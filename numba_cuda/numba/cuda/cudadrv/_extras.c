@@ -3,8 +3,7 @@
  * encoded using ctypes.
  */
 
-#include "_pymodule.h"
-
+#include "Python.h"
 
 #define CUDA_IPC_HANDLE_SIZE 64
 
@@ -33,13 +32,18 @@ CUresult call_cuIpcOpenMemHandle(CUdeviceptr* pdptr, CUipcMemHandle* handle, uns
 }
 
 
-MOD_INIT(_extras) {
-    PyObject *m;
-    MOD_DEF(m, "_extras", "No docs", NULL)
+PyMODINIT_FUNC PyInit__extras(void) {
+    static struct PyModuleDef moduledef = {
+        PyModuleDef_HEAD_INIT, "_extras", "No docs", -1, NULL, NULL, NULL, NULL, NULL
+    };
+
+    PyObject *m = PyModule_Create(&moduledef);
+
     if (m == NULL)
-        return MOD_ERROR_VAL;
+        return NULL;
+
     PyModule_AddObject(m, "set_cuIpcOpenMemHandle", PyLong_FromVoidPtr(&set_cuIpcOpenMemHandle));
     PyModule_AddObject(m, "call_cuIpcOpenMemHandle", PyLong_FromVoidPtr(&call_cuIpcOpenMemHandle));
     PyModule_AddIntConstant(m, "CUDA_IPC_HANDLE_SIZE", CUDA_IPC_HANDLE_SIZE);
-    return MOD_SUCCESS_VAL(m);
+    return m;
 }

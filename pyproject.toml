@@ -1,0 +1,22 @@
+[tool.scikit-build]
+cmake.minimum-version = "3.26.4"
+cmake.verbose = true
+ninja.make-fallback = true
+build-dir = "build/{wheel_tag}"
+wheel.packages = ["numba_cuda"]
+
+[build-system]
+requires = ["scikit-build-core"]
+build-backend = "scikit_build_core.build"
+
+[project]
+name = "numba_cuda"
+version = "0.1.0"
+description = "CUDA target for Numba"
+readme = { file = "README.md", content-type = "text/markdown" }
+authors = [
+    { name = "Anaconda Inc." },
+    { name = "NVIDIA Corporation" }
+]
+license = { text = "BSD 2-clause" }
+requires-python = ">=3.9"
