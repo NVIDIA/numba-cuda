@@ -1,0 +1,9 @@
+#python code owners
+pynvjitlink/            @rapidsai/numba-cuda-write
+
+#cmake code owners
+**/CMakeLists.txt  @rapidsai/numba-cuda-write
+**/cmake/          @rapidsai/numba-cuda-write
+
+#build/ops code owners
+.github/           @rapidsai/ops-codeowners

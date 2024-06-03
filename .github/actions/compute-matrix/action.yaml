@@ -1,0 +1,48 @@
+name: Compute matrix
+
+outputs:
+  BUILD_MATRIX:
+    value: ${{ steps.compute-matrix.outputs.BUILD_MATRIX }}
+  TEST_MATRIX:
+    value: ${{ steps.compute-matrix.outputs.TEST_MATRIX }}
+
+runs:
+  using: composite
+  steps:
+    - name: Compute matrix
+      id: compute-matrix
+      shell: bash
+      run: |
+        set -eo pipefail
+
+        export BUILD_MATRIX="
+        - { CUDA_VER: '12.0.1', ARCH: 'amd64', PY_VER: '3.9', LINUX_VER: 'rockylinux8' }
+        - { CUDA_VER: '12.0.1', ARCH: 'amd64', PY_VER: '3.10', LINUX_VER: 'rockylinux8' }
+        - { CUDA_VER: '12.0.1', ARCH: 'amd64', PY_VER: '3.11', LINUX_VER: 'rockylinux8' }
+        - { CUDA_VER: '12.0.1', ARCH: 'amd64', PY_VER: '3.12', LINUX_VER: 'rockylinux8' }
+        - { CUDA_VER: '12.0.1', ARCH: 'arm64', PY_VER: '3.9', LINUX_VER: 'rockylinux8' }
+        - { CUDA_VER: '12.0.1', ARCH: 'arm64', PY_VER: '3.10', LINUX_VER: 'rockylinux8' }
+        - { CUDA_VER: '12.0.1', ARCH: 'arm64', PY_VER: '3.11', LINUX_VER: 'rockylinux8' }
+        - { CUDA_VER: '12.0.1', ARCH: 'arm64', PY_VER: '3.12', LINUX_VER: 'rockylinux8' }
+        "
+
+        export TEST_MATRIX="
+          - { CUDA_VER: '12.0.1', ARCH: 'amd64', PY_VER: '3.9', LINUX_VER: 'ubuntu20.04', gpu: 'v100', driver: 'latest' }
+          - { CUDA_VER: '12.0.1', ARCH: 'amd64', PY_VER: '3.10', LINUX_VER: 'ubuntu20.04', gpu: 'v100', driver: 'latest' }
+          - { CUDA_VER: '12.0.1', ARCH: 'amd64', PY_VER: '3.11', LINUX_VER: 'ubuntu20.04', gpu: 'v100', driver: 'latest' }
+          - { CUDA_VER: '12.0.1', ARCH: 'amd64', PY_VER: '3.12', LINUX_VER: 'ubuntu20.04', gpu: 'v100', driver: 'latest' }
+          - { CUDA_VER: '12.0.1', ARCH: 'arm64', PY_VER: '3.9', LINUX_VER: 'ubuntu20.04', gpu: 'a100', driver: 'latest' }
+          - { CUDA_VER: '12.0.1', ARCH: 'arm64', PY_VER: '3.10', LINUX_VER: 'ubuntu20.04', gpu: 'a100', driver: 'latest' }
+          - { CUDA_VER: '12.0.1', ARCH: 'arm64', PY_VER: '3.11', LINUX_VER: 'ubuntu20.04', gpu: 'a100', driver: 'latest' }
+          - { CUDA_VER: '12.0.1', ARCH: 'arm64', PY_VER: '3.12', LINUX_VER: 'ubuntu20.04', gpu: 'a100', driver: 'latest' }
+        "
+
+        echo "BUILD_MATRIX=$(
+          yq -n -o json 'env(BUILD_MATRIX)' | \
+          jq -c '.' \
+        )" | tee --append "${GITHUB_OUTPUT}"
+
+        echo "TEST_MATRIX=$(
+          yq -n -o json 'env(TEST_MATRIX)' | \
+          jq -c '.' \
+        )" | tee --append "${GITHUB_OUTPUT}"
