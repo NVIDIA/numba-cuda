@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.26.4 FATAL_ERROR)
 
 project(
   numba_cuda
-  VERSION 0.1.5
+  VERSION ${SKBUILD_PROJECT_VERSION}
   LANGUAGES C
 )
 

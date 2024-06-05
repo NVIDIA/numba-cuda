@@ -11,7 +11,7 @@ build-backend = "scikit_build_core.build"
 
 [project]
 name = "numba_cuda"
-version = "0.1.0"
+dynamic = ["version"]
 description = "CUDA target for Numba"
 readme = { file = "README.md", content-type = "text/markdown" }
 authors = [
@@ -20,3 +20,14 @@ authors = [
 ]
 license = { text = "BSD 2-clause" }
 requires-python = ">=3.9"
+
+[project.urls]
+Homepage = "https://github.com/rapidsai/numba-cuda"
+Documentation = "https://github.com/rapidsai/numba-cuda/blob/main/README.md"
+Repository = "https://github.com/rapidsai/numba-cuda"
+License = "https://github.com/rapidsai/numba-cuda/blob/main/LICENSE"
+
+[tool.scikit-build.metadata.version]
+provider = "scikit_build_core.metadata.regex"
+input = "numba_cuda/VERSION"
+regex = "(?P<value>.*)"
