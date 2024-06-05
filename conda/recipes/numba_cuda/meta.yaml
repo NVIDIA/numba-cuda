@@ -32,8 +32,7 @@ requirements:
     - scikit-build-core
   run:
     - python
-    - numba >=0.60.0
-    - {{ pin_compatible('cuda-version', min_pin='x', max_pin='x.x') }}
+    - numba >=0.59.1
 
 about:
   home: {{ project_urls["Homepage"] }}

@@ -1,4 +1,4 @@
-from numba import cuda, njit, types
+from numba import cuda, njit, types, version_info
 from numba.core.errors import TypingError
 from numba.core.extending import overload, overload_attribute
 from numba.core.typing.typeof import typeof
@@ -309,8 +309,16 @@ class TestOverload(CUDATestCase):
 
         # Ensure that we cannot use the CUDA target-specific attribute on the
         # CPU, and that an appropriate typing error is raised
-        with self.assertRaisesRegex(TypingError,
-                                    "Unknown attribute 'cuda_only'"):
+
+        # A different error is produced prior to version 0.60
+        # (the fixes in #9454 improved the message)
+        # https://github.com/numba/numba/pull/9454
+        if version_info[:2] < (0, 60):
+            msg = 'resolving type of attribute "cuda_only" of "x"'
+        else:
+            msg = "Unknown attribute 'cuda_only'"
+
+        with self.assertRaisesRegex(TypingError, msg):
             @njit(types.int64(mydummy_type))
             def illegal_target_attr_use(x):
                 return x.cuda_only
