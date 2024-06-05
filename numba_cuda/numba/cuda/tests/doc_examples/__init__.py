@@ -1,4 +1,4 @@
-from numba.testing import load_testsuite
+from numba.cuda.tests import load_testsuite
 import os
 
 

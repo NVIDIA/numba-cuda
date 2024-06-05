@@ -1,5 +1,5 @@
 from numba.cuda.testing import ensure_supported_ccs_initialized
-from numba.testing import load_testsuite
+from numba.cuda.tests import load_testsuite
 import os
 
 
