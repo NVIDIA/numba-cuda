@@ -22,7 +22,6 @@ build:
 requirements:
   build:
     - {{ compiler('c') }}
-    - {{ compiler('cxx') }}
     - cmake >=3.26.4
     - ninja
     - sysroot_{{ target_platform }} 2.17
@@ -39,7 +38,7 @@ about:
   dev_url: {{ project_urls["Repository"] }}
   doc_url: {{ project_urls["Documentation"] }}
   license: {{ project_data["license"]["text"] }}
-  license_family: Apache
+  license_family: BSD
   license_file: LICENSE
   license_url: {{ project_urls["License"] }}
-  summary: nvJitLink Python binding
+  summary: Numba CUDA target
