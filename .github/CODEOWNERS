@@ -5,7 +5,6 @@ pynvjitlink/            @rapidsai/numba-cuda-write
 **/CMakeLists.txt  @rapidsai/numba-cuda-write
 **/cmake/          @rapidsai/numba-cuda-write
 
-#build/ops code owners
 #CI code owners
 /.github/                @rapidsai/ci-codeowners
 /ci/                     @rapidsai/ci-codeowners
