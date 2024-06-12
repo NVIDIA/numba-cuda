@@ -1,5 +1,5 @@
 #python code owners
-pynvjitlink/            @rapidsai/numba-cuda-write
+numba_cuda/            @rapidsai/numba-cuda-write
 
 #cmake code owners
 **/CMakeLists.txt  @rapidsai/numba-cuda-write
