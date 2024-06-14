@@ -68,7 +68,7 @@ of threads in other blocks, or fail to see updates from their opposite thread.
 
 First we'll define our kernel:
 
-.. literalinclude:: ../../../numba/cuda/tests/doc_examples/test_cg.py
+.. literalinclude:: ../../../numba_cuda/numba/cuda/tests/doc_examples/test_cg.py
    :language: python
    :caption: from ``test_grid_sync`` of ``numba/cuda/tests/doc_example/test_cg.py``
    :start-after: magictoken.ex_grid_sync_kernel.begin
@@ -78,7 +78,7 @@ First we'll define our kernel:
 
 Then create some empty input data and determine the grid and block sizes:
 
-.. literalinclude:: ../../../numba/cuda/tests/doc_examples/test_cg.py
+.. literalinclude:: ../../../numba_cuda/numba/cuda/tests/doc_examples/test_cg.py
    :language: python
    :caption: from ``test_grid_sync`` of ``numba/cuda/tests/doc_example/test_cg.py``
    :start-after: magictoken.ex_grid_sync_data.begin
@@ -88,7 +88,7 @@ Then create some empty input data and determine the grid and block sizes:
 
 Finally we launch the kernel and print the result:
 
-.. literalinclude:: ../../../numba/cuda/tests/doc_examples/test_cg.py
+.. literalinclude:: ../../../numba_cuda/numba/cuda/tests/doc_examples/test_cg.py
    :language: python
    :caption: from ``test_grid_sync`` of ``numba/cuda/tests/doc_example/test_cg.py``
    :start-after: magictoken.ex_grid_sync_launch.begin

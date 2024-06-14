@@ -100,7 +100,7 @@ array arguments using C pointer types.
 
 For example, a function with the following prototype:
 
-.. literalinclude:: ../../../numba/cuda/tests/doc_examples/ffi/functions.cu
+.. literalinclude:: ../../../numba_cuda/numba/cuda/tests/doc_examples/ffi/functions.cu
    :language: C
    :caption: ``numba/cuda/tests/doc_examples/ffi/functions.cu``
    :start-after: magictoken.ex_sum_reduce_proto.begin
@@ -109,7 +109,7 @@ For example, a function with the following prototype:
 
 would be declared as follows:
 
-.. literalinclude:: ../../../numba/cuda/tests/doc_examples/test_ffi.py
+.. literalinclude:: ../../../numba_cuda/numba/cuda/tests/doc_examples/test_ffi.py
    :language: python
    :caption: from ``test_ex_from_buffer`` in ``numba/cuda/tests/doc_examples/test_ffi.py``
    :start-after: magictoken.ex_from_buffer_decl.begin
@@ -121,7 +121,7 @@ To obtain a pointer to array data for passing to foreign functions, use the
 ``from_buffer()`` method of a ``cffi.FFI`` instance. For example, a kernel using
 the ``sum_reduce`` function could be defined as:
 
-.. literalinclude:: ../../../numba/cuda/tests/doc_examples/test_ffi.py
+.. literalinclude:: ../../../numba_cuda/numba/cuda/tests/doc_examples/test_ffi.py
    :language: python
    :caption: from ``test_ex_from_buffer`` in ``numba/cuda/tests/doc_examples/test_ffi.py``
    :start-after: magictoken.ex_from_buffer_kernel.begin
@@ -179,7 +179,7 @@ multiply pairs of numbers from two arrays.
 
 The foreign function is written as follows:
 
-.. literalinclude:: ../../../numba/cuda/tests/doc_examples/ffi/functions.cu
+.. literalinclude:: ../../../numba_cuda/numba/cuda/tests/doc_examples/ffi/functions.cu
    :language: C
    :caption: ``numba/cuda/tests/doc_examples/ffi/functions.cu``
    :start-after: magictoken.ex_mul_f32_f32.begin
@@ -188,7 +188,7 @@ The foreign function is written as follows:
 
 The Python code and kernel are:
 
-.. literalinclude:: ../../../numba/cuda/tests/doc_examples/test_ffi.py
+.. literalinclude:: ../../../numba_cuda/numba/cuda/tests/doc_examples/test_ffi.py
    :language: python
    :caption: from ``test_ex_linking_cu`` in ``numba/cuda/tests/doc_examples/test_ffi.py``
    :start-after: magictoken.ex_linking_cu.begin
