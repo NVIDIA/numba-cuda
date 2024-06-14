@@ -6,6 +6,12 @@
 Numba CUDA
 ==========
 
+This is the documentation for Numba's CUDA target.
+
+This is presently a work-in-progress - the user guide and reference
+documentation are presently direct copies of the `upstream Numba CUDA
+documentation <https://numba.readthedocs.io/en/0.60.0/>`_.
+
 .. toctree::
    :maxdepth: 2
    :hidden:

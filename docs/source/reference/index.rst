@@ -8,3 +8,4 @@ Reference documentation
    types.rst
    memory.rst
    libdevice.rst
+   envvars.rst
