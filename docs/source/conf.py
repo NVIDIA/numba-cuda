@@ -13,7 +13,7 @@ author = 'NVIDIA Corporation'
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
 
-extensions = ['numpydoc', 'sphinx.ext.intersphinx']
+extensions = ['numpydoc', 'sphinx.ext.intersphinx', 'sphinx.ext.autodoc']
 
 templates_path = ['_templates']
 exclude_patterns = []
@@ -27,6 +27,8 @@ intersphinx_mapping = {
 
 # To prevent autosummary warnings
 numpydoc_show_class_members = False
+
+autodoc_typehints = 'none'
 
 # -- Options for HTML output -------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
