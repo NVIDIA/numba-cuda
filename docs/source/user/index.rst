@@ -1,8 +1,8 @@
 
 .. _cuda-index:
 
-Numba for CUDA GPUs
-===================
+User guide
+==========
 
 .. toctree::
 

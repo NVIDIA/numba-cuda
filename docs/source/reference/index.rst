@@ -1,5 +1,5 @@
-CUDA Python Reference
-=====================
+Reference documentation
+=======================
 
 .. toctree::
 
