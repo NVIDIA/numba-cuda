@@ -52,6 +52,7 @@ jobs:
     with:
       build_type: pull-request
       script: "ci/test_conda.sh"
+      run_codecov: false
       matrix_filter: ${{ needs.compute-matrix.outputs.TEST_MATRIX }}
   build-wheels:
     needs:
