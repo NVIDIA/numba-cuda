@@ -10,4 +10,4 @@ find_package(Python COMPONENTS Interpreter Development REQUIRED)
 
 install(FILES site-packages/_numba_cuda_redirector.py
               site-packages/_numba_cuda_redirector.pth
-              DESTINATION ${SKBUILD_PLATLIB_DIR})
+              DESTINATION ${SKBUILD_PURELIB_DIR})
