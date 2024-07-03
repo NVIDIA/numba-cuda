@@ -12,7 +12,7 @@ _msg_deprecated_signature_arg = ("Deprecated keyword argument `{0}`. "
 
 
 def jit(func_or_sig=None, device=False, inline=False, link=[], debug=None,
-        opt=True, lineinfo=False, cache=False, **kws):
+        opt=None, lineinfo=False, cache=False, **kws):
     """
     JIT compile a Python function for CUDA GPUs.
 
@@ -73,6 +73,7 @@ def jit(func_or_sig=None, device=False, inline=False, link=[], debug=None,
     debug = config.CUDA_DEBUGINFO_DEFAULT if debug is None else debug
     fastmath = kws.get('fastmath', False)
     extensions = kws.get('extensions', [])
+    opt = (True if config.OPT != 0 else False) if opt is None else opt
 
     if debug and opt:
         msg = ("debug=True with opt=True (the default) "
