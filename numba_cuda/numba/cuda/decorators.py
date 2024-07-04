@@ -44,7 +44,10 @@ def jit(func_or_sig=None, device=False, inline=False, link=[], debug=None,
        Useful for increasing occupancy.
     :param opt: Whether to compile from LLVM IR to PTX with optimization
                 enabled. When ``True``, ``-opt=3`` is passed to NVVM. When
-                ``False``, ``-opt=0`` is passed to NVVM. Defaults to ``True``.
+                ``False``, ``-opt=0`` is passed to NVVM. Defaults to ``None``.
+                The default value will be reset by environment variable
+                ``NUMBA_OPT``. If ``0``, ``opt`` is reset as ``False``;
+                otherwise, it is reset to ``True``.
     :type opt: bool
     :param lineinfo: If True, generate a line mapping between source code and
        assembly code. This enables inspection of the source code in NVIDIA
@@ -71,9 +74,9 @@ def jit(func_or_sig=None, device=False, inline=False, link=[], debug=None,
         raise DeprecationError(msg)
 
     debug = config.CUDA_DEBUGINFO_DEFAULT if debug is None else debug
+    opt = (True if config.OPT != 0 else False) if opt is None else opt
     fastmath = kws.get('fastmath', False)
     extensions = kws.get('extensions', [])
-    opt = (True if config.OPT != 0 else False) if opt is None else opt
 
     if debug and opt:
         msg = ("debug=True with opt=True (the default) "
