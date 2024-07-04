@@ -74,7 +74,7 @@ def jit(func_or_sig=None, device=False, inline=False, link=[], debug=None,
         raise DeprecationError(msg)
 
     debug = config.CUDA_DEBUGINFO_DEFAULT if debug is None else debug
-    opt = (True if config.OPT != 0 else False) if opt is None else opt
+    opt = (config.OPT != 0) if opt is None else opt
     fastmath = kws.get('fastmath', False)
     extensions = kws.get('extensions', [])
 
