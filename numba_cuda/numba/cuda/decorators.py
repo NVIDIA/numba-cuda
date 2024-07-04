@@ -76,7 +76,7 @@ def jit(func_or_sig=None, device=False, inline=False, link=[], debug=None,
     extensions = kws.get('extensions', [])
 
     if debug and opt:
-        msg = ("debug=True with opt=True (the default) "
+        msg = ("debug=True with opt=True "
                "is not supported by CUDA. This may result in a crash"
                " - set debug=False or opt=False.")
         warn(NumbaInvalidConfigWarning(msg))
