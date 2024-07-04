@@ -42,12 +42,9 @@ def jit(func_or_sig=None, device=False, inline=False, link=[], debug=None,
        this number of registers per thread. The limit may not be respected if
        the ABI requires a greater number of registers than that requested.
        Useful for increasing occupancy.
-    :param opt: Whether to compile from LLVM IR to PTX with optimization
-                enabled. When ``True``, ``-opt=3`` is passed to NVVM. When
-                ``False``, ``-opt=0`` is passed to NVVM. Defaults to ``None``.
-                The default value will be reset by environment variable
-                ``NUMBA_OPT``. If ``0``, ``opt`` is reset as ``False``;
-                otherwise, it is reset to ``True``.
+    :param opt: Whether to compile with optimization enabled. If unspecified,
+       the OPT configuration variable is decided by ``NUMBA_OPT```; all
+       non-zero values will enable optimization.
     :type opt: bool
     :param lineinfo: If True, generate a line mapping between source code and
        assembly code. This enables inspection of the source code in NVIDIA
