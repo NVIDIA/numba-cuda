@@ -4,6 +4,7 @@ from numba.core import config, serialize
 from numba.core.codegen import Codegen, CodeLibrary
 from .cudadrv import devices, driver, nvvm, runtime
 from numba.cuda.cudadrv.libs import get_cudalib
+from numba.cuda.cuda_paths import get_cuda_paths
 
 import os
 import subprocess
@@ -24,7 +25,8 @@ def run_nvdisasm(cubin, flags):
             f.write(cubin)
 
         try:
-            cp = subprocess.run(['nvdisasm', *flags, fname], check=True,
+            nvdisasm = get_cuda_paths()['nvdisasm'].info
+            cp = subprocess.run([nvdisasm, *flags, fname], check=True,
                                 stdout=subprocess.PIPE,
                                 stderr=subprocess.PIPE)
         except FileNotFoundError as e:

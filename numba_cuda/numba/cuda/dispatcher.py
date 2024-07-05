@@ -247,7 +247,7 @@ class _Kernel(serialize.ReduceMixin):
         '''
         Returns the CFG of the SASS for this kernel.
 
-        Requires nvdisasm to be available on the PATH.
+        Requires nvdisasm to be available.
         '''
         return self._codelibrary.get_sass_cfg()
 
@@ -255,7 +255,7 @@ class _Kernel(serialize.ReduceMixin):
         '''
         Returns the SASS code for this kernel.
 
-        Requires nvdisasm to be available on the PATH.
+        Requires nvdisasm to be available.
         '''
         return self._codelibrary.get_sass()
 
@@ -995,7 +995,7 @@ class CUDADispatcher(Dispatcher, serialize.ReduceMixin):
 
         The CFG for the device in the current context is returned.
 
-        Requires nvdisasm to be available on the PATH.
+        Requires nvdisasm to be available.
         '''
         if self.targetoptions.get('device'):
             raise RuntimeError('Cannot get the CFG of a device function')
@@ -1017,7 +1017,7 @@ class CUDADispatcher(Dispatcher, serialize.ReduceMixin):
 
         SASS for the device in the current context is returned.
 
-        Requires nvdisasm to be available on the PATH.
+        Requires nvdisasm to be available.
         '''
         if self.targetoptions.get('device'):
             raise RuntimeError('Cannot inspect SASS of a device function')
