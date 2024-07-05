@@ -363,7 +363,7 @@ def compile(pyfunc, sig, debug=False, lineinfo=False, device=True,
 
 
 def compile_for_current_device(pyfunc, sig, debug=False, lineinfo=False,
-                               device=True, fastmath=False, opt=True,
+                               device=True, fastmath=False, opt=None,
                                abi="c", abi_info=None, output='ptx'):
     """Compile a Python function to PTX or LTO-IR for a given signature for the
     current device's compute capabilility. This calls :func:`compile` with an
@@ -375,7 +375,7 @@ def compile_for_current_device(pyfunc, sig, debug=False, lineinfo=False,
 
 
 def compile_ptx(pyfunc, sig, debug=False, lineinfo=False, device=False,
-                fastmath=False, cc=None, opt=True, abi="numba", abi_info=None):
+                fastmath=False, cc=None, opt=None, abi="numba", abi_info=None):
     """Compile a Python function to PTX for a given signature. See
     :func:`compile`. The defaults for this function are to compile a kernel
     with the Numba ABI, rather than :func:`compile`'s default of compiling a
@@ -386,7 +386,7 @@ def compile_ptx(pyfunc, sig, debug=False, lineinfo=False, device=False,
 
 
 def compile_ptx_for_current_device(pyfunc, sig, debug=False, lineinfo=False,
-                                   device=False, fastmath=False, opt=True,
+                                   device=False, fastmath=False, opt=None,
                                    abi="numba", abi_info=None):
     """Compile a Python function to PTX for a given signature for the current
     device's compute capabilility. See :func:`compile_ptx`."""
