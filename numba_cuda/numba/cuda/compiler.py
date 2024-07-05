@@ -308,7 +308,7 @@ def compile(pyfunc, sig, debug=False, lineinfo=False, device=True,
         raise NotImplementedError(f'Unsupported output type: {output}')
 
     debug = config.CUDA_DEBUGINFO_DEFAULT if debug is None else debug
-    opt = (config.OPT != 0) if opt is None else opt
+    opt = (config.OPT._raw_value != 0) if opt is None else opt
 
     if debug and opt:
         msg = ("debug=True with opt=True "

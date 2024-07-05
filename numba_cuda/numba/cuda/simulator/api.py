@@ -9,6 +9,7 @@ from contextlib import contextmanager
 from .cudadrv.devices import require_context, reset, gpus  # noqa: F401
 from .kernel import FakeCUDAKernel
 from numba.core.sigutils import is_signature
+from numba.core import config
 from warnings import warn
 from ..args import In, Out, InOut  # noqa: F401
 
@@ -80,9 +81,9 @@ class Event(object):
 event = Event
 
 
-def jit(func_or_sig=None, device=False, debug=False, argtypes=None,
+def jit(func_or_sig=None, device=False, debug=None, argtypes=None,
         inline=False, restype=None, fastmath=False, link=None,
-        boundscheck=None, opt=True, cache=None
+        boundscheck=None, opt=None, cache=None
         ):
     # Here for API compatibility
     if boundscheck:
@@ -90,6 +91,9 @@ def jit(func_or_sig=None, device=False, debug=False, argtypes=None,
 
     if link is not None:
         raise NotImplementedError('Cannot link PTX in the simulator')
+
+    debug = config.CUDA_DEBUGINFO_DEFAULT if debug is None else debug
+    opt = (config.OPT._raw_value != 0) if opt is None else opt
 
     # Check for first argument specifying types - in that case the
     # decorator is not being passed a function
