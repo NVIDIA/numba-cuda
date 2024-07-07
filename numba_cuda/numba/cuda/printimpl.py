@@ -4,6 +4,7 @@ from numba.core import types, cgutils
 from numba.core.errors import NumbaWarning
 from numba.core.imputils import Registry
 from numba.cuda import nvvmutils
+from numba.cuda.types import Dim3
 from warnings import warn
 
 registry = Registry()
@@ -51,6 +52,15 @@ def const_print_impl(ty, context, builder, sigval):
     rawfmt = "%s"
     val = context.insert_string_const_addrspace(builder, pyval)
     return rawfmt, [val]
+
+
+@print_item.register(Dim3)
+def dim3_print_impl(ty, context, builder, val):
+    rawfmt = "(%d, %d, %d)"
+    x = builder.extract_value(val, 0)
+    y = builder.extract_value(val, 1)
+    z = builder.extract_value(val, 2)
+    return rawfmt, [x, y, z]
 
 
 @lower(print, types.VarArg(types.Any))

@@ -43,6 +43,19 @@ printstring[1, 3]()
 cuda.synchronize()
 """
 
+
+printdim3_usecase = """\
+from numba import cuda
+
+@cuda.jit
+def printdim3():
+    print(cuda.threadIdx)
+
+printdim3[1, (2, 2, 2)]()
+cuda.synchronize()
+"""
+
+
 printempty_usecase = """\
 from numba import cuda
 
@@ -104,6 +117,12 @@ class TestPrint(CUDATestCase):
         lines = [line.strip() for line in output.splitlines(True)]
         expected = ['%d hop! 999' % i for i in range(3)]
         self.assertEqual(sorted(lines), expected)
+
+    def test_dim3(self):
+        output, _ = self.run_code(printdim3_usecase)
+        lines = [line.strip() for line in output.splitlines(True)]
+        expected = [str((k, j, i)) for i in range(2) for j in range(2) for k in range(2)]
+        self.assertEqual(sorted(lines), sorted(expected))
 
     @skip_on_cudasim('cudasim can print unlimited output')
     def test_too_many_args(self):
