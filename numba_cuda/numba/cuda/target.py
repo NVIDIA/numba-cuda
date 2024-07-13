@@ -67,6 +67,7 @@ VALID_CHARS = re.compile(r'[^a-z0-9]', re.I)
 class CUDATargetContext(BaseContext):
     implement_powi_as_math_call = True
     strict_alignment = True
+    allow_dynamic_globals = True
 
     def __init__(self, typingctx, target='cuda'):
         super().__init__(typingctx, target)
@@ -279,43 +280,19 @@ class CUDATargetContext(BaseContext):
         Unlike the parent version.  This returns a a pointer in the constant
         addrspace.
         """
-
-        lmod = builder.module
-
-        constvals = [
-            self.get_constant(types.byte, i)
-            for i in iter(arr.tobytes(order='A'))
-        ]
-        constaryty = ir.ArrayType(ir.IntType(8), len(constvals))
-        constary = ir.Constant(constaryty, constvals)
-
-        addrspace = nvvm.ADDRSPACE_CONSTANT
-        gv = cgutils.add_global_variable(lmod, constary.type, "_cudapy_cmem",
-                                         addrspace=addrspace)
-        gv.linkage = 'internal'
-        gv.global_constant = True
-        gv.initializer = constary
-
-        # Preserve the underlying alignment
-        lldtype = self.get_data_type(aryty.dtype)
-        align = self.get_abi_sizeof(lldtype)
-        gv.align = 2 ** (align - 1).bit_length()
-
-        # Convert to generic address-space
-        ptrty = ir.PointerType(ir.IntType(8))
-        genptr = builder.addrspacecast(gv, ptrty, 'generic')
-
-        # Create array object
-        ary = self.make_array(aryty)(self, builder)
+        dataptr = arr.dataptr
+        data = self.add_dynamic_addr(builder, dataptr, info=str(type(dataptr)))
+        rt_addr = self.add_dynamic_addr(builder, id(arr), info=str(type(arr)))
         kshape = [self.get_constant(types.intp, s) for s in arr.shape]
         kstrides = [self.get_constant(types.intp, s) for s in arr.strides]
-        self.populate_array(ary, data=builder.bitcast(genptr, ary.data.type),
+        cary = self.make_array(aryty)(self, builder)
+        self.populate_array(cary, data=builder.bitcast(data, cary.data.type),
                             shape=kshape,
                             strides=kstrides,
-                            itemsize=ary.itemsize, parent=ary.parent,
+                            itemsize=arr.dtype.itemsize, parent=rt_addr,
                             meminfo=None)
 
-        return ary._getvalue()
+        return cary._getvalue()
 
     def insert_const_string(self, mod, string):
         """
