@@ -4,7 +4,6 @@ from numba.core import config, serialize
 from numba.core.codegen import Codegen, CodeLibrary
 from .cudadrv import devices, driver, nvvm, runtime
 from numba.cuda.cudadrv.libs import get_cudalib
-import functools
 
 import os
 import subprocess
@@ -13,14 +12,6 @@ import tempfile
 
 CUDA_TRIPLE = 'nvptx64-nvidia-cuda'
 
-@functools.cache
-def make_nrt():
-    from numba.cuda import descriptor
-    from numba.cuda.cudadrv.nrt import compile_nrt_functions
-
-    library = compile_nrt_functions(descriptor.cuda_target.target_context)
-    numba_cuda_runtime = library.get_asm_str().encode()
-    return numba_cuda_runtime
 
 def run_nvdisasm(cubin, flags):
     # nvdisasm only accepts input from a file, so we need to write out to a
@@ -188,9 +179,6 @@ class CUDACodeLibrary(serialize.ReduceMixin, CodeLibrary):
             return cubin
 
         linker = driver.Linker.new(max_registers=self._max_registers, cc=cc)
-
-#        numba_cuda_runtime = make_nrt()
- #       linker.add_ptx(numba_cuda_runtime)
 
         if linker.lto:
             ltoir = self.get_ltoir(cc=cc)
