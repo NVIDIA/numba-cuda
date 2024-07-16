@@ -5,7 +5,7 @@
     load_file="numba_cuda/VERSION",
     regex_pattern="(?P<value>.*)"
 )[0] %}
-{% set project_data = data.get("project") %}
+{% set project_data = data["project"] %}
 {% set project_urls = project_data["urls"] %}
 
 package:
