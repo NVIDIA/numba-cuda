@@ -15,7 +15,7 @@ rapids-logger "Download Wheel"
 RAPIDS_PY_WHEEL_NAME="numba_cuda" rapids-download-wheels-from-s3 ./dist/
 
 rapids-logger "Install wheel"
-python -m pip install $(echo ./dist/numba-cuda*.whl)
+python -m pip install $(echo ./dist/numba_cuda*.whl)
 
 rapids-logger "Check GPU usage"
 nvidia-smi
