@@ -9,12 +9,10 @@ source rapids-configure-sccache
 
 source rapids-date-string
 
-export CMAKE_GENERATOR=Ninja
-
 rapids-print-env
 
 rapids-logger "Begin py build"
 
-rapids-conda-retry mambabuild conda/recipes/numba_cuda
+rapids-conda-retry mambabuild conda/recipes/numba-cuda
 
 rapids-upload-conda-to-s3 python
