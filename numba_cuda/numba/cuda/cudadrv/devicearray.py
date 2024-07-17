@@ -122,7 +122,7 @@ class DeviceNDArrayBase(_devicearray.DeviceArray):
         return {
             'shape': tuple(self.shape),
             'strides': None if is_contiguous(self) else tuple(self.strides),
-            'data': (self.dataptr, False),
+            'data': (self.dynamic_address, False),
             'typestr': self.dtype.str,
             'stream': int(self.stream) if self.stream != 0 else None,
             'version': 3,
@@ -199,7 +199,7 @@ class DeviceNDArrayBase(_devicearray.DeviceArray):
             return self.gpu_data.device_ctypes_pointer
 
     @property
-    def dataptr(self):
+    def dynamic_address(self):
         if _driver.USE_NV_BINDING:
             if self.device_ctypes_pointer is not None:
                 ptr = int(self.device_ctypes_pointer)

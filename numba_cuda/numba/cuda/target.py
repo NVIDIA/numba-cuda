@@ -14,6 +14,7 @@ from numba.core import datamodel
 from .cudadrv import nvvm
 from numba.cuda import codegen, nvvmutils, ufuncs
 from numba.cuda.models import cuda_data_manager
+from numba.cuda.cudadrv import devicearray
 
 # -----------------------------------------------------------------------------
 # Typing
@@ -277,19 +278,31 @@ class CUDATargetContext(BaseContext):
 
     def make_constant_array(self, builder, aryty, arr):
         """
-        Unlike the parent version.  This returns a a pointer in the constant
-        addrspace.
+        returns dynmaic address of read-only global or closure device array.
+        If it is on host, the array will be copied to device.
+        In this way, this jitted function can't be cached.
         """
-        dataptr = arr.dataptr
-        data = self.add_dynamic_addr(builder, dataptr, info=str(type(dataptr)))
-        rt_addr = self.add_dynamic_addr(builder, id(arr), info=str(type(arr)))
+        if devicearray.is_cuda_ndarray(arr):
+            devarr = arr
+        else:
+            devarr, is_copy = devicearray.auto_device(arr)
+            assert is_copy
+
+        # XXX arr and devarr should share the same aryty
+
+        daddr = devarr.dynamic_address
+        info_da, info_devarr = str(type(daddr)), str(type(devarr))
+        dptr = self.add_dynamic_addr(builder, daddr, info_da)
+        devptr = self.add_dynamic_addr(builder, id(devarr), info_devarr)
+        cary = self.make_array(aryty)(self, builder)
         kshape = [self.get_constant(types.intp, s) for s in arr.shape]
         kstrides = [self.get_constant(types.intp, s) for s in arr.strides]
-        cary = self.make_array(aryty)(self, builder)
-        self.populate_array(cary, data=builder.bitcast(data, cary.data.type),
+        self.populate_array(arr=cary,
+                            data=builder.bitcast(dptr, cary.data.type),
                             shape=kshape,
                             strides=kstrides,
-                            itemsize=arr.dtype.itemsize, parent=rt_addr,
+                            itemsize=devarr.dtype.itemsize,
+                            parent=devptr,
                             meminfo=None)
 
         return cary._getvalue()
