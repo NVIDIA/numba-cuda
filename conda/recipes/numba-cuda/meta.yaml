@@ -9,7 +9,7 @@
 {% set project_urls = project_data["urls"] %}
 
 package:
-  name: numba_cuda
+  name: numba-cuda
   version: {{ version }}
 
 source:
@@ -21,13 +21,10 @@ build:
     - {{ PYTHON }} -m pip install . -vv
 
 requirements:
-  build:
-    - cmake >=3.26.4
-    - ninja
   host:
     - python
     - pip
-    - scikit-build-core
+    - setuptools
   run:
     - python
     - numba >=0.59.1

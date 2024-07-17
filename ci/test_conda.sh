@@ -34,7 +34,7 @@ rapids-print-env
 
 rapids-mamba-retry install \
   --channel "${PYTHON_CHANNEL}" \
-  numba_cuda
+  numba-cuda
 
 rapids-logger "Check GPU usage"
 nvidia-smi
