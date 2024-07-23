@@ -94,11 +94,6 @@ jobs:
       env:
         RAPIDS_BUILD_TYPE: ${{ inputs.build_type }}
     steps:
-      - uses: aws-actions/configure-aws-credentials@v4
-        with:
-          role-to-assume: ${{ vars.AWS_ROLE_ARN }}
-          aws-region: ${{ vars.AWS_REGION }}
-          role-duration-seconds: 43200 # 12h
       - uses: actions/checkout@v4
         with:
           repository: ${{ inputs.repo }}
@@ -114,6 +109,9 @@ jobs:
         run: ${{ inputs.script }}
         env:
           GH_TOKEN: ${{ github.token }}
-      - name: Upload additional artifacts
+      - name: Upload conda package
         if: "!cancelled()"
-        run: rapids-upload-artifacts-dir cuda${RAPIDS_CUDA_VERSION%%.*}_$(arch)_py${RAPIDS_PY_VERSION//.}
+        uses: actions/upload-artifact@v4
+        with:
+          name: conda-package
+          path: ${{ env.package_path }}

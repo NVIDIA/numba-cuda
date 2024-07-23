@@ -25,16 +25,15 @@ set +u
 conda activate test
 set -u
 
-PYTHON_CHANNEL=$(rapids-download-conda-from-s3 python)
+package=$(realpath conda-package/numba-cuda-*.tar.bz2)
+echo "Package path: $package"
+rapids-mamba-retry install $package
+
 RAPIDS_TESTS_DIR=${RAPIDS_TESTS_DIR:-"${PWD}/test-results"}/
 mkdir -p "${RAPIDS_TESTS_DIR}"
 pushd "${RAPIDS_TESTS_DIR}"
 
 rapids-print-env
-
-rapids-mamba-retry install \
-  --channel "${PYTHON_CHANNEL}" \
-  numba-cuda
 
 rapids-logger "Check GPU usage"
 nvidia-smi
