@@ -105,8 +105,11 @@ class _Kernel(serialize.ReduceMixin):
         if self.cooperative:
             lib.needs_cudadevrt = True
 
+        basedir = os.path.dirname(os.path.abspath(__file__))
+        asm = lib.get_asm_str()
+
         res = [fn for fn in cuda_fp16_math_funcs
-               if (f'__numba_wrapper_{fn}' in lib.get_asm_str())]
+               if (f'__numba_wrapper_{fn}' in asm)]
 
         if res:
             # Path to the source containing the foreign function
@@ -114,6 +117,10 @@ class _Kernel(serialize.ReduceMixin):
             functions_cu_path = os.path.join(basedir,
                                              'cpp_function_wrappers.cu')
             link.append(functions_cu_path)
+
+        if "NRT_" in asm:
+            nrt_path = os.path.join(basedir, 'runtime', 'nrt.cu')
+            link.append(nrt_path)
 
         for filepath in link:
             lib.add_linking_file(filepath)
