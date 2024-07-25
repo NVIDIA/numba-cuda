@@ -63,7 +63,7 @@ class TestNrtRefCt(EnableNRTStatsMixin, TestCase):
         self.assertEqual(cur_stats.free - init_stats.free, n)
 
 class TestNrtBasic(CUDATestCase):
-    def test_basic(self):
+    def test_nrt_launches(self):
         from pynvjitlink.patch import patch_numba_linker
 
         patch_numba_linker()
@@ -80,7 +80,27 @@ class TestNrtBasic(CUDATestCase):
         g[1,1]()
         cuda.synchronize()
 
+    def test_nrt_returns_correct(self):
+        from pynvjitlink.patch import patch_numba_linker
 
+        patch_numba_linker()
+
+        @cuda.jit
+        def f(x):
+            return x[5:]
+
+        @cuda.jit
+        def g(out_ary):
+            x = cuda_empty(10, np.int64)
+            x[5] = 1
+            y = f(x)
+            out_ary[0] = y[0]
+
+        out_ary = np.zeros(1, dtype=np.int64)
+
+        g[1,1](out_ary)
+
+        self.assertEqual(out_ary[0], 1)
 
 if __name__ == '__main__':
     unittest.main()
