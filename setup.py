@@ -1,8 +1,10 @@
 # Copyright (c) 2024, NVIDIA CORPORATION.
+import logging
 import pathlib
 
 from setuptools import setup
 from setuptools.command.build_py import build_py
+from setuptools.command.editable_wheel import editable_wheel, _TopLevelFinder
 
 
 # Adapted from https://stackoverflow.com/a/71137790
@@ -38,4 +40,36 @@ class build_py_with_redirector(build_py):  # noqa: N801
         return mapping
 
 
-setup(cmdclass={"build_py": build_py_with_redirector})
+class TopLevelFinderWithRedirector(_TopLevelFinder):
+    """Include the redirector files in the editable wheel."""
+
+    def get_implementation(self):
+        for item in super().get_implementation():
+            yield item
+
+        site_packages = pathlib.Path("site-packages")
+        pth_file = "_numba_cuda_redirector.pth"
+        py_file = "_numba_cuda_redirector.py"
+
+        with open(site_packages / pth_file) as f:
+            yield (pth_file, f.read())
+
+        with open(site_packages / py_file) as f:
+            yield (py_file, f.read())
+
+
+class editable_wheel_with_redirector(editable_wheel):
+    def _select_strategy(self, name, tag, build_lib):
+        # The default mode is "lenient" - others are "strict" and "compat".
+        # "compat" is deprecated. "strict" creates a tree of links to files in
+        # the repo. It could be implemented, but we only handle the default
+        # case for now.
+        if self.mode is not None and self.mode != "lenient":
+            raise RuntimeError("Only lenient mode is supported for editable "
+                               f"install. Current mode is {self.mode}")
+
+        return TopLevelFinderWithRedirector(self.distribution, name)
+
+
+setup(cmdclass={"build_py": build_py_with_redirector,
+                "editable_wheel": editable_wheel_with_redirector})
