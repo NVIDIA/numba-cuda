@@ -395,16 +395,12 @@ class _Kernel(serialize.ReduceMixin):
 
             c_intp = ctypes.c_ssize_t
 
-            
-
-            from numba import cuda
-
-            # set the refcount to a huge number for now to avoid freeing
+            # hack: allocate too much space to hold the meminfo and set it all to 1
             dbuf = cuda.to_device(np.ones(1024, dtype=np.uint8))
             
+            # hack: don't garbage collect up the array containing the meminfo
             def inner():
                 print(dbuf)
-
             retr.append(inner)
 
             meminfo = ctypes.c_void_p(dbuf.gpu_data._mem.device_ctypes_pointer.value)

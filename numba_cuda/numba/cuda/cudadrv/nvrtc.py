@@ -238,7 +238,7 @@ def compile(src, name, cc):
     cudadrv_path = os.path.dirname(os.path.abspath(__file__))
     numba_cuda_path = os.path.dirname(cudadrv_path)
     numba_include = f'-I{numba_cuda_path}'
-    options = [arch, include, numba_include, '-rdc', 'true', '-G']
+    options = [arch, include, numba_include, '-rdc', 'true']
 
     # Compile the program
     compile_error = nvrtc.compile_program(program, options)
