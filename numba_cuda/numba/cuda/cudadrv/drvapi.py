@@ -1,7 +1,6 @@
 from ctypes import (c_byte, c_char_p, c_float, c_int, c_size_t, c_uint,
-                    c_uint8, c_void_p, py_object, CFUNCTYPE, POINTER)
-
-from numba.cuda.cudadrv import _extras
+                    c_uint8, c_void_p, py_object, CFUNCTYPE, POINTER,
+                    Structure)
 
 cu_device = c_int
 cu_device_attribute = c_int     # enum
@@ -15,12 +14,17 @@ cu_stream = c_void_p            # an opaque handle
 cu_event = c_void_p
 cu_link_state = c_void_p
 cu_function_attribute = c_int
-cu_ipc_mem_handle = (c_byte * _extras.CUDA_IPC_HANDLE_SIZE)   # 64 bytes wide
 cu_uuid = (c_byte * 16)         # Device UUID
 
 cu_stream_callback_pyobj = CFUNCTYPE(None, cu_stream, c_int, py_object)
 
 cu_occupancy_b2d_size = CFUNCTYPE(c_size_t, c_int)
+
+
+# Mirrors the definition of CUipcMemHandle in cuda.h
+class cu_ipc_mem_handle(Structure):
+    _fields_ = [("reserved", c_uint8 * 64)]
+
 
 # See https://docs.nvidia.com/cuda/cuda-driver-api/group__CUDA__TYPES.html
 CU_STREAM_DEFAULT = 0
