@@ -96,6 +96,7 @@ class CUDATargetContext(BaseContext):
     def load_additional_registries(self):
         # side effect of import needed for numba.cpython.*, the builtins
         # registry is updated at import time.
+        from numba.core.imputils import builtin_registry
         from numba.cpython import numbers, tupleobj, slicing # noqa: F401
         from numba.cpython import rangeobj, iterators, enumimpl # noqa: F401
         from numba.cpython import unicode, charseq # noqa: F401
@@ -109,6 +110,8 @@ class CUDATargetContext(BaseContext):
         # fix for #8940
         from numba.np.unsafe import ndarray # noqa F401
 
+        # XXX ensure builtin_registry is installed before cudaimpl
+        self.install_registry(builtin_registry)
         self.install_registry(cudaimpl.registry)
         self.install_registry(cffiimpl.registry)
         self.install_registry(printimpl.registry)
@@ -116,6 +119,10 @@ class CUDATargetContext(BaseContext):
         self.install_registry(cmathimpl.registry)
         self.install_registry(mathimpl.registry)
         self.install_registry(vector_types.impl_registry)
+
+    def refresh(self):
+        self.load_additional_registries()
+        self.typing_context.refresh()
 
     def codegen(self):
         return self._internal_codegen
@@ -278,34 +285,46 @@ class CUDATargetContext(BaseContext):
 
     def make_constant_array(self, builder, aryty, arr):
         """
-        returns dynmaic address of read-only global or closure device array.
-        If it is on host, the array will be copied to device.
-        In this way, this jitted function can't be cached.
+        Unlike the parent version.  This returns a a pointer in the constant
+        addrspace.
         """
-        if devicearray.is_cuda_ndarray(arr):
-            devarr = arr
-        else:
-            devarr, is_copy = devicearray.auto_device(arr)
-            assert is_copy
+        # FIXME: arr is ir.LoadInstr instead of python ndarray
+        lmod = builder.module
 
-        # XXX arr and devarr should share the same aryty
+        constvals = [
+            self.get_constant(types.byte, i)
+            for i in iter(arr.tobytes(order='A'))
+        ]
+        constaryty = ir.ArrayType(ir.IntType(8), len(constvals))
+        constary = ir.Constant(constaryty, constvals)
 
-        daddr = devarr.dynamic_address
-        info_da, info_devarr = str(type(daddr)), str(type(devarr))
-        dptr = self.add_dynamic_addr(builder, daddr, info_da)
-        devptr = self.add_dynamic_addr(builder, id(devarr), info_devarr)
-        cary = self.make_array(aryty)(self, builder)
+        addrspace = nvvm.ADDRSPACE_CONSTANT
+        gv = cgutils.add_global_variable(lmod, constary.type, "_cudapy_cmem",
+                                         addrspace=addrspace)
+        gv.linkage = 'internal'
+        gv.global_constant = True
+        gv.initializer = constary
+
+        # Preserve the underlying alignment
+        lldtype = self.get_data_type(aryty.dtype)
+        align = self.get_abi_sizeof(lldtype)
+        gv.align = 2 ** (align - 1).bit_length()
+
+        # Convert to generic address-space
+        ptrty = ir.PointerType(ir.IntType(8))
+        genptr = builder.addrspacecast(gv, ptrty, 'generic')
+
+        # Create array object
+        ary = self.make_array(aryty)(self, builder)
         kshape = [self.get_constant(types.intp, s) for s in arr.shape]
         kstrides = [self.get_constant(types.intp, s) for s in arr.strides]
-        self.populate_array(arr=cary,
-                            data=builder.bitcast(dptr, cary.data.type),
+        self.populate_array(ary, data=builder.bitcast(genptr, ary.data.type),
                             shape=kshape,
                             strides=kstrides,
-                            itemsize=devarr.dtype.itemsize,
-                            parent=devptr,
+                            itemsize=ary.itemsize, parent=ary.parent,
                             meminfo=None)
 
-        return cary._getvalue()
+        return ary._getvalue()
 
     def insert_const_string(self, mod, string):
         """

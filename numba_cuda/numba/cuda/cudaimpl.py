@@ -15,8 +15,9 @@ from .cudadrv import nvvm
 from numba import cuda
 from numba.cuda import nvvmutils, stubs, errors
 from numba.cuda.types import dim3, CUDADispatcher
+from numba.cuda.cudadrv import devicearray
 
-registry = Registry()
+registry = Registry("cuda_lowering")
 lower = registry.lower
 lower_attr = registry.lower_getattr
 lower_constant = registry.lower_constant
@@ -73,9 +74,8 @@ def dim3_z(context, builder, sig, args):
 
 @lower(cuda.const.array_like, types.Array)
 def cuda_const_array_like(context, builder, sig, args):
-    # This is a no-op because CUDATargetContext.make_constant_array already
-    # created the constant array.
-    return args[0]
+    """call cuda specialized const array creation in CUDATargetContext"""
+    return context.make_constant_array(builder, sig.args[0], args[0])
 
 
 _unique_smem_id = 0
@@ -1049,6 +1049,36 @@ def _generic_array(context, builder, shape, dtype, symbol_name, addrspace,
 def cuda_dispatcher_const(context, builder, ty, pyval):
     return context.get_dummy_value()
 
+
+@lower_constant(types.Array)
+def constant_array(context, builder, aryty, arr):
+    """
+    returns dynmaic address of read-only global or closure device array.
+    If it is on host, the array will be copied to device.
+    In this way, this jitted function can't be cached.
+    """
+    if devicearray.is_cuda_ndarray(arr):
+        devarr = arr
+    else:
+        devarr, is_copy = devicearray.auto_device(arr)
+        assert is_copy
+
+    daddr = devarr.dynamic_address
+    info_da, info_devarr = str(type(daddr)), str(type(devarr))
+    dptr = context.add_dynamic_addr(builder, daddr, info_da)
+    devptr = context.add_dynamic_addr(builder, id(devarr), info_devarr)
+    cary = context.make_array(aryty)(context, builder)
+    kshape = [context.get_constant(types.intp, s) for s in arr.shape]
+    kstrides = [context.get_constant(types.intp, s) for s in arr.strides]
+    context.populate_array(arr=cary,
+                        data=builder.bitcast(dptr, cary.data.type),
+                        shape=kshape,
+                        strides=kstrides,
+                        itemsize=devarr.dtype.itemsize,
+                        parent=devptr,
+                        meminfo=None)
+
+    return cary._getvalue()
 
 # NumPy
 
