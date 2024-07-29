@@ -79,7 +79,6 @@ def make_logger():
             logger.addHandler(logging.NullHandler())
     return logger
 
-
 class DeadMemoryError(RuntimeError):
     pass
 
@@ -2594,13 +2593,13 @@ class Linker(metaclass=ABCMeta):
     """Abstract base class for linkers"""
 
     @classmethod
-    def new(cls, max_registers=0, lineinfo=False, cc=None):
+    def new(cls, max_registers=0, lineinfo=False, cc=None, **kwargs):
         if config.CUDA_ENABLE_MINOR_VERSION_COMPATIBILITY:
             # TODO: circular
             from . import runtime
             driver_ver, runtime_ver = driver.get_version(), runtime.get_version()
             if driver_ver >= (12, 0) and runtime_ver > driver_ver:
-                return PatchedLinker(max_registers, lineinfo, cc)
+                return PatchedLinker(max_registers, lineinfo, cc, **kwargs)
             else:
                 return MVCLinker(max_registers, lineinfo, cc)
 
