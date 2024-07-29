@@ -14,6 +14,7 @@ concurrency:
 
 jobs:
   build-conda:
+    uses: ./.github/workflows/conda-python-build.yaml
     secrets: inherit
     with:
       build_type: release
