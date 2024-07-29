@@ -2599,6 +2599,8 @@ class Linker(metaclass=ABCMeta):
             from . import runtime
             driver_ver, runtime_ver = driver.get_version(), runtime.get_version()
             if driver_ver >= (12, 0) and runtime_ver > driver_ver:
+                # runs once
+                patch_cuda()
                 return PatchedLinker(max_registers, lineinfo, cc, **kwargs)
             else:
                 return MVCLinker(max_registers, lineinfo, cc)
@@ -3018,6 +3020,18 @@ class LTOIR(LinkableCode):
 
     kind = "ltoir"
     default_name = "<unnamed-ltoir>"
+
+
+@functools.lru_cache(maxsize=1)
+def patch_cuda():
+    from numba import cuda
+    cuda.Archive = Archive
+    cuda.CUSource = CUSource
+    cuda.Cubin = Cubin
+    cuda.Fatbin = Fatbin
+    cuda.Object = Object
+    cuda.PTXSource = PTXSource
+    cuda.LTOIR = LTOIR
 
 
 class PatchedLinker(Linker):
