@@ -19,4 +19,4 @@ jobs:
     with:
       build_type: release
       script: "ci/build_conda.sh"
-      upload_to_conda: true
+      upload_to_anaconda: true
