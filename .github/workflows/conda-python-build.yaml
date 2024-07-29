@@ -21,6 +21,9 @@ on:
       matrix_filter:
         type: string
         default: "."
+      upload_to_anaconda:
+        type: boolean
+        required: false
 
 defaults:
   run:
@@ -115,3 +118,8 @@ jobs:
         with:
           name: conda-package
           path: ${{ env.package_path }}
+      - name: Publish conda package
+        if: inputs.upload_to_anaconda
+        run: "ci/upload_conda.sh"
+        env:
+          CONDA_TOKEN: ${{ secrets.NVIDIA_CONDA_TOKEN }}

@@ -1,27 +1,21 @@
 # SPDX-FileCopyrightText: Copyright (c) 2024 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 
-name: Publish CONDA PKG
+name: Publish packages
 
 on:
-  workflow_dispatch:
+  push:
+    tags:
+      - 'v*'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}-release
+  cancel-in-progress: true
 
 jobs:
-  build-conda-x86_64:
-    uses: ./.github/workflows/conda-python-build.yaml
+  build-conda:
     secrets: inherit
     with:
-      build_type: branch
+      build_type: release
       script: "ci/build_conda.sh"
-      CPU: "amd64"
-      GPU: "v100"
-      upload_to_conda: true
-  build-conda-aarch64:
-    uses: ./.github/workflows/conda-python-build.yaml
-    secrets: inherit
-    with:
-      build_type: branch
-      script: "ci/build_conda.sh"
-      CPU: "arm64"
-      GPU: "a100"
       upload_to_conda: true
