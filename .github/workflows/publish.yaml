@@ -12,7 +12,26 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}-release
   cancel-in-progress: true
 
+
 jobs:
+  publish-packages:
+    needs:
+      - compute-matrix
+      - build-conda
+    secrets: inherit
+    runs-on: ubuntu-latest
+    steps:
+      - run: exit 0
+  compute-matrix:
+    runs-on: ubuntu-latest
+    outputs:
+      BUILD_MATRIX: ${{ steps.compute-matrix.outputs.BUILD_MATRIX }}
+      TEST_MATRIX: ${{ steps.compute-matrix.outputs.TEST_MATRIX }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Compute Build Matrix
+        id: compute-matrix
+        uses: ./.github/actions/compute-matrix
   build-conda:
     uses: ./.github/workflows/conda-python-build.yaml
     secrets: inherit
