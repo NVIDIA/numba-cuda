@@ -33,3 +33,12 @@ jobs:
       script: "ci/build_conda.sh"
       matrix_filter: ${{ needs.compute-matrix.outputs.BUILD_MATRIX }}
       upload_to_anaconda: true
+  build-wheels:
+    needs: compute-matrix
+    uses: ./.github/workflows/wheels-build.yaml
+    secrets: inherit
+    with:
+      build_type: release
+      script: "ci/build_wheel.sh"
+      matrix_filter: ${{ needs.compute-matrix.outputs.BUILD_MATRIX }}
+      upload_to_pypi: true
