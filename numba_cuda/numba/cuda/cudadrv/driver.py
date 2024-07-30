@@ -35,6 +35,7 @@ from numba.core import utils, serialize, config
 from .error import CudaSupportError, CudaDriverError
 from .drvapi import API_PROTOTYPES
 from .drvapi import cu_occupancy_b2d_size, cu_stream_callback_pyobj, cu_uuid
+from .mappings import FILE_EXTENSION_MAP
 from numba.cuda.cudadrv import enums, drvapi, nvrtc, _extras
 
 USE_NV_BINDING = config.CUDA_USE_NVIDIA_BINDING
@@ -2568,40 +2569,18 @@ def launch_kernel(cufunc_handle,
                               extra)
 
 
-if USE_NV_BINDING:
-    jitty = binding.CUjitInputType
-    FILE_EXTENSION_MAP = {
-        'o': jitty.CU_JIT_INPUT_OBJECT,
-        'ptx': jitty.CU_JIT_INPUT_PTX,
-        'a': jitty.CU_JIT_INPUT_LIBRARY,
-        'lib': jitty.CU_JIT_INPUT_LIBRARY,
-        'cubin': jitty.CU_JIT_INPUT_CUBIN,
-        'fatbin': jitty.CU_JIT_INPUT_FATBINARY,
-    }
-else:
-    FILE_EXTENSION_MAP = {
-        'o': enums.CU_JIT_INPUT_OBJECT,
-        'ptx': enums.CU_JIT_INPUT_PTX,
-        'a': enums.CU_JIT_INPUT_LIBRARY,
-        'lib': enums.CU_JIT_INPUT_LIBRARY,
-        'cubin': enums.CU_JIT_INPUT_CUBIN,
-        'fatbin': enums.CU_JIT_INPUT_FATBINARY,
-    }
-
-
 class Linker(metaclass=ABCMeta):
     """Abstract base class for linkers"""
 
     @classmethod
-    def new(cls, max_registers=0, lineinfo=False, cc=None, **kwargs):
+    def new(cls, max_registers=0, lineinfo=False, cc=None, lto=None, additional_flags=None):
         if config.CUDA_ENABLE_MINOR_VERSION_COMPATIBILITY:
             # TODO: circular
             from . import runtime
             driver_ver, runtime_ver = driver.get_version(), runtime.get_version()
             if driver_ver >= (12, 0) and runtime_ver > driver_ver:
                 # runs once
-                patch_cuda()
-                return PatchedLinker(max_registers, lineinfo, cc, **kwargs)
+                return PyNvJitLinker(max_registers, lineinfo, cc, lto, additional_flags)
             else:
                 return MVCLinker(max_registers, lineinfo, cc)
 
@@ -2960,81 +2939,7 @@ class CudaPythonLinker(Linker):
         cubin_ptr = ctypes.cast(cubin_buf, ctypes.POINTER(ctypes.c_char))
         return bytes(np.ctypeslib.as_array(cubin_ptr, shape=(size,)))
 
-class LinkableCode:
-    """An object that can be passed in the `link` list argument to `@cuda.jit`
-    kernels to supply code to be linked from memory."""
-
-    def __init__(self, data, name=None):
-        self.data = data
-        self._name = name
-
-    @property
-    def name(self):
-        return self._name or self.default_name
-
-
-class PTXSource(LinkableCode):
-    """PTX Source code in memory"""
-
-    kind = FILE_EXTENSION_MAP["ptx"]
-    default_name = "<unnamed-ptx>"
-
-
-class CUSource(LinkableCode):
-    """CUDA C/C++ Source code in memory"""
-
-    kind = "cu"
-    default_name = "<unnamed-cu>"
-
-
-class Fatbin(LinkableCode):
-    """A fatbin ELF in memory"""
-
-    kind = FILE_EXTENSION_MAP["fatbin"]
-    default_name = "<unnamed-fatbin>"
-
-
-class Cubin(LinkableCode):
-    """A cubin ELF in memory"""
-
-    kind = FILE_EXTENSION_MAP["cubin"]
-    default_name = "<unnamed-cubin>"
-
-
-class Archive(LinkableCode):
-    """An archive of objects in memory"""
-
-    kind = FILE_EXTENSION_MAP["a"]
-    default_name = "<unnamed-archive>"
-
-
-class Object(LinkableCode):
-    """An object file in memory"""
-
-    kind = FILE_EXTENSION_MAP["o"]
-    default_name = "<unnamed-object>"
-
-
-class LTOIR(LinkableCode):
-    """An LTOIR file in memory"""
-
-    kind = "ltoir"
-    default_name = "<unnamed-ltoir>"
-
-
-@functools.lru_cache(maxsize=1)
-def patch_cuda():
-    from numba import cuda
-    cuda.Archive = Archive
-    cuda.CUSource = CUSource
-    cuda.Cubin = Cubin
-    cuda.Fatbin = Fatbin
-    cuda.Object = Object
-    cuda.PTXSource = PTXSource
-    cuda.LTOIR = LTOIR
-
-
-class PatchedLinker(Linker):
+class PyNvJitLinker(Linker):
     def __init__(
         self,
         max_registers=None,
@@ -3049,7 +2954,7 @@ class PatchedLinker(Linker):
             raise ImportError(_MVC_ERROR_MESSAGE) from err
 
         if cc is None:
-            raise RuntimeError("PatchedLinker requires CC to be specified")
+            raise RuntimeError("PyNvJitLinker requires CC to be specified")
         if not any(isinstance(cc, t) for t in [list, tuple]):
             raise TypeError("`cc` must be a list or tuple of length 2")
 
