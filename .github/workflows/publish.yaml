@@ -31,4 +31,5 @@ jobs:
     with:
       build_type: release
       script: "ci/build_conda.sh"
+      matrix_filter: ${{ needs.compute-matrix.outputs.BUILD_MATRIX }}
       upload_to_anaconda: true
