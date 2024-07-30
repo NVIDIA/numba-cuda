@@ -401,8 +401,8 @@ class atomic(Stub):
 
         Performs::
 
-           ary[idx] = (value if (ary[idx] == 0) or
-                       (ary[idx] > value) else ary[idx] - 1)
+           ary[idx] = (val if (ary[idx] == 0) or
+                       (ary[idx] > val) else ary[idx] - 1)
 
         Supported on uint32, and uint64 operands only.
 
