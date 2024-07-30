@@ -14,14 +14,6 @@ concurrency:
 
 
 jobs:
-  publish-packages:
-    needs:
-      - compute-matrix
-      - build-conda
-    secrets: inherit
-    runs-on: ubuntu-latest
-    steps:
-      - run: exit 0
   compute-matrix:
     runs-on: ubuntu-latest
     outputs:
@@ -33,6 +25,7 @@ jobs:
         id: compute-matrix
         uses: ./.github/actions/compute-matrix
   build-conda:
+    needs: compute-matrix
     uses: ./.github/workflows/conda-python-build.yaml
     secrets: inherit
     with:
