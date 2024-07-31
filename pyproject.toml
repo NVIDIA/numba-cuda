@@ -18,6 +18,7 @@ authors = [
 ]
 license = { text = "BSD 2-clause" }
 requires-python = ">=3.9"
+dependencies = ["numba>=0.59.1"]
 
 [project.urls]
 Homepage = "https://github.com/rapidsai/numba-cuda"
