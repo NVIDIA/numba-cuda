@@ -5,7 +5,7 @@ set -euo pipefail
 
 . /opt/conda/etc/profile.d/conda.sh
 
-rapids-logger "Install testing dependencies"
+rapids-logger "Install docs dependencies"
 # TODO: Replace with rapids-dependency-file-generator
 rapids-mamba-retry create -n docs \
     make \
@@ -16,7 +16,7 @@ rapids-mamba-retry create -n docs \
 
 # Temporarily allow unbound variables for conda activation.
 set +u
-conda activate test
+conda activate docs
 set -u
 
 package=$(realpath conda-package/numba-cuda-*.tar.bz2)
