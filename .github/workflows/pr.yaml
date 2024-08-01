@@ -1,4 +1,6 @@
-# Copyright (c) 2024, NVIDIA CORPORATION.
+# SPDX-FileCopyrightText: Copyright (c) 2024 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
 name: pr
 
 on:
@@ -19,11 +21,12 @@ jobs:
       - test-conda
       - build-wheels
       - test-wheels
+      - build-docs
     secrets: inherit
-    uses: rapidsai/shared-workflows/.github/workflows/pr-builder.yaml@branch-24.04
+    uses: rapidsai/shared-workflows/.github/workflows/pr-builder.yaml@branch-24.08
   checks:
     secrets: inherit
-    uses: rapidsai/shared-workflows/.github/workflows/checks.yaml@branch-24.04
+    uses: rapidsai/shared-workflows/.github/workflows/checks.yaml@branch-24.08
     with:
       enable_check_generated_files: false
   compute-matrix:
@@ -39,7 +42,7 @@ jobs:
   build-conda:
     needs:
       - compute-matrix
-    uses: rapidsai/shared-workflows/.github/workflows/conda-python-build.yaml@branch-24.04
+    uses: ./.github/workflows/conda-python-build.yaml
     with:
       build_type: pull-request
       script: "ci/build_conda.sh"
@@ -48,7 +51,7 @@ jobs:
     needs:
       - build-conda
       - compute-matrix
-    uses: rapidsai/shared-workflows/.github/workflows/conda-python-tests.yaml@branch-24.04
+    uses: ./.github/workflows/conda-python-tests.yaml
     with:
       build_type: pull-request
       script: "ci/test_conda.sh"
@@ -57,7 +60,7 @@ jobs:
   build-wheels:
     needs:
       - compute-matrix
-    uses: rapidsai/shared-workflows/.github/workflows/wheels-build.yaml@branch-24.04
+    uses: ./.github/workflows/wheels-build.yaml
     with:
       build_type: pull-request
       script: "ci/build_wheel.sh"
@@ -66,8 +69,14 @@ jobs:
     needs:
       - build-wheels
       - compute-matrix
-    uses: rapidsai/shared-workflows/.github/workflows/wheels-test.yaml@branch-24.04
+    uses: ./.github/workflows/wheels-test.yaml
     with:
       build_type: pull-request
       script: "ci/test_wheel.sh"
       matrix_filter: ${{ needs.compute-matrix.outputs.TEST_MATRIX }}
+  build-docs:
+    needs:
+      - build-conda
+    uses: ./.github/workflows/docs-build.yaml
+    with:
+      build_type: pull-request
