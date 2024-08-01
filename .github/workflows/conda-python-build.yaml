@@ -117,7 +117,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: conda-repo
-          path: "/tmp/conda-bld-output/noarch"
+          path: "/tmp/conda-bld-output"
       - name: Publish conda package
         if: inputs.upload_to_anaconda
         run: "ci/upload_conda.sh"
