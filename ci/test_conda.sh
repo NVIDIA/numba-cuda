@@ -10,11 +10,10 @@ rapids-logger "Install testing dependencies"
 rapids-mamba-retry create -n test \
     c-compiler \
     cxx-compiler \
-    cuda-nvcc \
+    cuda-nvcc-impl \
     cuda-nvrtc \
     cuda-python \
     cuda-version=${RAPIDS_CUDA_VERSION%.*} \
-    "numba>=0.59.1" \
     make \
     psutil \
     pytest \

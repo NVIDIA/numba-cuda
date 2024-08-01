@@ -6,7 +6,6 @@ set -euo pipefail
 rapids-logger "Install testing dependencies"
 # TODO: Replace with rapids-dependency-file-generator
 python -m pip install \
-    "numba>=0.59.1" \
     psutil \
     cuda-python \
     pytest
