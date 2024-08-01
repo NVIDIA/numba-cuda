@@ -56,7 +56,7 @@ jobs:
           ref: ${{ inputs.sha }}
           fetch-depth: 0
       - uses: actions/download-artifact@v4
-        name: conda-package
+        name: conda-repo
       - name: Display structure of downloaded files
         run: ls -R
       - name: Standardize repository information

@@ -112,12 +112,12 @@ jobs:
         run: ${{ inputs.script }}
         env:
           GH_TOKEN: ${{ github.token }}
-      - name: Upload conda package
+      - name: Upload conda repo
         if: "!cancelled()"
         uses: actions/upload-artifact@v4
         with:
-          name: conda-package
-          path: ${{ env.package_path }}
+          name: conda-repo
+          path: "/tmp/conda-bld-output/noarch"
       - name: Publish conda package
         if: inputs.upload_to_anaconda
         run: "ci/upload_conda.sh"

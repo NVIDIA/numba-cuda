@@ -19,9 +19,7 @@ set +u
 conda activate docs
 set -u
 
-package=$(realpath conda-package/numba-cuda-*.tar.bz2)
-echo "Package path: $package"
-rapids-mamba-retry install $package
+rapids-mamba-retry install -c `pwd`/conda-repo numba-cuda
 
 rapids-print-env
 

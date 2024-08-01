@@ -24,9 +24,7 @@ set +u
 conda activate test
 set -u
 
-package=$(realpath conda-package/numba-cuda-*.tar.bz2)
-echo "Package path: $package"
-rapids-mamba-retry install $package
+rapids-mamba-retry install -c `pwd`/conda-repo numba-cuda
 
 RAPIDS_TESTS_DIR=${RAPIDS_TESTS_DIR:-"${PWD}/test-results"}/
 mkdir -p "${RAPIDS_TESTS_DIR}"
