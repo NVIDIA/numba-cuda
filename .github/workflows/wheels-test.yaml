@@ -1,0 +1,164 @@
+name: Test RAPIDS wheels
+
+on:
+  workflow_call:
+    inputs:
+      # repo and branch
+      repo:
+        type: string
+      branch:
+        type: string
+      date:
+        type: string
+      sha:
+        type: string
+      build_type:
+        required: true
+        type: string
+      script:
+        type: string
+        default: "ci/test_wheel.sh"
+      matrix_filter:
+        type: string
+        default: "."
+      container-options:
+        required: false
+        type: string
+        default: "-e _NOOP"
+      test_summary_show:
+        required: false
+        type: string
+        default: "fail"
+    # the use of secrets in shared-workflows is discouraged, especially for public repositories.
+    # these values were added for situations where the use of secrets is unavoidable.
+    secrets:
+      RAPIDS_AUX_SECRET_1:
+        required: false
+
+defaults:
+  run:
+    shell: bash
+
+permissions:
+  actions: read
+  checks: none
+  contents: read
+  deployments: none
+  discussions: none
+  id-token: write
+  issues: none
+  packages: read
+  pages: none
+  pull-requests: read
+  repository-projects: none
+  security-events: none
+  statuses: none
+
+jobs:
+  compute-matrix:
+    runs-on: ubuntu-latest
+    env:
+      BUILD_TYPE: ${{ inputs.build_type }}
+    outputs:
+      MATRIX: ${{ steps.compute-matrix.outputs.MATRIX }}
+    steps:
+      - name: Validate test type
+        run: |
+          if [[ "$BUILD_TYPE" != "pull-request" ]] && [[ "$BUILD_TYPE" != "nightly" ]]; then
+              echo "Invalid build type! Must be 'nightly' or 'pull-request'."
+              exit 1
+          fi
+      - name: Compute test matrix
+        id: compute-matrix
+        run: |
+          set -eo pipefail
+
+          # please keep the matrices sorted in ascending order by the following:
+          #
+          #     [ARCH, PY_VER, CUDA_VER, LINUX_VER, GPU, DRIVER]
+          #
+          export MATRICES="
+            pull-request:
+              # amd64
+              - { ARCH: 'amd64', PY_VER: '3.9',  CUDA_VER: '12.5.1', LINUX_VER: 'ubuntu22.04', gpu: 'v100', driver: 'latest' }
+              # arm64
+              - { ARCH: 'arm64', PY_VER: '3.11', CUDA_VER: '11.8.0', LINUX_VER: 'ubuntu20.04', gpu: 'a100', driver: 'latest' }
+            nightly:
+              # amd64
+              - { ARCH: 'amd64', PY_VER: '3.9',  CUDA_VER: '11.8.0', LINUX_VER: 'ubuntu20.04', gpu: 'v100', driver: 'latest' }
+              - { ARCH: 'amd64', PY_VER: '3.9',  CUDA_VER: '12.5.1', LINUX_VER: 'ubuntu22.04', gpu: 'v100', driver: 'latest' }
+              - { ARCH: 'amd64', PY_VER: '3.10', CUDA_VER: '11.8.0', LINUX_VER: 'ubuntu22.04', gpu: 'v100', driver: 'latest' }
+              - { ARCH: 'amd64', PY_VER: '3.10', CUDA_VER: '12.0.1', LINUX_VER: 'ubuntu20.04', gpu: 'v100', driver: 'latest' }
+              - { ARCH: 'amd64', PY_VER: '3.11', CUDA_VER: '12.0.1', LINUX_VER: 'ubuntu20.04', gpu: 'v100', driver: 'latest' }
+              - { ARCH: 'amd64', PY_VER: '3.11', CUDA_VER: '12.5.1', LINUX_VER: 'ubuntu22.04', gpu: 'v100', driver: 'latest' }
+              # arm64
+              - { ARCH: 'arm64', PY_VER: '3.9',  CUDA_VER: '11.8.0', LINUX_VER: 'ubuntu20.04', gpu: 'a100', driver: 'latest' }
+              - { ARCH: 'arm64', PY_VER: '3.10', CUDA_VER: '12.0.1', LINUX_VER: 'ubuntu20.04', gpu: 'a100', driver: 'latest' }
+              - { ARCH: 'arm64', PY_VER: '3.10', CUDA_VER: '12.5.1', LINUX_VER: 'ubuntu22.04', gpu: 'a100', driver: 'latest' }
+              - { ARCH: 'arm64', PY_VER: '3.11', CUDA_VER: '11.8.0', LINUX_VER: 'ubuntu22.04', gpu: 'a100', driver: 'latest' }
+          "
+
+          TEST_MATRIX=$(yq -n 'env(MATRICES) | .[strenv(BUILD_TYPE)]')
+          export TEST_MATRIX
+
+          MATRIX="$(
+            yq -n -o json 'env(TEST_MATRIX)' | \
+            jq -c '${{ inputs.matrix_filter }} | if (. | length) > 0 then {include: .} else "Error: Empty matrix\n" | halt_error(1) end'
+          )"
+
+          echo "MATRIX=${MATRIX}" | tee --append "${GITHUB_OUTPUT}"
+  test:
+    name: ${{ matrix.CUDA_VER }}, ${{ matrix.PY_VER }}, ${{ matrix.ARCH }}, ${{ matrix.LINUX_VER }}, ${{ matrix.gpu }}
+    needs: compute-matrix
+    env:
+      RAPIDS_TESTS_DIR: ${{ github.workspace }}/test-results
+      RAPIDS_ARTIFACTS_DIR: ${{ github.workspace }}/artifacts
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.compute-matrix.outputs.MATRIX) }}
+    runs-on: "linux-${{ matrix.ARCH }}-gpu-${{ matrix.gpu }}-${{ matrix.driver }}-1"
+    container:
+      image: "rapidsai/citestwheel:cuda${{ matrix.CUDA_VER }}-${{ matrix.LINUX_VER }}-py${{ matrix.PY_VER }}"
+      options: ${{ inputs.container-options }}
+      env:
+        NVIDIA_VISIBLE_DEVICES: ${{ env.NVIDIA_VISIBLE_DEVICES }} # GPU jobs must set this container env variable
+        RAPIDS_BUILD_TYPE: ${{ inputs.build_type }}
+    steps:
+    - name: Run nvidia-smi to make sure GPU is working
+      run: nvidia-smi
+
+    - name: checkout code repo
+      uses: actions/checkout@v4
+      with:
+        repository: ${{ inputs.repo }}
+        ref: ${{ inputs.sha }}
+        fetch-depth: 0 # unshallow fetch for setuptools-scm
+        persist-credentials: false
+    - uses: actions/download-artifact@v4
+      name: wheel
+    - name: Display structure of downloaded files
+      run: ls -R
+    - name: Standardize repository information
+      uses: rapidsai/shared-actions/rapids-github-info@main
+      with:
+        repo: ${{ inputs.repo }}
+        branch: ${{ inputs.branch }}
+        date: ${{ inputs.date }}
+        sha: ${{ inputs.sha }}
+
+    - name: Run tests
+      run: ${{ inputs.script }}
+      env:
+        GH_TOKEN: ${{ github.token }}
+        RAPIDS_AUX_SECRET_1: ${{ secrets.RAPIDS_AUX_SECRET_1 }}
+
+    - name: Generate test report
+      uses: test-summary/action@v2.3
+      with:
+        paths: "${{ env.RAPIDS_TESTS_DIR }}/*.xml"
+        show: ${{ inputs.test_summary_show }}
+      if: always()
+
+    - name: Upload additional artifacts
+      if: "!cancelled()"
+      run: rapids-upload-artifacts-dir cuda${RAPIDS_CUDA_VERSION%%.*}_$(arch)_py${RAPIDS_PY_VERSION//.}
