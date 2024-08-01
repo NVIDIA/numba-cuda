@@ -12,6 +12,7 @@ rapids-mamba-retry create -n docs \
     psutil \
     sphinx \
     sphinx_rtd_theme \
+    numpydoc \
     python=${RAPIDS_PY_VERSION}
 
 # Temporarily allow unbound variables for conda activation.
