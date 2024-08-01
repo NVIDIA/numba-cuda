@@ -21,6 +21,7 @@ jobs:
       - test-conda
       - build-wheels
       - test-wheels
+      - build-docs
     secrets: inherit
     uses: rapidsai/shared-workflows/.github/workflows/pr-builder.yaml@branch-24.08
   checks:
@@ -73,3 +74,7 @@ jobs:
       build_type: pull-request
       script: "ci/test_wheel.sh"
       matrix_filter: ${{ needs.compute-matrix.outputs.TEST_MATRIX }}
+  build-docs:
+    uses: ./.github/workflows/docs-build.yaml
+    with:
+      build_type: pull-request
