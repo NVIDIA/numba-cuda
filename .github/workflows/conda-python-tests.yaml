@@ -134,6 +134,7 @@ jobs:
         run: ${{ inputs.script }}
         env:
           GH_TOKEN: ${{ github.token }}
+          CUDA_VER: ${{ matrix.CUDA_VER }}
       - name: Generate test report
         uses: test-summary/action@v2.3
         with:
