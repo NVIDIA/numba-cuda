@@ -67,6 +67,7 @@ VALID_CHARS = re.compile(r'[^a-z0-9]', re.I)
 class CUDATargetContext(BaseContext):
     implement_powi_as_math_call = True
     strict_alignment = True
+    enable_nrt = True
 
     def __init__(self, typingctx, target='cuda'):
         super().__init__(typingctx, target)

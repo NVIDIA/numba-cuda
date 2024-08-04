@@ -6,16 +6,14 @@ set -euo pipefail
 rapids-logger "Install testing dependencies"
 # TODO: Replace with rapids-dependency-file-generator
 python -m pip install \
-    "numba>=0.59.1" \
     psutil \
     cuda-python \
     pytest
 
-rapids-logger "Download Wheel"
-RAPIDS_PY_WHEEL_NAME="numba_cuda" rapids-download-wheels-from-s3 ./dist/
-
 rapids-logger "Install wheel"
-python -m pip install $(echo ./dist/numba_cuda*.whl)
+package=$(realpath wheel/numba_cuda*.whl)
+echo "Package path: $package"
+python -m pip install $package
 
 rapids-logger "Check GPU usage"
 nvidia-smi

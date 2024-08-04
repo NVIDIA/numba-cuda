@@ -145,7 +145,8 @@ class TestIpcMemory(ContextResettingTestCase):
         if driver.USE_NV_BINDING:
             self.assertEqual(ipch_recon.handle.reserved, ipch.handle.reserved)
         else:
-            self.assertEqual(tuple(ipch_recon.handle), tuple(ipch.handle))
+            self.assertEqual(ipch_recon.handle.reserved[:],
+                             ipch.handle.reserved[:])
 
         # spawn new process for testing
         ctx = mp.get_context('spawn')
@@ -262,7 +263,10 @@ class TestIpcStaged(ContextResettingTestCase):
         if driver.USE_NV_BINDING:
             self.assertEqual(ipch_recon.handle.reserved, ipch.handle.reserved)
         else:
-            self.assertEqual(tuple(ipch_recon.handle), tuple(ipch.handle))
+            self.assertEqual(
+                ipch_recon.handle.reserved[:],
+                ipch.handle.reserved[:]
+            )
         self.assertEqual(ipch_recon.size, ipch.size)
 
         # Test on every CUDA devices
