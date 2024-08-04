@@ -1,5 +1,6 @@
 from .mappings import FILE_EXTENSION_MAP
 
+
 class LinkableCode:
     """An object that can be passed in the `link` list argument to `@cuda.jit`
     kernels to supply code to be linked from memory."""

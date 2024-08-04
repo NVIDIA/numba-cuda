@@ -36,6 +36,7 @@ from .error import CudaSupportError, CudaDriverError
 from .drvapi import API_PROTOTYPES
 from .drvapi import cu_occupancy_b2d_size, cu_stream_callback_pyobj, cu_uuid
 from .mappings import FILE_EXTENSION_MAP
+from .linkable_code import LinkableCode
 from numba.cuda.cudadrv import enums, drvapi, nvrtc
 
 USE_NV_BINDING = config.CUDA_USE_NVIDIA_BINDING
@@ -55,6 +56,12 @@ _py_decref = ctypes.pythonapi.Py_DecRef
 _py_incref = ctypes.pythonapi.Py_IncRef
 _py_decref.argtypes = [ctypes.py_object]
 _py_incref.argtypes = [ctypes.py_object]
+
+pynvjitlink_import_err = None
+try:
+    from pynvjitlink.api import NvJitLinker, NvJitLinkError
+except ImportError as err:
+    pynvjitlink_import_err = err
 
 
 def make_logger():
@@ -79,6 +86,7 @@ def make_logger():
             # otherwise, put a null handler
             logger.addHandler(logging.NullHandler())
     return logger
+
 
 class DeadMemoryError(RuntimeError):
     pass
@@ -2550,14 +2558,24 @@ class Linker(metaclass=ABCMeta):
     """Abstract base class for linkers"""
 
     @classmethod
-    def new(cls, max_registers=0, lineinfo=False, cc=None, lto=None, additional_flags=None):
+    def new(cls,
+            max_registers=0,
+            lineinfo=False,
+            cc=None,
+            lto=None,
+            additional_flags=None
+            ):
         if config.CUDA_ENABLE_MINOR_VERSION_COMPATIBILITY:
             # TODO: circular
             from . import runtime
-            driver_ver, runtime_ver = driver.get_version(), runtime.get_version()
+            driver_ver, runtime_ver = (
+                driver.get_version(), runtime.get_version()
+            )
             if driver_ver >= (12, 0) and runtime_ver > driver_ver:
                 # runs once
-                return PyNvJitLinker(max_registers, lineinfo, cc, lto, additional_flags)
+                return PyNvJitLinker(
+                    max_registers, lineinfo, cc, lto, additional_flags
+                )
             else:
                 return MVCLinker(max_registers, lineinfo, cc)
 
@@ -2916,6 +2934,7 @@ class CudaPythonLinker(Linker):
         cubin_ptr = ctypes.cast(cubin_buf, ctypes.POINTER(ctypes.c_char))
         return bytes(np.ctypeslib.as_array(cubin_ptr, shape=(size,)))
 
+
 class PyNvJitLinker(Linker):
     def __init__(
         self,
@@ -2925,11 +2944,8 @@ class PyNvJitLinker(Linker):
         lto=False,
         additional_flags=None,
     ):
-        try:
-            from pynvjitlink.api import NvJitLinker, NvJitLinkError
-        except ImportError as err:
-            raise ImportError(_MVC_ERROR_MESSAGE) from err
-
+        if pynvjitlink_import_err is not None:
+            raise ImportError(_MVC_ERROR_MESSAGE)
         if cc is None:
             raise RuntimeError("PyNvJitLinker requires CC to be specified")
         if not any(isinstance(cc, t) for t in [list, tuple]):
@@ -2997,7 +3013,9 @@ class PyNvJitLinker(Linker):
         if path_or_code.kind == "cu":
             self.add_cu(path_or_code.data, path_or_code.name)
         else:
-            self.add_data(path_or_code.data, path_or_code.kind, path_or_code.name)
+            self.add_data(
+                path_or_code.data, path_or_code.kind, path_or_code.name
+            )
 
     def add_file(self, path, kind):
         try:
