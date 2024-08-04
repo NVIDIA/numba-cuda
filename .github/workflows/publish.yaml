@@ -1,0 +1,44 @@
+# SPDX-FileCopyrightText: Copyright (c) 2024 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+name: Publish packages
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}-release
+  cancel-in-progress: true
+
+
+jobs:
+  compute-matrix:
+    runs-on: ubuntu-latest
+    outputs:
+      BUILD_MATRIX: ${{ steps.compute-matrix.outputs.BUILD_MATRIX }}
+      TEST_MATRIX: ${{ steps.compute-matrix.outputs.TEST_MATRIX }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Compute Build Matrix
+        id: compute-matrix
+        uses: ./.github/actions/compute-matrix
+  build-conda:
+    needs: compute-matrix
+    uses: ./.github/workflows/conda-python-build.yaml
+    secrets: inherit
+    with:
+      build_type: release
+      script: "ci/build_conda.sh"
+      matrix_filter: ${{ needs.compute-matrix.outputs.BUILD_MATRIX }}
+      upload_to_anaconda: true
+  build-wheels:
+    needs: compute-matrix
+    uses: ./.github/workflows/wheels-build.yaml
+    secrets: inherit
+    with:
+      build_type: release
+      script: "ci/build_wheel.sh"
+      matrix_filter: ${{ needs.compute-matrix.outputs.BUILD_MATRIX }}
+      upload_to_pypi: true
