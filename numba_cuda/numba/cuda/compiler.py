@@ -253,7 +253,7 @@ def cabi_wrap_function(context, lib, fndesc, wrapper_function_name,
 
 
 @global_compiler_lock
-def compile(pyfunc, sig, debug=False, lineinfo=False, device=True,
+def compile(pyfunc, sig, debug=None, lineinfo=False, device=True,
             fastmath=False, cc=None, opt=None, abi="c", abi_info=None,
             output='ptx'):
     """Compile a Python function to PTX or LTO-IR for a given set of argument
@@ -308,7 +308,7 @@ def compile(pyfunc, sig, debug=False, lineinfo=False, device=True,
         raise NotImplementedError(f'Unsupported output type: {output}')
 
     debug = config.CUDA_DEBUGINFO_DEFAULT if debug is None else debug
-    opt = (config.OPT._raw_value != 0) if opt is None else opt
+    opt = (config.OPT != 0) if opt is None else opt
 
     if debug and opt:
         msg = ("debug=True with opt=True "
@@ -362,7 +362,7 @@ def compile(pyfunc, sig, debug=False, lineinfo=False, device=True,
     return code, resty
 
 
-def compile_for_current_device(pyfunc, sig, debug=False, lineinfo=False,
+def compile_for_current_device(pyfunc, sig, debug=None, lineinfo=False,
                                device=True, fastmath=False, opt=None,
                                abi="c", abi_info=None, output='ptx'):
     """Compile a Python function to PTX or LTO-IR for a given signature for the
@@ -374,7 +374,7 @@ def compile_for_current_device(pyfunc, sig, debug=False, lineinfo=False,
                    abi_info=abi_info, output=output)
 
 
-def compile_ptx(pyfunc, sig, debug=False, lineinfo=False, device=False,
+def compile_ptx(pyfunc, sig, debug=None, lineinfo=False, device=False,
                 fastmath=False, cc=None, opt=None, abi="numba", abi_info=None):
     """Compile a Python function to PTX for a given signature. See
     :func:`compile`. The defaults for this function are to compile a kernel
@@ -385,7 +385,7 @@ def compile_ptx(pyfunc, sig, debug=False, lineinfo=False, device=False,
                    abi_info=abi_info, output='ptx')
 
 
-def compile_ptx_for_current_device(pyfunc, sig, debug=False, lineinfo=False,
+def compile_ptx_for_current_device(pyfunc, sig, debug=None, lineinfo=False,
                                    device=False, fastmath=False, opt=None,
                                    abi="numba", abi_info=None):
     """Compile a Python function to PTX for a given signature for the current

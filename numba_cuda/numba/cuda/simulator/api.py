@@ -93,7 +93,6 @@ def jit(func_or_sig=None, device=False, debug=None, argtypes=None,
         raise NotImplementedError('Cannot link PTX in the simulator')
 
     debug = config.CUDA_DEBUGINFO_DEFAULT if debug is None else debug
-    opt = (config.OPT._raw_value != 0) if opt is None else opt
 
     # Check for first argument specifying types - in that case the
     # decorator is not being passed a function
