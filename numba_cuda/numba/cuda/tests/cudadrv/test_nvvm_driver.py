@@ -87,6 +87,8 @@ class TestNvvmDriver(unittest.TestCase):
         self.assertIn('section "llvm.metadata"', used_line)
 
     def test_nvvm_ir_verify_fail(self):
+        if runtime.get_version() >= (12, 5):
+            self.skipTest("Bad triple doesn't fail verify on CUDA >= 12.5")
         m = ir.Module("test_bad_ir")
         m.triple = "unknown-unknown-unknown"
         m.data_layout = NVVM().data_layout
