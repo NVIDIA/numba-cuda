@@ -1,16 +1,14 @@
-[tool.scikit-build]
-cmake.minimum-version = "3.26.4"
-cmake.verbose = true
-ninja.make-fallback = true
-build-dir = "build/{wheel_tag}"
-wheel.packages = ["numba_cuda"]
+# Copyright (c) 2023-2024, NVIDIA CORPORATION.
 
 [build-system]
-requires = ["scikit-build-core"]
-build-backend = "scikit_build_core.build"
+build-backend = "setuptools.build_meta"
+requires = [
+    "setuptools",
+    "wheel",
+]
 
 [project]
-name = "numba_cuda"
+name = "numba-cuda"
 dynamic = ["version"]
 description = "CUDA target for Numba"
 readme = { file = "README.md", content-type = "text/markdown" }
@@ -20,6 +18,7 @@ authors = [
 ]
 license = { text = "BSD 2-clause" }
 requires-python = ">=3.9"
+dependencies = ["numba>=0.59.1"]
 
 [project.urls]
 Homepage = "https://github.com/rapidsai/numba-cuda"
@@ -27,7 +26,14 @@ Documentation = "https://github.com/rapidsai/numba-cuda/blob/main/README.md"
 Repository = "https://github.com/rapidsai/numba-cuda"
 License = "https://github.com/rapidsai/numba-cuda/blob/main/LICENSE"
 
-[tool.scikit-build.metadata.version]
-provider = "scikit_build_core.metadata.regex"
-input = "numba_cuda/VERSION"
-regex = "(?P<value>.*)"
+[tool.setuptools.dynamic]
+version = {attr = "numba_cuda.__version__"}
+
+[tool.setuptools]
+license-files = ["LICENSE"]
+
+[tool.setuptools.packages.find]
+include = ["numba_cuda*"]
+
+[tool.setuptools.package-data]
+"*" = ["*.cu", "*.h", "*.hpp", "*.ptx", "VERSION"]

@@ -1,0 +1,125 @@
+on:
+  workflow_call:
+    inputs:
+      build_type:
+        required: true
+        type: string
+      branch:
+        type: string
+      date:
+        type: string
+      sha:
+        type: string
+      repo:
+        type: string
+      node_type:
+        type: string
+        default: "cpu8"
+      script:
+        type: string
+        default: "ci/build_python.sh"
+      matrix_filter:
+        type: string
+        default: "."
+      upload_to_anaconda:
+        type: boolean
+        required: false
+
+defaults:
+  run:
+    shell: bash
+
+permissions:
+  actions: read
+  checks: none
+  contents: read
+  deployments: none
+  discussions: none
+  id-token: write
+  issues: none
+  packages: read
+  pages: none
+  pull-requests: read
+  repository-projects: none
+  security-events: none
+  statuses: none
+
+jobs:
+  compute-matrix:
+    runs-on: ubuntu-latest
+    outputs:
+      MATRIX: ${{ steps.compute-matrix.outputs.MATRIX }}
+    steps:
+      - name: Compute Build Matrix
+        id: compute-matrix
+        run: |
+          set -eo pipefail
+
+          # please keep the matrices sorted in ascending order by the following:
+          #
+          #     [ARCH, PY_VER, CUDA_VER, LINUX_VER]
+          #
+          export MATRIX="
+          # amd64
+          - { ARCH: 'amd64', PY_VER: '3.9',  CUDA_VER: '11.8.0', LINUX_VER: 'ubuntu22.04' }
+          - { ARCH: 'amd64', PY_VER: '3.9',  CUDA_VER: '12.5.1', LINUX_VER: 'ubuntu22.04' }
+          - { ARCH: 'amd64', PY_VER: '3.10', CUDA_VER: '11.8.0', LINUX_VER: 'ubuntu22.04' }
+          - { ARCH: 'amd64', PY_VER: '3.10', CUDA_VER: '12.5.1', LINUX_VER: 'ubuntu22.04' }
+          - { ARCH: 'amd64', PY_VER: '3.11', CUDA_VER: '11.8.0', LINUX_VER: 'ubuntu22.04' }
+          - { ARCH: 'amd64', PY_VER: '3.11', CUDA_VER: '12.2.2', LINUX_VER: 'ubuntu22.04' }
+          - { ARCH: 'amd64', PY_VER: '3.11', CUDA_VER: '12.5.1', LINUX_VER: 'ubuntu22.04' }
+          # arm64
+          - { ARCH: 'arm64', PY_VER: '3.9',  CUDA_VER: '11.8.0', LINUX_VER: 'ubuntu22.04' }
+          - { ARCH: 'arm64', PY_VER: '3.9',  CUDA_VER: '12.5.1', LINUX_VER: 'ubuntu22.04' }
+          - { ARCH: 'arm64', PY_VER: '3.10', CUDA_VER: '11.8.0', LINUX_VER: 'ubuntu22.04' }
+          - { ARCH: 'arm64', PY_VER: '3.10', CUDA_VER: '12.5.1', LINUX_VER: 'ubuntu22.04' }
+          - { ARCH: 'arm64', PY_VER: '3.11', CUDA_VER: '11.8.0', LINUX_VER: 'ubuntu22.04' }
+          - { ARCH: 'arm64', PY_VER: '3.11', CUDA_VER: '12.2.2', LINUX_VER: 'ubuntu22.04' }
+          - { ARCH: 'arm64', PY_VER: '3.11', CUDA_VER: '12.5.1', LINUX_VER: 'ubuntu22.04' }
+          "
+
+          MATRIX="$(
+            yq -n -o json 'env(MATRIX)' | \
+            jq -c '${{ inputs.matrix_filter }} | if (. | length) > 0 then {include: .} else "Error: Empty matrix\n" | halt_error(1) end'
+          )"
+
+          echo "MATRIX=${MATRIX}" | tee --append "${GITHUB_OUTPUT}"
+  build:
+    needs: compute-matrix
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.compute-matrix.outputs.MATRIX) }}
+    runs-on: "linux-${{ matrix.ARCH }}-${{ inputs.node_type }}"
+    env:
+      RAPIDS_ARTIFACTS_DIR: ${{ github.workspace }}/artifacts
+    container:
+      image: rapidsai/ci-conda:cuda${{ matrix.CUDA_VER }}-${{ matrix.LINUX_VER }}-py${{ matrix.PY_VER }}
+      env:
+        RAPIDS_BUILD_TYPE: ${{ inputs.build_type }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: ${{ inputs.repo }}
+          ref: ${{ inputs.sha }}
+          fetch-depth: 0
+      - name: Standardize repository information
+        run: |
+          echo "RAPIDS_REPOSITORY=${{ inputs.repo || github.repository }}" >> "${GITHUB_ENV}"
+          echo "RAPIDS_SHA=$(git rev-parse HEAD)" >> "${GITHUB_ENV}"
+          echo "RAPIDS_REF_NAME=${{ inputs.branch || github.ref_name }}" >> "${GITHUB_ENV}"
+          echo "RAPIDS_NIGHTLY_DATE=${{ inputs.date }}" >> "${GITHUB_ENV}"
+      - name: Python build
+        run: ${{ inputs.script }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+      - name: Upload conda repo
+        if: "!cancelled()"
+        uses: actions/upload-artifact@v4
+        with:
+          name: conda-repo
+          path: "/tmp/conda-bld-output"
+      - name: Publish conda package
+        if: inputs.upload_to_anaconda
+        run: "ci/upload_conda.sh"
+        env:
+          CONDA_TOKEN: ${{ secrets.NVIDIA_CONDA_TOKEN }}

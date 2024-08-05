@@ -1,0 +1,174 @@
+name: Build RAPIDS wheels
+
+on:
+  workflow_call:
+    inputs:
+      # repo and branch
+      repo:
+        type: string
+      branch:
+        type: string
+      date:
+        type: string
+      sha:
+        type: string
+      build_type:
+        required: true
+        type: string
+      script:
+        required: true
+        type: string
+
+      # allow a bigger runner instance
+      node_type:
+        required: false
+        type: string
+        default: "cpu8"
+
+      # general settings
+      matrix_filter:
+        type: string
+        default: "."
+
+      # Extra repository that will be cloned into the project directory.
+      extra-repo:
+        required: false
+        type: string
+        default: ''
+      extra-repo-sha:
+        required: false
+        type: string
+        default: ''
+      # Note that this is the _name_ of a secret containing the key, not the key itself.
+      extra-repo-deploy-key:
+        required: false
+        type: string
+        default: ''
+
+      upload_to_pypi:
+        type: boolean
+        required: false
+
+defaults:
+  run:
+    shell: bash
+
+permissions:
+  actions: read
+  checks: none
+  contents: read
+  deployments: none
+  discussions: none
+  id-token: write
+  issues: none
+  packages: read
+  pages: none
+  pull-requests: read
+  repository-projects: none
+  security-events: none
+  statuses: none
+
+jobs:
+
+  compute-matrix:
+    runs-on: ubuntu-latest
+    outputs:
+      MATRIX: ${{ steps.compute-matrix.outputs.MATRIX }}
+    steps:
+      - name: Compute Build Matrix
+        id: compute-matrix
+        run: |
+          set -eo pipefail
+
+          # please keep the matrices sorted in ascending order by the following:
+          #
+          #     [ARCH, PY_VER, CUDA_VER, LINUX_VER]
+          #
+          export MATRIX="
+          # amd64
+          - { ARCH: 'amd64', PY_VER: '3.9',  CUDA_VER: '11.8.0', LINUX_VER: 'rockylinux8' }
+          - { ARCH: 'amd64', PY_VER: '3.9',  CUDA_VER: '12.5.1', LINUX_VER: 'rockylinux8' }
+          - { ARCH: 'amd64', PY_VER: '3.10', CUDA_VER: '11.8.0', LINUX_VER: 'rockylinux8' }
+          - { ARCH: 'amd64', PY_VER: '3.10', CUDA_VER: '12.5.1', LINUX_VER: 'rockylinux8' }
+          - { ARCH: 'amd64', PY_VER: '3.11', CUDA_VER: '11.8.0', LINUX_VER: 'rockylinux8' }
+          - { ARCH: 'amd64', PY_VER: '3.11', CUDA_VER: '12.5.1', LINUX_VER: 'rockylinux8' }
+          # arm64
+          - { ARCH: 'arm64', PY_VER: '3.9',  CUDA_VER: '11.8.0', LINUX_VER: 'rockylinux8' }
+          - { ARCH: 'arm64', PY_VER: '3.9',  CUDA_VER: '12.5.1', LINUX_VER: 'rockylinux8' }
+          - { ARCH: 'arm64', PY_VER: '3.10', CUDA_VER: '11.8.0', LINUX_VER: 'rockylinux8' }
+          - { ARCH: 'arm64', PY_VER: '3.10', CUDA_VER: '12.5.1', LINUX_VER: 'rockylinux8' }
+          - { ARCH: 'arm64', PY_VER: '3.11', CUDA_VER: '11.8.0', LINUX_VER: 'rockylinux8' }
+          - { ARCH: 'arm64', PY_VER: '3.11', CUDA_VER: '12.5.1', LINUX_VER: 'rockylinux8' }
+          "
+
+          MATRIX="$(
+            yq -n -o json 'env(MATRIX)' | \
+            jq -c '${{ inputs.matrix_filter }} | if (. | length) > 0 then {include: .} else "Error: Empty matrix\n" | halt_error(1) end'
+          )"
+
+          echo "MATRIX=${MATRIX}" | tee --append "${GITHUB_OUTPUT}"
+  build:
+    name:  ${{ matrix.CUDA_VER }}, ${{ matrix.PY_VER }}, ${{ matrix.ARCH }}, ${{ matrix.LINUX_VER }}
+    needs: [compute-matrix]
+    strategy:
+      matrix: ${{ fromJSON(needs.compute-matrix.outputs.MATRIX) }}
+    runs-on: "linux-${{ matrix.ARCH }}-${{ inputs.node_type }}"
+    env:
+      RAPIDS_ARTIFACTS_DIR: ${{ github.workspace }}/artifacts
+    container:
+      image: "rapidsai/ci-wheel:cuda${{ matrix.CUDA_VER }}-${{ matrix.LINUX_VER }}-py${{ matrix.PY_VER }}"
+      env:
+        RAPIDS_BUILD_TYPE: ${{ inputs.build_type }}
+
+    steps:
+      - name: checkout code repo
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ inputs.repo }}
+          ref: ${{ inputs.sha }}
+          fetch-depth: 0 # unshallow fetch for setuptools-scm
+          persist-credentials: false
+
+      - name: Standardize repository information
+        uses: rapidsai/shared-actions/rapids-github-info@main
+        with:
+          repo: ${{ inputs.repo }}
+          branch: ${{ inputs.branch }}
+          date: ${{ inputs.date }}
+          sha: ${{ inputs.sha }}
+
+      - name: Preprocess extra repos
+        id: preprocess-extras
+        if: ${{ inputs.extra-repo != '' }}
+        run: |
+          EXTRA_REPO_PATH=$(echo ${{ inputs.extra-repo }} | cut -d "/"  -f 2)
+          echo "EXTRA_REPO_PATH=${EXTRA_REPO_PATH}" >> $GITHUB_OUTPUT
+
+      - name: checkout extra repos
+        uses: actions/checkout@v4
+        if: ${{ inputs.extra-repo != '' }}
+        with:
+          repository: ${{ inputs.extra-repo }}
+          ref: ${{ inputs.extra-repo-sha }}
+          path: "./${{ steps.preprocess-extras.outputs.EXTRA_REPO_PATH }}"
+          ssh-key: ${{ secrets[inputs.extra-repo-deploy-key] }}
+          persist-credentials: false
+
+      - name: Build and repair the wheel
+        run: |
+          ${{ inputs.script }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        # Use a shell that loads the rc file so that we get the compiler settings
+        shell: bash -leo pipefail {0}
+      - name: Upload wheel
+        if: "!cancelled()"
+        uses: actions/upload-artifact@v4
+        with:
+          name: wheel
+          path: ${{ env.package_path }}
+      - name: Publish wheel
+        if: inputs.upload_to_pypi
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          password: ${{ secrets.RAPIDSAI_PYPI_TOKEN }}
