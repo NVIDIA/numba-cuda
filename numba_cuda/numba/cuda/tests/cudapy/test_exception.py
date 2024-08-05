@@ -160,7 +160,7 @@ class TestException(CUDATestCase):
         def f():
             raise ValueError(msg)
 
-        @cuda.jit(debug=True)
+        @cuda.jit(debug=True, opt=False)
         def kernel():
             f()
 

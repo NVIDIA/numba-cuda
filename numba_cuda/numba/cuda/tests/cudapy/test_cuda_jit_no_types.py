@@ -81,7 +81,7 @@ class TestCudaJitNoTypes(CUDATestCase):
         # Ensure that the jit decorator accepts the debug kwarg when the
         # simulator is in use - see Issue #6615.
         with override_config('ENABLE_CUDASIM', 1):
-            @cuda.jit(debug=True)
+            @cuda.jit(debug=True, opt=False)
             def f(x):
                 pass
 

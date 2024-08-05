@@ -253,8 +253,8 @@ def cabi_wrap_function(context, lib, fndesc, wrapper_function_name,
 
 
 @global_compiler_lock
-def compile(pyfunc, sig, debug=False, lineinfo=False, device=True,
-            fastmath=False, cc=None, opt=True, abi="c", abi_info=None,
+def compile(pyfunc, sig, debug=None, lineinfo=False, device=True,
+            fastmath=False, cc=None, opt=None, abi="c", abi_info=None,
             output='ptx'):
     """Compile a Python function to PTX or LTO-IR for a given set of argument
     types.
@@ -283,7 +283,7 @@ def compile(pyfunc, sig, debug=False, lineinfo=False, device=True,
     :param cc: Compute capability to compile for, as a tuple
                ``(MAJOR, MINOR)``. Defaults to ``(5, 0)``.
     :type cc: tuple
-    :param opt: Enable optimizations. Defaults to ``True``.
+    :param opt: Whether to enable optimizations in the compiled code.
     :type opt: bool
     :param abi: The ABI for a compiled function - either ``"numba"`` or
                 ``"c"``. Note that the Numba ABI is not considered stable.
@@ -307,8 +307,11 @@ def compile(pyfunc, sig, debug=False, lineinfo=False, device=True,
     if output not in ("ptx", "ltoir"):
         raise NotImplementedError(f'Unsupported output type: {output}')
 
+    debug = config.CUDA_DEBUGINFO_DEFAULT if debug is None else debug
+    opt = (config.OPT != 0) if opt is None else opt
+
     if debug and opt:
-        msg = ("debug=True with opt=True (the default) "
+        msg = ("debug=True with opt=True "
                "is not supported by CUDA. This may result in a crash"
                " - set debug=False or opt=False.")
         warn(NumbaInvalidConfigWarning(msg))
@@ -359,8 +362,8 @@ def compile(pyfunc, sig, debug=False, lineinfo=False, device=True,
     return code, resty
 
 
-def compile_for_current_device(pyfunc, sig, debug=False, lineinfo=False,
-                               device=True, fastmath=False, opt=True,
+def compile_for_current_device(pyfunc, sig, debug=None, lineinfo=False,
+                               device=True, fastmath=False, opt=None,
                                abi="c", abi_info=None, output='ptx'):
     """Compile a Python function to PTX or LTO-IR for a given signature for the
     current device's compute capabilility. This calls :func:`compile` with an
@@ -371,8 +374,8 @@ def compile_for_current_device(pyfunc, sig, debug=False, lineinfo=False,
                    abi_info=abi_info, output=output)
 
 
-def compile_ptx(pyfunc, sig, debug=False, lineinfo=False, device=False,
-                fastmath=False, cc=None, opt=True, abi="numba", abi_info=None):
+def compile_ptx(pyfunc, sig, debug=None, lineinfo=False, device=False,
+                fastmath=False, cc=None, opt=None, abi="numba", abi_info=None):
     """Compile a Python function to PTX for a given signature. See
     :func:`compile`. The defaults for this function are to compile a kernel
     with the Numba ABI, rather than :func:`compile`'s default of compiling a
@@ -382,8 +385,8 @@ def compile_ptx(pyfunc, sig, debug=False, lineinfo=False, device=False,
                    abi_info=abi_info, output='ptx')
 
 
-def compile_ptx_for_current_device(pyfunc, sig, debug=False, lineinfo=False,
-                                   device=False, fastmath=False, opt=True,
+def compile_ptx_for_current_device(pyfunc, sig, debug=None, lineinfo=False,
+                                   device=False, fastmath=False, opt=None,
                                    abi="numba", abi_info=None):
     """Compile a Python function to PTX for a given signature for the current
     device's compute capabilility. See :func:`compile_ptx`."""
