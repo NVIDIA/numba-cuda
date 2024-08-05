@@ -3,6 +3,7 @@ from numba import cuda
 from numba.cuda.testing import unittest, CUDATestCase, skip_on_cudasim
 from numba.tests.support import linux_only, override_config
 from numba.core.errors import NumbaPerformanceWarning
+from numba.core import config
 import warnings
 
 
@@ -133,6 +134,43 @@ class TestWarnings(CUDATestCase):
             cuda.jit()
 
         self.assertEqual(len(w), 0)
+
+    def test_no_warn_on_debug_and_opt_with_config(self):
+        with override_config('CUDA_DEBUGINFO_DEFAULT', 1):
+            with override_config('OPT', config._OptLevel(0)):
+                with warnings.catch_warnings(record=True) as w:
+                    cuda.jit()
+
+            self.assertEqual(len(w), 0)
+
+            with warnings.catch_warnings(record=True) as w:
+                cuda.jit(opt=False)
+
+            self.assertEqual(len(w), 0)
+
+        with override_config('OPT', config._OptLevel(0)):
+            with warnings.catch_warnings(record=True) as w:
+                cuda.jit(debug=True)
+
+            self.assertEqual(len(w), 0)
+
+    def test_warn_on_debug_and_opt_with_config(self):
+        with override_config('CUDA_DEBUGINFO_DEFAULT', 1):
+            for opt in (1, 2, 3, 'max'):
+                with override_config('OPT', config._OptLevel(opt)):
+                    with warnings.catch_warnings(record=True) as w:
+                        cuda.jit()
+
+                self.assertEqual(len(w), 1)
+                self.assertIn('not supported by CUDA', str(w[0].message))
+
+        for opt in (1, 2, 3, 'max'):
+            with override_config('OPT', config._OptLevel(opt)):
+                with warnings.catch_warnings(record=True) as w:
+                    cuda.jit(debug=True)
+
+                self.assertEqual(len(w), 1)
+                self.assertIn('not supported by CUDA', str(w[0].message))
 
 
 if __name__ == '__main__':

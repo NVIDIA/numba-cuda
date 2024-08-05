@@ -12,7 +12,7 @@ _msg_deprecated_signature_arg = ("Deprecated keyword argument `{0}`. "
 
 
 def jit(func_or_sig=None, device=False, inline=False, link=[], debug=None,
-        opt=True, lineinfo=False, cache=False, **kws):
+        opt=None, lineinfo=False, cache=False, **kws):
     """
     JIT compile a Python function for CUDA GPUs.
 
@@ -42,9 +42,9 @@ def jit(func_or_sig=None, device=False, inline=False, link=[], debug=None,
        this number of registers per thread. The limit may not be respected if
        the ABI requires a greater number of registers than that requested.
        Useful for increasing occupancy.
-    :param opt: Whether to compile from LLVM IR to PTX with optimization
-                enabled. When ``True``, ``-opt=3`` is passed to NVVM. When
-                ``False``, ``-opt=0`` is passed to NVVM. Defaults to ``True``.
+    :param opt: Whether to compile with optimization enabled. If unspecified,
+       the OPT configuration variable is decided by ``NUMBA_OPT```; all
+       non-zero values will enable optimization.
     :type opt: bool
     :param lineinfo: If True, generate a line mapping between source code and
        assembly code. This enables inspection of the source code in NVIDIA
@@ -71,11 +71,12 @@ def jit(func_or_sig=None, device=False, inline=False, link=[], debug=None,
         raise DeprecationError(msg)
 
     debug = config.CUDA_DEBUGINFO_DEFAULT if debug is None else debug
+    opt = (config.OPT != 0) if opt is None else opt
     fastmath = kws.get('fastmath', False)
     extensions = kws.get('extensions', [])
 
     if debug and opt:
-        msg = ("debug=True with opt=True (the default) "
+        msg = ("debug=True with opt=True "
                "is not supported by CUDA. This may result in a crash"
                " - set debug=False or opt=False.")
         warn(NumbaInvalidConfigWarning(msg))
