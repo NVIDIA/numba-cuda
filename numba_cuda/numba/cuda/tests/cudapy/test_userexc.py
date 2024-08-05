@@ -22,7 +22,7 @@ class TestUserExc(CUDATestCase):
         self.skip_if_lto("Exceptions not supported with LTO")
 
     def test_user_exception(self):
-        @cuda.jit("void(int32)", debug=True)
+        @cuda.jit("void(int32)", debug=True, opt=False)
         def test_exc(x):
             if x == 1:
                 raise MyError
