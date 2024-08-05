@@ -101,7 +101,7 @@ class TestCompile(unittest.TestCase):
         def f():
             pass
 
-        ptx, resty = compile_ptx(f, (), device=True, debug=True)
+        ptx, resty = compile_ptx(f, (), device=True, debug=True, opt=False)
         self.check_debug_info(ptx)
 
     def test_kernel_with_debug(self):
@@ -109,7 +109,7 @@ class TestCompile(unittest.TestCase):
         def f():
             pass
 
-        ptx, resty = compile_ptx(f, (), debug=True)
+        ptx, resty = compile_ptx(f, (), debug=True, opt=False)
         self.check_debug_info(ptx)
 
     def check_line_info(self, ptx):
