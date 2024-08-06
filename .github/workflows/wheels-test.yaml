@@ -79,23 +79,14 @@ jobs:
           #
           export MATRICES="
             pull-request:
-              # amd64
-              - { ARCH: 'amd64', PY_VER: '3.9',  CUDA_VER: '12.5.1', LINUX_VER: 'ubuntu22.04', gpu: 'v100', driver: 'latest' }
-              # arm64
-              - { ARCH: 'arm64', PY_VER: '3.11', CUDA_VER: '11.8.0', LINUX_VER: 'ubuntu20.04', gpu: 'a100', driver: 'latest' }
-            nightly:
-              # amd64
-              - { ARCH: 'amd64', PY_VER: '3.9',  CUDA_VER: '11.8.0', LINUX_VER: 'ubuntu20.04', gpu: 'v100', driver: 'latest' }
-              - { ARCH: 'amd64', PY_VER: '3.9',  CUDA_VER: '12.5.1', LINUX_VER: 'ubuntu22.04', gpu: 'v100', driver: 'latest' }
-              - { ARCH: 'amd64', PY_VER: '3.10', CUDA_VER: '11.8.0', LINUX_VER: 'ubuntu22.04', gpu: 'v100', driver: 'latest' }
-              - { ARCH: 'amd64', PY_VER: '3.10', CUDA_VER: '12.0.1', LINUX_VER: 'ubuntu20.04', gpu: 'v100', driver: 'latest' }
-              - { ARCH: 'amd64', PY_VER: '3.11', CUDA_VER: '12.0.1', LINUX_VER: 'ubuntu20.04', gpu: 'v100', driver: 'latest' }
-              - { ARCH: 'amd64', PY_VER: '3.11', CUDA_VER: '12.5.1', LINUX_VER: 'ubuntu22.04', gpu: 'v100', driver: 'latest' }
-              # arm64
-              - { ARCH: 'arm64', PY_VER: '3.9',  CUDA_VER: '11.8.0', LINUX_VER: 'ubuntu20.04', gpu: 'a100', driver: 'latest' }
-              - { ARCH: 'arm64', PY_VER: '3.10', CUDA_VER: '12.0.1', LINUX_VER: 'ubuntu20.04', gpu: 'a100', driver: 'latest' }
-              - { ARCH: 'arm64', PY_VER: '3.10', CUDA_VER: '12.5.1', LINUX_VER: 'ubuntu22.04', gpu: 'a100', driver: 'latest' }
-              - { ARCH: 'arm64', PY_VER: '3.11', CUDA_VER: '11.8.0', LINUX_VER: 'ubuntu22.04', gpu: 'a100', driver: 'latest' }
+              - { CUDA_VER: '11.8.0', ARCH: 'amd64', PY_VER: '3.9', LINUX_VER: 'ubuntu20.04', gpu: 'v100', driver: 'latest' }
+              - { CUDA_VER: '11.8.0', ARCH: 'amd64', PY_VER: '3.10', LINUX_VER: 'ubuntu20.04', gpu: 'v100', driver: 'latest' }
+              - { CUDA_VER: '12.0.1', ARCH: 'amd64', PY_VER: '3.11', LINUX_VER: 'ubuntu20.04', gpu: 'v100', driver: 'latest' }
+              - { CUDA_VER: '12.5.1', ARCH: 'amd64', PY_VER: '3.12', LINUX_VER: 'ubuntu20.04', gpu: 'v100', driver: 'latest' }
+              - { CUDA_VER: '11.8.0', ARCH: 'arm64', PY_VER: '3.9', LINUX_VER: 'ubuntu20.04', gpu: 'a100', driver: 'latest' }
+              - { CUDA_VER: '11.8.0', ARCH: 'arm64', PY_VER: '3.10', LINUX_VER: 'ubuntu20.04', gpu: 'a100', driver: 'latest' }
+              - { CUDA_VER: '12.0.1', ARCH: 'arm64', PY_VER: '3.11', LINUX_VER: 'ubuntu20.04', gpu: 'a100', driver: 'latest' }
+              - { CUDA_VER: '12.5.1', ARCH: 'arm64', PY_VER: '3.12', LINUX_VER: 'ubuntu20.04', gpu: 'a100', driver: 'latest' }
           "
 
           TEST_MATRIX=$(yq -n 'env(MATRICES) | .[strenv(BUILD_TYPE)]')

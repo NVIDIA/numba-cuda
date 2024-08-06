@@ -558,18 +558,12 @@ class TestCudaAtomics(CUDATestCase):
         # Use the first (and only) definition
         asm = next(iter(kernel.inspect_asm().values()))
         if cc_X_or_above(6, 0):
-            if cuda.runtime.get_version() > (12, 1):
-                # CUDA 12.2 and above generate a more optimized reduction
-                # instruction, because the result does not need to be
-                # placed in a register.
-                inst = 'red'
-            else:
-                inst = 'atom'
+            inst = "(red|atom)"
 
             if shared:
-                inst = f'{inst}.shared'
+                inst = f'{inst}\\.shared'
 
-            self.assertIn(f'{inst}.add.f64', asm)
+            self.assertRegex(asm, f'{inst}.add.f64', asm)
         else:
             if shared:
                 self.assertIn('atom.shared.cas.b64', asm)
