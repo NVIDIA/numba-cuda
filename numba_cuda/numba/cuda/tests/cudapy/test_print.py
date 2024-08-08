@@ -1,4 +1,5 @@
 from numba.cuda.testing import CUDATestCase, skip_on_cudasim
+import numpy as np
 import subprocess
 import sys
 import unittest
@@ -42,6 +43,19 @@ def printstring():
 printstring[1, 3]()
 cuda.synchronize()
 """
+
+
+printdim3_usecase = """\
+from numba import cuda
+
+@cuda.jit
+def printdim3():
+    print(cuda.threadIdx)
+
+printdim3[1, (2, 2, 2)]()
+cuda.synchronize()
+"""
+
 
 printempty_usecase = """\
 from numba import cuda
@@ -103,6 +117,12 @@ class TestPrint(CUDATestCase):
         output, _ = self.run_code(printstring_usecase)
         lines = [line.strip() for line in output.splitlines(True)]
         expected = ['%d hop! 999' % i for i in range(3)]
+        self.assertEqual(sorted(lines), expected)
+
+    def test_dim3(self):
+        output, _ = self.run_code(printdim3_usecase)
+        lines = [line.strip() for line in output.splitlines(True)]
+        expected = [str(i) for i in np.ndindex(2, 2, 2)]
         self.assertEqual(sorted(lines), expected)
 
     @skip_on_cudasim('cudasim can print unlimited output')
