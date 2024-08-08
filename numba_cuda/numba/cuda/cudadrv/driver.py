@@ -2654,9 +2654,13 @@ class Linker(metaclass=ABCMeta):
         """
 
 
-_MVC_ERROR_MESSAGE = (
+_MVC_ERROR_MESSAGE_CU11 = (
     "Minor version compatibility requires ptxcompiler and cubinlinker packages "
     "to be available"
+)
+
+_MVC_ERROR_MESSAGE_CU12 = (
+    "Minor version compatibility requires pynvjitlink package to be available"
 )
 
 
@@ -2669,7 +2673,7 @@ class MVCLinker(Linker):
         try:
             from cubinlinker import CubinLinker
         except ImportError as err:
-            raise ImportError(_MVC_ERROR_MESSAGE) from err
+            raise ImportError(_MVC_ERROR_MESSAGE_CU11) from err
 
         if cc is None:
             raise RuntimeError("MVCLinker requires Compute Capability to be "
@@ -2701,7 +2705,7 @@ class MVCLinker(Linker):
             from ptxcompiler import compile_ptx
             from cubinlinker import CubinLinkerError
         except ImportError as err:
-            raise ImportError(_MVC_ERROR_MESSAGE) from err
+            raise ImportError(_MVC_ERROR_MESSAGE_CU11) from err
         compile_result = compile_ptx(ptx.decode(), self.ptx_compile_options)
         try:
             self._linker.add_cubin(compile_result.compiled_program, name)
@@ -2712,7 +2716,7 @@ class MVCLinker(Linker):
         try:
             from cubinlinker import CubinLinkerError
         except ImportError as err:
-            raise ImportError(_MVC_ERROR_MESSAGE) from err
+            raise ImportError(_MVC_ERROR_MESSAGE_CU11) from err
 
         try:
             with open(path, 'rb') as f:
@@ -2741,7 +2745,7 @@ class MVCLinker(Linker):
         try:
             from cubinlinker import CubinLinkerError
         except ImportError as err:
-            raise ImportError(_MVC_ERROR_MESSAGE) from err
+            raise ImportError(_MVC_ERROR_MESSAGE_CU11) from err
 
         try:
             return self._linker.complete()
@@ -2945,7 +2949,7 @@ class PyNvJitLinker(Linker):
         additional_flags=None,
     ):
         if pynvjitlink_import_err is not None:
-            raise ImportError(_MVC_ERROR_MESSAGE)
+            raise ImportError(_MVC_ERROR_MESSAGE_CU12)
         if cc is None:
             raise RuntimeError("PyNvJitLinker requires CC to be specified")
         if not any(isinstance(cc, t) for t in [list, tuple]):
