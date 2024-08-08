@@ -1,4 +1,5 @@
 from numba.cuda.testing import CUDATestCase, skip_on_cudasim
+import numpy as np
 import subprocess
 import sys
 import unittest
@@ -121,8 +122,8 @@ class TestPrint(CUDATestCase):
     def test_dim3(self):
         output, _ = self.run_code(printdim3_usecase)
         lines = [line.strip() for line in output.splitlines(True)]
-        expected = [str((k, j, i)) for i in range(2) for j in range(2) for k in range(2)]
-        self.assertEqual(sorted(lines), sorted(expected))
+        expected = [str(i) for i in np.ndindex(2, 2, 2)]
+        self.assertEqual(sorted(lines), expected)
 
     @skip_on_cudasim('cudasim can print unlimited output')
     def test_too_many_args(self):

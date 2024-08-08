@@ -1,11 +1,12 @@
 """
-This script specifies all PTX special objects.
+This scripts specifies all PTX special objects.
 """
 import numpy as np
 from collections import defaultdict
 import functools
 import itertools
 from inspect import Signature, Parameter
+
 
 class Stub(object):
     '''
@@ -52,6 +53,7 @@ class Dim3(Stub):
     @property
     def z(self):
         pass
+
 
 class threadIdx(Dim3):
     '''
