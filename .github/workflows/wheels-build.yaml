@@ -23,7 +23,7 @@ on:
       node_type:
         required: false
         type: string
-        default: "cpu8"
+        default: "cpu4"
 
       # general settings
       matrix_filter:
