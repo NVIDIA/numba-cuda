@@ -2667,19 +2667,38 @@ class Linker(metaclass=ABCMeta):
             cu = f.read()
         self.add_cu(cu, os.path.basename(path))
 
-    def add_file_guess_ext(self, path):
+    def add_file_guess_ext(self, path_or_code):
         """Add a file to the link, guessing its type from its extension."""
-        ext = os.path.splitext(path)[1][1:]
-        if ext == '':
-            raise RuntimeError("Don't know how to link file with no extension")
-        elif ext == 'cu':
-            self.add_cu_file(path)
+        if isinstance(path_or_code, str):
+            ext = pathlib.Path(path_or_code).suffix
+            if ext == '':
+                raise RuntimeError(
+                    "Don't know how to link file with no extension"
+                )
+            elif ext == '.cu':
+                self.add_cu_file(path_or_code)
+            else:
+                kind = FILE_EXTENSION_MAP.get(ext, None)
+                if kind is None:
+                    raise RuntimeError(
+                        "Don't know how to link file with extension "
+                        f".{ext}"
+                    )
+                self.add_file(path_or_code, kind)
+            return
         else:
-            kind = FILE_EXTENSION_MAP.get(ext, None)
-            if kind is None:
-                raise RuntimeError("Don't know how to link file with extension "
-                                   f".{ext}")
-            self.add_file(path, kind)
+            # Otherwise, we should have been given a LinkableCode object
+            if not isinstance(path_or_code, LinkableCode):
+                raise TypeError(
+                    "Expected path to file or a LinkableCode object"
+                )
+
+            if path_or_code.kind == "cu":
+                self.add_cu(path_or_code.data, path_or_code.name)
+            else:
+                self.add_data(
+                    path_or_code.data, path_or_code.kind, path_or_code.name
+                )
 
     @abstractmethod
     def complete(self):
@@ -3016,36 +3035,6 @@ class PyNvJitLinker(Linker):
 
     def add_object(self, obj, name="<external-object>"):
         self._linker.add_object(obj, name)
-
-    def add_file_guess_ext(self, path_or_code):
-        # Numba's add_file_guess_ext expects to always be passed a path to a
-        # file that it will load from the filesystem to link. We augment it
-        # here with the ability to provide a file from memory.
-
-        # To maintain compatibility with the original interface, all strings
-        # are treated as paths in the filesystem.
-        if isinstance(path_or_code, str):
-            # Upstream numba does not yet recognize LTOIR, so handle that
-            # separately here.
-            extension = pathlib.Path(path_or_code).suffix
-            if extension == ".ltoir":
-                self.add_file(path_or_code, "ltoir")
-            else:
-                # Use Numba's logic for non-LTOIR
-                super().add_file_guess_ext(path_or_code)
-
-            return
-
-        # Otherwise, we should have been given a LinkableCode object
-        if not isinstance(path_or_code, LinkableCode):
-            raise TypeError("Expected path to file or a LinkableCode object")
-
-        if path_or_code.kind == "cu":
-            self.add_cu(path_or_code.data, path_or_code.name)
-        else:
-            self.add_data(
-                path_or_code.data, path_or_code.kind, path_or_code.name
-            )
 
     def add_file(self, path, kind):
         try:

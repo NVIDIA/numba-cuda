@@ -19,4 +19,5 @@ else:
         'lib': enums.CU_JIT_INPUT_LIBRARY,
         'cubin': enums.CU_JIT_INPUT_CUBIN,
         'fatbin': enums.CU_JIT_INPUT_FATBINARY,
+        'ltoir': enums.CU_JIT_INPUT_LTO_IR,
     }

@@ -309,7 +309,10 @@ CU_JIT_INPUT_OBJECT = 3
 # Applicable options: PTX compiler options, ::CU_JIT_FALLBACK_STRATEGY
 CU_JIT_INPUT_LIBRARY = 4
 
-CU_JIT_NUM_INPUT_TYPES = 6
+# LTO IR
+CU_JIT_INPUT_LTO_IR = 5
+
+CU_JIT_NUM_INPUT_TYPES = 7
 
 
 # Online compiler and linker options
