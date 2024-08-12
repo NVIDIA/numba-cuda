@@ -19,6 +19,7 @@ import functools
 import warnings
 import logging
 import threading
+import traceback
 import asyncio
 import pathlib
 from itertools import product
@@ -62,6 +63,38 @@ try:
     from pynvjitlink.api import NvJitLinker, NvJitLinkError
 except ImportError as err:
     pynvjitlink_import_err = err
+
+
+def _readenv(name, ctor, default):
+    value = os.environ.get(name)
+    if value is None:
+        return default() if callable(default) else default
+    try:
+        return ctor(value)
+    except Exception:
+        warnings.warn(
+            f"Environment variable '{name}' is defined but its associated "
+            f"value '{value}' could not be parsed.\n"
+            "The parse failed with exception:\n"
+            f"{traceback.format_exc()}",
+            RuntimeWarning
+        )
+        return default
+
+
+config.ENABLE_PYNVJITLINK = False
+if _readenv("ENABLE_PYNVJITLINK", bool, False):
+    config.ENABLE_PYNVJITLINK = True
+
+
+_MVC_ERROR_MESSAGE_CU11 = (
+    "Minor version compatibility requires ptxcompiler and cubinlinker packages "
+    "to be available"
+)
+
+_MVC_ERROR_MESSAGE_CU12 = (
+    "Minor version compatibility requires pynvjitlink package to be available"
+)
 
 
 def make_logger():
@@ -440,7 +473,7 @@ class Driver(object):
 
     def get_version(self):
         """
-        Returns the CUDA Runtime version as a tuple (major, minor).
+        Returns the CUDA Driver version as a tuple (major, minor).
         """
         if USE_NV_BINDING:
             version = driver.cuDriverGetVersion()
@@ -2566,23 +2599,26 @@ class Linker(metaclass=ABCMeta):
             additional_flags=None
             ):
         if config.CUDA_ENABLE_MINOR_VERSION_COMPATIBILITY:
-            # TODO: circular
-            from . import runtime
+            from numba.cuda.cudadrv import runtime
             driver_ver, runtime_ver = (
                 driver.get_version(), runtime.get_version()
             )
             if driver_ver >= (12, 0) and runtime_ver > driver_ver:
                 # runs once
-                return PyNvJitLinker(
-                    max_registers, lineinfo, cc, lto, additional_flags
-                )
+                linker = PyNvJitLinker
             else:
-                return MVCLinker(max_registers, lineinfo, cc)
+                linker = MVCLinker
 
         elif USE_NV_BINDING:
-            return CudaPythonLinker(max_registers, lineinfo, cc)
+            linker = CudaPythonLinker
         else:
-            return CtypesLinker(max_registers, lineinfo, cc)
+            linker = CtypesLinker
+        if linker is PyNvJitLinker:
+            return linker(max_registers, lineinfo, cc, lto, additional_flags)
+        elif additional_flags or lto:
+            raise ValueError("LTO and additional flags require PyNvJitLinker")
+        else:
+            return linker(max_registers, lineinfo, cc)
 
     @abstractmethod
     def __init__(self, max_registers, lineinfo, cc):
@@ -2652,16 +2688,6 @@ class Linker(metaclass=ABCMeta):
         cubin is a pointer to a internal buffer of cubin owned by the linker;
         thus, it should be loaded before the linker is destroyed.
         """
-
-
-_MVC_ERROR_MESSAGE_CU11 = (
-    "Minor version compatibility requires ptxcompiler and cubinlinker packages "
-    "to be available"
-)
-
-_MVC_ERROR_MESSAGE_CU12 = (
-    "Minor version compatibility requires pynvjitlink package to be available"
-)
 
 
 class MVCLinker(Linker):
