@@ -13,7 +13,7 @@ from numba.core.typing.typeof import Purpose, typeof
 
 from numba.cuda.api import get_current_device
 from numba.cuda.args import wrap_arg
-from numba.cuda.compiler import compile_cuda, CUDACompiler
+from numba.cuda.compiler import compile_cuda, CUDACompiler, kernel_fixup
 from numba.cuda.cudadrv import driver
 from numba.cuda.cudadrv.devices import get_context
 from numba.cuda.descriptor import cuda_target
@@ -86,15 +86,14 @@ class _Kernel(serialize.ReduceMixin):
                             inline=inline,
                             fastmath=fastmath,
                             nvvm_options=nvvm_options,
-                            cc=cc)
+                            cc=cc,
+                            max_registers=max_registers,
+                            lto=lto)
         tgt_ctx = cres.target_context
-        code = self.py_func.__code__
-        filename = code.co_filename
-        linenum = code.co_firstlineno
-        lib, kernel = tgt_ctx.prepare_cuda_kernel(cres.library, cres.fndesc,
-                                                  debug, lineinfo, nvvm_options,
-                                                  filename, linenum,
-                                                  max_registers, lto)
+        lib = cres.library
+        kernel = lib.get_function(cres.fndesc.llvm_func_name)
+        lib._entry_name = cres.fndesc.llvm_func_name
+        kernel_fixup(kernel, self.debug)
 
         if not link:
             link = []
