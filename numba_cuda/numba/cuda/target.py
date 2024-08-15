@@ -14,6 +14,7 @@ from numba.core import datamodel
 from .cudadrv import nvvm
 from numba.cuda import codegen, nvvmutils, ufuncs
 from numba.cuda.models import cuda_data_manager
+from numba.cuda.cudadrv import devicearray
 
 # -----------------------------------------------------------------------------
 # Typing
@@ -67,6 +68,7 @@ VALID_CHARS = re.compile(r'[^a-z0-9]', re.I)
 class CUDATargetContext(BaseContext):
     implement_powi_as_math_call = True
     strict_alignment = True
+    allow_dynamic_globals = True
 
     def __init__(self, typingctx, target='cuda'):
         super().__init__(typingctx, target)
@@ -94,6 +96,7 @@ class CUDATargetContext(BaseContext):
     def load_additional_registries(self):
         # side effect of import needed for numba.cpython.*, the builtins
         # registry is updated at import time.
+        from numba.core.imputils import builtin_registry
         from numba.cpython import numbers, tupleobj, slicing # noqa: F401
         from numba.cpython import rangeobj, iterators, enumimpl # noqa: F401
         from numba.cpython import unicode, charseq # noqa: F401
@@ -107,6 +110,8 @@ class CUDATargetContext(BaseContext):
         # fix for #8940
         from numba.np.unsafe import ndarray # noqa F401
 
+        # XXX ensure builtin_registry is installed before cudaimpl
+        self.install_registry(builtin_registry)
         self.install_registry(cudaimpl.registry)
         self.install_registry(cffiimpl.registry)
         self.install_registry(printimpl.registry)
@@ -114,6 +119,10 @@ class CUDATargetContext(BaseContext):
         self.install_registry(cmathimpl.registry)
         self.install_registry(mathimpl.registry)
         self.install_registry(vector_types.impl_registry)
+
+    def refresh(self):
+        self.load_additional_registries()
+        self.typing_context.refresh()
 
     def codegen(self):
         return self._internal_codegen
@@ -279,7 +288,7 @@ class CUDATargetContext(BaseContext):
         Unlike the parent version.  This returns a a pointer in the constant
         addrspace.
         """
-
+        # FIXME: arr is ir.LoadInstr instead of python ndarray
         lmod = builder.module
 
         constvals = [
