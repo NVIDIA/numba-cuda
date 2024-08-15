@@ -63,6 +63,17 @@ def dim3_print_impl(ty, context, builder, val):
     return rawfmt, [x, y, z]
 
 
+@print_item.register(types.Boolean)
+def bool_print_impl(ty, context, builder, val):
+    true_string = context.insert_string_const_addrspace(builder, "True")
+    false_string = context.insert_string_const_addrspace(builder, "False")
+    res_ptr = cgutils.alloca_once_value(builder, false_string)
+    with builder.if_then(val):
+        builder.store(true_string, res_ptr)
+    rawfmt = "%s"
+    return rawfmt, [builder.load(res_ptr)]
+
+
 @lower(print, types.VarArg(types.Any))
 def print_varargs(context, builder, sig, args):
     """This function is a generic 'print' wrapper for arbitrary types.
