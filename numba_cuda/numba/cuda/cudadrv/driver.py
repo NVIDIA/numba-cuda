@@ -2598,21 +2598,41 @@ class Linker(metaclass=ABCMeta):
             lto=None,
             additional_flags=None
             ):
-        if config.CUDA_ENABLE_MINOR_VERSION_COMPATIBILITY:
-            from numba.cuda.cudadrv import runtime
-            driver_ver, runtime_ver = (
-                driver.get_version(), runtime.get_version()
-            )
-            if driver_ver >= (12, 0) and runtime_ver > driver_ver:
-                # runs once
-                linker = PyNvJitLinker
-            else:
-                linker = MVCLinker
 
-        elif USE_NV_BINDING:
-            linker = CudaPythonLinker
+        driver_ver = driver.get_version()
+        if (
+            config.CUDA_ENABLE_MINOR_VERSION_COMPATIBILITY
+            and driver_ver >= (12, 0)
+        ):
+            raise ValueError(
+                "Use ENABLE_PYNVJITLINK for CUDA >= 12.0 MVC"
+            )
+        if config.ENABLE_PYNVJITLINK and driver_ver < (12, 0):
+            raise ValueError(
+                "Use CUDA_ENABLE_MINOR_VERSION_COMPATIBILITY "
+                "for CUDA < 12.0 MVC"
+            )
+        if (
+            config.CUDA_ENABLE_MINOR_VERSION_COMPATIBILITY
+            and config.ENABLE_PYNVJITLINK
+        ):
+            raise ValueError(
+                "can't set both config.ENABLE_PYNVJITLINK "
+                "and config.CUDA_ENABLE_MINOR_VERSION_COMPATIBILITY "
+                "at the same time"
+            )
+
+        if config.ENABLE_PYNVJITLINK:
+            linker = PyNvJitLinker
+
+        elif config.CUDA_ENABLE_MINOR_VERSION_COMPATIBILITY:
+            linker = MVCLinker
         else:
-            linker = CtypesLinker
+            if USE_NV_BINDING:
+                linker = CudaPythonLinker
+            else:
+                linker = CtypesLinker
+
         if linker is PyNvJitLinker:
             return linker(max_registers, lineinfo, cc, lto, additional_flags)
         elif additional_flags or lto:
