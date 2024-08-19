@@ -82,7 +82,6 @@ def _readenv(name, ctor, default):
         return default
 
 
-config.ENABLE_PYNVJITLINK = False
 if _readenv("ENABLE_PYNVJITLINK", bool, False):
     config.ENABLE_PYNVJITLINK = True
 
@@ -93,7 +92,7 @@ _MVC_ERROR_MESSAGE_CU11 = (
 )
 
 _MVC_ERROR_MESSAGE_CU12 = (
-    "Minor version compatibility requires pynvjitlink package to be available"
+    "Using pynvjitlink requires the pynvjitlink package to be available"
 )
 
 
