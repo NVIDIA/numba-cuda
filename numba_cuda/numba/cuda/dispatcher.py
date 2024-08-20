@@ -118,7 +118,7 @@ class _Kernel(serialize.ReduceMixin):
                                              'cpp_function_wrappers.cu')
             link.append(functions_cu_path)
 
-        if "NRT_" in asm:
+        if "NRT_" in asm and tgt_ctx.enable_nrt:
             nrt_path = os.path.join(basedir, 'runtime', 'nrt.cu')
             link.append(nrt_path)
 
