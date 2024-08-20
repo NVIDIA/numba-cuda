@@ -392,18 +392,9 @@ class _Kernel(serialize.ReduceMixin):
 
         if isinstance(ty, types.Array):
             devary = wrap_arg(val).to_device(retr, stream)
-
             c_intp = ctypes.c_ssize_t
 
-            # hack: allocate too much space to hold the meminfo and set it all to 1
-            dbuf = cuda.to_device(np.ones(1024, dtype=np.uint8))
-            
-            # hack: don't garbage collect up the array containing the meminfo
-            def inner():
-                print(dbuf)
-            retr.append(inner)
-
-            meminfo = ctypes.c_void_p(dbuf.gpu_data._mem.device_ctypes_pointer.value)
+            meminfo = ctypes.c_void_p(0)
             parent = ctypes.c_void_p(0)
             nitems = c_intp(devary.size)
             itemsize = c_intp(devary.dtype.itemsize)
