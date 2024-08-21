@@ -58,11 +58,7 @@ _py_incref = ctypes.pythonapi.Py_IncRef
 _py_decref.argtypes = [ctypes.py_object]
 _py_incref.argtypes = [ctypes.py_object]
 
-pynvjitlink_import_err = None
-try:
-    from pynvjitlink.api import NvJitLinker, NvJitLinkError
-except ImportError as err:
-    pynvjitlink_import_err = err
+_MVC_ERROR_MESSAGE_CU12 = None
 
 
 def _readenv(name, ctor, default):
@@ -82,10 +78,6 @@ def _readenv(name, ctor, default):
         return default
 
 
-if _readenv("ENABLE_PYNVJITLINK", bool, False):
-    config.ENABLE_PYNVJITLINK = True
-
-
 _MVC_ERROR_MESSAGE_CU11 = (
     "Minor version compatibility requires ptxcompiler and cubinlinker packages "
     "to be available"
@@ -94,6 +86,23 @@ _MVC_ERROR_MESSAGE_CU11 = (
 _MVC_ERROR_MESSAGE_CU12 = (
     "Using pynvjitlink requires the pynvjitlink package to be available"
 )
+
+ENABLE_PYNVJITLINK = (
+    _readenv("ENABLE_PYNVJITLINK", bool, False)
+    or config.ENABLE_PYNVJITLINK
+)
+
+if ENABLE_PYNVJITLINK:
+    try:
+        from pynvjitlink.api import NvJitLinker, NvJitLinkError
+    except ImportError:
+        raise ImportError(_MVC_ERROR_MESSAGE_CU12)
+
+    if config.CUDA_ENABLE_MINOR_VERSION_COMPATIBILITY:
+        raise ValueError(
+            "Can't set CUDA_ENABLE_MINOR_VERSION_COMPATIBILITY and "
+            "ENABLE_PYNVJITLINK at the same time"
+        )
 
 
 def make_logger():
@@ -2608,8 +2617,7 @@ class Linker(metaclass=ABCMeta):
             )
         if config.ENABLE_PYNVJITLINK and driver_ver < (12, 0):
             raise ValueError(
-                "Use CUDA_ENABLE_MINOR_VERSION_COMPATIBILITY "
-                "for CUDA < 12.0 MVC"
+                "Enabling pynvjitlink requires CUDA 12."
             )
         if (
             config.CUDA_ENABLE_MINOR_VERSION_COMPATIBILITY
@@ -3012,8 +3020,7 @@ class PyNvJitLinker(Linker):
         lto=False,
         additional_flags=None,
     ):
-        if pynvjitlink_import_err is not None:
-            raise ImportError(_MVC_ERROR_MESSAGE_CU12)
+
         if cc is None:
             raise RuntimeError("PyNvJitLinker requires CC to be specified")
         if not any(isinstance(cc, t) for t in [list, tuple]):
