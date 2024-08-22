@@ -58,8 +58,6 @@ _py_incref = ctypes.pythonapi.Py_IncRef
 _py_decref.argtypes = [ctypes.py_object]
 _py_incref.argtypes = [ctypes.py_object]
 
-_PYNVJITLINK_ERR_MSG = None
-
 
 def _readenv(name, ctor, default):
     value = os.environ.get(name)
@@ -83,7 +81,7 @@ _MVC_ERROR_MESSAGE = (
     "to be available"
 )
 
-_PYNVJITLINK_ERR_MSG = (
+_PYNVJITLINK_ERR_MESSAGE = (
     "Using pynvjitlink requires the pynvjitlink package to be available"
 )
 
@@ -96,7 +94,7 @@ if ENABLE_PYNVJITLINK:
     try:
         from pynvjitlink.api import NvJitLinker, NvJitLinkError
     except ImportError:
-        raise ImportError(_PYNVJITLINK_ERR_MSG)
+        raise ImportError(_PYNVJITLINK_ERR_MESSAGE)
 
     if config.CUDA_ENABLE_MINOR_VERSION_COMPATIBILITY:
         raise ValueError(
