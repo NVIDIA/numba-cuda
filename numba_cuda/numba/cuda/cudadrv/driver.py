@@ -81,20 +81,22 @@ _MVC_ERROR_MESSAGE = (
     "to be available"
 )
 
-_PYNVJITLINK_ERR_MESSAGE = (
-    "Using pynvjitlink requires the pynvjitlink package to be available"
-)
 
 ENABLE_PYNVJITLINK = (
     _readenv("ENABLE_PYNVJITLINK", bool, False)
-    or config.ENABLE_PYNVJITLINK
+    or getattr(config, "ENABLE_PYNVJITLINK", None)
 )
+if not hasattr(config, "ENABLE_PYNVJITLINK"):
+    config.ENABLE_PYNVJITLINK = ENABLE_PYNVJITLINK
+
 
 if ENABLE_PYNVJITLINK:
     try:
         from pynvjitlink.api import NvJitLinker, NvJitLinkError
     except ImportError:
-        raise ImportError(_PYNVJITLINK_ERR_MESSAGE)
+        raise ImportError(
+            "Using pynvjitlink requires the pynvjitlink package to be available"
+        )
 
     if config.CUDA_ENABLE_MINOR_VERSION_COMPATIBILITY:
         raise ValueError(
@@ -2617,16 +2619,6 @@ class Linker(metaclass=ABCMeta):
             raise ValueError(
                 "Enabling pynvjitlink requires CUDA 12."
             )
-        if (
-            config.CUDA_ENABLE_MINOR_VERSION_COMPATIBILITY
-            and config.ENABLE_PYNVJITLINK
-        ):
-            raise ValueError(
-                "can't set both config.ENABLE_PYNVJITLINK "
-                "and config.CUDA_ENABLE_MINOR_VERSION_COMPATIBILITY "
-                "at the same time"
-            )
-
         if config.ENABLE_PYNVJITLINK:
             linker = PyNvJitLinker
 
