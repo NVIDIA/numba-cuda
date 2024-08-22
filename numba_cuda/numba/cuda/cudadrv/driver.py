@@ -58,7 +58,7 @@ _py_incref = ctypes.pythonapi.Py_IncRef
 _py_decref.argtypes = [ctypes.py_object]
 _py_incref.argtypes = [ctypes.py_object]
 
-_MVC_ERROR_MESSAGE_CU12 = None
+_PYNVJITLINK_ERR_MSG = None
 
 
 def _readenv(name, ctor, default):
@@ -78,12 +78,12 @@ def _readenv(name, ctor, default):
         return default
 
 
-_MVC_ERROR_MESSAGE_CU11 = (
+_MVC_ERROR_MESSAGE = (
     "Minor version compatibility requires ptxcompiler and cubinlinker packages "
     "to be available"
 )
 
-_MVC_ERROR_MESSAGE_CU12 = (
+_PYNVJITLINK_ERR_MSG = (
     "Using pynvjitlink requires the pynvjitlink package to be available"
 )
 
@@ -96,7 +96,7 @@ if ENABLE_PYNVJITLINK:
     try:
         from pynvjitlink.api import NvJitLinker, NvJitLinkError
     except ImportError:
-        raise ImportError(_MVC_ERROR_MESSAGE_CU12)
+        raise ImportError(_PYNVJITLINK_ERR_MSG)
 
     if config.CUDA_ENABLE_MINOR_VERSION_COMPATIBILITY:
         raise ValueError(
@@ -2751,7 +2751,7 @@ class MVCLinker(Linker):
         try:
             from cubinlinker import CubinLinker
         except ImportError as err:
-            raise ImportError(_MVC_ERROR_MESSAGE_CU11) from err
+            raise ImportError(_MVC_ERROR_MESSAGE) from err
 
         if cc is None:
             raise RuntimeError("MVCLinker requires Compute Capability to be "
@@ -2783,7 +2783,7 @@ class MVCLinker(Linker):
             from ptxcompiler import compile_ptx
             from cubinlinker import CubinLinkerError
         except ImportError as err:
-            raise ImportError(_MVC_ERROR_MESSAGE_CU11) from err
+            raise ImportError(_MVC_ERROR_MESSAGE) from err
         compile_result = compile_ptx(ptx.decode(), self.ptx_compile_options)
         try:
             self._linker.add_cubin(compile_result.compiled_program, name)
@@ -2794,7 +2794,7 @@ class MVCLinker(Linker):
         try:
             from cubinlinker import CubinLinkerError
         except ImportError as err:
-            raise ImportError(_MVC_ERROR_MESSAGE_CU11) from err
+            raise ImportError(_MVC_ERROR_MESSAGE) from err
 
         try:
             with open(path, 'rb') as f:
@@ -2823,7 +2823,7 @@ class MVCLinker(Linker):
         try:
             from cubinlinker import CubinLinkerError
         except ImportError as err:
-            raise ImportError(_MVC_ERROR_MESSAGE_CU11) from err
+            raise ImportError(_MVC_ERROR_MESSAGE) from err
 
         try:
             return self._linker.complete()
