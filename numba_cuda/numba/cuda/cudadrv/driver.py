@@ -2640,7 +2640,7 @@ class Linker(metaclass=ABCMeta):
 
         if linker is PyNvJitLinker:
             return linker(max_registers, lineinfo, cc, lto, additional_flags)
-        elif additional_flags or lto:
+        elif additional_flags is not None or lto is not None:
             raise ValueError("LTO and additional flags require PyNvJitLinker")
         else:
             return linker(max_registers, lineinfo, cc)
@@ -2706,8 +2706,6 @@ class Linker(metaclass=ABCMeta):
                 )
             elif ext == '.cu':
                 self.add_cu_file(path_or_code)
-            elif ext == ".ltoir":
-                self.add_file(path_or_code, "ltoir")
             else:
                 kind = FILE_EXTENSION_MAP.get(ext, None)
                 if kind is None:
@@ -3087,7 +3085,7 @@ class PyNvJitLinker(Linker):
             return self.add_ptx(data, name)
         elif kind == FILE_EXTENSION_MAP["o"]:
             fn = self._linker.add_object
-        elif kind == "ltoir":
+        elif kind == FILE_EXTENSION_MAP["ltoir"]:
             fn = self._linker.add_ltoir
         else:
             raise LinkerError(f"Don't know how to link {kind}")
