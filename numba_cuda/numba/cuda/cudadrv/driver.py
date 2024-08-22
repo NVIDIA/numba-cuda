@@ -2691,7 +2691,7 @@ class Linker(metaclass=ABCMeta):
         object represents a file already in memory.
         """
         if isinstance(path_or_code, str):
-            ext = pathlib.Path(path_or_code).suffix
+            ext = pathlib.Path(path_or_code).suffix.lstrip('.')
             if ext == '':
                 raise RuntimeError(
                     "Don't know how to link file with no extension"

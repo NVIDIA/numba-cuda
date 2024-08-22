@@ -10,6 +10,7 @@ if config.CUDA_USE_NVIDIA_BINDING:
         'lib': jitty.CU_JIT_INPUT_LIBRARY,
         'cubin': jitty.CU_JIT_INPUT_CUBIN,
         'fatbin': jitty.CU_JIT_INPUT_FATBINARY,
+        'ltoir': jitty.CU_JIT_INPUT_NVVM,
     }
 else:
     FILE_EXTENSION_MAP = {
