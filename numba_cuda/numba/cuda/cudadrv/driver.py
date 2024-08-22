@@ -2695,7 +2695,11 @@ class Linker(metaclass=ABCMeta):
         self.add_cu(cu, os.path.basename(path))
 
     def add_file_guess_ext(self, path_or_code):
-        """Add a file to the link, guessing its type from its extension."""
+        """
+        Add a file or LinkableCode object to the link. If a file is
+        passed, the type will be inferred from the extension. A LinkableCode
+        object represents a file already in memory.
+        """
         if isinstance(path_or_code, str):
             ext = pathlib.Path(path_or_code).suffix
             if ext == '':
@@ -2704,6 +2708,8 @@ class Linker(metaclass=ABCMeta):
                 )
             elif ext == '.cu':
                 self.add_cu_file(path_or_code)
+            elif ext == ".ltoir":
+                self.add_file(path_or_code, "ltoir")
             else:
                 kind = FILE_EXTENSION_MAP.get(ext, None)
                 if kind is None:
@@ -3092,22 +3098,6 @@ class PyNvJitLinker(Linker):
             fn(data, name)
         except NvJitLinkError as e:
             raise LinkerError from e
-
-    def add_cu(self, cu, name):
-        with driver.get_active_context() as ac:
-            dev = driver.get_device(ac.devnum)
-            cc = dev.compute_capability
-
-        ptx, log = nvrtc.compile(cu, name, cc)
-
-        if config.DUMP_ASSEMBLY:
-            print(("ASSEMBLY %s" % name).center(80, "-"))
-            print(ptx)
-            print("=" * 80)
-
-        # Link the program's PTX using the normal linker mechanism
-        ptx_name = os.path.splitext(name)[0] + ".ptx"
-        self.add_ptx(ptx.encode(), ptx_name)
 
     def complete(self):
         try:

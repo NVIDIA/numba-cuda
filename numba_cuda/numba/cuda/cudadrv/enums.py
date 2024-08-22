@@ -312,7 +312,7 @@ CU_JIT_INPUT_LIBRARY = 4
 # LTO IR
 CU_JIT_INPUT_LTO_IR = 5
 
-CU_JIT_NUM_INPUT_TYPES = 7
+CU_JIT_NUM_INPUT_TYPES = 6
 
 
 # Online compiler and linker options
