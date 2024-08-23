@@ -1,8 +1,11 @@
 from ctypes import byref, c_char, c_char_p, c_int, c_size_t, c_void_p, POINTER
 from enum import IntEnum
 from numba.core import config
-from numba.cuda.cudadrv.error import (NvrtcError, NvrtcCompilationError,
-                                      NvrtcSupportError)
+from numba.cuda.cudadrv.error import (
+    NvrtcError,
+    NvrtcCompilationError,
+    NvrtcSupportError,
+)
 
 import functools
 import os
@@ -40,6 +43,7 @@ class NvrtcProgram:
     the class own an nvrtcProgram; when an instance is deleted, the underlying
     nvrtcProgram is destroyed using the appropriate NVRTC API.
     """
+
     def __init__(self, nvrtc, handle):
         self._nvrtc = nvrtc
         self._handle = handle
@@ -62,39 +66,49 @@ class NVRTC:
     NVVM interface. Initialization is protected by a lock and uses the standard
     (for Numba) open_cudalib function to load the NVRTC library.
     """
+
     _PROTOTYPES = {
         # nvrtcResult nvrtcVersion(int *major, int *minor)
-        'nvrtcVersion': (nvrtc_result, POINTER(c_int), POINTER(c_int)),
+        "nvrtcVersion": (nvrtc_result, POINTER(c_int), POINTER(c_int)),
         # nvrtcResult nvrtcCreateProgram(nvrtcProgram *prog,
         #                                const char *src,
         #                                const char *name,
         #                                int numHeaders,
         #                                const char * const *headers,
         #                                const char * const *includeNames)
-        'nvrtcCreateProgram': (nvrtc_result, nvrtc_program, c_char_p, c_char_p,
-                               c_int, POINTER(c_char_p), POINTER(c_char_p)),
+        "nvrtcCreateProgram": (
+            nvrtc_result,
+            nvrtc_program,
+            c_char_p,
+            c_char_p,
+            c_int,
+            POINTER(c_char_p),
+            POINTER(c_char_p),
+        ),
         # nvrtcResult nvrtcDestroyProgram(nvrtcProgram *prog);
-        'nvrtcDestroyProgram': (nvrtc_result, POINTER(nvrtc_program)),
+        "nvrtcDestroyProgram": (nvrtc_result, POINTER(nvrtc_program)),
         # nvrtcResult nvrtcCompileProgram(nvrtcProgram prog,
         #                                 int numOptions,
         #                                 const char * const *options)
-        'nvrtcCompileProgram': (nvrtc_result, nvrtc_program, c_int,
-                                POINTER(c_char_p)),
+        "nvrtcCompileProgram": (nvrtc_result, nvrtc_program, c_int, POINTER(c_char_p)),
         # nvrtcResult nvrtcGetPTXSize(nvrtcProgram prog, size_t *ptxSizeRet);
-        'nvrtcGetPTXSize': (nvrtc_result, nvrtc_program, POINTER(c_size_t)),
+        "nvrtcGetPTXSize": (nvrtc_result, nvrtc_program, POINTER(c_size_t)),
         # nvrtcResult nvrtcGetPTX(nvrtcProgram prog, char *ptx);
-        'nvrtcGetPTX': (nvrtc_result, nvrtc_program, c_char_p),
+        "nvrtcGetPTX": (nvrtc_result, nvrtc_program, c_char_p),
+        # nvrtcResult nvrtcGetLTOIRSize(nvrtcProgram prog, size_t *ltoSizeRet);
+        "nvrtcGetLTOIRSize": (nvrtc_result, nvrtc_program, POINTER(c_size_t)),
+        # nvrtcResult nvrtcGetLTOIR(nvrtcProgram prog, char *lto);
+        "nvrtcGetLTOIR": (nvrtc_result, nvrtc_program, c_char_p),
         # nvrtcResult nvrtcGetCUBINSize(nvrtcProgram prog,
         #                               size_t *cubinSizeRet);
-        'nvrtcGetCUBINSize': (nvrtc_result, nvrtc_program, POINTER(c_size_t)),
+        "nvrtcGetCUBINSize": (nvrtc_result, nvrtc_program, POINTER(c_size_t)),
         # nvrtcResult nvrtcGetCUBIN(nvrtcProgram prog, char *cubin);
-        'nvrtcGetCUBIN': (nvrtc_result, nvrtc_program, c_char_p),
+        "nvrtcGetCUBIN": (nvrtc_result, nvrtc_program, c_char_p),
         # nvrtcResult nvrtcGetProgramLogSize(nvrtcProgram prog,
         #                                    size_t *logSizeRet);
-        'nvrtcGetProgramLogSize': (nvrtc_result, nvrtc_program,
-                                   POINTER(c_size_t)),
+        "nvrtcGetProgramLogSize": (nvrtc_result, nvrtc_program, POINTER(c_size_t)),
         # nvrtcResult nvrtcGetProgramLog(nvrtcProgram prog, char *log);
-        'nvrtcGetProgramLog': (nvrtc_result, nvrtc_program, c_char_p),
+        "nvrtcGetProgramLog": (nvrtc_result, nvrtc_program, c_char_p),
     }
 
     # Singleton reference
@@ -104,9 +118,10 @@ class NVRTC:
         with _nvrtc_lock:
             if cls.__INSTANCE is None:
                 from numba.cuda.cudadrv.libs import open_cudalib
+
                 cls.__INSTANCE = inst = object.__new__(cls)
                 try:
-                    lib = open_cudalib('nvrtc')
+                    lib = open_cudalib("nvrtc")
                 except OSError as e:
                     cls.__INSTANCE = None
                     raise NvrtcSupportError("NVRTC cannot be loaded") from e
@@ -126,9 +141,10 @@ class NVRTC:
                             try:
                                 error_name = NvrtcResult(error).name
                             except ValueError:
-                                error_name = ('Unknown nvrtc_result '
-                                              f'(error code: {error})')
-                            msg = f'Failed to call {name}: {error_name}'
+                                error_name = (
+                                    "Unknown nvrtc_result " f"(error code: {error})"
+                                )
+                            msg = f"Failed to call {name}: {error_name}"
                             raise NvrtcError(msg)
 
                     setattr(inst, name, checked_call)
@@ -171,7 +187,7 @@ class NVRTC:
         # prior to the call to nvrtcCompileProgram
         encoded_options = [opt.encode() for opt in options]
         option_pointers = [c_char_p(opt) for opt in encoded_options]
-        c_options_type = (c_char_p * len(options))
+        c_options_type = c_char_p * len(options)
         c_options = c_options_type(*option_pointers)
         try:
             self.nvrtcCompileProgram(program.handle, len(options), c_options)
@@ -209,10 +225,22 @@ class NVRTC:
 
         return ptx.value.decode()
 
+    def get_lto(self, program):
+        """
+        Get the compiled LTOIR as a Python bytes object.
+        """
+        lto_size = c_size_t()
+        self.nvrtcGetLTOIRSize(program.handle, byref(lto_size))
 
-def compile(src, name, cc):
+        lto = b" " * lto_size.value
+        self.nvrtcGetLTOIR(program.handle, lto)
+
+        return lto
+
+
+def compile(src, name, cc, ltoir=False):
     """
-    Compile a CUDA C/C++ source to PTX for a given compute capability.
+    Compile a CUDA C/C++ source to PTX or LTOIR for a given compute capability.
 
     :param src: The source code to compile
     :type src: str
@@ -220,6 +248,8 @@ def compile(src, name, cc):
     :type name: str
     :param cc: A tuple ``(major, minor)`` of the compute capability
     :type cc: tuple
+    :param ltoir: Compile into LTOIR if True, otherwise into PTX
+    :type ltoir: bool
     :return: The compiled PTX and compilation log
     :rtype: tuple
     """
@@ -232,13 +262,15 @@ def compile(src, name, cc):
     # - Relocatable Device Code (rdc) is needed to prevent device functions
     #   being optimized away.
     major, minor = cc
-    arch = f'--gpu-architecture=compute_{major}{minor}'
-    include = f'-I{config.CUDA_INCLUDE_PATH}'
+    arch = f"--gpu-architecture=compute_{major}{minor}"
+    include = f"-I{config.CUDA_INCLUDE_PATH}"
 
     cudadrv_path = os.path.dirname(os.path.abspath(__file__))
     numba_cuda_path = os.path.dirname(cudadrv_path)
-    numba_include = f'-I{numba_cuda_path}'
-    options = [arch, include, numba_include, '-rdc', 'true']
+    numba_include = f"-I{numba_cuda_path}"
+    options = [arch, include, numba_include, "-rdc", "true"]
+    if ltoir:
+        options.append("-dlto")
 
     # Compile the program
     compile_error = nvrtc.compile_program(program, options)
@@ -248,13 +280,17 @@ def compile(src, name, cc):
 
     # If the compile failed, provide the log in an exception
     if compile_error:
-        msg = (f'NVRTC Compilation failure whilst compiling {name}:\n\n{log}')
+        msg = f"NVRTC Compilation failure whilst compiling {name}:\n\n{log}"
         raise NvrtcError(msg)
 
     # Otherwise, if there's any content in the log, present it as a warning
     if log:
-        msg = (f"NVRTC log messages whilst compiling {name}:\n\n{log}")
+        msg = f"NVRTC log messages whilst compiling {name}:\n\n{log}"
         warnings.warn(msg)
 
-    ptx = nvrtc.get_ptx(program)
-    return ptx, log
+    if ltoir:
+        ltoir = nvrtc.get_lto(program)
+        return ltoir, log
+    else:
+        ptx = nvrtc.get_ptx(program)
+        return ptx, log
