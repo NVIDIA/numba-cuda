@@ -3076,10 +3076,6 @@ class PyNvJitLinker(Linker):
         program, log = nvrtc.compile(cu, name, cc, ltoir=self.lto)
 
         if not self.lto and config.DUMP_ASSEMBLY:
-            # TODO: when linker is configured to generate LTOIR, assembly is not
-            # directly visible via the Linker API. We should provide `-ptx` as
-            # an additional flag to nvjitlink to generate PTX. However, this
-            # could break the linking pipeline. We need to investigate this further.
             print(("ASSEMBLY %s" % name).center(80, "-"))
             print(program)
             print("=" * 80)
@@ -3110,6 +3106,12 @@ class PyNvJitLinker(Linker):
 
         try:
             fn(data, name)
+        except NvJitLinkError as e:
+            raise LinkerError from e
+
+    def get_linked_ptx(self):
+        try:
+            return self._linker.get_linked_ptx()
         except NvJitLinkError as e:
             raise LinkerError from e
 
