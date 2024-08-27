@@ -90,7 +90,9 @@ class NVRTC:
         # nvrtcResult nvrtcCompileProgram(nvrtcProgram prog,
         #                                 int numOptions,
         #                                 const char * const *options)
-        "nvrtcCompileProgram": (nvrtc_result, nvrtc_program, c_int, POINTER(c_char_p)),
+        "nvrtcCompileProgram": (
+            nvrtc_result, nvrtc_program, c_int, POINTER(c_char_p)
+        ),
         # nvrtcResult nvrtcGetPTXSize(nvrtcProgram prog, size_t *ptxSizeRet);
         "nvrtcGetPTXSize": (nvrtc_result, nvrtc_program, POINTER(c_size_t)),
         # nvrtcResult nvrtcGetPTX(nvrtcProgram prog, char *ptx);
@@ -106,7 +108,9 @@ class NVRTC:
         "nvrtcGetCUBIN": (nvrtc_result, nvrtc_program, c_char_p),
         # nvrtcResult nvrtcGetProgramLogSize(nvrtcProgram prog,
         #                                    size_t *logSizeRet);
-        "nvrtcGetProgramLogSize": (nvrtc_result, nvrtc_program, POINTER(c_size_t)),
+        "nvrtcGetProgramLogSize": (
+            nvrtc_result, nvrtc_program, POINTER(c_size_t)
+        ),
         # nvrtcResult nvrtcGetProgramLog(nvrtcProgram prog, char *log);
         "nvrtcGetProgramLog": (nvrtc_result, nvrtc_program, c_char_p),
     }
@@ -142,7 +146,8 @@ class NVRTC:
                                 error_name = NvrtcResult(error).name
                             except ValueError:
                                 error_name = (
-                                    "Unknown nvrtc_result " f"(error code: {error})"
+                                    "Unknown nvrtc_result "
+                                    f"(error code: {error})"
                                 )
                             msg = f"Failed to call {name}: {error_name}"
                             raise NvrtcError(msg)

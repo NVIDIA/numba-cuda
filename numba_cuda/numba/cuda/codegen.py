@@ -192,7 +192,11 @@ class CUDACodeLibrary(serialize.ReduceMixin, CodeLibrary):
             return cubin
 
         if config.DUMP_ASSEMBLY:
-            linker = driver.Linker.new(max_registers=self._max_registers, cc=cc, additional_flags=["-ptx"])
+            linker = driver.Linker.new(
+                max_registers=self._max_registers,
+                cc=cc,
+                additional_flags=["-ptx"]
+            )
             self._link_all(linker, cc)
             ptx = linker.get_linked_ptx().decode('utf-8')
 
@@ -200,7 +204,6 @@ class CUDACodeLibrary(serialize.ReduceMixin, CodeLibrary):
                 print(("ASSEMBLY (AFTER LTO) %s" % self._name).center(80, '-'))
                 print(ptx)
                 print('=' * 80)
-
 
         linker = driver.Linker.new(max_registers=self._max_registers, cc=cc)
         self._link_all(linker, cc)
