@@ -10,6 +10,7 @@ rapids-logger "Install testing dependencies"
 rapids-mamba-retry create -n test \
     c-compiler \
     cxx-compiler \
+    cuda-cccl \
     cuda-nvcc-impl \
     cuda-nvrtc \
     cuda-python \
