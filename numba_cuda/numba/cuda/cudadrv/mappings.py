@@ -1,7 +1,7 @@
 from numba import config
-from cuda import cuda
 from . import enums
 if config.CUDA_USE_NVIDIA_BINDING:
+    from cuda import cuda
     jitty = cuda.CUjitInputType
     FILE_EXTENSION_MAP = {
         'o': jitty.CU_JIT_INPUT_OBJECT,
