@@ -2691,7 +2691,7 @@ class Linker(metaclass=ABCMeta):
         object represents a file already in memory.
         """
         if isinstance(path_or_code, str):
-            ext = pathlib.Path(path_or_code).suffix.lstrip('.')
+            ext = pathlib.Path(path_or_code).suffix
             if ext == '':
                 raise RuntimeError(
                     "Don't know how to link file with no extension"
@@ -2699,11 +2699,11 @@ class Linker(metaclass=ABCMeta):
             elif ext == '.cu':
                 self.add_cu_file(path_or_code)
             else:
-                kind = FILE_EXTENSION_MAP.get(ext, None)
+                kind = FILE_EXTENSION_MAP.get(ext.lstrip('.'), None)
                 if kind is None:
                     raise RuntimeError(
                         "Don't know how to link file with extension "
-                        f".{ext}"
+                        f"{ext}"
                     )
                 self.add_file(path_or_code, kind)
             return
