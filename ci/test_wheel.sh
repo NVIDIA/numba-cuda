@@ -12,7 +12,7 @@ python -m pip install \
 
 rapids-logger "Install wheel"
 package=$(realpath wheel/numba_cuda*.whl)
-echo "Package path: $package"
+echo "Wheel path: $package"
 python -m pip install $package
 
 rapids-logger "Check GPU usage"

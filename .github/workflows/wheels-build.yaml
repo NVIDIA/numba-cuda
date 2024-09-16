@@ -161,12 +161,19 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         # Use a shell that loads the rc file so that we get the compiler settings
         shell: bash -leo pipefail {0}
+      - name: Upload sdist
+        if: "!cancelled()"
+        uses: actions/upload-artifact@v4
+        with:
+          name: sdist
+          path: ${{ env.sdist_path }}
       - name: Upload wheel
         if: "!cancelled()"
         uses: actions/upload-artifact@v4
         with:
           name: wheel
-          path: ${{ env.package_path }}
+          path: ${{ env.wheel_path }}
+
       - name: Publish wheel
         if: inputs.upload_to_pypi
         uses: pypa/gh-action-pypi-publish@release/v1
