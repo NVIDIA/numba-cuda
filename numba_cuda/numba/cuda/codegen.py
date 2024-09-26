@@ -59,11 +59,18 @@ class CUDACodeLibrary(serialize.ReduceMixin, CodeLibrary):
     get_cufunc), which may be of different compute capabilities.
     """
 
-    def __init__(self, codegen, name, entry_name=None, max_registers=None,
-                 nvvm_options=None):
+    def __init__(
+        self,
+        codegen,
+        name,
+        entry_name=None,
+        max_registers=None,
+        lto=False,
+        nvvm_options=None
+    ):
         """
         codegen:
-            Codegen object.
+        Codegen object.
         name:
             Name of the function in the source.
         entry_name:
@@ -103,6 +110,7 @@ class CUDACodeLibrary(serialize.ReduceMixin, CodeLibrary):
         self._cufunc_cache = {}
 
         self._max_registers = max_registers
+        self._lto = lto
         if nvvm_options is None:
             nvvm_options = {}
         self._nvvm_options = nvvm_options
@@ -178,7 +186,9 @@ class CUDACodeLibrary(serialize.ReduceMixin, CodeLibrary):
         if cubin:
             return cubin
 
-        linker = driver.Linker.new(max_registers=self._max_registers, cc=cc)
+        linker = driver.Linker.new(
+            max_registers=self._max_registers, cc=cc, lto=self._lto
+        )
 
         if linker.lto:
             ltoir = self.get_ltoir(cc=cc)
