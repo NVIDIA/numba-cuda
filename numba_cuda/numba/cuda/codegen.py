@@ -195,17 +195,17 @@ class CUDACodeLibrary(serialize.ReduceMixin, CodeLibrary):
             linker = driver.Linker.new(
                 max_registers=self._max_registers,
                 cc=cc,
-                additional_flags=["-ptx"]
+                additional_flags=["-ptx"],
+                lto=True
             )
             self._link_all(linker, cc)
             ptx = linker.get_linked_ptx().decode('utf-8')
 
-            if config.DUMP_ASSEMBLY:
-                print(("ASSEMBLY (AFTER LTO) %s" % self._name).center(80, '-'))
-                print(ptx)
-                print('=' * 80)
+            print(("ASSEMBLY (AFTER LTO) %s" % self._name).center(80, '-'))
+            print(ptx)
+            print('=' * 80)
 
-        linker = driver.Linker.new(max_registers=self._max_registers, cc=cc)
+        linker = driver.Linker.new(max_registers=self._max_registers, cc=cc, lto=True)
         self._link_all(linker, cc)
         cubin = linker.complete()
 
