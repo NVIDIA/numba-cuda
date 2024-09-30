@@ -19,8 +19,10 @@ jobs:
       - compute-matrix
       - build-conda
       - test-conda
+      - test-conda-pynvjitlink
       - build-wheels
       - test-wheels
+      - test-wheels-pynvjitlink
       - build-docs
     secrets: inherit
     uses: rapidsai/shared-workflows/.github/workflows/pr-builder.yaml@branch-24.08
