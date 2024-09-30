@@ -54,9 +54,20 @@ jobs:
     uses: ./.github/workflows/conda-python-tests.yaml
     with:
       build_type: pull-request
-      script: "ci/test_conda.sh"
+      script: "ci/test_conda.sh false"
       run_codecov: false
       matrix_filter: ${{ needs.compute-matrix.outputs.TEST_MATRIX }}
+  test-conda-pynvjitlink:
+    needs:
+      - build-conda
+      - compute-matrix
+    uses: ./.github/workflows/conda-python-tests.yaml
+    with:
+      build_type: pull-request
+      script: "ci/test_conda.sh true"
+      run_codecov: false
+      # This selects "ARCH=amd64 + the latest supported Python + CUDA".
+      matrix_filter: map(select(.ARCH == "amd64")) | group_by(.CUDA_VER|split(".")|map(tonumber)|.[0]) | map(max_by([(.PY_VER|split(".")|map(tonumber)), (.CUDA_VER|split(".")|map(tonumber))]))
   build-wheels:
     needs:
       - compute-matrix
@@ -72,8 +83,18 @@ jobs:
     uses: ./.github/workflows/wheels-test.yaml
     with:
       build_type: pull-request
-      script: "ci/test_wheel.sh"
+      script: "ci/test_wheel.sh false"
       matrix_filter: ${{ needs.compute-matrix.outputs.TEST_MATRIX }}
+  test-wheels-pynvjitlink:
+    needs:
+      - build-wheels
+      - compute-matrix
+    uses: ./.github/workflows/wheels-test.yaml
+    with:
+      build_type: pull-request
+      script: "ci/test_wheel.sh true"
+      # This selects "ARCH=amd64 + the latest supported Python + CUDA".
+      matrix_filter: map(select(.ARCH == "amd64")) | group_by(.CUDA_VER|split(".")|map(tonumber)|.[0]) | map(max_by([(.PY_VER|split(".")|map(tonumber)), (.CUDA_VER|split(".")|map(tonumber))]))
   build-docs:
     needs:
       - build-conda

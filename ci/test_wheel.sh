@@ -3,12 +3,19 @@
 
 set -euo pipefail
 
+USE_PYNVJITLINK = $1
+
 rapids-logger "Install testing dependencies"
 # TODO: Replace with rapids-dependency-file-generator
 python -m pip install \
     psutil \
     cuda-python \
     pytest
+
+if [ "$USE_PYNVJITLINK" == true ]; then
+    rapids-logger "Install pynvjitlink"
+    python -m pip install pynvjitlink
+fi
 
 rapids-logger "Install wheel"
 package=$(realpath wheel/numba_cuda*.whl)
@@ -26,6 +33,6 @@ rapids-logger "Show Numba system info"
 python -m numba --sysinfo
 
 rapids-logger "Run Tests"
-python -m numba.runtests numba.cuda.tests -v
+ENABLE_PYNVJITLINK=$USE_PYNVJITLINK python -m numba.runtests numba.cuda.tests -v
 
 popd

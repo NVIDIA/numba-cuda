@@ -3,6 +3,8 @@
 
 set -euo pipefail
 
+USE_PYNVJITLINK = $1
+
 . /opt/conda/etc/profile.d/conda.sh
 
 rapids-logger "Install testing dependencies"
@@ -42,8 +44,13 @@ EXITCODE=0
 trap "EXITCODE=1" ERR
 set +e
 
+if [ "$USE_PYNVJITLINK" == true ]; then
+    rapids-logger "Install pynvjitlink"
+    conda install -c rapidsai pynvjitlink
+fi
+
 rapids-logger "Run Tests"
-python -m numba.runtests numba.cuda.tests -v
+ENABLE_PYNVJITLINK=$USE_PYNVJITLINK python -m numba.runtests numba.cuda.tests -v
 
 popd
 
