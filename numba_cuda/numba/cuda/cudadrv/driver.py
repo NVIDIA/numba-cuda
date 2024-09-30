@@ -2632,7 +2632,7 @@ class Linker(metaclass=ABCMeta):
 
         if linker is PyNvJitLinker:
             return linker(max_registers, lineinfo, cc, lto, additional_flags)
-        elif additional_flags is not None or lto is not None:
+        elif additional_flags is not None or lto is True:
             raise ValueError("LTO and additional flags require PyNvJitLinker")
         else:
             return linker(max_registers, lineinfo, cc)
