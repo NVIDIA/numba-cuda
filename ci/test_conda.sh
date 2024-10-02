@@ -3,7 +3,7 @@
 
 set -euo pipefail
 
-USE_PYNVJITLINK = $1
+USE_PYNVJITLINK=$1
 
 . /opt/conda/etc/profile.d/conda.sh
 
