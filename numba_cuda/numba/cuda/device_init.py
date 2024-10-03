@@ -1,6 +1,8 @@
 # Re export
 import sys
 from numba.cuda import cg
+from numba.cuda.cache_hints import (ldca, ldcg, ldcs, ldlu, ldcv, stcg, stcs,
+                                    stwb, stwt)
 from .stubs import (threadIdx, blockIdx, blockDim, gridDim, laneid, warpsize,
                     syncwarp, shared, local, const, atomic,
                     shfl_sync_intrinsic, vote_sync_intrinsic, match_any_sync,
