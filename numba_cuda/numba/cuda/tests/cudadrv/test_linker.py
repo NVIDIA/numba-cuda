@@ -1,5 +1,6 @@
 import numpy as np
 import warnings
+from numba.cuda.testing import unittest
 from numba.cuda.testing import (skip_on_cudasim, skip_if_cuda_includes_missing)
 from numba.cuda.testing import CUDATestCase, test_data_dir
 from numba.cuda.cudadrv.driver import (CudaAPIError, Linker,
@@ -310,3 +311,7 @@ class TestLinker(CUDATestCase):
         local_mem_size = compiled_specialized.get_local_mem_per_thread()
         calc_size = np.dtype(np.float64).itemsize * LMEM_SIZE
         self.assertGreaterEqual(local_mem_size, calc_size)
+
+
+if __name__ == '__main__':
+    unittest.main()

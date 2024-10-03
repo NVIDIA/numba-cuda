@@ -4,7 +4,6 @@ from numba.cuda.testing import CUDATestCase
 from numba.cuda.cudadrv.driver import PyNvJitLinker
 
 import itertools
-from pynvjitlink.api import NvJitLinkError
 from numba.cuda import get_current_device
 from numba import cuda
 from numba import config
@@ -12,6 +11,7 @@ from numba import config
 HAVE_PYNVJITLINK = False
 try:
     import pynvjitlink  # noqa: F401
+    from pynvjitlink.api import NvJitLinkError
 
     HAVE_PYNVJITLINK = True
 except ImportError:
