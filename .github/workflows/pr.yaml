@@ -81,7 +81,6 @@ jobs:
   test-wheels:
     needs:
       - build-wheels
-      - compute-matrix
     uses: ./.github/workflows/wheels-test.yaml
     with:
       build_type: pull-request

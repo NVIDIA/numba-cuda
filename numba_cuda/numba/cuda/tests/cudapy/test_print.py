@@ -1,4 +1,5 @@
 from numba.cuda.testing import CUDATestCase, skip_on_cudasim
+import numpy as np
 import subprocess
 import sys
 import unittest
@@ -31,6 +32,21 @@ cuda.synchronize()
 """
 
 
+printbool_usecase = """\
+from numba import cuda
+
+@cuda.jit
+def printbool(x):
+    print(True)
+    print(False)
+    print(x == 0)
+
+printbool[1, 1](0)
+printbool[1, 1](1)
+cuda.synchronize()
+"""
+
+
 printstring_usecase = """\
 from numba import cuda
 
@@ -42,6 +58,19 @@ def printstring():
 printstring[1, 3]()
 cuda.synchronize()
 """
+
+
+printdim3_usecase = """\
+from numba import cuda
+
+@cuda.jit
+def printdim3():
+    print(cuda.threadIdx)
+
+printdim3[1, (2, 2, 2)]()
+cuda.synchronize()
+"""
+
 
 printempty_usecase = """\
 from numba import cuda
@@ -95,6 +124,11 @@ class TestPrint(CUDATestCase):
         expected_cases = ["0 23 34.750000 321", "0 23 34.75 321"]
         self.assertIn(output.strip(), expected_cases)
 
+    def test_bool(self):
+        output, _ = self.run_code(printbool_usecase)
+        expected = "True\nFalse\nTrue\nTrue\nFalse\nFalse"
+        self.assertEqual(output.strip(), expected)
+
     def test_printempty(self):
         output, _ = self.run_code(printempty_usecase)
         self.assertEqual(output.strip(), "")
@@ -103,6 +137,12 @@ class TestPrint(CUDATestCase):
         output, _ = self.run_code(printstring_usecase)
         lines = [line.strip() for line in output.splitlines(True)]
         expected = ['%d hop! 999' % i for i in range(3)]
+        self.assertEqual(sorted(lines), expected)
+
+    def test_dim3(self):
+        output, _ = self.run_code(printdim3_usecase)
+        lines = [line.strip() for line in output.splitlines(True)]
+        expected = [str(i) for i in np.ndindex(2, 2, 2)]
         self.assertEqual(sorted(lines), expected)
 
     @skip_on_cudasim('cudasim can print unlimited output')
