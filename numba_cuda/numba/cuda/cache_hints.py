@@ -5,6 +5,10 @@ from numba.core.extending import intrinsic, overload
 from numba.core.errors import NumbaTypeError
 from numba.cuda.api_util import normalize_indices
 
+# Docs references:
+# https://docs.nvidia.com/cuda/parallel-thread-execution/index.html#data-movement-and-conversion-instructions-ld
+# https://docs.nvidia.com/cuda/cuda-c-programming-guide/index.html#load-functions-using-cache-hints
+
 
 def ldca(array, i):
     """Generate a `ld.global.ca` instruction for element `i` of an array."""
