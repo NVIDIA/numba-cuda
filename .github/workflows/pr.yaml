@@ -69,7 +69,7 @@ jobs:
       script: "ci/test_conda.sh true"
       run_codecov: false
       # This selects "ARCH=amd64 + the latest supported Python + CUDA".
-      matrix_filter: map(select(.ARCH == "amd64")) | group_by(.CUDA_VER|split(".")|map(tonumber)|.[0]) | map(max_by([(.PY_VER|split(".")|map(tonumber)), (.CUDA_VER|split(".")|map(tonumber))]))
+      matrix_filter: map(select(.ARCH == "amd64" and (.CUDA_VER|split(".")|map(tonumber)|.[0]) == 12)) | max_by(.PY_VER|split(".")|map(tonumber))
   build-wheels:
     needs:
       - compute-matrix
@@ -95,7 +95,7 @@ jobs:
       build_type: pull-request
       script: "ci/test_wheel.sh true"
       # This selects "ARCH=amd64 + the latest supported Python + CUDA".
-      matrix_filter: map(select(.ARCH == "amd64")) | group_by(.CUDA_VER|split(".")|map(tonumber)|.[0]) | map(max_by([(.PY_VER|split(".")|map(tonumber)), (.CUDA_VER|split(".")|map(tonumber))]))
+      matrix_filter: map(select(.ARCH == "amd64" and (.CUDA_VER|split(".")|map(tonumber)|.[0]) == 12)) | max_by(.PY_VER|split(".")|map(tonumber))
   build-docs:
     needs:
       - build-conda
