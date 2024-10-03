@@ -64,6 +64,8 @@ def _readenv(name, ctor, default):
     if value is None:
         return default() if callable(default) else default
     try:
+        if ctor is bool:
+            return bool(value.lower() in {'1', "True"})
         return ctor(value)
     except Exception:
         warnings.warn(
@@ -80,7 +82,6 @@ _MVC_ERROR_MESSAGE = (
     "Minor version compatibility requires ptxcompiler and cubinlinker packages "
     "to be available"
 )
-
 
 ENABLE_PYNVJITLINK = (
     _readenv("ENABLE_PYNVJITLINK", bool, False)
