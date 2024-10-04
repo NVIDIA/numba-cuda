@@ -68,6 +68,10 @@ def simple_popc(ary, c):
     ary[0] = cuda.popc(c)
 
 
+def simple_bit_count(ary, c):
+    ary[0] = c.bit_count()
+
+
 def simple_fma(ary, a, b, c):
     ary[0] = cuda.fma(a, b, c)
 
@@ -550,17 +554,53 @@ class TestCudaIntrinsic(CUDATestCase):
 
         self.assertTrue(np.all(arr))
 
+    def test_popc_u1(self):
+        compiled = cuda.jit("void(int32[:], uint8)")(simple_popc)
+        ary = np.zeros(1, dtype=np.int8)
+        compiled[1, 1](ary, np.uint8(0xFF))
+        self.assertEqual(ary[0], 8)
+
+    def test_popc_u2(self):
+        compiled = cuda.jit("void(int32[:], uint16)")(simple_popc)
+        ary = np.zeros(1, dtype=np.int16)
+        compiled[1, 1](ary, np.uint16(0xFFFF))
+        self.assertEqual(ary[0], 16)
+
     def test_popc_u4(self):
         compiled = cuda.jit("void(int32[:], uint32)")(simple_popc)
         ary = np.zeros(1, dtype=np.int32)
-        compiled[1, 1](ary, 0xF0)
-        self.assertEqual(ary[0], 4)
+        compiled[1, 1](ary, np.uint32(0xFFFFFFFF))
+        self.assertEqual(ary[0], 32)
 
     def test_popc_u8(self):
         compiled = cuda.jit("void(int32[:], uint64)")(simple_popc)
         ary = np.zeros(1, dtype=np.int32)
-        compiled[1, 1](ary, 0xF00000000000)
-        self.assertEqual(ary[0], 4)
+        compiled[1, 1](ary, np.uint64(0xFFFFFFFFFFFFFFFF))
+        self.assertEqual(ary[0], 64)
+
+    def test_bit_count_u1(self):
+        compiled = cuda.jit("void(int32[:], uint8)")(simple_bit_count)
+        ary = np.zeros(1, dtype=np.int8)
+        compiled[1, 1](ary, np.uint8(0xFF))
+        self.assertEqual(ary[0], 8)
+
+    def test_bit_count_u2(self):
+        compiled = cuda.jit("void(int32[:], uint16)")(simple_bit_count)
+        ary = np.zeros(1, dtype=np.int16)
+        compiled[1, 1](ary, np.uint16(0xFFFF))
+        self.assertEqual(ary[0], 16)
+
+    def test_bit_count_u4(self):
+        compiled = cuda.jit("void(int32[:], uint32)")(simple_bit_count)
+        ary = np.zeros(1, dtype=np.int32)
+        compiled[1, 1](ary, np.uint32(0xFFFFFFFF))
+        self.assertEqual(ary[0], 32)
+
+    def test_bit_count_u8(self):
+        compiled = cuda.jit("void(int32[:], uint64)")(simple_bit_count)
+        ary = np.zeros(1, dtype=np.int32)
+        compiled[1, 1](ary, np.uint64(0xFFFFFFFFFFFFFFFF))
+        self.assertEqual(ary[0], 64)
 
     def test_fma_f4(self):
         compiled = cuda.jit("void(f4[:], f4, f4, f4)")(simple_fma)
