@@ -4,7 +4,7 @@ from numba import cuda, types
 from numba.core import cgutils
 from numba.core.errors import RequireLiteralValue
 from numba.core.typing import signature
-from numba.core.extending import overload_attribute
+from numba.core.extending import overload_attribute, overload_method
 from numba.cuda import nvvmutils
 from numba.cuda.extending import intrinsic
 
@@ -196,3 +196,8 @@ def syncthreads_or(typingctx, predicate):
     '''
     fname = 'llvm.nvvm.barrier0.or'
     return _syncthreads_predicate(typingctx, predicate, fname)
+
+
+@overload_method(types.Integer, 'bit_count', target='cuda')
+def integer_bit_count(i):
+    return lambda i: cuda.popc(i)
