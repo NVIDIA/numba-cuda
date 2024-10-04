@@ -14,7 +14,7 @@ python -m pip install \
 
 if [ "$USE_PYNVJITLINK" == true ]; then
     rapids-logger "Install pynvjitlink"
-    python -m pip install pynvjitlink
+    python -m pip install pynvjitlink-cu12
 fi
 
 rapids-logger "Install wheel"
