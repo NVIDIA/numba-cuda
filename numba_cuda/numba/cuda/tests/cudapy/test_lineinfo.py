@@ -170,10 +170,9 @@ class TestCudaLineInfo(CUDATestCase):
                 subprograms += 1
 
         # One DISubprogram for each of:
-        # - The kernel wrapper
         # - The caller
         # - The callee
-        expected_subprograms = 3
+        expected_subprograms = 2
 
         self.assertEqual(subprograms, expected_subprograms,
                          f'"Expected {expected_subprograms} DISubprograms; '

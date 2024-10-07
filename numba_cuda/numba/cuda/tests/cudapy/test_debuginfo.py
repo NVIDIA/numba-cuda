@@ -72,6 +72,7 @@ class TestCudaDebugInfo(CUDATestCase):
         def f(x):
             x[0] = 0
 
+    @unittest.skip("Wrappers no longer exist")
     def test_wrapper_has_debuginfo(self):
         sig = (types.int32[::1],)
 

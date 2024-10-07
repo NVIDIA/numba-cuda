@@ -14,8 +14,11 @@ def device_func(x, y, z):
 
 
 # Fragments of code that are removed from kernel_func's PTX when optimization
-# is on
-removed_by_opt = ( '__local_depot0', 'call.uni', 'st.param.b64')
+# is on. Previously this list was longer when kernel wrappers were used - if
+# the test function were more complex it may be possible to isolate additional
+# fragments of PTX we could check for the absence / presence of, but removal of
+# the use of local memory is a good indicator that optimization was applied.
+removed_by_opt = ( '__local_depot0',)
 
 
 @skip_on_cudasim('Simulator does not optimize code')
