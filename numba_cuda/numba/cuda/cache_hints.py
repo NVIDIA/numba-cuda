@@ -61,12 +61,35 @@ CONSTRAINT_MAP = {
 }
 
 
+def _validate_arguments(instruction, array, index):
+    if not isinstance(array, types.Array):
+        msg = f"{instruction} operates on arrays. Got type {array}"
+        raise NumbaTypeError(msg)
+
+    valid_index = False
+
+    if isinstance(index, types.Integer):
+        if array.ndim != 1:
+            msg = f"Expected {array.ndim} indices, got a scalar"
+            raise NumbaTypeError(msg)
+        valid_index = True
+
+    if isinstance(index, types.UniTuple):
+        if index.count != array.ndim:
+            msg = f"Expected {array.ndim} indices, got {index.count}"
+            raise NumbaTypeError(msg)
+
+        if all([isinstance(t, types.Integer) for t in index.dtype]):
+            valid_index = True
+
+    if not valid_index:
+        raise NumbaTypeError(f"{index} is not a valid index")
+
+
 def ld_cache_operator(operator):
     @intrinsic
     def impl(typingctx, array, index):
-        if not isinstance(array, types.Array):
-            msg = f"ldcs operates on arrays. Got type {array}"
-            raise NumbaTypeError(msg)
+        _validate_arguments(f"ld{operator}", array, index)
 
         # Need to validate bitwidth
 
@@ -111,9 +134,7 @@ ldcv_intrinsic = ld_cache_operator("cv")
 def st_cache_operator(operator):
     @intrinsic
     def impl(typingctx, array, index, value):
-        if not isinstance(array, types.Array):
-            msg = f"ldcs operates on arrays. Got type {array}"
-            raise NumbaTypeError(msg)
+        _validate_arguments(f"st{operator}", array, index)
 
         # Need to validate bitwidth
 
