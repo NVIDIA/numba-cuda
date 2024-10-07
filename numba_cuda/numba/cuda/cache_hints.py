@@ -46,6 +46,21 @@ def stwt(array, i, value):
     """Generate a `st.global.wt` instruction for element `i` of an array."""
 
 
+# See
+# https://docs.nvidia.com/cuda/parallel-thread-execution/index.html#restricted-use-of-sub-word-sizes
+# for background on the choice of "r" for 8-bit operands - there is
+# no constraint for 8-bit operands, but the operand for loads and
+# stores is permitted to be greater than 8 bits.
+CONSTRAINT_MAP = {
+    1: "b",
+    8: "r",
+    16: "h",
+    32: "r",
+    64: "l",
+    128: "q"
+}
+
+
 def ld_cache_operator(operator):
     @intrinsic
     def impl(typingctx, array, index):
@@ -54,8 +69,6 @@ def ld_cache_operator(operator):
             raise NumbaTypeError(msg)
 
         # Need to validate bitwidth
-
-        # Need to validate indices
 
         signature = array.dtype(array, index)
 
@@ -79,20 +92,7 @@ def ld_cache_operator(operator):
 
             bitwidth = array_type.dtype.bitwidth
             inst = f"ld.global.{operator}.b{bitwidth}"
-            # See
-            # https://docs.nvidia.com/cuda/parallel-thread-execution/index.html#restricted-use-of-sub-word-sizes
-            # for background on the choice of "r" for 8-bit operands - there is
-            # no constraint for 8-bit operands, but the operand for loads and
-            # stores is permitted to be greater than 8 bits.
-            constraint_map = {
-                1: "b",
-                8: "r",
-                16: "h",
-                32: "r",
-                64: "l",
-                128: "q"
-            }
-            constraints = f"={constraint_map[bitwidth]},l"
+            constraints = f"={CONSTRAINT_MAP[bitwidth]},l"
             ldcs = ir.InlineAsm(ldcs_type, f"{inst} $0, [$1];", constraints)
             return builder.call(ldcs, [ptr])
 
@@ -116,8 +116,6 @@ def st_cache_operator(operator):
             raise NumbaTypeError(msg)
 
         # Need to validate bitwidth
-
-        # Need to validate indices
 
         signature = types.void(array, index, value)
 
@@ -144,15 +142,7 @@ def st_cache_operator(operator):
 
             bitwidth = array_type.dtype.bitwidth
             inst = f"st.global.{operator}.b{bitwidth}"
-            constraint_map = {
-                1: "b",
-                8: "r",
-                16: "h",
-                32: "r",
-                64: "l",
-                128: "q"
-            }
-            constraints = f"l,{constraint_map[bitwidth]},~{{memory}}"
+            constraints = f"l,{CONSTRAINT_MAP[bitwidth]},~{{memory}}"
             stcs = ir.InlineAsm(stcs_type, f"{inst} [$0], $1;", constraints)
             builder.call(stcs, [ptr, casted_value])
 
