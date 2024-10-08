@@ -10,7 +10,6 @@ subsequent deallocation could further corrupt the CUDA context and causes the
 system to freeze in some cases.
 
 """
-
 import sys
 import os
 import ctypes
@@ -85,11 +84,10 @@ _MVC_ERROR_MESSAGE = (
 
 ENABLE_PYNVJITLINK = (
     _readenv("ENABLE_PYNVJITLINK", bool, False)
-    or getattr(config, "ENABLE_PYNVJITLINK", None)
+    or getattr(config, "ENABLE_PYNVJITLINK", False)
 )
 if not hasattr(config, "ENABLE_PYNVJITLINK"):
     config.ENABLE_PYNVJITLINK = ENABLE_PYNVJITLINK
-
 
 if ENABLE_PYNVJITLINK:
     try:

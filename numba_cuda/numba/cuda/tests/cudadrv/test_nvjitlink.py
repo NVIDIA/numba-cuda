@@ -8,17 +8,8 @@ from numba.cuda import get_current_device
 from numba import cuda
 from numba import config
 
-HAVE_PYNVJITLINK = False
-try:
-    import pynvjitlink  # noqa: F401
-    from pynvjitlink.api import NvJitLinkError
 
-    HAVE_PYNVJITLINK = True
-except ImportError:
-    pass
-
-
-@unittest.skipIf(not HAVE_PYNVJITLINK, "pynvjitlink not available")
+@unittest.skipIf(config.ENABLE_PYNVJITLINK, "pynvjitlink not enabled")
 @skip_on_cudasim("Linking unsupported in the simulator")
 class TestLinker(CUDATestCase):
     _NUMBA_NVIDIA_BINDING_0_ENV = {"NUMBA_CUDA_USE_NVIDIA_BINDING": "0"}
@@ -35,6 +26,8 @@ class TestLinker(CUDATestCase):
             PyNvJitLinker()
 
     def test_nvjitlink_invalid_arch_error(self):
+        from pynvjitlink.api import NvJitLinkError
+
         # CC 0.0 is not a valid compute capability
         with self.assertRaisesRegex(
             NvJitLinkError, "NVJITLINK_ERROR_UNRECOGNIZED_OPTION error"
@@ -126,7 +119,6 @@ class TestLinker(CUDATestCase):
             # because there's no way to know what kind of file to treat it as
             patched_linker.add_file_guess_ext(content)
 
-    @unittest.skipIf(not HAVE_PYNVJITLINK, "pynvjitlink not available")
     def test_nvjitlink_jit_with_linkable_code(self):
         files = (
             "test_device_functions.a",
@@ -138,8 +130,6 @@ class TestLinker(CUDATestCase):
         )
         for file in files:
             with self.subTest(file=file):
-                # TODO: unsafe teardown if test errors
-                config.ENABLE_PYNVJITLINK = True
                 sig = "uint32(uint32, uint32)"
                 add_from_numba = cuda.declare_device("add_from_numba", sig)
 
