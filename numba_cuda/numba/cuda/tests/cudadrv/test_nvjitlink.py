@@ -9,7 +9,7 @@ from numba import cuda
 from numba import config
 
 
-@unittest.skipIf(config.ENABLE_PYNVJITLINK, "pynvjitlink not enabled")
+@unittest.skipIf(not config.ENABLE_PYNVJITLINK, "pynvjitlink not enabled")
 @skip_on_cudasim("Linking unsupported in the simulator")
 class TestLinker(CUDATestCase):
     _NUMBA_NVIDIA_BINDING_0_ENV = {"NUMBA_CUDA_USE_NVIDIA_BINDING": "0"}
