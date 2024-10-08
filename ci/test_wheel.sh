@@ -33,6 +33,6 @@ rapids-logger "Show Numba system info"
 python -m numba --sysinfo
 
 rapids-logger "Run Tests"
-ENABLE_PYNVJITLINK=$USE_PYNVJITLINK python -m numba.runtests numba.cuda.tests -v
+ENABLE_PYNVJITLINK=1 python -m numba.runtests numba.cuda.tests -v
 
 popd
