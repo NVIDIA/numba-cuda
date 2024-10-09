@@ -32,7 +32,7 @@ LIBRARY_FLAGS := $(GENCODE) -lib
 FATBIN_FLAGS := $(FATBIN_GENCODE) --fatbin
 LTOIR_FLAGS := $(LTOIR_GENCODE) -dc
 
-OUTPUT_DIR := ../cudadrv
+OUTPUT_DIR := ./
 
 all:
 	@echo "GPU CC: $(GPU_CC)"

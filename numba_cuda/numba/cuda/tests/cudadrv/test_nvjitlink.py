@@ -4,12 +4,39 @@ from numba.cuda.testing import CUDATestCase
 from numba.cuda.cudadrv.driver import PyNvJitLinker
 
 import itertools
+import os
 from numba.cuda import get_current_device
 from numba import cuda
 from numba import config
 
+TEST_BIN_DIR = os.getenv("NUMBA_CUDA_TEST_BIN_DIR")
+test_device_functions_a = os.path.join(
+    TEST_BIN_DIR, "test_device_functions.a"
+)
+test_device_functions_cubin = os.path.join(
+    TEST_BIN_DIR, "test_device_functions.cubin"
+)
+test_device_functions_cu = os.path.join(
+    TEST_BIN_DIR, "test_device_functions.cu"
+)
+test_device_functions_fatbin = os.path.join(
+    TEST_BIN_DIR, "test_device_functions.fatbin"
+)
+test_device_functions_o = os.path.join(
+    TEST_BIN_DIR, "test_device_functions.o"
+)
+test_device_functions_ptx = os.path.join(
+    TEST_BIN_DIR, "test_device_functions.ptx"
+)
+test_device_functions_ltoir = os.path.join(
+    TEST_BIN_DIR, "test_device_functions.ltoir"
+)
 
-@unittest.skipIf(not config.ENABLE_PYNVJITLINK, "pynvjitlink not enabled")
+
+@unittest.skipIf(
+    not config.ENABLE_PYNVJITLINK or not TEST_BIN_DIR,
+    "pynvjitlink not enabled"
+)
 @skip_on_cudasim("Linking unsupported in the simulator")
 class TestLinker(CUDATestCase):
     _NUMBA_NVIDIA_BINDING_0_ENV = {"NUMBA_CUDA_USE_NVIDIA_BINDING": "0"}
@@ -91,12 +118,12 @@ class TestLinker(CUDATestCase):
 
     def test_nvjitlink_add_file_guess_ext_linkable_code(self):
         files = (
-            "test_device_functions.a",
-            "test_device_functions.cubin",
-            "test_device_functions.cu",
-            "test_device_functions.fatbin",
-            "test_device_functions.o",
-            "test_device_functions.ptx",
+            test_device_functions_a,
+            test_device_functions_cubin,
+            test_device_functions_cu,
+            test_device_functions_fatbin,
+            test_device_functions_o,
+            test_device_functions_ptx,
         )
         for file in files:
             with self.subTest(file=file):
@@ -106,7 +133,7 @@ class TestLinker(CUDATestCase):
                 patched_linker.add_file_guess_ext(file)
 
     def test_nvjitlink_test_add_file_guess_ext_invalid_input(self):
-        with open("test_device_functions.cubin", "rb") as f:
+        with open(test_device_functions_cubin, "rb") as f:
             content = f.read()
 
         patched_linker = PyNvJitLinker(
@@ -121,12 +148,12 @@ class TestLinker(CUDATestCase):
 
     def test_nvjitlink_jit_with_linkable_code(self):
         files = (
-            "test_device_functions.a",
-            "test_device_functions.cubin",
-            "test_device_functions.cu",
-            "test_device_functions.fatbin",
-            "test_device_functions.o",
-            "test_device_functions.ptx",
+            test_device_functions_a,
+            test_device_functions_cubin,
+            test_device_functions_cu,
+            test_device_functions_fatbin,
+            test_device_functions_o,
+            test_device_functions_ptx,
         )
         for file in files:
             with self.subTest(file=file):
@@ -142,7 +169,7 @@ class TestLinker(CUDATestCase):
                 assert result[0] == 3
 
     def test_nvjitlink_jit_with_linkable_code_lto(self):
-        file = "test_device_functions.ltoir"
+        file = test_device_functions_ltoir
 
         sig = "uint32(uint32, uint32)"
         add_from_numba = cuda.declare_device("add_from_numba", sig)
@@ -156,7 +183,7 @@ class TestLinker(CUDATestCase):
         assert result[0] == 3
 
     def test_nvjitlink_jit_with_invalid_linkable_code(self):
-        with open("test_device_functions.cubin", "rb") as f:
+        with open(test_device_functions_cubin, "rb") as f:
             content = f.read()
         with self.assertRaisesRegex(
             TypeError, "Expected path to file or a LinkableCode"

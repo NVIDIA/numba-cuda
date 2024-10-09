@@ -53,7 +53,7 @@ set +u
 conda install -c rapidsai pynvjitlink
 set -u
 
-rapids_logger "Build tests"
+rapids-logger "Build tests"
 
 PY_SCRIPT="
 import numba_cuda
@@ -62,14 +62,14 @@ test_dir = root + \"numba/cuda/tests/test_binary_generation/\"
 print(test_dir)
 "
 
-TEST_DIR=$(python -c "$PY_SCRIPT")
-pushd $TEST_DIR
+NUMBA_CUDA_TEST_BIN_DIR=$(python -c "$PY_SCRIPT")
+pushd $NUMBA_CUDA_TEST_BIN_DIR
 make
 popd
 
 
 rapids-logger "Run Tests"
-ENABLE_PYNVJITLINK=1 python -m numba.runtests numba.cuda.tests -v
+ENABLE_PYNVJITLINK=1 NUMBA_CUDA_TEST_BIN_DIR=$NUMBA_CUDA_TEST_BIN_DIR python -m numba.runtests numba.cuda.tests -v
 
 popd
 
