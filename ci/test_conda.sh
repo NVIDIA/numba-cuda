@@ -3,7 +3,11 @@
 
 set -euo pipefail
 
-USE_PYNVJITLINK=$1
+if [ "$1" == "true" ]; then
+    USE_PYNVJITLINK=true
+else
+    USE_PYNVJITLINK=false
+fi
 
 . /opt/conda/etc/profile.d/conda.sh
 

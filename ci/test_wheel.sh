@@ -3,7 +3,11 @@
 
 set -euo pipefail
 
-USE_PYNVJITLINK=$1
+if [ "$1" == "true" ]; then
+    USE_PYNVJITLINK=true
+else
+    USE_PYNVJITLINK=false
+fi
 
 rapids-logger "Install testing dependencies"
 # TODO: Replace with rapids-dependency-file-generator
