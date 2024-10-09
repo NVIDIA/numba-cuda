@@ -10,6 +10,22 @@ python -m pip install \
     cuda-python \
     pytest
 
+rapids-logger "Install pynvjitlink"
+python -m pip install pynvjitlink-cu12
+
+rapids-logger "Build tests"
+PY_SCRIPT="
+import numba_cuda
+root = numba_cuda.__file__.rstrip('__init__.py')
+test_dir = root + \"numba/cuda/tests/test_binary_generation/\"
+print(test_dir)
+"
+
+TEST_DIR=$(python -c "$PY_SCRIPT")
+pushd $TEST_DIR
+make
+popd
+
 rapids-logger "Install wheel"
 package=$(realpath wheel/numba_cuda*.whl)
 echo "Package path: $package"
@@ -26,6 +42,6 @@ rapids-logger "Show Numba system info"
 python -m numba --sysinfo
 
 rapids-logger "Run Tests"
-python -m numba.runtests numba.cuda.tests -v
+ENABLE_PYNVJITLINK=1 python -m numba.runtests numba.cuda.tests -v
 
 popd

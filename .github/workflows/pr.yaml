@@ -56,7 +56,7 @@ jobs:
     uses: ./.github/workflows/conda-python-tests.yaml
     with:
       build_type: pull-request
-      script: "ci/test_conda.sh false"
+      script: "ci/test_conda.sh"
       run_codecov: false
       matrix_filter: ${{ needs.compute-matrix.outputs.TEST_MATRIX }}
   test-conda-pynvjitlink:
@@ -66,7 +66,7 @@ jobs:
     uses: ./.github/workflows/conda-python-tests.yaml
     with:
       build_type: pull-request
-      script: "ci/test_conda.sh true"
+      script: "ci/test_conda_pynvjitlink.sh"
       run_codecov: false
       matrix_filter: map(select(.ARCH == "amd64" and .CUDA_VER == "12.5.1" and .PY_VER == "3.11"))
   build-wheels:
@@ -90,7 +90,7 @@ jobs:
     uses: ./.github/workflows/wheels-test.yaml
     with:
       build_type: pull-request
-      script: "ci/test_wheel.sh true"
+      script: "ci/test_wheel_pynvjitlink.sh"
       matrix_filter: map(select(.ARCH == "amd64" and .CUDA_VER == "12.5.1" and .PY_VER == "3.12"))
   build-docs:
     needs:
