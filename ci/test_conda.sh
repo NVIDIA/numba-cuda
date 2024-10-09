@@ -58,6 +58,7 @@ if [ "$USE_PYNVJITLINK" == true ]; then
     set +u
     conda install -c rapidsai pynvjitlink
     set -u
+    sh build_tests.sh
 fi
 
 rapids-logger "Run Tests"
