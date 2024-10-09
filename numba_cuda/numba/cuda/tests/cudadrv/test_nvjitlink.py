@@ -10,27 +10,28 @@ from numba import cuda
 from numba import config
 
 TEST_BIN_DIR = os.getenv("NUMBA_CUDA_TEST_BIN_DIR")
-test_device_functions_a = os.path.join(
-    TEST_BIN_DIR, "test_device_functions.a"
-)
-test_device_functions_cubin = os.path.join(
-    TEST_BIN_DIR, "test_device_functions.cubin"
-)
-test_device_functions_cu = os.path.join(
-    TEST_BIN_DIR, "test_device_functions.cu"
-)
-test_device_functions_fatbin = os.path.join(
-    TEST_BIN_DIR, "test_device_functions.fatbin"
-)
-test_device_functions_o = os.path.join(
-    TEST_BIN_DIR, "test_device_functions.o"
-)
-test_device_functions_ptx = os.path.join(
-    TEST_BIN_DIR, "test_device_functions.ptx"
-)
-test_device_functions_ltoir = os.path.join(
-    TEST_BIN_DIR, "test_device_functions.ltoir"
-)
+if TEST_BIN_DIR:
+    test_device_functions_a = os.path.join(
+        TEST_BIN_DIR, "test_device_functions.a"
+    )
+    test_device_functions_cubin = os.path.join(
+        TEST_BIN_DIR, "test_device_functions.cubin"
+    )
+    test_device_functions_cu = os.path.join(
+        TEST_BIN_DIR, "test_device_functions.cu"
+    )
+    test_device_functions_fatbin = os.path.join(
+        TEST_BIN_DIR, "test_device_functions.fatbin"
+    )
+    test_device_functions_o = os.path.join(
+        TEST_BIN_DIR, "test_device_functions.o"
+    )
+    test_device_functions_ptx = os.path.join(
+        TEST_BIN_DIR, "test_device_functions.ptx"
+    )
+    test_device_functions_ltoir = os.path.join(
+        TEST_BIN_DIR, "test_device_functions.ltoir"
+    )
 
 
 @unittest.skipIf(

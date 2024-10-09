@@ -49,6 +49,4 @@ all:
 	nvcc $(NVCC_FLAGS) $(LTOIR_FLAGS) -o $(OUTPUT_DIR)/test_device_functions.ltoir.o test_device_functions.cu
 	# Generate LTO-IR in a "raw" LTO-IR container
 	python generate_raw_ltoir.py --arch sm_$(GPU_CC) -o $(OUTPUT_DIR)/test_device_functions.ltoir test_device_functions.cu
-	# We also want to test linking a .cu file; this needs no compilation,
-	# so copy it instead
-	cp test_device_functions.cu $(OUTPUT_DIR)
+
