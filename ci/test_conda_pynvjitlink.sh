@@ -50,7 +50,7 @@ set +e
 
 rapids-logger "Install pynvjitlink"
 set +u
-conda install -c rapidsai pynvjitlink
+rapids-mamba-retry install -c rapidsai pynvjitlink
 set -u
 
 rapids-logger "Build tests"
