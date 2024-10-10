@@ -46,7 +46,7 @@ class _Kernel(serialize.ReduceMixin):
     @global_compiler_lock
     def __init__(self, py_func, argtypes, link=None, debug=False,
                  lineinfo=False, inline=False, fastmath=False, extensions=None,
-                 max_registers=None, opt=True, device=False):
+                 max_registers=None, lto=False, opt=True, device=False):
 
         if device:
             raise RuntimeError('Cannot compile a device function as a kernel')
@@ -94,7 +94,7 @@ class _Kernel(serialize.ReduceMixin):
         lib, kernel = tgt_ctx.prepare_cuda_kernel(cres.library, cres.fndesc,
                                                   debug, lineinfo, nvvm_options,
                                                   filename, linenum,
-                                                  max_registers)
+                                                  max_registers, lto)
 
         if not link:
             link = []

@@ -31,6 +31,9 @@ from .intrinsic_wrapper import (all_sync, any_sync, eq_sync, ballot_sync,
                                 shfl_xor_sync)
 
 from .kernels import reduction
+from numba.cuda.cudadrv.linkable_code import (
+    Archive, CUSource, Cubin, Fatbin, LinkableCode, LTOIR, Object, PTXSource
+)
 
 reduce = Reduce = reduction.Reduce
 

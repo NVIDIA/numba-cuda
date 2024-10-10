@@ -19,8 +19,10 @@ jobs:
       - compute-matrix
       - build-conda
       - test-conda
+      - test-conda-pynvjitlink
       - build-wheels
       - test-wheels
+      - test-wheels-pynvjitlink
       - build-docs
     secrets: inherit
     uses: rapidsai/shared-workflows/.github/workflows/pr-builder.yaml@branch-24.08
@@ -57,6 +59,16 @@ jobs:
       script: "ci/test_conda.sh"
       run_codecov: false
       matrix_filter: ${{ needs.compute-matrix.outputs.TEST_MATRIX }}
+  test-conda-pynvjitlink:
+    needs:
+      - build-conda
+      - compute-matrix
+    uses: ./.github/workflows/conda-python-tests.yaml
+    with:
+      build_type: pull-request
+      script: "ci/test_conda_pynvjitlink.sh"
+      run_codecov: false
+      matrix_filter: map(select(.ARCH == "amd64" and .CUDA_VER == "12.5.1" and .PY_VER == "3.11"))
   build-wheels:
     needs:
       - compute-matrix
@@ -71,7 +83,15 @@ jobs:
     uses: ./.github/workflows/wheels-test.yaml
     with:
       build_type: pull-request
-      script: "ci/test_wheel.sh"
+      script: "ci/test_wheel.sh false"
+  test-wheels-pynvjitlink:
+    needs:
+      - build-wheels
+    uses: ./.github/workflows/wheels-test.yaml
+    with:
+      build_type: pull-request
+      script: "ci/test_wheel_pynvjitlink.sh"
+      matrix_filter: map(select(.ARCH == "amd64" and .CUDA_VER == "12.5.1" and .PY_VER == "3.12"))
   build-docs:
     needs:
       - build-conda
