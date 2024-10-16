@@ -5,16 +5,20 @@ set -euo pipefail
 
 . /opt/conda/etc/profile.d/conda.sh
 
+if [ "${CUDA_VER%.*.*}" = "11" ]; then
+  CTK_PACKAGES="cuda-cccl cudatoolkit"
+else
+  CTK_PACKAGES="cuda-cccl cuda-nvcc-impl cuda-nvrtc"
+fi
+
 rapids-logger "Install testing dependencies"
 # TODO: Replace with rapids-dependency-file-generator
 rapids-mamba-retry create -n test \
     c-compiler \
     cxx-compiler \
-    cuda-cccl \
-    cuda-nvcc-impl \
-    cuda-nvrtc \
+    ${CTK_PACKAGES} \
     cuda-python \
-    cuda-version=${RAPIDS_CUDA_VERSION%.*} \
+    cuda-version=${CUDA_VER%.*} \
     make \
     psutil \
     pytest \

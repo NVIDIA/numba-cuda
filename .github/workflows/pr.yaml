@@ -68,12 +68,10 @@ jobs:
   test-wheels:
     needs:
       - build-wheels
-      - compute-matrix
     uses: ./.github/workflows/wheels-test.yaml
     with:
       build_type: pull-request
       script: "ci/test_wheel.sh"
-      matrix_filter: ${{ needs.compute-matrix.outputs.TEST_MATRIX }}
   build-docs:
     needs:
       - build-conda
