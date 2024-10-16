@@ -241,6 +241,7 @@ def get_cuda_paths():
             'libdevice': _get_libdevice_paths(),
             'cudalib_dir': _get_cudalib_dir(),
             'static_cudalib_dir': _get_static_cudalib_dir(),
+            'include_dir': _get_include_dir(),
         }
         # Cache result
         get_cuda_paths._cached_result = d
@@ -256,3 +257,35 @@ def get_debian_pkg_libdevice():
     if not os.path.exists(pkg_libdevice_location):
         return None
     return pkg_libdevice_location
+
+
+def get_conda_include_dir():
+    """
+    Return the include directory in the current conda environment, if one
+    is active and it exists.
+    """
+    conda_prefix = os.environ.get('CONDA_PREFIX')
+    if conda_prefix:
+        include_dir = os.path.join(conda_prefix, 'include')
+        if os.path.exists(include_dir):
+            return include_dir
+    return None
+
+
+def get_system_include_dir():
+    """Return the system CUDA include directory, if it exists"""
+    system_cuda_include = '/usr/local/cuda/include'
+    if os.path.exists(system_cuda_include):
+        return system_cuda_include
+    return None
+
+
+def _get_include_dir():
+    """Find the root include directory."""
+    options = [
+        ('Conda environment', get_conda_include_dir()),
+        ('System', get_system_include_dir()),
+        # TODO: add others
+    ]
+    by, include_dir = _find_valid_path(options)
+    return _env_path_tuple(by, include_dir)
