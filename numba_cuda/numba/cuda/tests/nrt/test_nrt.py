@@ -12,6 +12,7 @@ from numba.core.extending import overload
 from numba.np.arrayobj import (_check_const_str_dtype, is_nonelike,
                                ty_parse_dtype, ty_parse_shape, numpy_empty_nd)
 
+
 def cuda_empty(shape, dtype):
     pass
 
@@ -37,6 +38,7 @@ def ol_cuda_empty(shape, dtype):
         msg = f"Cannot parse input types to function np.empty({shape}, {dtype})"
         raise errors.TypingError(msg)
 
+
 @unittest.skip
 class TestNrtRefCt(EnableNRTStatsMixin, TestCase):
 
@@ -49,18 +51,21 @@ class TestNrtRefCt(EnableNRTStatsMixin, TestCase):
         """
         Test issue #1291
         """
+        n = 10
 
         @cuda.jit
         def kernel():
-            for i in 10:
-                temp = np.zeros(2)
+            for i in range(n):
+                temp = np.zeros(2) # noqa: F841
             return 0
 
         init_stats = rtsys.get_allocation_stats()
         kernel[1,1]()
         cur_stats = rtsys.get_allocation_stats()
+        breakpoint()
         self.assertEqual(cur_stats.alloc - init_stats.alloc, n)
         self.assertEqual(cur_stats.free - init_stats.free, n)
+
 
 class TestNrtBasic(CUDATestCase):
     def test_nrt_launches(self):
@@ -101,6 +106,7 @@ class TestNrtBasic(CUDATestCase):
         g[1,1](out_ary)
 
         self.assertEqual(out_ary[0], 1)
+
 
 if __name__ == '__main__':
     unittest.main()
