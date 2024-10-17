@@ -8,6 +8,7 @@ rapids-logger "Install testing dependencies"
 python -m pip install \
     psutil \
     cuda-python \
+    nvidia-cuda-cccl-cu12 \
     pytest
 
 rapids-logger "Install wheel"
