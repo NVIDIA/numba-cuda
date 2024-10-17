@@ -62,7 +62,6 @@ class TestNrtRefCt(EnableNRTStatsMixin, TestCase):
         init_stats = rtsys.get_allocation_stats()
         kernel[1,1]()
         cur_stats = rtsys.get_allocation_stats()
-        breakpoint()
         self.assertEqual(cur_stats.alloc - init_stats.alloc, n)
         self.assertEqual(cur_stats.free - init_stats.free, n)
 
