@@ -3,7 +3,7 @@ import platform
 import shutil
 
 from numba.tests.support import SerialMixin
-from numba.cuda.cuda_paths import get_conda_ctk
+from numba.cuda.cuda_paths import get_cuda_paths, get_conda_ctk
 from numba.cuda.cudadrv import driver, devices, libs
 from numba.core import config
 from numba.tests.support import TestCase
@@ -97,12 +97,12 @@ def skip_under_cuda_memcheck(reason):
 
 
 def skip_without_nvdisasm(reason):
-    nvdisasm_path = shutil.which('nvdisasm')
+    nvdisasm_path = get_cuda_paths()['nvdisasm'].info
     return unittest.skipIf(nvdisasm_path is None, reason)
 
 
 def skip_with_nvdisasm(reason):
-    nvdisasm_path = shutil.which('nvdisasm')
+    nvdisasm_path = get_cuda_paths()['nvdisasm'].info
     return unittest.skipIf(nvdisasm_path is not None, reason)
 
 
