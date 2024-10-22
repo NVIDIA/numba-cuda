@@ -120,4 +120,14 @@ target.
    ``/usr/local/cuda/include``. On Windows, the default is
    ``$env:CUDA_PATH\include``.
 
+.. envvar:: NUMBA_CUDA_ENABLE_MINOR_VERSION_COMPATIBILITY
 
+      Enable minor version compatibility for the CUDA driver. Requires the
+      ``cubinlinker`` and ``ptxcompiler`` packages to be installed. Provides minor
+      version compatibility for driver versions less than 12.0.
+
+.. envvar:: NUMBA_CUDA_ENABLE_PYNVJITLINK
+
+   Use ``pynvjitlink`` for minor version compatibility. Requires the ``pynvjitlink``
+   package to be installed. Provides minor version compatibility for driver versions
+   greater than 12.0.
