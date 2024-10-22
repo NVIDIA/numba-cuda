@@ -35,7 +35,7 @@ if TEST_BIN_DIR:
 
 
 @unittest.skipIf(
-    not config.ENABLE_PYNVJITLINK or not TEST_BIN_DIR,
+    not config.CUDA_ENABLE_PYNVJITLINK or not TEST_BIN_DIR,
     "pynvjitlink not enabled"
 )
 @skip_on_cudasim("Linking unsupported in the simulator")
