@@ -64,7 +64,7 @@ def _readenv(name, ctor, default):
         return default() if callable(default) else default
     try:
         if ctor is bool:
-            return bool(value.lower() in {'1', "True"})
+            return value.lower() in {'1', "true"}
         return ctor(value)
     except Exception:
         warnings.warn(
@@ -2631,7 +2631,7 @@ class Linker(metaclass=ABCMeta):
 
         if linker is PyNvJitLinker:
             return linker(max_registers, lineinfo, cc, lto, additional_flags)
-        elif additional_flags is not None or lto is True:
+        elif additional_flags or lto:
             raise ValueError("LTO and additional flags require PyNvJitLinker")
         else:
             return linker(max_registers, lineinfo, cc)
@@ -3088,9 +3088,7 @@ class PyNvJitLinker(Linker):
 
     def complete(self):
         try:
-            cubin = self._linker.get_linked_cubin()
-            self._linker._complete = True
-            return cubin
+            return self._linker.get_linked_cubin()
         except NvJitLinkError as e:
             raise LinkerError from e
 
