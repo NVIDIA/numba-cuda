@@ -213,7 +213,11 @@ class CUDACodeLibrary(serialize.ReduceMixin, CodeLibrary):
             print(ptx)
             print('=' * 80)
 
-        linker = driver.Linker.new(max_registers=self._max_registers, cc=cc, lto=True)
+        linker = driver.Linker.new(
+            max_registers=self._max_registers,
+            cc=cc,
+            lto=True
+        )
         self._link_all(linker, cc)
         cubin = linker.complete()
 
