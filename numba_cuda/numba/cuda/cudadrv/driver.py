@@ -83,11 +83,11 @@ _MVC_ERROR_MESSAGE = (
 )
 
 ENABLE_PYNVJITLINK = (
-    _readenv("ENABLE_PYNVJITLINK", bool, False)
-    or getattr(config, "ENABLE_PYNVJITLINK", False)
+    _readenv("NUMBA_CUDA_ENABLE_PYNVJITLINK", bool, False)
+    or getattr(config, "CUDA_ENABLE_PYNVJITLINK", False)
 )
-if not hasattr(config, "ENABLE_PYNVJITLINK"):
-    config.ENABLE_PYNVJITLINK = ENABLE_PYNVJITLINK
+if not hasattr(config, "CUDA_ENABLE_PYNVJITLINK"):
+    config.CUDA_ENABLE_PYNVJITLINK = ENABLE_PYNVJITLINK
 
 if ENABLE_PYNVJITLINK:
     try:
@@ -100,7 +100,7 @@ if ENABLE_PYNVJITLINK:
     if config.CUDA_ENABLE_MINOR_VERSION_COMPATIBILITY:
         raise ValueError(
             "Can't set CUDA_ENABLE_MINOR_VERSION_COMPATIBILITY and "
-            "ENABLE_PYNVJITLINK at the same time"
+            "CUDA_ENABLE_PYNVJITLINK at the same time"
         )
 
 
@@ -2612,13 +2612,13 @@ class Linker(metaclass=ABCMeta):
             and driver_ver >= (12, 0)
         ):
             raise ValueError(
-                "Use ENABLE_PYNVJITLINK for CUDA >= 12.0 MVC"
+                "Use CUDA_ENABLE_PYNVJITLINK for CUDA >= 12.0 MVC"
             )
-        if config.ENABLE_PYNVJITLINK and driver_ver < (12, 0):
+        if config.CUDA_ENABLE_PYNVJITLINK and driver_ver < (12, 0):
             raise ValueError(
                 "Enabling pynvjitlink requires CUDA 12."
             )
-        if config.ENABLE_PYNVJITLINK:
+        if config.CUDA_ENABLE_PYNVJITLINK:
             linker = PyNvJitLinker
 
         elif config.CUDA_ENABLE_MINOR_VERSION_COMPATIBILITY:
