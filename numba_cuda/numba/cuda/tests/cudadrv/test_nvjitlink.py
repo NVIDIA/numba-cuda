@@ -172,7 +172,12 @@ class TestLinker(CUDATestCase):
     def test_nvjitlink_jit_with_linkable_code_lto(self):
         files = [
             test_device_functions_ltoir,
-            test_device_functions_cu
+            test_device_functions_a,
+            test_device_functions_cubin,
+            test_device_functions_cu,
+            test_device_functions_fatbin,
+            test_device_functions_o,
+            test_device_functions_ptx,
         ]
 
         for file in files:
