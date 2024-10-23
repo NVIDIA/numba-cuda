@@ -5,6 +5,9 @@ from numba.cuda.cudadrv.driver import PyNvJitLinker
 
 import itertools
 import os
+import io
+import contextlib
+
 from numba.cuda import get_current_device
 from numba import cuda
 from numba import config
@@ -156,42 +159,47 @@ class TestLinker(CUDATestCase):
             test_device_functions_o,
             test_device_functions_ptx,
         )
-        for file in files:
-            with self.subTest(file=file):
-                sig = "uint32(uint32, uint32)"
-                add_from_numba = cuda.declare_device("add_from_numba", sig)
+        for lto in [True, False]:
+            for file in files:
+                with self.subTest(file=file):
+                    sig = "uint32(uint32, uint32)"
+                    add_from_numba = cuda.declare_device("add_from_numba", sig)
 
-                @cuda.jit(link=[file])
-                def kernel(result):
-                    result[0] = add_from_numba(1, 2)
+                    @cuda.jit(link=[file], lto=lto)
+                    def kernel(result):
+                        result[0] = add_from_numba(1, 2)
 
-                result = cuda.device_array(1)
-                kernel[1, 1](result)
-                assert result[0] == 3
+                    result = cuda.device_array(1)
+                    kernel[1, 1](result)
+                    assert result[0] == 3
 
-    def test_nvjitlink_jit_with_linkable_code_lto(self):
+    def test_nvjitlink_jit_with_linkable_code_lto_dump_assembly(self):
         files = [
-            test_device_functions_ltoir,
-            test_device_functions_a,
-            test_device_functions_cubin,
             test_device_functions_cu,
-            test_device_functions_fatbin,
-            test_device_functions_o,
-            test_device_functions_ptx,
+            test_device_functions_ltoir,
         ]
 
+        config.DUMP_ASSEMBLY = True
+        
         for file in files:
             with self.subTest(file=file):
-                sig = "uint32(uint32, uint32)"
-                add_from_numba = cuda.declare_device("add_from_numba", sig)
+                f = io.StringIO()
+                with contextlib.redirect_stdout(f):
+                    sig = "uint32(uint32, uint32)"
+                    add_from_numba = cuda.declare_device("add_from_numba", sig)
 
-                @cuda.jit(link=[file], lto=True)
-                def kernel(result):
-                    result[0] = add_from_numba(1, 2)
+                    @cuda.jit(link=[file], lto=True)
+                    def kernel(result):
+                        result[0] = add_from_numba(1, 2)
 
-                result = cuda.device_array(1)
-                kernel[1, 1](result)
-                assert result[0] == 3
+                    result = cuda.device_array(1)
+                    kernel[1, 1](result)
+                    assert result[0] == 3
+
+                self.assertTrue("ASSEMBLY (AFTER LTO)" in f.getvalue())
+
+        config.DUMP_ASSEMBLY = False
+
 
     def test_nvjitlink_jit_with_invalid_linkable_code(self):
         with open(test_device_functions_cubin, "rb") as f:
