@@ -7,6 +7,7 @@ import itertools
 import os
 import io
 import contextlib
+import warnings
 
 from numba.cuda import get_current_device
 from numba import cuda
@@ -200,6 +201,38 @@ class TestLinker(CUDATestCase):
 
         config.DUMP_ASSEMBLY = False
 
+
+    def test_nvjitlink_jit_with_linkable_code_lto_dump_assembly_warn(self):
+        files = [
+            test_device_functions_a,
+            test_device_functions_cubin,
+            test_device_functions_fatbin,
+            test_device_functions_o,
+            test_device_functions_ptx,
+        ]
+
+        config.DUMP_ASSEMBLY = True
+        
+        for file in files:
+            with self.subTest(file=file):
+                with warnings.catch_warnings(record=True) as w:
+                    with contextlib.redirect_stdout(None): # suppress other PTX
+                        sig = "uint32(uint32, uint32)"
+                        add_from_numba = cuda.declare_device("add_from_numba", sig)
+
+                        @cuda.jit(link=[file], lto=True)
+                        def kernel(result):
+                            result[0] = add_from_numba(1, 2)
+
+                        result = cuda.device_array(1)
+                        kernel[1, 1](result)
+                        assert result[0] == 3
+
+                assert len(w) == 1
+                self.assertIn("cannot generate LTO-ed PTX", str(w[0].message))
+
+
+        config.DUMP_ASSEMBLY = False
 
     def test_nvjitlink_jit_with_invalid_linkable_code(self):
         with open(test_device_functions_cubin, "rb") as f:

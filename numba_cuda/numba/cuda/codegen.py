@@ -8,7 +8,7 @@ from numba.cuda.cudadrv.libs import get_cudalib
 import os
 import subprocess
 import tempfile
-
+from warnings import warn
 
 CUDA_TRIPLE = 'nvptx64-nvidia-cuda'
 
@@ -207,11 +207,20 @@ class CUDACodeLibrary(serialize.ReduceMixin, CodeLibrary):
                 lto=self._lto
             )
             self._link_all(linker, cc)
-            ptx = linker.get_linked_ptx().decode('utf-8')
 
-            print(("ASSEMBLY (AFTER LTO) %s" % self._name).center(80, '-'))
-            print(ptx)
-            print('=' * 80)
+            try:
+                ptx = linker.get_linked_ptx().decode('utf-8')
+
+                print(("ASSEMBLY (AFTER LTO) %s" % self._name).center(80, '-'))
+                print(ptx)
+                print('=' * 80)
+            except driver.LinkerError as e:
+                if linkererr_cause := getattr(e, "__cause__", None):
+                    if "-ptx requires that all inputs have LTOIR" in str(linkererr_cause):
+                        warn(
+                            "Linker input contains non-LTOIR objects, nvjitlink "
+                            "cannot generate LTO-ed PTX."
+                        )
 
         linker = driver.Linker.new(
             max_registers=self._max_registers,
