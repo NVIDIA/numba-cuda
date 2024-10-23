@@ -199,12 +199,12 @@ class CUDACodeLibrary(serialize.ReduceMixin, CodeLibrary):
         if cubin:
             return cubin
 
-        if config.DUMP_ASSEMBLY:
+        if self._lto and config.DUMP_ASSEMBLY:
             linker = driver.Linker.new(
                 max_registers=self._max_registers,
                 cc=cc,
                 additional_flags=["-ptx"],
-                lto=True
+                lto=self._lto
             )
             self._link_all(linker, cc)
             ptx = linker.get_linked_ptx().decode('utf-8')
@@ -216,7 +216,7 @@ class CUDACodeLibrary(serialize.ReduceMixin, CodeLibrary):
         linker = driver.Linker.new(
             max_registers=self._max_registers,
             cc=cc,
-            lto=True
+            lto=self._lto
         )
         self._link_all(linker, cc)
         cubin = linker.complete()
