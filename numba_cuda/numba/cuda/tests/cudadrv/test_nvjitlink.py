@@ -170,18 +170,23 @@ class TestLinker(CUDATestCase):
                 assert result[0] == 3
 
     def test_nvjitlink_jit_with_linkable_code_lto(self):
-        file = test_device_functions_ltoir
+        files = [
+            test_device_functions_ltoir,
+            test_device_functions_cu
+        ]
 
-        sig = "uint32(uint32, uint32)"
-        add_from_numba = cuda.declare_device("add_from_numba", sig)
+        for file in files:
+            with self.subTest(file=file):
+                sig = "uint32(uint32, uint32)"
+                add_from_numba = cuda.declare_device("add_from_numba", sig)
 
-        @cuda.jit(link=[file], lto=True)
-        def kernel(result):
-            result[0] = add_from_numba(1, 2)
+                @cuda.jit(link=[file], lto=True)
+                def kernel(result):
+                    result[0] = add_from_numba(1, 2)
 
-        result = cuda.device_array(1)
-        kernel[1, 1](result)
-        assert result[0] == 3
+                result = cuda.device_array(1)
+                kernel[1, 1](result)
+                assert result[0] == 3
 
     def test_nvjitlink_jit_with_invalid_linkable_code(self):
         with open(test_device_functions_cubin, "rb") as f:

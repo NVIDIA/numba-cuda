@@ -84,6 +84,10 @@ class NVRTC:
         'nvrtcGetPTXSize': (nvrtc_result, nvrtc_program, POINTER(c_size_t)),
         # nvrtcResult nvrtcGetPTX(nvrtcProgram prog, char *ptx);
         'nvrtcGetPTX': (nvrtc_result, nvrtc_program, c_char_p),
+        # nvrtcResult nvrtcGetLTOIRSize(nvrtcProgram prog, size_t *ltoSizeRet);
+        "nvrtcGetLTOIRSize": (nvrtc_result, nvrtc_program, POINTER(c_size_t)),
+        # nvrtcResult nvrtcGetLTOIR(nvrtcProgram prog, char *lto);
+        "nvrtcGetLTOIR": (nvrtc_result, nvrtc_program, c_char_p),
         # nvrtcResult nvrtcGetCUBINSize(nvrtcProgram prog,
         #                               size_t *cubinSizeRet);
         'nvrtcGetCUBINSize': (nvrtc_result, nvrtc_program, POINTER(c_size_t)),
