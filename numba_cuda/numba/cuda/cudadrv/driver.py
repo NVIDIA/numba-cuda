@@ -3065,6 +3065,28 @@ class PyNvJitLinker(Linker):
         name = pathlib.Path(path).name
         self.add_data(data, kind, name)
 
+    def add_cu(self, cu, name):
+        """Add CUDA source in a string to the link. The name of the source
+        file should be specified in `name`."""
+        with driver.get_active_context() as ac:
+            dev = driver.get_device(ac.devnum)
+            cc = dev.compute_capability
+
+        program, log = nvrtc.compile(cu, name, cc, ltoir=self.lto)
+
+        if not self.lto and config.DUMP_ASSEMBLY:
+            print(("ASSEMBLY %s" % name).center(80, "-"))
+            print(program)
+            print("=" * 80)
+
+        suffix = ".ltoir" if self.lto else ".ptx"
+        program_name = os.path.splitext(name)[0] + suffix
+        # Link the program's PTX or LTOIR using the normal linker mechanism
+        if self.lto:
+            self.add_ltoir(program, program_name)
+        else:
+            self.add_ptx(program.encode(), program_name)
+
     def add_data(self, data, kind, name):
         if kind == FILE_EXTENSION_MAP["cubin"]:
             fn = self._linker.add_cubin
@@ -3083,6 +3105,12 @@ class PyNvJitLinker(Linker):
 
         try:
             fn(data, name)
+        except NvJitLinkError as e:
+            raise LinkerError from e
+
+    def get_linked_ptx(self):
+        try:
+            return self._linker.get_linked_ptx()
         except NvJitLinkError as e:
             raise LinkerError from e
 
