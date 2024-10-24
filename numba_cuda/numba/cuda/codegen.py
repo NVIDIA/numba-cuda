@@ -8,7 +8,7 @@ from numba.cuda.cudadrv.libs import get_cudalib
 import os
 import subprocess
 import tempfile
-
+from warnings import warn
 
 CUDA_TRIPLE = 'nvptx64-nvidia-cuda'
 
@@ -181,17 +181,7 @@ class CUDACodeLibrary(serialize.ReduceMixin, CodeLibrary):
 
         return ltoir
 
-    def get_cubin(self, cc=None):
-        cc = self._ensure_cc(cc)
-
-        cubin = self._cubin_cache.get(cc, None)
-        if cubin:
-            return cubin
-
-        linker = driver.Linker.new(
-            max_registers=self._max_registers, cc=cc, lto=self._lto
-        )
-
+    def _link_all(self, linker, cc):
         if linker.lto:
             ltoir = self.get_ltoir(cc=cc)
             linker.add_ltoir(ltoir)
@@ -204,7 +194,46 @@ class CUDACodeLibrary(serialize.ReduceMixin, CodeLibrary):
         if self.needs_cudadevrt:
             linker.add_file_guess_ext(get_cudalib('cudadevrt', static=True))
 
+    def get_cubin(self, cc=None):
+        cc = self._ensure_cc(cc)
+
+        cubin = self._cubin_cache.get(cc, None)
+        if cubin:
+            return cubin
+
+        if self._lto and config.DUMP_ASSEMBLY:
+            linker = driver.Linker.new(
+                max_registers=self._max_registers,
+                cc=cc,
+                additional_flags=["-ptx"],
+                lto=self._lto
+            )
+            self._link_all(linker, cc)
+
+            try:
+                ptx = linker.get_linked_ptx().decode('utf-8')
+
+                print(("ASSEMBLY (AFTER LTO) %s" % self._name).center(80, '-'))
+                print(ptx)
+                print('=' * 80)
+            except driver.LinkerError as e:
+                if linkererr_cause := getattr(e, "__cause__", None):
+                    if "-ptx requires that all inputs have LTOIR" in str(
+                        linkererr_cause
+                    ):
+                        warn(
+                            "Linker input contains non-LTOIR objects, nvjitlink"
+                            " cannot generate LTO-ed PTX."
+                        )
+
+        linker = driver.Linker.new(
+            max_registers=self._max_registers,
+            cc=cc,
+            lto=self._lto
+        )
+        self._link_all(linker, cc)
         cubin = linker.complete()
+
         self._cubin_cache[cc] = cubin
         self._linkerinfo_cache[cc] = linker.info_log
 

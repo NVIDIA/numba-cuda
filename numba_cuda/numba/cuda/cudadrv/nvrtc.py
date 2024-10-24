@@ -62,6 +62,14 @@ class NVRTC:
     NVVM interface. Initialization is protected by a lock and uses the standard
     (for Numba) open_cudalib function to load the NVRTC library.
     """
+
+    _CU12ONLY_PROTOTYPES = {
+        # nvrtcResult nvrtcGetLTOIRSize(nvrtcProgram prog, size_t *ltoSizeRet);
+        "nvrtcGetLTOIRSize": (nvrtc_result, nvrtc_program, POINTER(c_size_t)),
+        # nvrtcResult nvrtcGetLTOIR(nvrtcProgram prog, char *lto);
+        "nvrtcGetLTOIR": (nvrtc_result, nvrtc_program, c_char_p)
+    }
+
     _PROTOTYPES = {
         # nvrtcResult nvrtcVersion(int *major, int *minor)
         'nvrtcVersion': (nvrtc_result, POINTER(c_int), POINTER(c_int)),
@@ -110,6 +118,10 @@ class NVRTC:
                 except OSError as e:
                     cls.__INSTANCE = None
                     raise NvrtcSupportError("NVRTC cannot be loaded") from e
+
+                from numba.cuda.cudadrv.runtime import get_version
+                if get_version() >= (12, 0):
+                    inst._PROTOTYPES |= inst._CU12ONLY_PROTOTYPES
 
                 # Find & populate functions
                 for name, proto in inst._PROTOTYPES.items():
@@ -209,10 +221,22 @@ class NVRTC:
 
         return ptx.value.decode()
 
+    def get_lto(self, program):
+        """
+        Get the compiled LTOIR as a Python bytes object.
+        """
+        lto_size = c_size_t()
+        self.nvrtcGetLTOIRSize(program.handle, byref(lto_size))
 
-def compile(src, name, cc):
+        lto = b" " * lto_size.value
+        self.nvrtcGetLTOIR(program.handle, lto)
+
+        return lto
+
+
+def compile(src, name, cc, ltoir=False):
     """
-    Compile a CUDA C/C++ source to PTX for a given compute capability.
+    Compile a CUDA C/C++ source to PTX or LTOIR for a given compute capability.
 
     :param src: The source code to compile
     :type src: str
@@ -220,6 +244,8 @@ def compile(src, name, cc):
     :type name: str
     :param cc: A tuple ``(major, minor)`` of the compute capability
     :type cc: tuple
+    :param ltoir: Compile into LTOIR if True, otherwise into PTX
+    :type ltoir: bool
     :return: The compiled PTX and compilation log
     :rtype: tuple
     """
@@ -239,6 +265,8 @@ def compile(src, name, cc):
     numba_cuda_path = os.path.dirname(cudadrv_path)
     numba_include = f'-I{numba_cuda_path}'
     options = [arch, include, numba_include, '-rdc', 'true']
+    if ltoir:
+        options.append("-dlto")
 
     # Compile the program
     compile_error = nvrtc.compile_program(program, options)
@@ -256,5 +284,9 @@ def compile(src, name, cc):
         msg = (f"NVRTC log messages whilst compiling {name}:\n\n{log}")
         warnings.warn(msg)
 
-    ptx = nvrtc.get_ptx(program)
-    return ptx, log
+    if ltoir:
+        ltoir = nvrtc.get_lto(program)
+        return ltoir, log
+    else:
+        ptx = nvrtc.get_ptx(program)
+        return ptx, log
