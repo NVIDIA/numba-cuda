@@ -216,10 +216,12 @@ class CUDACodeLibrary(serialize.ReduceMixin, CodeLibrary):
                 print('=' * 80)
             except driver.LinkerError as e:
                 if linkererr_cause := getattr(e, "__cause__", None):
-                    if "-ptx requires that all inputs have LTOIR" in str(linkererr_cause):
+                    if "-ptx requires that all inputs have LTOIR" in str(
+                        linkererr_cause
+                    ):
                         warn(
-                            "Linker input contains non-LTOIR objects, nvjitlink "
-                            "cannot generate LTO-ed PTX."
+                            "Linker input contains non-LTOIR objects, nvjitlink"
+                            " cannot generate LTO-ed PTX."
                         )
 
         linker = driver.Linker.new(
