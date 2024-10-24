@@ -3,7 +3,6 @@ from enum import IntEnum
 from numba.core import config
 from numba.cuda.cudadrv.error import (NvrtcError, NvrtcCompilationError,
                                       NvrtcSupportError)
-from cuda.cuda.cudadrv.driver import get_version
 
 import functools
 import os
@@ -106,9 +105,6 @@ class NVRTC:
         'nvrtcGetProgramLog': (nvrtc_result, nvrtc_program, c_char_p),
     }
 
-    if get_version() >= (12, 0):
-        _PROTOTYPES |= _CU12ONLY_PROTOTYPES
-
     # Singleton reference
     __INSTANCE = None
 
@@ -122,6 +118,10 @@ class NVRTC:
                 except OSError as e:
                     cls.__INSTANCE = None
                     raise NvrtcSupportError("NVRTC cannot be loaded") from e
+
+                from numba.cuda.cudadrv.runtime import get_version
+                if get_version() >= (12, 0):
+                    inst._PROTOTYPES |= inst._CU12ONLY_PROTOTYPES
 
                 # Find & populate functions
                 for name, proto in inst._PROTOTYPES.items():
