@@ -3,7 +3,7 @@ from enum import IntEnum
 from numba.core import config
 from numba.cuda.cudadrv.error import (NvrtcError, NvrtcCompilationError,
                                       NvrtcSupportError)
-from numba.cuda.cuda_paths import _get_include_dir
+from numba.cuda.cuda_paths import get_cuda_paths
 import functools
 import os
 import threading
@@ -233,12 +233,13 @@ def compile(src, name, cc):
     #   being optimized away.
     major, minor = cc
     arch = f'--gpu-architecture=compute_{major}{minor}'
-    include = f'-I{config.CUDA_INCLUDE_PATH}'
+
+    cuda_include = f"-I{get_cuda_paths()['include_dir'].info}"
 
     cudadrv_path = os.path.dirname(os.path.abspath(__file__))
     numba_cuda_path = os.path.dirname(cudadrv_path)
-    numba_include = f'-I{numba_cuda_path} -I{_get_include_dir()}'
-    options = [arch, include, numba_include, '-rdc', 'true']
+    numba_include = f'-I{numba_cuda_path}'
+    options = [arch, cuda_include, numba_include, '-rdc', 'true']
 
     # Compile the program
     compile_error = nvrtc.compile_program(program, options)

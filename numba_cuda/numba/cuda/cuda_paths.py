@@ -2,6 +2,7 @@ import sys
 import re
 import os
 from collections import namedtuple
+import platform
 
 from numba.core.config import IS_WIN32
 from numba.misc.findlib import find_lib, find_file
@@ -259,14 +260,41 @@ def get_debian_pkg_libdevice():
     return pkg_libdevice_location
 
 
+def get_current_cuda_target_name():
+    """Determine conda's CTK target folder based on system and machine arch.
+    
+    CTK's conda package delivers headers based on its architecture type. For example,
+    `x86_64` machine places header under `$CONDA_PREFIX/targets/x86_64-linux`, and
+    `aarch64` places under `$CONDA_PREFIX/targets/sbsa-linux`. Read more about the
+    nuances at cudart's conda feedstock:
+    https://github.com/conda-forge/cuda-cudart-feedstock/blob/main/recipe/meta.yaml#L8-L11  # noqa: E501
+    """
+    system = platform.system()
+    machine = platform.machine()
+
+    if system == "Linux":
+        arch_to_targets = {
+            'x86_64': 'x86_64-linux',
+            'aarch64': 'sbsa-linux'
+        }
+        return arch_to_targets.get(machine)
+    
+    return None
+
 def get_conda_include_dir():
     """
     Return the include directory in the current conda environment, if one
     is active and it exists.
     """
     conda_prefix = os.environ.get('CONDA_PREFIX')
+    target_name = get_current_cuda_target_name()
+
     if conda_prefix:
-        include_dir = os.path.join(conda_prefix, 'include')
+        if target_name:
+            include_dir = os.path.join(conda_prefix, f'targets/{target_name}/include')
+        else:
+            # A fallback when target cannot determined, though usually it shouldn't.
+            include_dir = os.path.join(conda_prefix, f'include')
         if os.path.exists(include_dir):
             return include_dir
     return None
