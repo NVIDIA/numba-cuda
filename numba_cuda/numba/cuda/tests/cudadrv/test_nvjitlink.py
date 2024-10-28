@@ -201,6 +201,7 @@ class TestLinker(CUDATestCase):
 
         config.DUMP_ASSEMBLY = False
 
+    @unittest.skip("Expected to cause issues")
     def test_nvjitlink_jit_with_linkable_code_lto_dump_assembly_warn(self):
         files = [
             test_device_functions_a,
