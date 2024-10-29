@@ -1,3 +1,5 @@
+<div align="center"><img src="docs/source/_static/numba-green-icon-rgb.svg" width="200"/></div>
+
 # Numba CUDA Target
 
 The CUDA target for Numba. Please visit the [official
