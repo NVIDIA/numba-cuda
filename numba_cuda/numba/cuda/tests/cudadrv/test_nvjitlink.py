@@ -230,7 +230,8 @@ class TestLinker(CUDATestCase):
                         assert result[0] == 3
 
                 assert len(w) == 1
-                self.assertIn("cannot generate LTO-ed PTX", str(w[0].message))
+                self.assertIn("it is not optimizable at link time, and "
+                              "`ignore_nonlto == True`", str(w[0].message))
 
         config.DUMP_ASSEMBLY = False
 

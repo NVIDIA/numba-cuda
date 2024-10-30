@@ -36,7 +36,7 @@ from .error import CudaSupportError, CudaDriverError
 from .drvapi import API_PROTOTYPES
 from .drvapi import cu_occupancy_b2d_size, cu_stream_callback_pyobj, cu_uuid
 from .mappings import FILE_EXTENSION_MAP
-from .linkable_code import LinkableCode
+from .linkable_code import LinkableCode, LTOIR
 from numba.cuda.cudadrv import enums, drvapi, nvrtc
 
 USE_NV_BINDING = config.CUDA_USE_NVIDIA_BINDING
@@ -2683,12 +2683,18 @@ class Linker(metaclass=ABCMeta):
             cu = f.read()
         self.add_cu(cu, os.path.basename(path))
 
-    def add_file_guess_ext(self, path_or_code):
+    def add_file_guess_ext(self, path_or_code, ignore_nonlto=False):
         """
         Add a file or LinkableCode object to the link. If a file is
         passed, the type will be inferred from the extension. A LinkableCode
         object represents a file already in memory.
+
+        When `ignore_nonlto` is set to true, do not add code that are will not
+        be LTO-ed in the linking process. This is useful in inspecting the
+        LTO-ed portion of the PTX when linker is added with objects that can be
+        both LTO-ed and not LTO-ed.
         """
+
         if isinstance(path_or_code, str):
             ext = pathlib.Path(path_or_code).suffix
             if ext == '':
@@ -2704,6 +2710,13 @@ class Linker(metaclass=ABCMeta):
                         "Don't know how to link file with extension "
                         f"{ext}"
                     )
+                if ignore_nonlto and kind != FILE_EXTENSION_MAP["ltoir"]:
+                    warnings.warn(
+                        f"Not adding {path_or_code} as it is not optimizable "
+                        "at link time, and `ignore_nonlto == True`."
+                    )
+                    return
+
                 self.add_file(path_or_code, kind)
             return
         else:
@@ -2716,6 +2729,13 @@ class Linker(metaclass=ABCMeta):
             if path_or_code.kind == "cu":
                 self.add_cu(path_or_code.data, path_or_code.name)
             else:
+                if ignore_nonlto and not isinstance(path_or_code.kind, LTOIR):
+                    warnings.warn(
+                        f"Not adding {path_or_code.name} as it is not "
+                        "optimizable at link time, and `ignore_nonlto == True`."
+                    )
+                    return
+
                 self.add_data(
                     path_or_code.data, path_or_code.kind, path_or_code.name
                 )
