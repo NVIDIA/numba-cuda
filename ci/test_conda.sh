@@ -6,7 +6,7 @@ set -euo pipefail
 . /opt/conda/etc/profile.d/conda.sh
 
 if [ "${CUDA_VER%.*.*}" = "11" ]; then
-  CTK_PACKAGES="cuda-cccl cudatoolkit"
+  CTK_PACKAGES="cudatoolkit"
 else
   CTK_PACKAGES="cuda-cccl cuda-nvcc-impl cuda-nvrtc"
 fi
