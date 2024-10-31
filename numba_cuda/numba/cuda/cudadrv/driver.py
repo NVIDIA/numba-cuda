@@ -3442,6 +3442,10 @@ def get_version():
 
 
 def inspect_obj_content(objpath: str):
+    """
+    Given path to a fatbin or object, use `cuobjdump` to examine its content
+    Return the set of entries in the object.
+    """
     code_types :set[str] = set()
 
     out = subprocess.run(["cuobjdump", objpath], capture_output=True)
