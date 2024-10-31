@@ -21,6 +21,9 @@ import threading
 import traceback
 import asyncio
 import pathlib
+import subprocess
+import tempfile
+import re
 from itertools import product
 from abc import ABCMeta, abstractmethod
 from ctypes import (c_int, byref, c_size_t, c_char, c_char_p, addressof,
@@ -36,7 +39,7 @@ from .error import CudaSupportError, CudaDriverError
 from .drvapi import API_PROTOTYPES
 from .drvapi import cu_occupancy_b2d_size, cu_stream_callback_pyobj, cu_uuid
 from .mappings import FILE_EXTENSION_MAP
-from .linkable_code import LinkableCode, LTOIR
+from .linkable_code import LinkableCode, LTOIR, Fatbin, Object
 from numba.cuda.cudadrv import enums, drvapi, nvrtc
 
 USE_NV_BINDING = config.CUDA_USE_NVIDIA_BINDING
@@ -2710,12 +2713,25 @@ class Linker(metaclass=ABCMeta):
                         "Don't know how to link file with extension "
                         f"{ext}"
                     )
-                if ignore_nonlto and kind != FILE_EXTENSION_MAP["ltoir"]:
-                    warnings.warn(
-                        f"Not adding {path_or_code} as it is not optimizable "
-                        "at link time, and `ignore_nonlto == True`."
-                    )
-                    return
+
+                if ignore_nonlto:
+                    warn_and_return = False
+                    if kind in (
+                        FILE_EXTENSION_MAP["fatbin"], FILE_EXTENSION_MAP["o"]
+                    ):
+                        entry_types = inspect_obj_content(path_or_code)
+                        if "nvvm" not in entry_types:
+                            warn_and_return = True
+                    elif kind != FILE_EXTENSION_MAP["ltoir"]:
+                        warn_and_return = True
+
+                    if warn_and_return:
+                        warnings.warn(
+                            f"Not adding {path_or_code} as it is not "
+                            "optimizable at link time, and `ignore_nonlto == "
+                            "True`."
+                        )
+                        return
 
                 self.add_file(path_or_code, kind)
             return
@@ -2729,12 +2745,24 @@ class Linker(metaclass=ABCMeta):
             if path_or_code.kind == "cu":
                 self.add_cu(path_or_code.data, path_or_code.name)
             else:
-                if ignore_nonlto and not isinstance(path_or_code.kind, LTOIR):
-                    warnings.warn(
-                        f"Not adding {path_or_code.name} as it is not "
-                        "optimizable at link time, and `ignore_nonlto == True`."
-                    )
-                    return
+                if ignore_nonlto:
+                    warn_and_return = False
+                    if isinstance(path_or_code, (Fatbin, Object)):
+                        with tempfile.NamedTemporaryFile("w") as fp:
+                            fp.write(path_or_code.data)
+                            entry_types = inspect_obj_content(fp.name)
+                        if "nvvm" not in entry_types:
+                            warn_and_return = True
+                    elif not isinstance(path_or_code, LTOIR):
+                        warn_and_return = True
+
+                    if warn_and_return:
+                        warnings.warn(
+                            f"Not adding {path_or_code.name} as it is not "
+                            "optimizable at link time, and `ignore_nonlto == "
+                            "True`."
+                        )
+                        return
 
                 self.add_data(
                     path_or_code.data, path_or_code.kind, path_or_code.name
@@ -3411,3 +3439,16 @@ def get_version():
     Return the driver version as a tuple of (major, minor)
     """
     return driver.get_version()
+
+
+def inspect_obj_content(objpath: str):
+    code_types :set[str] = set()
+
+    out = subprocess.run(["cuobjdump", objpath], capture_output=True)
+    objtable = out.stdout.decode()
+    entry_pattern = r"Fatbin (.*) code"
+    for line in objtable.split("\n"):
+        if match := re.match(entry_pattern, line):
+            code_types.add(match.group(1))
+
+    return code_types

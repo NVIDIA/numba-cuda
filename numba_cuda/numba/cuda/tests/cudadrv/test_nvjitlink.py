@@ -27,6 +27,9 @@ if TEST_BIN_DIR:
     test_device_functions_fatbin = os.path.join(
         TEST_BIN_DIR, "test_device_functions.fatbin"
     )
+    test_device_functions_fatbin_multi = os.path.join(
+        TEST_BIN_DIR, "test_device_functions_multi.fatbin"
+    )
     test_device_functions_o = os.path.join(
         TEST_BIN_DIR, "test_device_functions.o"
     )
@@ -178,6 +181,7 @@ class TestLinker(CUDATestCase):
         files = [
             test_device_functions_cu,
             test_device_functions_ltoir,
+            test_device_functions_fatbin_multi
         ]
 
         config.DUMP_ASSEMBLY = True
