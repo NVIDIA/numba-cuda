@@ -3450,13 +3450,13 @@ def inspect_obj_content(objpath: str):
 
     try:
         out = subprocess.run(["cuobjdump", objpath], check=True,
-                                capture_output=True)
+                             capture_output=True)
     except FileNotFoundError as e:
         msg = ("cuobjdump has not been found. You may need "
-            "to install the CUDA toolkit and ensure that "
-            "it is available on your PATH.\n")
+               "to install the CUDA toolkit and ensure that "
+               "it is available on your PATH.\n")
         raise RuntimeError(msg) from e
-    
+
     objtable = out.stdout.decode('utf-8')
     entry_pattern = r"Fatbin (.*) code"
     for line in objtable.split("\n"):
