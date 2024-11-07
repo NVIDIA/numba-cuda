@@ -262,7 +262,7 @@ def get_debian_pkg_libdevice():
 
 def get_current_cuda_target_name():
     """Determine conda's CTK target folder based on system and machine arch.
-    
+
     CTK's conda package delivers headers based on its architecture type. For example,
     `x86_64` machine places header under `$CONDA_PREFIX/targets/x86_64-linux`, and
     `aarch64` places under `$CONDA_PREFIX/targets/sbsa-linux`. Read more about the
@@ -278,8 +278,9 @@ def get_current_cuda_target_name():
             'aarch64': 'sbsa-linux'
         }
         return arch_to_targets.get(machine)
-    
+
     return None
+
 
 def get_conda_include_dir():
     """
@@ -291,10 +292,13 @@ def get_conda_include_dir():
 
     if conda_prefix:
         if target_name:
-            include_dir = os.path.join(conda_prefix, f'targets/{target_name}/include')
+            include_dir = os.path.join(
+                conda_prefix, f'targets/{target_name}/include'
+            )
         else:
-            # A fallback when target cannot determined, though usually it shouldn't.
-            include_dir = os.path.join(conda_prefix, f'include')
+            # A fallback when target cannot determined
+            # though usually it shouldn't.
+            include_dir = os.path.join(conda_prefix, 'include')
         if os.path.exists(include_dir):
             return include_dir
     return None
