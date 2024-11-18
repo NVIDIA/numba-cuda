@@ -71,10 +71,6 @@ class TestNrtRefCt(EnableNRTStatsMixin, TestCase):
 
 class TestNrtBasic(CUDATestCase):
     def test_nrt_launches(self):
-        from pynvjitlink.patch import patch_numba_linker
-
-        patch_numba_linker()
-
         @cuda.jit
         def f(x):
             return x[:5]
@@ -89,10 +85,6 @@ class TestNrtBasic(CUDATestCase):
         cuda.synchronize()
 
     def test_nrt_returns_correct(self):
-        from pynvjitlink.patch import patch_numba_linker
-
-        patch_numba_linker()
-
         @cuda.jit
         def f(x):
             return x[5:]
