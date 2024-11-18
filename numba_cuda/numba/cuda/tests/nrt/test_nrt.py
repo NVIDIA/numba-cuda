@@ -1,6 +1,7 @@
 import gc
 import numpy as np
 import unittest
+from unittest.mock import patch
 from numba.core.runtime import rtsys
 from numba.tests.support import TestCase, EnableNRTStatsMixin
 from numba.cuda.testing import CUDATestCase
@@ -60,7 +61,9 @@ class TestNrtRefCt(EnableNRTStatsMixin, TestCase):
             return 0
 
         init_stats = rtsys.get_allocation_stats()
-        kernel[1,1]()
+
+        with patch('numba.config.CUDA_ENABLE_NRT', True, create=True):
+            kernel[1,1]()
         cur_stats = rtsys.get_allocation_stats()
         self.assertEqual(cur_stats.alloc - init_stats.alloc, n)
         self.assertEqual(cur_stats.free - init_stats.free, n)
@@ -81,7 +84,8 @@ class TestNrtBasic(CUDATestCase):
             x = cuda_empty(10, np.int64)
             f(x)
 
-        g[1,1]()
+        with patch('numba.config.CUDA_ENABLE_NRT', True, create=True):
+            g[1,1]()
         cuda.synchronize()
 
     def test_nrt_returns_correct(self):
@@ -102,7 +106,8 @@ class TestNrtBasic(CUDATestCase):
 
         out_ary = np.zeros(1, dtype=np.int64)
 
-        g[1,1](out_ary)
+        with patch('numba.config.CUDA_ENABLE_NRT', True, create=True):
+            g[1,1](out_ary)
 
         self.assertEqual(out_ary[0], 1)
 

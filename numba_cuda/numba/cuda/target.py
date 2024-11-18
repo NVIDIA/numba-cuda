@@ -67,13 +67,16 @@ VALID_CHARS = re.compile(r'[^a-z0-9]', re.I)
 class CUDATargetContext(BaseContext):
     implement_powi_as_math_call = True
     strict_alignment = True
-    enable_nrt = True
 
     def __init__(self, typingctx, target='cuda'):
         super().__init__(typingctx, target)
         self.data_model_manager = cuda_data_manager.chain(
             datamodel.default_manager
         )
+
+    @property
+    def enable_nrt(self):
+        return getattr(config, 'CUDA_ENABLE_NRT', False)
 
     @property
     def DIBuilder(self):
