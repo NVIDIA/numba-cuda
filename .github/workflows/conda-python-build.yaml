@@ -14,7 +14,7 @@ on:
         type: string
       node_type:
         type: string
-        default: "cpu8"
+        default: "cpu4"
       script:
         type: string
         default: "ci/build_python.sh"

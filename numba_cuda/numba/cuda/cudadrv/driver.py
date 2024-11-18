@@ -10,7 +10,6 @@ subsequent deallocation could further corrupt the CUDA context and causes the
 system to freeze in some cases.
 
 """
-
 import sys
 import os
 import ctypes
@@ -19,6 +18,7 @@ import functools
 import warnings
 import logging
 import threading
+import traceback
 import asyncio
 import pathlib
 from itertools import product
@@ -35,6 +35,8 @@ from numba.core import utils, serialize, config
 from .error import CudaSupportError, CudaDriverError
 from .drvapi import API_PROTOTYPES
 from .drvapi import cu_occupancy_b2d_size, cu_stream_callback_pyobj, cu_uuid
+from .mappings import FILE_EXTENSION_MAP
+from .linkable_code import LinkableCode
 from numba.cuda.cudadrv import enums, drvapi, nvrtc
 
 USE_NV_BINDING = config.CUDA_USE_NVIDIA_BINDING
@@ -54,6 +56,52 @@ _py_decref = ctypes.pythonapi.Py_DecRef
 _py_incref = ctypes.pythonapi.Py_IncRef
 _py_decref.argtypes = [ctypes.py_object]
 _py_incref.argtypes = [ctypes.py_object]
+
+
+def _readenv(name, ctor, default):
+    value = os.environ.get(name)
+    if value is None:
+        return default() if callable(default) else default
+    try:
+        if ctor is bool:
+            return value.lower() in {'1', "true"}
+        return ctor(value)
+    except Exception:
+        warnings.warn(
+            f"Environment variable '{name}' is defined but its associated "
+            f"value '{value}' could not be parsed.\n"
+            "The parse failed with exception:\n"
+            f"{traceback.format_exc()}",
+            RuntimeWarning
+        )
+        return default
+
+
+_MVC_ERROR_MESSAGE = (
+    "Minor version compatibility requires ptxcompiler and cubinlinker packages "
+    "to be available"
+)
+
+ENABLE_PYNVJITLINK = (
+    _readenv("NUMBA_CUDA_ENABLE_PYNVJITLINK", bool, False)
+    or getattr(config, "CUDA_ENABLE_PYNVJITLINK", False)
+)
+if not hasattr(config, "CUDA_ENABLE_PYNVJITLINK"):
+    config.CUDA_ENABLE_PYNVJITLINK = ENABLE_PYNVJITLINK
+
+if ENABLE_PYNVJITLINK:
+    try:
+        from pynvjitlink.api import NvJitLinker, NvJitLinkError
+    except ImportError:
+        raise ImportError(
+            "Using pynvjitlink requires the pynvjitlink package to be available"
+        )
+
+    if config.CUDA_ENABLE_MINOR_VERSION_COMPATIBILITY:
+        raise ValueError(
+            "Can't set CUDA_ENABLE_MINOR_VERSION_COMPATIBILITY and "
+            "CUDA_ENABLE_PYNVJITLINK at the same time"
+        )
 
 
 def make_logger():
@@ -432,7 +480,7 @@ class Driver(object):
 
     def get_version(self):
         """
-        Returns the CUDA Runtime version as a tuple (major, minor).
+        Returns the CUDA Driver version as a tuple (major, minor).
         """
         if USE_NV_BINDING:
             version = driver.cuDriverGetVersion()
@@ -2546,38 +2594,47 @@ def launch_kernel(cufunc_handle,
                               extra)
 
 
-if USE_NV_BINDING:
-    jitty = binding.CUjitInputType
-    FILE_EXTENSION_MAP = {
-        'o': jitty.CU_JIT_INPUT_OBJECT,
-        'ptx': jitty.CU_JIT_INPUT_PTX,
-        'a': jitty.CU_JIT_INPUT_LIBRARY,
-        'lib': jitty.CU_JIT_INPUT_LIBRARY,
-        'cubin': jitty.CU_JIT_INPUT_CUBIN,
-        'fatbin': jitty.CU_JIT_INPUT_FATBINARY,
-    }
-else:
-    FILE_EXTENSION_MAP = {
-        'o': enums.CU_JIT_INPUT_OBJECT,
-        'ptx': enums.CU_JIT_INPUT_PTX,
-        'a': enums.CU_JIT_INPUT_LIBRARY,
-        'lib': enums.CU_JIT_INPUT_LIBRARY,
-        'cubin': enums.CU_JIT_INPUT_CUBIN,
-        'fatbin': enums.CU_JIT_INPUT_FATBINARY,
-    }
-
-
 class Linker(metaclass=ABCMeta):
     """Abstract base class for linkers"""
 
     @classmethod
-    def new(cls, max_registers=0, lineinfo=False, cc=None):
-        if config.CUDA_ENABLE_MINOR_VERSION_COMPATIBILITY:
-            return MVCLinker(max_registers, lineinfo, cc)
-        elif USE_NV_BINDING:
-            return CudaPythonLinker(max_registers, lineinfo, cc)
+    def new(cls,
+            max_registers=0,
+            lineinfo=False,
+            cc=None,
+            lto=None,
+            additional_flags=None
+            ):
+
+        driver_ver = driver.get_version()
+        if (
+            config.CUDA_ENABLE_MINOR_VERSION_COMPATIBILITY
+            and driver_ver >= (12, 0)
+        ):
+            raise ValueError(
+                "Use CUDA_ENABLE_PYNVJITLINK for CUDA >= 12.0 MVC"
+            )
+        if config.CUDA_ENABLE_PYNVJITLINK and driver_ver < (12, 0):
+            raise ValueError(
+                "Enabling pynvjitlink requires CUDA 12."
+            )
+        if config.CUDA_ENABLE_PYNVJITLINK:
+            linker = PyNvJitLinker
+
+        elif config.CUDA_ENABLE_MINOR_VERSION_COMPATIBILITY:
+            linker = MVCLinker
         else:
-            return CtypesLinker(max_registers, lineinfo, cc)
+            if USE_NV_BINDING:
+                linker = CudaPythonLinker
+            else:
+                linker = CtypesLinker
+
+        if linker is PyNvJitLinker:
+            return linker(max_registers, lineinfo, cc, lto, additional_flags)
+        elif additional_flags or lto:
+            raise ValueError("LTO and additional flags require PyNvJitLinker")
+        else:
+            return linker(max_registers, lineinfo, cc)
 
     @abstractmethod
     def __init__(self, max_registers, lineinfo, cc):
@@ -2626,19 +2683,42 @@ class Linker(metaclass=ABCMeta):
             cu = f.read()
         self.add_cu(cu, os.path.basename(path))
 
-    def add_file_guess_ext(self, path):
-        """Add a file to the link, guessing its type from its extension."""
-        ext = os.path.splitext(path)[1][1:]
-        if ext == '':
-            raise RuntimeError("Don't know how to link file with no extension")
-        elif ext == 'cu':
-            self.add_cu_file(path)
+    def add_file_guess_ext(self, path_or_code):
+        """
+        Add a file or LinkableCode object to the link. If a file is
+        passed, the type will be inferred from the extension. A LinkableCode
+        object represents a file already in memory.
+        """
+        if isinstance(path_or_code, str):
+            ext = pathlib.Path(path_or_code).suffix
+            if ext == '':
+                raise RuntimeError(
+                    "Don't know how to link file with no extension"
+                )
+            elif ext == '.cu':
+                self.add_cu_file(path_or_code)
+            else:
+                kind = FILE_EXTENSION_MAP.get(ext.lstrip('.'), None)
+                if kind is None:
+                    raise RuntimeError(
+                        "Don't know how to link file with extension "
+                        f"{ext}"
+                    )
+                self.add_file(path_or_code, kind)
+            return
         else:
-            kind = FILE_EXTENSION_MAP.get(ext, None)
-            if kind is None:
-                raise RuntimeError("Don't know how to link file with extension "
-                                   f".{ext}")
-            self.add_file(path, kind)
+            # Otherwise, we should have been given a LinkableCode object
+            if not isinstance(path_or_code, LinkableCode):
+                raise TypeError(
+                    "Expected path to file or a LinkableCode object"
+                )
+
+            if path_or_code.kind == "cu":
+                self.add_cu(path_or_code.data, path_or_code.name)
+            else:
+                self.add_data(
+                    path_or_code.data, path_or_code.kind, path_or_code.name
+                )
 
     @abstractmethod
     def complete(self):
@@ -2647,12 +2727,6 @@ class Linker(metaclass=ABCMeta):
         cubin is a pointer to a internal buffer of cubin owned by the linker;
         thus, it should be loaded before the linker is destroyed.
         """
-
-
-_MVC_ERROR_MESSAGE = (
-    "Minor version compatibility requires ptxcompiler and cubinlinker packages "
-    "to be available"
-)
 
 
 class MVCLinker(Linker):
@@ -2929,6 +3003,94 @@ class CudaPythonLinker(Linker):
         cubin_ptr = ctypes.cast(cubin_buf, ctypes.POINTER(ctypes.c_char))
         return bytes(np.ctypeslib.as_array(cubin_ptr, shape=(size,)))
 
+
+class PyNvJitLinker(Linker):
+    def __init__(
+        self,
+        max_registers=None,
+        lineinfo=False,
+        cc=None,
+        lto=False,
+        additional_flags=None,
+    ):
+
+        if cc is None:
+            raise RuntimeError("PyNvJitLinker requires CC to be specified")
+        if not any(isinstance(cc, t) for t in [list, tuple]):
+            raise TypeError("`cc` must be a list or tuple of length 2")
+
+        sm_ver = f"{cc[0] * 10 + cc[1]}"
+        arch = f"-arch=sm_{sm_ver}"
+        options = [arch]
+        if max_registers:
+            options.append(f"-maxrregcount={max_registers}")
+        if lineinfo:
+            options.append("-lineinfo")
+        if lto:
+            options.append("-lto")
+        if additional_flags is not None:
+            options.extend(additional_flags)
+
+        self._linker = NvJitLinker(*options)
+        self.lto = lto
+        self.options = options
+
+    @property
+    def info_log(self):
+        return self._linker.info_log
+
+    @property
+    def error_log(self):
+        return self._linker.error_log
+
+    def add_ptx(self, ptx, name="<cudapy-ptx>"):
+        self._linker.add_ptx(ptx, name)
+
+    def add_fatbin(self, fatbin, name="<external-fatbin>"):
+        self._linker.add_fatbin(fatbin, name)
+
+    def add_ltoir(self, ltoir, name="<external-ltoir>"):
+        self._linker.add_ltoir(ltoir, name)
+
+    def add_object(self, obj, name="<external-object>"):
+        self._linker.add_object(obj, name)
+
+    def add_file(self, path, kind):
+        try:
+            with open(path, "rb") as f:
+                data = f.read()
+        except FileNotFoundError:
+            raise LinkerError(f"{path} not found")
+
+        name = pathlib.Path(path).name
+        self.add_data(data, kind, name)
+
+    def add_data(self, data, kind, name):
+        if kind == FILE_EXTENSION_MAP["cubin"]:
+            fn = self._linker.add_cubin
+        elif kind == FILE_EXTENSION_MAP["fatbin"]:
+            fn = self._linker.add_fatbin
+        elif kind == FILE_EXTENSION_MAP["a"]:
+            fn = self._linker.add_library
+        elif kind == FILE_EXTENSION_MAP["ptx"]:
+            return self.add_ptx(data, name)
+        elif kind == FILE_EXTENSION_MAP["o"]:
+            fn = self._linker.add_object
+        elif kind == FILE_EXTENSION_MAP["ltoir"]:
+            fn = self._linker.add_ltoir
+        else:
+            raise LinkerError(f"Don't know how to link {kind}")
+
+        try:
+            fn(data, name)
+        except NvJitLinkError as e:
+            raise LinkerError from e
+
+    def complete(self):
+        try:
+            return self._linker.get_linked_cubin()
+        except NvJitLinkError as e:
+            raise LinkerError from e
 
 # -----------------------------------------------------------------------------
 

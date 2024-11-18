@@ -34,21 +34,3 @@ which will show a path like:
 ```
 <path to numba-cuda repo>/numba_cuda/numba/cuda/__init__.py
 ```
-
-## Branching strategy
-
-Presently the `main` branch is being used to target the exact behavior of the
-built-in CUDA target. New feature development and bug fixes should be applied to
-`develop`. Once the `main` branch is widely tested and confirmed to work well as
-a drop-in replacement for the built-in `numba.cuda`, the `develop` branch will
-be merged in and new feature development will proceed on `main`.
-
-### Current PR targets
-
-- PRs related to replacing the built-in CUDA target's features should target
-  `main`.
-- PRs adding new features and bug fixes should target `develop`.
-
-### Future PR targets
-
-- In future, all PRs should target the `main` branch.

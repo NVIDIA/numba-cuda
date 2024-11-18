@@ -65,7 +65,8 @@ MVC support is enabled by setting the environment variable:
 
 .. code:: bash
 
-   export NUMBA_CUDA_ENABLE_MINOR_VERSION_COMPATIBILITY=1
+   export NUMBA_CUDA_ENABLE_MINOR_VERSION_COMPATIBILITY=1 # CUDA 11
+   export NUMBA_CUDA_ENABLE_PYNVJITLINK=1 # CUDA 12
 
 
 or by setting a configuration variable prior to using any CUDA functionality in
@@ -74,7 +75,8 @@ Numba:
 .. code:: python
 
    from numba import config
-   config.CUDA_ENABLE_MINOR_VERSION_COMPATIBILITY = True
+   config.CUDA_ENABLE_MINOR_VERSION_COMPATIBILITY = True # CUDA 11
+   config.CUDA_ENABLE_PYNVJITLINK = True # CUDA 12
 
 
 References
