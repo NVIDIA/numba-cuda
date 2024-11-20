@@ -40,7 +40,6 @@ def ol_cuda_empty(shape, dtype):
         raise errors.TypingError(msg)
 
 
-@unittest.skip
 class TestNrtRefCt(EnableNRTStatsMixin, TestCase):
 
     def setUp(self):
@@ -48,6 +47,7 @@ class TestNrtRefCt(EnableNRTStatsMixin, TestCase):
         gc.collect()
         super(TestNrtRefCt, self).setUp()
 
+    @unittest.expectedFailure
     def test_no_return(self):
         """
         Test issue #1291
@@ -57,8 +57,8 @@ class TestNrtRefCt(EnableNRTStatsMixin, TestCase):
         @cuda.jit
         def kernel():
             for i in range(n):
-                temp = np.zeros(2) # noqa: F841
-            return 0
+                temp = cuda_empty(2, np.float64) # noqa: F841
+            return None
 
         init_stats = rtsys.get_allocation_stats()
 
