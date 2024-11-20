@@ -2,12 +2,33 @@ import sys
 import re
 import os
 from collections import namedtuple
+from shutil import which
 
 from numba.core.config import IS_WIN32
 from numba.misc.findlib import find_lib, find_file
 
 
 _env_path_tuple = namedtuple('_env_path_tuple', ['by', 'info'])
+
+
+def find_executable(name, bindirs=None):
+    # This should probably go into numba.misc.findlib
+    if bindirs is None:
+        return which(name) # Check the path if we've been given no directories.
+
+    if isinstance(bindirs, str):
+        bindirs = [bindirs,]
+    else:
+        bindirs = list(bindirs)
+    files = []
+    for bdir in bindirs:
+        try:
+            entries = os.listdir(bdir)
+        except FileNotFoundError:
+            continue
+        candidates = [os.path.join(bdir, ent) for ent in entries if name == ent]
+        files.extend([c for c in candidates if os.path.isfile(c)])
+    return files
 
 
 def _find_valid_path(options):
@@ -47,6 +68,18 @@ def _get_nvvm_path_decision():
         ('Conda environment (NVIDIA package)', get_nvidia_nvvm_ctk()),
         ('CUDA_HOME', get_cuda_home(*_nvvm_lib_dir())),
         ('System', get_system_ctk(*_nvvm_lib_dir())),
+    ]
+    by, path = _find_valid_path(options)
+    return by, path
+
+
+def _get_nvdisasm_path_decision():
+    options = [
+        ('Conda environment', get_conda_ctk()),
+        ('Conda environment (NVIDIA package)', get_nvidia_nvdisasm_ctk()),
+        ('CUDA_HOME', get_cuda_home('bin')),
+        ('System', get_system_ctk('bin')),
+        ('Path', None),
     ]
     by, path = _find_valid_path(options)
     return by, path
@@ -161,6 +194,29 @@ def get_nvidia_nvvm_ctk():
     return os.path.dirname(max(paths))
 
 
+def get_nvidia_nvdisasm_ctk():
+    """Return path to directory containing the nvdisasm executable.
+    """
+    is_conda_env = os.path.exists(os.path.join(sys.prefix, 'conda-meta'))
+    if not is_conda_env:
+        return
+
+    # Assume the existence of nvdisasm in the conda env implies that a CUDA
+    # toolkit conda package is installed.
+
+    # Try the location used on Linux and the Windows 11.x packages
+    bindir = os.path.join(sys.prefix, 'bin')
+    if not os.path.exists(bindir) or not os.path.isdir(bindir):
+        return
+
+    paths = find_executable('nvdisasm', bindir)
+    if not paths:
+        return
+
+    # Use the directory name of the max path
+    return os.path.dirname(max(paths))
+
+
 def get_nvidia_libdevice_ctk():
     """Return path to directory containing the libdevice library.
     """
@@ -220,6 +276,13 @@ def _get_nvvm_path():
     return _env_path_tuple(by, path)
 
 
+def _get_nvdisasm_path():
+    by, path = _get_nvdisasm_path_decision()
+    candidates = find_executable('nvdisasm', path)
+    path = max(candidates) if candidates else None
+    return _env_path_tuple(by, path)
+
+
 def get_cuda_paths():
     """Returns a dictionary mapping component names to a 2-tuple
     of (source_variable, info).
@@ -238,9 +301,10 @@ def get_cuda_paths():
         # Not in cache
         d = {
             'nvvm': _get_nvvm_path(),
+            'nvdisasm': _get_nvdisasm_path(),
             'libdevice': _get_libdevice_paths(),
             'cudalib_dir': _get_cudalib_dir(),
-            'static_cudalib_dir': _get_static_cudalib_dir(),
+            'static_cudalib_dir': _get_static_cudalib_dir()
         }
         # Cache result
         get_cuda_paths._cached_result = d
