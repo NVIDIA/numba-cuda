@@ -10,7 +10,7 @@ from numba import cuda
 from numba.core.errors import NumbaWarning
 from numba.cuda.testing import (CUDATestCase, skip_on_cudasim,
                                 skip_unless_cc_60, skip_if_cudadevrt_missing,
-                                skip_if_mvc_enabled)
+                                skip_if_mvc_enabled, test_data_dir)
 from numba.tests.support import SerialMixin
 from numba.tests.test_caching import (DispatcherCacheUsecasesTest,
                                       skip_bad_access)
@@ -72,7 +72,7 @@ class CUDACachingTest(SerialMixin, DispatcherCacheUsecasesTest):
         mod = self.import_module()
         f = mod.many_locals
         f[1, 1]()
-        self.check_pycache(0) # 1 index, 1 data
+        self.check_pycache(2) # 1 index, 1 data
 
     def test_closure(self):
         mod = self.import_module()
@@ -252,6 +252,14 @@ class CUDACachingTest(SerialMixin, DispatcherCacheUsecasesTest):
         self.addCleanup(os.chmod, pycache, old_perms)
 
         self._test_pycache_fallback()
+
+    def test_cannot_cache_linking_libraries(self):
+        link = str(test_data_dir / 'jitlink.ptx')
+        msg = 'Cannot pickle CUDACodeLibrary with linking files'
+        with self.assertRaisesRegex(RuntimeError, msg):
+            @cuda.jit('void()', cache=True, link=[link])
+            def f():
+                pass
 
 
 @skip_on_cudasim('Simulator does not implement caching')
