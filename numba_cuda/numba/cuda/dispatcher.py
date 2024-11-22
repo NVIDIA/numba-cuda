@@ -1,5 +1,6 @@
 import numpy as np
 import os
+import re
 import sys
 import ctypes
 import functools
@@ -42,6 +43,21 @@ class _Kernel(serialize.ReduceMixin):
     CUDA Kernel specialized for a given set of argument types. When called, this
     object launches the kernel on the device.
     '''
+
+    NRT_functions = [
+        "NRT_Allocate",
+        "NRT_MemInfo_init",
+        "NRT_MemInfo_new",
+        "NRT_Free",
+        "NRT_dealloc",
+        "NRT_MemInfo_destroy",
+        "NRT_MemInfo_call_dtor",
+        "NRT_MemInfo_data_fast",
+        "NRT_MemInfo_alloc_aligned",
+        "NRT_Allocate_External",
+        "NRT_decref",
+        "NRT_incref"
+    ]
 
     @global_compiler_lock
     def __init__(self, py_func, argtypes, link=None, debug=False,
@@ -118,9 +134,7 @@ class _Kernel(serialize.ReduceMixin):
                                              'cpp_function_wrappers.cu')
             link.append(functions_cu_path)
 
-        if "NRT_" in asm and tgt_ctx.enable_nrt:
-            nrt_path = os.path.join(basedir, 'runtime', 'nrt.cu')
-            link.append(nrt_path)
+        link = self.maybe_link_nrt(link, tgt_ctx, basedir, asm)
 
         for filepath in link:
             lib.add_linking_file(filepath)
@@ -142,6 +156,24 @@ class _Kernel(serialize.ReduceMixin):
         self._referenced_environments = []
         self.lifted = []
         self.reload_init = []
+
+    def maybe_link_nrt(self, link, tgt_ctx, basedir, asm):
+        if not tgt_ctx.enable_nrt:
+            return
+
+        all_nrt = "|".join(self.NRT_functions)
+        pattern = (
+            r'\.extern\s+\.func\s+(?:\s*\(.+\)\s*)?('
+            + all_nrt + r')\s*\([^)]*\)\s*;'
+        )
+
+        nrt_in_asm = re.findall(pattern, asm)
+
+        if nrt_in_asm:
+            nrt_path = os.path.join(basedir, 'runtime', 'nrt.cu')
+            link.append(nrt_path)
+
+        return link
 
     @property
     def library(self):

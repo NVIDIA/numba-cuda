@@ -59,6 +59,7 @@ extern "C" __device__ void NRT_MemInfo_init(NRT_MemInfo* mi,
 //  if (TheMSys->stats.enabled) { TheMSys->stats.mi_alloc++; }
 }
 
+extern "C"
 __device__ NRT_MemInfo* NRT_MemInfo_new(
   void* data, size_t size, NRT_dtor_function dtor, void* dtor_info)
 {
