@@ -158,7 +158,7 @@ class _Kernel(serialize.ReduceMixin):
 
     def maybe_link_nrt(self, link, tgt_ctx, asm):
         if not tgt_ctx.enable_nrt:
-            return
+            return link
 
         all_nrt = "|".join(self.NRT_functions)
         pattern = (
