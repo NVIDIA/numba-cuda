@@ -129,12 +129,11 @@ class _Kernel(serialize.ReduceMixin):
 
         if res:
             # Path to the source containing the foreign function
-            basedir = os.path.dirname(os.path.abspath(__file__))
             functions_cu_path = os.path.join(basedir,
                                              'cpp_function_wrappers.cu')
             link.append(functions_cu_path)
 
-        link = self.maybe_link_nrt(link, tgt_ctx, basedir, asm)
+        link = self.maybe_link_nrt(link, tgt_ctx, asm)
 
         for filepath in link:
             lib.add_linking_file(filepath)
@@ -157,7 +156,7 @@ class _Kernel(serialize.ReduceMixin):
         self.lifted = []
         self.reload_init = []
 
-    def maybe_link_nrt(self, link, tgt_ctx, basedir, asm):
+    def maybe_link_nrt(self, link, tgt_ctx, asm):
         if not tgt_ctx.enable_nrt:
             return
 
@@ -169,6 +168,7 @@ class _Kernel(serialize.ReduceMixin):
 
         nrt_in_asm = re.findall(pattern, asm)
 
+        basedir = os.path.dirname(os.path.abspath(__file__))
         if nrt_in_asm:
             nrt_path = os.path.join(basedir, 'runtime', 'nrt.cu')
             link.append(nrt_path)
