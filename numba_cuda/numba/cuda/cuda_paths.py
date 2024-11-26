@@ -6,6 +6,7 @@ import platform
 
 from numba.core.config import IS_WIN32
 from numba.misc.findlib import find_lib, find_file
+from numba import config
 
 
 _env_path_tuple = namedtuple('_env_path_tuple', ['by', 'info'])
@@ -323,6 +324,7 @@ def get_system_include_dir():
 def _get_include_dir():
     """Find the root include directory."""
     options = [
+        ('Config Override', config.CUDA_INCLUDE_PATH),
         ('Conda environment', get_conda_include_dir()),
         ('System', get_system_include_dir()),
         # TODO: add others
