@@ -277,9 +277,14 @@ def get_current_cuda_target_name():
             'x86_64': 'x86_64-linux',
             'aarch64': 'sbsa-linux'
         }
-        return arch_to_targets.get(machine)
+    elif system == "Windows":
+        arch_to_targets = {
+            'AMD64': 'x64',
+        }
+    else:
+        arch_to_targets = {}
 
-    return None
+    return arch_to_targets.get(machine, None)
 
 
 def get_conda_include_dir():
@@ -287,21 +292,24 @@ def get_conda_include_dir():
     Return the include directory in the current conda environment, if one
     is active and it exists.
     """
-    conda_prefix = os.environ.get('CONDA_PREFIX')
+    is_conda_env = os.path.exists(os.path.join(sys.prefix, 'conda-meta'))
+    if not is_conda_env:
+        return
+
     target_name = get_current_cuda_target_name()
 
-    if conda_prefix:
-        if target_name:
-            include_dir = os.path.join(
-                conda_prefix, f'targets/{target_name}/include'
-            )
-        else:
-            # A fallback when target cannot determined
-            # though usually it shouldn't.
-            include_dir = os.path.join(conda_prefix, 'include')
-        if os.path.exists(include_dir):
-            return include_dir
-    return None
+    if target_name:
+        include_dir = os.path.join(
+            sys.prefix, 'targets', target_name, 'include'
+        )
+    else:
+        # A fallback when target cannot determined
+        # though usually it shouldn't.
+        include_dir = os.path.join(sys.prefix, 'include')
+
+    if os.path.exists(include_dir):
+        return include_dir
+    return
 
 
 def get_system_include_dir():
