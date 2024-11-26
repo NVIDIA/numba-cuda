@@ -970,9 +970,7 @@ class CUDADispatcher(Dispatcher, serialize.ReduceMixin):
             kernel = _Kernel(self.py_func, argtypes, **self.targetoptions)
             # We call bind to force codegen, so that there is a cubin to cache
             kernel.bind()
-            # We only cache kernels that has no external linkage.
-            if len(kernel._codelibrary._linking_files) == 0:
-                self._cache.save_overload(sig, kernel)
+            self._cache.save_overload(sig, kernel)
 
         self.add_overload(kernel, argtypes)
 
