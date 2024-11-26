@@ -314,10 +314,11 @@ def get_conda_include_dir():
 
 def get_system_include_dir():
     """Return the system CUDA include directory, if it exists"""
-    system_cuda_include = '/usr/local/cuda/include'
-    if os.path.exists(system_cuda_include):
-        return system_cuda_include
-    return None
+    if sys.platform.startswith('linux'):
+        system_cuda_include = '/usr/local/cuda/include'
+        if os.path.exists(system_cuda_include):
+            return system_cuda_include
+    return
 
 
 def _get_include_dir():
