@@ -318,6 +318,10 @@ def get_system_include_dir():
         system_cuda_include = '/usr/local/cuda/include'
         if os.path.exists(system_cuda_include):
             return system_cuda_include
+    elif sys.platform.startswith('win'):
+        cuda_path = os.environ.get('CUDA_PATH')
+        if cuda_path and os.path.exists(cuda_path):
+            return os.path.join(cuda_path, "include")
     return
 
 
