@@ -316,8 +316,8 @@ def get_conda_include_dir():
 def _get_include_dir():
     """Find the root include directory."""
     options = [
-        ('Conda environment', get_conda_include_dir()),
-        ('Config', config.CUDA_INCLUDE_PATH),
+        ('Conda environment (NVIDIA package)', get_conda_include_dir()),
+        ('CUDA_INCLUDE_PATH Config Entry', config.CUDA_INCLUDE_PATH),
         # TODO: add others
     ]
     by, include_dir = _find_valid_path(options)

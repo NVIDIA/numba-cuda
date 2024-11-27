@@ -18,6 +18,7 @@ from numba.misc.findlib import find_lib
 from numba.cuda.cuda_paths import get_cuda_paths
 from numba.cuda.cudadrv.driver import locate_driver_and_loader, load_driver
 from numba.cuda.cudadrv.error import CudaSupportError
+from numba.core import config
 
 
 if sys.platform == 'win32':
@@ -93,6 +94,8 @@ def _get_source_variable(lib, static=False):
         return get_cuda_paths()['nvvm'].by
     elif lib == 'libdevice':
         return get_cuda_paths()['libdevice'].by
+    elif lib == 'include_dir':
+        return get_cuda_paths()['include_dir'].by
     else:
         dir_type = 'static_cudalib_dir' if static else 'cudalib_dir'
         return get_cuda_paths()[dir_type].by
@@ -191,8 +194,11 @@ def test():
         print('\tERROR: failed to find %s:\n%s' % (lib, e))
         failed = True
 
-    include = get_cuda_include_dir()
     # Check cuda include paths
+    where = _get_source_variable('include_dir')
+    print(f'Finding include directory from {where}')
+    include = get_cuda_include_dir()
+    print('\tLocated at', include)
     try:
         print('\tChecking include directory', end='...')
         check_cuda_include_dir(include)
@@ -200,5 +206,8 @@ def test():
     except FileNotFoundError as e:
         print('\tERROR: failed to find cuda include directory:\n%s' % e)
         failed = True
+
+    print("Config:")
+    print(f"CUDA_INCLUDE_PATH={config.CUDA_INCLUDE_PATH}")
 
     return not failed
