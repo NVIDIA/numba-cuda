@@ -3,7 +3,6 @@ from enum import IntEnum
 from numba.cuda.cudadrv.error import (NvrtcError, NvrtcCompilationError,
                                       NvrtcSupportError)
 from numba.cuda.cuda_paths import get_cuda_paths
-from numba import config
 import functools
 import os
 import threading
@@ -236,7 +235,6 @@ def compile(src, name, cc):
 
     cuda_include = [
         f"-I{get_cuda_paths()['include_dir'].info}",
-        f"-I{config.CUDA_INCLUDE_PATH}"
     ]
 
     cudadrv_path = os.path.dirname(os.path.abspath(__file__))

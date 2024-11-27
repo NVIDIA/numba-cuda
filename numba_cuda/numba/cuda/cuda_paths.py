@@ -6,6 +6,7 @@ import platform
 
 from numba.core.config import IS_WIN32
 from numba.misc.findlib import find_lib, find_file
+from numba import config
 
 
 _env_path_tuple = namedtuple('_env_path_tuple', ['by', 'info'])
@@ -312,24 +313,11 @@ def get_conda_include_dir():
     return
 
 
-def get_system_include_dir():
-    """Return the system CUDA include directory, if it exists"""
-    if sys.platform.startswith('linux'):
-        system_cuda_include = '/usr/local/cuda/include'
-        if os.path.exists(system_cuda_include):
-            return system_cuda_include
-    elif sys.platform.startswith('win'):
-        cuda_path = os.environ.get('CUDA_PATH')
-        if cuda_path and os.path.exists(cuda_path):
-            return os.path.join(cuda_path, "include")
-    return
-
-
 def _get_include_dir():
     """Find the root include directory."""
     options = [
         ('Conda environment', get_conda_include_dir()),
-        ('System', get_system_include_dir()),
+        ('Config', config.CUDA_INCLUDE_PATH),
         # TODO: add others
     ]
     by, include_dir = _find_valid_path(options)
