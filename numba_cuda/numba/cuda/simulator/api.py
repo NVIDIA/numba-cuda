@@ -35,6 +35,20 @@ class stream(object):
         pass
 
 
+# Default stream APIs. Since execution from the perspective of the host is
+# synchronous in the simulator, these can be the same as the stream class.
+default_stream = stream
+legacy_default_stream = stream
+per_thread_default_stream = stream
+
+
+# There is no way to use external streams with the simulator. Since the
+# implementation is not really using streams, we can't meaningfully interact
+# with external ones.
+def external_stream(ptr):
+    raise RuntimeError("External streams are unsupported in the simulator")
+
+
 def synchronize():
     pass
 
