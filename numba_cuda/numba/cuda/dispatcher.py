@@ -152,7 +152,7 @@ class _Kernel(serialize.ReduceMixin):
         link_to_library_functions(cuda_fp16_math_funcs,
                                   'cpp_function_wrappers.cu',
                                   '__numba_wrapper_')
-        
+
         self.maybe_link_nrt(link, tgt_ctx, asm)
 
         for filepath in link:
