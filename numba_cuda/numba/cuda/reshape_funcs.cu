@@ -4,7 +4,7 @@
  */
 #define NPY_MAXDIMS 32
 
-typedef long int npy_intp;
+typedef long long int npy_intp;
 
 extern "C" __device__ int
 nocopy_empty_reshape(npy_intp nd, const npy_intp *dims, const npy_intp *strides,
