@@ -2,6 +2,7 @@
 
 import argparse
 import pathlib
+import platform
 import subprocess
 import sys
 
@@ -56,7 +57,13 @@ def determine_include_flags():
         print(f"Unexpected return code ({rc}) from `nvcc -v`. Expected 1.")
         return None
 
-    output = cp.stderr.decode()
+    # NVCC writes to stdout on Windows and stderr on Linux
+    if platform.system() == 'Windows':
+        stream = cp.stdout
+    else:
+        stream = cp.stderr
+
+    output = stream.decode()
     lines = output.splitlines()
 
     includes_lines = [line for line in lines if line.startswith("#$ INCLUDES=")]

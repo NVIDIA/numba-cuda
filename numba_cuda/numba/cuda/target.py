@@ -75,6 +75,10 @@ class CUDATargetContext(BaseContext):
         )
 
     @property
+    def enable_nrt(self):
+        return getattr(config, 'CUDA_ENABLE_NRT', False)
+
+    @property
     def DIBuilder(self):
         return debuginfo.DIBuilder
 

@@ -69,7 +69,7 @@ class CUDACodeLibrary(serialize.ReduceMixin, CodeLibrary):
     ):
         """
         codegen:
-        Codegen object.
+            Codegen object.
         name:
             Name of the function in the source.
         entry_name:
@@ -77,6 +77,8 @@ class CUDACodeLibrary(serialize.ReduceMixin, CodeLibrary):
             kernel and not a device function.
         max_registers:
             The maximum register usage to aim for when linking.
+        lto:
+            Whether to enable link-time optimization.
         nvvm_options:
                 Dict of options to pass to NVVM.
         """

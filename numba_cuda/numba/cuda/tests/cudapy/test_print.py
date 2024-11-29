@@ -126,8 +126,8 @@ class TestPrint(CUDATestCase):
 
     def test_bool(self):
         output, _ = self.run_code(printbool_usecase)
-        expected = "True\nFalse\nTrue\nTrue\nFalse\nFalse"
-        self.assertEqual(output.strip(), expected)
+        expected = "True\r?\nFalse\r?\nTrue\r?\nTrue\r?\nFalse\r?\nFalse"
+        self.assertRegex(output.strip(), expected)
 
     def test_printempty(self):
         output, _ = self.run_code(printempty_usecase)

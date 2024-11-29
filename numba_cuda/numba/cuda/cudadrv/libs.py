@@ -18,6 +18,7 @@ from numba.misc.findlib import find_lib
 from numba.cuda.cuda_paths import get_cuda_paths
 from numba.cuda.cudadrv.driver import locate_driver_and_loader, load_driver
 from numba.cuda.cudadrv.error import CudaSupportError
+from numba.core import config
 
 
 if sys.platform == 'win32':
@@ -60,6 +61,24 @@ def get_cudalib(lib, static=False):
     return max(candidates) if candidates else namepattern % lib
 
 
+def get_cuda_include_dir():
+    """
+    Find the path to cuda include dir based on a list of default locations.
+    Note that this does not list the `CUDA_INCLUDE_PATH` entry in user
+    configuration.
+    """
+
+    return get_cuda_paths()['include_dir'].info
+
+
+def check_cuda_include_dir(path):
+    if path is None or not os.path.exists(path):
+        raise FileNotFoundError(f"{path} not found")
+
+    if not os.path.exists(os.path.join(path, "cuda_runtime.h")):
+        raise FileNotFoundError(f"Unable to find cuda_runtime.h from {path}")
+
+
 def open_cudalib(lib):
     path = get_cudalib(lib)
     return ctypes.CDLL(path)
@@ -75,6 +94,8 @@ def _get_source_variable(lib, static=False):
         return get_cuda_paths()['nvvm'].by
     elif lib == 'libdevice':
         return get_cuda_paths()['libdevice'].by
+    elif lib == 'include_dir':
+        return get_cuda_paths()['include_dir'].by
     else:
         dir_type = 'static_cudalib_dir' if static else 'cudalib_dir'
         return get_cuda_paths()[dir_type].by
@@ -171,6 +192,23 @@ def test():
         print('\tok')
     except FileNotFoundError as e:
         print('\tERROR: failed to find %s:\n%s' % (lib, e))
+        failed = True
+
+    # Check cuda include paths
+
+    print("Include directory configuration variable:")
+    print(f"\tCUDA_INCLUDE_PATH={config.CUDA_INCLUDE_PATH}")
+
+    where = _get_source_variable('include_dir')
+    print(f'Finding include directory from {where}')
+    include = get_cuda_include_dir()
+    print('\tLocated at', include)
+    try:
+        print('\tChecking include directory', end='...')
+        check_cuda_include_dir(include)
+        print('\tok')
+    except FileNotFoundError as e:
+        print('\tERROR: failed to find cuda include directory:\n%s' % e)
         failed = True
 
     return not failed
