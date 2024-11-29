@@ -711,8 +711,7 @@ class CUDADispatcher(Dispatcher, serialize.ReduceMixin):
         *args*.
         '''
         cc = get_current_device().compute_capability
-        argtypes = tuple(
-            [self.typingctx.resolve_argument_type(a) for a in args])
+        argtypes = tuple(self.typeof_pyval(a) for a in args)
         if self.specialized:
             raise RuntimeError('Dispatcher already specialized')
 
