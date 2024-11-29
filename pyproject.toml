@@ -36,4 +36,4 @@ license-files = ["LICENSE"]
 include = ["numba_cuda*"]
 
 [tool.setuptools.package-data]
-"*" = ["*.cu", "*.h", "*.hpp", "*.ptx", "VERSION"]
+"*" = ["*.cu", "*.h", "*.hpp", "*.ptx", "VERSION", "Makefile"]

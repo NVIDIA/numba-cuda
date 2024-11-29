@@ -1,5 +1,6 @@
 import numpy as np
 import os
+import re
 import sys
 import ctypes
 import functools
@@ -45,10 +46,25 @@ class _Kernel(serialize.ReduceMixin):
     object launches the kernel on the device.
     '''
 
+    NRT_functions = [
+        "NRT_Allocate",
+        "NRT_MemInfo_init",
+        "NRT_MemInfo_new",
+        "NRT_Free",
+        "NRT_dealloc",
+        "NRT_MemInfo_destroy",
+        "NRT_MemInfo_call_dtor",
+        "NRT_MemInfo_data_fast",
+        "NRT_MemInfo_alloc_aligned",
+        "NRT_Allocate_External",
+        "NRT_decref",
+        "NRT_incref"
+    ]
+
     @global_compiler_lock
     def __init__(self, py_func, argtypes, link=None, debug=False,
                  lineinfo=False, inline=False, fastmath=False, extensions=None,
-                 max_registers=None, opt=True, device=False):
+                 max_registers=None, lto=False, opt=True, device=False):
 
         if device:
             raise RuntimeError('Cannot compile a device function as a kernel')
@@ -96,13 +112,15 @@ class _Kernel(serialize.ReduceMixin):
         lib, kernel = tgt_ctx.prepare_cuda_kernel(cres.library, cres.fndesc,
                                                   debug, lineinfo, nvvm_options,
                                                   filename, linenum,
-                                                  max_registers)
+                                                  max_registers, lto)
 
         if not link:
             link = []
 
+        asm = lib.get_asm_str()
+
         # A kernel needs cooperative launch if grid_sync is being used.
-        self.cooperative = 'cudaCGGetIntrinsicHandle' in lib.get_asm_str()
+        self.cooperative = 'cudaCGGetIntrinsicHandle' in asm
         # We need to link against cudadevrt if grid sync is being used.
         if self.cooperative:
             lib.needs_cudadevrt = True
@@ -119,7 +137,7 @@ class _Kernel(serialize.ReduceMixin):
                                      library_functions]
 
             found_functions = [fn for fn in library_functions
-                               if f'{fn}' in lib.get_asm_str()]
+                               if f'{fn}' in asm]
 
             if found_functions:
                 basedir = os.path.dirname(os.path.abspath(__file__))
@@ -134,6 +152,8 @@ class _Kernel(serialize.ReduceMixin):
         link_to_library_functions(cuda_fp16_math_funcs,
                                   'cpp_function_wrappers.cu',
                                   '__numba_wrapper_')
+        
+        self.maybe_link_nrt(link, tgt_ctx, asm)
 
         for filepath in link:
             lib.add_linking_file(filepath)
@@ -155,6 +175,23 @@ class _Kernel(serialize.ReduceMixin):
         self._referenced_environments = []
         self.lifted = []
         self.reload_init = []
+
+    def maybe_link_nrt(self, link, tgt_ctx, asm):
+        if not tgt_ctx.enable_nrt:
+            return
+
+        all_nrt = "|".join(self.NRT_functions)
+        pattern = (
+            r'\.extern\s+\.func\s+(?:\s*\(.+\)\s*)?('
+            + all_nrt + r')\s*\([^)]*\)\s*;'
+        )
+
+        nrt_in_asm = re.findall(pattern, asm)
+
+        basedir = os.path.dirname(os.path.abspath(__file__))
+        if nrt_in_asm:
+            nrt_path = os.path.join(basedir, 'runtime', 'nrt.cu')
+            link.append(nrt_path)
 
     @property
     def library(self):
@@ -405,7 +442,6 @@ class _Kernel(serialize.ReduceMixin):
 
         if isinstance(ty, types.Array):
             devary = wrap_arg(val).to_device(retr, stream)
-
             c_intp = ctypes.c_ssize_t
 
             meminfo = ctypes.c_void_p(0)
@@ -539,7 +575,10 @@ class _LaunchConfiguration:
         self.stream = stream
         self.sharedmem = sharedmem
 
-        if config.CUDA_LOW_OCCUPANCY_WARNINGS:
+        if (
+            config.CUDA_LOW_OCCUPANCY_WARNINGS
+            and not config.DISABLE_PERFORMANCE_WARNINGS
+        ):
             # Warn when the grid has fewer than 128 blocks. This number is
             # chosen somewhat heuristically - ideally the minimum is 2 times
             # the number of SMs, but the number of SMs varies between devices -
@@ -728,8 +767,7 @@ class CUDADispatcher(Dispatcher, serialize.ReduceMixin):
         *args*.
         '''
         cc = get_current_device().compute_capability
-        argtypes = tuple(
-            [self.typingctx.resolve_argument_type(a) for a in args])
+        argtypes = tuple(self.typeof_pyval(a) for a in args)
         if self.specialized:
             raise RuntimeError('Dispatcher already specialized')
 

@@ -1,9 +1,8 @@
 from ctypes import byref, c_char, c_char_p, c_int, c_size_t, c_void_p, POINTER
 from enum import IntEnum
-from numba.core import config
 from numba.cuda.cudadrv.error import (NvrtcError, NvrtcCompilationError,
                                       NvrtcSupportError)
-
+from numba.cuda.cuda_paths import get_cuda_paths
 import functools
 import os
 import threading
@@ -233,12 +232,18 @@ def compile(src, name, cc):
     #   being optimized away.
     major, minor = cc
     arch = f'--gpu-architecture=compute_{major}{minor}'
-    include = f'-I{config.CUDA_INCLUDE_PATH}'
+
+    cuda_include = [
+        f"-I{get_cuda_paths()['include_dir'].info}",
+    ]
 
     cudadrv_path = os.path.dirname(os.path.abspath(__file__))
     numba_cuda_path = os.path.dirname(cudadrv_path)
     numba_include = f'-I{numba_cuda_path}'
-    options = [arch, include, numba_include, '-rdc', 'true']
+    options = [arch, *cuda_include, numba_include, '-rdc', 'true']
+
+    if nvrtc.get_version() < (12, 0):
+        options += ["-std=c++17"]
 
     # Compile the program
     compile_error = nvrtc.compile_program(program, options)

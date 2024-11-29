@@ -75,6 +75,10 @@ class CUDATargetContext(BaseContext):
         )
 
     @property
+    def enable_nrt(self):
+        return getattr(config, 'CUDA_ENABLE_NRT', False)
+
+    @property
     def DIBuilder(self):
         return debuginfo.DIBuilder
 
@@ -148,7 +152,7 @@ class CUDATargetContext(BaseContext):
 
     def prepare_cuda_kernel(self, codelib, fndesc, debug, lineinfo,
                             nvvm_options, filename, linenum,
-                            max_registers=None):
+                            max_registers=None, lto=False):
         """
         Adapt a code library ``codelib`` with the numba compiled CUDA kernel
         with name ``fname`` and arguments ``argtypes`` for NVVM.
@@ -175,7 +179,9 @@ class CUDATargetContext(BaseContext):
         library = self.codegen().create_library(f'{codelib.name}_kernel_',
                                                 entry_name=kernel_name,
                                                 nvvm_options=nvvm_options,
-                                                max_registers=max_registers)
+                                                max_registers=max_registers,
+                                                lto=lto
+                                                )
         library.add_linking_library(codelib)
         wrapper = self.generate_kernel_wrapper(library, fndesc, kernel_name,
                                                debug, lineinfo, filename,
