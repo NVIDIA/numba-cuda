@@ -8,7 +8,7 @@ set -euo pipefail
 if [ "${CUDA_VER%.*.*}" = "11" ]; then
   CTK_PACKAGES="cudatoolkit"
 else
-  CTK_PACKAGES="cuda-nvcc-impl cuda-nvrtc"
+  CTK_PACKAGES="cuda-cccl cuda-nvcc-impl cuda-nvrtc"
 fi
 
 rapids-logger "Install testing dependencies"
