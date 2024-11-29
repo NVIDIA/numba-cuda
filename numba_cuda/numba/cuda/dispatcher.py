@@ -557,7 +557,10 @@ class _LaunchConfiguration:
         self.stream = stream
         self.sharedmem = sharedmem
 
-        if config.CUDA_LOW_OCCUPANCY_WARNINGS:
+        if (
+            config.CUDA_LOW_OCCUPANCY_WARNINGS
+            and not config.DISABLE_PERFORMANCE_WARNINGS
+        ):
             # Warn when the grid has fewer than 128 blocks. This number is
             # chosen somewhat heuristically - ideally the minimum is 2 times
             # the number of SMs, but the number of SMs varies between devices -
@@ -746,8 +749,7 @@ class CUDADispatcher(Dispatcher, serialize.ReduceMixin):
         *args*.
         '''
         cc = get_current_device().compute_capability
-        argtypes = tuple(
-            [self.typingctx.resolve_argument_type(a) for a in args])
+        argtypes = tuple(self.typeof_pyval(a) for a in args)
         if self.specialized:
             raise RuntimeError('Dispatcher already specialized')
 
