@@ -3,6 +3,8 @@
 
 #include <cuda/atomic>
 
+#include "memsys.cuh"
+
 typedef void (*NRT_dtor_function)(void* ptr, size_t size, void* info);
 typedef void (*NRT_dealloc_func)(void* ptr, void* dealloc_info);
 
@@ -18,29 +20,20 @@ struct MemInfo {
 };
 }
 
-// Globally needed variables
-struct NRT_MemSys {
-  struct {
-    bool enabled;
-    cuda::atomic<size_t, cuda::thread_scope_device> alloc;
-    cuda::atomic<size_t, cuda::thread_scope_device> free;
-    cuda::atomic<size_t, cuda::thread_scope_device> mi_alloc;
-    cuda::atomic<size_t, cuda::thread_scope_device> mi_free;
-  } stats;
-};
+extern "C" __global__ void NRT_MemSys_set(NRT_MemSys *memsys_ptr)
+{
+  TheMSys = memsys_ptr;
+}
 
 static __device__ void *nrt_allocate_meminfo_and_data_align(size_t size, unsigned align, NRT_MemInfo **mi);
 static __device__ void *nrt_allocate_meminfo_and_data(size_t size, NRT_MemInfo **mi_out);
 extern "C" __device__ void* NRT_Allocate_External(size_t size);
 
-/* The Memory System object */
-__device__ NRT_MemSys* TheMSys;
-
 extern "C" __device__ void* NRT_Allocate(size_t size)
 {
   void* ptr = NULL;
   ptr       = malloc(size);
-//  if (TheMSys->stats.enabled) { TheMSys->stats.alloc++; }
+  if (TheMSys->stats.enabled) { TheMSys->stats.alloc++; }
   return ptr;
 }
 
@@ -49,14 +42,13 @@ extern "C" __device__ void NRT_MemInfo_init(NRT_MemInfo* mi,
                                             size_t size,
                                             NRT_dtor_function dtor,
                                             void* dtor_info)
-//                                            NRT_MemSys* TheMSys)
 {
   mi->refct     = 1; /* starts with 1 refct */
   mi->dtor      = dtor;
   mi->dtor_info = dtor_info;
   mi->data      = data;
   mi->size      = size;
-//  if (TheMSys->stats.enabled) { TheMSys->stats.mi_alloc++; }
+ if (TheMSys->stats.enabled) { TheMSys->stats.mi_alloc++; }
 }
 
 extern "C"
@@ -71,7 +63,7 @@ __device__ NRT_MemInfo* NRT_MemInfo_new(
 extern "C" __device__ void NRT_Free(void* ptr)
 {
   free(ptr);
-  //if (TheMSys->stats.enabled) { TheMSys->stats.free++; }
+  if (TheMSys->stats.enabled) { TheMSys->stats.free++; }
 }
 
 extern "C" __device__ void NRT_dealloc(NRT_MemInfo* mi)
@@ -82,8 +74,9 @@ extern "C" __device__ void NRT_dealloc(NRT_MemInfo* mi)
 extern "C" __device__ void NRT_MemInfo_destroy(NRT_MemInfo* mi)
 {
   NRT_dealloc(mi);
-  //if (TheMSys->stats.enabled) { TheMSys->stats.mi_free++; }
+  if (TheMSys->stats.enabled) { TheMSys->stats.mi_free++; }
 }
+
 extern "C" __device__ void NRT_MemInfo_call_dtor(NRT_MemInfo* mi)
 {
   if (mi->dtor) /* We have a destructor */
@@ -158,10 +151,10 @@ extern "C" __device__ void* NRT_Allocate_External(size_t size) {
     ptr = malloc(size);
     //NRT_Debug(nrt_debug_print("NRT_Allocate_External bytes=%zu ptr=%p\n", size, ptr));
 
-    //if (TheMSys.stats.enabled)
-    //{
-    //    TheMSys.stats.alloc++;
-    //}
+    if (TheMSys->stats.enabled)
+    {
+       TheMSys->stats.alloc++;
+    }
     return ptr;
 }
 
