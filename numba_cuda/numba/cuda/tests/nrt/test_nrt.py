@@ -3,7 +3,7 @@ import gc
 import numpy as np
 import unittest
 from unittest.mock import patch
-from numba.core.runtime import rtsys
+from numba.cuda.runtime import rtsys
 from numba.tests.support import EnableNRTStatsMixin
 from numba.cuda.testing import CUDATestCase
 
@@ -19,7 +19,6 @@ class TestNrtRefCt(EnableNRTStatsMixin, CUDATestCase):
         gc.collect()
         super(TestNrtRefCt, self).setUp()
 
-    @unittest.expectedFailure
     def test_no_return(self):
         """
         Test issue #1291
