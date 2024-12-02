@@ -297,9 +297,11 @@ def get_conda_include_dir():
     if not is_conda_env:
         return
 
-    target_name = get_current_cuda_target_name()
-
-    if target_name:
+    if platform.system() == "Windows":
+        include_dir = os.path.join(
+            sys.prefix, 'Library', 'include'
+        )
+    elif target_name := get_current_cuda_target_name():
         include_dir = os.path.join(
             sys.prefix, 'targets', target_name, 'include'
         )

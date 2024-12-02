@@ -195,6 +195,10 @@ def test():
         failed = True
 
     # Check cuda include paths
+
+    print("Include directory configuration variable:")
+    print(f"\tCUDA_INCLUDE_PATH={config.CUDA_INCLUDE_PATH}")
+
     where = _get_source_variable('include_dir')
     print(f'Finding include directory from {where}')
     include = get_cuda_include_dir()
@@ -206,8 +210,5 @@ def test():
     except FileNotFoundError as e:
         print('\tERROR: failed to find cuda include directory:\n%s' % e)
         failed = True
-
-    print("Config:")
-    print(f"CUDA_INCLUDE_PATH={config.CUDA_INCLUDE_PATH}")
 
     return not failed

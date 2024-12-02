@@ -1,6 +1,7 @@
 from llvmlite import ir
 from numba.core.typing.templates import ConcreteTemplate
-from numba.core import types, typing, funcdesc, config, compiler, sigutils
+from numba.core import (cgutils, types, typing, funcdesc, config, compiler,
+                        sigutils, utils)
 from numba.core.compiler import (sanitize_compile_result_entries, CompilerBase,
                                  DefaultPassBuilder, Flags, Option,
                                  CompileResult)
@@ -11,7 +12,10 @@ from numba.core.errors import NumbaInvalidConfigWarning
 from numba.core.typed_passes import (IRLegalization, NativeLowering,
                                      AnnotateTypes)
 from warnings import warn
+from numba.cuda import nvvmutils
 from numba.cuda.api import get_current_device
+from numba.cuda.cudadrv import nvvm
+from numba.cuda.descriptor import cuda_target
 from numba.cuda.target import CUDACABICallConv
 
 
@@ -21,6 +25,15 @@ def _nvvm_options_type(x):
 
     else:
         assert isinstance(x, dict)
+        return x
+
+
+def _optional_int_type(x):
+    if x is None:
+        return None
+
+    else:
+        assert isinstance(x, int)
         return x
 
 
@@ -34,6 +47,16 @@ class CUDAFlags(Flags):
         type=tuple,
         default=None,
         doc="Compute Capability",
+    )
+    max_registers = Option(
+        type=_optional_int_type,
+        default=None,
+        doc="Max registers"
+    )
+    lto = Option(
+        type=bool,
+        default=False,
+        doc="Enable Link-time Optimization"
     )
 
 
@@ -109,7 +132,11 @@ class CreateLibrary(LoweringPass):
         codegen = state.targetctx.codegen()
         name = state.func_id.func_qualname
         nvvm_options = state.flags.nvvm_options
-        state.library = codegen.create_library(name, nvvm_options=nvvm_options)
+        max_registers = state.flags.max_registers
+        lto = state.flags.lto
+        state.library = codegen.create_library(name, nvvm_options=nvvm_options,
+                                               max_registers=max_registers,
+                                               lto=lto)
         # Enable object caching upfront so that the library can be serialized.
         state.library.enable_object_caching()
 
@@ -152,7 +179,7 @@ class CUDACompiler(CompilerBase):
 @global_compiler_lock
 def compile_cuda(pyfunc, return_type, args, debug=False, lineinfo=False,
                  inline=False, fastmath=False, nvvm_options=None,
-                 cc=None):
+                 cc=None, max_registers=None, lto=False):
     if cc is None:
         raise ValueError('Compute Capability must be supplied')
 
@@ -189,6 +216,8 @@ def compile_cuda(pyfunc, return_type, args, debug=False, lineinfo=False,
     if nvvm_options:
         flags.nvvm_options = nvvm_options
     flags.compute_capability = cc
+    flags.max_registers = max_registers
+    flags.lto = lto
 
     # Run compilation pipeline
     from numba.core.target_extension import target_override
@@ -247,9 +276,153 @@ def cabi_wrap_function(context, lib, fndesc, wrapper_function_name,
         builder, func, restype, argtypes, callargs)
     builder.ret(return_value)
 
+    if config.DUMP_LLVM:
+        utils.dump_llvm(fndesc, wrapper_module)
+
     library.add_ir_module(wrapper_module)
     library.finalize()
     return library
+
+
+def kernel_fixup(kernel, debug):
+    if debug:
+        exc_helper = add_exception_store_helper(kernel)
+
+    # Pass 1 - replace:
+    #
+    #    ret <value>
+    #
+    # with:
+    #
+    #    exc_helper(<value>)
+    #    ret void
+
+    for block in kernel.blocks:
+        for i, inst in enumerate(block.instructions):
+            if isinstance(inst, ir.Ret):
+                old_ret = block.instructions.pop()
+                block.terminator = None
+
+                # The original return's metadata will be set on the new
+                # instructions in order to preserve debug info
+                metadata = old_ret.metadata
+
+                builder = ir.IRBuilder(block)
+                if debug:
+                    status_code = old_ret.operands[0]
+                    exc_helper_call = builder.call(exc_helper, (status_code,))
+                    exc_helper_call.metadata = metadata
+
+                new_ret = builder.ret_void()
+                new_ret.metadata = old_ret.metadata
+
+                # Need to break out so we don't carry on modifying what we are
+                # iterating over. There can only be one return in a block
+                # anyway.
+                break
+
+    # Pass 2: remove stores of null pointer to return value argument pointer
+
+    return_value = kernel.args[0]
+
+    for block in kernel.blocks:
+        remove_list = []
+
+        # Find all stores first
+        for inst in block.instructions:
+            if (isinstance(inst, ir.StoreInstr)
+                    and inst.operands[1] == return_value):
+                remove_list.append(inst)
+
+        # Remove all stores
+        for to_remove in remove_list:
+            block.instructions.remove(to_remove)
+
+    # Replace non-void return type with void return type and remove return
+    # value
+
+    if isinstance(kernel.type, ir.PointerType):
+        new_type = ir.PointerType(ir.FunctionType(ir.VoidType(),
+                                                  kernel.type.pointee.args[1:]))
+    else:
+        new_type = ir.FunctionType(ir.VoidType(), kernel.type.args[1:])
+
+    kernel.type = new_type
+    kernel.return_value = ir.ReturnValue(kernel, ir.VoidType())
+    kernel.args = kernel.args[1:]
+
+    # Mark as a kernel for NVVM
+
+    nvvm.set_cuda_kernel(kernel)
+
+    if config.DUMP_LLVM:
+        print(f"LLVM DUMP: Post kernel fixup {kernel.name}".center(80, '-'))
+        print(kernel.module)
+        print('=' * 80)
+
+
+def add_exception_store_helper(kernel):
+
+    # Create global variables for exception state
+
+    def define_error_gv(postfix):
+        name = kernel.name + postfix
+        gv = cgutils.add_global_variable(kernel.module, ir.IntType(32),
+                                         name)
+        gv.initializer = ir.Constant(gv.type.pointee, None)
+        return gv
+
+    gv_exc = define_error_gv("__errcode__")
+    gv_tid = []
+    gv_ctaid = []
+    for i in 'xyz':
+        gv_tid.append(define_error_gv("__tid%s__" % i))
+        gv_ctaid.append(define_error_gv("__ctaid%s__" % i))
+
+    # Create exception store helper function
+
+    helper_name = kernel.name + "__exc_helper__"
+    helper_type = ir.FunctionType(ir.VoidType(), (ir.IntType(32),))
+    helper_func = ir.Function(kernel.module, helper_type, helper_name)
+
+    block = helper_func.append_basic_block(name="entry")
+    builder = ir.IRBuilder(block)
+
+    # Implement status check / exception store logic
+
+    status_code = helper_func.args[0]
+    call_conv = cuda_target.target_context.call_conv
+    status = call_conv._get_return_status(builder, status_code)
+
+    # Check error status
+    with cgutils.if_likely(builder, status.is_ok):
+        builder.ret_void()
+
+    with builder.if_then(builder.not_(status.is_python_exc)):
+        # User exception raised
+        old = ir.Constant(gv_exc.type.pointee, None)
+
+        # Use atomic cmpxchg to prevent rewriting the error status
+        # Only the first error is recorded
+
+        xchg = builder.cmpxchg(gv_exc, old, status.code,
+                               'monotonic', 'monotonic')
+        changed = builder.extract_value(xchg, 1)
+
+        # If the xchange is successful, save the thread ID.
+        sreg = nvvmutils.SRegBuilder(builder)
+        with builder.if_then(changed):
+            for dim, ptr, in zip("xyz", gv_tid):
+                val = sreg.tid(dim)
+                builder.store(val, ptr)
+
+            for dim, ptr, in zip("xyz", gv_ctaid):
+                val = sreg.ctaid(dim)
+                builder.store(val, ptr)
+
+    builder.ret_void()
+
+    return helper_func
 
 
 @global_compiler_lock
@@ -347,13 +520,10 @@ def compile(pyfunc, sig, debug=None, lineinfo=False, device=True,
             lib = cabi_wrap_function(tgt, lib, cres.fndesc, wrapper_name,
                                      nvvm_options)
     else:
-        code = pyfunc.__code__
-        filename = code.co_filename
-        linenum = code.co_firstlineno
-
-        lib, kernel = tgt.prepare_cuda_kernel(cres.library, cres.fndesc, debug,
-                                              lineinfo, nvvm_options, filename,
-                                              linenum)
+        lib = cres.library
+        kernel = lib.get_function(cres.fndesc.llvm_func_name)
+        lib._entry_name = cres.fndesc.llvm_func_name
+        kernel_fixup(kernel, debug)
 
     if lto:
         code = lib.get_ltoir(cc=cc)
