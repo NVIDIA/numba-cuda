@@ -2692,7 +2692,7 @@ class Linker(metaclass=ABCMeta):
         passed, the type will be inferred from the extension. A LinkableCode
         object represents a file already in memory.
 
-        When `ignore_nonlto` is set to true, do not add code that are will not
+        When `ignore_nonlto` is set to true, do not add code that will not
         be LTO-ed in the linking process. This is useful in inspecting the
         LTO-ed portion of the PTX when linker is added with objects that can be
         both LTO-ed and not LTO-ed.
