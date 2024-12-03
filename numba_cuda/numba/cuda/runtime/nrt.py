@@ -116,6 +116,14 @@ class _Runtime:
         return stats_for_read[0]
 
     def get_allocation_stats(self):
+        # This is commented out to test the 700 error code from cuda.
+        # if self._memsys is None or (not self._initialized):
+        #     return _nrt_mstats(
+        #         alloc=0,
+        #         free=0,
+        #         mi_alloc=0,
+        #         mi_free=0
+        #     )
         memsys = self._copy_memsys_to_host()
         return _nrt_mstats(
             alloc=memsys.alloc,
