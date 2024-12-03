@@ -7,7 +7,7 @@ documentation](https://nvidia.github.io/numba-cuda) to get started!
 
 
 To report issues or file feature requests, please use the [issue
-tracker](https://github.com/NVIDIA/nvmath-python/issues).
+tracker](https://github.com/NVIDIA/numba-cuda/issues).
 
 To raise questions or initiate discussions, please use the [Numba Discourse
 forum](https://numba.discourse.group).
