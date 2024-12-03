@@ -341,8 +341,6 @@ class _Kernel(serialize.ReduceMixin):
         # Prepare kernel
         cufunc = self._codelibrary.get_cufunc()
 
-        rtsys.allocate()
-
         if self.debug:
             excname = cufunc.name + "__errcode__"
             excmem, excsz = cufunc.module.get_global_symbol(excname)
@@ -364,8 +362,11 @@ class _Kernel(serialize.ReduceMixin):
 
         stream_handle = stream and stream.handle or zero_stream
 
+        rtsys.allocate(stream_handle)
         rtsys.set_memsys_to_module(cufunc.module, stream_handle)
         rtsys.initialize(stream_handle)
+        rtsys.enable(stream_handle)
+        rtsys.print_memsys(0)
 
         # Invoke kernel
         driver.launch_kernel(cufunc.handle,

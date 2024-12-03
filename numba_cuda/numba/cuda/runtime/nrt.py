@@ -38,13 +38,13 @@ class _Runtime:
 
         self._memsys_module = module
 
-    def _ensure_allocate(self):
+    def _ensure_allocate(self, stream):
         if self._memsys is not None:
             return
 
-        self.allocate()
+        self.allocate(stream)
 
-    def allocate(self):
+    def allocate(self, stream):
         from numba.cuda import device_array
 
         if self._memsys_module is None:
@@ -53,7 +53,10 @@ class _Runtime:
         if self._memsys is None:
             # Allocate space for NRT_MemSys
             # TODO: determine the size of NRT_MemSys at runtime
-            self._memsys = device_array((40,), dtype="i1")
+            self._memsys = device_array((40,), dtype="i1", stream=stream)
+            # TODO: Memsys module needs a stream that's consistent with the
+            # system's stream.
+            self.set_memsys_to_module(self._memsys_module, stream=stream)
 
     def _single_thread_launch(self, module, stream, name, params=()):
         func = module.get_function(name)
@@ -84,18 +87,17 @@ class _Runtime:
 
     def enable(self, stream):
         self._single_thread_launch(
-            self._memsys_module, stream, "NR_MemSys_enable")
+            self._memsys_module, stream, "NRT_MemSys_enable")
 
     def disable(self, stream):
         self._single_thread_launch(
-            self._memsys_module, stream, "NR_MemSys_disable")
+            self._memsys_module, stream, "NRT_MemSys_disable")
 
     def _copy_memsys_to_host(self, stream=0):
-        self._ensure_allocate()
+        self._ensure_allocate(stream)
         self._ensure_initialize(stream)
 
         # Q: What stream should we execute this on?
-        # read the stats
         dt = np.dtype([
             ('alloc', np.uint64),
             ('free', np.uint64),
@@ -116,20 +118,12 @@ class _Runtime:
         return stats_for_read[0]
 
     def get_allocation_stats(self):
-        # This is commented out to test the 700 error code from cuda.
-        # if self._memsys is None or (not self._initialized):
-        #     return _nrt_mstats(
-        #         alloc=0,
-        #         free=0,
-        #         mi_alloc=0,
-        #         mi_free=0
-        #     )
         memsys = self._copy_memsys_to_host()
         return _nrt_mstats(
-            alloc=memsys.alloc,
-            free=memsys.free,
-            mi_alloc=memsys.mi_alloc,
-            mi_free=memsys.mi_free
+            alloc=memsys["alloc"],
+            free=memsys["free"],
+            mi_alloc=memsys["mi_alloc"],
+            mi_free=memsys["mi_free"]
         )
 
     def set_memsys_to_module(self, module, stream):
@@ -137,11 +131,20 @@ class _Runtime:
             raise RuntimeError(
                 "Please allocate NRT Memsys first before initializing.")
 
+        print(f"Setting {self._memsys.device_ctypes_pointer} to {module}")
         self._single_thread_launch(
             module,
             stream,
             "NRT_MemSys_set",
             [self._memsys.device_ctypes_pointer,]
+        )
+
+    def print_memsys(self, stream):
+        cuda.synchronize()
+        self._single_thread_launch(
+            self._memsys_module,
+            stream,
+            "NRT_MemSys_print"
         )
 
 

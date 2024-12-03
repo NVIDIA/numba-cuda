@@ -25,7 +25,7 @@ class TestNrtRefCt(EnableNRTStatsMixin, CUDATestCase):
         """
         n = 10
 
-        @cuda.jit
+        @cuda.jit(debug=True)
         def kernel():
             for i in range(n):
                 temp = cuda_empty(2, np.float64) # noqa: F841
@@ -35,6 +35,8 @@ class TestNrtRefCt(EnableNRTStatsMixin, CUDATestCase):
 
         with patch('numba.config.CUDA_ENABLE_NRT', True, create=True):
             kernel[1,1]()
+        print("After kernel launch...")
+        rtsys.print_memsys(0)
         cur_stats = rtsys.get_allocation_stats()
         self.assertEqual(cur_stats.alloc - init_stats.alloc, n)
         self.assertEqual(cur_stats.free - init_stats.free, n)
