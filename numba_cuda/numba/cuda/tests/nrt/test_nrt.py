@@ -7,7 +7,7 @@ from numba.cuda.runtime import rtsys
 from numba.tests.support import EnableNRTStatsMixin
 from numba.cuda.testing import CUDATestCase
 
-from .mock_numpy import cuda_empty
+from numba.cuda.tests.nrt.mock_numpy import cuda_empty, cuda_empty_like
 
 from numba import cuda
 
@@ -69,6 +69,29 @@ class TestNrtRefCt(EnableNRTStatsMixin, CUDATestCase):
         print("cur_stats", cur_stats)
         self.assertEqual(cur_stats.alloc - init_stats.alloc, 1)
         self.assertEqual(cur_stats.free - init_stats.free, 1)
+
+    def test_invalid_computation_of_lifetime(self):
+        """
+        Test issue #1573
+        """
+        @cuda.jit
+        def if_with_allocation_and_initialization(arr1, test1):
+            tmp_arr = cuda_empty_like(arr1)
+
+            for i in range(tmp_arr.shape[0]):
+                pass
+
+            if test1:
+                cuda_empty_like(arr1)
+
+        arr = np.random.random((5, 5))  # the values are not consumed
+
+        init_stats = rtsys.get_allocation_stats()
+        with patch('numba.config.CUDA_ENABLE_NRT', True, create=True):
+            if_with_allocation_and_initialization[1, 1](arr, False)
+        cur_stats = rtsys.get_allocation_stats()
+        self.assertEqual(cur_stats.alloc - init_stats.alloc,
+                         cur_stats.free - init_stats.free)
 
 
 class TestNrtBasic(CUDATestCase):

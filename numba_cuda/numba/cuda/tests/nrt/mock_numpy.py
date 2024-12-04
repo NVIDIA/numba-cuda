@@ -1,3 +1,4 @@
+import numpy as np
 
 from numba.core import errors, types
 from numba.core.extending import overload
@@ -17,6 +18,10 @@ from numba.np.arrayobj import (_check_const_str_dtype, is_nonelike,
 # longer be necessary and the tests in this module should be switched to use
 # the relevant NumPy functions instead.
 def cuda_empty(shape, dtype):
+    pass
+
+
+def cuda_empty_like(arr):
     pass
 
 
@@ -40,3 +45,15 @@ def ol_cuda_empty(shape, dtype):
     else:
         msg = f"Cannot parse input types to function np.empty({shape}, {dtype})"
         raise errors.TypingError(msg)
+
+
+@overload(cuda_empty_like)
+def ol_cuda_empty_like(a, dtype=None):
+    _check_const_str_dtype("zeros_like", dtype)
+
+    # NumPy uses 'a' as the arg name for the array-like
+    def impl(a, dtype=None):
+        arr = np.empty_like(a, dtype=dtype)
+        arr._zero_fill()
+        return arr
+    return impl
