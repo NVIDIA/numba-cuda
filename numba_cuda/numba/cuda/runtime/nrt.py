@@ -38,7 +38,7 @@ class _Runtime:
 
         self._memsys_module = module
 
-    def _ensure_allocate(self, stream):
+    def ensure_allocate(self, stream):
         if self._memsys is not None:
             return
 
@@ -50,13 +50,12 @@ class _Runtime:
         if self._memsys_module is None:
             self._compile_memsys_module()
 
-        if self._memsys is None:
-            # Allocate space for NRT_MemSys
-            # TODO: determine the size of NRT_MemSys at runtime
-            self._memsys = device_array((40,), dtype="i1", stream=stream)
-            # TODO: Memsys module needs a stream that's consistent with the
-            # system's stream.
-            self.set_memsys_to_module(self._memsys_module, stream=stream)
+        # Allocate space for NRT_MemSys
+        # TODO: determine the size of NRT_MemSys at runtime
+        self._memsys = device_array((40,), dtype="i1", stream=stream)
+        # TODO: Memsys module needs a stream that's consistent with the
+        # system's stream.
+        self.set_memsys_to_module(self._memsys_module, stream=stream)
 
     def _single_thread_launch(self, module, stream, name, params=()):
         func = module.get_function(name)
@@ -70,7 +69,7 @@ class _Runtime:
             cooperative=False
         )
 
-    def _ensure_initialize(self, stream):
+    def ensure_initialize(self, stream):
         if self._initialized:
             return
 
@@ -94,8 +93,8 @@ class _Runtime:
             self._memsys_module, stream, "NRT_MemSys_disable")
 
     def _copy_memsys_to_host(self, stream=0):
-        self._ensure_allocate(stream)
-        self._ensure_initialize(stream)
+        self.ensure_allocate(stream)
+        self.ensure_initialize(stream)
 
         # Q: What stream should we execute this on?
         dt = np.dtype([

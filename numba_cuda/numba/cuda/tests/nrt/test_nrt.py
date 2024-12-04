@@ -32,14 +32,43 @@ class TestNrtRefCt(EnableNRTStatsMixin, CUDATestCase):
             return None
 
         init_stats = rtsys.get_allocation_stats()
+        print("init_stats", init_stats)
 
         with patch('numba.config.CUDA_ENABLE_NRT', True, create=True):
             kernel[1,1]()
         print("After kernel launch...")
-        rtsys.print_memsys(0)
         cur_stats = rtsys.get_allocation_stats()
+        print("cur_stats", cur_stats)
         self.assertEqual(cur_stats.alloc - init_stats.alloc, n)
         self.assertEqual(cur_stats.free - init_stats.free, n)
+
+    def test_escaping_var_init_in_loop(self):
+        """
+        Test issue #1297
+        """
+
+        @cuda.jit
+        def g(n):
+
+            x = cuda_empty((n, 2), np.float64)
+
+            for i in range(n):
+                y = x[i]
+
+            for i in range(n):
+                y = x[i] # noqa: F841
+
+            return None
+
+        init_stats = rtsys.get_allocation_stats()
+        print("init_stats", init_stats)
+        with patch('numba.config.CUDA_ENABLE_NRT', True, create=True):
+            g[1, 1](10)
+        print("After kernel launch...")
+        cur_stats = rtsys.get_allocation_stats()
+        print("cur_stats", cur_stats)
+        self.assertEqual(cur_stats.alloc - init_stats.alloc, 1)
+        self.assertEqual(cur_stats.free - init_stats.free, 1)
 
 
 class TestNrtBasic(CUDATestCase):
