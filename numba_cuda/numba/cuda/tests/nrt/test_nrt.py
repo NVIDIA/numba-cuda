@@ -93,6 +93,29 @@ class TestNrtRefCt(EnableNRTStatsMixin, CUDATestCase):
         self.assertEqual(cur_stats.alloc - init_stats.alloc,
                          cur_stats.free - init_stats.free)
 
+    def test_del_at_beginning_of_loop(self):
+        """
+        Test issue #1734
+        """
+        @cuda.jit
+        def f(arr):
+            res = 0
+
+            for i in (0, 1):
+                # `del t` is issued here before defining t.  It must be
+                # correctly handled by the lowering phase.
+                t = arr[i]
+                if t[i] > 1:
+                    res += t[i]
+
+        arr = np.ones((2, 2))
+        init_stats = rtsys.get_allocation_stats()
+        with patch('numba.config.CUDA_ENABLE_NRT', True, create=True):
+            f[1, 1](arr)
+        cur_stats = rtsys.get_allocation_stats()
+        self.assertEqual(cur_stats.alloc - init_stats.alloc,
+                         cur_stats.free - init_stats.free)
+
 
 class TestNrtBasic(CUDATestCase):
     def test_nrt_launches(self):
