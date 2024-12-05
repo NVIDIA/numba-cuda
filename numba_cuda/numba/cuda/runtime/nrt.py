@@ -84,11 +84,11 @@ class _Runtime:
             self._memsys_module, stream, "NRT_MemSys_init")
         self._initialized = True
 
-    def enable(self, stream):
+    def memsys_stats_enabled(self, stream):
         self._single_thread_launch(
             self._memsys_module, stream, "NRT_MemSys_enable")
 
-    def disable(self, stream):
+    def memsys_stats_disabled(self, stream):
         self._single_thread_launch(
             self._memsys_module, stream, "NRT_MemSys_disable")
 
@@ -116,8 +116,8 @@ class _Runtime:
 
         return stats_for_read[0]
 
-    def get_allocation_stats(self):
-        memsys = self._copy_memsys_to_host()
+    def get_allocation_stats(self, stream=0):
+        memsys = self._copy_memsys_to_host(stream)
         return _nrt_mstats(
             alloc=memsys["alloc"],
             free=memsys["free"],

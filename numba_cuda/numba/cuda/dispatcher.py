@@ -365,7 +365,7 @@ class _Kernel(serialize.ReduceMixin):
         rtsys.ensure_allocate(stream_handle)
         rtsys.set_memsys_to_module(cufunc.module, stream_handle)
         rtsys.ensure_initialize(stream_handle)
-        rtsys.enable(stream_handle)
+        rtsys.memsys_stats_enabled(stream_handle)
 
         # Invoke kernel
         driver.launch_kernel(cufunc.handle,
