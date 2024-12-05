@@ -58,13 +58,16 @@ class _Runtime:
         self.set_memsys_to_module(self._memsys_module, stream=stream)
 
     def _single_thread_launch(self, module, stream, name, params=()):
+        if stream is None:
+            stream = cuda.default_stream()
+
         func = module.get_function(name)
         launch_kernel(
             func.handle,
             1, 1, 1,
             1, 1, 1,
             0,
-            stream,
+            stream.handle,
             params,
             cooperative=False
         )
@@ -92,7 +95,7 @@ class _Runtime:
         self._single_thread_launch(
             self._memsys_module, stream, "NRT_MemSys_disable")
 
-    def _copy_memsys_to_host(self, stream=0):
+    def _copy_memsys_to_host(self, stream):
         self.ensure_allocate(stream)
         self.ensure_initialize(stream)
 
@@ -116,7 +119,7 @@ class _Runtime:
 
         return stats_for_read[0]
 
-    def get_allocation_stats(self, stream=0):
+    def get_allocation_stats(self, stream):
         memsys = self._copy_memsys_to_host(stream)
         return _nrt_mstats(
             alloc=memsys["alloc"],
