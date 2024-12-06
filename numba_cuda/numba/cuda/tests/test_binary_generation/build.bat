@@ -13,8 +13,14 @@ if "%GPU_CC:~0,1%"=="7" (
 REM Gencode flags suitable for most tests
 set GENCODE=-gencode arch=compute_%GPU_CC%,code=sm_%GPU_CC%
 
+REM Gencode flags for a fatbin with SASS and LTO
+set MULTI_GENCODE=-gencode arch=compute_%GPU_CC%,code=[sm_%GPU_CC%,lto_%GPU_CC%]
+
 REM Fatbin tests need to generate code for an additional compute capability
 set FATBIN_GENCODE=%GENCODE% -gencode arch=compute_%ALT_CC%,code=sm_%ALT_CC%
+
+REM Fatbin that contains both LTO, SASS for multiple architectures
+set MULTI_FATBIN_GENCODE=%MULTI_GENCODE% -gencode arch=compute_%ALT_CC%,code=[sm_%ALT_CC%,lto_%ALT_CC%]
 
 REM LTO-IR tests need to generate for the LTO "architecture" instead
 set LTOIR_GENCODE=-gencode arch=lto_%GPU_CC%,code=lto_%GPU_CC%
@@ -29,6 +35,7 @@ set PTX_FLAGS=%GENCODE% -ptx
 set OBJECT_FLAGS=%GENCODE% -dc
 set LIBRARY_FLAGS=%GENCODE% -lib
 set FATBIN_FLAGS=%FATBIN_GENCODE% --fatbin
+set MULTI_FATBIN_FLAGS=%MULTI_FATBIN_GENCODE% --fatbin
 set LTOIR_FLAGS=%LTOIR_GENCODE% -dc
 
 set OUTPUT_DIR=.
@@ -42,6 +49,7 @@ echo Alternative CC: %ALT_CC%
 nvcc %NVCC_FLAGS% %CUBIN_FLAGS% -o %OUTPUT_DIR%\undefined_extern.cubin undefined_extern.cu
 nvcc %NVCC_FLAGS% %CUBIN_FLAGS% -o %OUTPUT_DIR%\test_device_functions.cubin test_device_functions.cu
 nvcc %NVCC_FLAGS% %FATBIN_FLAGS% -o %OUTPUT_DIR%\test_device_functions.fatbin test_device_functions.cu
+nvcc %NVCC_FLAGS% %MULTI_FATBIN_FLAGS% -o %OUTPUT_DIR%\test_device_functions_multi.fatbin test_device_functions.cu
 nvcc %NVCC_FLAGS% %PTX_FLAGS% -o %OUTPUT_DIR%\test_device_functions.ptx test_device_functions.cu
 nvcc %NVCC_FLAGS% %OBJECT_FLAGS% -o %OUTPUT_DIR%\test_device_functions.o test_device_functions.cu
 nvcc %NVCC_FLAGS% %LIBRARY_FLAGS% -o %OUTPUT_DIR%\test_device_functions.a test_device_functions.cu

@@ -21,6 +21,9 @@ import threading
 import traceback
 import asyncio
 import pathlib
+import subprocess
+import tempfile
+import re
 from itertools import product
 from abc import ABCMeta, abstractmethod
 from ctypes import (c_int, byref, c_size_t, c_char, c_char_p, addressof,
@@ -36,7 +39,7 @@ from .error import CudaSupportError, CudaDriverError
 from .drvapi import API_PROTOTYPES
 from .drvapi import cu_occupancy_b2d_size, cu_stream_callback_pyobj, cu_uuid
 from .mappings import FILE_EXTENSION_MAP
-from .linkable_code import LinkableCode
+from .linkable_code import LinkableCode, LTOIR, Fatbin, Object
 from numba.cuda.cudadrv import enums, drvapi, nvrtc
 
 USE_NV_BINDING = config.CUDA_USE_NVIDIA_BINDING
@@ -2683,12 +2686,18 @@ class Linker(metaclass=ABCMeta):
             cu = f.read()
         self.add_cu(cu, os.path.basename(path))
 
-    def add_file_guess_ext(self, path_or_code):
+    def add_file_guess_ext(self, path_or_code, ignore_nonlto=False):
         """
         Add a file or LinkableCode object to the link. If a file is
         passed, the type will be inferred from the extension. A LinkableCode
         object represents a file already in memory.
+
+        When `ignore_nonlto` is set to true, do not add code that will not
+        be LTO-ed in the linking process. This is useful in inspecting the
+        LTO-ed portion of the PTX when linker is added with objects that can be
+        both LTO-ed and not LTO-ed.
         """
+
         if isinstance(path_or_code, str):
             ext = pathlib.Path(path_or_code).suffix
             if ext == '':
@@ -2704,6 +2713,26 @@ class Linker(metaclass=ABCMeta):
                         "Don't know how to link file with extension "
                         f"{ext}"
                     )
+
+                if ignore_nonlto:
+                    warn_and_return = False
+                    if kind in (
+                        FILE_EXTENSION_MAP["fatbin"], FILE_EXTENSION_MAP["o"]
+                    ):
+                        entry_types = inspect_obj_content(path_or_code)
+                        if "nvvm" not in entry_types:
+                            warn_and_return = True
+                    elif kind != FILE_EXTENSION_MAP["ltoir"]:
+                        warn_and_return = True
+
+                    if warn_and_return:
+                        warnings.warn(
+                            f"Not adding {path_or_code} as it is not "
+                            "optimizable at link time, and `ignore_nonlto == "
+                            "True`."
+                        )
+                        return
+
                 self.add_file(path_or_code, kind)
             return
         else:
@@ -2716,6 +2745,25 @@ class Linker(metaclass=ABCMeta):
             if path_or_code.kind == "cu":
                 self.add_cu(path_or_code.data, path_or_code.name)
             else:
+                if ignore_nonlto:
+                    warn_and_return = False
+                    if isinstance(path_or_code, (Fatbin, Object)):
+                        with tempfile.NamedTemporaryFile("w") as fp:
+                            fp.write(path_or_code.data)
+                            entry_types = inspect_obj_content(fp.name)
+                        if "nvvm" not in entry_types:
+                            warn_and_return = True
+                    elif not isinstance(path_or_code, LTOIR):
+                        warn_and_return = True
+
+                    if warn_and_return:
+                        warnings.warn(
+                            f"Not adding {path_or_code.name} as it is not "
+                            "optimizable at link time, and `ignore_nonlto == "
+                            "True`."
+                        )
+                        return
+
                 self.add_data(
                     path_or_code.data, path_or_code.kind, path_or_code.name
                 )
@@ -3065,6 +3113,28 @@ class PyNvJitLinker(Linker):
         name = pathlib.Path(path).name
         self.add_data(data, kind, name)
 
+    def add_cu(self, cu, name):
+        """Add CUDA source in a string to the link. The name of the source
+        file should be specified in `name`."""
+        with driver.get_active_context() as ac:
+            dev = driver.get_device(ac.devnum)
+            cc = dev.compute_capability
+
+        program, log = nvrtc.compile(cu, name, cc, ltoir=self.lto)
+
+        if not self.lto and config.DUMP_ASSEMBLY:
+            print(("ASSEMBLY %s" % name).center(80, "-"))
+            print(program)
+            print("=" * 80)
+
+        suffix = ".ltoir" if self.lto else ".ptx"
+        program_name = os.path.splitext(name)[0] + suffix
+        # Link the program's PTX or LTOIR using the normal linker mechanism
+        if self.lto:
+            self.add_ltoir(program, program_name)
+        else:
+            self.add_ptx(program.encode(), program_name)
+
     def add_data(self, data, kind, name):
         if kind == FILE_EXTENSION_MAP["cubin"]:
             fn = self._linker.add_cubin
@@ -3083,6 +3153,12 @@ class PyNvJitLinker(Linker):
 
         try:
             fn(data, name)
+        except NvJitLinkError as e:
+            raise LinkerError from e
+
+    def get_linked_ptx(self):
+        try:
+            return self._linker.get_linked_ptx()
         except NvJitLinkError as e:
             raise LinkerError from e
 
@@ -3361,3 +3437,28 @@ def get_version():
     Return the driver version as a tuple of (major, minor)
     """
     return driver.get_version()
+
+
+def inspect_obj_content(objpath: str):
+    """
+    Given path to a fatbin or object, use `cuobjdump` to examine its content
+    Return the set of entries in the object.
+    """
+    code_types :set[str] = set()
+
+    try:
+        out = subprocess.run(["cuobjdump", objpath], check=True,
+                             capture_output=True)
+    except FileNotFoundError as e:
+        msg = ("cuobjdump has not been found. You may need "
+               "to install the CUDA toolkit and ensure that "
+               "it is available on your PATH.\n")
+        raise RuntimeError(msg) from e
+
+    objtable = out.stdout.decode('utf-8')
+    entry_pattern = r"Fatbin (.*) code"
+    for line in objtable.split("\n"):
+        if match := re.match(entry_pattern, line):
+            code_types.add(match.group(1))
+
+    return code_types
