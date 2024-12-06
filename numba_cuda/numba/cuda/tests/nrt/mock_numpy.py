@@ -1,8 +1,8 @@
-
 from numba.core import errors, types
 from numba.core.extending import overload
 from numba.np.arrayobj import (_check_const_str_dtype, is_nonelike,
-                               ty_parse_dtype, ty_parse_shape, numpy_empty_nd)
+                               ty_parse_dtype, ty_parse_shape, numpy_empty_nd,
+                               numpy_empty_like_nd)
 
 
 # Typical tests for allocation use array construction (e.g. np.zeros, np.empty,
@@ -17,6 +17,10 @@ from numba.np.arrayobj import (_check_const_str_dtype, is_nonelike,
 # longer be necessary and the tests in this module should be switched to use
 # the relevant NumPy functions instead.
 def cuda_empty(shape, dtype):
+    pass
+
+
+def cuda_empty_like(arr):
     pass
 
 
@@ -40,3 +44,23 @@ def ol_cuda_empty(shape, dtype):
     else:
         msg = f"Cannot parse input types to function np.empty({shape}, {dtype})"
         raise errors.TypingError(msg)
+
+
+@overload(cuda_empty_like)
+def ol_cuda_empty_like(arr):
+
+    if isinstance(arr, types.Array):
+        nb_dtype = arr.dtype
+    else:
+        nb_dtype = arr
+
+    if isinstance(arr, types.Array):
+        layout = arr.layout if arr.layout != 'A' else 'C'
+        retty = arr.copy(dtype=nb_dtype, layout=layout, readonly=False)
+    else:
+        retty = types.Array(nb_dtype, 0, 'C')
+
+    def impl(arr):
+        dtype = None
+        return numpy_empty_like_nd(arr, dtype, retty)
+    return impl

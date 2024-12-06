@@ -21,6 +21,7 @@ from numba.cuda.descriptor import cuda_target
 from numba.cuda.errors import (missing_launch_config_msg,
                                normalize_kernel_dimensions)
 from numba.cuda import types as cuda_types
+from numba.cuda.runtime.nrt import rtsys
 
 from numba import cuda
 from numba import _dispatcher
@@ -360,6 +361,11 @@ class _Kernel(serialize.ReduceMixin):
             zero_stream = None
 
         stream_handle = stream and stream.handle or zero_stream
+
+        rtsys.ensure_allocate(stream_handle)
+        rtsys.set_memsys_to_module(cufunc.module, stream_handle)
+        rtsys.ensure_initialize(stream_handle)
+        rtsys.memsys_stats_enabled(stream_handle)
 
         # Invoke kernel
         driver.launch_kernel(cufunc.handle,

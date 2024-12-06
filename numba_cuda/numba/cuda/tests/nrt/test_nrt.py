@@ -1,44 +1,12 @@
 import re
-import gc
 import numpy as np
 import unittest
 from unittest.mock import patch
-from numba.core.runtime import rtsys
-from numba.tests.support import EnableNRTStatsMixin
 from numba.cuda.testing import CUDATestCase
 
-from .mock_numpy import cuda_empty
+from numba.cuda.tests.nrt.mock_numpy import cuda_empty
 
 from numba import cuda
-
-
-class TestNrtRefCt(EnableNRTStatsMixin, CUDATestCase):
-
-    def setUp(self):
-        # Clean up any NRT-backed objects hanging in a dead reference cycle
-        gc.collect()
-        super(TestNrtRefCt, self).setUp()
-
-    @unittest.expectedFailure
-    def test_no_return(self):
-        """
-        Test issue #1291
-        """
-        n = 10
-
-        @cuda.jit
-        def kernel():
-            for i in range(n):
-                temp = cuda_empty(2, np.float64) # noqa: F841
-            return None
-
-        init_stats = rtsys.get_allocation_stats()
-
-        with patch('numba.config.CUDA_ENABLE_NRT', True, create=True):
-            kernel[1,1]()
-        cur_stats = rtsys.get_allocation_stats()
-        self.assertEqual(cur_stats.alloc - init_stats.alloc, n)
-        self.assertEqual(cur_stats.free - init_stats.free, n)
 
 
 class TestNrtBasic(CUDATestCase):
