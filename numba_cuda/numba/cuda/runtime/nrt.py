@@ -131,7 +131,7 @@ class _Runtime:
         self._single_thread_launch(
             self._memsys_module,
             stream,
-            "NRT_MemSys_stats_get_enabled",
+            "NRT_MemSys_stats_enabled",
             (enabled_ar.device_ctypes_pointer,)
         )
 
