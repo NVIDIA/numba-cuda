@@ -18,7 +18,6 @@ import functools
 import warnings
 import logging
 import threading
-import traceback
 import asyncio
 import pathlib
 from itertools import product
@@ -37,6 +36,7 @@ from .drvapi import API_PROTOTYPES
 from .drvapi import cu_occupancy_b2d_size, cu_stream_callback_pyobj, cu_uuid
 from .mappings import FILE_EXTENSION_MAP
 from .linkable_code import LinkableCode
+from numba.cuda.utils import _readenv
 from numba.cuda.cudadrv import enums, drvapi, nvrtc
 
 USE_NV_BINDING = config.CUDA_USE_NVIDIA_BINDING
@@ -56,25 +56,6 @@ _py_decref = ctypes.pythonapi.Py_DecRef
 _py_incref = ctypes.pythonapi.Py_IncRef
 _py_decref.argtypes = [ctypes.py_object]
 _py_incref.argtypes = [ctypes.py_object]
-
-
-def _readenv(name, ctor, default):
-    value = os.environ.get(name)
-    if value is None:
-        return default() if callable(default) else default
-    try:
-        if ctor is bool:
-            return value.lower() in {'1', "true"}
-        return ctor(value)
-    except Exception:
-        warnings.warn(
-            f"Environment variable '{name}' is defined but its associated "
-            f"value '{value}' could not be parsed.\n"
-            "The parse failed with exception:\n"
-            f"{traceback.format_exc()}",
-            RuntimeWarning
-        )
-        return default
 
 
 _MVC_ERROR_MESSAGE = (
