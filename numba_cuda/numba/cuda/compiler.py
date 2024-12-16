@@ -206,6 +206,7 @@ def compile_cuda(pyfunc, return_type, args, debug=False, lineinfo=False,
 
     if debug:
         flags.error_model = 'python'
+        flags.dbg_extend_lifetimes = True
     else:
         flags.error_model = 'numpy'
 
