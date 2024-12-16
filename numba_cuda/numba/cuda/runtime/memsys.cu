@@ -25,6 +25,30 @@ extern "C" __global__ void NRT_MemSys_read(uint64_t *managed_memsys)
   managed_memsys[3] = TheMSys->stats.mi_free;
 }
 
+extern "C" __global__ void NRT_MemSys_read_alloc(uint64_t *managed_memsys)
+{
+  detail::check_memsys();
+  managed_memsys[0] = TheMSys->stats.alloc;
+}
+
+extern "C" __global__ void NRT_MemSys_read_free(uint64_t *managed_memsys)
+{
+  detail::check_memsys();
+  managed_memsys[0] = TheMSys->stats.free;
+}
+
+extern "C" __global__ void NRT_MemSys_read_mi_alloc(uint64_t *managed_memsys)
+{
+  detail::check_memsys();
+  managed_memsys[0] = TheMSys->stats.mi_alloc;
+}
+
+extern "C" __global__ void NRT_MemSys_read_mi_free(uint64_t *managed_memsys)
+{
+  detail::check_memsys();
+  managed_memsys[0] = TheMSys->stats.mi_free;
+}
+
 extern "C" __global__ void NRT_MemSys_init(void)
 {
   detail::check_memsys();

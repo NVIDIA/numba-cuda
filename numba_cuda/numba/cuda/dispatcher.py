@@ -365,7 +365,8 @@ class _Kernel(serialize.ReduceMixin):
         rtsys.ensure_allocated(stream_handle)
         rtsys.set_memsys_to_module(cufunc.module, stream_handle)
         rtsys.ensure_initialized(stream_handle)
-        rtsys.memsys_enable_stats(stream_handle)
+        if config.CUDA_NRT_STATS:
+            rtsys.memsys_enable_stats(stream_handle)
 
         # Invoke kernel
         driver.launch_kernel(cufunc.handle,

@@ -163,6 +163,9 @@ class _Runtime:
 
     @_alloc_init_guard
     def get_allocation_stats(self, stream=None):
+        enabled = self.memsys_stats_enabled(stream)
+        if not enabled:
+            raise RuntimeError("NRT stats are disabled.")
         memsys = self._copy_memsys_to_host(stream)
         return _nrt_mstats(
             alloc=memsys["alloc"],
@@ -170,6 +173,51 @@ class _Runtime:
             mi_alloc=memsys["mi_alloc"],
             mi_free=memsys["mi_free"]
         )
+
+    @_alloc_init_guard
+    def _get_single_stat(self, stat, stream=None):
+        got = cuda.managed_array(1, np.uint64)
+        self._single_thread_launch(
+            self._memsys_module,
+            stream,
+            f"NRT_MemSys_read_{stat}",
+            [got.device_ctypes_pointer]
+        )
+
+        cuda.synchronize()
+        return got[0]
+
+    @_alloc_init_guard
+    def memsys_get_stats_alloc(self, stream=None):
+        enabled = self.memsys_stats_enabled(stream)
+        if not enabled:
+            raise RuntimeError("NRT stats are disabled.")
+
+        return self._get_single_stat("alloc")
+
+    @_alloc_init_guard
+    def memsys_get_stats_free(self, stream=None):
+        enabled = self.memsys_stats_enabled(stream)
+        if not enabled:
+            raise RuntimeError("NRT stats are disabled.")
+
+        return self._get_single_stat("free")
+
+    @_alloc_init_guard
+    def memsys_get_stats_mi_alloc(self, stream=None):
+        enabled = self.memsys_stats_enabled(stream)
+        if not enabled:
+            raise RuntimeError("NRT stats are disabled.")
+
+        return self._get_single_stat("mi_alloc")
+
+    @_alloc_init_guard
+    def memsys_get_stats_mi_free(self, stream=None):
+        enabled = self.memsys_stats_enabled(stream)
+        if not enabled:
+            raise RuntimeError("NRT stats are disabled.")
+
+        return self._get_single_stat("mi_free")
 
     def set_memsys_to_module(self, module, stream=None):
         if self._memsys is None:
@@ -186,6 +234,7 @@ class _Runtime:
 
     @_alloc_init_guard
     def print_memsys(self, stream=None):
+        """Print the current statistics of memsys, for debugging purpose."""
         cuda.synchronize()
         self._single_thread_launch(
             self._memsys_module,

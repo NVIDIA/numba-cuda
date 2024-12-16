@@ -6,7 +6,7 @@ import unittest
 from unittest.mock import patch
 from numba.cuda.testing import CUDATestCase
 
-from numba.cuda.tests.nrt.mock_numpy import cuda_empty
+from numba.cuda.tests.nrt.mock_numpy import cuda_empty, cuda_ones, cuda_arange
 from numba.tests.support import run_in_subprocess
 
 from numba import cuda
@@ -159,6 +159,71 @@ class TestNrtStatistics(CUDATestCase):
         env = os.environ.copy()
         env.pop('NUMBA_CUDA_NRT_STATS', None)
         self.check_env_var_off(env)
+
+    def test_stats_status_toggle(self):
+
+        @cuda.jit
+        def foo():
+            tmp = cuda_ones(3)
+            arr = cuda_arange(5 * tmp[0]) # noqa: F841
+            return None
+
+        # Switch on stats
+        rtsys.memsys_enable_stats()
+        # check the stats are on
+        self.assertTrue(rtsys.memsys_stats_enabled())
+
+        for i in range(2):
+            # capture the stats state
+            stats_1 = rtsys.get_allocation_stats()
+            # Switch off stats
+            rtsys.memsys_disable_stats()
+            # check the stats are off
+            self.assertFalse(rtsys.memsys_stats_enabled())
+            # run something that would move the counters were they enabled
+            with patch('numba.config.CUDA_ENABLE_NRT', True, create=True):
+                foo[1, 1]()
+            # Switch on stats
+            rtsys.memsys_enable_stats()
+            # check the stats are on
+            self.assertTrue(rtsys.memsys_stats_enabled())
+            # capture the stats state (should not have changed)
+            stats_2 = rtsys.get_allocation_stats()
+            # run something that will move the counters
+            with patch('numba.config.CUDA_ENABLE_NRT', True, create=True):
+                foo[1, 1]()
+            # capture the stats state (should have changed)
+            stats_3 = rtsys.get_allocation_stats()
+            # check stats_1 == stats_2
+            self.assertEqual(stats_1, stats_2)
+            # check stats_2 < stats_3
+            self.assertLess(stats_2, stats_3)
+
+    def test_rtsys_stats_query_raises_exception_when_disabled(self):
+        # Checks that the standard rtsys.get_allocation_stats() query raises
+        # when stats counters are turned off.
+
+        rtsys.memsys_disable_stats()
+        self.assertFalse(rtsys.memsys_stats_enabled())
+
+        with self.assertRaises(RuntimeError) as raises:
+            rtsys.get_allocation_stats()
+
+        self.assertIn("NRT stats are disabled.", str(raises.exception))
+
+    def test_nrt_explicit_stats_query_raises_exception_when_disabled(self):
+        # Checks the various memsys_get_stats functions raise if queried when
+        # the stats counters are disabled.
+        method_variations = ('alloc', 'free', 'mi_alloc', 'mi_free')
+        for meth in method_variations:
+            stats_func = getattr(rtsys, f'memsys_get_stats_{meth}')
+            with self.subTest(stats_func=stats_func):
+                # Turn stats off
+                rtsys.memsys_disable_stats()
+                self.assertFalse(rtsys.memsys_stats_enabled())
+                with self.assertRaises(RuntimeError) as raises:
+                    stats_func()
+                self.assertIn("NRT stats are disabled.", str(raises.exception))
 
 
 if __name__ == '__main__':
