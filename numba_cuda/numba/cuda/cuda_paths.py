@@ -310,7 +310,9 @@ def get_conda_include_dir():
         # though usually it shouldn't.
         include_dir = os.path.join(sys.prefix, 'include')
 
-    if os.path.exists(include_dir):
+    if (os.path.exists(include_dir) and os.path.isdir(include_dir)
+            and os.path.exists(os.path.join(include_dir,
+                                            'cuda_device_runtime_api.h'))):
         return include_dir
     return
 

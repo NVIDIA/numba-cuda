@@ -9,7 +9,6 @@ import os
 import subprocess
 import tempfile
 
-
 CUDA_TRIPLE = 'nvptx64-nvidia-cuda'
 
 
@@ -181,17 +180,7 @@ class CUDACodeLibrary(serialize.ReduceMixin, CodeLibrary):
 
         return ltoir
 
-    def get_cubin(self, cc=None):
-        cc = self._ensure_cc(cc)
-
-        cubin = self._cubin_cache.get(cc, None)
-        if cubin:
-            return cubin
-
-        linker = driver.Linker.new(
-            max_registers=self._max_registers, cc=cc, lto=self._lto
-        )
-
+    def _link_all(self, linker, cc, ignore_nonlto=False):
         if linker.lto:
             ltoir = self.get_ltoir(cc=cc)
             linker.add_ltoir(ltoir)
@@ -200,11 +189,44 @@ class CUDACodeLibrary(serialize.ReduceMixin, CodeLibrary):
             linker.add_ptx(ptx.encode())
 
         for path in self._linking_files:
-            linker.add_file_guess_ext(path)
+            linker.add_file_guess_ext(path, ignore_nonlto)
         if self.needs_cudadevrt:
-            linker.add_file_guess_ext(get_cudalib('cudadevrt', static=True))
+            linker.add_file_guess_ext(
+                get_cudalib('cudadevrt', static=True), ignore_nonlto
+            )
 
+    def get_cubin(self, cc=None):
+        cc = self._ensure_cc(cc)
+
+        cubin = self._cubin_cache.get(cc, None)
+        if cubin:
+            return cubin
+
+        if self._lto and config.DUMP_ASSEMBLY:
+            linker = driver.Linker.new(
+                max_registers=self._max_registers,
+                cc=cc,
+                additional_flags=["-ptx"],
+                lto=self._lto
+            )
+            # `-ptx` flag is meant to view the optimized PTX for LTO objects.
+            # Non-LTO objects are not passed to linker.
+            self._link_all(linker, cc, ignore_nonlto=True)
+
+            ptx = linker.get_linked_ptx().decode('utf-8')
+
+            print(("ASSEMBLY (AFTER LTO) %s" % self._name).center(80, '-'))
+            print(ptx)
+            print('=' * 80)
+
+        linker = driver.Linker.new(
+            max_registers=self._max_registers,
+            cc=cc,
+            lto=self._lto
+        )
+        self._link_all(linker, cc, ignore_nonlto=False)
         cubin = linker.complete()
+
         self._cubin_cache[cc] = cubin
         self._linkerinfo_cache[cc] = linker.info_log
 
