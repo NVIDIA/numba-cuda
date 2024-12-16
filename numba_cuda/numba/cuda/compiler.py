@@ -497,6 +497,9 @@ def compile(pyfunc, sig, debug=None, lineinfo=False, device=True,
         'opt': 3 if opt else 0
     }
 
+    if debug:
+        nvvm_options['g'] = None
+
     if lto:
         nvvm_options['gen-lto'] = None
 

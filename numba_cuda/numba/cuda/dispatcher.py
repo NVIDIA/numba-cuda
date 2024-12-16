@@ -95,6 +95,9 @@ class _Kernel(serialize.ReduceMixin):
             'opt': 3 if opt else 0
         }
 
+        if debug:
+            nvvm_options['g'] = None
+
         cc = get_current_device().compute_capability
         cres = compile_cuda(self.py_func, types.void, self.argtypes,
                             debug=self.debug,
@@ -917,6 +920,9 @@ class CUDADispatcher(Dispatcher, serialize.ReduceMixin):
                     'opt': 3 if self.targetoptions.get('opt') else 0,
                     'fastmath': fastmath
                 }
+
+                if debug:
+                    nvvm_options['g'] = None
 
                 cc = get_current_device().compute_capability
                 cres = compile_cuda(self.py_func, return_type, args,
