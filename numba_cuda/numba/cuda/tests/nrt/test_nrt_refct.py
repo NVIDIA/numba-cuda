@@ -4,7 +4,7 @@ import numpy as np
 import unittest
 from unittest.mock import patch
 from numba.cuda.runtime import rtsys
-from numba.tests.support import EnableNRTStatsMixin
+from numba.cuda.tests.support import EnableNRTStatsMixin
 from numba.cuda.testing import CUDATestCase
 from numba.cuda.tests.nrt.mock_numpy import cuda_empty, cuda_empty_like
 
@@ -30,11 +30,10 @@ class TestNrtRefCt(EnableNRTStatsMixin, CUDATestCase):
                 temp = cuda_empty(2, np.float64) # noqa: F841
             return None
 
-        stream = cuda.default_stream()
-        init_stats = rtsys.get_allocation_stats(stream)
+        init_stats = rtsys.get_allocation_stats()
         with patch('numba.config.CUDA_ENABLE_NRT', True, create=True):
-            kernel[1, 1, stream]()
-        cur_stats = rtsys.get_allocation_stats(stream)
+            kernel[1, 1]()
+        cur_stats = rtsys.get_allocation_stats()
         self.assertEqual(cur_stats.alloc - init_stats.alloc, n)
         self.assertEqual(cur_stats.free - init_stats.free, n)
 
@@ -56,11 +55,10 @@ class TestNrtRefCt(EnableNRTStatsMixin, CUDATestCase):
 
             return None
 
-        stream = cuda.default_stream()
-        init_stats = rtsys.get_allocation_stats(stream)
+        init_stats = rtsys.get_allocation_stats()
         with patch('numba.config.CUDA_ENABLE_NRT', True, create=True):
-            g[1, 1, stream](10)
-        cur_stats = rtsys.get_allocation_stats(stream)
+            g[1, 1](10)
+        cur_stats = rtsys.get_allocation_stats()
         self.assertEqual(cur_stats.alloc - init_stats.alloc, 1)
         self.assertEqual(cur_stats.free - init_stats.free, 1)
 
@@ -80,11 +78,10 @@ class TestNrtRefCt(EnableNRTStatsMixin, CUDATestCase):
 
         arr = np.random.random((5, 5))  # the values are not consumed
 
-        stream = cuda.default_stream()
-        init_stats = rtsys.get_allocation_stats(stream)
+        init_stats = rtsys.get_allocation_stats()
         with patch('numba.config.CUDA_ENABLE_NRT', True, create=True):
-            if_with_allocation_and_initialization[1, 1, stream](arr, False)
-        cur_stats = rtsys.get_allocation_stats(stream)
+            if_with_allocation_and_initialization[1, 1](arr, False)
+        cur_stats = rtsys.get_allocation_stats()
         self.assertEqual(cur_stats.alloc - init_stats.alloc,
                          cur_stats.free - init_stats.free)
 
@@ -105,11 +102,10 @@ class TestNrtRefCt(EnableNRTStatsMixin, CUDATestCase):
 
         arr = np.ones((2, 2))
 
-        stream = cuda.default_stream()
-        init_stats = rtsys.get_allocation_stats(stream)
+        init_stats = rtsys.get_allocation_stats()
         with patch('numba.config.CUDA_ENABLE_NRT', True, create=True):
-            f[1, 1, stream](arr)
-        cur_stats = rtsys.get_allocation_stats(stream)
+            f[1, 1](arr)
+        cur_stats = rtsys.get_allocation_stats()
         self.assertEqual(cur_stats.alloc - init_stats.alloc,
                          cur_stats.free - init_stats.free)
 
