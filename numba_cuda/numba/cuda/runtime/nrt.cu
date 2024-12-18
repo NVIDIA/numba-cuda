@@ -33,7 +33,8 @@ extern "C" __device__ void* NRT_Allocate(size_t size)
 {
   void* ptr = NULL;
   ptr       = malloc(size);
-  if (TheMSys && TheMSys->stats.enabled) { TheMSys->stats.alloc++; }
+  if (TheMSys && TheMSys->stats.enabled) { 
+    TheMSys->stats.alloc.fetch_add(1, cuda::memory_order_relaxed) }
   return ptr;
 }
 
@@ -48,7 +49,8 @@ extern "C" __device__ void NRT_MemInfo_init(NRT_MemInfo* mi,
   mi->dtor_info = dtor_info;
   mi->data      = data;
   mi->size      = size;
- if (TheMSys && TheMSys->stats.enabled) { TheMSys->stats.mi_alloc++; }
+ if (TheMSys && TheMSys->stats.enabled) { 
+  TheMSys->stats.mi_alloc.fetch_add(1, cuda::memory_order_relaxed); }
 }
 
 extern "C"
@@ -63,7 +65,8 @@ __device__ NRT_MemInfo* NRT_MemInfo_new(
 extern "C" __device__ void NRT_Free(void* ptr)
 {
   free(ptr);
-  if (TheMSys && TheMSys->stats.enabled) { TheMSys->stats.free++; }
+  if (TheMSys && TheMSys->stats.enabled) {
+    TheMSys->stats.free.fetch_add(1, cuda::memory_order_relaxed); }
 }
 
 extern "C" __device__ void NRT_dealloc(NRT_MemInfo* mi)
@@ -74,7 +77,8 @@ extern "C" __device__ void NRT_dealloc(NRT_MemInfo* mi)
 extern "C" __device__ void NRT_MemInfo_destroy(NRT_MemInfo* mi)
 {
   NRT_dealloc(mi);
-  if (TheMSys && TheMSys->stats.enabled) { TheMSys->stats.mi_free++; }
+  if (TheMSys && TheMSys->stats.enabled) { 
+    TheMSys->stats.mi_free.fetch_add(1, cuda::memory_order_relaxed); }
 }
 
 extern "C" __device__ void NRT_MemInfo_call_dtor(NRT_MemInfo* mi)
@@ -153,7 +157,7 @@ extern "C" __device__ void* NRT_Allocate_External(size_t size) {
 
     if (TheMSys && TheMSys->stats.enabled)
     {
-       TheMSys->stats.alloc++;
+       TheMSys->stats.alloc.fetch_add(1, cuda::memory_order_relaxed);
     }
     return ptr;
 }
