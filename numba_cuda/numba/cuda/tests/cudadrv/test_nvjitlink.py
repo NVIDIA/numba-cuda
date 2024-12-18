@@ -8,6 +8,13 @@ from numba import cuda
 from numba import config
 from numba.tests.support import run_in_subprocess, override_config
 
+try:
+    import pynvjitlink  # noqa: F401
+    PYNVJITLINK_INSTALLED = True
+except ImportError:
+    PYNVJITLINK_INSTALLED = False
+
+
 import itertools
 import os
 import io
@@ -253,6 +260,7 @@ class TestLinker(CUDATestCase):
                 pass
 
 
+@unittest.skipIf(not PYNVJITLINK_INSTALLED)
 class TestLinkerUsage(CUDATestCase):
     """Test that whether pynvjitlink can be enabled by both environment variable
     and modification of config at runtime.
