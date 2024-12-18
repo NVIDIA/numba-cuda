@@ -3,17 +3,20 @@ import os
 
 import numpy as np
 import unittest
-from unittest.mock import patch
 from numba.cuda.testing import CUDATestCase
 
 from numba.cuda.tests.nrt.mock_numpy import cuda_empty, cuda_ones, cuda_arange
-from numba.tests.support import run_in_subprocess
+from numba.tests.support import run_in_subprocess, override_config
 
 from numba import cuda
 from numba.cuda.runtime.nrt import rtsys
 
 
 class TestNrtBasic(CUDATestCase):
+    def run(self, result=None):
+        with override_config("CUDA_ENABLE_NRT", True):
+            super(TestNrtBasic, self).run(result)
+
     def test_nrt_launches(self):
         @cuda.jit
         def f(x):
@@ -24,8 +27,7 @@ class TestNrtBasic(CUDATestCase):
             x = cuda_empty(10, np.int64)
             f(x)
 
-        with patch('numba.config.CUDA_ENABLE_NRT', True, create=True):
-            g[1,1]()
+        g[1,1]()
         cuda.synchronize()
 
     def test_nrt_ptx_contains_refcount(self):
@@ -38,8 +40,7 @@ class TestNrtBasic(CUDATestCase):
             x = cuda_empty(10, np.int64)
             f(x)
 
-        with patch('numba.config.CUDA_ENABLE_NRT', True, create=True):
-            g[1,1]()
+        g[1,1]()
 
         ptx = next(iter(g.inspect_asm().values()))
 
@@ -72,8 +73,7 @@ class TestNrtBasic(CUDATestCase):
 
         out_ary = np.zeros(1, dtype=np.int64)
 
-        with patch('numba.config.CUDA_ENABLE_NRT', True, create=True):
-            g[1,1](out_ary)
+        g[1,1](out_ary)
 
         self.assertEqual(out_ary[0], 1)
 
@@ -168,36 +168,35 @@ class TestNrtStatistics(CUDATestCase):
             arr = cuda_arange(5 * tmp[0]) # noqa: F841
             return None
 
-        # Switch on stats
-        rtsys.memsys_enable_stats()
-        # check the stats are on
-        self.assertTrue(rtsys.memsys_stats_enabled())
-
-        for i in range(2):
-            # capture the stats state
-            stats_1 = rtsys.get_allocation_stats()
-            # Switch off stats
-            rtsys.memsys_disable_stats()
-            # check the stats are off
-            self.assertFalse(rtsys.memsys_stats_enabled())
-            # run something that would move the counters were they enabled
-            with patch('numba.config.CUDA_ENABLE_NRT', True, create=True):
-                foo[1, 1]()
+        with override_config('CUDA_ENABLE_NRT', True):
             # Switch on stats
             rtsys.memsys_enable_stats()
             # check the stats are on
             self.assertTrue(rtsys.memsys_stats_enabled())
-            # capture the stats state (should not have changed)
-            stats_2 = rtsys.get_allocation_stats()
-            # run something that will move the counters
-            with patch('numba.config.CUDA_ENABLE_NRT', True, create=True):
+
+            for i in range(2):
+                # capture the stats state
+                stats_1 = rtsys.get_allocation_stats()
+                # Switch off stats
+                rtsys.memsys_disable_stats()
+                # check the stats are off
+                self.assertFalse(rtsys.memsys_stats_enabled())
+                # run something that would move the counters were they enabled
                 foo[1, 1]()
-            # capture the stats state (should have changed)
-            stats_3 = rtsys.get_allocation_stats()
-            # check stats_1 == stats_2
-            self.assertEqual(stats_1, stats_2)
-            # check stats_2 < stats_3
-            self.assertLess(stats_2, stats_3)
+                # Switch on stats
+                rtsys.memsys_enable_stats()
+                # check the stats are on
+                self.assertTrue(rtsys.memsys_stats_enabled())
+                # capture the stats state (should not have changed)
+                stats_2 = rtsys.get_allocation_stats()
+                # run something that will move the counters
+                foo[1, 1]()
+                # capture the stats state (should have changed)
+                stats_3 = rtsys.get_allocation_stats()
+                # check stats_1 == stats_2
+                self.assertEqual(stats_1, stats_2)
+                # check stats_2 < stats_3
+                self.assertLess(stats_2, stats_3)
 
     def test_rtsys_stats_query_raises_exception_when_disabled(self):
         # Checks that the standard rtsys.get_allocation_stats() query raises
