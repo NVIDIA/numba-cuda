@@ -260,7 +260,9 @@ class TestLinker(CUDATestCase):
                 pass
 
 
-@unittest.skipIf(not PYNVJITLINK_INSTALLED)
+@unittest.skipIf(
+    not PYNVJITLINK_INSTALLED, reason="Pynvjitlink is not installed"
+)
 class TestLinkerUsage(CUDATestCase):
     """Test that whether pynvjitlink can be enabled by both environment variable
     and modification of config at runtime.
