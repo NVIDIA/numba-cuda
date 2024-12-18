@@ -267,9 +267,8 @@ class TestLinkerUsage(CUDATestCase):
     """Test that whether pynvjitlink can be enabled by both environment variable
     and modification of config at runtime.
     """
-    def test_linker_enabled_envvar(self):
-        # Linkable code is only supported via pynvjitlink
-        src = """if 1:
+
+    src = """if 1:
         import os
         from numba import cuda
 
@@ -278,45 +277,56 @@ class TestLinkerUsage(CUDATestCase):
             test_device_functions_cubin = os.path.join(
                 TEST_BIN_DIR, "test_device_functions.cubin"
             )
-        print(TEST_BIN_DIR)
-        files = (
-            test_device_functions_cubin,
-        )
-        for lto in [True, False]:
-            for file in files:
-                sig = "uint32(uint32, uint32)"
-                add_from_numba = cuda.declare_device("add_from_numba", sig)
 
-                @cuda.jit(link=[file], lto=lto)
-                def kernel(result):
-                    result[0] = add_from_numba(1, 2)
+        sig = "uint32(uint32, uint32)"
+        add_from_numba = cuda.declare_device("add_from_numba", sig)
 
-                result = cuda.device_array(1)
-                kernel[1, 1](result)
-                assert result[0] == 3
+        @cuda.jit(link=[test_device_functions_cubin], lto=True)
+        def kernel(result):
+            result[0] = add_from_numba(1, 2)
+
+        result = cuda.device_array(1)
+        kernel[1, 1](result)
+        assert result[0] == 3
         """
+
+    def test_linker_enabled_envvar(self):
         env = os.environ.copy()
         env['NUMBA_CUDA_ENABLE_PYNVJITLINK'] = "1"
-        print(env['NUMBA_CUDA_TEST_BIN_DIR'])
-        run_in_subprocess(src, env=env)
+        run_in_subprocess(self.src, env=env)
+
+    def test_linker_disabled_envvar(self):
+        env = os.environ.copy()
+        env.pop('NUMBA_CUDA_ENABLE_PYNVJITLINK', None)
+        with self.assertRaisesRegex(
+            AssertionError, "LTO and additional flags require PyNvJitLinker"
+        ):
+            # Actual error raised is `ValueError`, but `run_in_subprocess`
+            # reraises as AssertionError.
+            run_in_subprocess(self.src, env=env)
+
+    def _lto_test(self):
+        sig = "uint32(uint32, uint32)"
+        add_from_numba = cuda.declare_device("add_from_numba", sig)
+
+        @cuda.jit(link=[test_device_functions_cubin], lto=True)
+        def kernel(result):
+            result[0] = add_from_numba(1, 2)
+
+        result = cuda.device_array(1)
+        kernel[1, 1](result)
+        assert result[0] == 3
 
     def test_linker_enabled_config(self):
         with override_config("CUDA_ENABLE_PYNVJITLINK", True):
-            files = (
-                test_device_functions_cubin,
-            )
-            for lto in [True, False]:
-                for file in files:
-                    sig = "uint32(uint32, uint32)"
-                    add_from_numba = cuda.declare_device("add_from_numba", sig)
+            self._lto_test()
 
-                    @cuda.jit(link=[file], lto=lto)
-                    def kernel(result):
-                        result[0] = add_from_numba(1, 2)
-
-                    result = cuda.device_array(1)
-                    kernel[1, 1](result)
-                    assert result[0] == 3
+    def test_linker_disabled_config(self):
+        with override_config("CUDA_ENABLE_PYNVJITLINK", False):
+            with self.assertRaisesRegex(
+                ValueError, "LTO and additional flags require PyNvJitLinker"
+            ):
+                self._lto_test()
 
 
 if __name__ == "__main__":
