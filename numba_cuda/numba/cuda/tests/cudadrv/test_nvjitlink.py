@@ -270,7 +270,9 @@ class TestLinkerUsage(CUDATestCase):
 
     src = """if 1:
         import os
-        from numba import cuda
+        from numba import cuda, config
+
+        {config}
 
         TEST_BIN_DIR = os.getenv("NUMBA_CUDA_TEST_BIN_DIR")
         if TEST_BIN_DIR:
@@ -293,7 +295,7 @@ class TestLinkerUsage(CUDATestCase):
     def test_linker_enabled_envvar(self):
         env = os.environ.copy()
         env['NUMBA_CUDA_ENABLE_PYNVJITLINK'] = "1"
-        run_in_subprocess(self.src, env=env)
+        run_in_subprocess(self.src.format(config=""), env=env)
 
     def test_linker_disabled_envvar(self):
         env = os.environ.copy()
@@ -303,30 +305,23 @@ class TestLinkerUsage(CUDATestCase):
         ):
             # Actual error raised is `ValueError`, but `run_in_subprocess`
             # reraises as AssertionError.
-            run_in_subprocess(self.src, env=env)
-
-    def _lto_test(self):
-        sig = "uint32(uint32, uint32)"
-        add_from_numba = cuda.declare_device("add_from_numba", sig)
-
-        @cuda.jit(link=[test_device_functions_cubin], lto=True)
-        def kernel(result):
-            result[0] = add_from_numba(1, 2)
-
-        result = cuda.device_array(1)
-        kernel[1, 1](result)
-        assert result[0] == 3
+            run_in_subprocess(self.src.format(config=""), env=env)
 
     def test_linker_enabled_config(self):
-        with override_config("CUDA_ENABLE_PYNVJITLINK", True):
-            self._lto_test()
+        env = os.environ.copy()
+        env.pop('NUMBA_CUDA_ENABLE_PYNVJITLINK', None)
+        run_in_subprocess(self.src.format(
+            config="config.CUDA_ENABLE_PYNVJITLINK = True"), env=env)
 
     def test_linker_disabled_config(self):
+        env = os.environ.copy()
+        env.pop('NUMBA_CUDA_ENABLE_PYNVJITLINK', None)
         with override_config("CUDA_ENABLE_PYNVJITLINK", False):
             with self.assertRaisesRegex(
-                ValueError, "LTO and additional flags require PyNvJitLinker"
+                AssertionError, "LTO and additional flags require PyNvJitLinker"
             ):
-                self._lto_test()
+                run_in_subprocess(self.src.format(
+                    config="config.CUDA_ENABLE_PYNVJITLINK = False"), env=env)
 
 
 if __name__ == "__main__":
