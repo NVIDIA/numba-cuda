@@ -508,6 +508,11 @@ class Cuda_atomic_cas(AbstractTemplate):
             return signature(dty, ary, idx, dty, dty)
 
 
+@register_global(breakpoint)
+class Cuda_breakpoint(ConcreteTemplate):
+    cases = [signature(types.none)]
+
+
 @register
 class Cuda_nanosleep(ConcreteTemplate):
     key = cuda.nanosleep

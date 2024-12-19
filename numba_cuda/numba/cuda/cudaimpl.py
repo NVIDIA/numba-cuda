@@ -934,6 +934,14 @@ def ptx_atomic_cas(context, builder, sig, args):
 
 # -----------------------------------------------------------------------------
 
+
+@lower(breakpoint)
+def ptx_brkpt(context, builder, sig, args):
+    brkpt = ir.InlineAsm(ir.FunctionType(ir.VoidType(), []),
+                         "brkpt;", '', side_effect=True)
+    builder.call(brkpt, ())
+
+
 @lower(stubs.nanosleep, types.uint32)
 def ptx_nanosleep(context, builder, sig, args):
     nanosleep = ir.InlineAsm(ir.FunctionType(ir.VoidType(), [ir.IntType(32)]),
