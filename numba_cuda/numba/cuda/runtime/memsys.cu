@@ -82,10 +82,10 @@ extern "C" __global__ void NRT_MemSys_print(void)
   if (TheMSys != nullptr)
   {
     printf("TheMSys->stats.enabled %d\n", TheMSys->stats.enabled);
-    printf("TheMSys->stats.alloc %d\n", TheMSys->stats.alloc);
-    printf("TheMSys->stats.free %d\n", TheMSys->stats.free);
-    printf("TheMSys->stats.mi_alloc %d\n", TheMSys->stats.mi_alloc);
-    printf("TheMSys->stats.mi_free %d\n", TheMSys->stats.mi_free);
+    printf("TheMSys->stats.alloc %d\n", TheMSys->stats.alloc.load());
+    printf("TheMSys->stats.free %d\n", TheMSys->stats.free.load());
+    printf("TheMSys->stats.mi_alloc %d\n", TheMSys->stats.mi_alloc.load());
+    printf("TheMSys->stats.mi_free %d\n", TheMSys->stats.mi_free.load());
   } else {
     printf("TheMsys is null.\n");
   }
