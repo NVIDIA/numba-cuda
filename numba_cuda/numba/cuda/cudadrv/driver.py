@@ -42,6 +42,11 @@ from .mappings import FILE_EXTENSION_MAP
 from .linkable_code import LinkableCode, LTOIR, Fatbin, Object
 from numba.cuda.cudadrv import enums, drvapi, nvrtc
 
+try:
+    from pynvjitlink.api import NvJitLinker, NvJitLinkError
+except ImportError:
+    NvJitLinker, NvJitLinkError = None, None
+
 USE_NV_BINDING = config.CUDA_USE_NVIDIA_BINDING
 
 if USE_NV_BINDING:
@@ -91,20 +96,6 @@ ENABLE_PYNVJITLINK = (
 )
 if not hasattr(config, "CUDA_ENABLE_PYNVJITLINK"):
     config.CUDA_ENABLE_PYNVJITLINK = ENABLE_PYNVJITLINK
-
-if ENABLE_PYNVJITLINK:
-    try:
-        from pynvjitlink.api import NvJitLinker, NvJitLinkError
-    except ImportError:
-        raise ImportError(
-            "Using pynvjitlink requires the pynvjitlink package to be available"
-        )
-
-    if config.CUDA_ENABLE_MINOR_VERSION_COMPATIBILITY:
-        raise ValueError(
-            "Can't set CUDA_ENABLE_MINOR_VERSION_COMPATIBILITY and "
-            "CUDA_ENABLE_PYNVJITLINK at the same time"
-        )
 
 
 def make_logger():
@@ -3061,6 +3052,17 @@ class PyNvJitLinker(Linker):
         lto=False,
         additional_flags=None,
     ):
+        if NvJitLinker is None:
+            raise ImportError(
+                "Using pynvjitlink requires the pynvjitlink package to be "
+                "available"
+            )
+
+        if config.CUDA_ENABLE_MINOR_VERSION_COMPATIBILITY:
+            raise ValueError(
+                "Can't set CUDA_ENABLE_MINOR_VERSION_COMPATIBILITY and "
+                "CUDA_ENABLE_PYNVJITLINK at the same time"
+            )
 
         if cc is None:
             raise RuntimeError("PyNvJitLinker requires CC to be specified")
