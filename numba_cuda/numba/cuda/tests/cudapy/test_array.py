@@ -12,6 +12,31 @@ else:
                             cuda.pinned_array_like)
 
 
+def array_reshape1d(arr, newshape, got):
+    y = arr.reshape(newshape)
+    for i in range(y.shape[0]):
+        got[i] = y[i]
+
+
+def array_reshape2d(arr, newshape, got):
+    y = arr.reshape(newshape)
+    for i in range(y.shape[0]):
+        for j in range(y.shape[1]):
+            got[i, j] = y[i, j]
+
+
+def array_reshape3d(arr, newshape, got):
+    y = arr.reshape(newshape)
+    for i in range(y.shape[0]):
+        for j in range(y.shape[1]):
+            for k in range(y.shape[2]):
+                got[i, j, k] = y[i, j, k]
+
+
+def array_reshape(arr, newshape):
+    return arr.reshape(newshape)
+
+
 class TestCudaArray(CUDATestCase):
     def test_gpu_array_zero_length(self):
         x = np.arange(0)
@@ -254,6 +279,54 @@ class TestCudaArray(CUDATestCase):
         func[1, 128](d_a, result)
 
         self.assertEqual(1, len(func.overloads))
+
+    def test_array_reshape(self):
+        def check(pyfunc, kernelfunc, arr, shape):
+            kernel = cuda.jit(kernelfunc)
+            expected = pyfunc(arr, shape)
+            got = np.zeros(expected.shape, dtype=arr.dtype)
+            kernel[1, 1](arr, shape, got)
+            self.assertPreciseEqual(got, expected)
+
+        def check_only_shape(kernelfunc, arr, shape, expected_shape):
+            kernel = cuda.jit(kernelfunc)
+            got = np.zeros(expected_shape, dtype=arr.dtype)
+            kernel[1, 1](arr, shape, got)
+            self.assertEqual(got.shape, expected_shape)
+            self.assertEqual(got.size, arr.size)
+
+        # 0-sized arrays
+        def check_empty(arr):
+            check(array_reshape, array_reshape1d, arr, 0)
+            check(array_reshape, array_reshape1d, arr, (0,))
+            check(array_reshape, array_reshape3d, arr, (1, 0, 2))
+            check_only_shape(array_reshape2d, arr, (0, -1), (0, 0))
+            check_only_shape(array_reshape2d, arr, (4, -1), (4, 0))
+            check_only_shape(array_reshape3d, arr, (-1, 0, 4), (0, 0, 4))
+
+        # C-contiguous
+        arr = np.arange(24)
+        check(array_reshape, array_reshape1d, arr, (24,))
+        check(array_reshape, array_reshape2d, arr, (4, 6))
+        check(array_reshape, array_reshape2d, arr, (8, 3))
+        check(array_reshape, array_reshape3d, arr, (8, 1, 3))
+
+        arr = np.arange(24).reshape((1, 8, 1, 1, 3, 1))
+        check(array_reshape, array_reshape1d, arr, (24,))
+        check(array_reshape, array_reshape2d, arr, (4, 6))
+        check(array_reshape, array_reshape2d, arr, (8, 3))
+        check(array_reshape, array_reshape3d, arr, (8, 1, 3))
+
+        # Test negative shape value
+        arr = np.arange(25).reshape(5,5)
+        check(array_reshape, array_reshape1d, arr, -1)
+        check(array_reshape, array_reshape1d, arr, (-1,))
+        check(array_reshape, array_reshape2d, arr, (-1, 5))
+        check(array_reshape, array_reshape3d, arr, (5, -1, 5))
+        check(array_reshape, array_reshape3d, arr, (5, 5, -1))
+
+        arr = np.array([])
+        check_empty(arr)
 
 
 if __name__ == '__main__':

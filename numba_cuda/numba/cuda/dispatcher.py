@@ -37,6 +37,8 @@ cuda_fp16_math_funcs = ['hsin', 'hcos',
                         'hrcp', 'hrint',
                         'htrunc', 'hdiv']
 
+reshape_funcs = ['nocopy_empty_reshape', 'numba_attempt_nocopy_reshape']
+
 
 class _Kernel(serialize.ReduceMixin):
     '''
@@ -117,25 +119,43 @@ class _Kernel(serialize.ReduceMixin):
         if not link:
             link = []
 
+        asm = lib.get_asm_str()
+
         # A kernel needs cooperative launch if grid_sync is being used.
-        self.cooperative = 'cudaCGGetIntrinsicHandle' in lib.get_asm_str()
+        self.cooperative = 'cudaCGGetIntrinsicHandle' in asm
         # We need to link against cudadevrt if grid sync is being used.
         if self.cooperative:
             lib.needs_cudadevrt = True
 
-        basedir = os.path.dirname(os.path.abspath(__file__))
-        asm = lib.get_asm_str()
+        def link_to_library_functions(library_functions, library_path,
+                                      prefix=None):
+            """
+            Dynamically links to library functions by searching for their names
+            in the specified library and linking to the corresponding source
+            file.
+            """
+            if prefix is not None:
+                library_functions = [f"{prefix}{fn}" for fn in
+                                     library_functions]
 
-        res = [fn for fn in cuda_fp16_math_funcs
-               if (f'__numba_wrapper_{fn}' in asm)]
+            found_functions = [fn for fn in library_functions
+                               if f'{fn}' in asm]
 
-        if res:
-            # Path to the source containing the foreign function
-            functions_cu_path = os.path.join(basedir,
-                                             'cpp_function_wrappers.cu')
-            link.append(functions_cu_path)
+            if found_functions:
+                basedir = os.path.dirname(os.path.abspath(__file__))
+                source_file_path = os.path.join(basedir, library_path)
+                link.append(source_file_path)
 
-        link = self.maybe_link_nrt(link, tgt_ctx, asm)
+            return found_functions
+
+        # Link to the helper library functions if needed
+        link_to_library_functions(reshape_funcs, 'reshape_funcs.cu')
+        # Link to the CUDA FP16 math library functions if needed
+        link_to_library_functions(cuda_fp16_math_funcs,
+                                  'cpp_function_wrappers.cu',
+                                  '__numba_wrapper_')
+
+        self.maybe_link_nrt(link, tgt_ctx, asm)
 
         for filepath in link:
             lib.add_linking_file(filepath)
@@ -160,7 +180,7 @@ class _Kernel(serialize.ReduceMixin):
 
     def maybe_link_nrt(self, link, tgt_ctx, asm):
         if not tgt_ctx.enable_nrt:
-            return link
+            return
 
         all_nrt = "|".join(self.NRT_functions)
         pattern = (
@@ -174,8 +194,6 @@ class _Kernel(serialize.ReduceMixin):
         if nrt_in_asm:
             nrt_path = os.path.join(basedir, 'runtime', 'nrt.cu')
             link.append(nrt_path)
-
-        return link
 
     @property
     def library(self):
