@@ -266,7 +266,11 @@ def compile(src, name, cc, ltoir=False):
     cudadrv_path = os.path.dirname(os.path.abspath(__file__))
     numba_cuda_path = os.path.dirname(cudadrv_path)
     numba_include = f'-I{numba_cuda_path}'
-    options = [arch, *cuda_include, numba_include, '-rdc', 'true']
+
+    nrt_path = os.path.join(numba_cuda_path, "runtime")
+    nrt_include = f'-I{nrt_path}'
+
+    options = [arch, *cuda_include, numba_include, nrt_include, '-rdc', 'true']
 
     if ltoir:
         options.append("-dlto")
