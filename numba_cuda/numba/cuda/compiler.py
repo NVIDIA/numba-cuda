@@ -352,6 +352,18 @@ def kernel_fixup(kernel, debug):
     kernel.return_value = ir.ReturnValue(kernel, ir.VoidType())
     kernel.args = kernel.args[1:]
 
+    # If debug metadata is present, remove the return value from it
+
+    if kernel_metadata := getattr(kernel, 'metadata', None):
+        if dbg_metadata := kernel_metadata.get('dbg', None):
+            for name, value in dbg_metadata.operands:
+                if name == "type":
+                    type_metadata = value
+                    for tm_name, tm_value in type_metadata.operands:
+                        if tm_name == 'types':
+                            types = tm_value
+                            types.operands = types.operands[1:]
+
     # Mark as a kernel for NVVM
 
     nvvm.set_cuda_kernel(kernel)
