@@ -34,7 +34,7 @@ extern "C" __device__ void* NRT_Allocate(size_t size)
   void* ptr = NULL;
   ptr       = malloc(size);
   if (TheMSys && TheMSys->stats.enabled) { 
-    TheMSys->stats.alloc.fetch_add(1, cuda::memory_order_relaxed) }
+    TheMSys->stats.alloc.fetch_add(1, cuda::memory_order_relaxed); }
   return ptr;
 }
 
