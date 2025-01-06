@@ -233,7 +233,14 @@ class _Kernel(serialize.ReduceMixin):
         """
         Force binding to current CUDA context
         """
-        self._codelibrary.get_cufunc()
+        cufunc = self._codelibrary.get_cufunc()
+
+        if hasattr(self, "target_context") and self.target_context.enable_nrt:
+            rtsys.ensure_initialized()
+            rtsys.set_memsys_to_module(cufunc.module)
+            # We don't know which stream the kernel will be launched on, so
+            # we force synchronize here.
+            cuda.synchronize()
 
     @property
     def regs_per_thread(self):
@@ -361,13 +368,6 @@ class _Kernel(serialize.ReduceMixin):
             zero_stream = None
 
         stream_handle = stream and stream.handle or zero_stream
-
-        if hasattr(self, "target_context") and self.target_context.enable_nrt:
-            # If NRT is enabled, we also initialize the memsys. The statistics
-            # enablement are controlled by a different config setting
-            # `NRT_STATS`.
-            rtsys.ensure_initialized(stream_handle)
-            rtsys.set_memsys_to_module(cufunc.module, stream_handle)
 
         # Invoke kernel
         driver.launch_kernel(cufunc.handle,

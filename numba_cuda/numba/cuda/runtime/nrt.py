@@ -287,7 +287,7 @@ class _Runtime:
         """
         if self._memsys is None:
             raise RuntimeError(
-                "Please allocate NRT Memsys first before initializing.")
+                "Please allocate NRT Memsys first before setting to module.")
 
         self._single_thread_launch(
             module,
