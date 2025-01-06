@@ -137,9 +137,14 @@ class _Runtime:
         """
         Launch memsys initialization kernel
         """
+        self.ensure_allocated()
+
         self._single_thread_launch(
             self._memsys_module, stream, "NRT_MemSys_init")
         self._initialized = True
+
+        if config.CUDA_NRT_STATS:
+            self.memsys_enable_stats()
 
     @_alloc_init_guard
     def memsys_enable_stats(self, stream=None):

@@ -106,7 +106,7 @@ class TestNrtStatistics(CUDATestCase):
 
         # initialize the NRT before use
         rtsys.initialize()
-        assert rtsys.memsys_stats_enabled()
+        assert rtsys.memsys_stats_enabled(), "Stats not enabled"
         orig_stats = rtsys.get_allocation_stats()
         foo[1, 1]()
         new_stats = rtsys.get_allocation_stats()
@@ -116,10 +116,14 @@ class TestNrtStatistics(CUDATestCase):
         total_mi_free = new_stats.mi_free - orig_stats.mi_free
 
         expected = 1
-        assert total_alloc == expected
-        assert total_free == expected
-        assert total_mi_alloc == expected
-        assert total_mi_free == expected
+        assert total_alloc == expected, \\
+            f"total_alloc != expected, {total_alloc} != {expected}"
+        assert total_free == expected, \\
+            f"total_free != expected, {total_free} != {expected}"
+        assert total_mi_alloc == expected, \\
+            f"total_mi_alloc != expected, {total_mi_alloc} != {expected}"
+        assert total_mi_free == expected, \\
+            f"total_mi_free != expected, {total_mi_free} != {expected}"
         """
 
         # Check env var explicitly being set works
