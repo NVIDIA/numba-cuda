@@ -1,5 +1,7 @@
 #include "memsys.cuh"
 
+__device__ size_t memsys_size = sizeof(NRT_MemSys);
+
 namespace detail
 {
   void __device__ check_memsys()

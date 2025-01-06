@@ -1,10 +1,11 @@
+import ctypes
 import os
 from functools import wraps
 import numpy as np
 
 from numba import cuda, config
 from numba.core.runtime.nrt import _nrt_mstats
-from numba.cuda.cudadrv.driver import Linker, launch_kernel
+from numba.cuda.cudadrv.driver import Linker, driver, launch_kernel
 from numba.cuda.cudadrv import devices
 from numba.cuda.api import get_current_device
 from numba.cuda.utils import _readenv
@@ -101,8 +102,12 @@ class _Runtime:
             self._compile_memsys_module()
 
         # Allocate space for NRT_MemSys
-        # TODO: determine the size of NRT_MemSys at runtime
-        self._memsys = device_array((40,), dtype="i1", stream=stream)
+        ptr, nbytes = self._memsys_module.get_global_symbol("memsys_size")
+        memsys_size = ctypes.c_uint64()
+        driver.cuMemcpyDtoH(ctypes.addressof(memsys_size),
+                            ptr.device_ctypes_pointer, nbytes)
+        self._memsys = device_array(
+            (memsys_size.value,), dtype="i1", stream=stream)
         self.set_memsys_to_module(self._memsys_module, stream=stream)
 
     def _single_thread_launch(self, module, stream, name, params=()):
