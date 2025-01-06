@@ -96,7 +96,6 @@ class TestNrtStatistics(CUDATestCase):
         # Checks that explicitly turning the stats on via the env var works.
         src = """if 1:
         from numba import cuda
-        from unittest.mock import patch
         from numba.cuda.runtime import rtsys
         from numba.cuda.tests.nrt.mock_numpy import cuda_arange
 
