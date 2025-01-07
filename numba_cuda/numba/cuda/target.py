@@ -3,8 +3,7 @@ from functools import cached_property
 import llvmlite.binding as ll
 from llvmlite import ir
 
-from numba.core import (cgutils, config, debuginfo, itanium_mangler, types,
-                        typing, utils)
+from numba.core import cgutils, config, itanium_mangler, types, typing, utils
 from numba.core.dispatcher import Dispatcher
 from numba.core.base import BaseContext
 from numba.core.callconv import BaseCallConv, MinimalCallConv
@@ -13,6 +12,7 @@ from numba.core import datamodel
 
 from .cudadrv import nvvm
 from numba.cuda import codegen, nvvmutils, ufuncs
+from numba.cuda.debuginfo import CUDADIBuilder
 from numba.cuda.models import cuda_data_manager
 
 # -----------------------------------------------------------------------------
@@ -80,7 +80,7 @@ class CUDATargetContext(BaseContext):
 
     @property
     def DIBuilder(self):
-        return debuginfo.DIBuilder
+        return CUDADIBuilder
 
     @property
     def enable_boundscheck(self):
