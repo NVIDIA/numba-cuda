@@ -1,14 +1,17 @@
 from llvmlite import ir
 from numba.core.typing.templates import ConcreteTemplate
+from numba.core import ir as numba_ir
 from numba.core import (cgutils, types, typing, funcdesc, config, compiler,
                         sigutils, utils)
 from numba.core.compiler import (sanitize_compile_result_entries, CompilerBase,
                                  DefaultPassBuilder, Flags, Option,
                                  CompileResult)
 from numba.core.compiler_lock import global_compiler_lock
-from numba.core.compiler_machinery import (LoweringPass,
+from numba.core.compiler_machinery import (FunctionPass, LoweringPass,
                                            PassManager, register_pass)
+from numba.core.interpreter import Interpreter
 from numba.core.errors import NumbaInvalidConfigWarning
+from numba.core.untyped_passes import TranslateByteCode
 from numba.core.typed_passes import (IRLegalization, NativeLowering,
                                      AnnotateTypes)
 from warnings import warn
@@ -143,13 +146,74 @@ class CreateLibrary(LoweringPass):
         return True
 
 
+class CUDABytecodeInterpreter(Interpreter):
+    # Based on the superclass implementation, but names the resulting variable
+    # "$bool<N>" instead of "bool<N>" - see Numba PR #9888:
+    # https://github.com/numba/numba/pull/9888
+    #
+    # This can be removed once that PR is available in an upstream Numba
+    # release.
+    def _op_JUMP_IF(self, inst, pred, iftrue):
+        brs = {
+            True: inst.get_jump_target(),
+            False: inst.next,
+        }
+        truebr = brs[iftrue]
+        falsebr = brs[not iftrue]
+
+        name = "$bool%s" % (inst.offset)
+        gv_fn = numba_ir.Global("bool", bool, loc=self.loc)
+        self.store(value=gv_fn, name=name)
+
+        callres = numba_ir.Expr.call(self.get(name), (self.get(pred),), (),
+                                     loc=self.loc)
+
+        pname = "$%spred" % (inst.offset)
+        predicate = self.store(value=callres, name=pname)
+        bra = numba_ir.Branch(cond=predicate, truebr=truebr, falsebr=falsebr,
+                              loc=self.loc)
+        self.current_block.append(bra)
+
+
+@register_pass(mutates_CFG=True, analysis_only=False)
+class CUDATranslateBytecode(FunctionPass):
+    _name = "cuda_translate_bytecode"
+
+    def __init__(self):
+        FunctionPass.__init__(self)
+
+    def run_pass(self, state):
+        func_id = state['func_id']
+        bc = state['bc']
+        interp = CUDABytecodeInterpreter(func_id)
+        func_ir = interp.interpret(bc)
+        state['func_ir'] = func_ir
+        return True
+
+
 class CUDACompiler(CompilerBase):
     def define_pipelines(self):
         dpb = DefaultPassBuilder
         pm = PassManager('cuda')
 
         untyped_passes = dpb.define_untyped_pipeline(self.state)
-        pm.passes.extend(untyped_passes.passes)
+
+        # Rather than replicating the whole untyped passes definition in
+        # numba-cuda, it seems cleaner to take the pass list and replace the
+        # TranslateBytecode pass with our own.
+
+        def replace_translate_pass(implementation, description):
+            if implementation is TranslateByteCode:
+                return (CUDATranslateBytecode, description)
+            else:
+                return (implementation, description)
+
+        cuda_untyped_passes = [
+            replace_translate_pass(implementation, description)
+            for implementation, description in untyped_passes.passes
+        ]
+
+        pm.passes.extend(cuda_untyped_passes)
 
         typed_passes = dpb.define_typed_pipeline(self.state)
         pm.passes.extend(typed_passes.passes)
