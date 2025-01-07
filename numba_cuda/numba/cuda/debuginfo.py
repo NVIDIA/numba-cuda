@@ -13,14 +13,15 @@ class CUDADIBuilder(DIBuilder):
         if isinstance(lltype, ir.IntType):
             if datamodel is None:
                 if size == 1:
+                    name = str(lltype)
                     is_bool = True
             elif isinstance(datamodel.fe_type, types.Boolean):
+                name = str(datamodel.fe_type)
                 is_bool = True
 
         # Booleans should use our implementation until upstream Numba is fixed
         if is_bool:
             m = self.module
-            name = str(lltype)
             bitsize = _BYTE_SIZE * size
             ditok = "DW_ATE_boolean"
 
