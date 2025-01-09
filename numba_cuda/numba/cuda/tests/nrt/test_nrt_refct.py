@@ -1,5 +1,3 @@
-
-import gc
 import numpy as np
 import unittest
 from numba.tests.support import override_config
@@ -14,8 +12,6 @@ from numba import cuda
 class TestNrtRefCt(EnableNRTStatsMixin, CUDATestCase):
 
     def setUp(self):
-        # Clean up any NRT-backed objects hanging in a dead reference cycle
-        gc.collect()
         super(TestNrtRefCt, self).setUp()
 
     def tearDown(self):
