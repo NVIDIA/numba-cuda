@@ -10,7 +10,7 @@ from numba.core.typing.npydecl import (parse_dtype, parse_shape,
 from numba.core.typing.templates import (AttributeTemplate, ConcreteTemplate,
                                          AbstractTemplate, CallableTemplate,
                                          signature, Registry)
-from numba.cuda.types import dim3
+from numba.cuda.types import dim3, tid
 from numba.core.typeconv import Conversion
 from numba import cuda
 from numba.cuda.compiler import declare_device_function_template
@@ -525,13 +525,13 @@ class Dim3_attrs(AttributeTemplate):
     key = dim3
 
     def resolve_x(self, mod):
-        return types.int32
+        return tid
 
     def resolve_y(self, mod):
-        return types.int32
+        return tid
 
     def resolve_z(self, mod):
-        return types.int32
+        return tid
 
 
 @register_attr
@@ -720,7 +720,7 @@ class CudaModuleTemplate(AttributeTemplate):
         return dim3
 
     def resolve_laneid(self, mod):
-        return types.int32
+        return tid
 
     def resolve_shared(self, mod):
         return types.Module(cuda.shared)
