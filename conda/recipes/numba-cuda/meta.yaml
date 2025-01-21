@@ -27,7 +27,7 @@ requirements:
     - setuptools
   run:
     - python
-    - numba >=0.59.1
+    - numba >=0.59.1,<0.61.0a0
 
 about:
   home: {{ project_urls["Homepage"] }}
