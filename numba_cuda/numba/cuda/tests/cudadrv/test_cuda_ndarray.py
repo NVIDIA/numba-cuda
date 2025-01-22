@@ -4,6 +4,7 @@ from numba.cuda.cudadrv import devicearray
 from numba import cuda
 from numba.cuda.testing import unittest, CUDATestCase
 from numba.cuda.testing import skip_on_cudasim
+from numba.tests.support import IS_NUMPY_2
 
 
 class TestCudaNDArray(CUDATestCase):
@@ -454,6 +455,36 @@ class TestCudaNDArray(CUDATestCase):
 
         dev_array.copy_to_device(dev_array_from_host)
         dev_array_from_host.copy_to_device(dev_array)
+
+
+class TestArrayMethod(CUDATestCase):
+    """Tests of the __array__() method via np.array"""
+
+    def test_np_array(self):
+        dev_array = cuda.to_device(np.asarray([1.0, 2.0, 3.0]))
+        host_array = np.array(dev_array)
+        np.testing.assert_equal(dev_array.copy_to_host(), host_array)
+
+    def test_np_array_dtype(self):
+        dtype = np.int32
+        dev_array = cuda.to_device(np.asarray([1.0, 2.0, 3.0]))
+        host_array = np.array(dev_array, dtype=dtype)
+        np.testing.assert_equal(
+            host_array,
+            dev_array.copy_to_host().astype(dtype)
+        )
+
+    @unittest.skipUnless(IS_NUMPY_2, "NumPy 1.x does not pass copy kwarg")
+    def test_np_array_copy_false(self):
+        dev_array = cuda.to_device(np.asarray([1.0, 2.0, 3.0]))
+        with self.assertRaisesRegex(ValueError, "`copy=False` is not"):
+            np.array(dev_array, copy=False)
+
+    @unittest.skipUnless(IS_NUMPY_2, "NumPy 1.x does not pass copy kwarg")
+    def test_np_array_copy_true(self):
+        dev_array = cuda.to_device(np.asarray([1.0, 2.0, 3.0]))
+        host_array = np.array(dev_array)
+        np.testing.assert_equal(dev_array.copy_to_host(), host_array)
 
 
 class TestRecarray(CUDATestCase):
