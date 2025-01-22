@@ -570,10 +570,13 @@ class DeviceNDArray(DeviceNDArrayBase):
         '''
         return self._dummy.is_c_contig
 
-    def __array__(self, dtype=None):
+    def __array__(self, dtype=None, copy=None):
         """
         :return: an `numpy.ndarray`, so copies to the host.
         """
+        if copy is False:
+            msg = "`copy=False` is not supported. A copy is always created."
+            raise ValueError(msg)
         if dtype:
             return self.copy_to_host().__array__(dtype)
         else:
