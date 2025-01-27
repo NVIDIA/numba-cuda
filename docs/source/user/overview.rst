@@ -46,11 +46,11 @@ Devices with Compute Capability 5.0 or greater include (but are not limited to):
 - Embedded platforms: NVIDIA Jetson Nano, Jetson Orin Nano, TX1, TX2, Xavier
   NX, AGX Xavier, AGX Orin.
 - Desktop / Server GPUs: All GPUs with Maxwell microarchitecture or later. E.g.
-  GTX 9 / 10 / 16 series, RTX 20 / 30 / 40 series, Quadro / Tesla M / P / V /
-  RTX series, RTX A series, RTX Ada / SFF, A / L series, H100.
+  GTX 9 / 10 / 16 series, RTX 20 / 30 / 40 / 50 series, Quadro / Tesla L / M /
+  P / V / RTX series, RTX A series, RTX Ada / SFF, A / L series, H100, B100.
 - Laptop GPUs: All GPUs with Maxwell microarchitecture or later. E.g. MX series,
-  Quadro M / P / T series (mobile), RTX 20 / 30 series (mobile), RTX A series
-  (mobile).
+  Quadro M / P / T series (mobile), RTX 20 / 30 series (mobile), RTX A / Ada
+  series (mobile).
 
 Software
 --------
