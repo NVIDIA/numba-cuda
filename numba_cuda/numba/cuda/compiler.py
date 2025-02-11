@@ -570,16 +570,16 @@ def compile_ptx_for_current_device(pyfunc, sig, debug=None, lineinfo=False,
                        abi=abi, abi_info=abi_info)
 
 
-def declare_device_function(name, restype, argtypes):
-    return declare_device_function_template(name, restype, argtypes).key
+def declare_device_function(name, restype, argtypes, link):
+    return declare_device_function_template(name, restype, argtypes, link).key
 
 
-def declare_device_function_template(name, restype, argtypes):
+def declare_device_function_template(name, restype, argtypes, link):
     from .descriptor import cuda_target
     typingctx = cuda_target.typing_context
     targetctx = cuda_target.target_context
     sig = typing.signature(restype, *argtypes)
-    extfn = ExternFunction(name, sig)
+    extfn = ExternFunction(name, sig, link)
 
     class device_function_template(ConcreteTemplate):
         key = extfn
@@ -593,7 +593,8 @@ def declare_device_function_template(name, restype, argtypes):
     return device_function_template
 
 
-class ExternFunction(object):
-    def __init__(self, name, sig):
+class ExternFunction:
+    def __init__(self, name, sig, link):
         self.name = name
         self.sig = sig
+        self.link = link
