@@ -12,7 +12,19 @@ tracker](https://github.com/NVIDIA/numba-cuda/issues).
 To raise questions or initiate discussions, please use the [Numba Discourse
 forum](https://numba.discourse.group).
 
-## Building from source
+## Installation with pip
+
+```shell
+pip install numba-cuda
+```
+
+## Installation with Conda
+
+```shell
+conda install -c conda-forge numba-cuda
+```
+
+## Installation from source
 
 Install as an editable install:
 
@@ -38,3 +50,9 @@ which will show a path like:
 ```
 <path to numba-cuda repo>/numba_cuda/numba/cuda/__init__.py
 ```
+
+## Contributing Guide
+
+Review the
+[CONTRIBUTING.md](https://github.com/NVIDIA/numba-cuda/blob/main/CONTRIBUTING.md)
+file for information on how to contribute code and issues to the project.
