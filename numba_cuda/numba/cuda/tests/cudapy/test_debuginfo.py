@@ -72,6 +72,23 @@ class TestCudaDebugInfo(CUDATestCase):
         def f(x):
             x[0] = 0
 
+    def test_issue_9888(self):
+        # Compiler created symbol should not be emitted in DILocalVariable
+        # See Numba Issue #9888 https://github.com/numba/numba/pull/9888
+        sig = (types.boolean,)
+        @cuda.jit(sig, debug=True, opt=False)
+        def f(cond):
+            if cond:
+                x = 1
+            else:
+                x = 0
+
+        llvm_ir = f.inspect_llvm(sig)
+        # A varible name starting with "bool" in the debug metadata
+        pat = r'!DILocalVariable\(.*name:\s+\"bool'
+        match = re.compile(pat).search(llvm_ir)
+        self.assertIsNone(match, msg=llvm_ir)
+
     @unittest.skip("Wrappers no longer exist")
     def test_wrapper_has_debuginfo(self):
         sig = (types.int32[::1],)
