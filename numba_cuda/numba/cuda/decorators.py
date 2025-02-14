@@ -181,6 +181,7 @@ def declare_device(name, sig, link=None):
     :param name: The name of the foreign function.
     :type name: str
     :param sig: The Numba signature of the function.
+    :param link: External code to link when calling the function.
     """
     if link is None:
         link = tuple()

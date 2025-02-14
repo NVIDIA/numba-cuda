@@ -11,7 +11,7 @@ of a Python kernel call to a foreign device function are:
 
 - The device function implementation in a foreign language (e.g. CUDA C).
 - A declaration of the device function in Python.
-- A kernel that links with and calls the foreign function.
+- A kernel that calls the foreign function.
 
 .. _device-function-abi:
 
@@ -83,7 +83,7 @@ For example, when:
 
 .. code::
 
-   mul = cuda.declare_device('mul_f32_f32', 'float32(float32, float32)')
+   mul = cuda.declare_device('mul_f32_f32', 'float32(float32, float32)' , link="functions.cu")
 
 is declared, calling ``mul(a, b)`` inside a kernel will translate into a call to
 ``mul_f32_f32(a, b)`` in the compiled code.
@@ -134,15 +134,63 @@ where ``result`` and ``array`` are both arrays of ``float32`` data.
 Linking and Calling functions
 -----------------------------
 
-The ``link`` keyword argument of the :func:`@cuda.jit <numba.cuda.jit>`
-decorator accepts a list of file names specified by absolute path or a path
-relative to the current working directory. Files whose name ends in ``.cu``
-will be compiled with the `NVIDIA Runtime Compiler (NVRTC)
-<https://docs.nvidia.com/cuda/nvrtc/index.html>`_ and linked into the kernel as
-PTX; other files will be passed directly to the CUDA Linker.
+The ``link`` keyword argument to the :func:`declare_device
+<numba.cuda.declare_device>` function accepts *Linkable Code* items. Either a
+single Linkable Code item can be passed, or multiple items in a list, tuple, or
+set.
 
-For example, the following kernel calls the ``mul()`` function declared above
-with the implementation ``mul_f32_f32()`` in a file called ``functions.cu``:
+A Linkable Code item is either:
+
+* A string indicating the location of a file in the filesystem, or
+* A :class:`LinkableCode <numba.cuda.LinkableCode>` object, for linking code
+  that exists in memory.
+
+Suported code formats that can be linked are:
+
+* PTX source code (``*.ptx``)
+* CUDA C/C++ source code (``*.cu``)
+* CUDA ELF Fat Binaries (``*.fatbin``)
+* CUDA ELF Cubins (``*.cubin``)
+* CUDA ELF archives (``*.a``)
+* CUDA Object files (``*.o``)
+* CUDA LTOIR files (``*.ltoir``)
+
+CUDA C/C++ source code will be compiled with the `NVIDIA Runtime Compiler
+(NVRTC) <https://docs.nvidia.com/cuda/nvrtc/index.html>`_ and linked into the
+kernel as either PTX or LTOIR, depending on whether LTO is enabled. Other files
+will be passed directly to the CUDA Linker.
+
+:class:`LinkableCode <numba.cuda.LinkableCode>` objects are initialized using
+the parameters of their base class:
+
+.. autoclass:: numba.cuda.LinkableCode
+
+However, one should instantiate an instance of the class that represents the
+type of item being linked:
+
+.. autoclass:: numba.cuda.PTXSource
+.. autoclass:: numba.cuda.CUSource
+.. autoclass:: numba.cuda.Fatbin
+.. autoclass:: numba.cuda.Cubin
+.. autoclass:: numba.cuda.Archive
+.. autoclass:: numba.cuda.Object
+.. autoclass:: numba.cuda.LTOIR
+
+Legacy ``@cuda.jit`` decorator ``link`` support
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The ``link`` keyword argument of the :func:`@cuda.jit <numba.cuda.jit>`
+decorator also accepts a list of Linkable Code items, which will then be linked
+into the kernel. This facility is provided for backwards compatibility; it is
+recommended that Linkable Code items are always specified in the
+:func:`declare_device <numba.cuda.declare_device>` call, so that the user of the
+declared API is not burdened with specifying the items to link themselves when
+writing a kernel.
+
+As an example of how this legacy mechanism looked at the point of use: the
+following kernel calls the ``mul()`` function declared above with the
+implementation ``mul_f32_f32()`` as if it were in a file called ``functions.cu``
+that had not been declared as part of the ``link`` argument in the declaration:
 
 .. code::
 
@@ -153,17 +201,13 @@ with the implementation ``mul_f32_f32()`` in a file called ``functions.cu``:
        if i < len(r):
            r[i] = mul(x[i], y[i])
 
-
 C/C++ Support
 -------------
 
 Support for compiling and linking of CUDA C/C++ code is provided through the use
 of NVRTC subject to the following considerations:
 
-- It is only available when using the NVIDIA Bindings. See
-  :envvar:`NUMBA_CUDA_USE_NVIDIA_BINDING`.
-- A suitable version of the NVRTC library for the installed version of the
-  NVIDIA CUDA Bindings must be available.
+- A suitable version of the NVRTC library must be available.
 - The CUDA include path is assumed by default to be ``/usr/local/cuda/include``
   on Linux and ``$env:CUDA_PATH\include`` on Windows. It can be modified using
   the environment variable :envvar:`NUMBA_CUDA_INCLUDE_PATH`.
