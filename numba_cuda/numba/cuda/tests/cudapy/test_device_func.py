@@ -3,8 +3,8 @@ import cffi
 
 import numpy as np
 
-from numba.cuda.testing import (skip_on_cudasim, test_data_dir, unittest,
-                                CUDATestCase)
+from numba.cuda.testing import (skip_on_cudasim, skip_unless_cffi,
+                                test_data_dir, unittest, CUDATestCase)
 from numba import cuda, jit, float32, int32, types
 from numba.core.errors import TypingError
 from types import ModuleType
@@ -297,6 +297,7 @@ class TestDeclareDevice(CUDATestCase):
     def test_link_multiple_sources_list(self):
         self._test_link_multiple_sources(list)
 
+    @skip_unless_cffi
     def test_link_sources_in_memory_and_on_disk(self):
         jitlink_cu = str(test_data_dir / "jitlink.cu")
         link = [jitlink_cu, jitlink_user_cu]

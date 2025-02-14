@@ -7,6 +7,7 @@ rapids-logger "Install testing dependencies"
 # TODO: Replace with rapids-dependency-file-generator
 python -m pip install \
     psutil \
+    cffi \
     cuda-python \
     nvidia-cuda-cccl-cu12 \
     pytest
