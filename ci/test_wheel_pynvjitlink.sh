@@ -9,6 +9,7 @@ python -m pip install \
     psutil \
     cffi \
     cuda-python \
+    nvidia-cuda-curand-cu12 \
     pytest
 
 rapids-logger "Install pynvjitlink"

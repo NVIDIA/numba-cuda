@@ -19,6 +19,7 @@ rapids-mamba-retry create -n test \
     ${CTK_PACKAGES} \
     cuda-python \
     cuda-version=${CUDA_VER%.*} \
+    libcurand-dev \
     make \
     psutil \
     pytest \

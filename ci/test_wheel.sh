@@ -10,6 +10,7 @@ python -m pip install \
     cffi \
     cuda-python \
     nvidia-cuda-cccl-cu12 \
+    nvidia-cuda-curand-cu12 \
     pytest
 
 rapids-logger "Install wheel"
