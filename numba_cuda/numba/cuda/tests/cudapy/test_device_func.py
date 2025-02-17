@@ -231,6 +231,25 @@ int use_array_mutator(void *out, int *a) {
 }
 """)
 
+rng_cu = cuda.CUSource("""
+#include <curand_kernel.h>
+
+extern "C" __device__
+int random_number(unsigned int *out, unsigned long long seed)
+{
+  // Initialize state
+  curandStateXORWOW_t state;
+  unsigned long long sequence = 1;
+  unsigned long long offset = 0;
+  curand_init(seed, sequence, offset, &state);
+
+  // Generate one random number
+  *out = curand(&state);
+
+  // Report no exception
+  return 0;
+}""")
+
 
 @skip_on_cudasim('External functions unsupported in the simulator')
 class TestDeclareDevice(CUDATestCase):
@@ -317,6 +336,19 @@ class TestDeclareDevice(CUDATestCase):
 
         expected = np.ones(2, dtype=np.int32)
         np.testing.assert_equal(x, expected)
+
+    def test_include_cuda_header(self):
+        sig = types.int32(types.uint64)
+        link = [rng_cu]
+        random_number = cuda.declare_device("random_number", sig, link=link)
+
+        @cuda.jit
+        def kernel(x, seed):
+            x[0] = random_number(seed)
+
+        x = np.zeros(1, dtype=np.uint32)
+        kernel[1, 1](x, 1)
+        np.testing.assert_equal(x[0], 323845807)
 
 
 if __name__ == '__main__':
