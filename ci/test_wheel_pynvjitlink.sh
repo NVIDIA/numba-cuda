@@ -7,7 +7,9 @@ rapids-logger "Install testing dependencies"
 # TODO: Replace with rapids-dependency-file-generator
 python -m pip install \
     psutil \
+    cffi \
     cuda-python \
+    nvidia-curand-cu12 \
     pytest
 
 rapids-logger "Install pynvjitlink"

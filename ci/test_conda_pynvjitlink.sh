@@ -8,7 +8,7 @@ set -euo pipefail
 if [ "${CUDA_VER%.*.*}" = "11" ]; then
   CTK_PACKAGES="cudatoolkit"
 else
-  CTK_PACKAGES="cuda-nvcc-impl cuda-nvrtc cuda-cuobjdump"
+  CTK_PACKAGES="cuda-nvcc-impl cuda-nvrtc cuda-cuobjdump libcurand-dev"
 fi
 
 rapids-logger "Install testing dependencies"
@@ -22,6 +22,7 @@ rapids-mamba-retry create -n test \
     make \
     psutil \
     pytest \
+    cffi \
     python=${RAPIDS_PY_VERSION}
 
 # Temporarily allow unbound variables for conda activation.

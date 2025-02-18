@@ -15,16 +15,18 @@ class TestFFI(CUDATestCase):
         import numpy as np
         import os
 
-        # Declaration of the foreign function
-        mul = cuda.declare_device('mul_f32_f32', 'float32(float32, float32)')
-
         # Path to the source containing the foreign function
         # (here assumed to be in a subdirectory called "ffi")
         basedir = os.path.dirname(os.path.abspath(__file__))
         functions_cu = os.path.join(basedir, 'ffi', 'functions.cu')
 
-        # Kernel that links in functions.cu and calls mul
-        @cuda.jit(link=[functions_cu])
+        # Declaration of the foreign function
+        mul = cuda.declare_device('mul_f32_f32', 'float32(float32, float32)',
+                                  link=functions_cu)
+
+        # A kernel that calls mul; functions.cu is linked automatically due to
+        # the call to mul.
+        @cuda.jit
         def multiply_vectors(r, x, y):
             i = cuda.grid(1)
 
@@ -54,14 +56,15 @@ class TestFFI(CUDATestCase):
 
         # magictoken.ex_from_buffer_decl.begin
         signature = 'float32(CPointer(float32), int32)'
-        sum_reduce = cuda.declare_device('sum_reduce', signature)
+        sum_reduce = cuda.declare_device('sum_reduce', signature,
+                                         link=functions_cu)
         # magictoken.ex_from_buffer_decl.end
 
         # magictoken.ex_from_buffer_kernel.begin
         import cffi
         ffi = cffi.FFI()
 
-        @cuda.jit(link=[functions_cu])
+        @cuda.jit
         def reduction_caller(result, array):
             array_ptr = ffi.from_buffer(array)
             result[()] = sum_reduce(array_ptr, len(array))

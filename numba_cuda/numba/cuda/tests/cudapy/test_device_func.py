@@ -1,11 +1,14 @@
 import re
-import types
+import cffi
 
 import numpy as np
 
-from numba.cuda.testing import unittest, skip_on_cudasim, CUDATestCase
-from numba import cuda, jit, float32, int32
+from numba.cuda.testing import (skip_if_curand_kernel_missing, skip_on_cudasim,
+                                test_data_dir, unittest, CUDATestCase)
+from numba import cuda, jit, float32, int32, types
 from numba.core.errors import TypingError
+from numba.tests.support import skip_unless_cffi
+from types import ModuleType
 
 
 class TestDeviceFunc(CUDATestCase):
@@ -92,7 +95,7 @@ class TestDeviceFunc(CUDATestCase):
         def add(a, b):
             return a + b
 
-        mymod = types.ModuleType(name='mymod')
+        mymod = ModuleType(name='mymod')
         mymod.add = add
         del add
 
@@ -192,30 +195,161 @@ class TestDeviceFunc(CUDATestCase):
 
         self.assertEqual(0x04010203, x[0])
 
-    def _test_declare_device(self, decl):
+
+times2_cu = cuda.CUSource("""
+extern "C" __device__
+int times2(int *out, int a)
+{
+  *out = a * 2;
+  return 0;
+}
+""")
+
+
+times4_cu = cuda.CUSource("""
+extern "C" __device__
+int times2(int *out, int a);
+
+extern "C" __device__
+int times4(int *out, int a)
+{
+  int tmp;
+  times2(&tmp, a);
+  *out = tmp * 2;
+  return 0;
+}
+""")
+
+jitlink_user_cu = cuda.CUSource("""
+extern "C" __device__
+int array_mutator(void *out, int *a);
+
+extern "C" __device__
+int use_array_mutator(void *out, int *a) {
+  array_mutator(out, a);
+  return 0;
+}
+""")
+
+rng_cu = cuda.CUSource("""
+#include <curand_kernel.h>
+
+extern "C" __device__
+int random_number(unsigned int *out, unsigned long long seed)
+{
+  // Initialize state
+  curandStateXORWOW_t state;
+  unsigned long long sequence = 1;
+  unsigned long long offset = 0;
+  curand_init(seed, sequence, offset, &state);
+
+  // Generate one random number
+  *out = curand(&state);
+
+  // Report no exception
+  return 0;
+}""")
+
+
+@skip_on_cudasim('External functions unsupported in the simulator')
+class TestDeclareDevice(CUDATestCase):
+
+    def check_api(self, decl):
         self.assertEqual(decl.name, 'f1')
         self.assertEqual(decl.sig.args, (float32[:],))
         self.assertEqual(decl.sig.return_type, int32)
 
-    @skip_on_cudasim('cudasim does not check signatures')
     def test_declare_device_signature(self):
         f1 = cuda.declare_device('f1', int32(float32[:]))
-        self._test_declare_device(f1)
+        self.check_api(f1)
 
-    @skip_on_cudasim('cudasim does not check signatures')
     def test_declare_device_string(self):
         f1 = cuda.declare_device('f1', 'int32(float32[:])')
-        self._test_declare_device(f1)
+        self.check_api(f1)
 
-    @skip_on_cudasim('cudasim does not check signatures')
     def test_bad_declare_device_tuple(self):
         with self.assertRaisesRegex(TypeError, 'Return type'):
             cuda.declare_device('f1', (float32[:],))
 
-    @skip_on_cudasim('cudasim does not check signatures')
     def test_bad_declare_device_string(self):
         with self.assertRaisesRegex(TypeError, 'Return type'):
             cuda.declare_device('f1', '(float32[:],)')
+
+    def test_link_cu_source(self):
+        times2 = cuda.declare_device('times2', 'int32(int32)', link=times2_cu)
+
+        @cuda.jit
+        def kernel(r, x):
+            i = cuda.grid(1)
+            if i < len(r):
+                r[i] = times2(x[i])
+
+        x = np.arange(10, dtype=np.int32)
+        r = np.empty_like(x)
+
+        kernel[1, 32](r, x)
+
+        np.testing.assert_equal(r, x * 2)
+
+    def _test_link_multiple_sources(self, link_type):
+        link = link_type([times2_cu, times4_cu])
+        times4 = cuda.declare_device('times4', 'int32(int32)', link=link)
+
+        @cuda.jit
+        def kernel(r, x):
+            i = cuda.grid(1)
+            if i < len(r):
+                r[i] = times4(x[i])
+
+        x = np.arange(10, dtype=np.int32)
+        r = np.empty_like(x)
+
+        kernel[1, 32](r, x)
+
+        np.testing.assert_equal(r, x * 4)
+
+    def test_link_multiple_sources_set(self):
+        self._test_link_multiple_sources(set)
+
+    def test_link_multiple_sources_tuple(self):
+        self._test_link_multiple_sources(tuple)
+
+    def test_link_multiple_sources_list(self):
+        self._test_link_multiple_sources(list)
+
+    @skip_unless_cffi
+    def test_link_sources_in_memory_and_on_disk(self):
+        jitlink_cu = str(test_data_dir / "jitlink.cu")
+        link = [jitlink_cu, jitlink_user_cu]
+        sig = types.void(types.CPointer(types.int32))
+        ext_fn = cuda.declare_device("use_array_mutator", sig, link=link)
+
+        ffi = cffi.FFI()
+
+        @cuda.jit
+        def kernel(x):
+            ptr = ffi.from_buffer(x)
+            ext_fn(ptr)
+
+        x = np.arange(2, dtype=np.int32)
+        kernel[1, 1](x)
+
+        expected = np.ones(2, dtype=np.int32)
+        np.testing.assert_equal(x, expected)
+
+    @skip_if_curand_kernel_missing
+    def test_include_cuda_header(self):
+        sig = types.int32(types.uint64)
+        link = [rng_cu]
+        random_number = cuda.declare_device("random_number", sig, link=link)
+
+        @cuda.jit
+        def kernel(x, seed):
+            x[0] = random_number(seed)
+
+        x = np.zeros(1, dtype=np.uint32)
+        kernel[1, 1](x, 1)
+        np.testing.assert_equal(x[0], 323845807)
 
 
 if __name__ == '__main__':

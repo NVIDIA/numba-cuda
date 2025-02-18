@@ -11,10 +11,11 @@ from numba.core.compiler_lock import global_compiler_lock
 from numba.core.dispatcher import Dispatcher
 from numba.core.errors import NumbaPerformanceWarning
 from numba.core.typing.typeof import Purpose, typeof
-
+from numba.core.types.functions import Function
 from numba.cuda.api import get_current_device
 from numba.cuda.args import wrap_arg
-from numba.cuda.compiler import compile_cuda, CUDACompiler, kernel_fixup
+from numba.cuda.compiler import (compile_cuda, CUDACompiler, kernel_fixup,
+                                 ExternFunction)
 from numba.cuda.cudadrv import driver
 from numba.cuda.cudadrv.devices import get_context
 from numba.cuda.descriptor import cuda_target
@@ -157,6 +158,16 @@ class _Kernel(serialize.ReduceMixin):
                                   '__numba_wrapper_')
 
         self.maybe_link_nrt(link, tgt_ctx, asm)
+
+        for k, v in cres.fndesc.typemap.items():
+            if not isinstance(v, Function):
+                continue
+
+            if not isinstance(v.typing_key, ExternFunction):
+                continue
+
+            for obj in v.typing_key.link:
+                lib.add_linking_file(obj)
 
         for filepath in link:
             lib.add_linking_file(filepath)
