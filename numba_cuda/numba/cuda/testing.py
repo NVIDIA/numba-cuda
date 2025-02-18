@@ -121,6 +121,14 @@ def skip_if_cuda_includes_missing(fn):
     return unittest.skipUnless(cuda_h_file, reason)(fn)
 
 
+def skip_if_curand_kernel_missing(fn):
+    curand_kernel_h = os.path.join(config.CUDA_INCLUDE_PATH, 'curand_kernel.h')
+    curand_kernel_h_file = (os.path.exists(curand_kernel_h) and
+                            os.path.isfile(curand_kernel_h))
+    reason = 'curand_kernel.h not available on this system'
+    return unittest.skipUnless(curand_kernel_h_file, reason)(fn)
+
+
 def skip_if_mvc_enabled(reason):
     """Skip a test if Minor Version Compatibility is enabled"""
     return unittest.skipIf(config.CUDA_ENABLE_MINOR_VERSION_COMPATIBILITY,
