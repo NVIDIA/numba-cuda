@@ -8,7 +8,7 @@ set -euo pipefail
 if [ "${CUDA_VER%.*.*}" = "11" ]; then
   CTK_PACKAGES="cudatoolkit"
 else
-  CTK_PACKAGES="cuda-cccl cuda-nvcc-impl cuda-nvrtc"
+  CTK_PACKAGES="cuda-cccl cuda-nvcc-impl cuda-nvrtc libcurand-dev"
 fi
 
 rapids-logger "Install testing dependencies"
@@ -19,7 +19,6 @@ rapids-mamba-retry create -n test \
     ${CTK_PACKAGES} \
     cuda-python \
     cuda-version=${CUDA_VER%.*} \
-    libcurand-dev \
     make \
     psutil \
     pytest \

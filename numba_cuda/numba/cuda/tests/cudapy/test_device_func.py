@@ -3,8 +3,8 @@ import cffi
 
 import numpy as np
 
-from numba.cuda.testing import (skip_on_cudasim, test_data_dir, unittest,
-                                CUDATestCase)
+from numba.cuda.testing import (skip_if_cuda_includes_missing, skip_on_cudasim,
+                                test_data_dir, unittest, CUDATestCase)
 from numba import cuda, jit, float32, int32, types
 from numba.core.errors import TypingError
 from numba.tests.support import skip_unless_cffi
@@ -337,6 +337,7 @@ class TestDeclareDevice(CUDATestCase):
         expected = np.ones(2, dtype=np.int32)
         np.testing.assert_equal(x, expected)
 
+    @skip_if_cuda_includes_missing
     def test_include_cuda_header(self):
         sig = types.int32(types.uint64)
         link = [rng_cu]
