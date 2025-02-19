@@ -171,7 +171,10 @@ class TestNrtStatistics(CUDATestCase):
             arr = cuda_arange(5 * tmp[0]) # noqa: F841
             return None
 
-        with override_config('CUDA_ENABLE_NRT', True):
+        with (
+            override_config('CUDA_ENABLE_NRT', True),
+            override_config('CUDA_NRT_STATS', True)
+        ):
             # Switch on stats
             rtsys.memsys_enable_stats()
             # check the stats are on
