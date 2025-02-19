@@ -76,12 +76,13 @@ class TestCudaDebugInfo(CUDATestCase):
         # Compiler created symbol should not be emitted in DILocalVariable
         # See Numba Issue #9888 https://github.com/numba/numba/pull/9888
         sig = (types.boolean,)
+
         @cuda.jit(sig, debug=True, opt=False)
         def f(cond):
             if cond:
-                x = 1
+                x = 1  # noqa: F841
             else:
-                x = 0
+                x = 0  # noqa: F841
 
         llvm_ir = f.inspect_llvm(sig)
         # A varible name starting with "bool" in the debug metadata
