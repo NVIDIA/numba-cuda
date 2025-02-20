@@ -235,6 +235,36 @@ class TestCudaDebugInfo(CUDATestCase):
         three_device_fns(kernel_debug=False, leaf_debug=True)
         three_device_fns(kernel_debug=False, leaf_debug=False)
 
+    def test_kernel_args_types(self):
+        sig = (types.int32, types.int32)
+
+        @cuda.jit("void(int32, int32)", debug=True, opt=False)
+        def f(x, y):
+            z = x + y  # noqa: F841
+
+        llvm_ir = f.inspect_llvm(sig)
+
+        # extract the metadata node id from `types` field of DISubroutineType
+        pat = r'!DISubroutineType\(types:\s+!(\d+)\)'
+        match = re.compile(pat).search(llvm_ir)
+        self.assertIsNotNone(match, msg=llvm_ir)
+        mdnode_id = match.group(1)
+
+        # extract the metadata node ids from the flexible node of types
+        pat = rf'!{mdnode_id}\s+=\s+!{{\s+!(\d+),\s+!(\d+)\s+}}'
+        match = re.compile(pat).search(llvm_ir)
+        self.assertIsNotNone(match, msg=llvm_ir)
+        mdnode_id1 = match.group(1)
+        mdnode_id2 = match.group(2)
+
+        # verify each of the two metadata nodes match expected type
+        pat = rf'!{mdnode_id1}\s+=\s+!DIBasicType\(.*DW_ATE_signed,\s+name:\s+"int32"'  # noqa: E501
+        match = re.compile(pat).search(llvm_ir)
+        self.assertIsNotNone(match, msg=llvm_ir)
+        pat = rf'!{mdnode_id2}\s+=\s+!DIBasicType\(.*DW_ATE_signed,\s+name:\s+"int32"'  # noqa: E501
+        match = re.compile(pat).search(llvm_ir)
+        self.assertIsNotNone(match, msg=llvm_ir)
+
 
 if __name__ == '__main__':
     unittest.main()
