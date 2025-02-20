@@ -90,6 +90,25 @@ class TestCudaDebugInfo(CUDATestCase):
         match = re.compile(pat).search(llvm_ir)
         self.assertIsNone(match, msg=llvm_ir)
 
+    def test_bool_type(self):
+        sig = (types.int32, types.int32)
+        @cuda.jit("void(int32, int32)", debug=True, opt=False)
+        def f(x, y):
+            z = x == y
+
+        llvm_ir = f.inspect_llvm(sig)
+
+        # extract the metadata node id from `type` field of DILocalVariable
+        pat = r'!DILocalVariable\(.*name:\s+"z".*type:\s+!(\d+)'
+        match = re.compile(pat).search(llvm_ir)
+        self.assertIsNotNone(match, msg=llvm_ir)
+        mdnode_id = match.group(1)
+
+        # verify the DIBasicType has correct encoding attribute DW_ATE_boolean
+        pat = f'!{mdnode_id}\s+=\s+!DIBasicType\(.*DW_ATE_boolean'
+        match = re.compile(pat).search(llvm_ir)
+        self.assertIsNotNone(match, msg=llvm_ir)
+
     @unittest.skip("Wrappers no longer exist")
     def test_wrapper_has_debuginfo(self):
         sig = (types.int32[::1],)
