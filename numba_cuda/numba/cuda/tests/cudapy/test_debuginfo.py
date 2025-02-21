@@ -110,6 +110,19 @@ class TestCudaDebugInfo(CUDATestCase):
         match = re.compile(pat).search(llvm_ir)
         self.assertIsNotNone(match, msg=llvm_ir)
 
+    def test_grid_group_type(self):
+        sig = (types.int32,)
+
+        @cuda.jit(sig, debug=True, opt=False)
+        def f(x):
+            grid = cuda.cg.this_grid()  # noqa: F841
+
+        llvm_ir = f.inspect_llvm(sig)
+
+        pat = r'!DIBasicType\(.*DW_ATE_unsigned, name: "GridGroup", size: 64'
+        match = re.compile(pat).search(llvm_ir)
+        self.assertIsNotNone(match, msg=llvm_ir)
+
     @unittest.skip("Wrappers no longer exist")
     def test_wrapper_has_debuginfo(self):
         sig = (types.int32[::1],)
