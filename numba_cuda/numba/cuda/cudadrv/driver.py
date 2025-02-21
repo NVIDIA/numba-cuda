@@ -2658,6 +2658,7 @@ class Linker(metaclass=ABCMeta):
 
         nvvm_options = {}
         arch = nvvm.get_arch_option(*cc)
+        nvvm_options["arch"] = arch
         ptx = nvvm.compile_bitcode(bc, **nvvm_options)
 
         if config.DUMP_ASSEMBLY:
@@ -2668,7 +2669,6 @@ class Linker(metaclass=ABCMeta):
         # Link the program's PTX using the normal linker mechanism
         ptx_name = os.path.splitext(name)[0] + ".ptx"
         self.add_ptx(ptx.encode(), ptx_name)
-
 
     @abstractmethod
     def add_file(self, path, kind):
@@ -3155,8 +3155,9 @@ class PyNvJitLinker(Linker):
 
         nvvm_options = {}
         arch = nvvm.get_arch_option(*cc)
+        nvvm_options['arch'] = arch
         if self.lto:
-            nvvm_options['-gen-lto'] = None
+            nvvm_options['gen-lto'] = None
         program = nvvm.compile_ir(bc, **nvvm_options)
 
         if not self.lto and config.DUMP_ASSEMBLY:
@@ -3171,7 +3172,6 @@ class PyNvJitLinker(Linker):
             self.add_ltoir(program, program_name)
         else:
             self.add_ptx(program.encode(), program_name)
-
 
     def add_data(self, data, kind, name):
         if kind == FILE_EXTENSION_MAP["cubin"]:

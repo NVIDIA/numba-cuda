@@ -644,7 +644,7 @@ def compile_ir(llvmir, **opts):
 
 
 def compile_bitcode(llvmir_btytes, **opts):
-    if not isintance(llvmir_btytes, bytes):
+    if not isinstance(llvmir_btytes, bytes):
         raise ValueError(f"Expected bytes, got {type(llvmir_btytes)}")
 
     if opts.pop('fastmath', False):
@@ -658,7 +658,7 @@ def compile_bitcode(llvmir_btytes, **opts):
     cu = CompilationUnit()
     libdevice = LibDevice()
 
-    cu.add_module(llvmir)
+    cu.add_module(llvmir_btytes)
     cu.lazy_add_module(libdevice.get())
 
     return cu.compile(**opts)
