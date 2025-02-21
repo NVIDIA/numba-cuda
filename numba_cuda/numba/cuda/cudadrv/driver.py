@@ -40,7 +40,7 @@ from .drvapi import cu_occupancy_b2d_size, cu_stream_callback_pyobj, cu_uuid
 from .mappings import FILE_EXTENSION_MAP
 from .linkable_code import LinkableCode, LTOIR, Fatbin, Object
 from numba.cuda.utils import _readenv
-from numba.cuda.cudadrv import enums, drvapi, nvrtc
+from numba.cuda.cudadrv import enums, drvapi, nvrtc, nvvm
 
 try:
     from pynvjitlink.api import NvJitLinker, NvJitLinkError
@@ -2649,6 +2649,27 @@ class Linker(metaclass=ABCMeta):
         ptx_name = os.path.splitext(name)[0] + ".ptx"
         self.add_ptx(ptx.encode(), ptx_name)
 
+    def add_bc(self, bc, name):
+        """Add LLVM bitcode in byte streams to the link. The name of the source
+        file should be specified in `name`."""
+        with driver.get_active_context() as ac:
+            dev = driver.get_device(ac.devnum)
+            cc = dev.compute_capability
+
+        nvvm_options = {}
+        arch = nvvm.get_arch_option(*cc)
+        ptx = nvvm.compile_bitcode(bc, **nvvm_options)
+
+        if config.DUMP_ASSEMBLY:
+            print(("ASSEMBLY %s" % name).center(80, '-'))
+            print(ptx)
+            print('=' * 80)
+
+        # Link the program's PTX using the normal linker mechanism
+        ptx_name = os.path.splitext(name)[0] + ".ptx"
+        self.add_ptx(ptx.encode(), ptx_name)
+
+
     @abstractmethod
     def add_file(self, path, kind):
         """Add code from a file to the link"""
@@ -2657,6 +2678,11 @@ class Linker(metaclass=ABCMeta):
         with open(path, 'rb') as f:
             cu = f.read()
         self.add_cu(cu, os.path.basename(path))
+
+    def add_bc_file(self, path):
+        with open(path, 'rb') as f:
+            bc = f.read()
+        self.add_bc(bc, os.path.basename(path))
 
     def add_file_guess_ext(self, path_or_code, ignore_nonlto=False):
         """
@@ -2678,6 +2704,8 @@ class Linker(metaclass=ABCMeta):
                 )
             elif ext == '.cu':
                 self.add_cu_file(path_or_code)
+            elif ext == ".bc":
+                self.add_bc_file(path_or_code)
             else:
                 kind = FILE_EXTENSION_MAP.get(ext.lstrip('.'), None)
                 if kind is None:
@@ -3117,6 +3145,33 @@ class PyNvJitLinker(Linker):
             self.add_ltoir(program, program_name)
         else:
             self.add_ptx(program.encode(), program_name)
+
+    def add_bc(self, bc, name):
+        """Add LLVM bitcode in byte streams to the link. The name of the source
+        file should be specified in `name`."""
+        with driver.get_active_context() as ac:
+            dev = driver.get_device(ac.devnum)
+            cc = dev.compute_capability
+
+        nvvm_options = {}
+        arch = nvvm.get_arch_option(*cc)
+        if self.lto:
+            nvvm_options['-gen-lto'] = None
+        program = nvvm.compile_ir(bc, **nvvm_options)
+
+        if not self.lto and config.DUMP_ASSEMBLY:
+            print(("ASSEMBLY %s" % name).center(80, '-'))
+            print(program)
+            print('=' * 80)
+
+        suffix = ".ltoir" if self.lto else ".ptx"
+        program_name = os.path.splitext(name)[0] + suffix
+        # Link the program's PTX or LTOIR using the normal linker mechanism
+        if self.lto:
+            self.add_ltoir(program, program_name)
+        else:
+            self.add_ptx(program.encode(), program_name)
+
 
     def add_data(self, data, kind, name):
         if kind == FILE_EXTENSION_MAP["cubin"]:

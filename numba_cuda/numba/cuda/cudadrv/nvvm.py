@@ -643,6 +643,27 @@ def compile_ir(llvmir, **opts):
     return cu.compile(**opts)
 
 
+def compile_bitcode(llvmir_btytes, **opts):
+    if not isintance(llvmir_btytes, bytes):
+        raise ValueError(f"Expected bytes, got {type(llvmir_btytes)}")
+
+    if opts.pop('fastmath', False):
+        opts.update({
+            'ftz': True,
+            'fma': True,
+            'prec_div': False,
+            'prec_sqrt': False,
+        })
+
+    cu = CompilationUnit()
+    libdevice = LibDevice()
+
+    cu.add_module(llvmir)
+    cu.lazy_add_module(libdevice.get())
+
+    return cu.compile(**opts)
+
+
 re_attributes_def = re.compile(r"^attributes #\d+ = \{ ([\w\s]+)\ }")
 
 
