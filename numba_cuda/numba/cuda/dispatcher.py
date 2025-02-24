@@ -267,7 +267,11 @@ class _Kernel(serialize.ReduceMixin):
         """
         cufunc = self._codelibrary.get_cufunc()
 
-        if hasattr(self, "target_context") and self.target_context.enable_nrt:
+        if (
+            hasattr(self, "target_context")
+            and self.target_context.enable_nrt
+            and config.CUDA_NRT_STATS
+        ):
             rtsys.ensure_initialized()
             rtsys.set_memsys_to_module(cufunc.module)
             # We don't know which stream the kernel will be launched on, so

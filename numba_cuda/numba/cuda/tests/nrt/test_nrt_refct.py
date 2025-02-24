@@ -18,7 +18,10 @@ class TestNrtRefCt(EnableNRTStatsMixin, CUDATestCase):
         super(TestNrtRefCt, self).tearDown()
 
     def run(self, result=None):
-        with override_config("CUDA_ENABLE_NRT", True):
+        with (
+            override_config("CUDA_ENABLE_NRT", True),
+            override_config('CUDA_NRT_STATS', True)
+        ):
             super(TestNrtRefCt, self).run(result)
 
     def test_no_return(self):

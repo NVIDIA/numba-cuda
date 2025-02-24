@@ -72,6 +72,57 @@ class TestCudaDebugInfo(CUDATestCase):
         def f(x):
             x[0] = 0
 
+    def test_issue_9888(self):
+        # Compiler created symbol should not be emitted in DILocalVariable
+        # See Numba Issue #9888 https://github.com/numba/numba/pull/9888
+        sig = (types.boolean,)
+
+        @cuda.jit(sig, debug=True, opt=False)
+        def f(cond):
+            if cond:
+                x = 1  # noqa: F841
+            else:
+                x = 0  # noqa: F841
+
+        llvm_ir = f.inspect_llvm(sig)
+        # A varible name starting with "bool" in the debug metadata
+        pat = r'!DILocalVariable\(.*name:\s+\"bool'
+        match = re.compile(pat).search(llvm_ir)
+        self.assertIsNone(match, msg=llvm_ir)
+
+    def test_bool_type(self):
+        sig = (types.int32, types.int32)
+
+        @cuda.jit("void(int32, int32)", debug=True, opt=False)
+        def f(x, y):
+            z = x == y  # noqa: F841
+
+        llvm_ir = f.inspect_llvm(sig)
+
+        # extract the metadata node id from `type` field of DILocalVariable
+        pat = r'!DILocalVariable\(.*name:\s+"z".*type:\s+!(\d+)'
+        match = re.compile(pat).search(llvm_ir)
+        self.assertIsNotNone(match, msg=llvm_ir)
+        mdnode_id = match.group(1)
+
+        # verify the DIBasicType has correct encoding attribute DW_ATE_boolean
+        pat = rf'!{mdnode_id}\s+=\s+!DIBasicType\(.*DW_ATE_boolean'
+        match = re.compile(pat).search(llvm_ir)
+        self.assertIsNotNone(match, msg=llvm_ir)
+
+    def test_grid_group_type(self):
+        sig = (types.int32,)
+
+        @cuda.jit(sig, debug=True, opt=False)
+        def f(x):
+            grid = cuda.cg.this_grid()  # noqa: F841
+
+        llvm_ir = f.inspect_llvm(sig)
+
+        pat = r'!DIBasicType\(.*DW_ATE_unsigned, name: "GridGroup", size: 64'
+        match = re.compile(pat).search(llvm_ir)
+        self.assertIsNotNone(match, msg=llvm_ir)
+
     @unittest.skip("Wrappers no longer exist")
     def test_wrapper_has_debuginfo(self):
         sig = (types.int32[::1],)
@@ -216,6 +267,36 @@ class TestCudaDebugInfo(CUDATestCase):
         three_device_fns(kernel_debug=True, leaf_debug=False)
         three_device_fns(kernel_debug=False, leaf_debug=True)
         three_device_fns(kernel_debug=False, leaf_debug=False)
+
+    def test_kernel_args_types(self):
+        sig = (types.int32, types.int32)
+
+        @cuda.jit("void(int32, int32)", debug=True, opt=False)
+        def f(x, y):
+            z = x + y  # noqa: F841
+
+        llvm_ir = f.inspect_llvm(sig)
+
+        # extract the metadata node id from `types` field of DISubroutineType
+        pat = r'!DISubroutineType\(types:\s+!(\d+)\)'
+        match = re.compile(pat).search(llvm_ir)
+        self.assertIsNotNone(match, msg=llvm_ir)
+        mdnode_id = match.group(1)
+
+        # extract the metadata node ids from the flexible node of types
+        pat = rf'!{mdnode_id}\s+=\s+!{{\s+!(\d+),\s+!(\d+)\s+}}'
+        match = re.compile(pat).search(llvm_ir)
+        self.assertIsNotNone(match, msg=llvm_ir)
+        mdnode_id1 = match.group(1)
+        mdnode_id2 = match.group(2)
+
+        # verify each of the two metadata nodes match expected type
+        pat = rf'!{mdnode_id1}\s+=\s+!DIBasicType\(.*DW_ATE_signed,\s+name:\s+"int32"'  # noqa: E501
+        match = re.compile(pat).search(llvm_ir)
+        self.assertIsNotNone(match, msg=llvm_ir)
+        pat = rf'!{mdnode_id2}\s+=\s+!DIBasicType\(.*DW_ATE_signed,\s+name:\s+"int32"'  # noqa: E501
+        match = re.compile(pat).search(llvm_ir)
+        self.assertIsNotNone(match, msg=llvm_ir)
 
 
 if __name__ == '__main__':
