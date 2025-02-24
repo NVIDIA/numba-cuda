@@ -250,7 +250,7 @@ class CUDACodeLibrary(serialize.ReduceMixin, CodeLibrary):
 
         # Load
         #cufunc = module.get_function(self._entry_name)
-        cufunc = cubin.get_kernel(self._entry_name) 
+        cufunc = cubin.get_kernel(self._entry_name)
 
         # Populate caches
         self._cufunc_cache[device.id] = cufunc

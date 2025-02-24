@@ -32,7 +32,13 @@ import importlib
 import numpy as np
 from collections import namedtuple, deque
 
-from cuda.core.experimental import Linker as _CUDALinker, LinkerOptions as _CUDALinkerOptions, ObjectCode, Program, ProgramOptions
+from cuda.core.experimental import (
+    Linker as _CUDALinker,
+    LinkerOptions as _CUDALinkerOptions,
+    ObjectCode,
+    Program,
+    ProgramOptions
+)
 
 from numba import mviewbuf
 from numba.core import utils, serialize, config
@@ -2600,10 +2606,10 @@ class Linker(metaclass=ABCMeta):
 
         elif config.CUDA_ENABLE_MINOR_VERSION_COMPATIBILITY:
             # TODO - who handles MVC now?
-            linker = MVCLinker 
+            linker = MVCLinker
         else:
             if USE_NV_BINDING:
-                linker = CUDALinker 
+                linker = CUDALinker
             else:
                 linker = CtypesLinker
 
@@ -2750,14 +2756,15 @@ class Linker(metaclass=ABCMeta):
         thus, it should be loaded before the linker is destroyed.
         """
 
+
 class CUDALinker(Linker):
     def __init__(self, max_registers=None, lineinfo=False, cc=None):
         arch = f"sm_{cc[0] * 10 + cc[1]}"
         self.options = _CUDALinkerOptions(
-                max_register_count=max_registers, 
-                lineinfo=lineinfo,
-                arch=arch
-        ) 
+            max_register_count=max_registers,
+            lineinfo=lineinfo,
+            arch=arch
+        )
 
         self.max_registers = max_registers
         self.lineinfo = lineinfo
@@ -2767,8 +2774,7 @@ class CUDALinker(Linker):
 
         self._complete = False
         self._object_codes = []
-        self.linker = None # need at least one program 
-        
+        self.linker = None # need at least one program
 
     @property
     def info_log(self):
@@ -2784,41 +2790,39 @@ class CUDALinker(Linker):
 
     def add_ptx(self, ptx, name='<cudapy-ptx>'):
         prog = Program(
-                ptx.decode('utf-8'), 
-                'ptx', 
-                ProgramOptions(
-                    arch=self.arch, 
-                    lineinfo=self.lineinfo, 
-                    max_register_count=self.max_registers
-                    )
-                )
-    
+            ptx.decode('utf-8'),
+            'ptx',
+            ProgramOptions(
+                arch=self.arch,
+                lineinfo=self.lineinfo,
+                max_register_count=self.max_registers
+            )
+        )
+
         # calls Linker.link() internally?
         obj = prog.compile('cubin')
         self._complete = True
         self._linked = obj
         self.linker = prog._linker
 
-
     def add_cu(self, cu, name='<cudapy-cu>'):
         prog = Program(
-                cu.decode('utf-8'), 
-                'c++', 
-                ProgramOptions(
-                    arch=self.arch, 
-                    lineinfo=self.lineinfo, 
-                    max_register_count=self.max_registers
-                )
+            cu.decode('utf-8'),
+            'c++',
+            ProgramOptions(
+                arch=self.arch,
+                lineinfo=self.lineinfo,
+                max_register_count=self.max_registers
             )
+        )
         obj = prog.compile('ptx')
         self._object_codes.append(obj)
         prog.close()
 
     def add_cubin(self, cubin, name='<cudapy-cubin>'):
-        obj = ObjectCode.from_cubin(cubin) 
+        obj = ObjectCode.from_cubin(cubin)
         self._object_codes.append(obj)
 
-                
     def add_file(self, path, kind):
         try:
             with open(path, 'rb') as f:
@@ -2832,18 +2836,22 @@ class CUDALinker(Linker):
         elif kind == FILE_EXTENSION_MAP['cubin']:
             fn = self.add_cubin
         elif kind == 'cu':
-            fn = self.add_cu 
+            fn = self.add_cu
         else:
             raise LinkerError(f"Don't know how to link {kind}")
 
         fn(data, name)
-    
+
     def complete(self):
         # TODO
         if self._linked:
             return self._linked
-        result = _CUDALinker(*self._object_codes, options=self.options).link('cubin')
+        result = _CUDALinker(
+            *self._object_codes,
+            options=self.options
+        ).link('cubin')
         self._linker.close()
+        return result
 
 
 class MVCLinker(Linker):
