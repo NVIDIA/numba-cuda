@@ -93,7 +93,6 @@ class _Kernel(serialize.ReduceMixin):
         self.debug = debug
         self.lineinfo = lineinfo
         self.extensions = extensions or []
-
         nvvm_options = {
             'fastmath': fastmath,
             'opt': 3 if opt else 0
@@ -406,7 +405,7 @@ class _Kernel(serialize.ReduceMixin):
         stream_handle = stream and stream.handle or zero_stream
 
         # Invoke kernel
-        driver.launch_kernel(cufunc.handle,
+        driver.launch_kernel(cufunc._handle,
                              *griddim,
                              *blockdim,
                              sharedmem,

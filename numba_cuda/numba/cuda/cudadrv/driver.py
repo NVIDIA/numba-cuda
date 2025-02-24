@@ -32,6 +32,8 @@ import importlib
 import numpy as np
 from collections import namedtuple, deque
 
+from cuda.core.experimental import Linker as _CUDALinker, LinkerOptions as _CUDALinkerOptions, ObjectCode, Program, ProgramOptions
+
 from numba import mviewbuf
 from numba.core import utils, serialize, config
 from .error import CudaSupportError, CudaDriverError
@@ -46,9 +48,6 @@ try:
     from pynvjitlink.api import NvJitLinker, NvJitLinkError
 except ImportError:
     NvJitLinker, NvJitLinkError = None, None
-
-from cuda.bindings.nvjitlink import nvJitLinkError
-from cuda.bindings import nvjitlink as _nvjitlink
 
 USE_NV_BINDING = config.CUDA_USE_NVIDIA_BINDING
 
@@ -2597,13 +2596,14 @@ class Linker(metaclass=ABCMeta):
                 "Enabling pynvjitlink requires CUDA 12."
             )
         if config.CUDA_ENABLE_PYNVJITLINK:
-            linker = PyNvJitLinkerNew
+            linker = PyNvJitLinker
 
         elif config.CUDA_ENABLE_MINOR_VERSION_COMPATIBILITY:
-            linker = MVCLinker
+            # TODO - who handles MVC now?
+            linker = MVCLinker 
         else:
             if USE_NV_BINDING:
-                linker = CudaPythonLinker
+                linker = CUDALinker 
             else:
                 linker = CtypesLinker
 
@@ -2640,7 +2640,6 @@ class Linker(metaclass=ABCMeta):
         with driver.get_active_context() as ac:
             dev = driver.get_device(ac.devnum)
             cc = dev.compute_capability
-
         ptx, log = nvrtc.compile(cu, name, cc)
 
         if config.DUMP_ASSEMBLY:
@@ -2750,6 +2749,101 @@ class Linker(metaclass=ABCMeta):
         cubin is a pointer to a internal buffer of cubin owned by the linker;
         thus, it should be loaded before the linker is destroyed.
         """
+
+class CUDALinker(Linker):
+    def __init__(self, max_registers=None, lineinfo=False, cc=None):
+        arch = f"sm_{cc[0] * 10 + cc[1]}"
+        self.options = _CUDALinkerOptions(
+                max_register_count=max_registers, 
+                lineinfo=lineinfo,
+                arch=arch
+        ) 
+
+        self.max_registers = max_registers
+        self.lineinfo = lineinfo
+        self.cc = cc
+        self.arch = arch
+        self.lto = False
+
+        self._complete = False
+        self._object_codes = []
+        self.linker = None # need at least one program 
+        
+
+    @property
+    def info_log(self):
+        if not self.linker:
+            raise ValueError("Not Initialized")
+        return self.linker.get_info_log()
+
+    @property
+    def error_log(self):
+        if not self.linker:
+            raise ValueError("Not Initialized")
+        return self.linker.get_error_log()
+
+    def add_ptx(self, ptx, name='<cudapy-ptx>'):
+        prog = Program(
+                ptx.decode('utf-8'), 
+                'ptx', 
+                ProgramOptions(
+                    arch=self.arch, 
+                    lineinfo=self.lineinfo, 
+                    max_register_count=self.max_registers
+                    )
+                )
+    
+        # calls Linker.link() internally?
+        obj = prog.compile('cubin')
+        self._complete = True
+        self._linked = obj
+        self.linker = prog._linker
+
+
+    def add_cu(self, cu, name='<cudapy-cu>'):
+        prog = Program(
+                cu.decode('utf-8'), 
+                'c++', 
+                ProgramOptions(
+                    arch=self.arch, 
+                    lineinfo=self.lineinfo, 
+                    max_register_count=self.max_registers
+                )
+            )
+        obj = prog.compile('ptx')
+        self._object_codes.append(obj)
+        prog.close()
+
+    def add_cubin(self, cubin, name='<cudapy-cubin>'):
+        obj = ObjectCode.from_cubin(cubin) 
+        self._object_codes.append(obj)
+
+                
+    def add_file(self, path, kind):
+        try:
+            with open(path, 'rb') as f:
+                data = f.read()
+        except FileNotFoundError:
+            raise LinkerError(f'{path} not found')
+
+        name = pathlib.Path(path).name
+        if kind == FILE_EXTENSION_MAP['ptx']:
+            fn = self.add_ptx
+        elif kind == FILE_EXTENSION_MAP['cubin']:
+            fn = self.add_cubin
+        elif kind == 'cu':
+            fn = self.add_cu 
+        else:
+            raise LinkerError(f"Don't know how to link {kind}")
+
+        fn(data, name)
+    
+    def complete(self):
+        # TODO
+        if self._linked:
+            return self._linked
+        result = _CUDALinker(*self._object_codes, options=self.options).link('cubin')
+        self._linker.close()
 
 
 class MVCLinker(Linker):
@@ -3025,143 +3119,6 @@ class CudaPythonLinker(Linker):
         # We return a copy of the cubin because it's owned by the linker
         cubin_ptr = ctypes.cast(cubin_buf, ctypes.POINTER(ctypes.c_char))
         return bytes(np.ctypeslib.as_array(cubin_ptr, shape=(size,)))
-
-
-class PyNvJitLinkerNew(Linker):
-    def __init__(
-        self,
-        max_registers=None,
-        lineinfo=False,
-        cc=None,
-        lto=False,
-        additional_flags=None,
-    ):
-
-        if cc is None:
-            raise RuntimeError("NvJitLink requires CC to be specified")
-        if not any(isinstance(cc, t) for t in [list, tuple]):
-            raise TypeError("`cc` must be a list or tuple of length 2")
-
-        sm_ver = f"{cc[0] * 10 + cc[1]}"
-        arch = f"-arch=sm_{sm_ver}"
-        options = [arch]
-        if max_registers:
-            options.append(f"-maxrregcount={max_registers}")
-        if lineinfo:
-            options.append("-lineinfo")
-        if lto:
-            options.append("-lto")
-        if additional_flags is not None:
-            options.extend(additional_flags)
-
-        self.handle = _nvjitlink.create(len(options), options)
-        self.lto = lto
-        self.options = options
-
-        self._info_log = None
-        self._error_log = None
-        self._complete = False
-
-    @property
-    def info_log(self):
-        return self._info_log
-
-    @property
-    def error_log(self):
-        return self._error_log
-
-    def add_data(self, input_type, data, name):
-        if self._complete:
-            raise nvJitLinkError("Cannot add data to already-completeted link")
-
-        try:
-            _nvjitlink.add_data(
-                self.handle,
-                input_type.value,
-                data,
-                len(data),
-                name
-            )
-        except RuntimeError as e:
-            log_size = _nvjitlink.get_error_log_size(self.handle)
-            log = bytearray(log_size)
-            self._info_log = _nvjitlink.get_error_log(self.handle, log)
-
-            log_size = _nvjitlink.get_info_log_size(self.handle)
-            log = bytearray(log_size)
-            self._error_log = _nvjitlink.get_info_log(self.handle, log)
-            raise nvJitLinkError(f"{e}\n{self.error_log}")
-
-    def add_cubin(self, cubin, name=None):
-        name = name or "unnamed-cubin"
-        self.add_data(_nvjitlink.InputType.CUBIN, cubin, name)
-
-    def add_ptx(self, ptx, name=None):
-        name = name or "unnamed-ptx"
-        self.add_data(_nvjitlink.InputType.PTX, ptx, name)
-
-    def add_ltoir(self, ltoir, name=None):
-        name = name or "unnamed-ltoir"
-        self.add_data(_nvjitlink.InputType.LTOIR, ltoir, name)
-
-    def add_object(self, object_, name=None):
-        name = name or "unnamed-object"
-        self.add_data(_nvjitlink.InputType.OBJECT, object_, name)
-
-    def add_fatbin(self, fatbin, name=None):
-        name = name or "unnamed-fatbin"
-        self.add_data(_nvjitlink.InputType.FATBIN, fatbin, name)
-
-    def add_library(self, library, name=None):
-        self.add_data(_nvjitlink.InputType.LIBRARY, library, name)
-
-    def add_file(self, path, kind):
-        try:
-            with open(path, "rb") as f:
-                data = f.read()
-        except FileNotFoundError:
-            raise LinkerError(f"{path} not found")
-
-        name = pathlib.Path(path).name
-        self.add_data(data, kind, name)
-
-    def get_linked_cubin(self):
-        try:
-            _nvjitlink.complete(self.handle)
-            self._complete = True
-            size = _nvjitlink.get_linked_cubin_size(self.handle)
-            cubin = bytearray(size)
-
-            _nvjitlink.get_linked_cubin(self.handle, cubin)
-            return cubin
-
-        except nvJitLinkError as e:
-            size = _nvjitlink.get_error_log_size(self.handle)
-            log = bytearray(size)
-            self._error_log = _nvjitlink.get_error_log(self.handle, log)
-            raise nvJitLinkError(f"{e}\n{self.error_log}")
-        finally:
-            size = _nvjitlink.get_info_log_size(self.handle)
-            log = bytearray(size)
-            self._info_log = _nvjitlink.get_info_log(self.handle, log)
-
-    def get_linked_ptx(self):
-        try:
-            _nvjitlink.complete(self.handle)
-            self._complete = True
-            size = _nvjitlink.get_linked_ptx_size(self.handle)
-            return _nvjitlink.get_linked_ptx(self.handle, size)
-        except RuntimeError as e:
-            self._error_log = _nvjitlink.get_error_log(self.handle)
-            raise NvJitLinkError(f"{e}\n{self.error_log}")
-        finally:
-            self._info_log = _nvjitlink.get_info_log(self.handle)
-
-    def complete(self):
-        try:
-            return self.get_linked_cubin()
-        except NvJitLinkError as e:
-            raise LinkerError from e
 
 
 class PyNvJitLinker(Linker):

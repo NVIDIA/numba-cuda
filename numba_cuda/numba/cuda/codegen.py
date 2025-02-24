@@ -246,10 +246,11 @@ class CUDACodeLibrary(serialize.ReduceMixin, CodeLibrary):
             return cufunc
 
         cubin = self.get_cubin(cc=device.compute_capability)
-        module = ctx.create_module_image(cubin)
+        #module = ctx.create_module_image(cubin)
 
         # Load
-        cufunc = module.get_function(self._entry_name)
+        #cufunc = module.get_function(self._entry_name)
+        cufunc = cubin.get_kernel(self._entry_name) 
 
         # Populate caches
         self._cufunc_cache[device.id] = cufunc
