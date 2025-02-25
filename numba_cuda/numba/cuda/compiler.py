@@ -427,6 +427,8 @@ def kernel_fixup(kernel, debug):
                         if tm_name == 'types':
                             types = tm_value
                             types.operands = types.operands[1:]
+                            if config.DUMP_LLVM:
+                                types._clear_string_cache()
 
     # Mark as a kernel for NVVM
 
