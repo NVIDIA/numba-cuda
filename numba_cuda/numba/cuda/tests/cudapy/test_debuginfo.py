@@ -268,7 +268,7 @@ class TestCudaDebugInfo(CUDATestCase):
         three_device_fns(kernel_debug=False, leaf_debug=True)
         three_device_fns(kernel_debug=False, leaf_debug=False)
 
-    def test_kernel_args_types(self):
+    def _test_kernel_args_types(self):
         sig = (types.int32, types.int32)
 
         @cuda.jit("void(int32, int32)", debug=True, opt=False)
@@ -297,6 +297,14 @@ class TestCudaDebugInfo(CUDATestCase):
         pat = rf'!{mdnode_id2}\s+=\s+!DIBasicType\(.*DW_ATE_signed,\s+name:\s+"int32"'  # noqa: E501
         match = re.compile(pat).search(llvm_ir)
         self.assertIsNotNone(match, msg=llvm_ir)
+
+    def test_kernel_args_types(self):
+        self._test_kernel_args_types()
+
+    def test_kernel_args_types_dump(self):
+        # see issue#135
+        with override_config('DUMP_LLVM', 1):
+            self._test_kernel_args_types()
 
 
 if __name__ == '__main__':
