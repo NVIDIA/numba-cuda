@@ -174,8 +174,24 @@ jobs:
           name: wheel
           path: ${{ env.wheel_path }}
 
+  publish:
+    needs: [build]
+    runs-on: ubuntu-latest
+    if: inputs.upload_to_pypi
+    steps:
+      - name: Download sdist
+        if: "!cancelled()"
+        uses: actions/download-artifact@v4
+        with:
+          name: sdist
+          path: dist
+      - name: Download wheel
+        if: "!cancelled()"
+        uses: actions/download-artifact@v4
+        with:
+          name: wheel
+          path: dist
       - name: Publish wheel
-        if: inputs.upload_to_pypi
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
           password: ${{ secrets.RAPIDSAI_PYPI_TOKEN }}
