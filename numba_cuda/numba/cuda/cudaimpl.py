@@ -1,6 +1,7 @@
 from functools import reduce
 import operator
 import math
+import struct
 
 from llvmlite import ir
 import llvmlite.binding as ll
@@ -91,35 +92,85 @@ def _get_unique_smem_id(name):
     return "{0}_{1}".format(name, _unique_smem_id)
 
 
+def _validate_alignment(alignment: int):
+    """
+    Ensures that *alignment*, if not None, is a) greater than zero, b) a power
+    of two, and c) a multiple of the size of a pointer.  If any of these
+    conditions are not met, a NumbaValueError is raised.  Otherwise, this
+    function returns None, indicating that the alignment is valid.
+    """
+    if alignment is None:
+        return
+    if not isinstance(alignment, int):
+        raise ValueError("Alignment must be an integer")
+    if alignment <= 0:
+        raise ValueError("Alignment must be positive")
+    if (alignment & (alignment - 1)) != 0:
+        raise ValueError("Alignment must be a power of 2")
+    pointer_size = struct.calcsize("P")
+    if (alignment % pointer_size) != 0:
+        msg = f"Alignment must be a multiple of {pointer_size}"
+        raise ValueError(msg)
+
+
 @lower(cuda.shared.array, types.IntegerLiteral, types.Any)
+@lower(cuda.shared.array, types.IntegerLiteral, types.Any, types.IntegerLiteral)
+@lower(cuda.shared.array, types.IntegerLiteral, types.Any, types.NoneType)
 def cuda_shared_array_integer(context, builder, sig, args):
     length = sig.args[0].literal_value
     dtype = parse_dtype(sig.args[1])
+    alignment = None
+    if len(sig.args) == 3:
+        try:
+            alignment = sig.args[2].literal_value
+            _validate_alignment(alignment)
+        except AttributeError:
+            pass
     return _generic_array(context, builder, shape=(length,), dtype=dtype,
                           symbol_name=_get_unique_smem_id('_cudapy_smem'),
                           addrspace=nvvm.ADDRSPACE_SHARED,
-                          can_dynsized=True)
+                          can_dynsized=True, alignment=alignment)
 
 
 @lower(cuda.shared.array, types.Tuple, types.Any)
 @lower(cuda.shared.array, types.UniTuple, types.Any)
+@lower(cuda.shared.array, types.Tuple, types.Any, types.IntegerLiteral)
+@lower(cuda.shared.array, types.UniTuple, types.Any, types.IntegerLiteral)
+@lower(cuda.shared.array, types.Tuple, types.Any, types.NoneType)
+@lower(cuda.shared.array, types.UniTuple, types.Any, types.NoneType)
 def cuda_shared_array_tuple(context, builder, sig, args):
     shape = [ s.literal_value for s in sig.args[0] ]
     dtype = parse_dtype(sig.args[1])
+    alignment = None
+    if len(sig.args) == 3:
+        try:
+            alignment = sig.args[2].literal_value
+            _validate_alignment(alignment)
+        except AttributeError:
+            pass
     return _generic_array(context, builder, shape=shape, dtype=dtype,
                           symbol_name=_get_unique_smem_id('_cudapy_smem'),
                           addrspace=nvvm.ADDRSPACE_SHARED,
-                          can_dynsized=True)
+                          can_dynsized=True, alignment=alignment)
 
 
 @lower(cuda.local.array, types.IntegerLiteral, types.Any)
+@lower(cuda.local.array, types.IntegerLiteral, types.Any, types.IntegerLiteral)
+@lower(cuda.local.array, types.IntegerLiteral, types.Any, types.NoneType)
 def cuda_local_array_integer(context, builder, sig, args):
     length = sig.args[0].literal_value
     dtype = parse_dtype(sig.args[1])
+    alignment = None
+    if len(sig.args) == 3:
+        try:
+            alignment = sig.args[2].literal_value
+            _validate_alignment(alignment)
+        except AttributeError:
+            pass
     return _generic_array(context, builder, shape=(length,), dtype=dtype,
                           symbol_name='_cudapy_lmem',
                           addrspace=nvvm.ADDRSPACE_LOCAL,
-                          can_dynsized=False)
+                          can_dynsized=False, alignment=alignment)
 
 
 @lower(cuda.local.array, types.Tuple, types.Any)
@@ -954,7 +1005,7 @@ def ptx_nanosleep(context, builder, sig, args):
 
 
 def _generic_array(context, builder, shape, dtype, symbol_name, addrspace,
-                   can_dynsized=False):
+                   can_dynsized=False, alignment=None):
     elemcount = reduce(operator.mul, shape, 1)
 
     # Check for valid shape for this type of allocation.
@@ -981,17 +1032,37 @@ def _generic_array(context, builder, shape, dtype, symbol_name, addrspace,
         # NVVM is smart enough to only use local memory if no register is
         # available
         dataptr = cgutils.alloca_once(builder, laryty, name=symbol_name)
+
+        # If the caller has specified a custom alignment, just set the align
+        # attribute on the alloca IR directly.  We don't do any additional
+        # hand-holding here like checking the underlying data type's alignment
+        # or rounding up to the next power of 2--those checks will have already
+        # been done by the time we see the alignment value.
+        if alignment is not None:
+            dataptr.align = alignment
     else:
         lmod = builder.module
 
         # Create global variable in the requested address space
         gvmem = cgutils.add_global_variable(lmod, laryty, symbol_name,
                                             addrspace)
-        # Specify alignment to avoid misalignment bug
-        align = context.get_abi_sizeof(lldtype)
-        # Alignment is required to be a power of 2 for shared memory. If it is
-        # not a power of 2 (e.g. for a Record array) then round up accordingly.
-        gvmem.align = 1 << (align - 1 ).bit_length()
+
+        # If the caller hasn't specified a custom alignment, obtain the
+        # underlying dtype alignment from the ABI and then round it up to
+        # a power of two.  Otherwise, just use the caller's alignment.
+        #
+        # N.B. The caller *could* provide a valid-but-smaller-than-natural
+        #      alignment here; we'll assume the caller knows what they're
+        #      doing and let that through without error.
+
+        if alignment is None:
+            abi_alignment = context.get_abi_alignment(lldtype)
+            # Ensure a power of two alignment.
+            actual_alignment = 1 << (abi_alignment - 1).bit_length()
+        else:
+            actual_alignment = alignment
+
+        gvmem.align = actual_alignment
 
         if dynamic_smem:
             gvmem.linkage = 'external'
@@ -1041,7 +1112,8 @@ def _generic_array(context, builder, shape, dtype, symbol_name, addrspace,
 
     # Create array object
     ndim = len(shape)
-    aryty = types.Array(dtype=dtype, ndim=ndim, layout='C')
+    aryty = types.Array(dtype=dtype, ndim=ndim, layout='C',
+                        alignment=alignment)
     ary = context.make_array(aryty)(context, builder)
 
     context.populate_array(ary,
