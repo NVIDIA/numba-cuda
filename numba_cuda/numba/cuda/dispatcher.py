@@ -4,6 +4,7 @@ import re
 import sys
 import ctypes
 import functools
+from collections import defaultdict
 
 from numba.core import config, ir, serialize, sigutils, types, typing, utils
 from numba.core.caching import Cache, CacheImpl
@@ -48,29 +49,36 @@ def get_cres_link_objects(cres):
 
     link_objects = set()
 
-    # The typemap of the function includes calls, so we can traverse it to find
-    # the references we need.
+    # List of calls into declared device functions
+    device_func_calls = [
+        (name, v) for name, v in cres.fndesc.typemap.items() if (
+            isinstance(v, cuda_types.CUDADispatcher)
+        )
+    ]
+
+    # List of tuples with SSA name of calls and corresponding signature
+    call_signatures = [
+        (call.func.name, sig)
+        for call, sig in cres.fndesc.calltypes.items() if (
+            isinstance(call, ir.Expr) and call.op == 'call'
+        )
+    ]
+
+    # Map SSA names to all invoked signatures
+    call_signature_d = defaultdict(list)
+    for name, sig in call_signatures:
+        call_signature_d[name].append(sig)
+
+    for name, v in device_func_calls:
+        for sig in call_signature_d.get(name, []):
+            called_cres = v.dispatcher.overloads[sig.args]
+            called_link_objects = get_cres_link_objects(called_cres)
+            link_objects.update(called_link_objects)
+
+    # From this point onwards, we are only interested in ExternFunction
+    # declarations - these are the calls made directly in this function to
+    # them.
     for name, v in cres.fndesc.typemap.items():
-
-        # CUDADispatchers represent a call to a device function, so we need to
-        # look up the linkable code for those recursively.
-        if isinstance(v, cuda_types.CUDADispatcher):
-            # We need to locate the signature of the call so we can find the
-            # correct overload.
-            for call, sig in cres.fndesc.calltypes.items():
-                if isinstance(call, ir.Expr) and call.op == 'call':
-                    # There will likely be multiple calls in the typemap; we
-                    # can uniquely identify the relevant one using its SSA
-                    # name.
-                    if call.func.name == name:
-                        called_cres = v.dispatcher.overloads[sig.args]
-                        called_link_objects = get_cres_link_objects(called_cres)
-                        link_objects.update(called_link_objects)
-
-        # From this point onwards, we are only interested in ExternFunction
-        # declarations - these are the calls made directly in this function to
-        # them.
-
         if not isinstance(v, Function):
             continue
 
