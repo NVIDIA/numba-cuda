@@ -1,5 +1,5 @@
 import operator
-from numba.core import types
+from numba.core import errors, types
 from numba.core.typing.npydecl import (
     parse_dtype,
     parse_shape,
@@ -33,7 +33,7 @@ register_number_classes(register_global)
 
 class Cuda_array_decl(CallableTemplate):
     def generic(self):
-        def typer(shape, dtype):
+        def typer(shape, dtype, alignment=None):
             # Only integer literals and tuples of integer literals are valid
             # shapes
             if isinstance(shape, types.Integer):
@@ -46,6 +46,16 @@ class Cuda_array_decl(CallableTemplate):
                     return None
             else:
                 return None
+
+            if alignment is not None:
+                permitted = (types.IntegerLiteral, types.NoneType)
+                if not isinstance(alignment, permitted):
+                    msg = "alignment must be a constant integer"
+                    raise errors.RequireLiteralValue(msg)
+
+            # N.B. We don't use alignment for typing; it's not part of
+            #      types.Array.  The value supplied to the array declaration
+            #      is handled in the lowering.
 
             ndim = parse_shape(shape)
             nb_dtype = parse_dtype(dtype)
