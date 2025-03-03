@@ -25,7 +25,7 @@ register_number_classes(register_global)
 
 class Cuda_array_decl(CallableTemplate):
     def generic(self):
-        def typer(shape, dtype):
+        def typer(shape, dtype, alignment=None):
 
             # Only integer literals and tuples of integer literals are valid
             # shapes
@@ -38,6 +38,14 @@ class Cuda_array_decl(CallableTemplate):
                     return None
             else:
                 return None
+
+            # N.B. We don't do anything with alignment in this routine; it's
+            #      not part of the underlying types.Array interface, so we
+            #      don't need to pass it down the stack.  The value supplied
+            #      to the array declaration will be handled in the lowering.
+            #
+            #      E.g. `cuda.local.array(..., alignment=256)` will be handled
+            #      by `cudaimpl.cuda_local_array_integer()`.
 
             ndim = parse_shape(shape)
             nb_dtype = parse_dtype(dtype)

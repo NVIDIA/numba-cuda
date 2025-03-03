@@ -116,12 +116,17 @@ class shared(Stub):
     _description_ = '<shared>'
 
     @stub_function
-    def array(shape, dtype):
+    def array(shape, dtype, alignment=None):
         '''
-        Allocate a shared array of the given *shape* and *type*. *shape* is
-        either an integer or a tuple of integers representing the array's
-        dimensions.  *type* is a :ref:`Numba type <numba-types>` of the
-        elements needing to be stored in the array.
+        Allocate a shared array of the given *shape*, *type*, and, optionally,
+        *alignment*.  *shape* is either an integer or a tuple of integers
+        representing the array's dimensions.  *type* is a :ref:`Numba type
+        <numba-types>` of the elements needing to be stored in the array.
+        *alignment* is an optional integer specifying the byte alignment of
+        the array.  When specified, it must be a power of two, and a multiple
+        of the size of a pointer (4 for 32-bit, 8 for 64-bit).  When not
+        specified, the array is allocated with an alignment appropriate for
+        the supplied *dtype*.
 
         The returned array-like object can be read and written to like any
         normal device array (e.g. through indexing).
@@ -135,12 +140,21 @@ class local(Stub):
     _description_ = '<local>'
 
     @stub_function
-    def array(shape, dtype):
+    def array(shape, dtype, alignment=None):
         '''
-        Allocate a local array of the given *shape* and *type*. The array is
-        private to the current thread, and resides in global memory. An
-        array-like object is returned which can be read and written to like any
-        standard array (e.g.  through indexing).
+        Allocate a local array of the given *shape*, *type*, and, optionally,
+        *alignment*.  *shape* is either an integer or a tuple of integers
+        representing the array's dimensions.  *type* is a :ref:`Numba type
+        <numba-types>` of the elements needing to be stored in the array.
+        *alignment* is an optional integer specifying the byte alignment of
+        the array.  When specified, it must be a power of two, and a multiple
+        of the size of a pointer (4 for 32-bit, 8 for 64-bit).  When not
+        specified, the array is allocated with an alignment appropriate for
+        the supplied *dtype*.
+
+        The array is private to the current thread, and resides in global
+        memory.  An array-like object is returned which can be read and
+        written to like any standard array (e.g. through indexing).
         '''
 
 
