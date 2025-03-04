@@ -49,7 +49,7 @@ from .mappings import FILE_EXTENSION_MAP
 from .linkable_code import LinkableCode, LTOIR, Fatbin, Object
 from numba.cuda.utils import _readenv
 from numba.cuda.cudadrv import enums, drvapi, nvrtc
-
+from numba.cuda.cuda_paths import get_cuda_paths
 try:
     from pynvjitlink.api import NvJitLinker, NvJitLinkError
 except ImportError:
@@ -2797,6 +2797,21 @@ class CUDALinker(Linker):
         self._object_codes.append(obj)
 
     def add_cu(self, cu, name='<cudapy-cu>'):
+        # TODO - vendor below logic somewhere common
+        cuda_include = [
+            f"-I{get_cuda_paths()['include_dir'].info}",
+        ]
+
+        cudadrv_path = os.path.dirname(os.path.abspath(__file__))
+        numba_cuda_path = os.path.dirname(cudadrv_path)
+        numba_include = f'-I{numba_cuda_path}'
+
+        nrt_path = os.path.join(numba_cuda_path, "runtime")
+        nrt_include = f'-I{nrt_path}'
+
+        include_paths = cuda_include + [numba_include, nrt_include]
+        breakpoint()
+
         prog = Program(
             cu.decode('utf-8'),
             'c++',
@@ -2805,9 +2820,17 @@ class CUDALinker(Linker):
                 lineinfo=self.lineinfo,
                 max_register_count=self.max_registers,
                 relocatable_device_code=True,
+                include_path=include_paths,
             )
         )
-        obj = prog.compile('ptx')
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore",
+                message=(
+                    "The CUDA driver version is older"
+                )
+            )
+            obj = prog.compile('ptx')
         self._object_codes.append(obj)
         prog.close()
 
