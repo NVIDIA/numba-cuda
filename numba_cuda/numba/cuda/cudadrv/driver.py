@@ -2793,21 +2793,8 @@ class CUDALinker(Linker):
         return self.linker.get_error_log()
 
     def add_ptx(self, ptx, name='<cudapy-ptx>'):
-        prog = Program(
-            ptx.decode('utf-8'),
-            'ptx',
-            ProgramOptions(
-                arch=self.arch,
-                lineinfo=self.lineinfo,
-                max_register_count=self.max_registers
-            )
-        )
-
-        # calls Linker.link() internally?
-        obj = prog.compile('cubin')
-        self._complete = True
-        self._linked = obj
-        self.linker = prog._linker
+        obj = ObjectCode.from_ptx(ptx)
+        self._object_codes.append(obj)
 
     def add_cu(self, cu, name='<cudapy-cu>'):
         prog = Program(
@@ -2816,7 +2803,8 @@ class CUDALinker(Linker):
             ProgramOptions(
                 arch=self.arch,
                 lineinfo=self.lineinfo,
-                max_register_count=self.max_registers
+                max_register_count=self.max_registers,
+                relocatable_device_code=True,
             )
         )
         obj = prog.compile('ptx')
@@ -2847,14 +2835,13 @@ class CUDALinker(Linker):
         fn(data, name)
 
     def complete(self):
-        # TODO
-        if self._linked:
-            return self._linked
-        result = _CUDALinker(
+        self.linker = _CUDALinker(
             *self._object_codes,
             options=self.options
-        ).link('cubin')
-        self._linker.close()
+        )
+        result = self.linker.link('cubin')
+        self.linker.close()
+        self._complete = True
         return result
 
 

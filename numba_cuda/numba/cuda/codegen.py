@@ -228,7 +228,7 @@ class CUDACodeLibrary(serialize.ReduceMixin, CodeLibrary):
         cubin = linker.complete()
 
         self._cubin_cache[cc] = cubin
-        self._linkerinfo_cache[cc] = linker.info_log
+        #self._linkerinfo_cache[cc] = linker.info_log
 
         return cubin
 
