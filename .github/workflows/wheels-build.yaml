@@ -193,4 +193,4 @@ jobs:
           name: wheel
           path: dist
       - name: Publish wheel
-        run: ls dist
+        script: ls dist
