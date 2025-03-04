@@ -174,11 +174,10 @@ jobs:
           name: wheel
           path: ${{ env.wheel_path }}
 
-  # TODO Revert the commit that introduced this TODO
   publish:
     needs: [build]
     runs-on: ubuntu-latest
-    if: "!cancelled()"
+    if: inputs.upload_to_pypi
     steps:
       - name: Download sdist
         if: "!cancelled()"
@@ -193,4 +192,6 @@ jobs:
           name: wheel
           path: dist
       - name: Publish wheel
-        script: ls dist
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          password: ${{ secrets.RAPIDSAI_PYPI_TOKEN }}
