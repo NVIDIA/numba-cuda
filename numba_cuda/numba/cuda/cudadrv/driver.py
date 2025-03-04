@@ -1599,8 +1599,12 @@ def load_module_image_cuda_python(context, image):
     option_vals = [v for v in options.values()]
 
     try:
-        handle = driver.cuModuleLoadDataEx(image, len(options), option_keys,
-                                           option_vals)
+        handle = driver.cuModuleLoadDataEx(
+            image.code,
+            len(options),
+            option_keys,
+            option_vals
+        )
     except CudaAPIError as e:
         err_string = jiterrors.decode('utf-8')
         msg = "cuModuleLoadDataEx error:\n%s" % err_string
@@ -2602,7 +2606,7 @@ class Linker(metaclass=ABCMeta):
                 "Enabling pynvjitlink requires CUDA 12."
             )
         if config.CUDA_ENABLE_PYNVJITLINK:
-            linker = PyNvJitLinker
+            linker = CUDALinker
 
         elif config.CUDA_ENABLE_MINOR_VERSION_COMPATIBILITY:
             # TODO - who handles MVC now?
