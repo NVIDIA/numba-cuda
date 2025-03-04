@@ -2810,7 +2810,6 @@ class CUDALinker(Linker):
         nrt_include = f'-I{nrt_path}'
 
         include_paths = cuda_include + [numba_include, nrt_include]
-        breakpoint()
 
         prog = Program(
             cu.decode('utf-8'),
