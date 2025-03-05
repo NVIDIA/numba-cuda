@@ -6,6 +6,8 @@ from .cudadrv import devices, driver, nvvm, runtime
 from numba.cuda.cudadrv.libs import get_cudalib
 from numba.cuda.cudadrv.linkable_code import LinkableCode
 
+from cuda.core.experimental import ObjectCode
+
 import os
 import subprocess
 import tempfile
@@ -250,14 +252,15 @@ class CUDACodeLibrary(serialize.ReduceMixin, CodeLibrary):
             return cufunc
 
         cubin = self.get_cubin(cc=device.compute_capability)
-        module = ctx.create_module_image(cubin)
+
+        # just a mock, https://github.com/NVIDIA/numba-cuda/pull/133 will
+        # formalize the object code interface
+        obj_code = ObjectCode.from_cubin(cubin)
+        cufunc = obj_code.get_kernel(self._entry_name)
 
         # Init
         for init_fn in self._init_functions:
-            init_fn(module)
-
-        # Load
-        cufunc = module.get_function(self._entry_name)
+            init_fn(obj_code)
 
         # Populate caches
         self._cufunc_cache[device.id] = cufunc

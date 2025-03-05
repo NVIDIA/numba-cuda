@@ -4,7 +4,11 @@ from numba import cuda
 from numba.cuda.cudadrv.linkable_code import CUSource
 from numba.cuda.testing import CUDATestCase
 
-from cuda.bindings.driver import cuModuleGetGlobal, cuMemcpyHtoD
+from cuda.bindings.driver import (
+    cuModuleGetGlobal,
+    cuMemcpyHtoD,
+    cuLibraryGetModule
+)
 
 
 class TestModuleInitCallback(CUDATestCase):
@@ -21,11 +25,13 @@ __device__ int get_num(int &retval) {
 }
 """
 
-        def set_fourty_two(mod):
+        def set_fourty_two(obj):
             # Initialize 42 to global variable `num`
-            res, dptr, size = cuModuleGetGlobal(
-                mod.handle.value, "num".encode()
-            )
+            culib = obj._handle
+            res, mod = cuLibraryGetModule(culib)
+            self.assertEqual(res, 0)
+
+            res, dptr, size = cuModuleGetGlobal(mod, "num".encode())
             self.assertEqual(res, 0)
             self.assertEqual(size, 4)
 
