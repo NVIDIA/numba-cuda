@@ -77,6 +77,25 @@ jobs:
       build_type: pull-request
       script: "ci/build_wheel.sh"
       matrix_filter: ${{ needs.compute-matrix.outputs.BUILD_MATRIX }}
+  # TODO: Remove this job before merging
+  fake-publish-wheels:
+    needs: build-wheels
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download sdist
+        if: "!cancelled()"
+        uses: actions/download-artifact@v4
+        with:
+          name: sdist
+          path: dist
+      - name: Download wheel
+        if: "!cancelled()"
+        uses: actions/download-artifact@v4
+        with:
+          name: wheel
+          path: dist
+      - name: List wheels
+        run: ls dist/
   test-wheels:
     needs:
       - build-wheels
