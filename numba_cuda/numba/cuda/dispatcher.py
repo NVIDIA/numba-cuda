@@ -69,6 +69,7 @@ def get_cres_link_objects(cres):
     for name, sig in call_signatures:
         call_signature_d[name].append(sig)
 
+    # Add the link objects from the current function's callees
     for name, v in device_func_calls:
         for sig in call_signature_d.get(name, []):
             called_cres = v.dispatcher.overloads[sig.args]
