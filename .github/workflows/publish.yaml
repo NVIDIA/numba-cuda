@@ -41,7 +41,26 @@ jobs:
       build_type: release
       script: "ci/build_wheel.sh"
       matrix_filter: ${{ needs.compute-matrix.outputs.BUILD_MATRIX }}
-      upload_to_pypi: true
+  publish-wheels:
+    needs: build-wheels
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download sdist
+        if: "!cancelled()"
+        uses: actions/download-artifact@v4
+        with:
+          name: sdist
+          path: dist
+      - name: Download wheel
+        if: "!cancelled()"
+        uses: actions/download-artifact@v4
+        with:
+          name: wheel
+          path: dist
+      - name: Publish wheel
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          password: ${{ secrets.RAPIDSAI_PYPI_TOKEN }}
   build-docs:
     needs:
       - build-conda
