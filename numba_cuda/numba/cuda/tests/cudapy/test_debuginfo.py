@@ -1,4 +1,4 @@
-from numba.tests.support import override_config
+from numba.tests.support import (override_config, captured_stdout)
 from numba.cuda.testing import skip_on_cudasim
 from numba import cuda
 from numba.core import types
@@ -304,7 +304,8 @@ class TestCudaDebugInfo(CUDATestCase):
     def test_kernel_args_types_dump(self):
         # see issue#135
         with override_config('DUMP_LLVM', 1):
-            self._test_kernel_args_types()
+            with captured_stdout():
+                self._test_kernel_args_types()
 
 
 if __name__ == '__main__':
