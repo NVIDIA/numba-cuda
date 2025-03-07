@@ -9,9 +9,10 @@ class LinkableCode:
                  linking errors that may be produced.
     """
 
-    def __init__(self, data, name=None):
+    def __init__(self, data, name=None, init_callback=None):
         self.data = data
         self._name = name
+        self.init_callback = init_callback
 
     @property
     def name(self):

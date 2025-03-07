@@ -4,6 +4,9 @@ from numba.core import config, serialize
 from numba.core.codegen import Codegen, CodeLibrary
 from .cudadrv import devices, driver, nvvm, runtime
 from numba.cuda.cudadrv.libs import get_cudalib
+from numba.cuda.cudadrv.linkable_code import LinkableCode
+
+from cuda.core.experimental import ObjectCode
 
 import os
 import subprocess
@@ -94,6 +97,9 @@ class CUDACodeLibrary(serialize.ReduceMixin, CodeLibrary):
         # Files to link with the generated PTX. These are linked using the
         # Driver API at link time.
         self._linking_files = set()
+        # Module Init functions to be applied to loaded module, the order is
+        # determined by the order they are added to the codelib.
+        self._init_functions = []
         # Should we link libcudadevrt?
         self.needs_cudadevrt = False
 
@@ -246,10 +252,15 @@ class CUDACodeLibrary(serialize.ReduceMixin, CodeLibrary):
             return cufunc
 
         cubin = self.get_cubin(cc=device.compute_capability)
-        module = ctx.create_module_image(cubin)
 
-        # Load
-        cufunc = module.get_function(self._entry_name)
+        # just a mock, https://github.com/NVIDIA/numba-cuda/pull/133 will
+        # formalize the object code interface
+        obj_code = ObjectCode.from_cubin(cubin)
+        cufunc = obj_code.get_kernel(self._entry_name)
+
+        # Init
+        for init_fn in self._init_functions:
+            init_fn(obj_code)
 
         # Populate caches
         self._cufunc_cache[device.id] = cufunc
@@ -284,8 +295,12 @@ class CUDACodeLibrary(serialize.ReduceMixin, CodeLibrary):
 
         self._linking_libraries.add(library)
 
-    def add_linking_file(self, filepath):
-        self._linking_files.add(filepath)
+    def add_linking_file(self, path_or_obj):
+        if isinstance(path_or_obj, LinkableCode):
+            if path_or_obj.init_callback is not None:
+                self._init_functions.append(path_or_obj.init_callback)
+
+        self._linking_files.add(path_or_obj)
 
     def get_function(self, name):
         for fn in self._module.functions:
