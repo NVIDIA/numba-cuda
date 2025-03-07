@@ -228,7 +228,7 @@ class CUDACodeLibrary(serialize.ReduceMixin, CodeLibrary):
         cubin = linker.complete()
 
         self._cubin_cache[cc] = cubin
-        self._linkerinfo_cache[cc] = linker.info_log
+        #self._linkerinfo_cache[cc] = linker.info_log
 
         return cubin
 
@@ -244,7 +244,6 @@ class CUDACodeLibrary(serialize.ReduceMixin, CodeLibrary):
         cufunc = self._cufunc_cache.get(device.id, None)
         if cufunc:
             return cufunc
-
         cubin = self.get_cubin(cc=device.compute_capability)
         module = ctx.create_module_image(cubin)
 

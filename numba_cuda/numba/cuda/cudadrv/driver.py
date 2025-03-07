@@ -32,6 +32,14 @@ import importlib
 import numpy as np
 from collections import namedtuple, deque
 
+from cuda.core.experimental import (
+    Linker as _CUDALinker,
+    LinkerOptions as _CUDALinkerOptions,
+    ObjectCode,
+    Program,
+    ProgramOptions
+)
+
 from numba import mviewbuf
 from numba.core import utils, serialize, config
 from .error import CudaSupportError, CudaDriverError
@@ -41,7 +49,7 @@ from .mappings import FILE_EXTENSION_MAP
 from .linkable_code import LinkableCode, LTOIR, Fatbin, Object
 from numba.cuda.utils import _readenv
 from numba.cuda.cudadrv import enums, drvapi, nvrtc
-
+from numba.cuda.cuda_paths import get_cuda_paths
 try:
     from pynvjitlink.api import NvJitLinker, NvJitLinkError
 except ImportError:
@@ -1591,8 +1599,12 @@ def load_module_image_cuda_python(context, image):
     option_vals = [v for v in options.values()]
 
     try:
-        handle = driver.cuModuleLoadDataEx(image, len(options), option_keys,
-                                           option_vals)
+        handle = driver.cuModuleLoadDataEx(
+            image.code,
+            len(options),
+            option_keys,
+            option_vals
+        )
     except CudaAPIError as e:
         err_string = jiterrors.decode('utf-8')
         msg = "cuModuleLoadDataEx error:\n%s" % err_string
@@ -2594,13 +2606,14 @@ class Linker(metaclass=ABCMeta):
                 "Enabling pynvjitlink requires CUDA 12."
             )
         if config.CUDA_ENABLE_PYNVJITLINK:
-            linker = PyNvJitLinker
+            linker = CUDALinker
 
         elif config.CUDA_ENABLE_MINOR_VERSION_COMPATIBILITY:
+            # TODO - who handles MVC now?
             linker = MVCLinker
         else:
             if USE_NV_BINDING:
-                linker = CudaPythonLinker
+                linker = CUDALinker
             else:
                 linker = CtypesLinker
 
@@ -2637,7 +2650,6 @@ class Linker(metaclass=ABCMeta):
         with driver.get_active_context() as ac:
             dev = driver.get_device(ac.devnum)
             cc = dev.compute_capability
-
         ptx, log = nvrtc.compile(cu, name, cc)
 
         if config.DUMP_ASSEMBLY:
@@ -2747,6 +2759,112 @@ class Linker(metaclass=ABCMeta):
         cubin is a pointer to a internal buffer of cubin owned by the linker;
         thus, it should be loaded before the linker is destroyed.
         """
+
+
+class CUDALinker(Linker):
+    def __init__(self, max_registers=None, lineinfo=False, cc=None):
+        arch = f"sm_{cc[0] * 10 + cc[1]}"
+        self.options = _CUDALinkerOptions(
+            max_register_count=max_registers,
+            lineinfo=lineinfo,
+            arch=arch
+        )
+
+        self.max_registers = max_registers
+        self.lineinfo = lineinfo
+        self.cc = cc
+        self.arch = arch
+        self.lto = False
+
+        self._complete = False
+        self._object_codes = []
+        self.linker = None # need at least one program
+
+    @property
+    def info_log(self):
+        if not self.linker:
+            raise ValueError("Not Initialized")
+        return self.linker.get_info_log()
+
+    @property
+    def error_log(self):
+        if not self.linker:
+            raise ValueError("Not Initialized")
+        return self.linker.get_error_log()
+
+    def add_ptx(self, ptx, name='<cudapy-ptx>'):
+        obj = ObjectCode.from_ptx(ptx)
+        self._object_codes.append(obj)
+
+    def add_cu(self, cu, name='<cudapy-cu>'):
+        # TODO - vendor below logic somewhere common
+        cuda_include = [
+            f"-I{get_cuda_paths()['include_dir'].info}",
+        ]
+
+        cudadrv_path = os.path.dirname(os.path.abspath(__file__))
+        numba_cuda_path = os.path.dirname(cudadrv_path)
+        numba_include = f'-I{numba_cuda_path}'
+
+        nrt_path = os.path.join(numba_cuda_path, "runtime")
+        nrt_include = f'-I{nrt_path}'
+
+        include_paths = cuda_include + [numba_include, nrt_include]
+
+        prog = Program(
+            cu.decode('utf-8'),
+            'c++',
+            ProgramOptions(
+                arch=self.arch,
+                lineinfo=self.lineinfo,
+                max_register_count=self.max_registers,
+                relocatable_device_code=True,
+                include_path=include_paths,
+            )
+        )
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore",
+                message=(
+                    "The CUDA driver version is older"
+                )
+            )
+            obj = prog.compile('ptx')
+        self._object_codes.append(obj)
+        prog.close()
+
+    def add_cubin(self, cubin, name='<cudapy-cubin>'):
+        obj = ObjectCode.from_cubin(cubin)
+        self._object_codes.append(obj)
+
+    def add_file(self, path, kind):
+        try:
+            with open(path, 'rb') as f:
+                data = f.read()
+        except FileNotFoundError:
+            raise LinkerError(f'{path} not found')
+
+        name = pathlib.Path(path).name
+        if kind == FILE_EXTENSION_MAP['ptx']:
+            fn = self.add_ptx
+        elif kind == FILE_EXTENSION_MAP['cubin']:
+            fn = self.add_cubin
+        elif kind == 'cu':
+            fn = self.add_cu
+        else:
+            raise LinkerError(f"Don't know how to link {kind}")
+
+        fn(data, name)
+
+    def complete(self):
+        self.linker = _CUDALinker(
+            *self._object_codes,
+            options=self.options
+        )
+        result = self.linker.link('cubin')
+        self.linker.close()
+        self._complete = True
+        return result
 
 
 class MVCLinker(Linker):
