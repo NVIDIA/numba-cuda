@@ -83,16 +83,14 @@ jobs:
               - { ARCH: 'amd64', PY_VER: '3.10', CUDA_VER: '11.8.0', LINUX_VER: 'rockylinux8', GPU: 'l4',   DRIVER: 'latest', DEPENDENCIES: 'latest' }
               - { ARCH: 'amd64', PY_VER: '3.11', CUDA_VER: '12.0.1', LINUX_VER: 'ubuntu20.04', GPU: 'l4',   DRIVER: 'latest', DEPENDENCIES: 'latest' }
               - { ARCH: 'amd64', PY_VER: '3.12', CUDA_VER: '12.2.2', LINUX_VER: 'ubuntu22.04', GPU: 'l4',   DRIVER: 'latest', DEPENDENCIES: 'latest' }
-              # TODO: One of these two jobs will probably fail
+              # TODO: Use CUDA 12.8.0 below.
               - { ARCH: 'amd64', PY_VER: '3.13', CUDA_VER: '12.5.1', LINUX_VER: 'ubuntu24.04', GPU: 'l4',   DRIVER: 'latest', DEPENDENCIES: 'latest' }
-              - { ARCH: 'amd64', PY_VER: '3.13', CUDA_VER: '12.8.0', LINUX_VER: 'ubuntu22.04', GPU: 'l4',   DRIVER: 'latest', DEPENDENCIES: 'latest' }
               - { ARCH: 'arm64', PY_VER: '3.9',  CUDA_VER: '11.8.0', LINUX_VER: 'rockylinux8', GPU: 'a100', DRIVER: 'latest', DEPENDENCIES: 'oldest' }
               - { ARCH: 'arm64', PY_VER: '3.10', CUDA_VER: '11.8.0', LINUX_VER: 'rockylinux8', GPU: 'a100', DRIVER: 'latest', DEPENDENCIES: 'latest' }
               - { ARCH: 'arm64', PY_VER: '3.11', CUDA_VER: '12.0.1', LINUX_VER: 'ubuntu20.04', GPU: 'a100', DRIVER: 'latest', DEPENDENCIES: 'latest' }
               - { ARCH: 'arm64', PY_VER: '3.12', CUDA_VER: '12.2.2', LINUX_VER: 'ubuntu22.04', GPU: 'a100', DRIVER: 'latest', DEPENDENCIES: 'latest' }
-              # TODO: One of these two jobs will probably fail
+              # TODO: Use CUDA 12.8.0 below.
               - { ARCH: 'arm64', PY_VER: '3.13', CUDA_VER: '12.5.1', LINUX_VER: 'ubuntu24.04', GPU: 'a100', DRIVER: 'latest', DEPENDENCIES: 'latest' }
-              - { ARCH: 'arm64', PY_VER: '3.13', CUDA_VER: '12.8.0', LINUX_VER: 'ubuntu22.04', GPU: 'a100', DRIVER: 'latest', DEPENDENCIES: 'latest' }
           "
 
           TEST_MATRIX=$(yq -n 'env(MATRICES) | .[strenv(BUILD_TYPE)]')
