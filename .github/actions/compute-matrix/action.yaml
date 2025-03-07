@@ -20,16 +20,20 @@ runs:
         "
 
         export TEST_MATRIX="
-          - { CUDA_VER: '11.4.3', ARCH: 'amd64', PY_VER: '3.9',  LINUX_VER: 'rockylinux8', gpu: 'l4',   driver: 'latest' }
+          # TODO: Use CUDA 11.4.3 below.
+          - { CUDA_VER: '11.8.0', ARCH: 'amd64', PY_VER: '3.9',  LINUX_VER: 'rockylinux8', gpu: 'l4',   driver: 'latest' }
           - { CUDA_VER: '11.8.0', ARCH: 'amd64', PY_VER: '3.10', LINUX_VER: 'ubuntu20.04', gpu: 'l4',   driver: 'latest' }
           - { CUDA_VER: '12.0.1', ARCH: 'amd64', PY_VER: '3.11', LINUX_VER: 'ubuntu22.04', gpu: 'l4',   driver: 'latest' }
           - { CUDA_VER: '12.2.2', ARCH: 'amd64', PY_VER: '3.12', LINUX_VER: 'ubuntu22.04', gpu: 'l4',   driver: 'latest' }
-          - { CUDA_VER: '12.8.0', ARCH: 'amd64', PY_VER: '3.13', LINUX_VER: 'ubuntu24.04', gpu: 'l4',   driver: 'latest' }
-          - { CUDA_VER: '11.4.3', ARCH: 'arm64', PY_VER: '3.9',  LINUX_VER: 'rockylinux8', gpu: 'a100', driver: 'latest' }
+          # TODO: Use Python 3.13 below.
+          - { CUDA_VER: '12.8.0', ARCH: 'amd64', PY_VER: '3.12', LINUX_VER: 'ubuntu24.04', gpu: 'l4',   driver: 'latest' }
+          # TODO: Use CUDA 11.4.3 below.
+          - { CUDA_VER: '11.8.0', ARCH: 'arm64', PY_VER: '3.9',  LINUX_VER: 'rockylinux8', gpu: 'a100', driver: 'latest' }
           - { CUDA_VER: '11.8.0', ARCH: 'arm64', PY_VER: '3.10', LINUX_VER: 'ubuntu20.04', gpu: 'a100', driver: 'latest' }
           - { CUDA_VER: '12.0.1', ARCH: 'arm64', PY_VER: '3.11', LINUX_VER: 'ubuntu22.04', gpu: 'a100', driver: 'latest' }
           - { CUDA_VER: '12.2.2', ARCH: 'arm64', PY_VER: '3.12', LINUX_VER: 'ubuntu22.04', gpu: 'a100', driver: 'latest' }
-          - { CUDA_VER: '12.8.0', ARCH: 'arm64', PY_VER: '3.13', LINUX_VER: 'ubuntu24.04', gpu: 'a100', driver: 'latest' }
+          # TODO: Use Python 3.13 below.
+          - { CUDA_VER: '12.8.0', ARCH: 'arm64', PY_VER: '3.12', LINUX_VER: 'ubuntu24.04', gpu: 'a100', driver: 'latest' }
         "
 
         echo "BUILD_MATRIX=$(
