@@ -129,6 +129,8 @@ class _Kernel(serialize.ReduceMixin):
         if self.cooperative:
             lib.needs_cudadevrt = True
 
+        self._linked_nrt = False
+
         def link_to_library_functions(library_functions, library_path,
                                       prefix=None):
             """
@@ -201,11 +203,11 @@ class _Kernel(serialize.ReduceMixin):
         )
 
         nrt_in_asm = re.findall(pattern, asm)
-
         basedir = os.path.dirname(os.path.abspath(__file__))
         if nrt_in_asm:
             nrt_path = os.path.join(basedir, 'runtime', 'nrt.cu')
             link.append(nrt_path)
+            self._linked_nrt = True
 
     @property
     def library(self):
@@ -267,7 +269,7 @@ class _Kernel(serialize.ReduceMixin):
         """
         cufunc = self._codelibrary.get_cufunc()
 
-        if hasattr(self, "target_context") and self.target_context.enable_nrt:
+        if hasattr(self, "target_context") and self.target_context.enable_nrt and self._linked_nrt:
             rtsys.ensure_initialized()
             rtsys.set_memsys_to_module(cufunc.module)
             # We don't know which stream the kernel will be launched on, so

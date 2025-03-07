@@ -292,7 +292,7 @@ def compile(src, name, cc, ltoir=False):
     # Otherwise, if there's any content in the log, present it as a warning
     if log:
         msg = (f"NVRTC log messages whilst compiling {name}:\n\n{log}")
-        warnings.warn(msg)
+#        warnings.warn(msg)
 
     if ltoir:
         ltoir = nvrtc.get_lto(program)
