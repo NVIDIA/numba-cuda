@@ -1112,8 +1112,7 @@ def _generic_array(context, builder, shape, dtype, symbol_name, addrspace,
 
     # Create array object
     ndim = len(shape)
-    aryty = types.Array(dtype=dtype, ndim=ndim, layout='C',
-                        alignment=alignment)
+    aryty = types.Array(dtype=dtype, ndim=ndim, layout='C')
     ary = context.make_array(aryty)(context, builder)
 
     context.populate_array(ary,
