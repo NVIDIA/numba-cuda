@@ -13,7 +13,7 @@ CUDA Toolkit libraries can be available via either:
 import os
 import sys
 import ctypes
-
+import site
 from numba.misc.findlib import find_lib
 from numba.cuda.cuda_paths import get_cuda_paths
 from numba.cuda.cudadrv.driver import locate_driver_and_loader, load_driver
@@ -51,7 +51,7 @@ def get_cudalib(lib, static=False):
     loader's search mechanism.
     """
     if lib == 'nvvm':
-        return get_cuda_paths()['nvvm'].info or _dllnamepattern % 'nvvm'
+        return get_nvvm(static=static)
     else:
         dir_type = 'static_cudalib_dir' if static else 'cudalib_dir'
         libdir = get_cuda_paths()[dir_type].info
@@ -60,6 +60,43 @@ def get_cudalib(lib, static=False):
     namepattern = _staticnamepattern if static else _dllnamepattern
     return max(candidates) if candidates else namepattern % lib
 
+def get_nvvm(static=False):
+    if static:
+        raise NotImplementedError("Static NVVM library is not supported")
+    
+    standard_install = get_cuda_paths()['nvvm'].info or _dllnamepattern % 'nvvm'
+    if os.path.exists(standard_install):
+        return standard_install
+    else:
+        # search for nvvm from nvidia-cuda-nvcc
+            site_paths = [site.getusersitepackages()] + site.getsitepackages() + ["conda", None]
+    for sp in site_paths:
+        # The SONAME is taken based on public CTK 12.x releases
+        if sys.platform.startswith("linux"):
+            dso_dir = "lib64"
+            # Hack: libnvvm from Linux wheel does not have any soname (CUDAINST-3183)
+            dso_path = "libnvvm.so"
+            if sp == "conda" or sp is None:
+                dso_path += ".4"
+        elif sys.platform.startswith("win32"):
+            dso_dir = "bin"
+            dso_path = "nvvm64_40_0.dll"
+        else:
+            raise AssertionError()
+
+        if sp == "conda" and "CONDA_PREFIX" in os.environ:
+            # nvvm is not under $CONDA_PREFIX/lib, so it's not in the default search path
+            if sys.platform.startswith("linux"):
+                dso_dir = os.path.join(os.environ["CONDA_PREFIX"], "nvvm", dso_dir)
+            elif sys.platform.startswith("win32"):
+                dso_dir = os.path.join(os.environ["CONDA_PREFIX"], "Library", "nvvm", dso_dir)
+            dso_path = os.path.join(dso_dir, dso_path)
+        elif sp is not None:
+            dso_dir = os.path.join(sp, "nvidia", "cuda_nvcc", "nvvm", dso_dir)
+            dso_path = os.path.join(dso_dir, dso_path)
+            if os.path.exists(dso_path):
+                return dso_path
+    raise FileNotFoundError(f"Unable to find nvvm library, searched in {site_paths} and {standard_install}" )
 
 def get_cuda_include_dir():
     """

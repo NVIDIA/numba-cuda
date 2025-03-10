@@ -4,9 +4,11 @@ This is a direct translation of nvvm.h
 import logging
 import re
 import sys
+import os
+import site
 import warnings
 from ctypes import (c_void_p, c_int, POINTER, c_char_p, c_size_t, byref,
-                    c_char)
+                    c_char, CDLL, RTLD_GLOBAL)
 
 import threading
 
@@ -16,6 +18,8 @@ from .error import NvvmError, NvvmSupportError, NvvmWarning
 from .libs import get_libdevice, open_libdevice, open_cudalib
 from numba.core import cgutils, config
 
+PLATFORM_LINUX = sys.platform.startswith("linux")
+PLATFORM_WIN = sys.platform.startswith("win32")
 
 logger = logging.getLogger(__name__)
 
@@ -56,6 +60,75 @@ _datalayout_i128 = ('e-p:64:64:64-i1:8:8-i8:8:8-i16:16:16-i32:32:32-i64:64:64-'
                     'i128:128:128-f32:32:32-f64:64:64-v16:16:16-v32:32:32-'
                     'v64:64:64-v128:128:128-n16:32:64')
 
+_nvvm_obj = []
+
+def force_loading_nvvm():
+    # this logic should live in CUDA Python...
+    # This logic handles all cases - wheel, conda, and system installations
+    global _nvvm_obj
+    if len(_nvvm_obj) > 0:
+        return
+
+    site_paths = [site.getusersitepackages()] + site.getsitepackages() + ["conda", None]
+    for sp in site_paths:
+        # The SONAME is taken based on public CTK 12.x releases
+        if PLATFORM_LINUX:
+            dso_dir = "lib64"
+            # Hack: libnvvm from Linux wheel does not have any soname (CUDAINST-3183)
+            dso_path = "libnvvm.so"
+            if sp == "conda" or sp is None:
+                dso_path += ".4"
+        elif PLATFORM_WIN:
+            dso_dir = "bin"
+            dso_path = "nvvm64_40_0.dll"
+        else:
+            raise AssertionError()
+
+        if sp == "conda" and "CONDA_PREFIX" in os.environ:
+            # nvvm is not under $CONDA_PREFIX/lib, so it's not in the default search path
+            if PLATFORM_LINUX:
+                dso_dir = os.path.join(os.environ["CONDA_PREFIX"], "nvvm", dso_dir)
+            elif PLATFORM_WIN:
+                dso_dir = os.path.join(os.environ["CONDA_PREFIX"], "Library", "nvvm", dso_dir)
+            dso_path = os.path.join(dso_dir, dso_path)
+        elif sp is not None:
+            dso_dir = os.path.join(sp, "nvidia", "cuda_nvcc", "nvvm", dso_dir)
+            dso_path = os.path.join(dso_dir, dso_path)
+        try:
+            _nvvm_obj.append(CDLL(dso_path, mode=RTLD_GLOBAL))
+        except OSError:
+            continue
+        else:
+            break
+    else:
+        raise RuntimeError(
+            "NVVM from CUDA 12 not found. Depending on how you install nvmath-python and other CUDA packages,\n"
+            "you may need to perform one of the steps below:\n"
+            "  - pip install nvidia-cuda-nvcc-cu12\n"
+            "  - conda install -c conda-forge cuda-nvvm cuda-version=12\n"
+            "  - export LD_LIBRARY_PATH=/path/to/CUDA/Toolkit/nvvm/lib64:$LD_LIBRARY_PATH"
+        )
+
+def patch_nvvm_libdevice():
+    if _nvvm_obj[0]._name.startswith(("libnvvm", "nvvm64")):
+        # libnvvm found in sys path (ex: LD_LIBRARY_PATH), fall back to Numba's way
+        # way of locating it
+        from numba.cuda.cudadrv.libs import get_libdevice
+
+        libdevice_path = get_libdevice()
+        # custom CUDA path is a corner case
+        if libdevice_path is None:
+            raise RuntimeError(
+                "cannot locate libdevice, perhaps you need to set "
+                "CUDA_HOME? Please follow Numba's instruction at:\n"
+                "https://numba.readthedocs.io/en/stable/cuda/overview.html#setting-cuda-installation-path"
+            )
+    else:
+        # maybe it's pip or conda
+        libdevice_path = os.path.join(os.path.dirname(_nvvm_obj[0]._name), "../libdevice/libdevice.10.bc")
+    assert os.path.isfile(libdevice_path), f"{libdevice_path=}"
+    with open(libdevice_path, "rb") as f:
+        LibDevice._cache_ = f.read()
 
 def is_available():
     """
@@ -710,3 +783,6 @@ def add_ir_version(mod):
     ir_versions = [i32(v) for v in NVVM().get_ir_version()]
     md_ver = mod.add_metadata(ir_versions)
     mod.add_named_metadata('nvvmir.version', md_ver)
+
+#force_loading_nvvm()
+#patch_nvvm_libdevice()

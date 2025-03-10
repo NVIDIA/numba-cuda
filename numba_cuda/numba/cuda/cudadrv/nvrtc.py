@@ -1,10 +1,13 @@
-from ctypes import byref, c_char, c_char_p, c_int, c_size_t, c_void_p, POINTER
+from ctypes import byref, c_char, c_char_p, c_int, c_size_t, c_void_p, POINTER, CDLL, RTLD_GLOBAL
 from enum import IntEnum
 from numba.cuda.cudadrv.error import (NvrtcError, NvrtcCompilationError,
                                       NvrtcSupportError)
 from numba.cuda.cuda_paths import get_cuda_paths
 import functools
 import os
+import re
+import site
+import sys
 import threading
 import warnings
 
@@ -13,6 +16,9 @@ nvrtc_program = c_void_p
 
 # Result code
 nvrtc_result = c_int
+
+PLATFORM_LINUX = sys.platform.startswith("linux")
+PLATFORM_WIN = sys.platform.startswith("win32")
 
 
 class NvrtcResult(IntEnum):
@@ -31,7 +37,68 @@ class NvrtcResult(IntEnum):
 
 
 _nvrtc_lock = threading.Lock()
+_nvrtc_obj = []
 
+def force_loading_nvrtc(cu_ver):
+    # this logic should live in CUDA Python...
+    # TODO: remove this function once NVIDIA/cuda-python#62 is resolved
+    # This logic handles all cases - wheel, conda, and system installations
+    global _nvrtc_obj
+    if len(_nvrtc_obj) > 0:
+        return
+
+    cu_ver = cu_ver.split(".")
+    major = cu_ver[0]
+    if major == "11":
+        # CUDA 11.2+ supports minor ver compat
+        if PLATFORM_LINUX:
+            cu_ver = "11.2"
+        elif PLATFORM_WIN:
+            cu_ver = "112"
+    elif major == "12":
+        if PLATFORM_LINUX:
+            cu_ver = "12"
+        elif PLATFORM_WIN:
+            cu_ver = "120"
+    else:
+        raise NotImplementedError(f"CUDA {major} is not supported")
+
+    site_paths = [site.getusersitepackages()] + site.getsitepackages() + [None]
+    for sp in site_paths:
+        if PLATFORM_LINUX:
+            dso_dir = "lib"
+            dso_path = f"libnvrtc.so.{cu_ver}"
+        elif PLATFORM_WIN:
+            dso_dir = "bin"
+            dso_path = f"nvrtc64_{cu_ver}_0.dll"
+        else:
+            raise AssertionError()
+
+        if sp is not None:
+            dso_dir = os.path.join(sp, "nvidia", "cuda_nvrtc", dso_dir)
+            dso_path = os.path.join(dso_dir, dso_path)
+        try:
+            _nvrtc_obj.append(CDLL(dso_path, mode=RTLD_GLOBAL))
+        except OSError:
+            continue
+        else:
+            if PLATFORM_WIN:
+                import win32api
+
+                # This absolute path will always be correct regardless of the package source
+                nvrtc_path = win32api.GetModuleFileNameW(_nvrtc_obj[0]._handle)
+                dso_dir = os.path.dirname(nvrtc_path)
+                dso_path = os.path.join(dso_dir, [f for f in os.listdir(dso_dir) if re.match("^nvrtc-builtins.*.dll$", f)][0])
+                _nvrtc_obj.append(CDLL(dso_path))
+            break
+    else:
+        raise RuntimeError(
+            f"NVRTC from CUDA {major} not found. Depending on how you install nvmath-python and other CUDA packages,\n"
+            f"you may need to perform one of the steps below:\n"
+            f"  - pip install nvidia-cuda-nvrtc-cu{major}\n"
+            f"  - conda install -c conda-forge cuda-nvrtc cuda-version={major}\n"
+            "  - export LD_LIBRARY_PATH=/path/to/CUDA/Toolkit/lib64:$LD_LIBRARY_PATH"
+        )
 
 class NvrtcProgram:
     """
@@ -110,10 +177,9 @@ class NVRTC:
     def __new__(cls):
         with _nvrtc_lock:
             if cls.__INSTANCE is None:
-                from numba.cuda.cudadrv.libs import open_cudalib
                 cls.__INSTANCE = inst = object.__new__(cls)
                 try:
-                    lib = open_cudalib('nvrtc')
+                    lib = _nvrtc_obj[0]
                 except OSError as e:
                     cls.__INSTANCE = None
                     raise NvrtcSupportError("NVRTC cannot be loaded") from e
@@ -145,6 +211,7 @@ class NVRTC:
                     setattr(inst, name, checked_call)
 
         return cls.__INSTANCE
+
 
     def get_version(self):
         """
@@ -300,3 +367,5 @@ def compile(src, name, cc, ltoir=False):
     else:
         ptx = nvrtc.get_ptx(program)
         return ptx, log
+
+force_loading_nvrtc('12')
