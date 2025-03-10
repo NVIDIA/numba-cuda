@@ -2799,18 +2799,15 @@ class CUDALinker(Linker):
     def add_cu(self, cu, name='<cudapy-cu>'):
         # TODO - vendor below logic somewhere common
         cuda_include = [
-            f"-I{get_cuda_paths()['include_dir'].info}",
+            get_cuda_paths()['include_dir'].info,
         ]
 
         cudadrv_path = os.path.dirname(os.path.abspath(__file__))
         numba_cuda_path = os.path.dirname(cudadrv_path)
-        numba_include = f'-I{numba_cuda_path}'
 
         nrt_path = os.path.join(numba_cuda_path, "runtime")
-        nrt_include = f'-I{nrt_path}'
 
-        include_paths = cuda_include + [numba_include, nrt_include]
-
+        include_paths = cuda_include + [numba_cuda_path, nrt_path]
         prog = Program(
             cu.decode('utf-8'),
             'c++',
