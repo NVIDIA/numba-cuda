@@ -2806,7 +2806,6 @@ class CUDALinker(Linker):
         numba_cuda_path = os.path.dirname(cudadrv_path)
 
         nrt_path = os.path.join(numba_cuda_path, "runtime")
-
         include_paths = cuda_include + [numba_cuda_path, nrt_path]
         prog = Program(
             cu.decode('utf-8'),
