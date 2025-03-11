@@ -4,7 +4,7 @@ import os
 from collections import namedtuple
 import platform
 import site
-
+from pathlib import Path
 from numba.core.config import IS_WIN32
 from numba.misc.findlib import find_lib, find_file
 from numba import config
@@ -30,10 +30,13 @@ def _get_libdevice_path_decision():
         ('Conda environment', get_conda_ctk()),
         ('Conda environment (NVIDIA package)', get_nvidia_libdevice_ctk()),
         ('CUDA_HOME', get_cuda_home('nvvm', 'libdevice')),
-        ('System', get_system_ctk('nvvm', 'libdevice')),
         ('Debian package', get_debian_pkg_libdevice()),
-        ('NVIDIA NVCC Wheel', get_wheel_libdevice()),
+        ('NVIDIA NVCC Wheel', get_libdevice_wheel()),
     ]
+    libdevice_ctk_dir = get_system_ctk('nvvm', 'libdevice')
+    if os.path.exists(libdevice_ctk_dir):
+        options.append(('System', libdevice_ctk_dir))
+
     by, libdir = _find_valid_path(options)
     return by, libdir
 
@@ -54,7 +57,7 @@ def _get_nvvm_path_decision():
     ]
     # need to ensure nvvm dir actually exists
     nvvm_ctk_dir = get_system_ctk(*_nvvm_lib_dir())
-    if nvvm_ctk_dir is not None:
+    if os.path.exists(nvvm_ctk_dir):
         options.append(('System', nvvm_ctk_dir))
 
     by, path = _find_valid_path(options)
@@ -287,30 +290,14 @@ def get_debian_pkg_libdevice():
         return None
     return pkg_libdevice_location
 
-def get_wheel_libdevice():
-    nvvm_path = _get_nvvm_path().info
-    if _nvvm_obj[0]._name.startswith(("libnvvm", "nvvm64")):
-        # libnvvm found in sys path (ex: LD_LIBRARY_PATH), fall back to Numba's way
-        # way of locating it
-        from numba.cuda.cudadrv.libs import get_libdevice
+def get_libdevice_wheel():
+    nvvm_path = _get_nvvm_wheel()
+    if nvvm_path is None:
+        return None
+    nvvm_path = Path(nvvm_path)
+    libdevice_path = nvvm_path.parent.parent / "libdevice" / "libdevice.10.bc"
 
-        libdevice_path = get_libdevice()
-        # custom CUDA path is a corner case
-        if libdevice_path is None:
-            raise RuntimeError(
-                "cannot locate libdevice, perhaps you need to set "
-                "CUDA_HOME? Please follow Numba's instruction at:\n"
-                "https://numba.readthedocs.io/en/stable/cuda/overview.html#setting-cuda-installation-path"
-            )
-    else:
-        # maybe it's pip or conda
-        libdevice_path = os.path.join(os.path.dirname(_nvvm_obj[0]._name), "../libdevice/libdevice.10.bc")
-    assert os.path.isfile(libdevice_path), f"{libdevice_path=}"
-    with open(libdevice_path, "rb") as f:
-        nvvm.LibDevice._cache_ = f.read()
-
-    _is_numba_nvvm_patched = True
-
+    return str(libdevice_path)
 
 
 def get_current_cuda_target_name():
