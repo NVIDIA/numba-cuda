@@ -63,13 +63,17 @@ def _get_nvvm_path_decision():
     by, path = _find_valid_path(options)
     return by, path
 
+
 def _get_nvvm_wheel():
-    site_paths = [site.getusersitepackages()] + site.getsitepackages() + ["conda", None]
+    site_paths = [
+        site.getusersitepackages()
+    ] + site.getsitepackages() + ["conda", None]
     for sp in site_paths:
         # The SONAME is taken based on public CTK 12.x releases
         if sys.platform.startswith("linux"):
             dso_dir = "lib64"
-            # Hack: libnvvm from Linux wheel does not have any soname (CUDAINST-3183)
+            # Hack: libnvvm from Linux wheel
+            # does not have any soname (CUDAINST-3183)
             dso_path = "libnvvm.so"
         elif sys.platform.startswith("win32"):
             dso_dir = "bin"
@@ -78,7 +82,13 @@ def _get_nvvm_wheel():
             raise AssertionError()
 
         if sp is not None:
-            dso_dir = os.path.join(sp, "nvidia", "cuda_nvcc", "nvvm", dso_dir)
+            dso_dir = os.path.join(
+                sp,
+                "nvidia",
+                "cuda_nvcc",
+                "nvvm",
+                dso_dir
+            )
             dso_path = os.path.join(dso_dir, dso_path)
             if os.path.exists(dso_path):
                 return str(Path(dso_path).parent)
@@ -297,6 +307,7 @@ def get_debian_pkg_libdevice():
     if not os.path.exists(pkg_libdevice_location):
         return None
     return pkg_libdevice_location
+
 
 def get_libdevice_wheel():
     nvvm_path = _get_nvvm_wheel()
