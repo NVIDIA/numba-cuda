@@ -5,15 +5,8 @@ import logging
 import re
 import sys
 import warnings
-from ctypes import (
-    c_void_p,
-    c_int,
-    POINTER,
-    c_char_p,
-    c_size_t,
-    byref,
-    c_char
-)
+from ctypes import (c_void_p, c_int, POINTER, c_char_p, c_size_t, byref,
+                    c_char)
 
 import threading
 
@@ -23,8 +16,6 @@ from .error import NvvmError, NvvmSupportError, NvvmWarning
 from .libs import get_libdevice, open_libdevice, open_cudalib
 from numba.core import cgutils, config
 
-PLATFORM_LINUX = sys.platform.startswith("linux")
-PLATFORM_WIN = sys.platform.startswith("win32")
 
 logger = logging.getLogger(__name__)
 

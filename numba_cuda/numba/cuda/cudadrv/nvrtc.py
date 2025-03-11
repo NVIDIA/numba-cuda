@@ -1,19 +1,10 @@
-from ctypes import (
-    byref,
-    c_char,
-    c_char_p,
-    c_int,
-    c_size_t,
-    c_void_p,
-    POINTER,
-)
+from ctypes import byref, c_char, c_char_p, c_int, c_size_t, c_void_p, POINTER
 from enum import IntEnum
 from numba.cuda.cudadrv.error import (NvrtcError, NvrtcCompilationError,
                                       NvrtcSupportError)
 from numba.cuda.cuda_paths import get_cuda_paths
 import functools
 import os
-import sys
 import threading
 import warnings
 
@@ -22,9 +13,6 @@ nvrtc_program = c_void_p
 
 # Result code
 nvrtc_result = c_int
-
-PLATFORM_LINUX = sys.platform.startswith("linux")
-PLATFORM_WIN = sys.platform.startswith("win32")
 
 
 class NvrtcResult(IntEnum):
@@ -43,7 +31,6 @@ class NvrtcResult(IntEnum):
 
 
 _nvrtc_lock = threading.Lock()
-_nvrtc_obj = []
 
 
 class NvrtcProgram:
@@ -123,9 +110,10 @@ class NVRTC:
     def __new__(cls):
         with _nvrtc_lock:
             if cls.__INSTANCE is None:
+                from numba.cuda.cudadrv.libs import open_cudalib
                 cls.__INSTANCE = inst = object.__new__(cls)
                 try:
-                    lib = _nvrtc_obj[0]
+                    lib = open_cudalib('nvrtc')
                 except OSError as e:
                     cls.__INSTANCE = None
                     raise NvrtcSupportError("NVRTC cannot be loaded") from e

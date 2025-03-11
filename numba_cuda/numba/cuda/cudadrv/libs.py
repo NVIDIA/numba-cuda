@@ -13,6 +13,7 @@ CUDA Toolkit libraries can be available via either:
 import os
 import sys
 import ctypes
+
 from numba.misc.findlib import find_lib
 from numba.cuda.cuda_paths import get_cuda_paths
 from numba.cuda.cudadrv.driver import locate_driver_and_loader, load_driver
@@ -50,7 +51,7 @@ def get_cudalib(lib, static=False):
     loader's search mechanism.
     """
     if lib == 'nvvm':
-        return get_cuda_paths()['nvvm'].info
+        return get_cuda_paths()['nvvm'].info or _dllnamepattern % 'nvvm'
     else:
         dir_type = 'static_cudalib_dir' if static else 'cudalib_dir'
         libdir = get_cuda_paths()[dir_type].info
