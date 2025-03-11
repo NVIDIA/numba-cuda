@@ -81,16 +81,20 @@ def _get_nvvm_wheel():
             dso_dir = os.path.join(sp, "nvidia", "cuda_nvcc", "nvvm", dso_dir)
             dso_path = os.path.join(dso_dir, dso_path)
             if os.path.exists(dso_path):
-                return dso_path
+                return str(Path(dso_path).parent)
 
 
 def _get_libdevice_paths():
     by, libdir = _get_libdevice_path_decision()
-    # Search for pattern
-    pat = r'libdevice(\.\d+)*\.bc$'
-    candidates = find_file(re.compile(pat), libdir)
-    # Keep only the max (most recent version) of the bitcode files.
-    out = max(candidates, default=None)
+    if by == "NVIDIA NVCC Wheel":
+        # The NVVM path is a directory, not a file
+        out = os.path.join(libdir, "libdevice.10.bc")
+    else:
+        # Search for pattern
+        pat = r'libdevice(\.\d+)*\.bc$'
+        candidates = find_file(re.compile(pat), libdir)
+        # Keep only the max (most recent version) of the bitcode files.
+        out = max(candidates, default=None)
     return _env_path_tuple(by, out)
 
 
@@ -247,8 +251,12 @@ def get_cuda_home(*subdirs):
 
 def _get_nvvm_path():
     by, path = _get_nvvm_path_decision()
-    candidates = find_lib('nvvm', path)
-    path = max(candidates) if candidates else None
+    if by == "NVIDIA NVCC Wheel":
+        # The NVVM path is a directory, not a file
+        path = os.path.join(path, "libnvvm.so")
+    else:
+        candidates = find_lib('nvvm', path)
+        path = max(candidates) if candidates else None
     return _env_path_tuple(by, path)
 
 
@@ -295,7 +303,7 @@ def get_libdevice_wheel():
     if nvvm_path is None:
         return None
     nvvm_path = Path(nvvm_path)
-    libdevice_path = nvvm_path.parent.parent / "libdevice" / "libdevice.10.bc"
+    libdevice_path = nvvm_path.parent / "libdevice"
 
     return str(libdevice_path)
 
