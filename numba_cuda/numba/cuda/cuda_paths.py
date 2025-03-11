@@ -3,6 +3,7 @@ import re
 import os
 from collections import namedtuple
 import platform
+import site
 
 from numba.core.config import IS_WIN32
 from numba.misc.findlib import find_lib, find_file
@@ -31,6 +32,7 @@ def _get_libdevice_path_decision():
         ('CUDA_HOME', get_cuda_home('nvvm', 'libdevice')),
         ('System', get_system_ctk('nvvm', 'libdevice')),
         ('Debian package', get_debian_pkg_libdevice()),
+        ('NVIDIA NVCC Wheel', get_wheel_libdevice()),
     ]
     by, libdir = _find_valid_path(options)
     return by, libdir
@@ -48,10 +50,35 @@ def _get_nvvm_path_decision():
         ('Conda environment', get_conda_ctk()),
         ('Conda environment (NVIDIA package)', get_nvidia_nvvm_ctk()),
         ('CUDA_HOME', get_cuda_home(*_nvvm_lib_dir())),
-        ('System', get_system_ctk(*_nvvm_lib_dir())),
+        ('NVIDIA NVCC Wheel', _get_nvvm_wheel()),
     ]
+    # need to ensure nvvm dir actually exists
+    nvvm_ctk_dir = get_system_ctk(*_nvvm_lib_dir())
+    if nvvm_ctk_dir is not None:
+        options.append(('System', nvvm_ctk_dir))
+
     by, path = _find_valid_path(options)
     return by, path
+
+def _get_nvvm_wheel():
+    site_paths = [site.getusersitepackages()] + site.getsitepackages() + ["conda", None]
+    for sp in site_paths:
+        # The SONAME is taken based on public CTK 12.x releases
+        if sys.platform.startswith("linux"):
+            dso_dir = "lib64"
+            # Hack: libnvvm from Linux wheel does not have any soname (CUDAINST-3183)
+            dso_path = "libnvvm.so"
+        elif sys.platform.startswith("win32"):
+            dso_dir = "bin"
+            dso_path = "nvvm64_40_0.dll"
+        else:
+            raise AssertionError()
+
+        if sp is not None:
+            dso_dir = os.path.join(sp, "nvidia", "cuda_nvcc", "nvvm", dso_dir)
+            dso_path = os.path.join(dso_dir, dso_path)
+            if os.path.exists(dso_path):
+                return dso_path
 
 
 def _get_libdevice_paths():
@@ -259,6 +286,31 @@ def get_debian_pkg_libdevice():
     if not os.path.exists(pkg_libdevice_location):
         return None
     return pkg_libdevice_location
+
+def get_wheel_libdevice():
+    nvvm_path = _get_nvvm_path().info
+    if _nvvm_obj[0]._name.startswith(("libnvvm", "nvvm64")):
+        # libnvvm found in sys path (ex: LD_LIBRARY_PATH), fall back to Numba's way
+        # way of locating it
+        from numba.cuda.cudadrv.libs import get_libdevice
+
+        libdevice_path = get_libdevice()
+        # custom CUDA path is a corner case
+        if libdevice_path is None:
+            raise RuntimeError(
+                "cannot locate libdevice, perhaps you need to set "
+                "CUDA_HOME? Please follow Numba's instruction at:\n"
+                "https://numba.readthedocs.io/en/stable/cuda/overview.html#setting-cuda-installation-path"
+            )
+    else:
+        # maybe it's pip or conda
+        libdevice_path = os.path.join(os.path.dirname(_nvvm_obj[0]._name), "../libdevice/libdevice.10.bc")
+    assert os.path.isfile(libdevice_path), f"{libdevice_path=}"
+    with open(libdevice_path, "rb") as f:
+        nvvm.LibDevice._cache_ = f.read()
+
+    _is_numba_nvvm_patched = True
+
 
 
 def get_current_cuda_target_name():

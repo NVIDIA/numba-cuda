@@ -95,6 +95,7 @@ def get_nvvm(static=False):
             dso_dir = os.path.join(sp, "nvidia", "cuda_nvcc", "nvvm", dso_dir)
             dso_path = os.path.join(dso_dir, dso_path)
             if os.path.exists(dso_path):
+                
                 return dso_path
     raise FileNotFoundError(f"Unable to find nvvm library, searched in {site_paths} and {standard_install}" )
 
