@@ -1436,7 +1436,7 @@ class Context(object):
         if isinstance(ptx, str):
             ptx = ptx.encode('utf8')
         if USE_NV_BINDING:
-            image = ptx
+            image = ObjectCode.from_ptx(ptx)
         else:
             image = c_char_p(ptx)
         return self.create_module_image(image)
