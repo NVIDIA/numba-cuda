@@ -2617,12 +2617,7 @@ class Linker(metaclass=ABCMeta):
             else:
                 linker = CtypesLinker
 
-        if linker is PyNvJitLinker:
-            return linker(max_registers, lineinfo, cc, lto, additional_flags)
-        elif additional_flags or lto:
-            raise ValueError("LTO and additional flags require PyNvJitLinker")
-        else:
-            return linker(max_registers, lineinfo, cc)
+        return linker(max_registers, lineinfo, cc, lto, additional_flags)
 
     @abstractmethod
     def __init__(self, max_registers, lineinfo, cc):
@@ -2762,19 +2757,31 @@ class Linker(metaclass=ABCMeta):
 
 
 class CUDALinker(Linker):
-    def __init__(self, max_registers=None, lineinfo=False, cc=None):
+    def __init__(
+            self,
+            max_registers=None,
+            lineinfo=False,
+            cc=None,
+            lto=None,
+            additional_flags=None
+    ):
         arch = f"sm_{cc[0] * 10 + cc[1]}"
+        # TODO: cuda-python/xyz
+        if lto is False:
+            lto = None
         self.options = _CUDALinkerOptions(
             max_register_count=max_registers,
             lineinfo=lineinfo,
-            arch=arch
+            arch=arch,
+            link_time_optimization=lto,
         )
 
         self.max_registers = max_registers
         self.lineinfo = lineinfo
         self.cc = cc
         self.arch = arch
-        self.lto = False
+        self.lto = lto
+        self.additional_flags = additional_flags
 
         self._complete = False
         self._object_codes = []
@@ -2831,6 +2838,10 @@ class CUDALinker(Linker):
 
     def add_cubin(self, cubin, name='<cudapy-cubin>'):
         obj = ObjectCode.from_cubin(cubin)
+        self._object_codes.append(obj)
+
+    def add_ltoir(self, ltoir, name='<cudapy-ltoir>'):
+        obj = ObjectCode._init(ltoir, 'ltoir')
         self._object_codes.append(obj)
 
     def add_file(self, path, kind):
