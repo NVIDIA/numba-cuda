@@ -199,11 +199,51 @@ class NVVM(object):
 
 
 class CompilationUnit(object):
-    def __init__(self):
+    """
+    A CompilationUnit is a set of LLVM modules that are compiled to PTX or
+    LTO-IR with NVVM.
+
+    Compilation options are accepted as a dict mapping option names to values,
+    with the following considerations:
+
+    - Underscores (`_`) in option names are converted to dashes (`-`), to match
+      NVVM's option name format.
+    - Options that take a value will be emitted in the form "-<name>=<value>".
+    - Booleans passed as option values will be converted to integers.
+    - Options which take no value (such as `-gen-lto`) should have a value of
+      `None` and will be emitted in the form "-<name>".
+
+    For documentation on NVVM compilation options, see the CUDA Toolkit
+    Documentation:
+
+    https://docs.nvidia.com/cuda/libnvvm-api/index.html#_CPPv418nvvmCompileProgram11nvvmProgramiPPKc
+    """
+
+    def __init__(self, options):
         self.driver = NVVM()
         self._handle = nvvm_program()
         err = self.driver.nvvmCreateProgram(byref(self._handle))
         self.driver.check_error(err, 'Failed to create CU')
+
+        def stringify_option(k, v):
+            k = k.replace('_', '-')
+
+            if v is None:
+                return f'-{k}'.encode('utf-8')
+
+            if isinstance(v, bool):
+                v = int(v)
+
+            return f'-{k}={v}'.encode('utf-8')
+
+        options = [stringify_option(k, v) for k, v in options.items()]
+        option_ptrs = (c_char_p * len(options))(*[c_char_p(x) for x in options])
+
+        # We keep both the options and the pointers to them so that options are
+        # not destroyed before we've used their values
+        self.options = options
+        self.option_ptrs = option_ptrs
+        self.n_options = len(options)
 
     def __del__(self):
         driver = NVVM()
@@ -230,60 +270,35 @@ class CompilationUnit(object):
                                                      len(buffer), None)
         self.driver.check_error(err, 'Failed to add module')
 
-    def compile(self, **options):
-        """Perform Compilation.
-
-        Compilation options are accepted as keyword arguments, with the
-        following considerations:
-
-        - Underscores (`_`) in option names are converted to dashes (`-`), to
-          match NVVM's option name format.
-        - Options that take a value will be emitted in the form
-          "-<name>=<value>".
-        - Booleans passed as option values will be converted to integers.
-        - Options which take no value (such as `-gen-lto`) should have a value
-          of `None` passed in and will be emitted in the form "-<name>".
-
-        For documentation on NVVM compilation options, see the CUDA Toolkit
-        Documentation:
-
-        https://docs.nvidia.com/cuda/libnvvm-api/index.html#_CPPv418nvvmCompileProgram11nvvmProgramiPPKc
+    def verify(self):
         """
-
-        def stringify_option(k, v):
-            k = k.replace('_', '-')
-
-            if v is None:
-                return f'-{k}'
-
-            if isinstance(v, bool):
-                v = int(v)
-
-            return f'-{k}={v}'
-
-        options = [stringify_option(k, v) for k, v in options.items()]
-
-        c_opts = (c_char_p * len(options))(*[c_char_p(x.encode('utf8'))
-                                             for x in options])
-        # verify
-        err = self.driver.nvvmVerifyProgram(self._handle, len(options), c_opts)
+        Run the NVVM verifier on all code added to the compilation unit.
+        """
+        err = self.driver.nvvmVerifyProgram(self._handle, self.n_options,
+                                            self.option_ptrs)
         self._try_error(err, 'Failed to verify\n')
 
-        # compile
-        err = self.driver.nvvmCompileProgram(self._handle, len(options), c_opts)
+    def compile(self):
+        """
+        Compile all modules added to the compilation unit and return the
+        resulting PTX or LTO-IR (depending on the options).
+        """
+        err = self.driver.nvvmCompileProgram(self._handle, self.n_options,
+                                             self.option_ptrs)
         self._try_error(err, 'Failed to compile\n')
 
-        # get result
-        reslen = c_size_t()
-        err = self.driver.nvvmGetCompiledResultSize(self._handle, byref(reslen))
+        # Get result
+        result_size = c_size_t()
+        err = self.driver.nvvmGetCompiledResultSize(self._handle,
+                                                    byref(result_size))
 
         self._try_error(err, 'Failed to get size of compiled result.')
 
-        output_buffer = (c_char * reslen.value)()
+        output_buffer = (c_char * result_size.value)()
         err = self.driver.nvvmGetCompiledResult(self._handle, output_buffer)
         self._try_error(err, 'Failed to get compiled result.')
 
-        # get log
+        # Get log
         self.log = self.get_log()
         if self.log:
             warnings.warn(self.log, category=NvvmWarning)
@@ -620,27 +635,31 @@ def llvm_replace(llvmir):
     return llvmir
 
 
-def compile_ir(llvmir, **opts):
+def compile_ir(llvmir, **options):
     if isinstance(llvmir, str):
         llvmir = [llvmir]
 
-    if opts.pop('fastmath', False):
-        opts.update({
+    if options.pop('fastmath', False):
+        options.update({
             'ftz': True,
             'fma': True,
             'prec_div': False,
             'prec_sqrt': False,
         })
 
-    cu = CompilationUnit()
-    libdevice = LibDevice()
+    cu = CompilationUnit(options)
 
     for mod in llvmir:
         mod = llvm_replace(mod)
         cu.add_module(mod.encode('utf8'))
+    cu.verify()
+
+    # We add libdevice following verification so that it is not subject to the
+    # verifier's requirements
+    libdevice = LibDevice()
     cu.lazy_add_module(libdevice.get())
 
-    return cu.compile(**opts)
+    return cu.compile()
 
 
 re_attributes_def = re.compile(r"^attributes #\d+ = \{ ([\w\s]+)\ }")
