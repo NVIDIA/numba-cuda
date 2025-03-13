@@ -615,7 +615,7 @@ def llvm_replace(llvmir):
     for decl, fn in replacements:
         llvmir = llvmir.replace(decl, fn)
 
-    llvmir = llvm140_to_70_ir(llvmir)
+    llvmir = llvm150_to_70_ir(llvmir)
 
     return llvmir
 
@@ -646,9 +646,9 @@ def compile_ir(llvmir, **opts):
 re_attributes_def = re.compile(r"^attributes #\d+ = \{ ([\w\s]+)\ }")
 
 
-def llvm140_to_70_ir(ir):
+def llvm150_to_70_ir(ir):
     """
-    Convert LLVM 14.0 IR for LLVM 7.0.
+    Convert LLVM 15.0 IR for LLVM 7.0.
     """
     buf = []
     for line in ir.splitlines():
