@@ -5,6 +5,7 @@ from numba.core.codegen import Codegen, CodeLibrary
 from .cudadrv import devices, driver, nvvm, runtime
 from numba.cuda.cudadrv.libs import get_cudalib
 from numba.cuda.cudadrv.linkable_code import LinkableCode
+from numba.cuda.cudadrv.managed_module import ManagedModule
 
 import os
 import subprocess
@@ -95,9 +96,12 @@ class CUDACodeLibrary(serialize.ReduceMixin, CodeLibrary):
         # Files to link with the generated PTX. These are linked using the
         # Driver API at link time.
         self._linking_files = set()
-        # Module Init functions to be applied to loaded module, the order is
-        # determined by the order they are added to the codelib.
-        self._init_functions = []
+        # List of setup functions to the loaded module
+        # the order is determined by the order they are added to the codelib.
+        self._setup_functions = []
+        # List of teardown functions to the loaded module
+        # the order is determined by the order they are added to the codelib.
+        self._teardown_functions = []
         # Should we link libcudadevrt?
         self.needs_cudadevrt = False
 
@@ -252,9 +256,10 @@ class CUDACodeLibrary(serialize.ReduceMixin, CodeLibrary):
         cubin = self.get_cubin(cc=device.compute_capability)
         module = ctx.create_module_image(cubin)
 
-        # Init
-        for init_fn in self._init_functions:
-            init_fn(module)
+        # Wrap ctypesmodule with managed module with auto module setup/teardown
+        module = ManagedModule(
+            module, self._setup_functions, self._teardown_functions
+        )
 
         # Load
         cufunc = module.get_function(self._entry_name)
@@ -294,8 +299,10 @@ class CUDACodeLibrary(serialize.ReduceMixin, CodeLibrary):
 
     def add_linking_file(self, path_or_obj):
         if isinstance(path_or_obj, LinkableCode):
-            if path_or_obj.init_callback is not None:
-                self._init_functions.append(path_or_obj.init_callback)
+            if path_or_obj.setup_callback is not None:
+                self._setup_functions.append(path_or_obj.setup_callback)
+            if path_or_obj.teardown_callback is not None:
+                self._teardown_functions.append(path_or_obj.teardown_callback)
 
         self._linking_files.add(path_or_obj)
 

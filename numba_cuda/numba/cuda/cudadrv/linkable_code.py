@@ -7,12 +7,17 @@ class LinkableCode:
     :param data: A buffer containing the data to link.
     :param name: The name of the file to be referenced in any compilation or
                  linking errors that may be produced.
+    :param setup_callback Callback function on kernel before launching.
+    :param teardown_callback Callback function on kernel before tearing down.
     """
 
-    def __init__(self, data, name=None, init_callback=None):
+    def __init__(self, data, name=None,
+                 setup_callback=None,
+                 teardown_callback=None):
         self.data = data
         self._name = name
-        self.init_callback = init_callback
+        self.setup_callback = setup_callback
+        self.teardown_callback = teardown_callback
 
     @property
     def name(self):
