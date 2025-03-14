@@ -11,6 +11,7 @@ from numba.cuda.api import get_current_device
 from numba.cuda.utils import _readenv
 
 
+
 # Check environment variable or config for NRT statistics enablement
 NRT_STATS = (
     _readenv("NUMBA_CUDA_NRT_STATS", bool, False) or
@@ -116,6 +117,13 @@ class _Runtime:
         """
         if stream is None:
             stream = cuda.default_stream()
+
+        if config.CUDA_USE_NVIDIA_BINDING:
+            from numba.cuda.cudadrv.drvapi import cu_device_ptr
+            from cuda.cuda import CUdeviceptr
+            params = tuple(
+                cu_device_ptr.from_address(ptr.getPtr()) if isinstance(ptr, CUdeviceptr) else ptr for ptr in params
+            )
 
         func = module.get_function(name)
         launch_kernel(
@@ -293,6 +301,7 @@ class _Runtime:
         if self._memsys is None:
             raise RuntimeError(
                 "Please allocate NRT Memsys first before setting to module.")
+
 
         self._single_thread_launch(
             module,

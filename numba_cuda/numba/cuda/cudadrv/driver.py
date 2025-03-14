@@ -2553,7 +2553,6 @@ def launch_kernel(cufunc_handle,
                   hstream,
                   args,
                   cooperative=False):
-
     param_ptrs = [addressof(arg) for arg in args]
     params = (c_void_p * len(param_ptrs))(*param_ptrs)
 
