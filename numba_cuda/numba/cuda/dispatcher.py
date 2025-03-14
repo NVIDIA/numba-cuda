@@ -93,6 +93,7 @@ class _Kernel(serialize.ReduceMixin):
         self.debug = debug
         self.lineinfo = lineinfo
         self.extensions = extensions or []
+        self.initialized = False
 
         nvvm_options = {
             'fastmath': fastmath,
@@ -404,6 +405,12 @@ class _Kernel(serialize.ReduceMixin):
             zero_stream = None
 
         stream_handle = stream and stream.handle or zero_stream
+
+        # Set init and finalize module callbacks
+        if not self.initialized:
+            cufunc.init_module(stream_handle)
+            cufunc.lazy_finalize_module(stream_handle)
+            self.initialized = True
 
         # Invoke kernel
         driver.launch_kernel(cufunc.handle,
