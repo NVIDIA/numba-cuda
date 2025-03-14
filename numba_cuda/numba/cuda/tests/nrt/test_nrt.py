@@ -5,7 +5,6 @@ import numpy as np
 import unittest
 from numba.cuda.testing import CUDATestCase
 
-from numba.cuda.tests.nrt.mock_numpy import cuda_empty, cuda_ones, cuda_arange
 from numba.tests.support import run_in_subprocess, override_config
 
 from numba import cuda
@@ -24,7 +23,7 @@ class TestNrtBasic(CUDATestCase):
 
         @cuda.jit
         def g():
-            x = cuda_empty(10, np.int64)
+            x = np.empty(10, np.int64)
             f(x)
 
         g[1,1]()
@@ -37,7 +36,7 @@ class TestNrtBasic(CUDATestCase):
 
         @cuda.jit
         def g():
-            x = cuda_empty(10, np.int64)
+            x = np.empty(10, np.int64)
             f(x)
 
         g[1,1]()
@@ -66,7 +65,7 @@ class TestNrtBasic(CUDATestCase):
 
         @cuda.jit
         def g(out_ary):
-            x = cuda_empty(10, np.int64)
+            x = np.empty(10, np.int64)
             x[5] = 1
             y = f(x)
             out_ary[0] = y[0]
@@ -97,11 +96,11 @@ class TestNrtStatistics(CUDATestCase):
         src = """if 1:
         from numba import cuda
         from numba.cuda.runtime import rtsys
-        from numba.cuda.tests.nrt.mock_numpy import cuda_arange
+        import numpy as np
 
         @cuda.jit
         def foo():
-            x = cuda_arange(10)[0]
+            x = np.arange(10)[0]
 
         # initialize the NRT before use
         rtsys.initialize()
@@ -167,8 +166,8 @@ class TestNrtStatistics(CUDATestCase):
 
         @cuda.jit
         def foo():
-            tmp = cuda_ones(3)
-            arr = cuda_arange(5 * tmp[0]) # noqa: F841
+            tmp = np.ones(3)
+            arr = np.arange(5 * tmp[0]) # noqa: F841
             return None
 
         with (
