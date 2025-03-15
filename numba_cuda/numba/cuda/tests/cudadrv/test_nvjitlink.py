@@ -49,7 +49,6 @@ if TEST_BIN_DIR:
         TEST_BIN_DIR, "test_device_functions.ltoir"
     )
 
-
 @unittest.skipIf(
     not config.CUDA_ENABLE_PYNVJITLINK or not TEST_BIN_DIR,
     "pynvjitlink not enabled"

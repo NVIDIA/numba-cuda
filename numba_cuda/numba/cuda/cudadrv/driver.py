@@ -2843,6 +2843,16 @@ class CUDALinker(Linker):
         obj = ObjectCode._init(ltoir, 'ltoir')
         self._object_codes.append(obj)
 
+    def add_library(self, lib, name='<cudapy-lib>'):
+        # TODO - hack
+        from cuda.bindings import nvjitlink
+        from cuda.core.experimental import _linker
+        _linker._nvjitlink_input_types['lib'] = nvjitlink.InputType.LIBRARY
+        ObjectCode._supported_code_type = (*ObjectCode._supported_code_type, 'lib')
+        obj = ObjectCode._init(lib, 'lib')
+        self._object_codes.append(obj)
+
+
     def add_file(self, path, kind):
         try:
             with open(path, 'rb') as f:
@@ -2857,6 +2867,8 @@ class CUDALinker(Linker):
             fn = self.add_cubin
         elif kind == 'cu':
             fn = self.add_cu
+        elif kind == FILE_EXTENSION_MAP['lib']:
+            fn = self.add_library
         else:
             raise LinkerError(f"Don't know how to link {kind}")
 
