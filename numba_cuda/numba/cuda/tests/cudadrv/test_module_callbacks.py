@@ -69,6 +69,38 @@ class TestModuleCallbacksBasic(CUDATestCase):
         # self.assertEqual(counter, 0) # We don't have a way to explicitly
         # evict kernel and its modules at the moment.
 
+    def test_two_kernels(self):
+        counter = 0
+
+        def setup(mod, stream):
+            nonlocal counter
+            counter += 1
+
+        def teardown(mod, stream):
+            nonlocal counter
+            counter -= 1
+
+        lib = CUSource("", setup_callback=setup, teardown_callback=teardown)
+
+        @cuda.jit(link=[lib])
+        def kernel():
+            pass
+
+        @cuda.jit(link=[lib])
+        def kernel2():
+            pass
+
+        kernel[1, 1]()
+        self.assertEqual(counter, 1)
+        kernel2[1, 1]()
+        self.assertEqual(counter, 2)
+
+        # del kernel
+        # gc.collect()
+        # cuda.current_context().deallocations.clear()
+        # self.assertEqual(counter, 0) # We don't have a way to explicitly
+        # evict kernel and its modules at the moment.
+
 
 class TestModuleCallbacks(CUDATestCase):
 
