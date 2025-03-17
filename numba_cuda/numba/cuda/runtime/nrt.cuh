@@ -20,4 +20,4 @@ extern "C" __device__ void NRT_MemInfo_init(NRT_MemInfo* mi,
                                             NRT_dtor_function dtor,
                                             void* dtor_info);
 extern "C" __device__ void NRT_decref(NRT_MemInfo* mi);
-
+extern "C" __device__ void NRT_print_refct(NRT_MemInfo* mi);

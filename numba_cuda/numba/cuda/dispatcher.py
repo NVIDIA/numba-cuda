@@ -66,7 +66,7 @@ class _Kernel(serialize.ReduceMixin):
     @global_compiler_lock
     def __init__(self, py_func, argtypes, link=None, debug=False,
                  lineinfo=False, inline=False, fastmath=False, extensions=None,
-                 max_registers=None, lto=False, opt=True, device=False):
+                 max_registers=None, lto=False, opt=True, device=False, nrt=None):
 
         if device:
             raise RuntimeError('Cannot compile a device function as a kernel')
@@ -129,7 +129,7 @@ class _Kernel(serialize.ReduceMixin):
         if self.cooperative:
             lib.needs_cudadevrt = True
 
-        self._linked_nrt = False
+        self.nrt = nrt
 
         def link_to_library_functions(library_functions, library_path,
                                       prefix=None):
@@ -193,21 +193,16 @@ class _Kernel(serialize.ReduceMixin):
         self.reload_init = []
 
     def maybe_link_nrt(self, link, tgt_ctx, asm):
-        if not tgt_ctx.enable_nrt:
+        if not tgt_ctx.enable_nrt or self.nrt is False:
             return
-
-        all_nrt = "|".join(self.NRT_functions)
-        pattern = (
-            r'\.extern\s+\.func\s+(?:\s*\(.+\)\s*)?('
-            + all_nrt + r')\s*\([^)]*\)\s*;'
-        )
-
-        nrt_in_asm = re.findall(pattern, asm)
+        
         basedir = os.path.dirname(os.path.abspath(__file__))
-        if nrt_in_asm:
-            nrt_path = os.path.join(basedir, 'runtime', 'nrt.cu')
+        nrt_path = os.path.join(basedir, 'runtime', 'nrt.cu')
+
+        if self.nrt is True or (self.nrt is None and any(fn in asm for fn in self.NRT_functions)):
             link.append(nrt_path)
-            self._linked_nrt = True
+            if self.nrt is None:
+                self.nrt = True
 
     @property
     def library(self):
@@ -230,7 +225,7 @@ class _Kernel(serialize.ReduceMixin):
 
     @classmethod
     def _rebuild(cls, cooperative, name, signature, codelibrary,
-                 debug, lineinfo, call_helper, extensions):
+                 debug, lineinfo, call_helper, extensions, nrt):
         """
         Rebuild an instance.
         """
@@ -248,6 +243,7 @@ class _Kernel(serialize.ReduceMixin):
         instance.lineinfo = lineinfo
         instance.call_helper = call_helper
         instance.extensions = extensions
+        instance.nrt = nrt
         return instance
 
     def _reduce_states(self):
@@ -269,7 +265,7 @@ class _Kernel(serialize.ReduceMixin):
         """
         cufunc = self._codelibrary.get_cufunc()
 
-        if hasattr(self, "target_context") and self.target_context.enable_nrt and self._linked_nrt:
+        if hasattr(self, "target_context") and self.target_context.enable_nrt and self.nrt:
             rtsys.ensure_initialized()
             rtsys.set_memsys_to_module(cufunc.module)
             # We don't know which stream the kernel will be launched on, so
@@ -676,12 +672,12 @@ class CUDADispatcher(Dispatcher, serialize.ReduceMixin):
     def __init__(self, py_func, targetoptions, pipeline_class=CUDACompiler):
         super().__init__(py_func, targetoptions=targetoptions,
                          pipeline_class=pipeline_class)
-
         # The following properties are for specialization of CUDADispatchers. A
         # specialized CUDADispatcher is one that is compiled for exactly one
         # set of argument types, and bypasses some argument type checking for
         # faster kernel launches.
-
+        #if targetoptions['nrt']:
+        #    breakpoint()
         # Is this a specialized dispatcher?
         self._specialized = False
 
