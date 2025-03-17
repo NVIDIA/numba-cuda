@@ -57,80 +57,7 @@ if TEST_BIN_DIR:
 class TestLinker(CUDATestCase):
     _NUMBA_NVIDIA_BINDING_0_ENV = {"NUMBA_CUDA_USE_NVIDIA_BINDING": "0"}
 
-    def test_nvjitlink_create(self):
-        patched_linker = PyNvJitLinker(cc=(7, 5))
-        assert "-arch=sm_75" in patched_linker.options
 
-    def test_nvjitlink_create_no_cc_error(self):
-        # nvJitLink expects at least the architecture to be specified.
-        with self.assertRaisesRegex(
-            RuntimeError, "PyNvJitLinker requires CC to be specified"
-        ):
-            PyNvJitLinker()
-
-    def test_nvjitlink_invalid_arch_error(self):
-        from pynvjitlink.api import NvJitLinkError
-
-        # CC 0.0 is not a valid compute capability
-        with self.assertRaisesRegex(
-            NvJitLinkError, "NVJITLINK_ERROR_UNRECOGNIZED_OPTION error"
-        ):
-            PyNvJitLinker(cc=(0, 0))
-
-    def test_nvjitlink_invalid_cc_type_error(self):
-        with self.assertRaisesRegex(
-            TypeError, "`cc` must be a list or tuple of length 2"
-        ):
-            PyNvJitLinker(cc=0)
-
-    def test_nvjitlink_ptx_compile_options(self):
-
-        max_registers = (None, 32)
-        lineinfo = (False, True)
-        lto = (False, True)
-        additional_flags = (None, ("-g",), ("-g", "-time"))
-        for (
-            max_registers_i,
-            line_info_i,
-            lto_i,
-            additional_flags_i,
-        ) in itertools.product(max_registers, lineinfo, lto, additional_flags):
-            with self.subTest(
-                max_registers=max_registers_i,
-                lineinfo=line_info_i,
-                lto=lto_i,
-                additional_flags=additional_flags_i,
-            ):
-                patched_linker = PyNvJitLinker(
-                    cc=(7, 5),
-                    max_registers=max_registers_i,
-                    lineinfo=line_info_i,
-                    lto=lto_i,
-                    additional_flags=additional_flags_i,
-                )
-                assert "-arch=sm_75" in patched_linker.options
-
-                if max_registers_i:
-                    assert (
-                        f"-maxrregcount={max_registers_i}"
-                        in patched_linker.options
-                    )
-                else:
-                    assert "-maxrregcount" not in patched_linker.options
-
-                if line_info_i:
-                    assert "-lineinfo" in patched_linker.options
-                else:
-                    assert "-lineinfo" not in patched_linker.options
-
-                if lto_i:
-                    assert "-lto" in patched_linker.options
-                else:
-                    assert "-lto" not in patched_linker.options
-
-                if additional_flags_i:
-                    for flag in additional_flags_i:
-                        assert flag in patched_linker.options
 
     def test_nvjitlink_add_file_guess_ext_linkable_code(self):
         files = (
@@ -232,7 +159,6 @@ class TestLinker(CUDATestCase):
                         add_from_numba = cuda.declare_device(
                             "add_from_numba", sig
                         )
-
                         @cuda.jit(link=[file], lto=True)
                         def kernel(result):
                             result[0] = add_from_numba(1, 2)

@@ -2843,6 +2843,20 @@ class CUDALinker(Linker):
         obj = ObjectCode._init(ltoir, 'ltoir')
         self._object_codes.append(obj)
 
+    def add_fatbin(self, fatbin, name='<cudapy-fatbin>'):
+        obj = ObjectCode._init(fatbin, 'fatbin')
+        self._object_codes.append(obj)
+
+    def add_object(self, obj, name='<cudapy-object>'):
+        # TODO - hack
+        from cuda.bindings import nvjitlink
+        from cuda.core.experimental import _linker
+        _linker._nvjitlink_input_types['object'] = nvjitlink.InputType.OBJECT
+        ObjectCode._supported_code_type = (*ObjectCode._supported_code_type, 'object')
+        obj = ObjectCode._init(obj, 'object')
+        self._object_codes.append(obj)
+    
+
     def add_library(self, lib, name='<cudapy-lib>'):
         # TODO - hack
         from cuda.bindings import nvjitlink
@@ -2859,7 +2873,6 @@ class CUDALinker(Linker):
                 data = f.read()
         except FileNotFoundError:
             raise LinkerError(f'{path} not found')
-
         name = pathlib.Path(path).name
         if kind == FILE_EXTENSION_MAP['ptx']:
             fn = self.add_ptx
@@ -2867,12 +2880,36 @@ class CUDALinker(Linker):
             fn = self.add_cubin
         elif kind == 'cu':
             fn = self.add_cu
-        elif kind == FILE_EXTENSION_MAP['lib']:
+        elif kind == FILE_EXTENSION_MAP['lib'] or kind == FILE_EXTENSION_MAP['a']:
             fn = self.add_library
+        elif kind == FILE_EXTENSION_MAP['fatbin']:
+            fn = self.add_fatbin
+        elif kind == FILE_EXTENSION_MAP['o']:
+            fn = self.add_object
         else:
             raise LinkerError(f"Don't know how to link {kind}")
 
         fn(data, name)
+
+    def get_linked_ptx(self):
+        options = _CUDALinkerOptions(
+            max_register_count=self.max_registers,
+            lineinfo=self.lineinfo,
+            arch=self.arch,
+            link_time_optimization=True,
+            ptx=True
+        )
+
+        self.linker = _CUDALinker(
+            *self._object_codes,
+            options=options
+        )
+
+        result = self.linker.link('ptx')
+        self.linker.close()
+        self._complete = True
+        return result
+
 
     def complete(self):
         self.linker = _CUDALinker(
