@@ -1,13 +1,10 @@
 import weakref
 
-from numba import config
 from . import devices
-from .driver import CtypesModule
-
-USE_NV_BINDING = config.CUDA_USE_NVIDIA_BINDING
+from .driver import CtypesModule, USE_NV_BINDING
 
 
-class CuFuncProxy:
+class _CuFuncProxy:
     def __init__(self, module, cufunc):
         self._module = module
         self._cufunc = cufunc
@@ -73,7 +70,7 @@ class ManagedModule:
 
     def get_function(self, name):
         ctypesfunc = self._module.get_function(name)
-        return CuFuncProxy(self, ctypesfunc)
+        return _CuFuncProxy(self, ctypesfunc)
 
     def __getattr__(self, name):
         if name == "get_function":

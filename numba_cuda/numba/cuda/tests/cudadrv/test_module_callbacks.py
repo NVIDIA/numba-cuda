@@ -1,3 +1,5 @@
+import gc
+
 import numpy as np
 
 from numba import cuda
@@ -31,10 +33,11 @@ class TestModuleCallbacksBasic(CUDATestCase):
         self.assertEqual(counter, 1)
         kernel[1, 1]() # cached
         self.assertEqual(counter, 1)
-        # del kernel
-        # gc.collect()
-        # cuda.current_context().deallocations.clear()
-        # self.assertEqual(counter, 0)
+        breakpoint()
+        del kernel
+        gc.collect()
+        cuda.current_context().deallocations.clear()
+        self.assertEqual(counter, 0)
         # We don't have a way to explicitly evict kernel and its modules at
         # the moment.
 
