@@ -1,14 +1,23 @@
-import gc
+import unittest
 
 import numpy as np
 
-from numba import cuda
+from numba import cuda, config
 from numba.cuda.cudadrv.linkable_code import CUSource
 from numba.cuda.testing import CUDATestCase
 
 from cuda.bindings.driver import cuModuleGetGlobal, cuMemcpyHtoD
 
 
+def wipe_all_modules_in_context():
+    ctx = cuda.current_context()
+    ctx.modules.clear()
+
+
+@unittest.skipIf(
+    config.CUDA_USE_NVIDIA_BINDING,
+    "NV binding support superceded by cuda.bindings."
+)
 class TestModuleCallbacksBasic(CUDATestCase):
 
     def test_basic(self):
@@ -33,13 +42,9 @@ class TestModuleCallbacksBasic(CUDATestCase):
         self.assertEqual(counter, 1)
         kernel[1, 1]() # cached
         self.assertEqual(counter, 1)
-        breakpoint()
-        del kernel
-        gc.collect()
-        cuda.current_context().deallocations.clear()
+
+        wipe_all_modules_in_context()
         self.assertEqual(counter, 0)
-        # We don't have a way to explicitly evict kernel and its modules at
-        # the moment.
 
     def test_different_argtypes(self):
         counter = 0
@@ -66,11 +71,8 @@ class TestModuleCallbacksBasic(CUDATestCase):
         kernel[1, 1](3.14)  # (float64)->() : module 2
         self.assertEqual(counter, 2)
 
-        # del kernel
-        # gc.collect()
-        # cuda.current_context().deallocations.clear()
-        # self.assertEqual(counter, 0) # We don't have a way to explicitly
-        # evict kernel and its modules at the moment.
+        wipe_all_modules_in_context()
+        self.assertEqual(counter, 0)
 
     def test_two_kernels(self):
         counter = 0
@@ -98,11 +100,8 @@ class TestModuleCallbacksBasic(CUDATestCase):
         kernel2[1, 1]()
         self.assertEqual(counter, 2)
 
-        # del kernel
-        # gc.collect()
-        # cuda.current_context().deallocations.clear()
-        # self.assertEqual(counter, 0) # We don't have a way to explicitly
-        # evict kernel and its modules at the moment.
+        wipe_all_modules_in_context()
+        self.assertEqual(counter, 0)
 
 
 class TestModuleCallbacks(CUDATestCase):
@@ -136,10 +135,6 @@ __device__ int get_num(int &retval) {
 
         self.lib = CUSource(
             module, setup_callback=set_forty_two, teardown_callback=teardown)
-
-    def tearDown(self):
-        super().tearDown()
-        del self.lib
 
     def test_decldevice_arg(self):
         get_num = cuda.declare_device("get_num", "int32()", link=[self.lib])

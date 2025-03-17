@@ -1,5 +1,4 @@
 import numpy as np
-import weakref
 import os
 import re
 import sys
@@ -1025,7 +1024,6 @@ class CUDADispatcher(Dispatcher, serialize.ReduceMixin):
                 raise RuntimeError("Compilation disabled")
 
             kernel = _Kernel(self.py_func, argtypes, **self.targetoptions)
-            weakref.finalize(kernel, _kernel_finalize_callback, kernel)
             # We call bind to force codegen, so that there is a cubin to cache
             kernel.bind()
             self._cache.save_overload(sig, kernel)
@@ -1151,18 +1149,3 @@ class CUDADispatcher(Dispatcher, serialize.ReduceMixin):
         """
         return dict(py_func=self.py_func,
                     targetoptions=self.targetoptions)
-
-
-def _kernel_finalize_callback(kernel):
-    module = kernel.library.get_cufunc().module
-    try:
-        if driver.USE_NV_BINDING:
-            key = module.handle
-        else:
-            key = module.handle.value
-    except ReferenceError:
-        return
-
-    ctx = cuda.current_context()
-    if key in ctx.modules:
-        del ctx.modules[key]
