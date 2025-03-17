@@ -160,6 +160,19 @@ CUDA C/C++ source code will be compiled with the `NVIDIA Runtime Compiler
 kernel as either PTX or LTOIR, depending on whether LTO is enabled. Other files
 will be passed directly to the CUDA Linker.
 
+For cumodules linked to a linkable code object, additional setup
+and teardown callbacks are available. Setup functions are invoked once for
+every new module loaded. Teardown functions are invoked before the module is
+garbage collected by python. These callbacks are defined as follows:
+
+.. code::
+
+  def setup_callback(
+    mod: cuda.driver.CtypeModule, stream: cuda.driver.Stream
+  )
+
+The `stream` argument is the same stream user passes in to launch the kernel.
+
 :class:`LinkableCode <numba.cuda.LinkableCode>` objects are initialized using
 the parameters of their base class:
 
