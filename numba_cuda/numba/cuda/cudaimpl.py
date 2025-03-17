@@ -96,7 +96,7 @@ def _validate_alignment(alignment: int):
     """
     Ensures that *alignment*, if not None, is a) greater than zero, b) a power
     of two, and c) a multiple of the size of a pointer.  If any of these
-    conditions are not met, a NumbaValueError is raised.  Otherwise, this
+    conditions are not met, a ValueError is raised.  Otherwise, this
     function returns None, indicating that the alignment is valid.
     """
     if alignment is None:
