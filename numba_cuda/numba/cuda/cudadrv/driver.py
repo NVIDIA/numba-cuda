@@ -2847,6 +2847,10 @@ class CUDALinker(Linker):
         obj = ObjectCode._init(fatbin, 'fatbin')
         self._object_codes.append(obj)
 
+    def add_ltoir(self, ltoir, name='<cudapy-ltoir>'):
+        obj = ObjectCode._init(ltoir, 'ltoir')
+        self._object_codes.append(obj)
+
     def add_object(self, obj, name='<cudapy-object>'):
         # TODO - hack
         from cuda.bindings import nvjitlink
@@ -2886,7 +2890,10 @@ class CUDALinker(Linker):
             fn = self.add_fatbin
         elif kind == FILE_EXTENSION_MAP['o']:
             fn = self.add_object
+        elif kind == FILE_EXTENSION_MAP['ltoir']:
+            fn = self.add_ltoir
         else:
+            breakpoint()
             raise LinkerError(f"Don't know how to link {kind}")
 
         fn(data, name)

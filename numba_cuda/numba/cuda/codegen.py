@@ -181,6 +181,7 @@ class CUDACodeLibrary(serialize.ReduceMixin, CodeLibrary):
         return ltoir
 
     def _link_all(self, linker, cc, ignore_nonlto=False):
+        breakpoint()
         if linker.lto:
             ltoir = self.get_ltoir(cc=cc)
             linker.add_ltoir(ltoir)

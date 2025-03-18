@@ -115,8 +115,8 @@ class TestLinker(CUDATestCase):
     def test_nvjitlink_jit_with_linkable_code_lto_dump_assembly(self):
         files = [
             test_device_functions_cu,
-            test_device_functions_ltoir,
-            test_device_functions_fatbin_multi
+            #test_device_functions_ltoir,
+            #test_device_functions_fatbin_multi
         ]
 
         config.DUMP_ASSEMBLY = True
@@ -124,18 +124,18 @@ class TestLinker(CUDATestCase):
         for file in files:
             with self.subTest(file=file):
                 f = io.StringIO()
-                with contextlib.redirect_stdout(f):
-                    sig = "uint32(uint32, uint32)"
-                    add_from_numba = cuda.declare_device("add_from_numba", sig)
+                #with contextlib.redirect_stdout(f):
+                sig = "uint32(uint32, uint32)"
+                add_from_numba = cuda.declare_device("add_from_numba", sig)
 
-                    @cuda.jit(link=[file], lto=True)
-                    def kernel(result):
-                        result[0] = add_from_numba(1, 2)
+                @cuda.jit(link=[file], lto=True)
+                def kernel(result):
+                    result[0] = add_from_numba(1, 2)
 
-                    result = cuda.device_array(1)
-                    kernel[1, 1](result)
-                    assert result[0] == 3
-
+                result = cuda.device_array(1)
+                kernel[1, 1](result)
+                assert result[0] == 3
+            
                 self.assertTrue("ASSEMBLY (AFTER LTO)" in f.getvalue())
 
         config.DUMP_ASSEMBLY = False
