@@ -11,6 +11,7 @@ python -m pip install \
     cuda-python \
     nvidia-curand-cu12 \
     nvidia-cuda-nvcc-cu12 \
+    pynvjitlink-cu12 \
     pytest
 
 
@@ -47,6 +48,6 @@ apt-get update
 apt remove --purge cuda-nvvm-12-5 -y
 
 rapids-logger "Run Tests"
-NUMBA_CUDA_TEST_BIN_DIR=$NUMBA_CUDA_TEST_BIN_DIR python -m numba.runtests numba.cuda.tests -v
+NUMBA_CUDA_ENABLE_PYNVJITLINK=1 NUMBA_CUDA_TEST_BIN_DIR=$NUMBA_CUDA_TEST_BIN_DIR python -m numba.runtests numba.cuda.tests -v
 
 popd
