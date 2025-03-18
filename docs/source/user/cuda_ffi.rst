@@ -162,8 +162,8 @@ will be passed directly to the CUDA Linker.
 
 For cumodules linked to a linkable code object, additional setup
 and teardown callbacks are available. Setup functions are invoked once for
-every new module loaded. Teardown functions are invoked before the module is
-garbage collected by python. These callbacks are defined as follows:
+every new module loaded. Teardown functions are invoked just prior to
+module unloading. These callbacks are defined as follows:
 
 .. code::
 
