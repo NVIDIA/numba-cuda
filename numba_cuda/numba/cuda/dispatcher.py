@@ -89,6 +89,9 @@ def get_cres_link_objects(cres):
         for obj in v.typing_key.link:
             link_objects.add(obj)
 
+    for obj in cres.target_context._external_linkage:
+        link_objects.add(obj)
+
     return link_objects
 
 
@@ -1058,6 +1061,7 @@ class CUDADispatcher(Dispatcher, serialize.ReduceMixin):
             if not self._can_compile:
                 raise RuntimeError("Compilation disabled")
 
+            get_context()._external_linkage.clear()
             kernel = _Kernel(self.py_func, argtypes, **self.targetoptions)
             # We call bind to force codegen, so that there is a cubin to cache
             kernel.bind()
