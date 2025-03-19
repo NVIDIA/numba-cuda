@@ -11,7 +11,7 @@ from cuda.bindings.driver import cuModuleGetGlobal, cuMemcpyHtoD
 
 def wipe_all_modules_in_context():
     ctx = cuda.current_context()
-    ctx.modules.clear()
+    ctx.reset()
 
 
 @unittest.skipIf(
