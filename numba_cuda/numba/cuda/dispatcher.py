@@ -116,7 +116,7 @@ class _Kernel(serialize.ReduceMixin):
     def __init__(self, py_func, argtypes, link=None, debug=False,
                  lineinfo=False, inline=False, fastmath=False,
                  extensions=None, max_registers=None, lto=False, opt=True,
-                 device=False, nrt=None):
+                 device=False):
 
         if device:
             raise RuntimeError('Cannot compile a device function as a kernel')
@@ -179,8 +179,6 @@ class _Kernel(serialize.ReduceMixin):
         if self.cooperative:
             lib.needs_cudadevrt = True
 
-        self.nrt = nrt
-
         def link_to_library_functions(library_functions, library_path,
                                       prefix=None):
             """
@@ -235,7 +233,7 @@ class _Kernel(serialize.ReduceMixin):
         self.reload_init = []
 
     def maybe_link_nrt(self, link, tgt_ctx, asm):
-        if not tgt_ctx.enable_nrt or self.nrt is False:
+        if not tgt_ctx.enable_nrt:
             return
 
         nrt_in_asm = lambda asm: any(fn in asm for fn in self.NRT_functions)
@@ -318,7 +316,7 @@ class _Kernel(serialize.ReduceMixin):
 
         if (
             hasattr(self, "target_context")
-            and self.target_context.enable_nrt and self.nrt
+            and self.target_context.enable_nrt
             and config.CUDA_NRT_STATS
         ):
             rtsys.ensure_initialized()
