@@ -205,6 +205,14 @@ int times2(int *out, int a)
 }
 """)
 
+times3_cu = cuda.CUSource("""
+extern "C" __device__
+int times3(int *out, int a)
+{
+  *out = a * 3;
+  return 0;
+}
+""")
 
 times4_cu = cuda.CUSource("""
 extern "C" __device__
@@ -350,6 +358,123 @@ class TestDeclareDevice(CUDATestCase):
         x = np.zeros(1, dtype=np.uint32)
         kernel[1, 1](x, 1)
         np.testing.assert_equal(x[0], 323845807)
+
+    def test_declared_in_called_function(self):
+        times2 = cuda.declare_device('times2', 'int32(int32)', link=times2_cu)
+
+        @cuda.jit
+        def device_func(x):
+            return times2(x)
+
+        @cuda.jit
+        def kernel(r, x):
+            i = cuda.grid(1)
+            if i < len(r):
+                r[i] = device_func(x[i])
+
+        x = np.arange(10, dtype=np.int32)
+        r = np.empty_like(x)
+
+        kernel[1, 32](r, x)
+
+        np.testing.assert_equal(r, x * 2)
+
+    def test_declared_in_called_function_twice(self):
+        times2 = cuda.declare_device('times2', 'int32(int32)', link=times2_cu)
+
+        @cuda.jit
+        def device_func_1(x):
+            return times2(x)
+
+        @cuda.jit
+        def device_func_2(x):
+            return device_func_1(x)
+
+        @cuda.jit
+        def kernel(r, x):
+            i = cuda.grid(1)
+            if i < len(r):
+                r[i] = device_func_2(x[i])
+
+        x = np.arange(10, dtype=np.int32)
+        r = np.empty_like(x)
+
+        kernel[1, 32](r, x)
+
+        np.testing.assert_equal(r, x * 2)
+
+    def test_declared_in_called_function_two_calls(self):
+        times2 = cuda.declare_device('times2', 'int32(int32)', link=times2_cu)
+
+        @cuda.jit
+        def device_func(x):
+            return times2(x)
+
+        @cuda.jit
+        def kernel(r, x):
+            i = cuda.grid(1)
+            if i < len(r):
+                r[i] = device_func(x[i]) + device_func(x[i] + i)
+
+        x = np.arange(10, dtype=np.int32)
+        r = np.empty_like(x)
+
+        kernel[1, 32](r, x)
+
+        np.testing.assert_equal(r, x * 6)
+
+    def test_call_declared_function_twice(self):
+        times2 = cuda.declare_device('times2', 'int32(int32)', link=times2_cu)
+
+        @cuda.jit
+        def kernel(r, x):
+            i = cuda.grid(1)
+            if i < len(r):
+                r[i] = times2(x[i]) + times2(x[i] + i)
+
+        x = np.arange(10, dtype=np.int32)
+        r = np.empty_like(x)
+
+        kernel[1, 32](r, x)
+
+        np.testing.assert_equal(r, x * 6)
+
+    def test_declared_in_called_function_and_parent(self):
+        times2 = cuda.declare_device('times2', 'int32(int32)', link=times2_cu)
+
+        @cuda.jit
+        def device_func(x):
+            return times2(x)
+
+        @cuda.jit
+        def kernel(r, x):
+            i = cuda.grid(1)
+            if i < len(r):
+                r[i] = device_func(x[i]) + times2(x[i])
+
+        x = np.arange(10, dtype=np.int32)
+        r = np.empty_like(x)
+
+        kernel[1, 32](r, x)
+
+        np.testing.assert_equal(r, x * 4)
+
+    def test_call_two_different_declared_functions(self):
+        times2 = cuda.declare_device('times2', 'int32(int32)', link=times2_cu)
+        times3 = cuda.declare_device('times3', 'int32(int32)', link=times3_cu)
+
+        @cuda.jit
+        def kernel(r, x):
+            i = cuda.grid(1)
+            if i < len(r):
+                r[i] = times2(x[i]) + times3(x[i])
+
+        x = np.arange(10, dtype=np.int32)
+        r = np.empty_like(x)
+
+        kernel[1, 32](r, x)
+
+        np.testing.assert_equal(r, x * 5)
 
 
 if __name__ == '__main__':

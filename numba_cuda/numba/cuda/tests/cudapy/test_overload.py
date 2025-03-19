@@ -56,6 +56,10 @@ def target_overloaded_calls_target_overloaded():
     pass
 
 
+def default_values_and_kwargs():
+    pass
+
+
 # To recognise which functions are resolved for a call, we identify each with a
 # prime number. Each function called multiplies a value by its prime (starting
 # with the value 1), and we can check that the result is as expected based on
@@ -182,6 +186,13 @@ def ol_generic_calls_target_overloaded_cuda(x):
     def impl(x):
         x[0] *= CUDA_TARGET_OL_CALLS_TARGET_OL
         target_overloaded(x)
+    return impl
+
+
+@overload(default_values_and_kwargs)
+def ol_default_values_and_kwargs(out, x, y=5, z=6):
+    def impl(out, x, y=5, z=6):
+        out[0], out[1] = x + y, z
     return impl
 
 
@@ -329,6 +340,18 @@ class TestOverload(CUDATestCase):
         @cuda.jit(types.void(types.int64[::1], mydummy_type))
         def cuda_target_attr_use(res, dummy):
             res[0] = dummy.cuda_only
+
+    def test_default_values_and_kwargs(self):
+        """
+        Test default values and kwargs.
+        """
+        @cuda.jit()
+        def kernel(a, b, out):
+            default_values_and_kwargs(out, a, z=b)
+
+        out = np.empty(2, dtype=np.int64)
+        kernel[1,1](1, 2, out)
+        self.assertEqual(tuple(out), (6, 2))
 
 
 if __name__ == '__main__':

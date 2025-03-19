@@ -4,7 +4,6 @@ from numba.tests.support import override_config
 from numba.cuda.runtime import rtsys
 from numba.cuda.tests.support import EnableNRTStatsMixin
 from numba.cuda.testing import CUDATestCase
-from numba.cuda.tests.nrt.mock_numpy import cuda_empty, cuda_empty_like
 
 from numba import cuda
 
@@ -18,7 +17,10 @@ class TestNrtRefCt(EnableNRTStatsMixin, CUDATestCase):
         super(TestNrtRefCt, self).tearDown()
 
     def run(self, result=None):
-        with override_config("CUDA_ENABLE_NRT", True):
+        with (
+            override_config("CUDA_ENABLE_NRT", True),
+            override_config('CUDA_NRT_STATS', True)
+        ):
             super(TestNrtRefCt, self).run(result)
 
     def test_no_return(self):
@@ -31,7 +33,7 @@ class TestNrtRefCt(EnableNRTStatsMixin, CUDATestCase):
         @cuda.jit
         def kernel():
             for i in range(n):
-                temp = cuda_empty(2, np.float64) # noqa: F841
+                temp = np.empty(2) # noqa: F841
             return None
 
         init_stats = rtsys.get_allocation_stats()
@@ -48,7 +50,7 @@ class TestNrtRefCt(EnableNRTStatsMixin, CUDATestCase):
         @cuda.jit
         def g(n):
 
-            x = cuda_empty((n, 2), np.float64)
+            x = np.empty((n, 2))
 
             for i in range(n):
                 y = x[i]
@@ -70,13 +72,13 @@ class TestNrtRefCt(EnableNRTStatsMixin, CUDATestCase):
         """
         @cuda.jit
         def if_with_allocation_and_initialization(arr1, test1):
-            tmp_arr = cuda_empty_like(arr1)
+            tmp_arr = np.empty_like(arr1)
 
             for i in range(tmp_arr.shape[0]):
                 pass
 
             if test1:
-                cuda_empty_like(arr1)
+                np.empty_like(arr1)
 
         arr = np.random.random((5, 5))  # the values are not consumed
 
