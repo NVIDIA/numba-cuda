@@ -208,7 +208,6 @@ class _Kernel(serialize.ReduceMixin):
         link_to_library_functions(cuda_fp16_math_funcs,
                                   'cpp_function_wrappers.cu',
                                   '__numba_wrapper_')
-
         self.maybe_link_nrt(link, tgt_ctx, asm)
 
         for obj in get_cres_link_objects(cres):
@@ -239,15 +238,22 @@ class _Kernel(serialize.ReduceMixin):
         if not tgt_ctx.enable_nrt or self.nrt is False:
             return
 
-        basedir = os.path.dirname(os.path.abspath(__file__))
-        nrt_path = os.path.join(basedir, 'runtime', 'nrt.cu')
+        nrt_in_asm = lambda asm: any(fn in asm for fn in self.NRT_functions)
+        link_nrt = nrt_in_asm(asm)
+        if not link_nrt:
+            for file in link:
+                if file.endswith('ptx'):
+                    with open(file) as f:
+                        asm = f.read()
+                        # TODO: double read
+                    if nrt_in_asm(asm):
+                        link_nrt = True
+                        break
 
-        if self.nrt is True or (
-            self.nrt is None and any(fn in asm for fn in self.NRT_functions)
-        ):
+        if link_nrt:
+            basedir = os.path.dirname(os.path.abspath(__file__))
+            nrt_path = os.path.join(basedir, 'runtime', 'nrt.cu')
             link.append(nrt_path)
-            if self.nrt is None:
-                self.nrt = True
 
     @property
     def library(self):
