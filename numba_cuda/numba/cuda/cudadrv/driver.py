@@ -2675,7 +2675,6 @@ class Linker(metaclass=ABCMeta):
         LTO-ed portion of the PTX when linker is added with objects that can be
         both LTO-ed and not LTO-ed.
         """
-
         if isinstance(path_or_code, str):
             ext = pathlib.Path(path_or_code).suffix
             if ext == '':
@@ -2813,6 +2812,15 @@ class CUDALinker(Linker):
 
         nrt_path = os.path.join(numba_cuda_path, "runtime")
         include_paths = cuda_include + [numba_cuda_path, nrt_path]
+
+        class Logger:
+            def __init__(self):
+                self.log = []
+
+            def write(self, msg):
+                self.log.append(msg)
+        logger = Logger()
+
         prog = Program(
             cu.decode('utf-8'),
             'c++',
@@ -2831,7 +2839,9 @@ class CUDALinker(Linker):
                     "The CUDA driver version is older"
                 )
             )
-            obj = prog.compile('ptx')
+            obj = prog.compile('ptx', logs=logger)
+            if logger.log:
+                warnings.warn(f"NVRTC log messages: {"\n".join(logger.log)}")
         self._object_codes.append(obj)
         prog.close()
 
@@ -2847,29 +2857,27 @@ class CUDALinker(Linker):
         obj = ObjectCode._init(fatbin, 'fatbin')
         self._object_codes.append(obj)
 
-    def add_ltoir(self, ltoir, name='<cudapy-ltoir>'):
-        obj = ObjectCode._init(ltoir, 'ltoir')
-        self._object_codes.append(obj)
-
     def add_object(self, obj, name='<cudapy-object>'):
         # TODO - hack
         from cuda.bindings import nvjitlink
         from cuda.core.experimental import _linker
         _linker._nvjitlink_input_types['object'] = nvjitlink.InputType.OBJECT
-        ObjectCode._supported_code_type = (*ObjectCode._supported_code_type, 'object')
+        ObjectCode._supported_code_type = (
+            *ObjectCode._supported_code_type, 'object'
+        )
         obj = ObjectCode._init(obj, 'object')
         self._object_codes.append(obj)
-    
 
     def add_library(self, lib, name='<cudapy-lib>'):
         # TODO - hack
         from cuda.bindings import nvjitlink
         from cuda.core.experimental import _linker
         _linker._nvjitlink_input_types['lib'] = nvjitlink.InputType.LIBRARY
-        ObjectCode._supported_code_type = (*ObjectCode._supported_code_type, 'lib')
+        ObjectCode._supported_code_type = (
+            *ObjectCode._supported_code_type, 'lib'
+        )
         obj = ObjectCode._init(lib, 'lib')
         self._object_codes.append(obj)
-
 
     def add_file(self, path, kind):
         try:
@@ -2884,7 +2892,9 @@ class CUDALinker(Linker):
             fn = self.add_cubin
         elif kind == 'cu':
             fn = self.add_cu
-        elif kind == FILE_EXTENSION_MAP['lib'] or kind == FILE_EXTENSION_MAP['a']:
+        elif (
+            kind == FILE_EXTENSION_MAP['lib'] or kind == FILE_EXTENSION_MAP['a']
+        ):
             fn = self.add_library
         elif kind == FILE_EXTENSION_MAP['fatbin']:
             fn = self.add_fatbin
@@ -2893,7 +2903,6 @@ class CUDALinker(Linker):
         elif kind == FILE_EXTENSION_MAP['ltoir']:
             fn = self.add_ltoir
         else:
-            breakpoint()
             raise LinkerError(f"Don't know how to link {kind}")
 
         fn(data, name)
@@ -2916,7 +2925,6 @@ class CUDALinker(Linker):
         self.linker.close()
         self._complete = True
         return result
-
 
     def complete(self):
         self.linker = _CUDALinker(
