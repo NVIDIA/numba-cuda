@@ -15,7 +15,6 @@ except ImportError:
     PYNVJITLINK_INSTALLED = False
 
 
-import itertools
 import os
 import io
 import contextlib
@@ -49,6 +48,7 @@ if TEST_BIN_DIR:
         TEST_BIN_DIR, "test_device_functions.ltoir"
     )
 
+
 @unittest.skipIf(
     not config.CUDA_ENABLE_PYNVJITLINK or not TEST_BIN_DIR,
     "pynvjitlink not enabled"
@@ -56,8 +56,6 @@ if TEST_BIN_DIR:
 @skip_on_cudasim("Linking unsupported in the simulator")
 class TestLinker(CUDATestCase):
     _NUMBA_NVIDIA_BINDING_0_ENV = {"NUMBA_CUDA_USE_NVIDIA_BINDING": "0"}
-
-
 
     def test_nvjitlink_add_file_guess_ext_linkable_code(self):
         files = (
@@ -135,7 +133,7 @@ class TestLinker(CUDATestCase):
                 result = cuda.device_array(1)
                 kernel[1, 1](result)
                 assert result[0] == 3
-            
+
                 self.assertTrue("ASSEMBLY (AFTER LTO)" in f.getvalue())
 
         config.DUMP_ASSEMBLY = False
@@ -159,6 +157,7 @@ class TestLinker(CUDATestCase):
                         add_from_numba = cuda.declare_device(
                             "add_from_numba", sig
                         )
+
                         @cuda.jit(link=[file], lto=True)
                         def kernel(result):
                             result[0] = add_from_numba(1, 2)
@@ -186,7 +185,8 @@ class TestLinker(CUDATestCase):
 
 
 @unittest.skipIf(
-    not PYNVJITLINK_INSTALLED, reason="Pynvjitlink is not installed"
+    not PYNVJITLINK_INSTALLED or not TEST_BIN_DIR,
+    reason="pynvjitlink not enabled"
 )
 class TestLinkerUsage(CUDATestCase):
     """Test that whether pynvjitlink can be enabled by both environment variable
