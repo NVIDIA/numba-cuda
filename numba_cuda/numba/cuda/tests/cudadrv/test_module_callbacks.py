@@ -103,6 +103,42 @@ class TestModuleCallbacksBasic(CUDATestCase):
         wipe_all_modules_in_context()
         self.assertEqual(counter, 0)
 
+    def test_different_streams(self):
+
+        s1 = cuda.stream()
+        s2 = cuda.stream()
+
+        counter = 0
+
+        def setup(mod, stream, self=self):
+            nonlocal counter, s1, s2
+            if counter == 0:
+                self.assertEqual(stream, s1.handle)
+            elif counter == 1:
+                self.assertEqual(stream, s2.handle)
+            else:
+                raise RuntimeError("Setup should only be invoked twice.")
+            counter += 1
+
+        def teardown(mod, stream, self=self):
+            nonlocal counter, s1, s2
+            if counter == 2:
+                self.assertEqual(stream, s2.handle)
+            elif counter == 1:
+                self.assertEqual(stream, s1.handle)
+            else:
+                raise RuntimeError("Teardown should only be invoked twice.")
+            counter -= 1
+
+        lib = CUSource("", setup_callback=setup, teardown_callback=teardown)
+
+        @cuda.jit(link=[lib])
+        def kernel():
+            pass
+
+        kernel[1, 1, s1]()
+        kernel[1, 1, s2]()
+
 
 class TestModuleCallbacks(CUDATestCase):
 
