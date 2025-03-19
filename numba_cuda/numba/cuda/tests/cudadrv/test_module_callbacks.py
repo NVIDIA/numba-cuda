@@ -138,6 +138,8 @@ class TestModuleCallbacksBasic(CUDATestCase):
 
         kernel[1, 1, s1]()
         kernel[1, 1, s2]()
+        wipe_all_modules_in_context()
+        self.assertEqual(counter, 0)
 
 
 class TestModuleCallbacks(CUDATestCase):
