@@ -159,19 +159,11 @@ extern "C" __device__ void* NRT_Allocate_External(size_t size) {
 extern "C" __device__ void NRT_decref(NRT_MemInfo* mi)
 {
   if (mi != NULL) {
-    //printf("NRT_decref %p\n", mi);
-    //printf("NRT_decref refct %d\n", mi->refct);
     mi->refct--;
     if (mi->refct == 0) { NRT_MemInfo_call_dtor(mi); }
   }
 }
 
-extern "C" __device__ void NRT_print_refct(NRT_MemInfo* mi){
-  if (mi != NULL) {
-    printf("NRT_print_refct %p\n", mi);
-    printf("NRT_print_refct refct %d\n", mi->refct);
-  }
-}
 
 #endif
 

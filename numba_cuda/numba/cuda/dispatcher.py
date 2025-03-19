@@ -1,6 +1,5 @@
 import numpy as np
 import os
-import re
 import sys
 import ctypes
 import functools
@@ -65,8 +64,9 @@ class _Kernel(serialize.ReduceMixin):
 
     @global_compiler_lock
     def __init__(self, py_func, argtypes, link=None, debug=False,
-                 lineinfo=False, inline=False, fastmath=False, extensions=None,
-                 max_registers=None, lto=False, opt=True, device=False, nrt=None):
+                 lineinfo=False, inline=False, fastmath=False,
+                 extensions=None, max_registers=None, lto=False, opt=True,
+                 device=False, nrt=None):
 
         if device:
             raise RuntimeError('Cannot compile a device function as a kernel')
@@ -195,11 +195,13 @@ class _Kernel(serialize.ReduceMixin):
     def maybe_link_nrt(self, link, tgt_ctx, asm):
         if not tgt_ctx.enable_nrt or self.nrt is False:
             return
-        
+
         basedir = os.path.dirname(os.path.abspath(__file__))
         nrt_path = os.path.join(basedir, 'runtime', 'nrt.cu')
 
-        if self.nrt is True or (self.nrt is None and any(fn in asm for fn in self.NRT_functions)):
+        if self.nrt is True or (
+            self.nrt is None and any(fn in asm for fn in self.NRT_functions)
+        ):
             link.append(nrt_path)
             if self.nrt is None:
                 self.nrt = True
@@ -265,7 +267,10 @@ class _Kernel(serialize.ReduceMixin):
         """
         cufunc = self._codelibrary.get_cufunc()
 
-        if hasattr(self, "target_context") and self.target_context.enable_nrt and self.nrt:
+        if (
+            hasattr(self, "target_context")
+            and self.target_context.enable_nrt and self.nrt
+        ):
             rtsys.ensure_initialized()
             rtsys.set_memsys_to_module(cufunc.module)
             # We don't know which stream the kernel will be launched on, so
@@ -676,8 +681,7 @@ class CUDADispatcher(Dispatcher, serialize.ReduceMixin):
         # specialized CUDADispatcher is one that is compiled for exactly one
         # set of argument types, and bypasses some argument type checking for
         # faster kernel launches.
-        #if targetoptions['nrt']:
-        #    breakpoint()
+
         # Is this a specialized dispatcher?
         self._specialized = False
 
