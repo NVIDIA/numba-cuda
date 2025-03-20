@@ -1433,21 +1433,16 @@ class Context(object):
             image = c_char_p(ptx)
         return self.create_module_image(image)
 
-    def create_module_image(self, image):
-        module = load_module_image(self, image)
+    def create_module_image(self, image,
+                            setup_callbacks=None, teardown_callbacks=None):
+        module = load_module_image(self, image,
+                                   setup_callbacks, teardown_callbacks)
         if USE_NV_BINDING:
             key = module.handle
         else:
             key = module.handle.value
         self.modules[key] = module
         return weakref.proxy(module)
-
-    def create_module_image_with_callbacks(
-            self, image, setup_callbacks, teardown_callbacks):
-        mod = self.create_module_image(image)
-        mod.set_setup_functions(setup_callbacks)
-        mod.set_teardown_functions(teardown_callbacks)
-        return mod
 
     def unload_module(self, module):
         if USE_NV_BINDING:
@@ -1535,17 +1530,21 @@ class Context(object):
         return not self.__eq__(other)
 
 
-def load_module_image(context, image):
+def load_module_image(context, image,
+                      setup_callbacks=None, teardown_callbacks=None):
     """
     image must be a pointer
     """
     if USE_NV_BINDING:
-        return load_module_image_cuda_python(context, image)
+        return load_module_image_cuda_python(
+            context, image, setup_callbacks, teardown_callbacks)
     else:
-        return load_module_image_ctypes(context, image)
+        return load_module_image_ctypes(
+            context, image, setup_callbacks, teardown_callbacks)
 
 
-def load_module_image_ctypes(context, image):
+def load_module_image_ctypes(context, image,
+                             setup_callbacks, teardown_callbacks):
     logsz = config.CUDA_LOG_SIZE
 
     jitinfo = (c_char * logsz)()
@@ -1573,10 +1572,12 @@ def load_module_image_ctypes(context, image):
     info_log = jitinfo.value
 
     return CtypesModule(weakref.proxy(context), handle, info_log,
-                        _module_finalizer(context, handle))
+                        _module_finalizer(context, handle),
+                        setup_callbacks, teardown_callbacks)
 
 
-def load_module_image_cuda_python(context, image):
+def load_module_image_cuda_python(context, image,
+                                  setup_callbacks, teardown_callbacks):
     """
     image must be a pointer
     """
@@ -1608,7 +1609,8 @@ def load_module_image_cuda_python(context, image):
     info_log = jitinfo.decode('utf-8')
 
     return CudaPythonModule(weakref.proxy(context), handle, info_log,
-                            _module_finalizer(context, handle))
+                            _module_finalizer(context, handle),
+                            setup_callbacks, teardown_callbacks)
 
 
 def _alloc_finalizer(memory_manager, ptr, alloc_key, size):
@@ -2394,15 +2396,16 @@ def event_elapsed_time(evtstart, evtend):
 class Module(metaclass=ABCMeta):
     """Abstract base class for modules"""
 
-    def __init__(self, context, handle, info_log, finalizer=None):
+    def __init__(self, context, handle, info_log, finalizer=None,
+                 setup_callbacks=None, teardown_callbacks=None):
         self.context = context
         self.handle = handle
         self.info_log = info_log
         if finalizer is not None:
             self._finalizer = weakref.finalize(self, finalizer)
 
-        self.setup_functions = None
-        self.teardown_functions = None
+        self.setup_functions = setup_callbacks
+        self.teardown_functions = teardown_callbacks
 
     def unload(self):
         """Unload this module from the context"""
@@ -2425,14 +2428,6 @@ class Module(metaclass=ABCMeta):
                 raise TypeError("callback must be callable")
 
         setattr(self, attr, callbacks)
-
-    def set_setup_functions(self, callbacks):
-        """Set the setup callback for this module"""
-        self._set_callables(callbacks, "setup_functions")
-
-    def set_teardown_functions(self, callbacks):
-        """Set the finalize callback for this module"""
-        self._set_callables(callbacks, "teardown_functions")
 
     def setup(self, stream):
         """Call the setup functions for cumodule with the given `stream`"""

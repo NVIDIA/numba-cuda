@@ -253,7 +253,7 @@ class CUDACodeLibrary(serialize.ReduceMixin, CodeLibrary):
             return cufunc
 
         cubin = self.get_cubin(cc=device.compute_capability)
-        module = ctx.create_module_image_with_callbacks(
+        module = ctx.create_module_image(
             cubin, self._setup_functions, self._teardown_functions)
 
         # Load
