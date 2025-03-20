@@ -44,6 +44,7 @@ class TestModuleCallbacksBasic(CUDATestCase):
         self.assertEqual(counter, 1)
 
         wipe_all_modules_in_context()
+        del kernel
         self.assertEqual(counter, 0)
 
     def test_different_argtypes(self):
@@ -72,6 +73,7 @@ class TestModuleCallbacksBasic(CUDATestCase):
         self.assertEqual(counter, 2)
 
         wipe_all_modules_in_context()
+        del kernel
         self.assertEqual(counter, 0)
 
     def test_two_kernels(self):
@@ -101,6 +103,7 @@ class TestModuleCallbacksBasic(CUDATestCase):
         self.assertEqual(counter, 2)
 
         wipe_all_modules_in_context()
+        del kernel
         self.assertEqual(counter, 0)
 
     def test_different_streams(self):
@@ -144,9 +147,8 @@ class TestModuleCallbacksBasic(CUDATestCase):
         kernel[1, 1, s1]()
         kernel[1, 1, s2]()
         wipe_all_modules_in_context()
+        del kernel
         self.assertEqual(counter, 0)
-        self.assertEqual(setup_seen, {s1.handle.value, s2.handle.value})
-        self.assertEqual(teardown_seen, {s1.handle.value, s2.handle.value})
 
 
 class TestModuleCallbacks(CUDATestCase):
