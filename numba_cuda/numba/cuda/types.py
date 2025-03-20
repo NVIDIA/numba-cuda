@@ -1,4 +1,8 @@
+import numpy as np
+
 from numba.core import types
+from numba.core.typeconv.rules import default_casting_rules
+from numba.np import numpy_support
 
 
 class Dim3(types.Type):
@@ -19,6 +23,25 @@ class GridGroup(types.Type):
 
 dim3 = Dim3()
 grid_group = GridGroup()
+
+tid = types.Integer('thread_idx', 32, signed=False)
+default_casting_rules.promote_unsafe(tid, types.int64)
+
+# We need to patch the as_dtype function, because it doesn't know how to
+# translate the tid type to a NumPy dtype, and there's no way to augment the
+# lookup.
+
+_original_as_dtype = numpy_support.as_dtype
+
+
+def _as_dtype(nbtype):
+    nbtype = types.unliteral(nbtype)
+    if nbtype == tid:
+        return np.dtype('uint32')
+    return _original_as_dtype(nbtype)
+
+
+numpy_support.as_dtype = _as_dtype
 
 
 class CUDADispatcher(types.Dispatcher):

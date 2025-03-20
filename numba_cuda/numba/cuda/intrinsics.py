@@ -7,6 +7,7 @@ from numba.core.typing import signature
 from numba.core.extending import overload_attribute, overload_method
 from numba.cuda import nvvmutils
 from numba.cuda.extending import intrinsic
+from numba.cuda.types import tid
 
 
 #-------------------------------------------------------------------------------
@@ -105,7 +106,7 @@ def gridsize(typingctx, ndim):
 
 @intrinsic
 def _warpsize(typingctx):
-    sig = signature(types.int32)
+    sig = signature(tid)
 
     def codegen(context, builder, sig, args):
         return nvvmutils.call_sreg(builder, 'warpsize')
