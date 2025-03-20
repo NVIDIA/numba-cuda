@@ -3,7 +3,8 @@ import re
 import os
 from collections import namedtuple
 import platform
-
+import site
+from pathlib import Path
 from numba.core.config import IS_WIN32
 from numba.misc.findlib import find_lib, find_file
 from numba import config
@@ -29,9 +30,13 @@ def _get_libdevice_path_decision():
         ('Conda environment', get_conda_ctk()),
         ('Conda environment (NVIDIA package)', get_nvidia_libdevice_ctk()),
         ('CUDA_HOME', get_cuda_home('nvvm', 'libdevice')),
-        ('System', get_system_ctk('nvvm', 'libdevice')),
         ('Debian package', get_debian_pkg_libdevice()),
+        ('NVIDIA NVCC Wheel', get_libdevice_wheel()),
     ]
+    libdevice_ctk_dir = get_system_ctk('nvvm', 'libdevice')
+    if os.path.exists(libdevice_ctk_dir):
+        options.append(('System', libdevice_ctk_dir))
+
     by, libdir = _find_valid_path(options)
     return by, libdir
 
@@ -48,19 +53,58 @@ def _get_nvvm_path_decision():
         ('Conda environment', get_conda_ctk()),
         ('Conda environment (NVIDIA package)', get_nvidia_nvvm_ctk()),
         ('CUDA_HOME', get_cuda_home(*_nvvm_lib_dir())),
-        ('System', get_system_ctk(*_nvvm_lib_dir())),
+        ('NVIDIA NVCC Wheel', _get_nvvm_wheel()),
     ]
+    # need to ensure nvvm dir actually exists
+    nvvm_ctk_dir = get_system_ctk(*_nvvm_lib_dir())
+    if os.path.exists(nvvm_ctk_dir):
+        options.append(('System', nvvm_ctk_dir))
+
     by, path = _find_valid_path(options)
     return by, path
 
 
+def _get_nvvm_wheel():
+    site_paths = [
+        site.getusersitepackages()
+    ] + site.getsitepackages() + ["conda", None]
+    for sp in site_paths:
+        # The SONAME is taken based on public CTK 12.x releases
+        if sys.platform.startswith("linux"):
+            dso_dir = "lib64"
+            # Hack: libnvvm from Linux wheel
+            # does not have any soname (CUDAINST-3183)
+            dso_path = "libnvvm.so"
+        elif sys.platform.startswith("win32"):
+            dso_dir = "bin"
+            dso_path = "nvvm64_40_0.dll"
+        else:
+            raise AssertionError()
+
+        if sp is not None:
+            dso_dir = os.path.join(
+                sp,
+                "nvidia",
+                "cuda_nvcc",
+                "nvvm",
+                dso_dir
+            )
+            dso_path = os.path.join(dso_dir, dso_path)
+            if os.path.exists(dso_path):
+                return str(Path(dso_path).parent)
+
+
 def _get_libdevice_paths():
     by, libdir = _get_libdevice_path_decision()
-    # Search for pattern
-    pat = r'libdevice(\.\d+)*\.bc$'
-    candidates = find_file(re.compile(pat), libdir)
-    # Keep only the max (most recent version) of the bitcode files.
-    out = max(candidates, default=None)
+    if by == "NVIDIA NVCC Wheel":
+        # The NVVM path is a directory, not a file
+        out = os.path.join(libdir, "libdevice.10.bc")
+    else:
+        # Search for pattern
+        pat = r'libdevice(\.\d+)*\.bc$'
+        candidates = find_file(re.compile(pat), libdir)
+        # Keep only the max (most recent version) of the bitcode files.
+        out = max(candidates, default=None)
     return _env_path_tuple(by, out)
 
 
@@ -217,8 +261,12 @@ def get_cuda_home(*subdirs):
 
 def _get_nvvm_path():
     by, path = _get_nvvm_path_decision()
-    candidates = find_lib('nvvm', path)
-    path = max(candidates) if candidates else None
+    if by == "NVIDIA NVCC Wheel":
+        # The NVVM path is a directory, not a file
+        path = os.path.join(path, "libnvvm.so")
+    else:
+        candidates = find_lib('nvvm', path)
+        path = max(candidates) if candidates else None
     return _env_path_tuple(by, path)
 
 
@@ -259,6 +307,16 @@ def get_debian_pkg_libdevice():
     if not os.path.exists(pkg_libdevice_location):
         return None
     return pkg_libdevice_location
+
+
+def get_libdevice_wheel():
+    nvvm_path = _get_nvvm_wheel()
+    if nvvm_path is None:
+        return None
+    nvvm_path = Path(nvvm_path)
+    libdevice_path = nvvm_path.parent / "libdevice"
+
+    return str(libdevice_path)
 
 
 def get_current_cuda_target_name():
