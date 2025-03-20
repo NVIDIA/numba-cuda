@@ -26,6 +26,7 @@ exclude =
     *.cpp
     *.c
     *.h
+    cuda_bf16.py
 
 per-file-ignores =
     # Slightly long line in the standard version file
