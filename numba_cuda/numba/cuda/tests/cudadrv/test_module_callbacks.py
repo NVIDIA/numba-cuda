@@ -115,7 +115,6 @@ class TestModuleCallbacksBasic(CUDATestCase):
 
         def setup(mod, stream, self=self):
             nonlocal counter, s1, s2, setup_seen
-            print("setup!")
             if counter == 0:
                 self.assertEqual(stream, s1.handle)
             elif counter == 1:
@@ -126,7 +125,6 @@ class TestModuleCallbacksBasic(CUDATestCase):
             counter += 1
 
         def teardown(mod, stream, self=self):
-            print("teardown!")
             nonlocal counter, s1, s2, teardown_seen
             if counter == 2:
                 self.assertEqual(stream, s2.handle)

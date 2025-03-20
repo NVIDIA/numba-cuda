@@ -452,8 +452,9 @@ class _Kernel(serialize.ReduceMixin):
 
         # Set init and finalize module callbacks
         if not self.initialized:
-            cufunc.init_module(stream_handle)
-            cufunc.lazy_finalize_module(stream_handle)
+            mod = cufunc.module
+            mod.setup(stream_handle)
+            mod.set_finalizers(stream_handle)
             self.initialized = True
 
         # Invoke kernel

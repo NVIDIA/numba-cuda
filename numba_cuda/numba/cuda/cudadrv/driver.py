@@ -1442,6 +1442,13 @@ class Context(object):
         self.modules[key] = module
         return weakref.proxy(module)
 
+    def create_module_image_with_callbacks(
+            self, image, setup_callbacks, teardown_callbacks):
+        mod = self.create_module_image(image)
+        mod.set_setup_functions(setup_callbacks)
+        mod.set_teardown_functions(teardown_callbacks)
+        return mod
+
     def unload_module(self, module):
         if USE_NV_BINDING:
             key = module.handle
@@ -2394,6 +2401,9 @@ class Module(metaclass=ABCMeta):
         if finalizer is not None:
             self._finalizer = weakref.finalize(self, finalizer)
 
+        self.setup_functions = None
+        self.teardown_functions = None
+
     def unload(self):
         """Unload this module from the context"""
         self.context.unload_module(self)
@@ -2405,6 +2415,47 @@ class Module(metaclass=ABCMeta):
     @abstractmethod
     def get_global_symbol(self, name):
         """Return a MemoryPointer referring to the named symbol"""
+
+    def _set_callables(self, callbacks, attr):
+        if not isinstance(callbacks, list):
+            raise TypeError("callbacks must be a list")
+
+        for f in callbacks:
+            if not callable(f):
+                raise TypeError("callback must be callable")
+
+        setattr(self, attr, callbacks)
+
+    def set_setup_functions(self, callbacks):
+        """Set the setup callback for this module"""
+        self._set_callables(callbacks, "setup_functions")
+
+    def set_teardown_functions(self, callbacks):
+        """Set the finalize callback for this module"""
+        self._set_callables(callbacks, "teardown_functions")
+
+    def setup(self, stream):
+        if self.setup_functions is None:
+            return
+
+        for f in self.setup_functions:
+            f(weakref.proxy(self), stream)
+
+    def set_finalizers(self, stream):
+        if self.teardown_functions is None:
+            return
+
+        def _teardown(teardowns, modref, stream):
+            for f in teardowns:
+                f(modref, stream)
+
+        weakref.finalize(
+            self,
+            _teardown,
+            self.teardown_functions,
+            weakref.proxy(self),
+            stream
+        )
 
 
 class CtypesModule(Module):

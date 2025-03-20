@@ -5,7 +5,6 @@ from numba.core.codegen import Codegen, CodeLibrary
 from .cudadrv import devices, driver, nvvm, runtime
 from numba.cuda.cudadrv.libs import get_cudalib
 from numba.cuda.cudadrv.linkable_code import LinkableCode
-from numba.cuda.cudadrv.managed_module import ManagedModule
 
 import os
 import subprocess
@@ -254,12 +253,8 @@ class CUDACodeLibrary(serialize.ReduceMixin, CodeLibrary):
             return cufunc
 
         cubin = self.get_cubin(cc=device.compute_capability)
-        module = ctx.create_module_image(cubin)
-
-        # Wrap ctypesmodule with managed module with auto module setup/teardown
-        module = ManagedModule(
-            module, self._setup_functions, self._teardown_functions
-        )
+        module = ctx.create_module_image_with_callbacks(
+            cubin, self._setup_functions, self._teardown_functions)
 
         # Load
         cufunc = module.get_function(self._entry_name)
