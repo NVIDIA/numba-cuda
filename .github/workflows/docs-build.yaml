@@ -46,7 +46,7 @@ jobs:
     env:
       RAPIDS_ARTIFACTS_DIR: ${{ github.workspace }}/artifacts
     container:
-      image: rapidsai/ci-conda:cuda12.5.1-ubuntu22.04-py3.11
+      image: rapidsai/ci-conda:latest
       env:
         RAPIDS_BUILD_TYPE: ${{ inputs.build_type }}
     steps:
@@ -65,6 +65,11 @@ jobs:
           echo "RAPIDS_SHA=$(git rev-parse HEAD)" >> "${GITHUB_ENV}"
           echo "RAPIDS_REF_NAME=${{ inputs.branch || github.ref_name }}" >> "${GITHUB_ENV}"
           echo "RAPIDS_NIGHTLY_DATE=${{ inputs.date }}" >> "${GITHUB_ENV}"
+      - name: Setup proxy cache
+        uses: nv-gha-runners/setup-proxy-cache@main
+        continue-on-error: true
+        # Skip the cache on RDS Lab nodes
+        if: ${{ matrix.GPU != 'v100' }}
       - name: Docs build
         run: ${{ inputs.script }}
         env:

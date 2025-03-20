@@ -83,18 +83,26 @@ jobs:
           export MATRIX="
           # amd64
           - { ARCH: 'amd64', PY_VER: '3.9',  CUDA_VER: '11.8.0', LINUX_VER: 'rockylinux8' }
-          - { ARCH: 'amd64', PY_VER: '3.9',  CUDA_VER: '12.5.1', LINUX_VER: 'rockylinux8' }
+          - { ARCH: 'amd64', PY_VER: '3.9',  CUDA_VER: '12.8.0', LINUX_VER: 'rockylinux8' }
           - { ARCH: 'amd64', PY_VER: '3.10', CUDA_VER: '11.8.0', LINUX_VER: 'rockylinux8' }
-          - { ARCH: 'amd64', PY_VER: '3.10', CUDA_VER: '12.5.1', LINUX_VER: 'rockylinux8' }
+          - { ARCH: 'amd64', PY_VER: '3.10', CUDA_VER: '12.8.0', LINUX_VER: 'rockylinux8' }
           - { ARCH: 'amd64', PY_VER: '3.11', CUDA_VER: '11.8.0', LINUX_VER: 'rockylinux8' }
-          - { ARCH: 'amd64', PY_VER: '3.11', CUDA_VER: '12.5.1', LINUX_VER: 'rockylinux8' }
+          - { ARCH: 'amd64', PY_VER: '3.11', CUDA_VER: '12.8.0', LINUX_VER: 'rockylinux8' }
+          - { ARCH: 'amd64', PY_VER: '3.12', CUDA_VER: '11.8.0', LINUX_VER: 'rockylinux8' }
+          - { ARCH: 'amd64', PY_VER: '3.12', CUDA_VER: '12.8.0', LINUX_VER: 'rockylinux8' }
+          - { ARCH: 'amd64', PY_VER: '3.13', CUDA_VER: '11.8.0', LINUX_VER: 'rockylinux8' }
+          - { ARCH: 'amd64', PY_VER: '3.13', CUDA_VER: '12.8.0', LINUX_VER: 'rockylinux8' }
           # arm64
           - { ARCH: 'arm64', PY_VER: '3.9',  CUDA_VER: '11.8.0', LINUX_VER: 'rockylinux8' }
-          - { ARCH: 'arm64', PY_VER: '3.9',  CUDA_VER: '12.5.1', LINUX_VER: 'rockylinux8' }
+          - { ARCH: 'arm64', PY_VER: '3.9',  CUDA_VER: '12.8.0', LINUX_VER: 'rockylinux8' }
           - { ARCH: 'arm64', PY_VER: '3.10', CUDA_VER: '11.8.0', LINUX_VER: 'rockylinux8' }
-          - { ARCH: 'arm64', PY_VER: '3.10', CUDA_VER: '12.5.1', LINUX_VER: 'rockylinux8' }
+          - { ARCH: 'arm64', PY_VER: '3.10', CUDA_VER: '12.8.0', LINUX_VER: 'rockylinux8' }
           - { ARCH: 'arm64', PY_VER: '3.11', CUDA_VER: '11.8.0', LINUX_VER: 'rockylinux8' }
-          - { ARCH: 'arm64', PY_VER: '3.11', CUDA_VER: '12.5.1', LINUX_VER: 'rockylinux8' }
+          - { ARCH: 'arm64', PY_VER: '3.11', CUDA_VER: '12.8.0', LINUX_VER: 'rockylinux8' }
+          - { ARCH: 'arm64', PY_VER: '3.12', CUDA_VER: '11.8.0', LINUX_VER: 'rockylinux8' }
+          - { ARCH: 'arm64', PY_VER: '3.12', CUDA_VER: '12.8.0', LINUX_VER: 'rockylinux8' }
+          - { ARCH: 'arm64', PY_VER: '3.13', CUDA_VER: '11.8.0', LINUX_VER: 'rockylinux8' }
+          - { ARCH: 'arm64', PY_VER: '3.13', CUDA_VER: '12.8.0', LINUX_VER: 'rockylinux8' }
           "
 
           MATRIX="$(
@@ -149,6 +157,10 @@ jobs:
           path: "./${{ steps.preprocess-extras.outputs.EXTRA_REPO_PATH }}"
           ssh-key: ${{ secrets[inputs.extra-repo-deploy-key] }}
           persist-credentials: false
+
+      - name: Setup proxy cache
+        uses: nv-gha-runners/setup-proxy-cache@main
+        continue-on-error: true
 
       - name: Build and repair the wheel
         run: |
