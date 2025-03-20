@@ -1,6 +1,5 @@
 import numpy as np
 import os
-import re
 import sys
 import ctypes
 import functools
@@ -115,8 +114,9 @@ class _Kernel(serialize.ReduceMixin):
 
     @global_compiler_lock
     def __init__(self, py_func, argtypes, link=None, debug=False,
-                 lineinfo=False, inline=False, fastmath=False, extensions=None,
-                 max_registers=None, lto=False, opt=True, device=False):
+                 lineinfo=False, inline=False, fastmath=False,
+                 extensions=None, max_registers=None, lto=False, opt=True,
+                 device=False):
 
         if device:
             raise RuntimeError('Cannot compile a device function as a kernel')
@@ -206,7 +206,6 @@ class _Kernel(serialize.ReduceMixin):
         link_to_library_functions(cuda_fp16_math_funcs,
                                   'cpp_function_wrappers.cu',
                                   '__numba_wrapper_')
-
         self.maybe_link_nrt(link, tgt_ctx, asm)
 
         for obj in get_cres_link_objects(cres):
@@ -237,16 +236,20 @@ class _Kernel(serialize.ReduceMixin):
         if not tgt_ctx.enable_nrt:
             return
 
-        all_nrt = "|".join(self.NRT_functions)
-        pattern = (
-            r'\.extern\s+\.func\s+(?:\s*\(.+\)\s*)?('
-            + all_nrt + r')\s*\([^)]*\)\s*;'
-        )
+        nrt_in_asm = lambda asm: any(fn in asm for fn in self.NRT_functions)
+        link_nrt = nrt_in_asm(asm)
+        if not link_nrt:
+            for file in link:
+                if file.endswith('ptx'):
+                    with open(file) as f:
+                        asm = f.read()
+                        # TODO: double read
+                    if nrt_in_asm(asm):
+                        link_nrt = True
+                        break
 
-        nrt_in_asm = re.findall(pattern, asm)
-
-        basedir = os.path.dirname(os.path.abspath(__file__))
-        if nrt_in_asm:
+        if link_nrt:
+            basedir = os.path.dirname(os.path.abspath(__file__))
             nrt_path = os.path.join(basedir, 'runtime', 'nrt.cu')
             link.append(nrt_path)
 
@@ -271,7 +274,7 @@ class _Kernel(serialize.ReduceMixin):
 
     @classmethod
     def _rebuild(cls, cooperative, name, signature, codelibrary,
-                 debug, lineinfo, call_helper, extensions):
+                 debug, lineinfo, call_helper, extensions, nrt):
         """
         Rebuild an instance.
         """
@@ -289,6 +292,7 @@ class _Kernel(serialize.ReduceMixin):
         instance.lineinfo = lineinfo
         instance.call_helper = call_helper
         instance.extensions = extensions
+        instance.nrt = nrt
         return instance
 
     def _reduce_states(self):
@@ -721,7 +725,6 @@ class CUDADispatcher(Dispatcher, serialize.ReduceMixin):
     def __init__(self, py_func, targetoptions, pipeline_class=CUDACompiler):
         super().__init__(py_func, targetoptions=targetoptions,
                          pipeline_class=pipeline_class)
-
         # The following properties are for specialization of CUDADispatchers. A
         # specialized CUDADispatcher is one that is compiled for exactly one
         # set of argument types, and bypasses some argument type checking for
