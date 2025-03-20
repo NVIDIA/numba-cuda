@@ -2435,6 +2435,7 @@ class Module(metaclass=ABCMeta):
         self._set_callables(callbacks, "teardown_functions")
 
     def setup(self, stream):
+        """Call the setup functions for cumodule with the given `stream`"""
         if self.setup_functions is None:
             return
 
@@ -2442,6 +2443,7 @@ class Module(metaclass=ABCMeta):
             f(weakref.proxy(self), stream)
 
     def set_finalizers(self, stream):
+        """Create finalizers that tears down the cumodule on `stream`"""
         if self.teardown_functions is None:
             return
 
