@@ -135,10 +135,7 @@ __device__ int get_num(int &retval) {
 }
 """
 
-        self.counter = 0
-
         def set_forty_two(handle):
-            self.counter += 1
             # Initialize 42 to global variable `num`
             res, dptr, size = cuModuleGetGlobal(
                 handle.value, "num".encode()
@@ -147,11 +144,8 @@ __device__ int get_num(int &retval) {
             arr = np.array([42], np.int32)
             cuMemcpyHtoD(dptr, arr.ctypes.data, size)
 
-        def teardown(handle):
-            self.counter -= 1
-
         self.lib = CUSource(
-            module, setup_callback=set_forty_two, teardown_callback=teardown)
+            module, setup_callback=set_forty_two, teardown_callback=None)
 
     def test_decldevice_arg(self):
         get_num = cuda.declare_device("get_num", "int32()", link=[self.lib])
