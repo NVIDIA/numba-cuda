@@ -167,11 +167,8 @@ module unloading. These callbacks are defined as follows:
 
 .. code::
 
-  def setup_callback(
-    mod: cuda.driver.CtypeModule, stream: cuda.driver.Stream
-  )
-
-The `stream` argument is the same stream user passes in to launch the kernel.
+  def setup_callback(mod: cuda.cudadrv.drvapi.cu_module):...
+  def teardown_callback(mod: cuda.cudadrv.drvapi.cu_module):...
 
 :class:`LinkableCode <numba.cuda.LinkableCode>` objects are initialized using
 the parameters of their base class:
