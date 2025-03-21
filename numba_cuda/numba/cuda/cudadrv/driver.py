@@ -2438,9 +2438,9 @@ class Module(metaclass=ABCMeta):
         if self.teardown_functions is None:
             return
 
-        def _teardown(teardowns, modref):
+        def _teardown(teardowns, handle):
             for f in teardowns:
-                f(modref)
+                f(handle)
 
         weakref.finalize(
             self,

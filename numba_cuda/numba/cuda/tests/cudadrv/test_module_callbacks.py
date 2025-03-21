@@ -5,9 +5,13 @@ import numpy as np
 from numba import cuda, config
 from numba.cuda.cudadrv.linkable_code import CUSource
 from numba.cuda.testing import CUDATestCase, ContextResettingTestCase
-from numba.cuda.cudadrv.drvapi import cu_module
 
 from cuda.bindings.driver import cuModuleGetGlobal, cuMemcpyHtoD
+
+if config.CUDA_USE_NVIDIA_BINDING:
+    from cuda.cuda import CUmodule as cu_module_type
+else:
+    from numba.cuda.cudadrv.drvapi import cu_module as cu_module_type
 
 
 def wipe_all_modules_in_context():
@@ -15,22 +19,24 @@ def wipe_all_modules_in_context():
     ctx.reset()
 
 
-@unittest.skipIf(
-    config.CUDA_USE_NVIDIA_BINDING,
-    "NV binding support superceded by cuda.bindings."
-)
+def get_hashable_handle_value(handle):
+    if not config.CUDA_USE_NVIDIA_BINDING:
+        handle = handle.value
+    return handle
+
+
 class TestModuleCallbacksBasic(ContextResettingTestCase):
 
     def test_basic(self):
         counter = 0
 
         def setup(handle):
-            self.assertTrue(isinstance(handle, cu_module))
+            self.assertTrue(isinstance(handle, cu_module_type))
             nonlocal counter
             counter += 1
 
         def teardown(handle):
-            self.assertTrue(isinstance(handle, cu_module))
+            self.assertTrue(isinstance(handle, cu_module_type))
             nonlocal counter
             counter -= 1
 
@@ -58,12 +64,12 @@ class TestModuleCallbacksBasic(ContextResettingTestCase):
         def setup(handle):
             nonlocal counter, setup_seen
             counter += 1
-            setup_seen.add(handle.value)
+            setup_seen.add(get_hashable_handle_value(handle))
 
         def teardown(handle):
             nonlocal counter
             counter -= 1
-            teardown_seen.add(handle.value)
+            teardown_seen.add(get_hashable_handle_value(handle))
 
         lib = CUSource("", setup_callback=setup, teardown_callback=teardown)
 
@@ -94,12 +100,12 @@ class TestModuleCallbacksBasic(ContextResettingTestCase):
         def setup(handle):
             nonlocal counter, setup_seen
             counter += 1
-            setup_seen.add(handle.value)
+            setup_seen.add(get_hashable_handle_value(handle))
 
         def teardown(handle):
             nonlocal counter, teardown_seen
             counter -= 1
-            teardown_seen.add(handle.value)
+            teardown_seen.add(get_hashable_handle_value(handle))
 
         lib = CUSource("", setup_callback=setup, teardown_callback=teardown)
 
@@ -169,7 +175,7 @@ __device__ int get_num(int &retval) {
         def set_forty_two(handle):
             # Initialize 42 to global variable `num`
             res, dptr, size = cuModuleGetGlobal(
-                handle.value, "num".encode()
+                get_hashable_handle_value(handle), "num".encode()
             )
 
             arr = np.array([42], np.int32)
@@ -199,3 +205,7 @@ __device__ int get_num(int &retval) {
         arr = np.zeros(1, np.int32)
         kernel[1, 1](arr)
         self.assertEqual(arr[0], 42)
+
+
+if __name__ == '__main__':
+    unittest.main()
