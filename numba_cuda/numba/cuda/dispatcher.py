@@ -311,7 +311,8 @@ class _Kernel(serialize.ReduceMixin):
         cufunc = self._codelibrary.get_cufunc()
 
         mod = cufunc.module
-        mod.setup()
+        if not mod.initialized:
+            mod.setup()
 
         if (
             hasattr(self, "target_context")

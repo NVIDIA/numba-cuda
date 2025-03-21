@@ -2424,7 +2424,10 @@ class Module(metaclass=ABCMeta):
 
     def setup(self):
         """Call the setup functions for the module"""
-        if self.setup_functions is None or self.initialized:
+        if self.initialized:
+            raise RuntimeError("The module has already been initialized.")
+
+        if self.setup_functions is None:
             return
 
         for f in self.setup_functions:
