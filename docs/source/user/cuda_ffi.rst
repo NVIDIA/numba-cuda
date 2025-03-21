@@ -160,10 +160,17 @@ CUDA C/C++ source code will be compiled with the `NVIDIA Runtime Compiler
 kernel as either PTX or LTOIR, depending on whether LTO is enabled. Other files
 will be passed directly to the CUDA Linker.
 
-For cumodules linked to a linkable code object, additional setup
-and teardown callbacks are available. Setup functions are invoked once for
-every new module loaded. Teardown functions are invoked just prior to
-module unloading. These callbacks are defined as follows:
+A ``LinkableCode`` object may have setup and teardown callback functions that
+perform module-specific initialization and cleanup tasks.
+
+* Setup functions are invoked once for every new module loaded.
+* Teardown functions are invoked just prior to module unloading.
+
+Both setup and teardown callbacks are called with a handle to the relevant
+module. In practice, Numba creates a new module each time a kernel is compiled
+for a specific set of argument types.
+
+The callbacks are defined as follows:
 
 .. code::
 
