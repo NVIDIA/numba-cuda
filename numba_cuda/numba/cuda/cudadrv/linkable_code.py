@@ -17,6 +17,12 @@ class LinkableCode:
     def __init__(self, data, name=None,
                  setup_callback=None,
                  teardown_callback=None):
+
+        if setup_callback and not callable(setup_callback):
+            raise TypeError("setup_callback must be callable")
+        if teardown_callback and not callable(teardown_callback):
+            raise TypeError("teardown_callback must be callable")
+
         self.data = data
         self._name = name
         self.setup_callback = setup_callback

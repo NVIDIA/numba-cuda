@@ -294,9 +294,9 @@ class CUDACodeLibrary(serialize.ReduceMixin, CodeLibrary):
 
     def add_linking_file(self, path_or_obj):
         if isinstance(path_or_obj, LinkableCode):
-            if path_or_obj.setup_callback is not None:
+            if path_or_obj.setup_callback:
                 self._setup_functions.append(path_or_obj.setup_callback)
-            if path_or_obj.teardown_callback is not None:
+            if path_or_obj.teardown_callback:
                 self._teardown_functions.append(path_or_obj.teardown_callback)
 
         self._linking_files.add(path_or_obj)
