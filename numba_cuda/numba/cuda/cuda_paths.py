@@ -122,7 +122,9 @@ def get_system_ctk(*subdirs):
 
 
 def get_conda_ctk():
-    """Return path to directory containing the shared libraries of cudatoolkit."""
+    """
+    Return path to directory containing the shared libraries of cudatoolkit.
+    """
     is_conda_env = os.path.exists(os.path.join(sys.prefix, "conda-meta"))
     if not is_conda_env:
         return
@@ -170,7 +172,9 @@ def get_nvidia_libdevice_ctk():
 
 
 def get_nvidia_cudalib_ctk():
-    """Return path to directory containing the shared libraries of cudatoolkit."""
+    """
+    Return path to directory containing the shared libraries of cudatoolkit.
+    """
     nvvm_ctk = get_nvidia_nvvm_ctk()
     if not nvvm_ctk:
         return
@@ -180,7 +184,9 @@ def get_nvidia_cudalib_ctk():
 
 
 def get_nvidia_static_cudalib_ctk():
-    """Return path to directory containing the static libraries of cudatoolkit."""
+    """
+    Return path to directory containing the static libraries of cudatoolkit.
+    """
     nvvm_ctk = get_nvidia_nvvm_ctk()
     if not nvvm_ctk:
         return

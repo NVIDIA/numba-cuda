@@ -1036,7 +1036,9 @@ class HostOnlyCUDAMemoryManager(BaseCUDAMemoryManager):
 
 
 class GetIpcHandleMixin:
-    """A class that provides a default implementation of ``get_ipc_handle()``."""
+    """
+    A class that provides a default implementation of ``get_ipc_handle()``.
+    """
 
     def get_ipc_handle(self, memory):
         """Open an IPC memory handle by using ``cuMemGetAddressRange`` to
@@ -1445,7 +1447,9 @@ class Context(object):
         )
 
     def enable_peer_access(self, peer_context, flags=0):
-        """Enable peer access between the current context and the peer context"""
+        """
+        Enable peer access between the current context and the peer context
+        """
         assert flags == 0, "*flags* is reserved and MUST be zero"
         driver.cuCtxEnablePeerAccess(peer_context, flags)
 
@@ -2282,14 +2286,18 @@ class Stream(object):
             default_streams = {
                 CU_STREAM_DEFAULT: "<Default CUDA stream on %s>",
                 binding.CU_STREAM_LEGACY: "<Legacy default CUDA stream on %s>",
-                binding.CU_STREAM_PER_THREAD: "<Per-thread default CUDA stream on %s>",
+                binding.CU_STREAM_PER_THREAD: (
+                    "<Per-thread default CUDA stream on %s>"
+                ),
             }
             ptr = int(self.handle) or 0
         else:
             default_streams = {
                 drvapi.CU_STREAM_DEFAULT: "<Default CUDA stream on %s>",
                 drvapi.CU_STREAM_LEGACY: "<Legacy default CUDA stream on %s>",
-                drvapi.CU_STREAM_PER_THREAD: "<Per-thread default CUDA stream on %s>",
+                drvapi.CU_STREAM_PER_THREAD: (
+                    "<Per-thread default CUDA stream on %s>"
+                ),
             }
             ptr = self.handle.value or drvapi.CU_STREAM_DEFAULT
 
