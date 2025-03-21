@@ -23,7 +23,7 @@ FNDEF(hdiv)(
 )
 {
   __half retval = __hdiv(__short_as_half (x), __short_as_half (y));
-  
+
   *return_value = __half_as_short (retval);
   // Signal that no Python exception occurred
   return 0;
@@ -44,4 +44,3 @@ UNARY_FUNCTION(hceil)
 UNARY_FUNCTION(hrcp)
 UNARY_FUNCTION(hrint)
 UNARY_FUNCTION(htrunc)
-
