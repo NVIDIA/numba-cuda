@@ -310,6 +310,10 @@ class _Kernel(serialize.ReduceMixin):
         """
         cufunc = self._codelibrary.get_cufunc()
 
+        mod = cufunc.module
+        if not mod.initialized:
+            mod.setup()
+
         if (
             hasattr(self, "target_context")
             and self.target_context.enable_nrt

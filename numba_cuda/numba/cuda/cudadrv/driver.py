@@ -1433,8 +1433,10 @@ class Context(object):
             image = c_char_p(ptx)
         return self.create_module_image(image)
 
-    def create_module_image(self, image):
-        module = load_module_image(self, image)
+    def create_module_image(self, image,
+                            setup_callbacks=None, teardown_callbacks=None):
+        module = load_module_image(self, image,
+                                   setup_callbacks, teardown_callbacks)
         if USE_NV_BINDING:
             key = module.handle
         else:
@@ -1528,17 +1530,21 @@ class Context(object):
         return not self.__eq__(other)
 
 
-def load_module_image(context, image):
+def load_module_image(context, image,
+                      setup_callbacks=None, teardown_callbacks=None):
     """
     image must be a pointer
     """
     if USE_NV_BINDING:
-        return load_module_image_cuda_python(context, image)
+        return load_module_image_cuda_python(
+            context, image, setup_callbacks, teardown_callbacks)
     else:
-        return load_module_image_ctypes(context, image)
+        return load_module_image_ctypes(
+            context, image, setup_callbacks, teardown_callbacks)
 
 
-def load_module_image_ctypes(context, image):
+def load_module_image_ctypes(context, image,
+                             setup_callbacks, teardown_callbacks):
     logsz = config.CUDA_LOG_SIZE
 
     jitinfo = (c_char * logsz)()
@@ -1566,10 +1572,12 @@ def load_module_image_ctypes(context, image):
     info_log = jitinfo.value
 
     return CtypesModule(weakref.proxy(context), handle, info_log,
-                        _module_finalizer(context, handle))
+                        _module_finalizer(context, handle),
+                        setup_callbacks, teardown_callbacks)
 
 
-def load_module_image_cuda_python(context, image):
+def load_module_image_cuda_python(context, image,
+                                  setup_callbacks, teardown_callbacks):
     """
     image must be a pointer
     """
@@ -1601,7 +1609,8 @@ def load_module_image_cuda_python(context, image):
     info_log = jitinfo.decode('utf-8')
 
     return CudaPythonModule(weakref.proxy(context), handle, info_log,
-                            _module_finalizer(context, handle))
+                            _module_finalizer(context, handle),
+                            setup_callbacks, teardown_callbacks)
 
 
 def _alloc_finalizer(memory_manager, ptr, alloc_key, size):
@@ -2387,12 +2396,19 @@ def event_elapsed_time(evtstart, evtend):
 class Module(metaclass=ABCMeta):
     """Abstract base class for modules"""
 
-    def __init__(self, context, handle, info_log, finalizer=None):
+    def __init__(self, context, handle, info_log, finalizer=None,
+                 setup_callbacks=None, teardown_callbacks=None):
         self.context = context
         self.handle = handle
         self.info_log = info_log
         if finalizer is not None:
             self._finalizer = weakref.finalize(self, finalizer)
+
+        self.initialized = False
+        self.setup_functions = setup_callbacks
+        self.teardown_functions = teardown_callbacks
+
+        self._set_finalizers()
 
     def unload(self):
         """Unload this module from the context"""
@@ -2405,6 +2421,36 @@ class Module(metaclass=ABCMeta):
     @abstractmethod
     def get_global_symbol(self, name):
         """Return a MemoryPointer referring to the named symbol"""
+
+    def setup(self):
+        """Call the setup functions for the module"""
+        if self.initialized:
+            raise RuntimeError("The module has already been initialized.")
+
+        if self.setup_functions is None:
+            return
+
+        for f in self.setup_functions:
+            f(self.handle)
+
+        self.initialized = True
+
+    def _set_finalizers(self):
+        """Create finalizers that tears down the module.
+        """
+        if self.teardown_functions is None:
+            return
+
+        def _teardown(teardowns, handle):
+            for f in teardowns:
+                f(handle)
+
+        weakref.finalize(
+            self,
+            _teardown,
+            self.teardown_functions,
+            self.handle,
+        )
 
 
 class CtypesModule(Module):
