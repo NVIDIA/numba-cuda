@@ -7,8 +7,11 @@ class LinkableCode:
     :param data: A buffer containing the data to link.
     :param name: The name of the file to be referenced in any compilation or
                  linking errors that may be produced.
-    :param setup_callback Callback function on kernel before launching.
-    :param teardown_callback Callback function on kernel before tearing down.
+    :param setup_callback A function called prior to the launch of a kernel
+                          contained within a module that has this code object
+                          linked into it.
+    :param teardown_callback A function called just prior to the unloading of
+                             a module that has this code object linked into it.
     """
 
     def __init__(self, data, name=None,
