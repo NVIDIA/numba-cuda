@@ -1067,7 +1067,9 @@ def _generic_array(context, builder, shape, dtype, symbol_name, addrspace,
 
         if alignment is None:
             abi_alignment = context.get_abi_alignment(lldtype)
-            # Ensure a power of two alignment.
+            # Alignment is required to be a power of 2 for shared memory.
+            # If it is not a power of 2 (e.g. for a Record array) then round
+            # up accordingly.
             actual_alignment = 1 << (abi_alignment - 1).bit_length()
         else:
             actual_alignment = alignment
