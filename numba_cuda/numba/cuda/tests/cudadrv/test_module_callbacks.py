@@ -5,6 +5,7 @@ import numpy as np
 from numba import cuda, config
 from numba.cuda.cudadrv.linkable_code import CUSource
 from numba.cuda.testing import CUDATestCase, ContextResettingTestCase
+from numba.cuda.cudadrv.drvapi import cu_module
 
 from cuda.bindings.driver import cuModuleGetGlobal, cuMemcpyHtoD
 
@@ -24,10 +25,12 @@ class TestModuleCallbacksBasic(ContextResettingTestCase):
         counter = 0
 
         def setup(handle):
+            self.assertTrue(isinstance(handle, cu_module))
             nonlocal counter
             counter += 1
 
         def teardown(handle):
+            self.assertTrue(isinstance(handle, cu_module))
             nonlocal counter
             counter -= 1
 
