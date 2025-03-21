@@ -170,6 +170,19 @@ def cuda_local_array_integer(context, builder, sig, args):
                           can_dynsized=False, alignment=alignment)
 
 
+@lower(cuda.local.array, types.BaseTuple, types.Any)
+@lower(cuda.local.array, types.BaseTuple, types.Any, types.IntegerLiteral)
+@lower(cuda.local.array, types.BaseTuple, types.Any, types.NoneType)
+def cuda_local_array_tuple(context, builder, sig, args):
+    shape = [ s.literal_value for s in sig.args[0] ]
+    dtype = parse_dtype(sig.args[1])
+    alignment = _try_extract_and_validate_alignment(sig)
+    return _generic_array(context, builder, shape=shape, dtype=dtype,
+                          symbol_name='_cudapy_lmem',
+                          addrspace=nvvm.ADDRSPACE_LOCAL,
+                          can_dynsized=False, alignment=alignment)
+
+
 @lower(cuda.local.array, types.Tuple, types.Any)
 @lower(cuda.local.array, types.UniTuple, types.Any)
 def ptx_lmem_alloc_array(context, builder, sig, args):
