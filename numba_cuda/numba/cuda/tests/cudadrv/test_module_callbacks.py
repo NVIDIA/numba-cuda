@@ -121,6 +121,34 @@ class TestModuleCallbacksBasic(ContextResettingTestCase):
         self.assertEqual(len(teardown_seen), 2)
 
 
+class TestModuleCallbacksAPICompleteness(CUDATestCase):
+
+    def test_api(self):
+        def setup(handle):
+            pass
+
+        def teardown(handle):
+            pass
+
+        api_combo = [
+            (setup, teardown),
+            (setup, None),
+            (None, teardown),
+            (None, None)
+        ]
+
+        for setup, teardown in api_combo:
+            with self.subTest(setup=setup, teardown=teardown):
+                lib = CUSource(
+                    "", setup_callback=setup, teardown_callback=teardown)
+
+                @cuda.jit(link=[lib])
+                def kernel():
+                    pass
+
+                kernel[1, 1]()
+
+
 class TestModuleCallbacks(CUDATestCase):
 
     def setUp(self):
