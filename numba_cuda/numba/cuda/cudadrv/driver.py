@@ -2422,18 +2422,8 @@ class Module(metaclass=ABCMeta):
     def get_global_symbol(self, name):
         """Return a MemoryPointer referring to the named symbol"""
 
-    def _set_callables(self, callbacks, attr):
-        if not isinstance(callbacks, list):
-            raise TypeError("callbacks must be a list")
-
-        for f in callbacks:
-            if not callable(f):
-                raise TypeError("callback must be callable")
-
-        setattr(self, attr, callbacks)
-
     def setup(self):
-        """Call the setup functions for cumodule with the given `stream`"""
+        """Call the setup functions for the module"""
         if self.setup_functions is None or self.initialized:
             return
 
@@ -2443,10 +2433,7 @@ class Module(metaclass=ABCMeta):
         self.initialized = True
 
     def _set_finalizers(self):
-        """Create finalizers that tears down the cumodule.
-
-        Unlike the setup functions which takes in streams, Numba does not
-        provide a stream object to the teardown function.
+        """Create finalizers that tears down the module.
         """
         if self.teardown_functions is None:
             return
