@@ -47,5 +47,3 @@
 	st.param.b32	[func_retval0+0], %r2;
 	ret;
 }
-
-

@@ -1,5 +1,20 @@
 repos:
+- repo: https://github.com/pre-commit/pre-commit-hooks
+  rev: v5.0.0 # Use the latest version or a specific tag
+  hooks:
+    - id: trailing-whitespace
+    - id: end-of-file-fixer
+    - id: check-yaml
+      exclude: ^conda/recipes/numba-cuda/meta.yaml
+    - id: check-added-large-files
+- repo: https://github.com/psf/black
+  rev: 25.1.0 # Use the latest version or a specific tag
+  hooks:
+    - id: black
+      args: [
+        "--line-length", "80",
+      ]
 - repo: https://github.com/PyCQA/flake8
-  rev: 7.1.0
+  rev: 7.1.2
   hooks:
   - id: flake8

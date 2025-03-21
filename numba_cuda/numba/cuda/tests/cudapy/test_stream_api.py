@@ -1,5 +1,9 @@
-from numba.cuda.testing import (skip_on_cudasim, skip_unless_cudasim, unittest,
-                                CUDATestCase)
+from numba.cuda.testing import (
+    skip_on_cudasim,
+    skip_unless_cudasim,
+    unittest,
+    CUDATestCase,
+)
 from numba import config, cuda
 
 # Basic tests that stream APIs execute on the hardware and in the simulator.
@@ -48,5 +52,5 @@ class TestStreamAPI(CUDATestCase):
             cuda.external_stream(ptr)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

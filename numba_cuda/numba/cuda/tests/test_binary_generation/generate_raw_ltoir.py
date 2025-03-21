@@ -58,7 +58,7 @@ def determine_include_flags():
         return None
 
     # NVCC writes to stdout on Windows and stderr on Linux
-    if platform.system() == 'Windows':
+    if platform.system() == "Windows":
         stream = cp.stdout
     else:
         stream = cp.stderr

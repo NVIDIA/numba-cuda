@@ -15,5 +15,8 @@
 import importlib.resources
 
 __version__ = (
-    importlib.resources.files("numba_cuda").joinpath("VERSION").read_text().strip()
+    importlib.resources.files("numba_cuda")
+    .joinpath("VERSION")
+    .read_text()
+    .strip()
 )
