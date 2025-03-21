@@ -113,41 +113,44 @@ def _validate_alignment(alignment: int):
         raise ValueError(msg)
 
 
+def _try_extract_and_validate_alignment(sig: types.Tuple):
+    """
+    Extracts the alignment from the given signature, if it is present,
+    validates it, and returns it if valid.   If the alignment is not
+    present, or not an integer literal, this function returns None.
+    """
+    if len(sig.args) != 3:
+        return None
+
+    alignment_arg = sig.args[2]
+    if not isinstance(alignment_arg, types.IntegerLiteral):
+        return None
+
+    alignment_arg = alignment_arg.literal_value
+    _validate_alignment(alignment_arg)
+    return alignment_arg
+
+
 @lower(cuda.shared.array, types.IntegerLiteral, types.Any)
 @lower(cuda.shared.array, types.IntegerLiteral, types.Any, types.IntegerLiteral)
 @lower(cuda.shared.array, types.IntegerLiteral, types.Any, types.NoneType)
 def cuda_shared_array_integer(context, builder, sig, args):
     length = sig.args[0].literal_value
     dtype = parse_dtype(sig.args[1])
-    alignment = None
-    if len(sig.args) == 3:
-        try:
-            alignment = sig.args[2].literal_value
-            _validate_alignment(alignment)
-        except AttributeError:
-            pass
+    alignment = _try_extract_and_validate_alignment(sig)
     return _generic_array(context, builder, shape=(length,), dtype=dtype,
                           symbol_name=_get_unique_smem_id('_cudapy_smem'),
                           addrspace=nvvm.ADDRSPACE_SHARED,
                           can_dynsized=True, alignment=alignment)
 
 
-@lower(cuda.shared.array, types.Tuple, types.Any)
-@lower(cuda.shared.array, types.UniTuple, types.Any)
-@lower(cuda.shared.array, types.Tuple, types.Any, types.IntegerLiteral)
-@lower(cuda.shared.array, types.UniTuple, types.Any, types.IntegerLiteral)
-@lower(cuda.shared.array, types.Tuple, types.Any, types.NoneType)
-@lower(cuda.shared.array, types.UniTuple, types.Any, types.NoneType)
+@lower(cuda.shared.array, types.BaseTuple, types.Any)
+@lower(cuda.shared.array, types.BaseTuple, types.Any, types.IntegerLiteral)
+@lower(cuda.shared.array, types.BaseTuple, types.Any, types.NoneType)
 def cuda_shared_array_tuple(context, builder, sig, args):
     shape = [ s.literal_value for s in sig.args[0] ]
     dtype = parse_dtype(sig.args[1])
-    alignment = None
-    if len(sig.args) == 3:
-        try:
-            alignment = sig.args[2].literal_value
-            _validate_alignment(alignment)
-        except AttributeError:
-            pass
+    alignment = _try_extract_and_validate_alignment(sig)
     return _generic_array(context, builder, shape=shape, dtype=dtype,
                           symbol_name=_get_unique_smem_id('_cudapy_smem'),
                           addrspace=nvvm.ADDRSPACE_SHARED,
@@ -160,13 +163,7 @@ def cuda_shared_array_tuple(context, builder, sig, args):
 def cuda_local_array_integer(context, builder, sig, args):
     length = sig.args[0].literal_value
     dtype = parse_dtype(sig.args[1])
-    alignment = None
-    if len(sig.args) == 3:
-        try:
-            alignment = sig.args[2].literal_value
-            _validate_alignment(alignment)
-        except AttributeError:
-            pass
+    alignment = _try_extract_and_validate_alignment(sig)
     return _generic_array(context, builder, shape=(length,), dtype=dtype,
                           symbol_name='_cudapy_lmem',
                           addrspace=nvvm.ADDRSPACE_LOCAL,
