@@ -29,24 +29,23 @@ dtypes = [int16, int32, int64, uint16, uint32, uint64, float32]
 
 
 @unittest.skipIf(
-    (cuda.get_current_device().compute_capability < (8, 0)) or
-    (not config.CUDA_ENABLE_PYNVJITLINK),
+    (cuda.get_current_device().compute_capability < (8, 0))
+    or (not config.CUDA_ENABLE_PYNVJITLINK),
     "bfloat16 require compute capability 8.0+ or pynvjitlink is not enabled",
 )
 class Bfloat16Test(CUDATestCase):
-
     def test_ctor(self):
         @cuda.jit
         def simple_kernel():
-            a = nv_bfloat16(float64(1.0))   # noqa: F841
-            b = nv_bfloat16(float32(2.0))   # noqa: F841
-            c = nv_bfloat16(int16(3))       # noqa: F841
-            d = nv_bfloat16(int32(4))       # noqa: F841
-            e = nv_bfloat16(int64(5))       # noqa: F841
-            f = nv_bfloat16(uint16(6))      # noqa: F841
-            g = nv_bfloat16(uint32(7))      # noqa: F841
-            h = nv_bfloat16(uint64(8))      # noqa: F841
-            i = nv_bfloat16(float16(9))     # noqa: F841
+            a = nv_bfloat16(float64(1.0))  # noqa: F841
+            b = nv_bfloat16(float32(2.0))  # noqa: F841
+            c = nv_bfloat16(int16(3))  # noqa: F841
+            d = nv_bfloat16(int32(4))  # noqa: F841
+            e = nv_bfloat16(int64(5))  # noqa: F841
+            f = nv_bfloat16(uint16(6))  # noqa: F841
+            g = nv_bfloat16(uint32(7))  # noqa: F841
+            h = nv_bfloat16(uint64(8))  # noqa: F841
+            i = nv_bfloat16(float16(9))  # noqa: F841
 
         simple_kernel[1, 1]()
 
@@ -84,6 +83,7 @@ class Bfloat16Test(CUDATestCase):
     def test_ctor_cast_loop(self):
         for dtype in dtypes:
             with self.subTest(dtype=dtype):
+
                 @cuda.jit
                 def simple_kernel(a):
                     a[0] = dtype(nv_bfloat16(dtype(3.14)))
@@ -225,10 +225,8 @@ class Bfloat16Test(CUDATestCase):
         arr = np.zeros(1, np.float32)
         kernel[1, 1](arr)
 
-        np.testing.assert_allclose(
-            arr, [3.14], atol=1e-2
-        )
+        np.testing.assert_allclose(arr, [3.14], atol=1e-2)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

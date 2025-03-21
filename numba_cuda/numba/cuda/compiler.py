@@ -1,19 +1,39 @@
 from llvmlite import ir
 from numba.core.typing.templates import ConcreteTemplate
 from numba.core import ir as numba_ir
-from numba.core import (cgutils, types, typing, funcdesc, config, compiler,
-                        sigutils, utils)
-from numba.core.compiler import (sanitize_compile_result_entries, CompilerBase,
-                                 DefaultPassBuilder, Flags, Option,
-                                 CompileResult)
+from numba.core import (
+    cgutils,
+    types,
+    typing,
+    funcdesc,
+    config,
+    compiler,
+    sigutils,
+    utils,
+)
+from numba.core.compiler import (
+    sanitize_compile_result_entries,
+    CompilerBase,
+    DefaultPassBuilder,
+    Flags,
+    Option,
+    CompileResult,
+)
 from numba.core.compiler_lock import global_compiler_lock
-from numba.core.compiler_machinery import (FunctionPass, LoweringPass,
-                                           PassManager, register_pass)
+from numba.core.compiler_machinery import (
+    FunctionPass,
+    LoweringPass,
+    PassManager,
+    register_pass,
+)
 from numba.core.interpreter import Interpreter
 from numba.core.errors import NumbaInvalidConfigWarning
 from numba.core.untyped_passes import TranslateByteCode
-from numba.core.typed_passes import (IRLegalization, NativeLowering,
-                                     AnnotateTypes)
+from numba.core.typed_passes import (
+    IRLegalization,
+    NativeLowering,
+    AnnotateTypes,
+)
 from warnings import warn
 from numba.cuda import nvvmutils
 from numba.cuda.api import get_current_device
@@ -52,15 +72,9 @@ class CUDAFlags(Flags):
         doc="Compute Capability",
     )
     max_registers = Option(
-        type=_optional_int_type,
-        default=None,
-        doc="Max registers"
+        type=_optional_int_type, default=None, doc="Max registers"
     )
-    lto = Option(
-        type=bool,
-        default=False,
-        doc="Enable Link-time Optimization"
-    )
+    lto = Option(type=bool, default=False, doc="Enable Link-time Optimization")
 
 
 # The CUDACompileResult (CCR) has a specially-defined entry point equal to its
@@ -79,6 +93,7 @@ class CUDAFlags(Flags):
 #    point will no longer need to be a synthetic value, but will instead be a
 #    pointer to the compiled function as in the CPU target.
 
+
 class CUDACompileResult(CompileResult):
     @property
     def entry_point(self):
@@ -92,7 +107,6 @@ def cuda_compile_result(**entries):
 
 @register_pass(mutates_CFG=True, analysis_only=False)
 class CUDABackend(LoweringPass):
-
     _name = "cuda_backend"
 
     def __init__(self):
@@ -102,7 +116,7 @@ class CUDABackend(LoweringPass):
         """
         Back-end: Packages lowering output in a compile result
         """
-        lowered = state['cr']
+        lowered = state["cr"]
         signature = typing.signature(state.return_type, *state.args)
 
         state.cr = cuda_compile_result(
@@ -137,9 +151,12 @@ class CreateLibrary(LoweringPass):
         nvvm_options = state.flags.nvvm_options
         max_registers = state.flags.max_registers
         lto = state.flags.lto
-        state.library = codegen.create_library(name, nvvm_options=nvvm_options,
-                                               max_registers=max_registers,
-                                               lto=lto)
+        state.library = codegen.create_library(
+            name,
+            nvvm_options=nvvm_options,
+            max_registers=max_registers,
+            lto=lto,
+        )
         # Enable object caching upfront so that the library can be serialized.
         state.library.enable_object_caching()
 
@@ -165,13 +182,15 @@ class CUDABytecodeInterpreter(Interpreter):
         gv_fn = numba_ir.Global("bool", bool, loc=self.loc)
         self.store(value=gv_fn, name=name)
 
-        callres = numba_ir.Expr.call(self.get(name), (self.get(pred),), (),
-                                     loc=self.loc)
+        callres = numba_ir.Expr.call(
+            self.get(name), (self.get(pred),), (), loc=self.loc
+        )
 
         pname = "$%spred" % (inst.offset)
         predicate = self.store(value=callres, name=pname)
-        bra = numba_ir.Branch(cond=predicate, truebr=truebr, falsebr=falsebr,
-                              loc=self.loc)
+        bra = numba_ir.Branch(
+            cond=predicate, truebr=truebr, falsebr=falsebr, loc=self.loc
+        )
         self.current_block.append(bra)
 
 
@@ -183,18 +202,18 @@ class CUDATranslateBytecode(FunctionPass):
         FunctionPass.__init__(self)
 
     def run_pass(self, state):
-        func_id = state['func_id']
-        bc = state['bc']
+        func_id = state["func_id"]
+        bc = state["bc"]
         interp = CUDABytecodeInterpreter(func_id)
         func_ir = interp.interpret(bc)
-        state['func_ir'] = func_ir
+        state["func_ir"] = func_ir
         return True
 
 
 class CUDACompiler(CompilerBase):
     def define_pipelines(self):
         dpb = DefaultPassBuilder
-        pm = PassManager('cuda')
+        pm = PassManager("cuda")
 
         untyped_passes = dpb.define_untyped_pipeline(self.state)
 
@@ -225,10 +244,9 @@ class CUDACompiler(CompilerBase):
         return [pm]
 
     def define_cuda_lowering_pipeline(self, state):
-        pm = PassManager('cuda_lowering')
+        pm = PassManager("cuda_lowering")
         # legalise
-        pm.add_pass(IRLegalization,
-                    "ensure IR is legal prior to lowering")
+        pm.add_pass(IRLegalization, "ensure IR is legal prior to lowering")
         pm.add_pass(AnnotateTypes, "annotate types")
 
         # lower
@@ -241,13 +259,24 @@ class CUDACompiler(CompilerBase):
 
 
 @global_compiler_lock
-def compile_cuda(pyfunc, return_type, args, debug=False, lineinfo=False,
-                 inline=False, fastmath=False, nvvm_options=None,
-                 cc=None, max_registers=None, lto=False):
+def compile_cuda(
+    pyfunc,
+    return_type,
+    args,
+    debug=False,
+    lineinfo=False,
+    inline=False,
+    fastmath=False,
+    nvvm_options=None,
+    cc=None,
+    max_registers=None,
+    lto=False,
+):
     if cc is None:
-        raise ValueError('Compute Capability must be supplied')
+        raise ValueError("Compute Capability must be supplied")
 
     from .descriptor import cuda_target
+
     typingctx = cuda_target.typing_context
     targetctx = cuda_target.target_context
 
@@ -269,10 +298,10 @@ def compile_cuda(pyfunc, return_type, args, debug=False, lineinfo=False,
         flags.dbg_directives_only = True
 
     if debug:
-        flags.error_model = 'python'
+        flags.error_model = "python"
         flags.dbg_extend_lifetimes = True
     else:
-        flags.error_model = 'numpy'
+        flags.error_model = "numpy"
 
     if inline:
         flags.forceinline = True
@@ -286,15 +315,18 @@ def compile_cuda(pyfunc, return_type, args, debug=False, lineinfo=False,
 
     # Run compilation pipeline
     from numba.core.target_extension import target_override
-    with target_override('cuda'):
-        cres = compiler.compile_extra(typingctx=typingctx,
-                                      targetctx=targetctx,
-                                      func=pyfunc,
-                                      args=args,
-                                      return_type=return_type,
-                                      flags=flags,
-                                      locals={},
-                                      pipeline_class=CUDACompiler)
+
+    with target_override("cuda"):
+        cres = compiler.compile_extra(
+            typingctx=typingctx,
+            targetctx=targetctx,
+            func=pyfunc,
+            args=args,
+            return_type=return_type,
+            flags=flags,
+            locals={},
+            pipeline_class=CUDACompiler,
+        )
 
     library = cres.library
     library.finalize()
@@ -311,8 +343,9 @@ def compile_cuda(pyfunc, return_type, args, debug=False, lineinfo=False,
     return cres
 
 
-def cabi_wrap_function(context, lib, fndesc, wrapper_function_name,
-                       nvvm_options):
+def cabi_wrap_function(
+    context, lib, fndesc, wrapper_function_name, nvvm_options
+):
     """
     Wrap a Numba ABI function in a C ABI wrapper at the NVVM IR level.
 
@@ -320,9 +353,11 @@ def cabi_wrap_function(context, lib, fndesc, wrapper_function_name,
     """
     # The wrapper will be contained in a new library that links to the wrapped
     # function's library
-    library = lib.codegen.create_library(f'{lib.name}_function_',
-                                         entry_name=wrapper_function_name,
-                                         nvvm_options=nvvm_options)
+    library = lib.codegen.create_library(
+        f"{lib.name}_function_",
+        entry_name=wrapper_function_name,
+        nvvm_options=nvvm_options,
+    )
     library.add_linking_library(lib)
 
     # Determine the caller (C ABI) and wrapper (Numba ABI) function types
@@ -340,14 +375,15 @@ def cabi_wrap_function(context, lib, fndesc, wrapper_function_name,
     # its return value
 
     wrapfn = ir.Function(wrapper_module, wrapfnty, wrapper_function_name)
-    builder = ir.IRBuilder(wrapfn.append_basic_block(''))
+    builder = ir.IRBuilder(wrapfn.append_basic_block(""))
 
     arginfo = context.get_arg_packer(argtypes)
     callargs = arginfo.from_arguments(builder, wrapfn.args)
     # We get (status, return_value), but we ignore the status since we
     # can't propagate it through the C ABI anyway
     _, return_value = context.call_conv.call_function(
-        builder, func, restype, argtypes, callargs)
+        builder, func, restype, argtypes, callargs
+    )
     builder.ret(return_value)
 
     if config.DUMP_LLVM:
@@ -404,8 +440,10 @@ def kernel_fixup(kernel, debug):
 
         # Find all stores first
         for inst in block.instructions:
-            if (isinstance(inst, ir.StoreInstr)
-                    and inst.operands[1] == return_value):
+            if (
+                isinstance(inst, ir.StoreInstr)
+                and inst.operands[1] == return_value
+            ):
                 remove_list.append(inst)
 
         # Remove all stores
@@ -416,8 +454,9 @@ def kernel_fixup(kernel, debug):
     # value
 
     if isinstance(kernel.type, ir.PointerType):
-        new_type = ir.PointerType(ir.FunctionType(ir.VoidType(),
-                                                  kernel.type.pointee.args[1:]))
+        new_type = ir.PointerType(
+            ir.FunctionType(ir.VoidType(), kernel.type.pointee.args[1:])
+        )
     else:
         new_type = ir.FunctionType(ir.VoidType(), kernel.type.args[1:])
 
@@ -427,13 +466,13 @@ def kernel_fixup(kernel, debug):
 
     # If debug metadata is present, remove the return value from it
 
-    if kernel_metadata := getattr(kernel, 'metadata', None):
-        if dbg_metadata := kernel_metadata.get('dbg', None):
+    if kernel_metadata := getattr(kernel, "metadata", None):
+        if dbg_metadata := kernel_metadata.get("dbg", None):
             for name, value in dbg_metadata.operands:
                 if name == "type":
                     type_metadata = value
                     for tm_name, tm_value in type_metadata.operands:
-                        if tm_name == 'types':
+                        if tm_name == "types":
                             types = tm_value
                             types.operands = types.operands[1:]
                             if config.DUMP_LLVM:
@@ -444,26 +483,24 @@ def kernel_fixup(kernel, debug):
     nvvm.set_cuda_kernel(kernel)
 
     if config.DUMP_LLVM:
-        print(f"LLVM DUMP: Post kernel fixup {kernel.name}".center(80, '-'))
+        print(f"LLVM DUMP: Post kernel fixup {kernel.name}".center(80, "-"))
         print(kernel.module)
-        print('=' * 80)
+        print("=" * 80)
 
 
 def add_exception_store_helper(kernel):
-
     # Create global variables for exception state
 
     def define_error_gv(postfix):
         name = kernel.name + postfix
-        gv = cgutils.add_global_variable(kernel.module, ir.IntType(32),
-                                         name)
+        gv = cgutils.add_global_variable(kernel.module, ir.IntType(32), name)
         gv.initializer = ir.Constant(gv.type.pointee, None)
         return gv
 
     gv_exc = define_error_gv("__errcode__")
     gv_tid = []
     gv_ctaid = []
-    for i in 'xyz':
+    for i in "xyz":
         gv_tid.append(define_error_gv("__tid%s__" % i))
         gv_ctaid.append(define_error_gv("__ctaid%s__" % i))
 
@@ -493,18 +530,25 @@ def add_exception_store_helper(kernel):
         # Use atomic cmpxchg to prevent rewriting the error status
         # Only the first error is recorded
 
-        xchg = builder.cmpxchg(gv_exc, old, status.code,
-                               'monotonic', 'monotonic')
+        xchg = builder.cmpxchg(
+            gv_exc, old, status.code, "monotonic", "monotonic"
+        )
         changed = builder.extract_value(xchg, 1)
 
         # If the xchange is successful, save the thread ID.
         sreg = nvvmutils.SRegBuilder(builder)
         with builder.if_then(changed):
-            for dim, ptr, in zip("xyz", gv_tid):
+            for (
+                dim,
+                ptr,
+            ) in zip("xyz", gv_tid):
                 val = sreg.tid(dim)
                 builder.store(val, ptr)
 
-            for dim, ptr, in zip("xyz", gv_ctaid):
+            for (
+                dim,
+                ptr,
+            ) in zip("xyz", gv_ctaid):
                 val = sreg.ctaid(dim)
                 builder.store(val, ptr)
 
@@ -514,9 +558,19 @@ def add_exception_store_helper(kernel):
 
 
 @global_compiler_lock
-def compile(pyfunc, sig, debug=None, lineinfo=False, device=True,
-            fastmath=False, cc=None, opt=None, abi="c", abi_info=None,
-            output='ptx'):
+def compile(
+    pyfunc,
+    sig,
+    debug=None,
+    lineinfo=False,
+    device=True,
+    fastmath=False,
+    cc=None,
+    opt=None,
+    abi="c",
+    abi_info=None,
+    output="ptx",
+):
     """Compile a Python function to PTX or LTO-IR for a given set of argument
     types.
 
@@ -560,43 +614,49 @@ def compile(pyfunc, sig, debug=None, lineinfo=False, device=True,
     :rtype: tuple
     """
     if abi not in ("numba", "c"):
-        raise NotImplementedError(f'Unsupported ABI: {abi}')
+        raise NotImplementedError(f"Unsupported ABI: {abi}")
 
-    if abi == 'c' and not device:
-        raise NotImplementedError('The C ABI is not supported for kernels')
+    if abi == "c" and not device:
+        raise NotImplementedError("The C ABI is not supported for kernels")
 
     if output not in ("ptx", "ltoir"):
-        raise NotImplementedError(f'Unsupported output type: {output}')
+        raise NotImplementedError(f"Unsupported output type: {output}")
 
     debug = config.CUDA_DEBUGINFO_DEFAULT if debug is None else debug
     opt = (config.OPT != 0) if opt is None else opt
 
     if debug and opt:
-        msg = ("debug=True with opt=True "
-               "is not supported by CUDA. This may result in a crash"
-               " - set debug=False or opt=False.")
+        msg = (
+            "debug=True with opt=True "
+            "is not supported by CUDA. This may result in a crash"
+            " - set debug=False or opt=False."
+        )
         warn(NumbaInvalidConfigWarning(msg))
 
-    lto = (output == 'ltoir')
+    lto = output == "ltoir"
     abi_info = abi_info or dict()
 
-    nvvm_options = {
-        'fastmath': fastmath,
-        'opt': 3 if opt else 0
-    }
+    nvvm_options = {"fastmath": fastmath, "opt": 3 if opt else 0}
 
     if debug:
-        nvvm_options['g'] = None
+        nvvm_options["g"] = None
 
     if lto:
-        nvvm_options['gen-lto'] = None
+        nvvm_options["gen-lto"] = None
 
     args, return_type = sigutils.normalize_signature(sig)
 
     cc = cc or config.CUDA_DEFAULT_PTX_CC
-    cres = compile_cuda(pyfunc, return_type, args, debug=debug,
-                        lineinfo=lineinfo, fastmath=fastmath,
-                        nvvm_options=nvvm_options, cc=cc)
+    cres = compile_cuda(
+        pyfunc,
+        return_type,
+        args,
+        debug=debug,
+        lineinfo=lineinfo,
+        fastmath=fastmath,
+        nvvm_options=nvvm_options,
+        cc=cc,
+    )
     resty = cres.signature.return_type
 
     if resty and not device and resty != types.void:
@@ -607,9 +667,10 @@ def compile(pyfunc, sig, debug=None, lineinfo=False, device=True,
     if device:
         lib = cres.library
         if abi == "c":
-            wrapper_name = abi_info.get('abi_name', pyfunc.__name__)
-            lib = cabi_wrap_function(tgt, lib, cres.fndesc, wrapper_name,
-                                     nvvm_options)
+            wrapper_name = abi_info.get("abi_name", pyfunc.__name__)
+            lib = cabi_wrap_function(
+                tgt, lib, cres.fndesc, wrapper_name, nvvm_options
+            )
     else:
         lib = cres.library
         kernel = lib.get_function(cres.fndesc.llvm_func_name)
@@ -623,38 +684,94 @@ def compile(pyfunc, sig, debug=None, lineinfo=False, device=True,
     return code, resty
 
 
-def compile_for_current_device(pyfunc, sig, debug=None, lineinfo=False,
-                               device=True, fastmath=False, opt=None,
-                               abi="c", abi_info=None, output='ptx'):
+def compile_for_current_device(
+    pyfunc,
+    sig,
+    debug=None,
+    lineinfo=False,
+    device=True,
+    fastmath=False,
+    opt=None,
+    abi="c",
+    abi_info=None,
+    output="ptx",
+):
     """Compile a Python function to PTX or LTO-IR for a given signature for the
     current device's compute capabilility. This calls :func:`compile` with an
     appropriate ``cc`` value for the current device."""
     cc = get_current_device().compute_capability
-    return compile(pyfunc, sig, debug=debug, lineinfo=lineinfo, device=device,
-                   fastmath=fastmath, cc=cc, opt=opt, abi=abi,
-                   abi_info=abi_info, output=output)
+    return compile(
+        pyfunc,
+        sig,
+        debug=debug,
+        lineinfo=lineinfo,
+        device=device,
+        fastmath=fastmath,
+        cc=cc,
+        opt=opt,
+        abi=abi,
+        abi_info=abi_info,
+        output=output,
+    )
 
 
-def compile_ptx(pyfunc, sig, debug=None, lineinfo=False, device=False,
-                fastmath=False, cc=None, opt=None, abi="numba", abi_info=None):
+def compile_ptx(
+    pyfunc,
+    sig,
+    debug=None,
+    lineinfo=False,
+    device=False,
+    fastmath=False,
+    cc=None,
+    opt=None,
+    abi="numba",
+    abi_info=None,
+):
     """Compile a Python function to PTX for a given signature. See
     :func:`compile`. The defaults for this function are to compile a kernel
     with the Numba ABI, rather than :func:`compile`'s default of compiling a
     device function with the C ABI."""
-    return compile(pyfunc, sig, debug=debug, lineinfo=lineinfo, device=device,
-                   fastmath=fastmath, cc=cc, opt=opt, abi=abi,
-                   abi_info=abi_info, output='ptx')
+    return compile(
+        pyfunc,
+        sig,
+        debug=debug,
+        lineinfo=lineinfo,
+        device=device,
+        fastmath=fastmath,
+        cc=cc,
+        opt=opt,
+        abi=abi,
+        abi_info=abi_info,
+        output="ptx",
+    )
 
 
-def compile_ptx_for_current_device(pyfunc, sig, debug=None, lineinfo=False,
-                                   device=False, fastmath=False, opt=None,
-                                   abi="numba", abi_info=None):
+def compile_ptx_for_current_device(
+    pyfunc,
+    sig,
+    debug=None,
+    lineinfo=False,
+    device=False,
+    fastmath=False,
+    opt=None,
+    abi="numba",
+    abi_info=None,
+):
     """Compile a Python function to PTX for a given signature for the current
     device's compute capabilility. See :func:`compile_ptx`."""
     cc = get_current_device().compute_capability
-    return compile_ptx(pyfunc, sig, debug=debug, lineinfo=lineinfo,
-                       device=device, fastmath=fastmath, cc=cc, opt=opt,
-                       abi=abi, abi_info=abi_info)
+    return compile_ptx(
+        pyfunc,
+        sig,
+        debug=debug,
+        lineinfo=lineinfo,
+        device=device,
+        fastmath=fastmath,
+        cc=cc,
+        opt=opt,
+        abi=abi,
+        abi_info=abi_info,
+    )
 
 
 def declare_device_function(name, restype, argtypes, link):
@@ -663,6 +780,7 @@ def declare_device_function(name, restype, argtypes, link):
 
 def declare_device_function_template(name, restype, argtypes, link):
     from .descriptor import cuda_target
+
     typingctx = cuda_target.typing_context
     targetctx = cuda_target.target_context
     sig = typing.signature(restype, *argtypes)
@@ -673,7 +791,8 @@ def declare_device_function_template(name, restype, argtypes, link):
         cases = [sig]
 
     fndesc = funcdesc.ExternalFunctionDescriptor(
-        name=name, restype=restype, argtypes=argtypes)
+        name=name, restype=restype, argtypes=argtypes
+    )
     typingctx.insert_user_function(extfn, device_function_template)
     targetctx.insert_user_function(extfn, fndesc)
 

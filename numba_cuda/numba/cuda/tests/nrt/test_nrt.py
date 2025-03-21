@@ -26,7 +26,7 @@ class TestNrtBasic(CUDATestCase):
             x = np.empty(10, np.int64)
             f(x)
 
-        g[1,1]()
+        g[1, 1]()
         cuda.synchronize()
 
     def test_nrt_ptx_contains_refcount(self):
@@ -39,7 +39,7 @@ class TestNrtBasic(CUDATestCase):
             x = np.empty(10, np.int64)
             f(x)
 
-        g[1,1]()
+        g[1, 1]()
 
         ptx = next(iter(g.inspect_asm().values()))
 
@@ -72,13 +72,12 @@ class TestNrtBasic(CUDATestCase):
 
         out_ary = np.zeros(1, dtype=np.int64)
 
-        g[1,1](out_ary)
+        g[1, 1](out_ary)
 
         self.assertEqual(out_ary[0], 1)
 
 
 class TestNrtStatistics(CUDATestCase):
-
     def setUp(self):
         self._stream = cuda.default_stream()
         # Store the current stats state
@@ -126,12 +125,11 @@ class TestNrtStatistics(CUDATestCase):
 
         # Check env var explicitly being set works
         env = os.environ.copy()
-        env['NUMBA_CUDA_NRT_STATS'] = "1"
-        env['NUMBA_CUDA_ENABLE_NRT'] = "1"
+        env["NUMBA_CUDA_NRT_STATS"] = "1"
+        env["NUMBA_CUDA_ENABLE_NRT"] = "1"
         run_in_subprocess(src, env=env)
 
     def check_env_var_off(self, env):
-
         src = """if 1:
         from numba import cuda
         import numpy as np
@@ -152,27 +150,26 @@ class TestNrtStatistics(CUDATestCase):
     def test_stats_env_var_explicit_off(self):
         # Checks that explicitly turning the stats off via the env var works.
         env = os.environ.copy()
-        env['NUMBA_CUDA_NRT_STATS'] = "0"
+        env["NUMBA_CUDA_NRT_STATS"] = "0"
         self.check_env_var_off(env)
 
     def test_stats_env_var_default_off(self):
         # Checks that the env var not being set is the same as "off", i.e.
         # default for Numba is off.
         env = os.environ.copy()
-        env.pop('NUMBA_CUDA_NRT_STATS', None)
+        env.pop("NUMBA_CUDA_NRT_STATS", None)
         self.check_env_var_off(env)
 
     def test_stats_status_toggle(self):
-
         @cuda.jit
         def foo():
             tmp = np.ones(3)
-            arr = np.arange(5 * tmp[0]) # noqa: F841
+            arr = np.arange(5 * tmp[0])  # noqa: F841
             return None
 
         with (
-            override_config('CUDA_ENABLE_NRT', True),
-            override_config('CUDA_NRT_STATS', True)
+            override_config("CUDA_ENABLE_NRT", True),
+            override_config("CUDA_NRT_STATS", True),
         ):
             # Switch on stats
             rtsys.memsys_enable_stats()
@@ -218,9 +215,9 @@ class TestNrtStatistics(CUDATestCase):
     def test_nrt_explicit_stats_query_raises_exception_when_disabled(self):
         # Checks the various memsys_get_stats functions raise if queried when
         # the stats counters are disabled.
-        method_variations = ('alloc', 'free', 'mi_alloc', 'mi_free')
+        method_variations = ("alloc", "free", "mi_alloc", "mi_free")
         for meth in method_variations:
-            stats_func = getattr(rtsys, f'memsys_get_stats_{meth}')
+            stats_func = getattr(rtsys, f"memsys_get_stats_{meth}")
             with self.subTest(stats_func=stats_func):
                 # Turn stats off
                 rtsys.memsys_disable_stats()
@@ -233,14 +230,13 @@ class TestNrtStatistics(CUDATestCase):
         @cuda.jit
         def foo():
             tmp = np.ones(3)
-            arr = np.arange(5 * tmp[0]) # noqa: F841
+            arr = np.arange(5 * tmp[0])  # noqa: F841
             return None
 
         with (
-            override_config('CUDA_ENABLE_NRT', True),
-            override_config('CUDA_NRT_STATS', True)
+            override_config("CUDA_ENABLE_NRT", True),
+            override_config("CUDA_NRT_STATS", True),
         ):
-
             # Switch on stats
             rtsys.memsys_enable_stats()
 
@@ -262,5 +258,5 @@ class TestNrtStatistics(CUDATestCase):
             self.assertEqual(stats.mi_free, stats_mi_free)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()
