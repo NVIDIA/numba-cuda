@@ -1,3 +1,4 @@
+import re
 import itertools
 import numpy as np
 from numba import cuda
@@ -6,8 +7,25 @@ import unittest
 
 
 # Set to true if you want to see dots printed for each subtest.
-NOISY = True
+NOISY = False
 
+
+# In order to verify the alignment of the local and shared memory arrays, we
+# inspect the LLVM IR of the generated kernel using the following regexes.
+
+# Shared memory example:
+# @"_cudapy_smem_38" = addrspace(3) global [1 x i8] undef, align 16
+SMEM_PATTERN = re.compile(
+    r'^@"_cudapy_smem_\d+".*?align (\d+)',
+    re.MULTILINE,
+)
+
+# Local memory example:
+# %"_cudapy_lmem" = alloca [1 x i8], align 64
+LMEM_PATTERN = re.compile(
+    r'^\s*%"_cudapy_lmem".*?align (\d+)',
+    re.MULTILINE,
+)
 
 # N.B. We name the test class TestArrayAddressAlignment to avoid name conflict
 #      with the test_alignment.TestArrayAlignment class.
@@ -19,57 +37,33 @@ class TestArrayAddressAlignment(CUDATestCase):
     keyword argument.
     """
 
-    def test_array_alignment(self):
+    def test_array_alignment_1d(self):
         shapes = (1, 8, 50)
         dtypes = (np.uint8, np.uint32, np.uint64)
         alignments = (None, 16, 64, 256)
         array_types = [(0, 'local'), (1, 'shared')]
+        self._do_test(array_types, shapes, dtypes, alignments)
 
-        items = itertools.product(array_types, shapes, dtypes, alignments)
+    def test_array_alignment_2d(self):
+        shapes = ((2, 3),)
+        dtypes = (np.uint8, np.uint32, np.uint64)
+        alignments = (None, 16, 64, 256)
+        array_types = [(0, 'local'), (1, 'shared')]
+        self._do_test(array_types, shapes, dtypes, alignments)
 
-        for (which, array_type), shape, dtype, alignment in items:
-            with self.subTest(array_type=array_type, shape=shape,
-                              dtype=dtype, alignment=alignment):
-                @cuda.jit
-                def f(loc, shrd, which):
-                    i = cuda.grid(1)
-                    if which == 0:
-                        local_array = cuda.local.array(
-                            shape=shape,
-                            dtype=dtype,
-                            alignment=alignment,
-                        )
-                        if i == 0:
-                            loc[0] = local_array.ctypes.data
-                    else:
-                        shared_array = cuda.shared.array(
-                            shape=shape,
-                            dtype=dtype,
-                            alignment=alignment,
-                        )
-                        if i == 0:
-                            shrd[0] = shared_array.ctypes.data
-
-                loc = np.zeros(1, dtype=np.uint64)
-                shrd = np.zeros(1, dtype=np.uint64)
-                f[1, 1](loc, shrd, which)
-
-                if alignment is not None:
-                    address = loc[0] if which == 0 else shrd[0]
-                    alignment_mod = int(address % alignment)
-                    self.assertEqual(alignment_mod, 0)
-
-                if NOISY:
-                    print('.', end='', flush=True)
+    def test_array_alignment_3d(self):
+        shapes = ((2, 3, 4), (1, 4, 5))
+        dtypes = (np.uint8, np.uint32, np.uint64)
+        alignments = (None, 16, 64, 256)
+        array_types = [(0, 'local'), (1, 'shared')]
+        self._do_test(array_types, shapes, dtypes, alignments)
 
     def test_invalid_aligments(self):
-        shapes = (1, 50)  # Just test small and large
-        dtypes = (np.uint8, np.uint64)  # Just test smallest and largest
-        # Keep a good selection of invalid alignments to test error cases
-        alignments = (-1, 0, 3, 17, 33)  # Negative, zero, and non-powers of 2
+        shapes = (1, 50)
+        dtypes = (np.uint8, np.uint64)
+        alignments = (-1, 0, 3, 17, 33)
         array_types = [(0, 'local'), (1, 'shared')]
 
-        # This reduces from 576 to 40 test cases (2×2×2×5)
         items = itertools.product(array_types, shapes, dtypes, alignments)
 
         for (which, array_type), shape, dtype, alignment in items:
@@ -106,9 +100,75 @@ class TestArrayAddressAlignment(CUDATestCase):
                 if NOISY:
                     print('.', end='', flush=True)
 
-    def test_array_like(self):
-        # XXX-140: TODO; need to flush out the array_like stuff more.
-        pass
+    def _do_test(self, array_types, shapes, dtypes, alignments):
+        items = itertools.product(array_types, shapes, dtypes, alignments)
+
+        for (which, array_type), shape, dtype, alignment in items:
+            with self.subTest(array_type=array_type, shape=shape,
+                              dtype=dtype, alignment=alignment):
+                @cuda.jit
+                def f(loc, shrd, which):
+                    i = cuda.grid(1)
+                    if which == 0:
+                        local_array = cuda.local.array(
+                            shape=shape,
+                            dtype=dtype,
+                            alignment=alignment,
+                        )
+                        if i == 0:
+                            loc[0] = local_array.ctypes.data
+                    else:
+                        shared_array = cuda.shared.array(
+                            shape=shape,
+                            dtype=dtype,
+                            alignment=alignment,
+                        )
+                        if i == 0:
+                            shrd[0] = shared_array.ctypes.data
+
+                loc = np.zeros(1, dtype=np.uint64)
+                shrd = np.zeros(1, dtype=np.uint64)
+                f[1, 1](loc, shrd, which)
+
+                kernel = f.overloads[f.signatures[0]]
+                llvm_ir = kernel.inspect_llvm()
+
+                if alignment is None:
+                    if which == 0:
+                        # Local memory shouldn't have any alignment information
+                        # when no alignment is specified.
+                        match = LMEM_PATTERN.findall(llvm_ir)
+                        self.assertEqual(len(match), 0)
+                    else:
+                        # Shared memory should at least have a power-of-two
+                        # alignment when no alignment is specified.
+                        match = SMEM_PATTERN.findall(llvm_ir)
+                        self.assertEqual(len(match), 1)
+
+                        alignment = int(match[0])
+                        # Verify alignment is a power of two.
+                        self.assertTrue(alignment & (alignment - 1) == 0)
+                else:
+                    # Verify alignment is in the LLVM IR.
+                    if which == 0:
+                        match = LMEM_PATTERN.findall(llvm_ir)
+                        self.assertEqual(len(match), 1)
+                        actual_alignment = int(match[0])
+                        self.assertEqual(alignment, actual_alignment)
+                    else:
+                        match = SMEM_PATTERN.findall(llvm_ir)
+                        self.assertEqual(len(match), 1)
+                        actual_alignment = int(match[0])
+                        self.assertEqual(alignment, actual_alignment)
+
+                    # Also verify that the address of the array is aligned.
+                    # If this fails, there problem is likely with NVVM.
+                    address = loc[0] if which == 0 else shrd[0]
+                    alignment_mod = int(address % alignment)
+                    self.assertEqual(alignment_mod, 0)
+
+                if NOISY:
+                    print('.', end='', flush=True)
 
 
 if __name__ == '__main__':
