@@ -143,7 +143,6 @@ class _Kernel(serialize.ReduceMixin):
         self.debug = debug
         self.lineinfo = lineinfo
         self.extensions = extensions or []
-        self.initialized = False
 
         nvvm_options = {
             'fastmath': fastmath,
@@ -290,7 +289,6 @@ class _Kernel(serialize.ReduceMixin):
         instance.lineinfo = lineinfo
         instance.call_helper = call_helper
         instance.extensions = extensions
-        instance.initialized = False
         return instance
 
     def _reduce_states(self):
@@ -311,6 +309,9 @@ class _Kernel(serialize.ReduceMixin):
         Force binding to current CUDA context
         """
         cufunc = self._codelibrary.get_cufunc()
+
+        mod = cufunc.module
+        mod.setup()
 
         if (
             hasattr(self, "target_context")
@@ -449,13 +450,6 @@ class _Kernel(serialize.ReduceMixin):
             zero_stream = None
 
         stream_handle = stream and stream.handle or zero_stream
-
-        # Set init and finalize module callbacks
-        if not self.initialized:
-            mod = cufunc.module
-            mod.setup(stream_handle)
-            mod.set_finalizers(stream_handle)
-            self.initialized = True
 
         # Invoke kernel
         driver.launch_kernel(cufunc.handle,

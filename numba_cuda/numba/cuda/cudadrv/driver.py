@@ -2404,8 +2404,11 @@ class Module(metaclass=ABCMeta):
         if finalizer is not None:
             self._finalizer = weakref.finalize(self, finalizer)
 
+        self.initialized = False
         self.setup_functions = setup_callbacks
         self.teardown_functions = teardown_callbacks
+
+        self._set_finalizers()
 
     def unload(self):
         """Unload this module from the context"""
@@ -2429,29 +2432,34 @@ class Module(metaclass=ABCMeta):
 
         setattr(self, attr, callbacks)
 
-    def setup(self, stream):
+    def setup(self):
         """Call the setup functions for cumodule with the given `stream`"""
-        if self.setup_functions is None:
+        if self.setup_functions is None or self.initialized:
             return
 
         for f in self.setup_functions:
-            f(weakref.proxy(self), stream)
+            f(self.handle)
 
-    def set_finalizers(self, stream):
-        """Create finalizers that tears down the cumodule on `stream`"""
+        self.initialized = True
+
+    def _set_finalizers(self):
+        """Create finalizers that tears down the cumodule.
+
+        Unlike the setup functions which takes in streams, Numba does not
+        provide a stream object to the teardown function.
+        """
         if self.teardown_functions is None:
             return
 
-        def _teardown(teardowns, modref, stream):
+        def _teardown(teardowns, modref):
             for f in teardowns:
-                f(modref, stream)
+                f(modref)
 
         weakref.finalize(
             self,
             _teardown,
             self.teardown_functions,
-            weakref.proxy(self),
-            stream
+            self.handle,
         )
 
 

@@ -4,7 +4,7 @@ import numpy as np
 
 from numba import cuda, config
 from numba.cuda.cudadrv.linkable_code import CUSource
-from numba.cuda.testing import CUDATestCase
+from numba.cuda.testing import CUDATestCase, ContextResettingTestCase
 
 from cuda.bindings.driver import cuModuleGetGlobal, cuMemcpyHtoD
 
@@ -18,16 +18,16 @@ def wipe_all_modules_in_context():
     config.CUDA_USE_NVIDIA_BINDING,
     "NV binding support superceded by cuda.bindings."
 )
-class TestModuleCallbacksBasic(CUDATestCase):
+class TestModuleCallbacksBasic(ContextResettingTestCase):
 
     def test_basic(self):
         counter = 0
 
-        def setup(mod, stream):
+        def setup(handle):
             nonlocal counter
             counter += 1
 
-        def teardown(mod, stream):
+        def teardown(handle):
             nonlocal counter
             counter -= 1
 
@@ -49,14 +49,18 @@ class TestModuleCallbacksBasic(CUDATestCase):
 
     def test_different_argtypes(self):
         counter = 0
+        setup_seen = set()
+        teardown_seen = set()
 
-        def setup(mod, stream):
-            nonlocal counter
+        def setup(handle):
+            nonlocal counter, setup_seen
             counter += 1
+            setup_seen.add(handle.value)
 
-        def teardown(mod, stream):
+        def teardown(handle):
             nonlocal counter
             counter -= 1
+            teardown_seen.add(handle.value)
 
         lib = CUSource("", setup_callback=setup, teardown_callback=teardown)
 
@@ -76,16 +80,23 @@ class TestModuleCallbacksBasic(CUDATestCase):
         del kernel
         self.assertEqual(counter, 0)
 
+        self.assertEqual(len(setup_seen), 2)
+        self.assertEqual(len(teardown_seen), 2)
+
     def test_two_kernels(self):
         counter = 0
+        setup_seen = set()
+        teardown_seen = set()
 
-        def setup(mod, stream):
-            nonlocal counter
+        def setup(handle):
+            nonlocal counter, setup_seen
             counter += 1
+            setup_seen.add(handle.value)
 
-        def teardown(mod, stream):
-            nonlocal counter
+        def teardown(handle):
+            nonlocal counter, teardown_seen
             counter -= 1
+            teardown_seen.add(handle.value)
 
         lib = CUSource("", setup_callback=setup, teardown_callback=teardown)
 
@@ -106,49 +117,8 @@ class TestModuleCallbacksBasic(CUDATestCase):
         del kernel
         self.assertEqual(counter, 0)
 
-    def test_different_streams(self):
-
-        s1 = cuda.stream()
-        s2 = cuda.stream()
-
-        setup_seen = set()
-        teardown_seen = set()
-
-        counter = 0
-
-        def setup(mod, stream, self=self):
-            nonlocal counter, s1, s2, setup_seen
-            if counter == 0:
-                self.assertEqual(stream, s1.handle)
-            elif counter == 1:
-                self.assertEqual(stream, s2.handle)
-            else:
-                raise RuntimeError("Setup should only be invoked twice.")
-            setup_seen.add(stream.value)
-            counter += 1
-
-        def teardown(mod, stream, self=self):
-            nonlocal counter, s1, s2, teardown_seen
-            if counter == 2:
-                self.assertEqual(stream, s2.handle)
-            elif counter == 1:
-                self.assertEqual(stream, s1.handle)
-            else:
-                raise RuntimeError("Teardown should only be invoked twice.")
-            teardown_seen.add(stream.value)
-            counter -= 1
-
-        lib = CUSource("", setup_callback=setup, teardown_callback=teardown)
-
-        @cuda.jit(link=[lib])
-        def kernel():
-            pass
-
-        kernel[1, 1, s1]()
-        kernel[1, 1, s2]()
-        wipe_all_modules_in_context()
-        del kernel
-        self.assertEqual(counter, 0)
+        self.assertEqual(len(setup_seen), 2)
+        self.assertEqual(len(teardown_seen), 2)
 
 
 class TestModuleCallbacks(CUDATestCase):
@@ -167,17 +137,17 @@ __device__ int get_num(int &retval) {
 
         self.counter = 0
 
-        def set_forty_two(mod, stream):
+        def set_forty_two(handle):
             self.counter += 1
             # Initialize 42 to global variable `num`
             res, dptr, size = cuModuleGetGlobal(
-                mod.handle.value, "num".encode()
+                handle.value, "num".encode()
             )
 
             arr = np.array([42], np.int32)
             cuMemcpyHtoD(dptr, arr.ctypes.data, size)
 
-        def teardown(mod, stream):
+        def teardown(handle):
             self.counter -= 1
 
         self.lib = CUSource(
