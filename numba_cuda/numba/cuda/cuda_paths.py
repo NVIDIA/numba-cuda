@@ -8,6 +8,8 @@ from pathlib import Path
 from numba.core.config import IS_WIN32
 from numba.misc.findlib import find_lib, find_file
 from numba import config
+import glob
+import ctypes
 
 
 _env_path_tuple = namedtuple('_env_path_tuple', ['by', 'info'])
@@ -64,6 +66,21 @@ def _get_nvvm_path_decision():
     return by, path
 
 
+def _get_nvrtc_path_decision():
+    options = [
+        ('CUDA_HOME', get_cuda_home('nvrtc')),
+        ('Conda environment', get_conda_ctk()),
+        ('NVIDIA NVCC Wheel', _get_nvrtc_wheel()),
+    ]
+    # need to ensure nvrtc dir actually exists
+    nvrtc_ctk_dir = get_system_ctk('nvrtc')
+    if os.path.exists(nvrtc_ctk_dir):
+        options.append(('System', nvrtc_ctk_dir))
+
+    by, path = _find_valid_path(options)
+    return by, path
+
+
 def _get_nvvm_wheel():
     site_paths = [
         site.getusersitepackages()
@@ -92,6 +109,90 @@ def _get_nvvm_wheel():
             dso_path = os.path.join(dso_dir, dso_path)
             if os.path.exists(dso_path):
                 return str(Path(dso_path).parent)
+
+
+def detect_nvrtc_major_cuda_version(lib_dir):
+    if sys.platform.startswith("linux"):
+        pattern = os.path.join(lib_dir, "libnvrtc.so.*")
+    elif sys.platform.startswith("win32"):
+        pattern = os.path.join(lib_dir, "nvrtc64_*.dll")
+    else:
+        raise NotImplementedError("Unsupported platform")
+
+    candidates = glob.glob(pattern)
+    for lib in candidates:
+        match = re.search(
+            r"libnvrtc\.so\.(\d+)(?:\.(\d+))?$"
+            if sys.platform.startswith("linux")
+            else r"nvrtc64_(\d+)(\d)_0", os.path.basename(lib)
+        )
+        if match:
+            major, _ = match.groups()
+            return int(major)
+
+    raise RuntimeError("CUDA version could not be detected")
+
+
+def get_nvrtc_dso_path():
+    site_paths = [site.getusersitepackages()] + site.getsitepackages() + [None]
+
+    for sp in site_paths:
+        lib_dir = os.path.join(
+            sp,
+            "nvidia",
+            "cuda_nvrtc",
+            (
+                "lib" if sys.platform.startswith("linux") else "bin"
+            ) if sp else None
+        )
+        if lib_dir and os.path.exists(lib_dir):
+
+            try:
+                major = detect_nvrtc_major_cuda_version(lib_dir)
+                if major == 11:
+                    cu_ver = (
+                        "11.2" if sys.platform.startswith("linux") else "112"
+                    )
+                elif major == 12:
+                    cu_ver = (
+                        "12" if sys.platform.startswith("linux") else "120"
+                    )
+                else:
+                    raise NotImplementedError(f"CUDA {major} is not supported")
+
+                return os.path.join(
+                    lib_dir,
+                    f"libnvrtc.so.{cu_ver}"
+                    if sys.platform.startswith("linux")
+                    else f"nvrtc64_{cu_ver}_0.dll"
+                )
+            except RuntimeError:
+                continue
+
+
+def _get_nvrtc_wheel():
+    dso_path = get_nvrtc_dso_path()
+    if dso_path:
+        try:
+            result = ctypes.CDLL(dso_path, mode=ctypes.RTLD_GLOBAL)
+        except OSError:
+            pass
+        else:
+            if sys.platform.startswith('win32'):
+                import win32api
+
+                # This absolute path will
+                # always be correct regardless of the package source
+                nvrtc_path = win32api.GetModuleFileNameW(result._handle)
+                dso_dir = os.path.dirname(nvrtc_path)
+                dso_path = os.path.join(
+                    dso_dir,
+                    [
+                        f for f in os.listdir(dso_dir)
+                        if re.match("^nvrtc-builtins.*.dll$", f)
+                    ][0]
+                )
+        return Path(dso_path)
 
 
 def _get_libdevice_paths():
@@ -270,6 +371,16 @@ def _get_nvvm_path():
     return _env_path_tuple(by, path)
 
 
+def _get_nvrtc_path():
+    by, path = _get_nvrtc_path_decision()
+    if by == "NVIDIA NVCC Wheel":
+        path = str(path)
+    else:
+        candidates = find_lib('nvrtc', path)
+        path = max(candidates) if candidates else None
+    return _env_path_tuple(by, path)
+
+
 def get_cuda_paths():
     """Returns a dictionary mapping component names to a 2-tuple
     of (source_variable, info).
@@ -288,6 +399,7 @@ def get_cuda_paths():
         # Not in cache
         d = {
             'nvvm': _get_nvvm_path(),
+            'nvrtc': _get_nvrtc_path(),
             'libdevice': _get_libdevice_paths(),
             'cudalib_dir': _get_cudalib_dir(),
             'static_cudalib_dir': _get_static_cudalib_dir(),
