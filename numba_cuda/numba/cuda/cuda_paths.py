@@ -32,13 +32,10 @@ def _get_libdevice_path_decision():
         ('Conda environment', get_conda_ctk()),
         ('Conda environment (NVIDIA package)', get_nvidia_libdevice_ctk()),
         ('CUDA_HOME', get_cuda_home('nvvm', 'libdevice')),
-        ('Debian package', get_debian_pkg_libdevice()),
+        ('System', get_system_ctk('nvvm', 'libdevice')),
         ('NVIDIA NVCC Wheel', get_libdevice_wheel()),
+        ('Debian package', get_debian_pkg_libdevice()),
     ]
-    libdevice_ctk_dir = get_system_ctk('nvvm', 'libdevice')
-    if os.path.exists(libdevice_ctk_dir):
-        options.append(('System', libdevice_ctk_dir))
-
     by, libdir = _find_valid_path(options)
     return by, libdir
 
@@ -55,12 +52,9 @@ def _get_nvvm_path_decision():
         ('Conda environment', get_conda_ctk()),
         ('Conda environment (NVIDIA package)', get_nvidia_nvvm_ctk()),
         ('CUDA_HOME', get_cuda_home(*_nvvm_lib_dir())),
+        ('System', get_system_ctk(*_nvvm_lib_dir())),
         ('NVIDIA NVCC Wheel', _get_nvvm_wheel()),
     ]
-    # need to ensure nvvm dir actually exists
-    nvvm_ctk_dir = get_system_ctk(*_nvvm_lib_dir())
-    if os.path.exists(nvvm_ctk_dir):
-        options.append(('System', nvvm_ctk_dir))
 
     by, path = _find_valid_path(options)
     return by, path
@@ -70,13 +64,10 @@ def _get_nvrtc_path_decision():
     options = [
         ('CUDA_HOME', get_cuda_home('nvrtc')),
         ('Conda environment', get_conda_ctk()),
+        ('System', get_system_ctk('nvrtc')),
         ('NVIDIA NVCC Wheel', _get_nvrtc_wheel()),
     ]
-    # need to ensure nvrtc dir actually exists
-    nvrtc_ctk_dir = get_system_ctk('nvrtc')
-    if os.path.exists(nvrtc_ctk_dir):
-        options.append(('System', nvrtc_ctk_dir))
-
+    breakpoint()
     by, path = _find_valid_path(options)
     return by, path
 
@@ -84,9 +75,9 @@ def _get_nvrtc_path_decision():
 def _get_nvvm_wheel():
     site_paths = [
         site.getusersitepackages()
-    ] + site.getsitepackages() + ["conda", None]
+    ] + site.getsitepackages()
+    # The SONAME is taken based on public CTK 12.x releases
     for sp in site_paths:
-        # The SONAME is taken based on public CTK 12.x releases
         if sys.platform.startswith("linux"):
             dso_dir = "lib64"
             # Hack: libnvvm from Linux wheel
@@ -96,8 +87,7 @@ def _get_nvvm_wheel():
             dso_dir = "bin"
             dso_path = "nvvm64_40_0.dll"
         else:
-            raise AssertionError()
-
+            raise NotImplementedError('Unsupported platform')
         if sp is not None:
             dso_dir = os.path.join(
                 sp,
@@ -134,8 +124,7 @@ def detect_nvrtc_major_cuda_version(lib_dir):
 
 
 def get_nvrtc_dso_path():
-    site_paths = [site.getusersitepackages()] + site.getsitepackages() + [None]
-
+    site_paths = [site.getusersitepackages()] + site.getsitepackages()
     for sp in site_paths:
         lib_dir = os.path.join(
             sp,
@@ -197,15 +186,7 @@ def _get_nvrtc_wheel():
 
 def _get_libdevice_paths():
     by, libdir = _get_libdevice_path_decision()
-    if by == "NVIDIA NVCC Wheel":
-        # The NVVM path is a directory, not a file
-        out = os.path.join(libdir, "libdevice.10.bc")
-    else:
-        # Search for pattern
-        pat = r'libdevice(\.\d+)*\.bc$'
-        candidates = find_file(re.compile(pat), libdir)
-        # Keep only the max (most recent version) of the bitcode files.
-        out = max(candidates, default=None)
+    out = os.path.join(libdir, "libdevice.10.bc")
     return _env_path_tuple(by, out)
 
 
@@ -262,9 +243,9 @@ def get_system_ctk(*subdirs):
     if sys.platform.startswith('linux'):
         # Is cuda alias to /usr/local/cuda?
         # We are intentionally not getting versioned cuda installation.
-        base = '/usr/local/cuda'
-        if os.path.exists(base):
-            return os.path.join(base, *subdirs)
+        result = os.path.join('/usr/local/cuda', *subdirs)
+        if os.path.exists(result):
+            return result
 
 
 def get_conda_ctk():
