@@ -46,7 +46,6 @@ def _nvvm_lib_dir():
     else:
         return 'nvvm', 'lib64'
 
-
 def _get_nvvm_path_decision():
     options = [
         ('Conda environment', get_conda_ctk()),
@@ -59,15 +58,19 @@ def _get_nvvm_path_decision():
     by, path = _find_valid_path(options)
     return by, path
 
+def _get_nvrtc_system_ctk():
+    sys_path = get_system_ctk('bin' if IS_WIN32 else 'lib64')
+    candidates = find_lib('nvrtc', sys_path)
+    if candidates:
+        return max(candidates)
 
 def _get_nvrtc_path_decision():
     options = [
         ('CUDA_HOME', get_cuda_home('nvrtc')),
         ('Conda environment', get_conda_ctk()),
-        ('System', get_system_ctk('nvrtc')),
+        ('System', _get_nvrtc_system_ctk()),
         ('NVIDIA NVCC Wheel', _get_nvrtc_wheel()),
     ]
-    breakpoint()
     by, path = _find_valid_path(options)
     return by, path
 
@@ -356,6 +359,8 @@ def _get_nvrtc_path():
     by, path = _get_nvrtc_path_decision()
     if by == "NVIDIA NVCC Wheel":
         path = str(path)
+    elif by == 'System':
+        return _env_path_tuple(by, path)
     else:
         candidates = find_lib('nvrtc', path)
         path = max(candidates) if candidates else None
