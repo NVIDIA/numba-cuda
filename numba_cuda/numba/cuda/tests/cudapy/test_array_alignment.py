@@ -58,48 +58,6 @@ class TestArrayAddressAlignment(CUDATestCase):
         array_types = [(0, 'local'), (1, 'shared')]
         self._do_test(array_types, shapes, dtypes, alignments)
 
-    def test_invalid_aligments(self):
-        shapes = (1, 50)
-        dtypes = (np.uint8, np.uint64)
-        alignments = (-1, 0, 3, 17, 33)
-        array_types = [(0, 'local'), (1, 'shared')]
-
-        items = itertools.product(array_types, shapes, dtypes, alignments)
-
-        for (which, array_type), shape, dtype, alignment in items:
-            with self.subTest(array_type=array_type, shape=shape,
-                              dtype=dtype, alignment=alignment):
-                @cuda.jit
-                def f(local_array, shared_array, which):
-                    i = cuda.grid(1)
-                    if which == 0:
-                        local_array = cuda.local.array(
-                            shape=shape,
-                            dtype=dtype,
-                            alignment=alignment,
-                        )
-                        if i == 0:
-                            local_array[0] = local_array.ctypes.data
-                    else:
-                        shared_array = cuda.shared.array(
-                            shape=shape,
-                            dtype=dtype,
-                            alignment=alignment,
-                        )
-                        if i == 0:
-                            shared_array[0] = shared_array.ctypes.data
-
-                loc = np.zeros(1, dtype=np.uint64)
-                shrd = np.zeros(1, dtype=np.uint64)
-
-                with self.assertRaises(ValueError) as raises:
-                    f[1, 1](loc, shrd, which)
-                exc = str(raises.exception)
-                self.assertIn("Alignment must be", exc)
-
-                if NOISY:
-                    print('.', end='', flush=True)
-
     def _do_test(self, array_types, shapes, dtypes, alignments):
         items = itertools.product(array_types, shapes, dtypes, alignments)
 
@@ -166,6 +124,48 @@ class TestArrayAddressAlignment(CUDATestCase):
                     address = loc[0] if which == 0 else shrd[0]
                     alignment_mod = int(address % alignment)
                     self.assertEqual(alignment_mod, 0)
+
+                if NOISY:
+                    print('.', end='', flush=True)
+
+    def test_invalid_aligments(self):
+        shapes = (1, 50)
+        dtypes = (np.uint8, np.uint64)
+        alignments = (-1, 0, 3, 17, 33)
+        array_types = [(0, 'local'), (1, 'shared')]
+
+        items = itertools.product(array_types, shapes, dtypes, alignments)
+
+        for (which, array_type), shape, dtype, alignment in items:
+            with self.subTest(array_type=array_type, shape=shape,
+                              dtype=dtype, alignment=alignment):
+                @cuda.jit
+                def f(local_array, shared_array, which):
+                    i = cuda.grid(1)
+                    if which == 0:
+                        local_array = cuda.local.array(
+                            shape=shape,
+                            dtype=dtype,
+                            alignment=alignment,
+                        )
+                        if i == 0:
+                            local_array[0] = local_array.ctypes.data
+                    else:
+                        shared_array = cuda.shared.array(
+                            shape=shape,
+                            dtype=dtype,
+                            alignment=alignment,
+                        )
+                        if i == 0:
+                            shared_array[0] = shared_array.ctypes.data
+
+                loc = np.zeros(1, dtype=np.uint64)
+                shrd = np.zeros(1, dtype=np.uint64)
+
+                with self.assertRaises(ValueError) as raises:
+                    f[1, 1](loc, shrd, which)
+                exc = str(raises.exception)
+                self.assertIn("Alignment must be", exc)
 
                 if NOISY:
                     print('.', end='', flush=True)
