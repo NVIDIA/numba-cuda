@@ -103,6 +103,12 @@ def make_logger():
     return logger
 
 
+@functools.lru_cache(maxsize=None)
+def read_file(filepath, how='r'):
+    with open(filepath, how) as f:
+        return f.read()
+
+
 class DeadMemoryError(RuntimeError):
     pass
 
@@ -2654,8 +2660,7 @@ class Linker(metaclass=ABCMeta):
         """Add code from a file to the link"""
 
     def add_cu_file(self, path):
-        with open(path, 'rb') as f:
-            cu = f.read()
+        cu = read_file(path, how='rb')
         self.add_cu(cu, os.path.basename(path))
 
     def add_file_guess_ext(self, path_or_code, ignore_nonlto=False):
@@ -2804,8 +2809,7 @@ class MVCLinker(Linker):
             raise ImportError(_MVC_ERROR_MESSAGE) from err
 
         try:
-            with open(path, 'rb') as f:
-                data = f.read()
+            data = read_file(path, how='rb')
         except FileNotFoundError:
             raise LinkerError(f'{path} not found')
 
@@ -3088,8 +3092,7 @@ class PyNvJitLinker(Linker):
 
     def add_file(self, path, kind):
         try:
-            with open(path, "rb") as f:
-                data = f.read()
+            data = read_file(path, 'rb')
         except FileNotFoundError:
             raise LinkerError(f"{path} not found")
 

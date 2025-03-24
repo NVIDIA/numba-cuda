@@ -241,9 +241,7 @@ class _Kernel(serialize.ReduceMixin):
         if not link_nrt:
             for file in link:
                 if file.endswith('ptx'):
-                    with open(file) as f:
-                        asm = f.read()
-                        # TODO: double read
+                    asm = driver.read_file(file)
                     if nrt_in_asm(asm):
                         link_nrt = True
                         break
@@ -274,7 +272,7 @@ class _Kernel(serialize.ReduceMixin):
 
     @classmethod
     def _rebuild(cls, cooperative, name, signature, codelibrary,
-                 debug, lineinfo, call_helper, extensions, nrt):
+                 debug, lineinfo, call_helper, extensions):
         """
         Rebuild an instance.
         """
@@ -292,7 +290,6 @@ class _Kernel(serialize.ReduceMixin):
         instance.lineinfo = lineinfo
         instance.call_helper = call_helper
         instance.extensions = extensions
-        instance.nrt = nrt
         return instance
 
     def _reduce_states(self):
