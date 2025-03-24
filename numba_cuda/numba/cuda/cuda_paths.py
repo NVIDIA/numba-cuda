@@ -6,7 +6,7 @@ import platform
 import site
 from pathlib import Path
 from numba.core.config import IS_WIN32
-from numba.misc.findlib import find_lib, find_file
+from numba.misc.findlib import find_lib
 from numba import config
 import glob
 import ctypes
@@ -46,6 +46,7 @@ def _nvvm_lib_dir():
     else:
         return 'nvvm', 'lib64'
 
+
 def _get_nvvm_path_decision():
     options = [
         ('Conda environment', get_conda_ctk()),
@@ -58,11 +59,13 @@ def _get_nvvm_path_decision():
     by, path = _find_valid_path(options)
     return by, path
 
+
 def _get_nvrtc_system_ctk():
     sys_path = get_system_ctk('bin' if IS_WIN32 else 'lib64')
     candidates = find_lib('nvrtc', sys_path)
     if candidates:
         return max(candidates)
+
 
 def _get_nvrtc_path_decision():
     options = [
@@ -105,6 +108,7 @@ def _get_nvvm_wheel():
 
 
 def detect_nvrtc_major_cuda_version(lib_dir):
+    # TODO - is this a bad idea?
     if sys.platform.startswith("linux"):
         pattern = os.path.join(lib_dir, "libnvrtc.so.*")
     elif sys.platform.startswith("win32"):
@@ -177,13 +181,14 @@ def _get_nvrtc_wheel():
                 # always be correct regardless of the package source
                 nvrtc_path = win32api.GetModuleFileNameW(result._handle)
                 dso_dir = os.path.dirname(nvrtc_path)
-                dso_path = os.path.join(
+                builtins_path = os.path.join(
                     dso_dir,
                     [
                         f for f in os.listdir(dso_dir)
                         if re.match("^nvrtc-builtins.*.dll$", f)
                     ][0]
                 )
+                assert os.path.exists(builtins_path)
         return Path(dso_path)
 
 
