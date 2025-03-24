@@ -183,17 +183,6 @@ def cuda_local_array_tuple(context, builder, sig, args):
                           can_dynsized=False, alignment=alignment)
 
 
-@lower(cuda.local.array, types.Tuple, types.Any)
-@lower(cuda.local.array, types.UniTuple, types.Any)
-def ptx_lmem_alloc_array(context, builder, sig, args):
-    shape = [ s.literal_value for s in sig.args[0] ]
-    dtype = parse_dtype(sig.args[1])
-    return _generic_array(context, builder, shape=shape, dtype=dtype,
-                          symbol_name='_cudapy_lmem',
-                          addrspace=nvvm.ADDRSPACE_LOCAL,
-                          can_dynsized=False)
-
-
 @lower(stubs.threadfence_block)
 def ptx_threadfence_block(context, builder, sig, args):
     assert not args
