@@ -28,6 +28,39 @@ LMEM_PATTERN = re.compile(
     re.MULTILINE,
 )
 
+
+DTYPES = [np.uint8, np.uint32, np.uint64]
+
+# Add in some record dtypes with and without alignment.
+for align in (True, False):
+    DTYPES += [
+        np.dtype(
+            [
+                ('a', np.uint8),
+                ('b', np.int32),
+                ('c', np.float64),
+            ],
+            align=align,
+        ),
+        np.dtype(
+            [
+                ('a', np.uint32),
+                ('b', np.uint8),
+            ],
+            align=align,
+        ),
+        np.dtype(
+            [
+                ('a', np.uint8),
+                ('b', np.int32),
+                ('c', np.float64),
+                ('d', np.complex64),
+                ('e', (np.uint8, 5))
+            ],
+            align=align,
+        ),
+    ]
+
 # N.B. We name the test class TestArrayAddressAlignment to avoid name conflict
 #      with the test_alignment.TestArrayAlignment class.
 
@@ -40,24 +73,21 @@ class TestArrayAddressAlignment(CUDATestCase):
 
     def test_array_alignment_1d(self):
         shapes = (1, 8, 50)
-        dtypes = (np.uint8, np.uint32, np.uint64)
         alignments = (None, 16, 64, 256)
         array_types = [(0, 'local'), (1, 'shared')]
-        self._do_test(array_types, shapes, dtypes, alignments)
+        self._do_test(array_types, shapes, DTYPES, alignments)
 
     def test_array_alignment_2d(self):
         shapes = ((2, 3),)
-        dtypes = (np.uint8, np.uint32, np.uint64)
         alignments = (None, 16, 64, 256)
         array_types = [(0, 'local'), (1, 'shared')]
-        self._do_test(array_types, shapes, dtypes, alignments)
+        self._do_test(array_types, shapes, DTYPES, alignments)
 
     def test_array_alignment_3d(self):
         shapes = ((2, 3, 4), (1, 4, 5))
-        dtypes = (np.uint8, np.uint32, np.uint64)
         alignments = (None, 16, 64, 256)
         array_types = [(0, 'local'), (1, 'shared')]
-        self._do_test(array_types, shapes, dtypes, alignments)
+        self._do_test(array_types, shapes, DTYPES, alignments)
 
     def _do_test(self, array_types, shapes, dtypes, alignments):
         items = itertools.product(array_types, shapes, dtypes, alignments)
