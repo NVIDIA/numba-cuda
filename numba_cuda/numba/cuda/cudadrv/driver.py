@@ -2436,8 +2436,7 @@ class Module(metaclass=ABCMeta):
         self.initialized = True
 
     def _set_finalizers(self):
-        """Create finalizers that tears down the module.
-        """
+        """Create finalizers that tear down the module. """
         if self.teardown_functions is None:
             return
 
