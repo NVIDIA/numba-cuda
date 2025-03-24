@@ -2,6 +2,7 @@ import re
 import itertools
 import numpy as np
 from numba import cuda
+from numba.core.errors import TypingError
 from numba.cuda.testing import CUDATestCase
 import unittest
 
@@ -131,8 +132,14 @@ class TestArrayAddressAlignment(CUDATestCase):
     def test_invalid_aligments(self):
         shapes = (1, 50)
         dtypes = (np.uint8, np.uint64)
-        alignments = (-1, 0, 3, 17, 33)
+        invalid_alignment_values = (-1, 0, 3, 17, 33)
+        invalid_alignment_types = ("1.0", "1", "foo", 1.0, 1.5, 3.2)
+        alignments = invalid_alignment_values + invalid_alignment_types
         array_types = [(0, 'local'), (1, 'shared')]
+
+        expected_invalid_type_error = (
+            "RequireLiteralValue: alignment must be a constant integer"
+        )
 
         items = itertools.product(array_types, shapes, dtypes, alignments)
 
@@ -162,10 +169,18 @@ class TestArrayAddressAlignment(CUDATestCase):
                 loc = np.zeros(1, dtype=np.uint64)
                 shrd = np.zeros(1, dtype=np.uint64)
 
-                with self.assertRaises(ValueError) as raises:
-                    f[1, 1](loc, shrd, which)
-                exc = str(raises.exception)
-                self.assertIn("Alignment must be", exc)
+                # The type of error we expect differs between an invalid value
+                # that is still an int, and an invalid type.
+                if isinstance(alignment, int):
+                    with self.assertRaises(ValueError) as raises:
+                        f[1, 1](loc, shrd, which)
+                    exc = str(raises.exception)
+                    self.assertIn("Alignment must be", exc)
+                else:
+                    with self.assertRaises(TypingError) as raises:
+                        f[1, 1](loc, shrd, which)
+                    exc = str(raises.exception)
+                    self.assertIn(expected_invalid_type_error, exc)
 
                 if NOISY:
                     print('.', end='', flush=True)
