@@ -5,7 +5,7 @@ from numba.core.codegen import Codegen, CodeLibrary
 from .cudadrv import devices, driver, nvvm, runtime
 from numba.cuda.cudadrv.libs import get_cudalib
 from numba.cuda.cudadrv.linkable_code import LinkableCode
-from numba.cuda.runtime.nrt import NRT_LIBRARY
+from numba.cuda.memory_management.nrt import NRT_LIBRARY
 
 import os
 import subprocess
