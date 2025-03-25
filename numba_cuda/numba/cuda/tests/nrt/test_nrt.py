@@ -12,7 +12,7 @@ from numba.cuda.cudadecl import registry as cuda_decl_registry
 from numba.core.typing import signature
 from numba.cuda.cudaimpl import lower as cuda_lower
 from numba import cuda
-from numba.cuda.runtime.nrt import rtsys, get_include
+from numba.cuda.memory_management.nrt import rtsys, get_include
 from numba.core.typing.templates import AbstractTemplate
 from numba.cuda.cudadrv.linkable_code import (
     CUSource,
@@ -213,7 +213,7 @@ class TestNrtStatistics(CUDATestCase):
         # Checks that explicitly turning the stats on via the env var works.
         src = """if 1:
         from numba import cuda
-        from numba.cuda.runtime import rtsys
+        from numba.cuda.memory_management import rtsys
         import numpy as np
 
         @cuda.jit
@@ -252,7 +252,7 @@ class TestNrtStatistics(CUDATestCase):
         src = """if 1:
         from numba import cuda
         import numpy as np
-        from numba.cuda.runtime import rtsys
+        from numba.cuda.memory_management import rtsys
 
         @cuda.jit
         def foo():
