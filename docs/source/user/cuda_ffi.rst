@@ -170,6 +170,10 @@ Both setup and teardown callbacks are called with a handle to the relevant
 module. In practice, Numba creates a new module each time a kernel is compiled
 for a specific set of argument types.
 
+For each module, the setup callback is invoked once only. When a module is
+executed by multiple threads, only one thread will execute the setup
+callback.
+
 The callbacks are defined as follows:
 
 .. code::
