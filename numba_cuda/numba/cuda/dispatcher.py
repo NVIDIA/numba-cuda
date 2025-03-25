@@ -24,6 +24,7 @@ from numba.cuda.errors import (missing_launch_config_msg,
                                normalize_kernel_dimensions)
 from numba.cuda import types as cuda_types
 from numba.cuda.runtime.nrt import rtsys
+from numba.cuda.locks import module_init_lock
 
 from numba import cuda
 from numba import _dispatcher
@@ -304,15 +305,18 @@ class _Kernel(serialize.ReduceMixin):
                     debug=self.debug, lineinfo=self.lineinfo,
                     call_helper=self.call_helper, extensions=self.extensions)
 
+    @module_init_lock
+    def initialize_once(self, mod):
+        if not mod.initialized:
+            mod.setup()
+
     def bind(self):
         """
         Force binding to current CUDA context
         """
         cufunc = self._codelibrary.get_cufunc()
 
-        mod = cufunc.module
-        if not mod.initialized:
-            mod.setup()
+        self.initialize_once(cufunc.module)
 
         if (
             hasattr(self, "target_context")
