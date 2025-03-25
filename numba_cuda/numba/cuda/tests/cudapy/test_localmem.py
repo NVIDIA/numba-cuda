@@ -159,6 +159,34 @@ class TestCudaLocalMem(CUDATestCase):
         self._check_local_array_size_fp16(2, 2, types.float16)
         self._check_local_array_size_fp16(2, 2, np.float16)
 
+    def _test_layout(self, layout, expected_linear):
+        # Test col-major and row-major layout for the array
+        @cuda.jit
+        def linear_write(x):
+            arr = cuda.local.array((2,2), dtype=int32, layout=layout)
+            arr[0,0] = 1
+            arr[0,1] = 2
+            arr[1,0] = 3
+            arr[1,1] = 4
+
+            arr = arr.reshape(4)
+            x[0] = arr[0]
+            x[1] = arr[1]
+            x[2] = arr[2]
+            x[3] = arr[3]
+
+        result = np.zeros(4, dtype=np.int32)
+        expected = np.array(expected_linear, dtype=np.int32)
+
+        linear_write[1, 1](result)
+        np.testing.assert_array_equal(expected, result)
+
+    def test_layout_c(self):
+        self._test_layout('C', [1, 2, 3, 4])
+
+    def test_layout_f(self):
+        self._test_layout('F', [1, 3, 2, 4])
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -25,7 +25,7 @@ register_number_classes(register_global)
 
 class Cuda_array_decl(CallableTemplate):
     def generic(self):
-        def typer(shape, dtype):
+        def typer(shape, dtype, layout=None):
 
             # Only integer literals and tuples of integer literals are valid
             # shapes
@@ -38,11 +38,19 @@ class Cuda_array_decl(CallableTemplate):
                     return None
             else:
                 return None
+            
+            # Only string literals are valid layouts
+            if layout in (None, types.none):
+                layout_str = 'C'
+            else:
+                if not isinstance(layout, types.StringLiteral):
+                    return None
+                layout_str = layout.literal_value
 
             ndim = parse_shape(shape)
             nb_dtype = parse_dtype(dtype)
             if nb_dtype is not None and ndim is not None:
-                return types.Array(dtype=nb_dtype, ndim=ndim, layout='C')
+                return types.Array(dtype=nb_dtype, ndim=ndim, layout=layout_str)
 
         return typer
 
