@@ -58,7 +58,7 @@ def determine_include_flags():
         return None
 
     # NVCC writes to stdout on Windows and stderr on Linux
-    if platform.system() == 'Windows':
+    if platform.system() == "Windows":
         stream = cp.stdout
     else:
         stream = cp.stderr
@@ -157,7 +157,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "-a",
         "--arch",
-        help="compute arch to target (e.g. sm_87). " "Defaults to sm_50.",
+        help="compute arch to target (e.g. sm_87). Defaults to sm_50.",
         default="sm_50",
     )
 
