@@ -5,7 +5,6 @@ import numpy as np
 import unittest
 from numba.cuda.testing import CUDATestCase
 
-from numba.cuda.tests.nrt.mock_numpy import cuda_empty, cuda_ones, cuda_arange
 from numba.tests.support import run_in_subprocess, override_config
 
 from numba import cuda
@@ -24,7 +23,7 @@ class TestNrtBasic(CUDATestCase):
 
         @cuda.jit
         def g():
-            x = cuda_empty(10, np.int64)
+            x = np.empty(10, np.int64)
             f(x)
 
         g[1,1]()
@@ -37,7 +36,7 @@ class TestNrtBasic(CUDATestCase):
 
         @cuda.jit
         def g():
-            x = cuda_empty(10, np.int64)
+            x = np.empty(10, np.int64)
             f(x)
 
         g[1,1]()
@@ -66,7 +65,7 @@ class TestNrtBasic(CUDATestCase):
 
         @cuda.jit
         def g(out_ary):
-            x = cuda_empty(10, np.int64)
+            x = np.empty(10, np.int64)
             x[5] = 1
             y = f(x)
             out_ary[0] = y[0]
@@ -97,11 +96,11 @@ class TestNrtStatistics(CUDATestCase):
         src = """if 1:
         from numba import cuda
         from numba.cuda.runtime import rtsys
-        from numba.cuda.tests.nrt.mock_numpy import cuda_arange
+        import numpy as np
 
         @cuda.jit
         def foo():
-            x = cuda_arange(10)[0]
+            x = np.arange(10)[0]
 
         # initialize the NRT before use
         rtsys.initialize()
@@ -167,8 +166,8 @@ class TestNrtStatistics(CUDATestCase):
 
         @cuda.jit
         def foo():
-            tmp = cuda_ones(3)
-            arr = cuda_arange(5 * tmp[0]) # noqa: F841
+            tmp = np.ones(3)
+            arr = np.arange(5 * tmp[0]) # noqa: F841
             return None
 
         with (
@@ -229,6 +228,38 @@ class TestNrtStatistics(CUDATestCase):
                 with self.assertRaises(RuntimeError) as raises:
                     stats_func()
                 self.assertIn("NRT stats are disabled.", str(raises.exception))
+
+    def test_read_one_stat(self):
+        @cuda.jit
+        def foo():
+            tmp = np.ones(3)
+            arr = np.arange(5 * tmp[0]) # noqa: F841
+            return None
+
+        with (
+            override_config('CUDA_ENABLE_NRT', True),
+            override_config('CUDA_NRT_STATS', True)
+        ):
+
+            # Switch on stats
+            rtsys.memsys_enable_stats()
+
+            # Launch the kernel a couple of times to increase stats
+            foo[1, 1]()
+            foo[1, 1]()
+
+            # Get stats struct and individual stats
+            stats = rtsys.get_allocation_stats()
+            stats_alloc = rtsys.memsys_get_stats_alloc()
+            stats_mi_alloc = rtsys.memsys_get_stats_mi_alloc()
+            stats_free = rtsys.memsys_get_stats_free()
+            stats_mi_free = rtsys.memsys_get_stats_mi_free()
+
+            # Check individual stats match stats struct
+            self.assertEqual(stats.alloc, stats_alloc)
+            self.assertEqual(stats.mi_alloc, stats_mi_alloc)
+            self.assertEqual(stats.free, stats_free)
+            self.assertEqual(stats.mi_free, stats_mi_free)
 
 
 if __name__ == '__main__':
