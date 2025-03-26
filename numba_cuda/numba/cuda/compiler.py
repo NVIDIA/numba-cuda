@@ -299,6 +299,15 @@ def compile_cuda(pyfunc, return_type, args, debug=False, lineinfo=False,
     library = cres.library
     library.finalize()
 
+    # External linking information that cannot be inferred from
+    # typing/lowering. e.g. Numbast bindings cannot persist information in
+    # state dictionary.
+    for obj in targetctx._external_linkage:
+        library.add_linking_file(obj)
+
+    # Immediately clear the external linkage info to avoid leakage
+    targetctx._external_linkage.clear()
+
     return cres
 
 
