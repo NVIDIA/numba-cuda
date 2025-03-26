@@ -116,6 +116,7 @@ class EnumTest(CUDATestCase):
         got = cuda_func(arr)
         self.assertPreciseEqual(expected, got)
 
+    @skip_on_cudasim("No typing context in CUDA simulator")
     def test_int_enum_no_conversion(self):
         # Ported from Numba PR #10047: "Fix IntEnumMember.can_convert_to() when
         # no conversions found", https://github.com/numba/numba/pull/10047.

@@ -7,6 +7,15 @@ Contains CUDA API functions
 from contextlib import contextmanager
 
 from .cudadrv.devices import require_context, reset, gpus  # noqa: F401
+from .cudadrv.linkable_code import (
+    PTXSource,  # noqa: F401
+    CUSource,  # noqa: F401
+    Cubin,  # noqa: F401
+    Fatbin,  # noqa: F401
+    Archive,  # noqa: F401
+    Object,  # noqa: F401
+    LTOIR,  # noqa: F401
+)  # noqa: F401
 from .kernel import FakeCUDAKernel
 from numba.core.sigutils import is_signature
 from numba.core import config
@@ -20,6 +29,10 @@ def select_device(dev=0):
 
 def is_float16_supported():
     return True
+
+
+def is_bfloat16_supported():
+    return False
 
 
 class stream(object):
@@ -70,6 +83,10 @@ def detect():
 
 def list_devices():
     return gpus
+
+
+def get_current_device():
+    return gpus[0].device
 
 
 # Events
