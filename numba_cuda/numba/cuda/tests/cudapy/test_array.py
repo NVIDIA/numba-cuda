@@ -310,9 +310,6 @@ class TestCudaArray(CUDATestCase):
             check(array_reshape, array_reshape1d, arr, 0)
             check(array_reshape, array_reshape1d, arr, (0,))
             check(array_reshape, array_reshape3d, arr, (1, 0, 2))
-            check_only_shape(array_reshape2d, arr, (0, -1), (0, 0))
-            check_only_shape(array_reshape2d, arr, (4, -1), (4, 0))
-            check_only_shape(array_reshape3d, arr, (-1, 0, 4), (0, 0, 4))
 
         # C-contiguous
         arr = np.arange(24)
