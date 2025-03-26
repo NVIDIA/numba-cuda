@@ -1,3 +1,4 @@
+import io
 from .mappings import FILE_EXTENSION_MAP
 
 
@@ -10,12 +11,18 @@ class LinkableCode:
     """
 
     def __init__(self, data, name=None):
-        self.data = data
         self._name = name
+        self._data = data
 
     @property
     def name(self):
         return self._name or self.default_name
+
+    @property
+    def data(self):
+        if isinstance(self._data, io.StringIO):
+            return self._data.getvalue()
+        return self._data
 
 
 class PTXSource(LinkableCode):
