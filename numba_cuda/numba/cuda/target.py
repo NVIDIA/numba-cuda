@@ -64,15 +64,8 @@ class CUDATypingContext(typing.BaseContext):
 
 class CUDACABIArgPacker(ArgPacker):
     """
-    Compute the position for each high-level typed argument.
-    It flattens every composite argument into primitive types.
-    It maintains a position map for unflattening the arguments.
-
-    Since struct (esp. nested struct) have specific ABI requirements (e.g.
-    alignment, pointer address-space, ...) in different architecture (e.g.
-    OpenCL, CUDA), flattening composite argument types simplifes the call
-    setup from the Python side.  Functions are receiving simple primitive
-    types and there are only a handful of these.
+    Subclass of ArgPacker which packs arguments according to the
+    CUDA C ABI calling convention.
     """
 
     def __init__(self, dmm, fe_args):
