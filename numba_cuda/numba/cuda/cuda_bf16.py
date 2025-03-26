@@ -40,10 +40,6 @@ from numba.types import int8
 from numba.types import uint8
 
 
-# Prefixes:
-
-numba.config.CUDA_ENABLE_PYNVJITLINK = True
-
 # Shim Stream:
 
 entry_point = "#include </home/wangm/micromamba/envs/numbast/targets/x86_64-linux/include/cuda_bf16.h>"

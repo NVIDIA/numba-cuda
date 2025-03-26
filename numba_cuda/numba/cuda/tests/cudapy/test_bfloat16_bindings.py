@@ -1,3 +1,4 @@
+from numba import config
 import numba.cuda as cuda
 from numba.cuda.testing import unittest, CUDATestCase
 from numba.cuda.cuda_bf16 import (
@@ -28,8 +29,9 @@ dtypes = [int16, int32, int64, uint16, uint32, uint64, float32]
 
 
 @unittest.skipIf(
-    cuda.get_current_device().compute_capability < (8, 0),
-    "bfloat16 require compute capability 8.0+",
+    (cuda.get_current_device().compute_capability < (8, 0)) or
+    (not config.CUDA_ENABLE_PYNVJITLINK),
+    "bfloat16 require compute capability 8.0+ or pynvjitlink is not enabled",
 )
 class Bfloat16Test(CUDATestCase):
 
