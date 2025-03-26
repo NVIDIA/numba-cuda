@@ -157,6 +157,7 @@ class TestCudaCooperativeGroups(CUDATestCase):
         self.assertEqual(blocks1d, blocks2d)
         self.assertEqual(blocks1d, blocks3d)
 
+    @skip_on_cudasim("External code unsupported on cudasim")
     @skip_unless_cc_60
     def test_external_cooperative_func(self):
         cudapy_test_path = os.path.dirname(__file__)

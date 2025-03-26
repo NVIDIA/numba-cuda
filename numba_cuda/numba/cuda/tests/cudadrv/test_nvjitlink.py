@@ -267,6 +267,7 @@ class TestLinker(CUDATestCase):
     not PYNVJITLINK_INSTALLED or not TEST_BIN_DIR,
     reason="pynvjitlink not enabled",
 )
+@skip_on_cudasim("Linking unsupported in the simulator")
 class TestLinkerUsage(CUDATestCase):
     """Test that whether pynvjitlink can be enabled by both environment variable
     and modification of config at runtime.

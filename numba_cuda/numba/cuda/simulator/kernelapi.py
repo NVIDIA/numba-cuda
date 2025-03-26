@@ -63,7 +63,10 @@ class FakeCUDALocal(object):
     CUDA Local arrays
     """
 
-    def array(self, shape, dtype):
+    def array(self, shape, dtype, alignment=None):
+        if alignment is not None:
+            raise RuntimeError("Array alignment is not supported in cudasim")
+
         if isinstance(dtype, types.Type):
             dtype = numpy_support.as_dtype(dtype)
         return np.empty(shape, dtype)
@@ -102,7 +105,10 @@ class FakeCUDAShared(object):
         self._dynshared_size = dynshared_size
         self._dynshared = np.zeros(dynshared_size, dtype=np.byte)
 
-    def array(self, shape, dtype):
+    def array(self, shape, dtype, alignment=None):
+        if alignment is not None:
+            raise RuntimeError("Array alignment is not supported in cudasim")
+
         if isinstance(dtype, types.Type):
             dtype = numpy_support.as_dtype(dtype)
         # Dynamic shared memory is requested with size 0 - this all shares the
