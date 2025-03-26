@@ -302,7 +302,7 @@ class CUDATargetContext(BaseContext):
     def get_arg_packer(self, fe_args):
         return CUDACABIArgPacker(self.data_model_manager, fe_args)
 
-    
+
 class CUDACallConv(MinimalCallConv):
     pass
 
