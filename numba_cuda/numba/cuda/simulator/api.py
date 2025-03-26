@@ -7,6 +7,9 @@ Contains CUDA API functions
 from contextlib import contextmanager
 
 from .cudadrv.devices import require_context, reset, gpus  # noqa: F401
+from .cudadrv.linkable_code import (PTXSource, CUSource, Cubin,  # noqa: F401
+                                    Fatbin, Archive, Object, # noqa: F401
+                                    LTOIR)  # noqa: F401
 from .kernel import FakeCUDAKernel
 from numba.core.sigutils import is_signature
 from numba.core import config
@@ -69,6 +72,10 @@ def detect():
 
 def list_devices():
     return gpus
+
+
+def get_current_device():
+    return gpus[0].device
 
 
 # Events
