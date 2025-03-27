@@ -292,9 +292,6 @@ class CUDATargetContext(BaseContext):
     def get_ufunc_info(self, ufunc_key):
         return ufuncs.get_ufunc_info(ufunc_key)
 
-    def get_arg_packer(self, fe_args):
-        return CUDACABIArgPacker(self.data_model_manager, fe_args)
-
 
 class CUDACallConv(MinimalCallConv):
     pass
@@ -366,3 +363,6 @@ class CUDACABICallConv(BaseCallConv):
 
     def get_return_type(self, ty):
         return self.context.data_model_manager[ty].get_return_type()
+
+    def _get_arg_packer(self, fe_args):
+        return CUDACABIArgPacker(self.data_model_manager, fe_args)
