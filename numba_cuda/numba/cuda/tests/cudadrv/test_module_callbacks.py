@@ -1,4 +1,5 @@
 import unittest
+import threading
 
 import numpy as np
 
@@ -15,6 +16,12 @@ else:
 
 
 def wipe_all_modules_in_context():
+    """Cleans all modules reference held by current context.
+    This simulates the behavior on interpreter shutdown.
+
+    TODO: This is a temp solution until
+    https://github.com/NVIDIA/numba-cuda/issues/171 is implemented.
+    """
     ctx = cuda.current_context()
     ctx.reset()
 
@@ -205,6 +212,81 @@ __device__ int get_num(int &retval) {
         arr = np.zeros(1, np.int32)
         kernel[1, 1](arr)
         self.assertEqual(arr[0], 42)
+
+
+class TestMultithreadedCallbacks(CUDATestCase):
+
+    def test_concurrent_initialization(self):
+        seen_mods = set()
+        max_seen_mods = 0
+
+        def setup(mod):
+            nonlocal seen_mods, max_seen_mods
+            seen_mods.add(get_hashable_handle_value(mod))
+            max_seen_mods = max(max_seen_mods, len(seen_mods))
+
+        def teardown(mod):
+            nonlocal seen_mods
+            # Raises an error if the module is not found in the seen_mods
+            seen_mods.remove(get_hashable_handle_value(mod))
+
+        lib = CUSource("", setup_callback=setup, teardown_callback=teardown)
+
+        @cuda.jit(link=[lib])
+        def kernel():
+            pass
+
+        def concurrent_compilation_launch(kernel):
+            kernel[1, 1]()
+
+        threads = [
+            threading.Thread(
+                target=concurrent_compilation_launch, args=(kernel,)
+            ) for _ in range(4)
+        ]
+        for t in threads:
+            t.start()
+        for t in threads:
+            t.join()
+
+        wipe_all_modules_in_context()
+        self.assertEqual(len(seen_mods), 0)
+        self.assertEqual(max_seen_mods, 4)
+
+    def test_concurrent_initialization_different_args(self):
+        seen_mods = set()
+        max_seen_mods = 0
+
+        def setup(mod):
+            nonlocal seen_mods, max_seen_mods
+            seen_mods.add(get_hashable_handle_value(mod))
+            max_seen_mods = max(max_seen_mods, len(seen_mods))
+
+        def teardown(mod):
+            nonlocal seen_mods
+            seen_mods.remove(get_hashable_handle_value(mod))
+
+        lib = CUSource("", setup_callback=setup, teardown_callback=teardown)
+
+        @cuda.jit(link=[lib])
+        def kernel(a):
+            pass
+
+        def concurrent_compilation_launch():
+            kernel[1, 1](42)  # (int64)->() : module 1
+            kernel[1, 1](9)   # (int64)->() : module 1 from cache
+            kernel[1, 1](3.14) # (float64)->() : module 2
+
+        threads = [threading.Thread(target=concurrent_compilation_launch)
+                   for _ in range(4)]
+        for t in threads:
+            t.start()
+        for t in threads:
+            t.join()
+
+        wipe_all_modules_in_context()
+        assert len(seen_mods) == 0
+        self.assertEqual(max_seen_mods, 8) # 2 kernels per thread
 
 
 if __name__ == '__main__':
