@@ -365,4 +365,4 @@ class CUDACABICallConv(BaseCallConv):
         return self.context.data_model_manager[ty].get_return_type()
 
     def _get_arg_packer(self, fe_args):
-        return CUDACABIArgPacker(self.data_model_manager, fe_args)
+        return CUDACABIArgPacker(self.context.data_model_manager, fe_args)

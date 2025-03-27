@@ -333,7 +333,7 @@ def cabi_wrap_function(context, lib, fndesc, wrapper_function_name,
     wrapfn = ir.Function(wrapper_module, wrapfnty, wrapper_function_name)
     builder = ir.IRBuilder(wrapfn.append_basic_block(''))
 
-    arginfo = context.get_arg_packer(argtypes)
+    arginfo = c_call_conv._get_arg_packer(argtypes)
     callargs = arginfo.from_arguments(builder, wrapfn.args)
     # We get (status, return_value), but we ignore the status since we
     # can't propagate it through the C ABI anyway
