@@ -45,7 +45,8 @@ python -m numba --sysinfo
 
 # remove cuda-nvvm-12-5 leaving libnvvm.so from nvidia-cuda-nvcc-cu12 only 
 apt-get update
-apt remove --purge cuda-nvvm-12-5 -y
+apt remove --purge `dpkg --get-selections | grep cuda-nvvm | awk '{print $1}'` -y
+apt remove --purge `dpkg --get-selections | grep cuda-nvrtc | awk '{print $1}'` -y
 
 rapids-logger "Run Tests"
 NUMBA_CUDA_ENABLE_PYNVJITLINK=1 NUMBA_CUDA_TEST_BIN_DIR=$NUMBA_CUDA_TEST_BIN_DIR python -m numba.runtests numba.cuda.tests -v
