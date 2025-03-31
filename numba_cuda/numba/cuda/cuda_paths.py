@@ -79,32 +79,25 @@ def _get_nvrtc_path_decision():
 
 
 def _get_nvvm_wheel():
-    site_paths = [
-        site.getusersitepackages()
-    ] + site.getsitepackages()
-    # The SONAME is taken based on public CTK 12.x releases
-    for sp in site_paths:
-        if sys.platform.startswith("linux"):
-            dso_dir = "lib64"
-            # Hack: libnvvm from Linux wheel
-            # does not have any soname (CUDAINST-3183)
-            dso_path = "libnvvm.so"
-        elif sys.platform.startswith("win32"):
-            dso_dir = "bin"
-            dso_path = "nvvm64_40_0.dll"
-        else:
-            raise NotImplementedError('Unsupported platform')
-        if sp is not None:
-            dso_dir = os.path.join(
-                sp,
-                "nvidia",
-                "cuda_nvcc",
-                "nvvm",
-                dso_dir
-            )
-            dso_path = os.path.join(dso_dir, dso_path)
-            if os.path.exists(dso_path):
-                return str(Path(dso_path).parent)
+    platform_map = {
+        "linux": ("lib64", "libnvvm.so"),
+        "win32": ("bin", "nvvm64_40_0.dll")
+    }
+
+    for plat, (dso_dir, dso_path) in platform_map.items():
+        if sys.platform.startswith(plat):
+            break
+    else:
+        raise NotImplementedError("Unsupported platform")
+
+    site_paths = [site.getusersitepackages()] + site.getsitepackages()
+
+    for sp in filter(None, site_paths):
+        nvvm_path = Path(sp, "nvidia", "cuda_nvcc", "nvvm", dso_dir, dso_path)
+        if nvvm_path.exists():
+            return str(nvvm_path.parent)
+
+    return None
 
 
 def detect_nvrtc_major_cuda_version(lib_dir):
@@ -352,7 +345,6 @@ def get_cuda_home(*subdirs):
 def _get_nvvm_path():
     by, path = _get_nvvm_path_decision()
     if by == "NVIDIA NVCC Wheel":
-        # The NVVM path is a directory, not a file
         path = os.path.join(path, "libnvvm.so")
     else:
         candidates = find_lib('nvvm', path)
