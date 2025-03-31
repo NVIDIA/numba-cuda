@@ -13,7 +13,7 @@ from numba.core.typing import signature
 from numba.cuda.cudaimpl import lower as cuda_lower
 from numba import cuda
 from numba.cuda.runtime.nrt import rtsys
-
+import tempfile
 from numba.core.typing.templates import AbstractTemplate
 
 
@@ -127,14 +127,20 @@ class TestNrtBasic(CUDATestCase):
         """
         cc = get_current_device().compute_capability
         ptx, _ = compile(src, 'external_nrt.cu', cc)
-        with open('external_nrt.ptx', 'w') as f:
+        with tempfile.NamedTemporaryFile(
+            delete=True,
+            mode="w+",
+            suffix='.ptx',
+            encoding='utf-8'
+        ) as f:
             f.write(ptx)
+            f.flush()
 
-        @cuda.jit(link=['external_nrt.ptx'])
-        def kernel():
-            allocate_shim()
+            @cuda.jit(link=[f.name])
+            def kernel():
+                allocate_shim()
 
-        kernel[1,1]()
+            kernel[1,1]()
 
 
 class TestNrtStatistics(CUDATestCase):
