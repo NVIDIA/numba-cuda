@@ -12,9 +12,6 @@ extern "C" __global__ void NRT_MemSys_set(NRT_MemSys *memsys_ptr)
   TheMSys = memsys_ptr;
 }
 
-static __device__ void *nrt_allocate_meminfo_and_data_align(size_t size, unsigned align, NRT_MemInfo **mi);
-static __device__ void *nrt_allocate_meminfo_and_data(size_t size, NRT_MemInfo **mi_out);
-extern "C" __device__ void* NRT_Allocate_External(size_t size);
 
 extern "C" __device__ void* NRT_Allocate(size_t size)
 {

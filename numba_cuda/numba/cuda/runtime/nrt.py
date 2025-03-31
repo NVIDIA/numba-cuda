@@ -29,6 +29,11 @@ if not hasattr(config, "NUMBA_CUDA_ENABLE_NRT"):
     config.CUDA_ENABLE_NRT = ENABLE_NRT
 
 
+def get_include():
+    """Return the include path for the NRT header"""
+    return os.path.dirname(os.path.abspath(__file__))
+
+
 # Protect method to ensure NRT memory allocation and initialization
 def _alloc_init_guard(method):
     """
