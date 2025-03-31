@@ -117,6 +117,25 @@ class TestNrtBasic(CUDATestCase):
 
         self.assertEqual(out_ary[0], 1)
 
+    def test_nrt_detect_linked_ptx_file(self):
+        src = """;
+                 extern "C" __device__ void* NRT_Allocate(size_t size);
+                 extern "C" __device__ int extern_func(int* nb_retval){
+                     NRT_Allocate(1);
+                     return 0;
+                 }
+        """
+        cc = get_current_device().compute_capability
+        ptx, _ = compile(src, 'external_nrt.cu', cc)
+        with open('external_nrt.ptx', 'w') as f:
+            f.write(ptx)
+
+        @cuda.jit(link=['external_nrt.ptx'])
+        def kernel():
+            allocate_shim()
+
+        kernel[1,1]()
+
 
 class TestNrtStatistics(CUDATestCase):
 
@@ -270,24 +289,37 @@ class TestNrtStatistics(CUDATestCase):
                     stats_func()
                 self.assertIn("NRT stats are disabled.", str(raises.exception))
 
-    def test_nrt_detect_linked_ptx_file(self):
-        src = """;
-                 extern "C" __device__ void* NRT_Allocate(size_t size);
-                 extern "C" __device__ int extern_func(int* nb_retval){
-                     NRT_Allocate(1);
-                     return 0;
-                 }
-        """
-        cc = get_current_device().compute_capability
-        ptx, _ = compile(src, 'external_nrt.cu', cc)
-        with open('external_nrt.ptx', 'w') as f:
-            f.write(ptx)
+    def test_read_one_stat(self):
+        @cuda.jit
+        def foo():
+            tmp = np.ones(3)
+            arr = np.arange(5 * tmp[0]) # noqa: F841
+            return None
 
-        @cuda.jit(link=['external_nrt.ptx'])
-        def kernel():
-            allocate_shim()
+        with (
+            override_config('CUDA_ENABLE_NRT', True),
+            override_config('CUDA_NRT_STATS', True)
+        ):
 
-        kernel[1,1]()
+            # Switch on stats
+            rtsys.memsys_enable_stats()
+
+            # Launch the kernel a couple of times to increase stats
+            foo[1, 1]()
+            foo[1, 1]()
+
+            # Get stats struct and individual stats
+            stats = rtsys.get_allocation_stats()
+            stats_alloc = rtsys.memsys_get_stats_alloc()
+            stats_mi_alloc = rtsys.memsys_get_stats_mi_alloc()
+            stats_free = rtsys.memsys_get_stats_free()
+            stats_mi_free = rtsys.memsys_get_stats_mi_free()
+
+            # Check individual stats match stats struct
+            self.assertEqual(stats.alloc, stats_alloc)
+            self.assertEqual(stats.mi_alloc, stats_mi_alloc)
+            self.assertEqual(stats.free, stats_free)
+            self.assertEqual(stats.mi_free, stats_mi_free)
 
 
 if __name__ == '__main__':
