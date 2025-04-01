@@ -115,9 +115,18 @@ def _validate_alignment(alignment: int):
 
 def _try_extract_and_validate_alignment(sig: types.Tuple):
     """
-    Extracts the alignment from the given signature, if it is present,
-    validates it, and returns it if valid.   If the alignment is not
-    present, or not an integer literal, this function returns None.
+    Extracts and validates the alignment from the supplied signature.
+
+    Returns the alignment if it is present and is an integer literal;
+    otherwise, returns None.
+
+    N.B. Currently, this routine assumes the signature has exactly
+         three arguments, with the alignment (if present) as the third
+         argument, as is the case with the shared and local array
+         helper routines below.
+
+         If this routine is called from new places, you may need to
+         review this implicit assumption.
     """
     if len(sig.args) != 3:
         return None
