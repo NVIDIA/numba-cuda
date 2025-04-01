@@ -11,6 +11,7 @@ python -m pip install \
     cuda-python \
     nvidia-curand-cu12 \
     nvidia-cuda-nvcc-cu12 \
+    nvidia-cuda-nvrtc-cu12 \
     pynvjitlink-cu12 \
     pytest
 
