@@ -25,15 +25,15 @@ runs:
           - { CUDA_VER: '11.8.0', ARCH: 'amd64', PY_VER: '3.10', LINUX_VER: 'ubuntu20.04', GPU: 'l4',   DRIVER: 'latest' }
           - { CUDA_VER: '12.0.1', ARCH: 'amd64', PY_VER: '3.11', LINUX_VER: 'ubuntu22.04', GPU: 'l4',   DRIVER: 'latest' }
           - { CUDA_VER: '12.2.2', ARCH: 'amd64', PY_VER: '3.12', LINUX_VER: 'ubuntu22.04', GPU: 'l4',   DRIVER: 'latest' }
-          # TODO: Use CUDA 12.8.0 below.
-          - { CUDA_VER: '12.5.1', ARCH: 'amd64', PY_VER: '3.13', LINUX_VER: 'ubuntu24.04', GPU: 'l4',   DRIVER: 'latest' }
+          # TODO: Use CUDA 12.8.0 and Ubuntu 24.04 below.
+          - { CUDA_VER: '12.5.1', ARCH: 'amd64', PY_VER: '3.13', LINUX_VER: 'ubuntu22.04', GPU: 'l4',   DRIVER: 'latest' }
           # TODO: Use CUDA 11.4.3 below.
           - { CUDA_VER: '11.8.0', ARCH: 'arm64', PY_VER: '3.9',  LINUX_VER: 'rockylinux8', GPU: 'a100', DRIVER: 'latest' }
           - { CUDA_VER: '11.8.0', ARCH: 'arm64', PY_VER: '3.10', LINUX_VER: 'ubuntu20.04', GPU: 'a100', DRIVER: 'latest' }
           - { CUDA_VER: '12.0.1', ARCH: 'arm64', PY_VER: '3.11', LINUX_VER: 'ubuntu22.04', GPU: 'a100', DRIVER: 'latest' }
           - { CUDA_VER: '12.2.2', ARCH: 'arm64', PY_VER: '3.12', LINUX_VER: 'ubuntu22.04', GPU: 'a100', DRIVER: 'latest' }
-          # TODO: Use CUDA 12.8.0 below.
-          - { CUDA_VER: '12.5.1', ARCH: 'arm64', PY_VER: '3.13', LINUX_VER: 'ubuntu24.04', GPU: 'a100', DRIVER: 'latest' }
+          # TODO: Use CUDA 12.8.0 and Ubuntu 24.04 below.
+          - { CUDA_VER: '12.5.1', ARCH: 'arm64', PY_VER: '3.13', LINUX_VER: 'ubuntu22.04', GPU: 'a100', DRIVER: 'latest' }
         "
 
         echo "BUILD_MATRIX=$(
