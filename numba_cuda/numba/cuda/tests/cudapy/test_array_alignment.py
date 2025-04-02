@@ -167,8 +167,10 @@ class TestArrayAddressAlignment(CUDATestCase):
         alignments = invalid_alignment_values + invalid_alignment_types
         array_types = [(0, 'local'), (1, 'shared')]
 
-        expected_invalid_type_error = (
-            "RequireLiteralValue: alignment must be a constant integer"
+        # Use regex pattern to match error message, handling potential ANSI
+        # color codes which appear on CI.
+        expected_invalid_type_error_pattern = re.compile(
+            r"RequireLiteralValue:.*alignment must be a constant integer"
         )
 
         items = itertools.product(array_types, shapes, dtypes, alignments)
@@ -210,7 +212,12 @@ class TestArrayAddressAlignment(CUDATestCase):
                     with self.assertRaises(TypingError) as raises:
                         f[1, 1](loc, shrd, which)
                     exc = str(raises.exception)
-                    self.assertIn(expected_invalid_type_error, exc)
+                    msg = (
+                        f"Error message '{exc}' does not match expected "
+                        f"regex pattern: {expected_invalid_type_error_pattern}"
+                    )
+                    match = expected_invalid_type_error_pattern.search(exc)
+                    self.assertTrue(match, msg)
 
                 if NOISY:
                     print('.', end='', flush=True)
