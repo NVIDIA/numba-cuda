@@ -25,10 +25,12 @@ class build_py_with_redirector(build_py):  # noqa: N801
 
     def get_source_files(self):
         src = super().get_source_files()
-        src.extend([
-            str(SITE_PACKAGES / REDIRECTOR_PTH),
-            str(SITE_PACKAGES / REDIRECTOR_PY),
-        ])
+        src.extend(
+            [
+                str(SITE_PACKAGES / REDIRECTOR_PTH),
+                str(SITE_PACKAGES / REDIRECTOR_PY),
+            ]
+        )
         return src
 
     def get_output_mapping(self):
@@ -60,11 +62,17 @@ class editable_wheel_with_redirector(editable_wheel):
         # the repo. It could be implemented, but we only handle the default
         # case for now.
         if self.mode is not None and self.mode != "lenient":
-            raise RuntimeError("Only lenient mode is supported for editable "
-                               f"install. Current mode is {self.mode}")
+            raise RuntimeError(
+                "Only lenient mode is supported for editable "
+                f"install. Current mode is {self.mode}"
+            )
 
         return TopLevelFinderWithRedirector(self.distribution, name)
 
 
-setup(cmdclass={"build_py": build_py_with_redirector,
-                "editable_wheel": editable_wheel_with_redirector})
+setup(
+    cmdclass={
+        "build_py": build_py_with_redirector,
+        "editable_wheel": editable_wheel_with_redirector,
+    }
+)

@@ -9,7 +9,6 @@ from numba import cuda
 
 
 class TestNrtRefCt(EnableNRTStatsMixin, CUDATestCase):
-
     def setUp(self):
         super(TestNrtRefCt, self).setUp()
 
@@ -19,7 +18,7 @@ class TestNrtRefCt(EnableNRTStatsMixin, CUDATestCase):
     def run(self, result=None):
         with (
             override_config("CUDA_ENABLE_NRT", True),
-            override_config('CUDA_NRT_STATS', True)
+            override_config("CUDA_NRT_STATS", True),
         ):
             super(TestNrtRefCt, self).run(result)
 
@@ -33,7 +32,7 @@ class TestNrtRefCt(EnableNRTStatsMixin, CUDATestCase):
         @cuda.jit
         def kernel():
             for i in range(n):
-                temp = np.empty(2) # noqa: F841
+                temp = np.empty(2)  # noqa: F841
             return None
 
         init_stats = rtsys.get_allocation_stats()
@@ -49,14 +48,13 @@ class TestNrtRefCt(EnableNRTStatsMixin, CUDATestCase):
 
         @cuda.jit
         def g(n):
-
             x = np.empty((n, 2))
 
             for i in range(n):
                 y = x[i]
 
             for i in range(n):
-                y = x[i] # noqa: F841
+                y = x[i]  # noqa: F841
 
             return None
 
@@ -70,6 +68,7 @@ class TestNrtRefCt(EnableNRTStatsMixin, CUDATestCase):
         """
         Test issue #1573
         """
+
         @cuda.jit
         def if_with_allocation_and_initialization(arr1, test1):
             tmp_arr = np.empty_like(arr1)
@@ -85,13 +84,15 @@ class TestNrtRefCt(EnableNRTStatsMixin, CUDATestCase):
         init_stats = rtsys.get_allocation_stats()
         if_with_allocation_and_initialization[1, 1](arr, False)
         cur_stats = rtsys.get_allocation_stats()
-        self.assertEqual(cur_stats.alloc - init_stats.alloc,
-                         cur_stats.free - init_stats.free)
+        self.assertEqual(
+            cur_stats.alloc - init_stats.alloc, cur_stats.free - init_stats.free
+        )
 
     def test_del_at_beginning_of_loop(self):
         """
         Test issue #1734
         """
+
         @cuda.jit
         def f(arr):
             res = 0
@@ -108,9 +109,10 @@ class TestNrtRefCt(EnableNRTStatsMixin, CUDATestCase):
         init_stats = rtsys.get_allocation_stats()
         f[1, 1](arr)
         cur_stats = rtsys.get_allocation_stats()
-        self.assertEqual(cur_stats.alloc - init_stats.alloc,
-                         cur_stats.free - init_stats.free)
+        self.assertEqual(
+            cur_stats.alloc - init_stats.alloc, cur_stats.free - init_stats.free
+        )
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

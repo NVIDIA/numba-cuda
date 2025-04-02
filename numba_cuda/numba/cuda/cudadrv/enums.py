@@ -140,7 +140,7 @@ CU_CTX_USER_COREDUMP_ENABLE = 0x40
 # Force synchronous blocking on cudaMemcpy/cudaMemset
 CU_CTX_SYNC_MEMOPS = 0x80
 
-CU_CTX_FLAGS_MASK = 0xff
+CU_CTX_FLAGS_MASK = 0xFF
 
 
 # DEFINES

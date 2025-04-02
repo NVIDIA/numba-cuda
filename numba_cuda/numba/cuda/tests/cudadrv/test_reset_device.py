@@ -7,7 +7,6 @@ from queue import Queue
 
 class TestResetDevice(ContextResettingTestCase):
     def test_reset_device(self):
-
         def newthread(exception_queue):
             try:
                 devices = range(driver.get_device_count())
@@ -32,5 +31,5 @@ class TestResetDevice(ContextResettingTestCase):
         self.assertEqual(exceptions, [])
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

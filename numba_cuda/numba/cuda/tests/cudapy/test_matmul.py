@@ -15,9 +15,7 @@ SM_SIZE = (tpb, tpb)
 
 
 class TestCudaMatMul(CUDATestCase):
-
     def test_func(self):
-
         @cuda.jit(void(float32[:, ::1], float32[:, ::1], float32[:, ::1]))
         def cu_square_matrix_mul(A, B, C):
             sA = cuda.shared.array(shape=SM_SIZE, dtype=float32)
@@ -70,5 +68,5 @@ class TestCudaMatMul(CUDATestCase):
         np.testing.assert_allclose(C, Cans, rtol=1e-5)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

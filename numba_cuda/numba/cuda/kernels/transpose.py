@@ -18,16 +18,14 @@ def transpose(a, b=None):
     """
 
     # prefer `a`'s stream if
-    stream = getattr(a, 'stream', 0)
+    stream = getattr(a, "stream", 0)
 
     if not b:
         cols, rows = a.shape
         strides = a.dtype.itemsize * cols, a.dtype.itemsize
         b = cuda.cudadrv.devicearray.DeviceNDArray(
-            (rows, cols),
-            strides,
-            dtype=a.dtype,
-            stream=stream)
+            (rows, cols), strides, dtype=a.dtype, stream=stream
+        )
 
     dt = nps.from_dtype(a.dtype)
 
@@ -40,7 +38,6 @@ def transpose(a, b=None):
 
     @cuda.jit
     def kernel(input, output):
-
         tile = cuda.shared.array(shape=tile_shape, dtype=dt)
 
         tx = cuda.threadIdx.x

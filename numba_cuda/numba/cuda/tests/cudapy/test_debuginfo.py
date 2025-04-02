@@ -1,4 +1,4 @@
-from numba.tests.support import (override_config, captured_stdout)
+from numba.tests.support import override_config, captured_stdout
 from numba.cuda.testing import skip_on_cudasim
 from numba import cuda
 from numba.core import types
@@ -8,7 +8,7 @@ import re
 import unittest
 
 
-@skip_on_cudasim('Simulator does not produce debug dumps')
+@skip_on_cudasim("Simulator does not produce debug dumps")
 class TestCudaDebugInfo(CUDATestCase):
     """
     These tests only checks the compiled PTX for debuginfo section
@@ -49,7 +49,7 @@ class TestCudaDebugInfo(CUDATestCase):
         self._check(foo, sig=(types.int32[:],), expect=True)
 
     def test_environment_override(self):
-        with override_config('CUDA_DEBUGINFO_DEFAULT', 1):
+        with override_config("CUDA_DEBUGINFO_DEFAULT", 1):
             # Using default value
             @cuda.jit(opt=False)
             def foo(x):
@@ -86,7 +86,7 @@ class TestCudaDebugInfo(CUDATestCase):
 
         llvm_ir = f.inspect_llvm(sig)
         # A varible name starting with "bool" in the debug metadata
-        pat = r'!DILocalVariable\(.*name:\s+\"bool'
+        pat = r"!DILocalVariable\(.*name:\s+\"bool"
         match = re.compile(pat).search(llvm_ir)
         self.assertIsNone(match, msg=llvm_ir)
 
@@ -106,7 +106,7 @@ class TestCudaDebugInfo(CUDATestCase):
         mdnode_id = match.group(1)
 
         # verify the DIBasicType has correct encoding attribute DW_ATE_boolean
-        pat = rf'!{mdnode_id}\s+=\s+!DIBasicType\(.*DW_ATE_boolean'
+        pat = rf"!{mdnode_id}\s+=\s+!DIBasicType\(.*DW_ATE_boolean"
         match = re.compile(pat).search(llvm_ir)
         self.assertIsNotNone(match, msg=llvm_ir)
 
@@ -133,14 +133,17 @@ class TestCudaDebugInfo(CUDATestCase):
 
         llvm_ir = f.inspect_llvm(sig)
 
-        defines = [line for line in llvm_ir.splitlines()
-                   if 'define void @"_ZN6cudapy' in line]
+        defines = [
+            line
+            for line in llvm_ir.splitlines()
+            if 'define void @"_ZN6cudapy' in line
+        ]
 
         # Make sure we only found one definition
         self.assertEqual(len(defines), 1)
 
         wrapper_define = defines[0]
-        self.assertIn('!dbg', wrapper_define)
+        self.assertIn("!dbg", wrapper_define)
 
     def test_debug_function_calls_internal_impl(self):
         # Calling a function in a module generated from an implementation
@@ -198,16 +201,16 @@ class TestCudaDebugInfo(CUDATestCase):
         debug_opts = itertools.product(*[(True, False)] * 3)
 
         for kernel_debug, f1_debug, f2_debug in debug_opts:
-            with self.subTest(kernel_debug=kernel_debug,
-                              f1_debug=f1_debug,
-                              f2_debug=f2_debug):
-                self._test_chained_device_function(kernel_debug,
-                                                   f1_debug,
-                                                   f2_debug)
+            with self.subTest(
+                kernel_debug=kernel_debug, f1_debug=f1_debug, f2_debug=f2_debug
+            ):
+                self._test_chained_device_function(
+                    kernel_debug, f1_debug, f2_debug
+                )
 
-    def _test_chained_device_function_two_calls(self, kernel_debug, f1_debug,
-                                                f2_debug):
-
+    def _test_chained_device_function_two_calls(
+        self, kernel_debug, f1_debug, f2_debug
+    ):
         @cuda.jit(device=True, debug=f2_debug, opt=False)
         def f2(x):
             return x + 1
@@ -232,12 +235,12 @@ class TestCudaDebugInfo(CUDATestCase):
         debug_opts = itertools.product(*[(True, False)] * 3)
 
         for kernel_debug, f1_debug, f2_debug in debug_opts:
-            with self.subTest(kernel_debug=kernel_debug,
-                              f1_debug=f1_debug,
-                              f2_debug=f2_debug):
-                self._test_chained_device_function_two_calls(kernel_debug,
-                                                             f1_debug,
-                                                             f2_debug)
+            with self.subTest(
+                kernel_debug=kernel_debug, f1_debug=f1_debug, f2_debug=f2_debug
+            ):
+                self._test_chained_device_function_two_calls(
+                    kernel_debug, f1_debug, f2_debug
+                )
 
     def test_chained_device_three_functions(self):
         # Like test_chained_device_function, but with enough functions (three)
@@ -278,13 +281,13 @@ class TestCudaDebugInfo(CUDATestCase):
         llvm_ir = f.inspect_llvm(sig)
 
         # extract the metadata node id from `types` field of DISubroutineType
-        pat = r'!DISubroutineType\(types:\s+!(\d+)\)'
+        pat = r"!DISubroutineType\(types:\s+!(\d+)\)"
         match = re.compile(pat).search(llvm_ir)
         self.assertIsNotNone(match, msg=llvm_ir)
         mdnode_id = match.group(1)
 
         # extract the metadata node ids from the flexible node of types
-        pat = rf'!{mdnode_id}\s+=\s+!{{\s+!(\d+),\s+!(\d+)\s+}}'
+        pat = rf"!{mdnode_id}\s+=\s+!{{\s+!(\d+),\s+!(\d+)\s+}}"
         match = re.compile(pat).search(llvm_ir)
         self.assertIsNotNone(match, msg=llvm_ir)
         mdnode_id1 = match.group(1)
@@ -303,10 +306,10 @@ class TestCudaDebugInfo(CUDATestCase):
 
     def test_kernel_args_types_dump(self):
         # see issue#135
-        with override_config('DUMP_LLVM', 1):
+        with override_config("DUMP_LLVM", 1):
             with captured_stdout():
                 self._test_kernel_args_types()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

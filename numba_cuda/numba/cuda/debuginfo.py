@@ -7,7 +7,6 @@ _BYTE_SIZE = 8
 
 
 class CUDADIBuilder(DIBuilder):
-
     def _var_type(self, lltype, size, datamodel=None):
         is_bool = False
         is_grid_group = False
@@ -34,11 +33,14 @@ class CUDADIBuilder(DIBuilder):
             elif is_grid_group:
                 ditok = "DW_ATE_unsigned"
 
-            return m.add_debug_info('DIBasicType', {
-                'name': name,
-                'size': bitsize,
-                'encoding': ir.DIToken(ditok),
-            })
+            return m.add_debug_info(
+                "DIBasicType",
+                {
+                    "name": name,
+                    "size": bitsize,
+                    "encoding": ir.DIToken(ditok),
+                },
+            )
 
         # For other cases, use upstream Numba implementation
         return super()._var_type(lltype, size, datamodel=datamodel)

@@ -14,7 +14,6 @@ SM_SIZE = tpb, tpb
 
 class TestCudaLaplace(CUDATestCase):
     def test_laplace_small(self):
-
         @cuda.jit(float64(float64, float64), device=True, inline=True)
         def get_max(a, b):
             if a > b:
@@ -38,8 +37,9 @@ class TestCudaLaplace(CUDATestCase):
 
             err_sm[ty, tx] = 0
             if j >= 1 and j < n - 1 and i >= 1 and i < m - 1:
-                Anew[j, i] = 0.25 * ( A[j, i + 1] + A[j, i - 1]
-                                      + A[j - 1, i] + A[j + 1, i])
+                Anew[j, i] = 0.25 * (
+                    A[j, i + 1] + A[j, i - 1] + A[j - 1, i] + A[j + 1, i]
+                )
                 err_sm[ty, tx] = Anew[j, i] - A[j, i]
 
             cuda.syncthreads()
@@ -91,8 +91,8 @@ class TestCudaLaplace(CUDATestCase):
 
         stream = cuda.stream()
 
-        dA = cuda.to_device(A, stream)          # to device and don't come back
-        dAnew = cuda.to_device(Anew, stream)    # to device and don't come back
+        dA = cuda.to_device(A, stream)  # to device and don't come back
+        dAnew = cuda.to_device(Anew, stream)  # to device and don't come back
         derror_grid = cuda.to_device(error_grid, stream)
 
         while error > tol and iter < iter_max:
@@ -115,5 +115,5 @@ class TestCudaLaplace(CUDATestCase):
             iter += 1
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

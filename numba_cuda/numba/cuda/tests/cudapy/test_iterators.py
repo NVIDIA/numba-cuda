@@ -5,7 +5,6 @@ import numpy as np
 
 
 class TestIterators(CUDATestCase):
-
     def test_enumerate(self):
         @cuda.jit
         def enumerator(x, error):
@@ -95,5 +94,5 @@ class TestIterators(CUDATestCase):
         self._test_twoarg_function(zipper_enumerator)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

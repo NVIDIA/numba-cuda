@@ -7,9 +7,8 @@ import unittest
 from numba.np import numpy_support
 
 
-@skip_on_cudasim('pickling not supported in CUDASIM')
+@skip_on_cudasim("pickling not supported in CUDASIM")
 class TestPickle(CUDATestCase):
-
     def check_call(self, callee):
         arr = np.array([100])
         expected = callee[1, 1](arr)
@@ -41,14 +40,13 @@ class TestPickle(CUDATestCase):
         def inner(a):
             return a + 1
 
-        @cuda.jit('void(intp[:])')
+        @cuda.jit("void(intp[:])")
         def foo(arr):
             arr[0] = inner(arr[0])
 
         self.check_call(foo)
 
     def test_pickling_jit(self):
-
         @cuda.jit(device=True)
         def inner(a):
             return a + 1
@@ -60,7 +58,7 @@ class TestPickle(CUDATestCase):
         self.check_call(foo)
 
     def test_pickling_vectorize(self):
-        @vectorize(['intp(intp)', 'float64(float64)'], target='cuda')
+        @vectorize(["intp(intp)", "float64(float64)"], target="cuda")
         def cuda_vect(x):
             return x * 2
 
@@ -81,5 +79,5 @@ class TestPickle(CUDATestCase):
         np.testing.assert_equal(expected, got2)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

@@ -50,7 +50,7 @@ def make_vector_type(
     name: str,
     base_type: types.Type,
     attr_names: Tuple[str, ...],
-    user_facing_object
+    user_facing_object,
 ) -> types.Type:
     """Create a vector type.
 
@@ -149,7 +149,7 @@ def enable_vector_type_ctor(
         lower(ctor, *arglist)(lowering)
 
 
-vector_types : Dict[str, VectorType] = {}
+vector_types: Dict[str, VectorType] = {}
 
 
 def build_constructor_overloads(base_type, vty_name, num_elements, arglists, l):

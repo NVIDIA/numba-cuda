@@ -10,6 +10,7 @@ from numba.tests.support import run_in_subprocess, override_config
 
 try:
     import pynvjitlink  # noqa: F401
+
     PYNVJITLINK_INSTALLED = True
 except ImportError:
     PYNVJITLINK_INSTALLED = False
@@ -52,7 +53,7 @@ if TEST_BIN_DIR:
 
 @unittest.skipIf(
     not config.CUDA_ENABLE_PYNVJITLINK or not TEST_BIN_DIR,
-    "pynvjitlink not enabled"
+    "pynvjitlink not enabled",
 )
 @skip_on_cudasim("Linking unsupported in the simulator")
 class TestLinker(CUDATestCase):
@@ -85,7 +86,6 @@ class TestLinker(CUDATestCase):
             PyNvJitLinker(cc=0)
 
     def test_nvjitlink_ptx_compile_options(self):
-
         max_registers = (None, 32)
         lineinfo = (False, True)
         lto = (False, True)
@@ -190,7 +190,7 @@ class TestLinker(CUDATestCase):
         files = [
             test_device_functions_cu,
             test_device_functions_ltoir,
-            test_device_functions_fatbin_multi
+            test_device_functions_fatbin_multi,
         ]
 
         config.DUMP_ASSEMBLY = True
@@ -228,7 +228,7 @@ class TestLinker(CUDATestCase):
         for file in files:
             with self.subTest(file=file):
                 with warnings.catch_warnings(record=True) as w:
-                    with contextlib.redirect_stdout(None): # suppress other PTX
+                    with contextlib.redirect_stdout(None):  # suppress other PTX
                         sig = "uint32(uint32, uint32)"
                         add_from_numba = cuda.declare_device(
                             "add_from_numba", sig
@@ -243,8 +243,11 @@ class TestLinker(CUDATestCase):
                         assert result[0] == 3
 
                 assert len(w) == 1
-                self.assertIn("it is not optimizable at link time, and "
-                              "`ignore_nonlto == True`", str(w[0].message))
+                self.assertIn(
+                    "it is not optimizable at link time, and "
+                    "`ignore_nonlto == True`",
+                    str(w[0].message),
+                )
 
         config.DUMP_ASSEMBLY = False
 
@@ -262,7 +265,7 @@ class TestLinker(CUDATestCase):
 
 @unittest.skipIf(
     not PYNVJITLINK_INSTALLED or not TEST_BIN_DIR,
-    reason="pynvjitlink not enabled"
+    reason="pynvjitlink not enabled",
 )
 class TestLinkerUsage(CUDATestCase):
     """Test that whether pynvjitlink can be enabled by both environment variable
@@ -295,12 +298,12 @@ class TestLinkerUsage(CUDATestCase):
 
     def test_linker_enabled_envvar(self):
         env = os.environ.copy()
-        env['NUMBA_CUDA_ENABLE_PYNVJITLINK'] = "1"
+        env["NUMBA_CUDA_ENABLE_PYNVJITLINK"] = "1"
         run_in_subprocess(self.src.format(config=""), env=env)
 
     def test_linker_disabled_envvar(self):
         env = os.environ.copy()
-        env.pop('NUMBA_CUDA_ENABLE_PYNVJITLINK', None)
+        env.pop("NUMBA_CUDA_ENABLE_PYNVJITLINK", None)
         with self.assertRaisesRegex(
             AssertionError, "LTO and additional flags require PyNvJitLinker"
         ):
@@ -310,19 +313,25 @@ class TestLinkerUsage(CUDATestCase):
 
     def test_linker_enabled_config(self):
         env = os.environ.copy()
-        env.pop('NUMBA_CUDA_ENABLE_PYNVJITLINK', None)
-        run_in_subprocess(self.src.format(
-            config="config.CUDA_ENABLE_PYNVJITLINK = True"), env=env)
+        env.pop("NUMBA_CUDA_ENABLE_PYNVJITLINK", None)
+        run_in_subprocess(
+            self.src.format(config="config.CUDA_ENABLE_PYNVJITLINK = True"),
+            env=env,
+        )
 
     def test_linker_disabled_config(self):
         env = os.environ.copy()
-        env.pop('NUMBA_CUDA_ENABLE_PYNVJITLINK', None)
+        env.pop("NUMBA_CUDA_ENABLE_PYNVJITLINK", None)
         with override_config("CUDA_ENABLE_PYNVJITLINK", False):
             with self.assertRaisesRegex(
                 AssertionError, "LTO and additional flags require PyNvJitLinker"
             ):
-                run_in_subprocess(self.src.format(
-                    config="config.CUDA_ENABLE_PYNVJITLINK = False"), env=env)
+                run_in_subprocess(
+                    self.src.format(
+                        config="config.CUDA_ENABLE_PYNVJITLINK = False"
+                    ),
+                    env=env,
+                )
 
 
 if __name__ == "__main__":
