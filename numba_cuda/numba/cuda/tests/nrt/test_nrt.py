@@ -12,7 +12,7 @@ from numba.cuda.cudadecl import registry as cuda_decl_registry
 from numba.core.typing import signature
 from numba.cuda.cudaimpl import lower as cuda_lower
 from numba import cuda
-from numba.cuda.runtime.nrt import rtsys
+from numba.cuda.runtime.nrt import rtsys, get_include
 import tempfile
 from numba.core.typing.templates import AbstractTemplate
 
@@ -117,8 +117,8 @@ class TestNrtBasic(CUDATestCase):
         self.assertEqual(out_ary[0], 1)
 
     def test_nrt_detect_linked_ptx_file(self):
-        src = """;
-                 extern "C" __device__ void* NRT_Allocate(size_t size);
+        src = f"#include <{get_include()}/nrt.cuh>"
+        src += """;
                  extern "C" __device__ int extern_func(int* nb_retval){
                      NRT_Allocate(1);
                      return 0;
