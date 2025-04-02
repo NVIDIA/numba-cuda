@@ -48,7 +48,6 @@ def allocate_shim_impl(context, builder, sig, args):
         (),
     )
 
-    # return len(&input)
     return result
 
 
