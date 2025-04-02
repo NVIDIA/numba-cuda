@@ -17,6 +17,7 @@ from numba.cuda.args import wrap_arg
 from numba.cuda.compiler import (compile_cuda, CUDACompiler, kernel_fixup,
                                  ExternFunction)
 from numba.cuda.cudadrv import driver
+from numba.cuda.cudadrv.linkable_code import LinkableCode
 from numba.cuda.cudadrv.devices import get_context
 from numba.cuda.descriptor import cuda_target
 from numba.cuda.errors import (missing_launch_config_msg,
@@ -241,11 +242,17 @@ class _Kernel(serialize.ReduceMixin):
         link_nrt = nrt_in_asm(asm)
         if not link_nrt:
             for file in link:
-                if file.endswith('ptx'):
-                    asm = cached_file_read(file)
-                    if nrt_in_asm(asm):
-                        link_nrt = True
-                        break
+                if isinstance(file, LinkableCode):
+                    asm = file.data.decode('utf-8')
+                else:
+                    if file.endswith('ptx') or file.endswith('cu'):
+                        asm = cached_file_read(file)
+                    else:
+                        # Not a PTX or CUDA source, skip it
+                        continue
+                if nrt_in_asm(asm):
+                    link_nrt = True
+                    break
 
         if link_nrt:
             basedir = os.path.dirname(os.path.abspath(__file__))
