@@ -39,7 +39,7 @@ from .drvapi import API_PROTOTYPES
 from .drvapi import cu_occupancy_b2d_size, cu_stream_callback_pyobj, cu_uuid
 from .mappings import FILE_EXTENSION_MAP
 from .linkable_code import LinkableCode, LTOIR, Fatbin, Object
-from numba.cuda.utils import _readenv
+from numba.cuda.utils import _readenv, cached_file_read
 from numba.cuda.cudadrv import enums, drvapi, nvrtc
 
 try:
@@ -101,12 +101,6 @@ def make_logger():
             # otherwise, put a null handler
             logger.addHandler(logging.NullHandler())
     return logger
-
-
-@functools.lru_cache(maxsize=None)
-def read_file(filepath, how='r'):
-    with open(filepath, how) as f:
-        return f.read()
 
 
 class DeadMemoryError(RuntimeError):
@@ -2663,7 +2657,7 @@ class Linker(metaclass=ABCMeta):
         """Add code from a file to the link"""
 
     def add_cu_file(self, path):
-        cu = read_file(path, how='rb')
+        cu = cached_file_read(path, how='rb')
         self.add_cu(cu, os.path.basename(path))
 
     def add_file_guess_ext(self, path_or_code, ignore_nonlto=False):
@@ -2812,7 +2806,7 @@ class MVCLinker(Linker):
             raise ImportError(_MVC_ERROR_MESSAGE) from err
 
         try:
-            data = read_file(path, how='rb')
+            data = cached_file_read(path, how='rb')
         except FileNotFoundError:
             raise LinkerError(f'{path} not found')
 
@@ -3095,7 +3089,7 @@ class PyNvJitLinker(Linker):
 
     def add_file(self, path, kind):
         try:
-            data = read_file(path, 'rb')
+            data = cached_file_read(path, 'rb')
         except FileNotFoundError:
             raise LinkerError(f"{path} not found")
 
