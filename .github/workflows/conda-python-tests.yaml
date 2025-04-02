@@ -146,8 +146,6 @@ jobs:
       - name: Setup proxy cache
         uses: nv-gha-runners/setup-proxy-cache@main
         continue-on-error: true
-        # Skip the cache on RDS Lab nodes
-        if: ${{ matrix.GPU != 'v100' }}
       - name: Python tests
         run: ${{ inputs.script }}
         env:
