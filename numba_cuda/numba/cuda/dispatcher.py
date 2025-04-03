@@ -143,7 +143,6 @@ class _Kernel(serialize.ReduceMixin):
         self.debug = debug
         self.lineinfo = lineinfo
         self.extensions = extensions or []
-
         nvvm_options = {
             'fastmath': fastmath,
             'opt': 3 if opt else 0
