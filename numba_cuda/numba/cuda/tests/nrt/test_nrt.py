@@ -4,11 +4,51 @@ import os
 import numpy as np
 import unittest
 from numba.cuda.testing import CUDATestCase
-
 from numba.tests.support import run_in_subprocess, override_config
-
+from numba.cuda import get_current_device
+from numba.cuda.cudadrv.nvrtc import compile
+from numba import types
+from numba.cuda.cudadecl import registry as cuda_decl_registry
+from numba.core.typing import signature
+from numba.cuda.cudaimpl import lower as cuda_lower
 from numba import cuda
-from numba.cuda.runtime.nrt import rtsys
+from numba.cuda.runtime.nrt import rtsys, get_include
+import tempfile
+from numba.core.typing.templates import AbstractTemplate
+
+
+def allocate_shim():
+    pass
+
+
+@cuda_decl_registry.register_global(allocate_shim)
+class AllocateShimImpl(AbstractTemplate):
+    def generic(self, args, kws):
+        return signature(types.void)
+
+
+# let there be a __device__ function expecting
+# a string_view* and returning size_type
+_allocate_shim = cuda.declare_device("extern_func", types.int32())
+
+
+# wrapper to turn the above into a python callable
+def call_allocate_shim():
+    return _allocate_shim()
+
+
+@cuda_lower(allocate_shim)
+def allocate_shim_impl(context, builder, sig, args):
+    sig_ = types.int32()
+    # call the external function, passing the pointer
+    result = context.compile_internal(
+        builder,
+        call_allocate_shim,
+        sig_,
+        (),
+    )
+
+    return result
 
 
 class TestNrtBasic(CUDATestCase):
@@ -75,6 +115,31 @@ class TestNrtBasic(CUDATestCase):
         g[1,1](out_ary)
 
         self.assertEqual(out_ary[0], 1)
+
+    def test_nrt_detect_linked_ptx_file(self):
+        src = f"#include <{get_include()}/nrt.cuh>"
+        src += """;
+                 extern "C" __device__ int extern_func(int* nb_retval){
+                     NRT_Allocate(1);
+                     return 0;
+                 }
+        """
+        cc = get_current_device().compute_capability
+        ptx, _ = compile(src, 'external_nrt.cu', cc)
+        with tempfile.NamedTemporaryFile(
+            delete=True,
+            mode="w+",
+            suffix='.ptx',
+            encoding='utf-8'
+        ) as f:
+            f.write(ptx)
+            f.flush()
+
+            @cuda.jit(link=[f.name])
+            def kernel():
+                allocate_shim()
+
+            kernel[1,1]()
 
 
 class TestNrtStatistics(CUDATestCase):
