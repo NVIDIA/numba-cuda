@@ -3,12 +3,12 @@ import os
 
 import numpy as np
 import unittest
-from numba.cuda.testing import CUDATestCase
+from numba.cuda.testing import CUDATestCase, skip_on_cudasim
 
 from numba.tests.support import run_in_subprocess, override_config
 
 from numba import cuda
-from numba.cuda.runtime.nrt import rtsys
+from numba.cuda.memory_management.nrt import rtsys
 
 
 class TestNrtBasic(CUDATestCase):
@@ -29,6 +29,7 @@ class TestNrtBasic(CUDATestCase):
         g[1,1]()
         cuda.synchronize()
 
+    @skip_on_cudasim("CUDA Simulator does not produce PTX")
     def test_nrt_ptx_contains_refcount(self):
         @cuda.jit
         def f(x):
@@ -77,6 +78,7 @@ class TestNrtBasic(CUDATestCase):
         self.assertEqual(out_ary[0], 1)
 
 
+@skip_on_cudasim("CUDASIM does not have NRT statistics")
 class TestNrtStatistics(CUDATestCase):
 
     def setUp(self):
@@ -95,7 +97,7 @@ class TestNrtStatistics(CUDATestCase):
         # Checks that explicitly turning the stats on via the env var works.
         src = """if 1:
         from numba import cuda
-        from numba.cuda.runtime import rtsys
+        from numba.cuda.memory_management import rtsys
         import numpy as np
 
         @cuda.jit
@@ -135,7 +137,7 @@ class TestNrtStatistics(CUDATestCase):
         src = """if 1:
         from numba import cuda
         import numpy as np
-        from numba.cuda.runtime import rtsys
+        from numba.cuda.memory_management import rtsys
 
         @cuda.jit
         def foo():
