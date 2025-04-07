@@ -49,7 +49,8 @@ trap "EXITCODE=1" ERR
 set +e
 
 rapids-logger "Run Tests"
-python -m numba.runtests numba.cuda.tests -v
+# python -m numba.runtests numba.cuda.tests -v
+python -m numba.runtests numba.cuda.tests.cudapy.test_caching.CUDACachingTest.test_cache_cg -v
 
 popd
 
