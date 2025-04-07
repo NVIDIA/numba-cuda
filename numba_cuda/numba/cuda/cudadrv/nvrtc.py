@@ -283,7 +283,6 @@ def compile(src, name, cc, ltoir=False):
         options += ["-std=c++17"]
 
     # Compile the program
-    print(options)
     compile_error = nvrtc.compile_program(program, options)
 
     # Get log from compilation
