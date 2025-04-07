@@ -251,6 +251,10 @@ def compile(src, name, cc, ltoir=False):
     nvrtc = NVRTC()
     program = nvrtc.create_program(src, name)
 
+    if nvrtc.get_version() < (12, 0):
+        # maximum supported target architecture for 11.x is 8.0
+        cc = min(cc, (8, 0))
+
     # Compilation options:
     # - Compile for the current device's compute capability.
     # - The CUDA include path is added.
