@@ -252,8 +252,8 @@ def compile(src, name, cc, ltoir=False):
     program = nvrtc.create_program(src, name)
 
     if nvrtc.get_version() < (12, 0):
-        # maximum supported target architecture for 11.x is 8.0
-        cc = min(cc, (8, 0))
+        # Maximum supported target architecture for 11.x is cc 9.0 in CUDA 11.8
+        cc = min(cc, (9, 0))
 
     # Compilation options:
     # - Compile for the current device's compute capability.
