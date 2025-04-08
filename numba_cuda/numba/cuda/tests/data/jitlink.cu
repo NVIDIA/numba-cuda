@@ -20,4 +20,4 @@ int array_mutator(void *out, int *a)
 {
   a[0] = a[1];
   return 0;
-}  
+}
