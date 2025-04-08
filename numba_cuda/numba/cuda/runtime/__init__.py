@@ -1,1 +1,1 @@
-from numba.cuda.runtime.nrt import rtsys # noqa: F401
+from numba.cuda.runtime.nrt import rtsys  # noqa: F401
