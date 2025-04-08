@@ -267,7 +267,15 @@ def compile(src, name, cc, ltoir=False):
                 f"Device Compute Capability ({cc}) is lower "
                 f"than minimum supported CC ({min_cc}) with installed "
                 "cudatoolkit. Consider downgrading cudatoolkit to supported "
-                "version"
+                "version."
+            )
+        elif version > max_cc:
+            warnings.warn(
+                f"Device Compute Capability ({cc}) is higher "
+                f"than maximum supported CC ({max_cc}) with installed "
+                "cudatoolkit. Numba will limit the compilation to the maximum"
+                "supported CC. This may hinder performance, consider upgrading"
+                "your cudatoolkit to supported version."
             )
         cc = min(cc, max_cc)
 
