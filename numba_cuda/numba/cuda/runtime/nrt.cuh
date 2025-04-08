@@ -3,7 +3,7 @@
 typedef void (*NRT_dtor_function)(void* ptr, size_t size, void* info);
 typedef void (*NRT_dealloc_func)(void* ptr, void* dealloc_info);
 
-extern "C" 
+extern "C"
 struct MemInfo {
   cuda::atomic<size_t, cuda::thread_scope_device> refct;
   NRT_dtor_function dtor;
