@@ -59,6 +59,7 @@ class TestMonteCarlo(CUDATestCase):
                 # value of the sample
                 y = func(samp)
                 out[gid] = y
+
         # ex_montecarlo.kernel.end
 
         # ex_montecarlo.callfunc.begin
@@ -84,6 +85,7 @@ class TestMonteCarlo(CUDATestCase):
             factor = (upper_lim - lower_lim) / (nsamps - 1)
 
             return sum_reduce(out) * factor
+
         # ex_montecarlo.callfunc.end
 
         # ex_montecarlo.launch.begin
