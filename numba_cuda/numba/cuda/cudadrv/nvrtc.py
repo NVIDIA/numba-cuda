@@ -160,11 +160,27 @@ class NVRTC:
         """
         Get Supported Architectures by NVRTC as list of arch tuples.
         """
-        num = c_int()
-        self.nvrtcGetNumSupportedArchs(byref(num))
-        archs = (c_int * num.value)()
-        self.nvrtcGetSupportedArchs(archs)
-        return [(archs[i] // 10, archs[i] % 10) for i in range(num.value)]
+        ver = self.get_version()
+        if ver < (11, 0):
+            raise RuntimeError(
+                "Unsupported CUDA version. CUDA 11.0 or higher is required."
+            )
+        elif ver == (11, 0):
+            return [
+                (3, 0), (3, 2), (3, 5), (3, 7), (5, 0), (5, 2), (5, 3), (6, 0),
+                (6, 1), (6, 2), (7, 0), (7, 2), (7, 5)
+            ]
+        elif ver == (11, 1):
+            return [
+                (3, 5), (3, 7), (5, 0), (5, 2), (5, 3), (6, 0), (6, 1), (6, 2),
+                (7, 0), (7, 2), (7, 5), (8, 0)
+            ]
+        else:
+            num = c_int()
+            self.nvrtcGetNumSupportedArchs(byref(num))
+            archs = (c_int * num.value)()
+            self.nvrtcGetSupportedArchs(archs)
+            return [(archs[i] // 10, archs[i] % 10) for i in range(num.value)]
 
     def get_version(self):
         """
@@ -279,11 +295,20 @@ def compile(src, name, cc, ltoir=False):
         )
     else:
         supported_arch = nvrtc.get_supported_archs()
-        if cc not in supported_arch:
+        try:
+            found = max(filter(lambda v: v <= cc, [v for v in supported_arch]))
+        except ValueError:
             raise RuntimeError(
-                f"Device compute capability {ver_str(cc)} is not supported by "
-                f"NVRTC {ver_str(version)}. Supported compute capabilities are "
+                f"Device compute capability {ver_str(cc)} is less than the "
+                f"minimum supported by NVRTC {ver_str(version)}. Supported "
+                "compute capabilities are "
                 f"{', '.join([ver_str(v) for v in supported_arch])}."
+            )
+
+        if found != cc:
+            warnings.warn(
+                f"Device compute capability {ver_str(cc)} is not supported by "
+                f"NVRTC {ver_str(version)}. Using {ver_str(found)} instead."
             )
 
     # Compilation options:
@@ -291,7 +316,7 @@ def compile(src, name, cc, ltoir=False):
     # - The CUDA include path is added.
     # - Relocatable Device Code (rdc) is needed to prevent device functions
     #   being optimized away.
-    major, minor = cc
+    major, minor = found
     arch = f'--gpu-architecture=compute_{major}{minor}'
 
     cuda_include = [
