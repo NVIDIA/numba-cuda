@@ -1,0 +1,476 @@
+.......................................................................................................................................................................................................................................................................................................................................................s..........................s...................s............s.............................s...............................................s.............................................................................................................................................................../raid/wangm/dev/rapids/numba-cuda/numba_cuda/numba/cuda/cudadrv/nvrtc.py:295: UserWarning: NVRTC log messages whilst compiling jitlink.cu:
+
+nvrtc: warning: Architectures prior to '<compute/sm>_75' are deprecated and may be removed in a future release
+
+  warnings.warn(msg)
+./raid/wangm/dev/rapids/numba-cuda/numba_cuda/numba/cuda/cudadrv/nvrtc.py:295: UserWarning: NVRTC log messages whilst compiling cuda_include.cu:
+
+nvrtc: warning: Architectures prior to '<compute/sm>_75' are deprecated and may be removed in a future release
+
+  warnings.warn(msg)
+..............s...ssssssssssssFFFF.............s..............s../raid/wangm/dev/rapids/numba-cuda/numba_cuda/numba/cuda/cudadrv/nvrtc.py:295: UserWarning: NVRTC log messages whilst compiling reshape_funcs.cu:
+
+nvrtc: warning: Architectures prior to '<compute/sm>_75' are deprecated and may be removed in a future release
+
+  warnings.warn(msg)
+/raid/wangm/dev/rapids/numba-cuda/numba_cuda/numba/cuda/cudadrv/nvrtc.py:295: UserWarning: NVRTC log messages whilst compiling reshape_funcs.cu:
+
+nvrtc: warning: Architectures prior to '<compute/sm>_75' are deprecated and may be removed in a future release
+
+  warnings.warn(msg)
+/raid/wangm/dev/rapids/numba-cuda/numba_cuda/numba/cuda/cudadrv/nvrtc.py:295: UserWarning: NVRTC log messages whilst compiling reshape_funcs.cu:
+
+nvrtc: warning: Architectures prior to '<compute/sm>_75' are deprecated and may be removed in a future release
+
+  warnings.warn(msg)
+/raid/wangm/dev/rapids/numba-cuda/numba_cuda/numba/cuda/cudadrv/nvrtc.py:295: UserWarning: NVRTC log messages whilst compiling reshape_funcs.cu:
+
+nvrtc: warning: Architectures prior to '<compute/sm>_75' are deprecated and may be removed in a future release
+
+  warnings.warn(msg)
+/raid/wangm/dev/rapids/numba-cuda/numba_cuda/numba/cuda/cudadrv/nvrtc.py:295: UserWarning: NVRTC log messages whilst compiling reshape_funcs.cu:
+
+nvrtc: warning: Architectures prior to '<compute/sm>_75' are deprecated and may be removed in a future release
+
+  warnings.warn(msg)
+/raid/wangm/dev/rapids/numba-cuda/numba_cuda/numba/cuda/cudadrv/nvrtc.py:295: UserWarning: NVRTC log messages whilst compiling reshape_funcs.cu:
+
+nvrtc: warning: Architectures prior to '<compute/sm>_75' are deprecated and may be removed in a future release
+
+  warnings.warn(msg)
+/raid/wangm/dev/rapids/numba-cuda/numba_cuda/numba/cuda/cudadrv/nvrtc.py:295: UserWarning: NVRTC log messages whilst compiling reshape_funcs.cu:
+
+nvrtc: warning: Architectures prior to '<compute/sm>_75' are deprecated and may be removed in a future release
+
+  warnings.warn(msg)
+/raid/wangm/dev/rapids/numba-cuda/numba_cuda/numba/cuda/cudadrv/nvrtc.py:295: UserWarning: NVRTC log messages whilst compiling reshape_funcs.cu:
+
+nvrtc: warning: Architectures prior to '<compute/sm>_75' are deprecated and may be removed in a future release
+
+  warnings.warn(msg)
+/raid/wangm/dev/rapids/numba-cuda/numba_cuda/numba/cuda/cudadrv/nvrtc.py:295: UserWarning: NVRTC log messages whilst compiling reshape_funcs.cu:
+
+nvrtc: warning: Architectures prior to '<compute/sm>_75' are deprecated and may be removed in a future release
+
+  warnings.warn(msg)
+/raid/wangm/dev/rapids/numba-cuda/numba_cuda/numba/cuda/cudadrv/nvrtc.py:295: UserWarning: NVRTC log messages whilst compiling reshape_funcs.cu:
+
+nvrtc: warning: Architectures prior to '<compute/sm>_75' are deprecated and may be removed in a future release
+
+  warnings.warn(msg)
+/raid/wangm/dev/rapids/numba-cuda/numba_cuda/numba/cuda/cudadrv/nvrtc.py:295: UserWarning: NVRTC log messages whilst compiling reshape_funcs.cu:
+
+nvrtc: warning: Architectures prior to '<compute/sm>_75' are deprecated and may be removed in a future release
+
+  warnings.warn(msg)
+/raid/wangm/dev/rapids/numba-cuda/numba_cuda/numba/cuda/cudadrv/nvrtc.py:295: UserWarning: NVRTC log messages whilst compiling reshape_funcs.cu:
+
+nvrtc: warning: Architectures prior to '<compute/sm>_75' are deprecated and may be removed in a future release
+
+  warnings.warn(msg)
+/raid/wangm/dev/rapids/numba-cuda/numba_cuda/numba/cuda/cudadrv/nvrtc.py:295: UserWarning: NVRTC log messages whilst compiling reshape_funcs.cu:
+
+nvrtc: warning: Architectures prior to '<compute/sm>_75' are deprecated and may be removed in a future release
+
+  warnings.warn(msg)
+/raid/wangm/dev/rapids/numba-cuda/numba_cuda/numba/cuda/cudadrv/nvrtc.py:295: UserWarning: NVRTC log messages whilst compiling reshape_funcs.cu:
+
+nvrtc: warning: Architectures prior to '<compute/sm>_75' are deprecated and may be removed in a future release
+
+  warnings.warn(msg)
+/raid/wangm/dev/rapids/numba-cuda/numba_cuda/numba/cuda/cudadrv/nvrtc.py:295: UserWarning: NVRTC log messages whilst compiling reshape_funcs.cu:
+
+nvrtc: warning: Architectures prior to '<compute/sm>_75' are deprecated and may be removed in a future release
+
+  warnings.warn(msg)
+/raid/wangm/dev/rapids/numba-cuda/numba_cuda/numba/cuda/cudadrv/nvrtc.py:295: UserWarning: NVRTC log messages whilst compiling reshape_funcs.cu:
+
+nvrtc: warning: Architectures prior to '<compute/sm>_75' are deprecated and may be removed in a future release
+
+  warnings.warn(msg)
+/raid/wangm/dev/rapids/numba-cuda/numba_cuda/numba/cuda/cudadrv/nvrtc.py:295: UserWarning: NVRTC log messages whilst compiling reshape_funcs.cu:
+
+nvrtc: warning: Architectures prior to '<compute/sm>_75' are deprecated and may be removed in a future release
+
+  warnings.warn(msg)
+/raid/wangm/dev/rapids/numba-cuda/numba_cuda/numba/cuda/cudadrv/nvrtc.py:295: UserWarning: NVRTC log messages whilst compiling reshape_funcs.cu:
+
+nvrtc: warning: Architectures prior to '<compute/sm>_75' are deprecated and may be removed in a future release
+
+  warnings.warn(msg)
+/raid/wangm/dev/rapids/numba-cuda/numba_cuda/numba/cuda/cudadrv/nvrtc.py:295: UserWarning: NVRTC log messages whilst compiling reshape_funcs.cu:
+
+nvrtc: warning: Architectures prior to '<compute/sm>_75' are deprecated and may be removed in a future release
+
+  warnings.warn(msg)
+................................................................................................................................../raid/wangm/dev/rapids/numba-cuda/numba_cuda/numba/cuda/tests/cudapy/test_atomics.py:673: RuntimeWarning: overflow encountered in scalar subtract
+  gold[orig[i]] -= 1
+.........................................................................................................................................s../raid/wangm/dev/rapids/numba-cuda/numba_cuda/numba/cuda/cudadrv/nvrtc.py:295: UserWarning: NVRTC log messages whilst compiling <unnamed-cu>:
+
+nvrtc: warning: Architectures prior to '<compute/sm>_75' are deprecated and may be removed in a future release
+
+  warnings.warn(msg)
+./raid/wangm/dev/rapids/numba-cuda/numba_cuda/numba/cuda/cudadrv/nvrtc.py:295: UserWarning: NVRTC log messages whilst compiling <unnamed-cu>:
+
+nvrtc: warning: Architectures prior to '<compute/sm>_75' are deprecated and may be removed in a future release
+
+  warnings.warn(msg)
+.../raid/wangm/dev/rapids/numba-cuda/numba_cuda/numba/cuda/cudadrv/nvrtc.py:295: UserWarning: NVRTC log messages whilst compiling <unnamed-cu>:
+
+nvrtc: warning: Architectures prior to '<compute/sm>_75' are deprecated and may be removed in a future release
+
+  warnings.warn(msg)
+./raid/wangm/dev/rapids/numba-cuda/numba_cuda/numba/cuda/cudadrv/nvrtc.py:295: UserWarning: NVRTC log messages whilst compiling <unnamed-cu>:
+
+nvrtc: warning: Architectures prior to '<compute/sm>_75' are deprecated and may be removed in a future release
+
+  warnings.warn(msg)
+./raid/wangm/dev/rapids/numba-cuda/numba_cuda/numba/cuda/cudadrv/nvrtc.py:295: UserWarning: NVRTC log messages whilst compiling <unnamed-cu>:
+
+nvrtc: warning: Architectures prior to '<compute/sm>_75' are deprecated and may be removed in a future release
+
+  warnings.warn(msg)
+./raid/wangm/dev/rapids/numba-cuda/numba_cuda/numba/cuda/cudadrv/nvrtc.py:295: UserWarning: NVRTC log messages whilst compiling <unnamed-cu>:
+
+nvrtc: warning: Architectures prior to '<compute/sm>_75' are deprecated and may be removed in a future release
+
+  warnings.warn(msg)
+./raid/wangm/dev/rapids/numba-cuda/numba_cuda/numba/cuda/cudadrv/nvrtc.py:295: UserWarning: NVRTC log messages whilst compiling <unnamed-cu>:
+
+nvrtc: warning: Architectures prior to '<compute/sm>_75' are deprecated and may be removed in a future release
+
+  warnings.warn(msg)
+./raid/wangm/dev/rapids/numba-cuda/numba_cuda/numba/cuda/cudadrv/nvrtc.py:295: UserWarning: NVRTC log messages whilst compiling <unnamed-cu>:
+
+nvrtc: warning: Architectures prior to '<compute/sm>_75' are deprecated and may be removed in a future release
+
+  warnings.warn(msg)
+./raid/wangm/dev/rapids/numba-cuda/numba_cuda/numba/cuda/cudadrv/nvrtc.py:295: UserWarning: NVRTC log messages whilst compiling <unnamed-cu>:
+
+nvrtc: warning: Architectures prior to '<compute/sm>_75' are deprecated and may be removed in a future release
+
+  warnings.warn(msg)
+./raid/wangm/dev/rapids/numba-cuda/numba_cuda/numba/cuda/cudadrv/nvrtc.py:295: UserWarning: NVRTC log messages whilst compiling <unnamed-cu>:
+
+nvrtc: warning: Architectures prior to '<compute/sm>_75' are deprecated and may be removed in a future release
+
+  warnings.warn(msg)
+./raid/wangm/dev/rapids/numba-cuda/numba_cuda/numba/cuda/cudadrv/nvrtc.py:295: UserWarning: NVRTC log messages whilst compiling <unnamed-cu>:
+
+nvrtc: warning: Architectures prior to '<compute/sm>_75' are deprecated and may be removed in a future release
+
+  warnings.warn(msg)
+./raid/wangm/dev/rapids/numba-cuda/numba_cuda/numba/cuda/cudadrv/nvrtc.py:295: UserWarning: NVRTC log messages whilst compiling <unnamed-cu>:
+
+nvrtc: warning: Architectures prior to '<compute/sm>_75' are deprecated and may be removed in a future release
+
+  warnings.warn(msg)
+/raid/wangm/dev/rapids/numba-cuda/numba_cuda/numba/cuda/cudadrv/nvrtc.py:295: UserWarning: NVRTC log messages whilst compiling jitlink.cu:
+
+nvrtc: warning: Architectures prior to '<compute/sm>_75' are deprecated and may be removed in a future release
+
+  warnings.warn(msg)
+.............x............x..............................x.......x.........s................................................s.........................../raid/wangm/dev/rapids/numba-cuda/numba_cuda/numba/cuda/cudadrv/nvrtc.py:295: UserWarning: NVRTC log messages whilst compiling cpp_function_wrappers.cu:
+
+nvrtc: warning: Architectures prior to '<compute/sm>_75' are deprecated and may be removed in a future release
+
+  warnings.warn(msg)
+/raid/wangm/dev/rapids/numba-cuda/numba_cuda/numba/cuda/cudadrv/nvrtc.py:295: UserWarning: NVRTC log messages whilst compiling cpp_function_wrappers.cu:
+
+nvrtc: warning: Architectures prior to '<compute/sm>_75' are deprecated and may be removed in a future release
+
+  warnings.warn(msg)
+/raid/wangm/dev/rapids/numba-cuda/numba_cuda/numba/cuda/cudadrv/nvrtc.py:295: UserWarning: NVRTC log messages whilst compiling cpp_function_wrappers.cu:
+
+nvrtc: warning: Architectures prior to '<compute/sm>_75' are deprecated and may be removed in a future release
+
+  warnings.warn(msg)
+/raid/wangm/dev/rapids/numba-cuda/numba_cuda/numba/cuda/cudadrv/nvrtc.py:295: UserWarning: NVRTC log messages whilst compiling cpp_function_wrappers.cu:
+
+nvrtc: warning: Architectures prior to '<compute/sm>_75' are deprecated and may be removed in a future release
+
+  warnings.warn(msg)
+/raid/wangm/dev/rapids/numba-cuda/numba_cuda/numba/cuda/cudadrv/nvrtc.py:295: UserWarning: NVRTC log messages whilst compiling cpp_function_wrappers.cu:
+
+nvrtc: warning: Architectures prior to '<compute/sm>_75' are deprecated and may be removed in a future release
+
+  warnings.warn(msg)
+/raid/wangm/dev/rapids/numba-cuda/numba_cuda/numba/cuda/cudadrv/nvrtc.py:295: UserWarning: NVRTC log messages whilst compiling cpp_function_wrappers.cu:
+
+nvrtc: warning: Architectures prior to '<compute/sm>_75' are deprecated and may be removed in a future release
+
+  warnings.warn(msg)
+/raid/wangm/dev/rapids/numba-cuda/numba_cuda/numba/cuda/cudadrv/nvrtc.py:295: UserWarning: NVRTC log messages whilst compiling cpp_function_wrappers.cu:
+
+nvrtc: warning: Architectures prior to '<compute/sm>_75' are deprecated and may be removed in a future release
+
+  warnings.warn(msg)
+/raid/wangm/dev/rapids/numba-cuda/numba_cuda/numba/cuda/cudadrv/nvrtc.py:295: UserWarning: NVRTC log messages whilst compiling cpp_function_wrappers.cu:
+
+nvrtc: warning: Architectures prior to '<compute/sm>_75' are deprecated and may be removed in a future release
+
+  warnings.warn(msg)
+/raid/wangm/dev/rapids/numba-cuda/numba_cuda/numba/cuda/cudadrv/nvrtc.py:295: UserWarning: NVRTC log messages whilst compiling cpp_function_wrappers.cu:
+
+nvrtc: warning: Architectures prior to '<compute/sm>_75' are deprecated and may be removed in a future release
+
+  warnings.warn(msg)
+/raid/wangm/dev/rapids/numba-cuda/numba_cuda/numba/cuda/cudadrv/nvrtc.py:295: UserWarning: NVRTC log messages whilst compiling cpp_function_wrappers.cu:
+
+nvrtc: warning: Architectures prior to '<compute/sm>_75' are deprecated and may be removed in a future release
+
+  warnings.warn(msg)
+/raid/wangm/dev/rapids/numba-cuda/numba_cuda/numba/cuda/cudadrv/nvrtc.py:295: UserWarning: NVRTC log messages whilst compiling cpp_function_wrappers.cu:
+
+nvrtc: warning: Architectures prior to '<compute/sm>_75' are deprecated and may be removed in a future release
+
+  warnings.warn(msg)
+/raid/wangm/dev/rapids/numba-cuda/numba_cuda/numba/cuda/cudadrv/nvrtc.py:295: UserWarning: NVRTC log messages whilst compiling cpp_function_wrappers.cu:
+
+nvrtc: warning: Architectures prior to '<compute/sm>_75' are deprecated and may be removed in a future release
+
+  warnings.warn(msg)
+/raid/wangm/dev/rapids/numba-cuda/numba_cuda/numba/cuda/cudadrv/nvrtc.py:295: UserWarning: NVRTC log messages whilst compiling cpp_function_wrappers.cu:
+
+nvrtc: warning: Architectures prior to '<compute/sm>_75' are deprecated and may be removed in a future release
+
+  warnings.warn(msg)
+/raid/wangm/dev/rapids/numba-cuda/numba_cuda/numba/cuda/cudadrv/nvrtc.py:295: UserWarning: NVRTC log messages whilst compiling cpp_function_wrappers.cu:
+
+nvrtc: warning: Architectures prior to '<compute/sm>_75' are deprecated and may be removed in a future release
+
+  warnings.warn(msg)
+......./raid/wangm/dev/rapids/numba-cuda/numba_cuda/numba/cuda/cudadrv/nvrtc.py:295: UserWarning: NVRTC log messages whilst compiling cpp_function_wrappers.cu:
+
+nvrtc: warning: Architectures prior to '<compute/sm>_75' are deprecated and may be removed in a future release
+
+  warnings.warn(msg)
+./raid/wangm/dev/rapids/numba-cuda/numba_cuda/numba/cuda/cudadrv/nvrtc.py:295: UserWarning: NVRTC log messages whilst compiling cpp_function_wrappers.cu:
+
+nvrtc: warning: Architectures prior to '<compute/sm>_75' are deprecated and may be removed in a future release
+
+  warnings.warn(msg)
+./raid/wangm/dev/rapids/numba-cuda/numba_cuda/numba/cuda/cudadrv/nvrtc.py:295: UserWarning: NVRTC log messages whilst compiling cpp_function_wrappers.cu:
+
+nvrtc: warning: Architectures prior to '<compute/sm>_75' are deprecated and may be removed in a future release
+
+  warnings.warn(msg)
+...........................................s................................................/raid/wangm/dev/rapids/numba-cuda/numba_cuda/numba/cuda/cudadrv/nvrtc.py:295: UserWarning: NVRTC log messages whilst compiling cpp_function_wrappers.cu:
+
+nvrtc: warning: Architectures prior to '<compute/sm>_75' are deprecated and may be removed in a future release
+
+  warnings.warn(msg)
+/raid/wangm/dev/rapids/numba-cuda/numba_cuda/numba/cuda/cudadrv/nvrtc.py:295: UserWarning: NVRTC log messages whilst compiling cpp_function_wrappers.cu:
+
+nvrtc: warning: Architectures prior to '<compute/sm>_75' are deprecated and may be removed in a future release
+
+  warnings.warn(msg)
+/raid/wangm/dev/rapids/numba-cuda/numba_cuda/numba/cuda/cudadrv/nvrtc.py:295: UserWarning: NVRTC log messages whilst compiling cpp_function_wrappers.cu:
+
+nvrtc: warning: Architectures prior to '<compute/sm>_75' are deprecated and may be removed in a future release
+
+  warnings.warn(msg)
+/raid/wangm/dev/rapids/numba-cuda/numba_cuda/numba/cuda/cudadrv/nvrtc.py:295: UserWarning: NVRTC log messages whilst compiling cpp_function_wrappers.cu:
+
+nvrtc: warning: Architectures prior to '<compute/sm>_75' are deprecated and may be removed in a future release
+
+  warnings.warn(msg)
+/raid/wangm/dev/rapids/numba-cuda/numba_cuda/numba/cuda/cudadrv/nvrtc.py:295: UserWarning: NVRTC log messages whilst compiling cpp_function_wrappers.cu:
+
+nvrtc: warning: Architectures prior to '<compute/sm>_75' are deprecated and may be removed in a future release
+
+  warnings.warn(msg)
+/raid/wangm/dev/rapids/numba-cuda/numba_cuda/numba/cuda/cudadrv/nvrtc.py:295: UserWarning: NVRTC log messages whilst compiling cpp_function_wrappers.cu:
+
+nvrtc: warning: Architectures prior to '<compute/sm>_75' are deprecated and may be removed in a future release
+
+  warnings.warn(msg)
+/raid/wangm/dev/rapids/numba-cuda/numba_cuda/numba/cuda/cudadrv/nvrtc.py:295: UserWarning: NVRTC log messages whilst compiling cpp_function_wrappers.cu:
+
+nvrtc: warning: Architectures prior to '<compute/sm>_75' are deprecated and may be removed in a future release
+
+  warnings.warn(msg)
+/raid/wangm/dev/rapids/numba-cuda/numba_cuda/numba/cuda/cudadrv/nvrtc.py:295: UserWarning: NVRTC log messages whilst compiling cpp_function_wrappers.cu:
+
+nvrtc: warning: Architectures prior to '<compute/sm>_75' are deprecated and may be removed in a future release
+
+  warnings.warn(msg)
+/raid/wangm/dev/rapids/numba-cuda/numba_cuda/numba/cuda/cudadrv/nvrtc.py:295: UserWarning: NVRTC log messages whilst compiling cpp_function_wrappers.cu:
+
+nvrtc: warning: Architectures prior to '<compute/sm>_75' are deprecated and may be removed in a future release
+
+  warnings.warn(msg)
+./raid/wangm/dev/rapids/numba-cuda/numba_cuda/numba/cuda/cudadrv/nvrtc.py:295: UserWarning: NVRTC log messages whilst compiling cpp_function_wrappers.cu:
+
+nvrtc: warning: Architectures prior to '<compute/sm>_75' are deprecated and may be removed in a future release
+
+  warnings.warn(msg)
+............./raid/wangm/dev/rapids/numba-cuda/numba_cuda/numba/cuda/tests/cudapy/test_math.py:620: RuntimeWarning: overflow encountered in cast
+  Cref[i] = math.pow(A[i], B[i])
+/raid/wangm/dev/rapids/numba-cuda/numba_cuda/numba/cuda/tests/cudapy/test_math.py:621: RuntimeWarning: overflow encountered in cast
+  np.testing.assert_allclose(np.power(A, B).astype(npdtype), C, rtol=1e-6)
+............................../raid/wangm/dev/rapids/numba-cuda/numba_cuda/numba/cuda/dispatcher.py:666: NumbaPerformanceWarning: [1mGrid size 1 will likely result in GPU under-utilization due to low occupancy.[0m
+  warn(NumbaPerformanceWarning(msg))
+...../raid/wangm/dev/rapids/numba-cuda/numba_cuda/numba/cuda/cudadrv/nvrtc.py:295: UserWarning: NVRTC log messages whilst compiling cpp_function_wrappers.cu:
+
+nvrtc: warning: Architectures prior to '<compute/sm>_75' are deprecated and may be removed in a future release
+
+  warnings.warn(msg)
+..../raid/wangm/dev/rapids/numba-cuda/numba_cuda/numba/cuda/cudadrv/nvrtc.py:295: UserWarning: NVRTC log messages whilst compiling cpp_function_wrappers.cu:
+
+nvrtc: warning: Architectures prior to '<compute/sm>_75' are deprecated and may be removed in a future release
+
+  warnings.warn(msg)
+...../raid/wangm/dev/rapids/numba-cuda/numba_cuda/numba/cuda/cudadrv/nvrtc.py:295: UserWarning: NVRTC log messages whilst compiling cpp_function_wrappers.cu:
+
+nvrtc: warning: Architectures prior to '<compute/sm>_75' are deprecated and may be removed in a future release
+
+  warnings.warn(msg)
+......................................................x...xxxxx..................................sx.s......................................................s........................................................................................s..../raid/wangm/dev/rapids/numba-cuda/numba_cuda/numba/cuda/cudadrv/nvrtc.py:295: UserWarning: NVRTC log messages whilst compiling functions.cu:
+
+nvrtc: warning: Architectures prior to '<compute/sm>_75' are deprecated and may be removed in a future release
+
+  warnings.warn(msg)
+./raid/wangm/dev/rapids/numba-cuda/numba_cuda/numba/cuda/cudadrv/nvrtc.py:295: UserWarning: NVRTC log messages whilst compiling functions.cu:
+
+nvrtc: warning: Architectures prior to '<compute/sm>_75' are deprecated and may be removed in a future release
+
+  warnings.warn(msg)
+........./raid/wangm/dev/rapids/numba-cuda/numba_cuda/numba/cuda/cudadrv/nvrtc.py:295: UserWarning: NVRTC log messages whilst compiling nrt.cu:
+
+nvrtc: warning: Architectures prior to '<compute/sm>_75' are deprecated and may be removed in a future release
+
+  warnings.warn(msg)
+./raid/wangm/dev/rapids/numba-cuda/numba_cuda/numba/cuda/cudadrv/nvrtc.py:295: UserWarning: NVRTC log messages whilst compiling nrt.cu:
+
+nvrtc: warning: Architectures prior to '<compute/sm>_75' are deprecated and may be removed in a future release
+
+  warnings.warn(msg)
+./raid/wangm/dev/rapids/numba-cuda/numba_cuda/numba/cuda/cudadrv/nvrtc.py:295: UserWarning: NVRTC log messages whilst compiling nrt.cu:
+
+nvrtc: warning: Architectures prior to '<compute/sm>_75' are deprecated and may be removed in a future release
+
+  warnings.warn(msg)
+./raid/wangm/dev/rapids/numba-cuda/numba_cuda/numba/cuda/cudadrv/nvrtc.py:295: UserWarning: NVRTC log messages whilst compiling memsys.cu:
+
+nvrtc: warning: Architectures prior to '<compute/sm>_75' are deprecated and may be removed in a future release
+
+  warnings.warn(msg)
+...../raid/wangm/dev/rapids/numba-cuda/numba_cuda/numba/cuda/dispatcher.py:666: NumbaPerformanceWarning: [1mGrid size 1 will likely result in GPU under-utilization due to low occupancy.[0m
+  warn(NumbaPerformanceWarning(msg))
+/raid/wangm/dev/rapids/numba-cuda/numba_cuda/numba/cuda/cudadrv/nvrtc.py:295: UserWarning: NVRTC log messages whilst compiling nrt.cu:
+
+nvrtc: warning: Architectures prior to '<compute/sm>_75' are deprecated and may be removed in a future release
+
+  warnings.warn(msg)
+./raid/wangm/dev/rapids/numba-cuda/numba_cuda/numba/cuda/dispatcher.py:666: NumbaPerformanceWarning: [1mGrid size 1 will likely result in GPU under-utilization due to low occupancy.[0m
+  warn(NumbaPerformanceWarning(msg))
+/raid/wangm/dev/rapids/numba-cuda/numba_cuda/numba/cuda/cudadrv/nvrtc.py:295: UserWarning: NVRTC log messages whilst compiling nrt.cu:
+
+nvrtc: warning: Architectures prior to '<compute/sm>_75' are deprecated and may be removed in a future release
+
+  warnings.warn(msg)
+/raid/wangm/dev/rapids/numba-cuda/numba_cuda/numba/cuda/cudadrv/devicearray.py:893: NumbaPerformanceWarning: [1mHost array used in CUDA kernel will incur copy overhead to/from device.[0m
+  warn(NumbaPerformanceWarning(msg))
+./raid/wangm/dev/rapids/numba-cuda/numba_cuda/numba/cuda/dispatcher.py:666: NumbaPerformanceWarning: [1mGrid size 1 will likely result in GPU under-utilization due to low occupancy.[0m
+  warn(NumbaPerformanceWarning(msg))
+/raid/wangm/dev/rapids/numba-cuda/numba_cuda/numba/cuda/cudadrv/nvrtc.py:295: UserWarning: NVRTC log messages whilst compiling nrt.cu:
+
+nvrtc: warning: Architectures prior to '<compute/sm>_75' are deprecated and may be removed in a future release
+
+  warnings.warn(msg)
+./raid/wangm/dev/rapids/numba-cuda/numba_cuda/numba/cuda/dispatcher.py:666: NumbaPerformanceWarning: [1mGrid size 1 will likely result in GPU under-utilization due to low occupancy.[0m
+  warn(NumbaPerformanceWarning(msg))
+/raid/wangm/dev/rapids/numba-cuda/numba_cuda/numba/cuda/cudadrv/nvrtc.py:295: UserWarning: NVRTC log messages whilst compiling nrt.cu:
+
+nvrtc: warning: Architectures prior to '<compute/sm>_75' are deprecated and may be removed in a future release
+
+  warnings.warn(msg)
+/raid/wangm/dev/rapids/numba-cuda/numba_cuda/numba/cuda/cudadrv/devicearray.py:893: NumbaPerformanceWarning: [1mHost array used in CUDA kernel will incur copy overhead to/from device.[0m
+  warn(NumbaPerformanceWarning(msg))
+./raid/wangm/dev/rapids/numba-cuda/numba_cuda/numba/cuda/dispatcher.py:666: NumbaPerformanceWarning: [1mGrid size 1 will likely result in GPU under-utilization due to low occupancy.[0m
+  warn(NumbaPerformanceWarning(msg))
+/raid/wangm/dev/rapids/numba-cuda/numba_cuda/numba/cuda/cudadrv/nvrtc.py:295: UserWarning: NVRTC log messages whilst compiling nrt.cu:
+
+nvrtc: warning: Architectures prior to '<compute/sm>_75' are deprecated and may be removed in a future release
+
+  warnings.warn(msg)
+.
+======================================================================
+FAIL: test_linker_disabled_config (numba.cuda.tests.cudadrv.test_nvjitlink.TestLinkerUsage)
+----------------------------------------------------------------------
+AssertionError: process failed with code 1: stderr follows
+Traceback (most recent call last):
+  File "<string>", line 16, in <module>
+NameError: name 'test_device_functions_cubin' is not defined
+
+
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/raid/wangm/dev/rapids/numba-cuda/numba_cuda/numba/cuda/tests/cudadrv/test_nvjitlink.py", line 320, in test_linker_disabled_config
+    with self.assertRaisesRegex(
+AssertionError: "LTO and additional flags require PyNvJitLinker" does not match "process failed with code 1: stderr follows
+Traceback (most recent call last):
+  File "<string>", line 16, in <module>
+NameError: name 'test_device_functions_cubin' is not defined
+
+"
+
+======================================================================
+FAIL: test_linker_disabled_envvar (numba.cuda.tests.cudadrv.test_nvjitlink.TestLinkerUsage)
+----------------------------------------------------------------------
+AssertionError: process failed with code 1: stderr follows
+Traceback (most recent call last):
+  File "<string>", line 16, in <module>
+NameError: name 'test_device_functions_cubin' is not defined
+
+
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/raid/wangm/dev/rapids/numba-cuda/numba_cuda/numba/cuda/tests/cudadrv/test_nvjitlink.py", line 303, in test_linker_disabled_envvar
+    with self.assertRaisesRegex(
+AssertionError: "LTO and additional flags require PyNvJitLinker" does not match "process failed with code 1: stderr follows
+Traceback (most recent call last):
+  File "<string>", line 16, in <module>
+NameError: name 'test_device_functions_cubin' is not defined
+
+"
+
+======================================================================
+FAIL: test_linker_enabled_config (numba.cuda.tests.cudadrv.test_nvjitlink.TestLinkerUsage)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/raid/wangm/dev/rapids/numba-cuda/numba_cuda/numba/cuda/tests/cudadrv/test_nvjitlink.py", line 313, in test_linker_enabled_config
+    run_in_subprocess(self.src.format(
+  File "/raid/wangm/dev/numba/numba/tests/support.py", line 1136, in run_in_subprocess
+    raise AssertionError(msg % (popen.returncode, err.decode()))
+AssertionError: process failed with code 1: stderr follows
+Traceback (most recent call last):
+  File "<string>", line 16, in <module>
+NameError: name 'test_device_functions_cubin' is not defined
+
+
+
+======================================================================
+FAIL: test_linker_enabled_envvar (numba.cuda.tests.cudadrv.test_nvjitlink.TestLinkerUsage)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/raid/wangm/dev/rapids/numba-cuda/numba_cuda/numba/cuda/tests/cudadrv/test_nvjitlink.py", line 298, in test_linker_enabled_envvar
+    run_in_subprocess(self.src.format(config=""), env=env)
+  File "/raid/wangm/dev/numba/numba/tests/support.py", line 1136, in run_in_subprocess
+    raise AssertionError(msg % (popen.returncode, err.decode()))
+AssertionError: process failed with code 1: stderr follows
+Traceback (most recent call last):
+  File "<string>", line 16, in <module>
+NameError: name 'test_device_functions_cubin' is not defined
+
+
+
+----------------------------------------------------------------------
+Ran 1573 tests in 282.205s
+
+FAILED (failures=4, skipped=29, expected failures=11)
