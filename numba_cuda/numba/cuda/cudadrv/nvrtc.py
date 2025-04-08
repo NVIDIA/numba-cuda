@@ -2,7 +2,6 @@ from ctypes import byref, c_char, c_char_p, c_int, c_size_t, c_void_p, POINTER
 from enum import IntEnum
 from numba.cuda.cudadrv.error import (NvrtcError, NvrtcCompilationError,
                                       NvrtcSupportError)
-from numba.cuda.cudadrv._info import _CUDA_CC_MIN_MAX_SUPPORT
 from numba.cuda.cuda_paths import get_cuda_paths
 
 import functools
@@ -64,6 +63,13 @@ class NVRTC:
     (for Numba) open_cudalib function to load the NVRTC library.
     """
 
+    _CU11_2ONLY_PROTOTYPES = {
+        # nvrtcResult nvrtcGetNumSupportedArchs(int *numArchs);
+        "nvrtcGetNumSupportedArchs": (nvrtc_result, POINTER(c_int)),
+        # nvrtcResult nvrtcGetSupportedArchs(int *supportedArchs);
+        "nvrtcGetSupportedArchs": (nvrtc_result, POINTER(c_int)),
+    }
+
     _CU12ONLY_PROTOTYPES = {
         # nvrtcResult nvrtcGetLTOIRSize(nvrtcProgram prog, size_t *ltoSizeRet);
         "nvrtcGetLTOIRSize": (nvrtc_result, nvrtc_program, POINTER(c_size_t)),
@@ -121,6 +127,8 @@ class NVRTC:
                     raise NvrtcSupportError("NVRTC cannot be loaded") from e
 
                 from numba.cuda.cudadrv.runtime import get_version
+                if get_version() >= (11, 2):
+                    inst._PROTOTYPES |= inst._CU11_2ONLY_PROTOTYPES
                 if get_version() >= (12, 0):
                     inst._PROTOTYPES |= inst._CU12ONLY_PROTOTYPES
 
@@ -147,6 +155,16 @@ class NVRTC:
                     setattr(inst, name, checked_call)
 
         return cls.__INSTANCE
+
+    def get_supported_archs(self):
+        """
+        Get Supported Architectures by NVRTC as list of arch tuples.
+        """
+        num = c_int()
+        self.nvrtcGetNumSupportedArchs(byref(num))
+        archs = (c_int * num.value)()
+        self.nvrtcGetSupportedArchs(archs)
+        return [(archs[i] // 10, archs[i] % 10) for i in range(num.value)]
 
     def get_version(self):
         """
@@ -260,33 +278,13 @@ def compile(src, name, cc, ltoir=False):
             "Unsupported CUDA version. CUDA 11.0 or higher is required."
         )
     else:
-        try:
-            min_cc, max_cc = _CUDA_CC_MIN_MAX_SUPPORT[version]
-        except KeyError:
-            max_rtc_ver, (min_cc, max_cc) = sorted(
-                _CUDA_CC_MIN_MAX_SUPPORT.items(), reverse=True
-            )[0]
-            warnings.warn(
-                "Unable to detect supported RTC version. Assuming "
-                f"maximum supported RTC version {ver_str(max_rtc_ver)}."
-            )
-
-        if version < min_cc:
+        supported_arch = nvrtc.get_supported_archs()
+        if cc not in supported_arch:
             raise RuntimeError(
-                f"Device Compute Capability ({ver_str(cc)}) is lower than the "
-                f"minimum supported Compute Capability ({ver_str(min_cc)}) "
-                f"with NVRTC {ver_str(version)}."
+                f"Device compute capability {ver_str(cc)} is not supported by "
+                f"NVRTC {ver_str(version)}. Supported compute capabilities are "
+                f"{', '.join([ver_str(v) for v in supported_arch])}."
             )
-        elif version > max_cc:
-            warnings.warn(
-                f"Device Compute Capability ({ver_str(cc)}) is higher than the "
-                f"maximum supported Compute Capability ({ver_str(max_cc)}) "
-                f"with NVRTC {ver_str(version)}. Numba will limit the "
-                "compilation to the maximum supported Compute Capability "
-                f"{ver_str(max_cc)}. This may hinder performance, consider "
-                "upgrading NVRTC."
-            )
-        cc = min(cc, max_cc)
 
     # Compilation options:
     # - Compile for the current device's compute capability.
