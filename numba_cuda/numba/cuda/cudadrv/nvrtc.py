@@ -2,9 +2,8 @@ from ctypes import byref, c_char, c_char_p, c_int, c_size_t, c_void_p, POINTER
 from enum import IntEnum
 from numba.cuda.cudadrv.error import (NvrtcError, NvrtcCompilationError,
                                       NvrtcSupportError)
+from numba.cuda.cudadrv._info import _CUDA_CC_MIN_MAX_SUPPORT
 from numba.cuda.cuda_paths import get_cuda_paths
-
-from .info import CTK_SUPPORTED
 
 import functools
 import os
@@ -256,26 +255,33 @@ def compile(src, name, cc, ltoir=False):
 
     version = nvrtc.get_version()
     if version < (11, 0):
-        # Maximum supported target architecture for 11.x is cc 9.0 in CUDA 11.8
         raise RuntimeError(
             "Unsupported CUDA version. CUDA 11.0 or higher is required."
         )
     else:
-        min_cc, max_cc = CTK_SUPPORTED[version]
+        try:
+            min_cc, max_cc = _CUDA_CC_MIN_MAX_SUPPORT[version]
+        except KeyError:
+            min_cc, max_cc = _CUDA_CC_MIN_MAX_SUPPORT.values()[-1]
+            max_rtc_ver = _CUDA_CC_MIN_MAX_SUPPORT.keys()[-1]
+            warnings.warn(
+                "Unable to detect supported RTC version. Assuming "
+                f"maximum supported RTC version {'.'.join(max_rtc_ver)}."
+            )
+
         if version < min_cc:
             raise RuntimeError(
-                f"Device Compute Capability ({cc}) is lower "
-                f"than minimum supported CC ({min_cc}) with installed "
-                "cudatoolkit. Consider downgrading cudatoolkit to supported "
-                "version."
+                f"Device Compute Capability ({cc}) is lower than the "
+                f"minimum supported Compute Capability ({min_cc}) with "
+                f"NVRTC {'.'.join(version)}."
             )
         elif version > max_cc:
             warnings.warn(
-                f"Device Compute Capability ({cc}) is higher "
-                f"than maximum supported CC ({max_cc}) with installed "
-                "cudatoolkit. Numba will limit the compilation to the maximum"
-                "supported CC. This may hinder performance, consider upgrading"
-                "your cudatoolkit to supported version."
+                f"Device Compute Capability ({cc}) is higher than the "
+                f"maximum supported Compute Capability ({max_cc}) with "
+                f"NVRTC {'.'.join(version)}. Numba will limit the compilation "
+                f"to the maximum supported Compute Capability ({max_cc}). "
+                "This may hinder performance, consider upgrading NVRTC."
             )
         cc = min(cc, max_cc)
 

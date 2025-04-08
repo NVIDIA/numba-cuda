@@ -1,5 +1,5 @@
 # Maps CTK version -> (min supported cc, max supported cc) inclusive
-CTK_SUPPORTED = {
+_CUDA_CC_MIN_MAX_SUPPORT = {
     (11, 1): ((3, 5), (8, 0)),
     (11, 2): ((3, 5), (8, 6)),
     (11, 3): ((3, 5), (8, 6)),

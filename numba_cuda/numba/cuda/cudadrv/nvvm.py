@@ -14,7 +14,7 @@ from llvmlite import ir
 
 from .error import NvvmError, NvvmSupportError, NvvmWarning
 from .libs import get_libdevice, open_libdevice, open_cudalib
-from .info import CTK_SUPPORTED
+from ._info import _CUDA_CC_MIN_MAX_SUPPORT
 from numba.core import cgutils, config
 
 
@@ -339,7 +339,7 @@ COMPUTE_CAPABILITIES = (
 def ccs_supported_by_ctk(ctk_version):
     try:
         # For supported versions, we look up the range of supported CCs
-        min_cc, max_cc = CTK_SUPPORTED[ctk_version]
+        min_cc, max_cc = _CUDA_CC_MIN_MAX_SUPPORT[ctk_version]
         return tuple([cc for cc in COMPUTE_CAPABILITIES
                       if min_cc <= cc <= max_cc])
     except KeyError:
@@ -360,7 +360,7 @@ def get_supported_ccs():
         return _supported_cc
 
     # Ensure the minimum CTK version requirement is met
-    min_cudart = min(CTK_SUPPORTED)
+    min_cudart = min(_CUDA_CC_MIN_MAX_SUPPORT)
     if cudart_version < min_cudart:
         _supported_cc = ()
         ctk_ver = f"{cudart_version[0]}.{cudart_version[1]}"
