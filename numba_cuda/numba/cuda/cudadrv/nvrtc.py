@@ -254,6 +254,8 @@ def compile(src, name, cc, ltoir=False):
     program = nvrtc.create_program(src, name)
 
     version = nvrtc.get_version()
+    ver_str = lambda ver : f"{ver[0]}.{ver[1]}"
+    cc_str = lambda cc: f"{cc[0]}{cc[1]}"
     if version < (11, 0):
         raise RuntimeError(
             "Unsupported CUDA version. CUDA 11.0 or higher is required."
@@ -266,22 +268,22 @@ def compile(src, name, cc, ltoir=False):
             max_rtc_ver = _CUDA_CC_MIN_MAX_SUPPORT.keys()[-1]
             warnings.warn(
                 "Unable to detect supported RTC version. Assuming "
-                f"maximum supported RTC version {'.'.join(max_rtc_ver)}."
+                f"maximum supported RTC version {ver_str(max_rtc_ver)}."
             )
 
         if version < min_cc:
             raise RuntimeError(
-                f"Device Compute Capability ({cc}) is lower than the "
-                f"minimum supported Compute Capability ({min_cc}) with "
-                f"NVRTC {'.'.join(version)}."
+                f"Device Compute Capability ({cc_str(cc)}) is lower than the "
+                f"minimum supported Compute Capability ({cc_str(min_cc)}) "
+                f"with NVRTC {ver_str(version)}."
             )
         elif version > max_cc:
             warnings.warn(
-                f"Device Compute Capability ({cc}) is higher than the "
-                f"maximum supported Compute Capability ({max_cc}) with "
-                f"NVRTC {'.'.join(version)}. Numba will limit the compilation "
-                f"to the maximum supported Compute Capability ({max_cc}). "
-                "This may hinder performance, consider upgrading NVRTC."
+                f"Device Compute Capability ({cc_str(cc)}) is higher than the "
+                f"maximum supported Compute Capability ({cc_str(max_cc)}) with "
+                f"NVRTC {ver_str(version)}. Numba will limit the compilation "
+                f"to the maximum supported Compute Capability {cc_str(max_cc)}"
+                ". This may hinder performance, consider upgrading NVRTC."
             )
         cc = min(cc, max_cc)
 
