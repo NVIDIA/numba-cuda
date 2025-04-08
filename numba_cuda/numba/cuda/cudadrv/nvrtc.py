@@ -254,8 +254,7 @@ def compile(src, name, cc, ltoir=False):
     program = nvrtc.create_program(src, name)
 
     version = nvrtc.get_version()
-    ver_str = lambda ver : f"{ver[0]}.{ver[1]}"
-    cc_str = lambda cc: f"{cc[0]}{cc[1]}"
+    ver_str = lambda v: ".".join(v)
     if version < (11, 0):
         raise RuntimeError(
             "Unsupported CUDA version. CUDA 11.0 or higher is required."
@@ -264,8 +263,9 @@ def compile(src, name, cc, ltoir=False):
         try:
             min_cc, max_cc = _CUDA_CC_MIN_MAX_SUPPORT[version]
         except KeyError:
-            min_cc, max_cc = _CUDA_CC_MIN_MAX_SUPPORT.values()[-1]
-            max_rtc_ver = _CUDA_CC_MIN_MAX_SUPPORT.keys()[-1]
+            max_rtc_ver, (min_cc, max_cc) = sorted(
+                _CUDA_CC_MIN_MAX_SUPPORT.items(), reverse=True
+            )[0]
             warnings.warn(
                 "Unable to detect supported RTC version. Assuming "
                 f"maximum supported RTC version {ver_str(max_rtc_ver)}."
@@ -273,17 +273,17 @@ def compile(src, name, cc, ltoir=False):
 
         if version < min_cc:
             raise RuntimeError(
-                f"Device Compute Capability ({cc_str(cc)}) is lower than the "
-                f"minimum supported Compute Capability ({cc_str(min_cc)}) "
+                f"Device Compute Capability ({ver_str(cc)}) is lower than the "
+                f"minimum supported Compute Capability ({ver_str(min_cc)}) "
                 f"with NVRTC {ver_str(version)}."
             )
         elif version > max_cc:
             warnings.warn(
-                f"Device Compute Capability ({cc_str(cc)}) is higher than the "
-                f"maximum supported Compute Capability ({cc_str(max_cc)}) with "
-                f"NVRTC {ver_str(version)}. Numba will limit the compilation "
-                f"to the maximum supported Compute Capability {cc_str(max_cc)}"
-                ". This may hinder performance, consider upgrading NVRTC."
+                f"Device Compute Capability ({ver_str(cc)}) is higher than the "
+                f"maximum supported Compute Capability ({ver_str(max_cc)}) with "
+                f"NVRTC {ver_str(version)}. Numba will limit the compilation to "
+                f"the maximum supported Compute Capability {ver_str(max_cc)}. "
+                "This may hinder performance, consider upgrading NVRTC."
             )
         cc = min(cc, max_cc)
 
