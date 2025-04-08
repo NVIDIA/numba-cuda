@@ -280,10 +280,11 @@ def compile(src, name, cc, ltoir=False):
         elif version > max_cc:
             warnings.warn(
                 f"Device Compute Capability ({ver_str(cc)}) is higher than the "
-                f"maximum supported Compute Capability ({ver_str(max_cc)}) with "
-                f"NVRTC {ver_str(version)}. Numba will limit the compilation to "
-                f"the maximum supported Compute Capability {ver_str(max_cc)}. "
-                "This may hinder performance, consider upgrading NVRTC."
+                f"maximum supported Compute Capability ({ver_str(max_cc)}) "
+                f"with NVRTC {ver_str(version)}. Numba will limit the "
+                "compilation to the maximum supported Compute Capability "
+                f"{ver_str(max_cc)}. This may hinder performance, consider "
+                "upgrading NVRTC."
             )
         cc = min(cc, max_cc)
 
