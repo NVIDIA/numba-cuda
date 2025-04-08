@@ -3,6 +3,9 @@ from enum import IntEnum
 from numba.cuda.cudadrv.error import (NvrtcError, NvrtcCompilationError,
                                       NvrtcSupportError)
 from numba.cuda.cuda_paths import get_cuda_paths
+
+from .info import CTK_SUPPORTED
+
 import functools
 import os
 import threading
@@ -251,9 +254,22 @@ def compile(src, name, cc, ltoir=False):
     nvrtc = NVRTC()
     program = nvrtc.create_program(src, name)
 
-    if nvrtc.get_version() < (12, 0):
+    version = nvrtc.get_version()
+    if version < (11, 0):
         # Maximum supported target architecture for 11.x is cc 9.0 in CUDA 11.8
-        cc = min(cc, (9, 0))
+        raise RuntimeError(
+            "Unsupported CUDA version. CUDA 11.0 or higher is required."
+        )
+    else:
+        min_cc, max_cc = CTK_SUPPORTED[version]
+        if version < min_cc:
+            raise RuntimeError(
+                f"Device Compute Capability ({cc}) is lower "
+                f"than minimum supported CC ({min_cc}) with installed "
+                "cudatoolkit. Consider downgrading cudatoolkit to supported "
+                "version"
+            )
+        cc = min(cc, max_cc)
 
     # Compilation options:
     # - Compile for the current device's compute capability.

@@ -14,6 +14,7 @@ from llvmlite import ir
 
 from .error import NvvmError, NvvmSupportError, NvvmWarning
 from .libs import get_libdevice, open_libdevice, open_cudalib
+from .info import CTK_SUPPORTED
 from numba.core import cgutils, config
 
 
@@ -333,25 +334,6 @@ COMPUTE_CAPABILITIES = (
     (10, 0), (10, 1),
     (12, 0),
 )
-
-# Maps CTK version -> (min supported cc, max supported cc) inclusive
-CTK_SUPPORTED = {
-    (11, 2): ((3, 5), (8, 6)),
-    (11, 3): ((3, 5), (8, 6)),
-    (11, 4): ((3, 5), (8, 7)),
-    (11, 5): ((3, 5), (8, 7)),
-    (11, 6): ((3, 5), (8, 7)),
-    (11, 7): ((3, 5), (8, 7)),
-    (11, 8): ((3, 5), (9, 0)),
-    (12, 0): ((5, 0), (9, 0)),
-    (12, 1): ((5, 0), (9, 0)),
-    (12, 2): ((5, 0), (9, 0)),
-    (12, 3): ((5, 0), (9, 0)),
-    (12, 4): ((5, 0), (9, 0)),
-    (12, 5): ((5, 0), (9, 0)),
-    (12, 6): ((5, 0), (9, 0)),
-    (12, 8): ((5, 0), (12, 0)),
-}
 
 
 def ccs_supported_by_ctk(ctk_version):
