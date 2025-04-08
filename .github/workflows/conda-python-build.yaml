@@ -61,21 +61,27 @@ jobs:
           #
           export MATRIX="
           # amd64
-          - { ARCH: 'amd64', PY_VER: '3.9',  CUDA_VER: '11.8.0', LINUX_VER: 'ubuntu22.04' }
-          - { ARCH: 'amd64', PY_VER: '3.9',  CUDA_VER: '12.5.1', LINUX_VER: 'ubuntu22.04' }
-          - { ARCH: 'amd64', PY_VER: '3.10', CUDA_VER: '11.8.0', LINUX_VER: 'ubuntu22.04' }
-          - { ARCH: 'amd64', PY_VER: '3.10', CUDA_VER: '12.5.1', LINUX_VER: 'ubuntu22.04' }
-          - { ARCH: 'amd64', PY_VER: '3.11', CUDA_VER: '11.8.0', LINUX_VER: 'ubuntu22.04' }
-          - { ARCH: 'amd64', PY_VER: '3.11', CUDA_VER: '12.2.2', LINUX_VER: 'ubuntu22.04' }
-          - { ARCH: 'amd64', PY_VER: '3.11', CUDA_VER: '12.5.1', LINUX_VER: 'ubuntu22.04' }
+          - { ARCH: 'amd64', PY_VER: '3.9',  CUDA_VER: '11.8.0', LINUX_VER: 'rockylinux8' }
+          - { ARCH: 'amd64', PY_VER: '3.9',  CUDA_VER: '12.8.0', LINUX_VER: 'rockylinux8' }
+          - { ARCH: 'amd64', PY_VER: '3.10', CUDA_VER: '11.8.0', LINUX_VER: 'rockylinux8' }
+          - { ARCH: 'amd64', PY_VER: '3.10', CUDA_VER: '12.8.0', LINUX_VER: 'rockylinux8' }
+          - { ARCH: 'amd64', PY_VER: '3.11', CUDA_VER: '11.8.0', LINUX_VER: 'rockylinux8' }
+          - { ARCH: 'amd64', PY_VER: '3.11', CUDA_VER: '12.8.0', LINUX_VER: 'rockylinux8' }
+          - { ARCH: 'amd64', PY_VER: '3.12', CUDA_VER: '11.8.0', LINUX_VER: 'rockylinux8' }
+          - { ARCH: 'amd64', PY_VER: '3.12', CUDA_VER: '12.8.0', LINUX_VER: 'rockylinux8' }
+          - { ARCH: 'amd64', PY_VER: '3.13', CUDA_VER: '11.8.0', LINUX_VER: 'rockylinux8' }
+          - { ARCH: 'amd64', PY_VER: '3.13', CUDA_VER: '12.8.0', LINUX_VER: 'rockylinux8' }
           # arm64
-          - { ARCH: 'arm64', PY_VER: '3.9',  CUDA_VER: '11.8.0', LINUX_VER: 'ubuntu22.04' }
-          - { ARCH: 'arm64', PY_VER: '3.9',  CUDA_VER: '12.5.1', LINUX_VER: 'ubuntu22.04' }
-          - { ARCH: 'arm64', PY_VER: '3.10', CUDA_VER: '11.8.0', LINUX_VER: 'ubuntu22.04' }
-          - { ARCH: 'arm64', PY_VER: '3.10', CUDA_VER: '12.5.1', LINUX_VER: 'ubuntu22.04' }
-          - { ARCH: 'arm64', PY_VER: '3.11', CUDA_VER: '11.8.0', LINUX_VER: 'ubuntu22.04' }
-          - { ARCH: 'arm64', PY_VER: '3.11', CUDA_VER: '12.2.2', LINUX_VER: 'ubuntu22.04' }
-          - { ARCH: 'arm64', PY_VER: '3.11', CUDA_VER: '12.5.1', LINUX_VER: 'ubuntu22.04' }
+          - { ARCH: 'arm64', PY_VER: '3.9',  CUDA_VER: '11.8.0', LINUX_VER: 'rockylinux8' }
+          - { ARCH: 'arm64', PY_VER: '3.9',  CUDA_VER: '12.8.0', LINUX_VER: 'rockylinux8' }
+          - { ARCH: 'arm64', PY_VER: '3.10', CUDA_VER: '11.8.0', LINUX_VER: 'rockylinux8' }
+          - { ARCH: 'arm64', PY_VER: '3.10', CUDA_VER: '12.8.0', LINUX_VER: 'rockylinux8' }
+          - { ARCH: 'arm64', PY_VER: '3.11', CUDA_VER: '11.8.0', LINUX_VER: 'rockylinux8' }
+          - { ARCH: 'arm64', PY_VER: '3.11', CUDA_VER: '12.8.0', LINUX_VER: 'rockylinux8' }
+          - { ARCH: 'arm64', PY_VER: '3.12', CUDA_VER: '11.8.0', LINUX_VER: 'rockylinux8' }
+          - { ARCH: 'arm64', PY_VER: '3.12', CUDA_VER: '12.8.0', LINUX_VER: 'rockylinux8' }
+          - { ARCH: 'arm64', PY_VER: '3.13', CUDA_VER: '11.8.0', LINUX_VER: 'rockylinux8' }
+          - { ARCH: 'arm64', PY_VER: '3.13', CUDA_VER: '12.8.0', LINUX_VER: 'rockylinux8' }
           "
 
           MATRIX="$(
@@ -108,6 +114,8 @@ jobs:
           echo "RAPIDS_SHA=$(git rev-parse HEAD)" >> "${GITHUB_ENV}"
           echo "RAPIDS_REF_NAME=${{ inputs.branch || github.ref_name }}" >> "${GITHUB_ENV}"
           echo "RAPIDS_NIGHTLY_DATE=${{ inputs.date }}" >> "${GITHUB_ENV}"
+      - name: Setup proxy cache
+        uses: nv-gha-runners/setup-proxy-cache@main
       - name: Python build
         run: ${{ inputs.script }}
         env:
