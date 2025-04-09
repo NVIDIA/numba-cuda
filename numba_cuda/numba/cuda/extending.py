@@ -5,7 +5,6 @@ Added for symmetry with the core API
 from numba.core.extending import intrinsic as _intrinsic
 from numba.cuda.models import register_model  # noqa: F401
 from numba.cuda import models  # noqa: F401
-from numba.cuda.cudaimpl import lower  # noqa: F401
 
 intrinsic = _intrinsic(target="cuda")
 
