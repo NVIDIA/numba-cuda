@@ -33,7 +33,6 @@ def get_hashable_handle_value(handle):
 
 
 class TestModuleCallbacksBasic(ContextResettingTestCase):
-
     def test_basic(self):
         counter = 0
 
@@ -56,7 +55,7 @@ class TestModuleCallbacksBasic(ContextResettingTestCase):
         self.assertEqual(counter, 0)
         kernel[1, 1]()
         self.assertEqual(counter, 1)
-        kernel[1, 1]() # cached
+        kernel[1, 1]()  # cached
         self.assertEqual(counter, 1)
 
         wipe_all_modules_in_context()
@@ -85,9 +84,9 @@ class TestModuleCallbacksBasic(ContextResettingTestCase):
             pass
 
         self.assertEqual(counter, 0)
-        kernel[1, 1](42)    # (int64)->() : module 1
+        kernel[1, 1](42)  # (int64)->() : module 1
         self.assertEqual(counter, 1)
-        kernel[1, 1](100)   # (int64)->() : module 1, cached
+        kernel[1, 1](100)  # (int64)->() : module 1, cached
         self.assertEqual(counter, 1)
         kernel[1, 1](3.14)  # (float64)->() : module 2
         self.assertEqual(counter, 2)
@@ -138,7 +137,6 @@ class TestModuleCallbacksBasic(ContextResettingTestCase):
 
 
 class TestModuleCallbacksAPICompleteness(CUDATestCase):
-
     def test_api(self):
         def setup(handle):
             pass
@@ -150,13 +148,14 @@ class TestModuleCallbacksAPICompleteness(CUDATestCase):
             (setup, teardown),
             (setup, None),
             (None, teardown),
-            (None, None)
+            (None, None),
         ]
 
         for setup, teardown in api_combo:
             with self.subTest(setup=setup, teardown=teardown):
                 lib = CUSource(
-                    "", setup_callback=setup, teardown_callback=teardown)
+                    "", setup_callback=setup, teardown_callback=teardown
+                )
 
                 @cuda.jit(link=[lib])
                 def kernel():
@@ -166,7 +165,6 @@ class TestModuleCallbacksAPICompleteness(CUDATestCase):
 
 
 class TestModuleCallbacks(CUDATestCase):
-
     def setUp(self):
         super().setUp()
 
@@ -189,7 +187,8 @@ __device__ int get_num(int &retval) {
             cuMemcpyHtoD(dptr, arr.ctypes.data, size)
 
         self.lib = CUSource(
-            module, setup_callback=set_forty_two, teardown_callback=None)
+            module, setup_callback=set_forty_two, teardown_callback=None
+        )
 
     def test_decldevice_arg(self):
         get_num = cuda.declare_device("get_num", "int32()", link=[self.lib])
@@ -215,7 +214,6 @@ __device__ int get_num(int &retval) {
 
 
 class TestMultithreadedCallbacks(CUDATestCase):
-
     def test_concurrent_initialization(self):
         seen_mods = set()
         max_seen_mods = 0
@@ -242,7 +240,8 @@ class TestMultithreadedCallbacks(CUDATestCase):
         threads = [
             threading.Thread(
                 target=concurrent_compilation_launch, args=(kernel,)
-            ) for _ in range(4)
+            )
+            for _ in range(4)
         ]
         for t in threads:
             t.start()
@@ -274,11 +273,13 @@ class TestMultithreadedCallbacks(CUDATestCase):
 
         def concurrent_compilation_launch():
             kernel[1, 1](42)  # (int64)->() : module 1
-            kernel[1, 1](9)   # (int64)->() : module 1 from cache
-            kernel[1, 1](3.14) # (float64)->() : module 2
+            kernel[1, 1](9)  # (int64)->() : module 1 from cache
+            kernel[1, 1](3.14)  # (float64)->() : module 2
 
-        threads = [threading.Thread(target=concurrent_compilation_launch)
-                   for _ in range(4)]
+        threads = [
+            threading.Thread(target=concurrent_compilation_launch)
+            for _ in range(4)
+        ]
         for t in threads:
             t.start()
         for t in threads:
@@ -286,8 +287,8 @@ class TestMultithreadedCallbacks(CUDATestCase):
 
         wipe_all_modules_in_context()
         assert len(seen_mods) == 0
-        self.assertEqual(max_seen_mods, 8) # 2 kernels per thread
+        self.assertEqual(max_seen_mods, 8)  # 2 kernels per thread
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()
