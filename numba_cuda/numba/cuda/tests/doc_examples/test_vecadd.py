@@ -37,6 +37,7 @@ class TestVecAdd(CUDATestCase):
 
             if tid < size:
                 c[tid] = a[tid] + b[tid]
+
         # ex_vecadd.kernel.end
 
         # Seed RNG for test repeatability
@@ -64,8 +65,7 @@ class TestVecAdd(CUDATestCase):
         # ex_vecadd.launch.end
 
         np.testing.assert_equal(
-            c.copy_to_host(),
-            a.copy_to_host() + b.copy_to_host()
+            c.copy_to_host(), a.copy_to_host() + b.copy_to_host()
         )
 
 

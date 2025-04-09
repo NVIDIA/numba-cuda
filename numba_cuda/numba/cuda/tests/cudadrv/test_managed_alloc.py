@@ -7,11 +7,10 @@ from numba.cuda.testing import skip_on_cudasim, skip_on_arm
 from numba.tests.support import linux_only
 
 
-@skip_on_cudasim('CUDA Driver API unsupported in the simulator')
+@skip_on_cudasim("CUDA Driver API unsupported in the simulator")
 @linux_only
-@skip_on_arm('Managed Alloc support is experimental/untested on ARM')
+@skip_on_arm("Managed Alloc support is experimental/untested on ARM")
 class TestManagedAlloc(ContextResettingTestCase):
-
     def get_total_gpu_memory(self):
         # We use a driver function to directly get the total GPU memory because
         # an EMM plugin may report something different (or not implement
@@ -48,7 +47,9 @@ class TestManagedAlloc(ContextResettingTestCase):
     def test_managed_alloc_driver_undersubscribe(self):
         msg = "Managed memory unsupported prior to CC 3.0"
         self.skip_if_cc_major_lt(3, msg)
-        self._test_managed_alloc_driver(0.5)
+        # We keep the allocation small so that it doesn't hang on GPUs
+        # with large memory (H100)
+        self._test_managed_alloc_driver(0.1)
 
     # This test is skipped by default because it is easy to hang the machine
     # for a very long time or get OOM killed if the GPU memory size is >50% of
@@ -85,7 +86,7 @@ class TestManagedAlloc(ContextResettingTestCase):
         n_elems = n_bytes // dtype.itemsize
         ary = np.ndarray(shape=n_elems, dtype=dtype, buffer=mem)
 
-        magic = 0xab
+        magic = 0xAB
         device_memset(mem, magic, n_bytes)
         ctx.synchronize()
 
@@ -102,7 +103,7 @@ class TestManagedAlloc(ContextResettingTestCase):
         ary.fill(123.456)
         self.assertTrue(all(ary == 123.456))
 
-        @cuda.jit('void(double[:])')
+        @cuda.jit("void(double[:])")
         def kernel(x):
             i = cuda.grid(1)
             if i < x.shape[0]:
@@ -123,5 +124,5 @@ class TestManagedAlloc(ContextResettingTestCase):
         self._test_managed_array(attach_global=False)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()
