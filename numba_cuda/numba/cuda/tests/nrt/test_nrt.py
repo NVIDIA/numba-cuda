@@ -15,6 +15,39 @@ from numba import cuda
 from numba.cuda.runtime.nrt import rtsys, get_include
 import tempfile
 from numba.core.typing.templates import AbstractTemplate
+from numba.cuda.cudadrv.linkable_code import (
+    CUSource,
+    PTXSource,
+    Fatbin,
+    Cubin,
+    Archive,
+    Object,
+)
+
+
+TEST_BIN_DIR = os.getenv("NUMBA_CUDA_TEST_BIN_DIR")
+
+if TEST_BIN_DIR:
+
+    def make_linkable_code(name, kind, mode):
+        path = os.path.join(TEST_BIN_DIR, name)
+        with open(path, mode) as f:
+            contents = f.read()
+        return kind(contents, nrt=True)
+
+    nrt_extern_a = make_linkable_code("nrt_extern.a", Archive, "rb")
+    nrt_extern_cubin = make_linkable_code("nrt_extern.cubin", Cubin, "rb")
+    nrt_extern_cu = make_linkable_code(
+        "nrt_extern.cu",
+        CUSource,
+        "rb",
+    )
+    nrt_extern_fatbin = make_linkable_code("nrt_extern.fatbin", Fatbin, "rb")
+    nrt_extern_fatbin_multi = make_linkable_code(
+        "nrt_extern_multi.fatbin", Fatbin, "rb"
+    )
+    nrt_extern_o = make_linkable_code("nrt_extern.o", Object, "rb")
+    nrt_extern_ptx = make_linkable_code("nrt_extern.ptx", PTXSource, "rb")
 
 
 def allocate_shim():
@@ -137,6 +170,54 @@ class TestNrtBasic(CUDATestCase):
                 allocate_shim()
 
             kernel[1, 1]()
+
+
+class TestNrtLinking(CUDATestCase):
+    def run(self, result=None):
+        with override_config("CUDA_ENABLE_NRT", True):
+            super(TestNrtLinking, self).run(result)
+
+    def test_nrt_detect_linked_ptx_file(self):
+        src = f"#include <{get_include()}/nrt.cuh>"
+        src += """;
+                 extern "C" __device__ int extern_func(int* nb_retval){
+                     NRT_Allocate(1);
+                     return 0;
+                 }
+        """
+        cc = get_current_device().compute_capability
+        ptx, _ = compile(src, "external_nrt.cu", cc)
+        with tempfile.NamedTemporaryFile(
+            delete=True, mode="w+", suffix=".ptx", encoding="utf-8"
+        ) as f:
+            f.write(ptx)
+            f.flush()
+
+            @cuda.jit(link=[f.name])
+            def kernel():
+                allocate_shim()
+
+            kernel[1, 1]()
+
+    @unittest.skipIf(not TEST_BIN_DIR, "necessary binaries not generated.")
+    def test_nrt_detect_linkable_code(self):
+        codes = (
+            nrt_extern_a,
+            nrt_extern_cubin,
+            nrt_extern_cu,
+            nrt_extern_fatbin,
+            nrt_extern_fatbin_multi,
+            nrt_extern_o,
+            nrt_extern_ptx,
+        )
+        for code in codes:
+            with self.subTest(code=code):
+
+                @cuda.jit(link=[code])
+                def kernel():
+                    allocate_shim()
+
+                kernel[1, 1]()
 
 
 class TestNrtStatistics(CUDATestCase):

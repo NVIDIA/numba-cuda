@@ -21,7 +21,7 @@ from numba.cuda.compiler import (
     ExternFunction,
 )
 from numba.cuda.cudadrv import driver
-from numba.cuda.cudadrv.linkable_code import LinkableCode
+from numba.cuda.cudadrv.linkable_code import LinkableCode, CUSource, PTXSource
 from numba.cuda.cudadrv.devices import get_context
 from numba.cuda.descriptor import cuda_target
 from numba.cuda.errors import (
@@ -270,7 +270,11 @@ class _Kernel(serialize.ReduceMixin):
         if not link_nrt:
             for file in link:
                 if isinstance(file, LinkableCode):
-                    asm = file.data.decode("utf-8")
+                    if file.nrt:
+                        link_nrt = True
+                        break
+                    elif isinstance(file, (CUSource, PTXSource)):
+                        asm = file.data.decode("utf-8")
                 else:
                     if file.endswith("ptx") or file.endswith("cu"):
                         asm = cached_file_read(file)
