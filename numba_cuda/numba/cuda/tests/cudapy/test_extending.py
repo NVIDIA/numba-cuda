@@ -35,15 +35,17 @@ if not config.ENABLE_CUDASIM:
     from numba.core import cgutils
     from numba.core.extending import (
         lower_builtin,
-        make_attribute_wrapper,
         models,
-        register_model,
         type_callable,
         typeof_impl,
     )
     from numba.core.typing.templates import AttributeTemplate
     from numba.cuda.cudadecl import registry as cuda_registry
     from numba.cuda.cudaimpl import lower_attr as cuda_lower_attr
+    from numba.cuda.extending import (
+        register_model,
+        make_attribute_wrapper,
+    )
 
     class IntervalType(types.Type):
         def __init__(self):
