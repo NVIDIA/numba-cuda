@@ -5,25 +5,28 @@ import numpy as np
 
 from numba import cuda, config
 from numba.core.runtime.nrt import _nrt_mstats
-from numba.cuda.cudadrv.driver import Linker, driver, launch_kernel
+from numba.cuda.cudadrv.driver import (
+    Linker,
+    driver,
+    launch_kernel,
+    USE_NV_BINDING,
+)
 from numba.cuda.cudadrv import devices
 from numba.cuda.api import get_current_device
 from numba.cuda.utils import _readenv
 
 
 # Check environment variable or config for NRT statistics enablement
-NRT_STATS = (
-    _readenv("NUMBA_CUDA_NRT_STATS", bool, False) or
-    getattr(config, "NUMBA_CUDA_NRT_STATS", False)
+NRT_STATS = _readenv("NUMBA_CUDA_NRT_STATS", bool, False) or getattr(
+    config, "NUMBA_CUDA_NRT_STATS", False
 )
 if not hasattr(config, "NUMBA_CUDA_NRT_STATS"):
     config.CUDA_NRT_STATS = NRT_STATS
 
 
 # Check environment variable or config for NRT enablement
-ENABLE_NRT = (
-    _readenv("NUMBA_CUDA_ENABLE_NRT", bool, False) or
-    getattr(config, "NUMBA_CUDA_ENABLE_NRT", False)
+ENABLE_NRT = _readenv("NUMBA_CUDA_ENABLE_NRT", bool, False) or getattr(
+    config, "NUMBA_CUDA_ENABLE_NRT", False
 )
 if not hasattr(config, "NUMBA_CUDA_ENABLE_NRT"):
     config.CUDA_ENABLE_NRT = ENABLE_NRT
@@ -34,16 +37,19 @@ def _alloc_init_guard(method):
     """
     Ensure NRT memory allocation and initialization before running the method
     """
+
     @wraps(method)
     def wrapper(self, *args, **kwargs):
         self.ensure_allocated()
         self.ensure_initialized()
         return method(self, *args, **kwargs)
+
     return wrapper
 
 
 class _Runtime:
     """Singleton class for Numba CUDA runtime"""
+
     _instance = None
 
     def __new__(cls, *args, **kwargs):
@@ -63,8 +69,7 @@ class _Runtime:
         """
         # Define the path for memsys.cu
         memsys_mod = os.path.join(
-            os.path.dirname(os.path.abspath(__file__)),
-            "memsys.cu"
+            os.path.dirname(os.path.abspath(__file__)), "memsys.cu"
         )
         cc = get_current_device().compute_capability
 
@@ -104,10 +109,12 @@ class _Runtime:
         # Allocate space for NRT_MemSys
         ptr, nbytes = self._memsys_module.get_global_symbol("memsys_size")
         memsys_size = ctypes.c_uint64()
-        driver.cuMemcpyDtoH(ctypes.addressof(memsys_size),
-                            ptr.device_ctypes_pointer, nbytes)
+        driver.cuMemcpyDtoH(
+            ctypes.addressof(memsys_size), ptr.device_ctypes_pointer, nbytes
+        )
         self._memsys = device_array(
-            (memsys_size.value,), dtype="i1", stream=stream)
+            (memsys_size.value,), dtype="i1", stream=stream
+        )
         self.set_memsys_to_module(self._memsys_module, stream=stream)
 
     def _single_thread_launch(self, module, stream, name, params=()):
@@ -120,13 +127,29 @@ class _Runtime:
         func = module.get_function(name)
         launch_kernel(
             func.handle,
-            1, 1, 1,
-            1, 1, 1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
             0,
             stream.handle,
             params,
-            cooperative=False
+            cooperative=False,
         )
+
+    def _ctypes_pointer(self, array):
+        """
+        Given an array, return a ctypes pointer to the data suitable for
+        passing to ``launch_kernel``.
+        """
+        ptr = array.device_ctypes_pointer
+
+        if USE_NV_BINDING:
+            ptr = ctypes.c_void_p(int(ptr))
+
+        return ptr
 
     def ensure_initialized(self, stream=None):
         """
@@ -145,7 +168,8 @@ class _Runtime:
         self.ensure_allocated()
 
         self._single_thread_launch(
-            self._memsys_module, stream, "NRT_MemSys_init")
+            self._memsys_module, stream, "NRT_MemSys_init"
+        )
         self._initialized = True
 
         if config.CUDA_NRT_STATS:
@@ -157,7 +181,8 @@ class _Runtime:
         Enable memsys statistics
         """
         self._single_thread_launch(
-            self._memsys_module, stream, "NRT_MemSys_enable_stats")
+            self._memsys_module, stream, "NRT_MemSys_enable_stats"
+        )
 
     @_alloc_init_guard
     def memsys_disable_stats(self, stream=None):
@@ -165,7 +190,8 @@ class _Runtime:
         Disable memsys statistics
         """
         self._single_thread_launch(
-            self._memsys_module, stream, "NRT_MemSys_disable_stats")
+            self._memsys_module, stream, "NRT_MemSys_disable_stats"
+        )
 
     @_alloc_init_guard
     def memsys_stats_enabled(self, stream=None):
@@ -174,12 +200,13 @@ class _Runtime:
         context
         """
         enabled_ar = cuda.managed_array(1, np.uint8)
+        enabled_ptr = self._ctypes_pointer(enabled_ar)
 
         self._single_thread_launch(
             self._memsys_module,
             stream,
             "NRT_MemSys_stats_enabled",
-            (enabled_ar.device_ctypes_pointer,)
+            (enabled_ptr,),
         )
 
         cuda.synchronize()
@@ -190,20 +217,20 @@ class _Runtime:
         """
         Copy all statistics of memsys to the host
         """
-        dt = np.dtype([
-            ('alloc', np.uint64),
-            ('free', np.uint64),
-            ('mi_alloc', np.uint64),
-            ('mi_free', np.uint64)
-        ])
+        dt = np.dtype(
+            [
+                ("alloc", np.uint64),
+                ("free", np.uint64),
+                ("mi_alloc", np.uint64),
+                ("mi_free", np.uint64),
+            ]
+        )
 
         stats_for_read = cuda.managed_array(1, dt)
+        stats_ptr = self._ctypes_pointer(stats_for_read)
 
         self._single_thread_launch(
-            self._memsys_module,
-            stream,
-            "NRT_MemSys_read",
-            [stats_for_read.device_ctypes_pointer]
+            self._memsys_module, stream, "NRT_MemSys_read", [stats_ptr]
         )
         cuda.synchronize()
 
@@ -222,7 +249,7 @@ class _Runtime:
             alloc=memsys["alloc"],
             free=memsys["free"],
             mi_alloc=memsys["mi_alloc"],
-            mi_free=memsys["mi_free"]
+            mi_free=memsys["mi_free"],
         )
 
     @_alloc_init_guard
@@ -231,11 +258,10 @@ class _Runtime:
         Get a single stat from the memsys
         """
         got = cuda.managed_array(1, np.uint64)
+        got_ptr = self._ctypes_pointer(got)
+
         self._single_thread_launch(
-            self._memsys_module,
-            stream,
-            f"NRT_MemSys_read_{stat}",
-            [got.device_ctypes_pointer]
+            self._memsys_module, stream, f"NRT_MemSys_read_{stat}", [got_ptr]
         )
 
         cuda.synchronize()
@@ -292,13 +318,13 @@ class _Runtime:
         """
         if self._memsys is None:
             raise RuntimeError(
-                "Please allocate NRT Memsys first before setting to module.")
+                "Please allocate NRT Memsys first before setting to module."
+            )
+
+        memsys_ptr = self._ctypes_pointer(self._memsys)
 
         self._single_thread_launch(
-            module,
-            stream,
-            "NRT_MemSys_set",
-            [self._memsys.device_ctypes_pointer,]
+            module, stream, "NRT_MemSys_set", [memsys_ptr]
         )
 
     @_alloc_init_guard
@@ -308,9 +334,7 @@ class _Runtime:
         """
         cuda.synchronize()
         self._single_thread_launch(
-            self._memsys_module,
-            stream,
-            "NRT_MemSys_print"
+            self._memsys_module, stream, "NRT_MemSys_print"
         )
 
 
