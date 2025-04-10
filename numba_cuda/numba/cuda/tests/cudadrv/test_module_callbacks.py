@@ -250,7 +250,7 @@ class TestMultithreadedCallbacks(CUDATestCase):
 
         wipe_all_modules_in_context()
         self.assertEqual(len(seen_mods), 0)
-        self.assertEqual(max_seen_mods, 4)
+        self.assertEqual(max_seen_mods, 1)  # one moduled shared across threads
 
     def test_concurrent_initialization_different_args(self):
         seen_mods = set()
@@ -287,7 +287,7 @@ class TestMultithreadedCallbacks(CUDATestCase):
 
         wipe_all_modules_in_context()
         assert len(seen_mods) == 0
-        self.assertEqual(max_seen_mods, 8)  # 2 kernels per thread
+        self.assertEqual(max_seen_mods, 2)  # two modules shared across threads
 
 
 if __name__ == "__main__":

@@ -1111,6 +1111,7 @@ class CUDADispatcher(Dispatcher, serialize.ReduceMixin):
         self._insert(c_sig, kernel, cuda=True)
         self.overloads[argtypes] = kernel
 
+    @global_compiler_lock
     def compile(self, sig):
         """
         Compile and bind to the current context a version of this kernel
