@@ -32,8 +32,8 @@ def _get_libdevice_path_decision():
         ("Conda environment", get_conda_ctk()),
         ("Conda environment (NVIDIA package)", get_nvidia_libdevice_ctk()),
         ("CUDA_HOME", get_cuda_home("nvvm", "libdevice")),
-        ("System", get_system_ctk("nvvm", "libdevice")),
         ("NVIDIA NVCC Wheel", get_libdevice_wheel()),
+        ("System", get_system_ctk("nvvm", "libdevice")),
         ("Debian package", get_debian_pkg_libdevice()),
     ]
     by, libdir = _find_valid_path(options)
@@ -52,8 +52,8 @@ def _get_nvvm_path_decision():
         ("Conda environment", get_conda_ctk()),
         ("Conda environment (NVIDIA package)", get_nvidia_nvvm_ctk()),
         ("CUDA_HOME", get_cuda_home(*_nvvm_lib_dir())),
-        ("System", get_system_ctk(*_nvvm_lib_dir())),
         ("NVIDIA NVCC Wheel", _get_nvvm_wheel()),
+        ("System", get_system_ctk(*_nvvm_lib_dir())),
     ]
 
     by, path = _find_valid_path(options)
@@ -71,8 +71,8 @@ def _get_nvrtc_path_decision():
     options = [
         ("CUDA_HOME", get_cuda_home("nvrtc")),
         ("Conda environment", get_conda_ctk()),
-        ("System", _get_nvrtc_system_ctk()),
         ("NVIDIA NVCC Wheel", _get_nvrtc_wheel()),
+        ("System", _get_nvrtc_system_ctk()),
     ]
     by, path = _find_valid_path(options)
     return by, path
