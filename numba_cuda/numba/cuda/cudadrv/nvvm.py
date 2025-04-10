@@ -372,8 +372,10 @@ COMPUTE_CAPABILITIES = (
     (12, 0),
 )
 
+
 # Maps CTK version -> (min supported cc, max supported cc) inclusive
-CTK_SUPPORTED = {
+_CUDA_CC_MIN_MAX_SUPPORT = {
+    (11, 1): ((3, 5), (8, 0)),
     (11, 2): ((3, 5), (8, 6)),
     (11, 3): ((3, 5), (8, 6)),
     (11, 4): ((3, 5), (8, 7)),
@@ -395,7 +397,7 @@ CTK_SUPPORTED = {
 def ccs_supported_by_ctk(ctk_version):
     try:
         # For supported versions, we look up the range of supported CCs
-        min_cc, max_cc = CTK_SUPPORTED[ctk_version]
+        min_cc, max_cc = _CUDA_CC_MIN_MAX_SUPPORT[ctk_version]
         return tuple(
             [cc for cc in COMPUTE_CAPABILITIES if min_cc <= cc <= max_cc]
         )
@@ -423,7 +425,7 @@ def get_supported_ccs():
         return _supported_cc
 
     # Ensure the minimum CTK version requirement is met
-    min_cudart = min(CTK_SUPPORTED)
+    min_cudart = min(_CUDA_CC_MIN_MAX_SUPPORT)
     if cudart_version < min_cudart:
         _supported_cc = ()
         ctk_ver = f"{cudart_version[0]}.{cudart_version[1]}"
