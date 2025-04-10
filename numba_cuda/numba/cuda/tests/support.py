@@ -1,4 +1,4 @@
-from numba.cuda.runtime.nrt import rtsys
+from numba.cuda.memory_management.nrt import rtsys
 
 
 class EnableNRTStatsMixin(object):

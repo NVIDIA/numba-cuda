@@ -38,6 +38,7 @@ if config.ENABLE_CUDASIM:
     sys.modules["numba.cuda.cudadrv.devicearray"] = cudadrv.devicearray
     sys.modules["numba.cuda.cudadrv.devices"] = cudadrv.devices
     sys.modules["numba.cuda.cudadrv.driver"] = cudadrv.driver
+    sys.modules["numba.cuda.cudadrv.linkable_code"] = cudadrv.linkable_code
     sys.modules["numba.cuda.cudadrv.runtime"] = cudadrv.runtime
     sys.modules["numba.cuda.cudadrv.drvapi"] = cudadrv.drvapi
     sys.modules["numba.cuda.cudadrv.error"] = cudadrv.error
@@ -46,3 +47,8 @@ if config.ENABLE_CUDASIM:
     from . import compiler
 
     sys.modules["numba.cuda.compiler"] = compiler
+
+    from numba.cuda.simulator import memory_management
+
+    sys.modules["numba.cuda.memory_management"] = memory_management
+    sys.modules["numba.cuda.memory_management.nrt"] = memory_management.nrt

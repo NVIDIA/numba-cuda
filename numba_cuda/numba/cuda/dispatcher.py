@@ -29,7 +29,7 @@ from numba.cuda.errors import (
     normalize_kernel_dimensions,
 )
 from numba.cuda import types as cuda_types
-from numba.cuda.runtime.nrt import rtsys
+from numba.cuda.memory_management.nrt import rtsys
 
 from numba import cuda
 from numba import _dispatcher
@@ -275,7 +275,7 @@ class _Kernel(serialize.ReduceMixin):
 
         basedir = os.path.dirname(os.path.abspath(__file__))
         if nrt_in_asm:
-            nrt_path = os.path.join(basedir, "runtime", "nrt.cu")
+            nrt_path = os.path.join(basedir, "memory_management", "nrt.cu")
             link.append(nrt_path)
 
     @property
