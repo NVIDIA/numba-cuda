@@ -2,6 +2,7 @@ from ctypes import byref, c_char, c_char_p, c_int, c_size_t, c_void_p, POINTER
 from enum import IntEnum
 from numba.cuda.cudadrv.error import (
     NvrtcError,
+    NvrtcBuiltinOperationFailure,
     NvrtcCompilationError,
     NvrtcSupportError,
 )
@@ -163,6 +164,11 @@ class NVRTC:
                         error = func(*args)
                         if error == NvrtcResult.NVRTC_ERROR_COMPILATION:
                             raise NvrtcCompilationError()
+                        elif (
+                            error
+                            == NvrtcResult.NVRTC_ERROR_BUILTIN_OPERATION_FAILURE
+                        ):
+                            raise NvrtcBuiltinOperationFailure()
                         elif error != NvrtcResult.NVRTC_SUCCESS:
                             try:
                                 error_name = NvrtcResult(error).name
@@ -266,7 +272,7 @@ class NVRTC:
         try:
             self.nvrtcCompileProgram(program.handle, len(options), c_options)
             return False
-        except NvrtcCompilationError:
+        except (NvrtcCompilationError, NvrtcBuiltinOperationFailure):
             return True
 
     def destroy_program(self, program):
