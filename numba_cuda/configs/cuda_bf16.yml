@@ -1,0 +1,20 @@
+Name: Numba Bfloat16
+Version: 0.0.1
+Entry Point: /usr/local/cuda/include/cuda_bf16.h
+File List:
+    - /usr/local/cuda/include/cuda_bf16.h
+Exclude: {}
+Types:
+    __nv_bfloat16_raw: Number
+    __nv_bfloat16: Number
+    __nv_bfloat162_raw: Type
+    __nv_bfloat162: Type
+    nv_bfloat16: Number
+    nv_bfloat162: Type
+Data Models:
+    __nv_bfloat16_raw: PrimitiveModel
+    __nv_bfloat16: PrimitiveModel
+    nv_bfloat16: PrimitiveModel
+    __nv_bfloat162_raw: StructModel
+    __nv_bfloat162: StructModel
+    nv_bfloat162: StructModel
