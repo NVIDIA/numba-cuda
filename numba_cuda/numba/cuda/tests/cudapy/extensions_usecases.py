@@ -20,10 +20,12 @@ if not config.ENABLE_CUDASIM:
     from numba import int32
     from numba.core.extending import (
         models,
-        register_model,
-        make_attribute_wrapper,
         typeof_impl,
         type_callable,
+    )
+    from numba.cuda.extending import (
+        register_model,
+        make_attribute_wrapper,
     )
     from numba.cuda.cudaimpl import lower
     from numba.core import cgutils
