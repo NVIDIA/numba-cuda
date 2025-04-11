@@ -16,7 +16,6 @@ _msg_deprecated_signature_arg = (
 def jit(
     func_or_sig=None,
     device=False,
-    inline=False,
     link=[],
     debug=None,
     opt=None,

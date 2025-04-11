@@ -46,7 +46,7 @@ All CUDA ufunc kernels have the ability to call other CUDA device functions::
     from numba import vectorize, cuda
 
     # define a device function
-    @cuda.jit('float32(float32, float32, float32)', device=True, inline=True)
+    @cuda.jit('float32(float32, float32, float32)', device=True, inline="always")
     def cu_device_fn(x, y, z):
         return x ** y / z
 
