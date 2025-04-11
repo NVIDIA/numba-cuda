@@ -279,10 +279,9 @@ The following functions from the :mod:`operator` module are supported:
 NumPy support
 =============
 
-Due to the CUDA programming model, dynamic memory allocation inside a kernel is
-inefficient and is often not needed.  Numba disallows any memory allocating features.
-This disables a large number of NumPy APIs.  For best performance, users should write
-code such that each thread is dealing with a single element at a time.
+Numba allows memory allocation features in CUDA, though care must be taken to consider
+the overhead of a potentially large number of synchronizations. When allocating memory,
+threads use CUDA dynamic global memory allocation (malloc) to allocate memory on the device.
 
 Supported NumPy features:
 
@@ -338,11 +337,6 @@ Supported NumPy features:
   * :func:`numpy.left_shift`
   * :func:`numpy.right_shift`
 
-Unsupported NumPy features:
-
-* array creation APIs.
-* array methods.
-* functions that returns a new array.
 
 
 CFFI support
