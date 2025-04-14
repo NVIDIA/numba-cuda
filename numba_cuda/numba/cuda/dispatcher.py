@@ -31,6 +31,7 @@ from numba.cuda.errors import (
 from numba.cuda import types as cuda_types
 from numba.cuda.runtime.nrt import rtsys
 from numba.cuda.utils import cached_file_read
+from numba.cuda.locks import module_init_lock
 
 from numba import cuda
 from numba import _dispatcher
@@ -359,11 +360,18 @@ class _Kernel(serialize.ReduceMixin):
             extensions=self.extensions,
         )
 
+    @module_init_lock
+    def initialize_once(self, mod):
+        if not mod.initialized:
+            mod.setup()
+
     def bind(self):
         """
         Force binding to current CUDA context
         """
         cufunc = self._codelibrary.get_cufunc()
+
+        self.initialize_once(cufunc.module)
 
         if (
             hasattr(self, "target_context")
@@ -1115,6 +1123,7 @@ class CUDADispatcher(Dispatcher, serialize.ReduceMixin):
         self._insert(c_sig, kernel, cuda=True)
         self.overloads[argtypes] = kernel
 
+    @global_compiler_lock
     def compile(self, sig):
         """
         Compile and bind to the current context a version of this kernel
