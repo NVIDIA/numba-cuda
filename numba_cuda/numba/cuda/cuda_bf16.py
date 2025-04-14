@@ -10,51 +10,56 @@
 
 
 # Imports:
-from numba.types import uint16
-from numba.types import Type
-import operator
-from numba.core.typing import signature
-from numba.extending import as_numba_type
-from numba.core.extending import make_attribute_wrapper
-from numba.types import CPointer
-from numba.cuda.cudadecl import register_attr
-import numba
-from numba.cuda import CUSource
-from llvmlite import ir
-from numba.types import int8
-import io
-from numba.core.typing.templates import ConcreteTemplate
-from numba.types import int64
-from numba import types
-from numba.core.typing.templates import AttributeTemplate
-from numba.core.datamodel.old_models import StructModel
-from numba.cuda import declare_device
-from numba.core.datamodel.old_models import PrimitiveModel
-from numba.types import float64
-from numba.core.extending import lower_cast
-from numba.types import float32
-from numba.types import int16
-from numba.cuda.cudadecl import register_global
-from numba.types import uint32
-from numba.cuda.cudadecl import register
-from numba.types import uint8
-from numba.types import int32
-from numba.types import Function
-from numba.types import bool_
-from numba.core.extending import register_model
-from numba.types import Number
-from numba.types import uint64
-from numba.types import float16
 from numba.cuda.cudaimpl import lower
-import os
+from numba.core.typing.templates import ConcreteTemplate
+from numba import types
+from numba.cuda.cudadecl import register_attr
+from numba.types import uint8
+from numba.types import float32
+from numba.types import bool_
+from numba.types import Function
+from numba.types import Number
+from numba.types import uint16
+from numba.core.datamodel.old_models import PrimitiveModel
+from numba.types import int64
+from numba.cuda.cudadecl import register
+from numba.types import CPointer
+from numba.types import int32
+from numba.core.typing import signature
+from numba.types import uint64
+from numba.core.extending import make_attribute_wrapper
+import io
+from numba.types import float16
+from numba.cuda import CUSource
+from numba.types import int16
+import numba
+from numba.core.extending import lower_cast
+from numba.types import int8
+from numba.extending import as_numba_type
+from numba.core.typing.templates import AttributeTemplate
+import operator
+from numba.types import float64
+from llvmlite import ir
+from numba.core.extending import register_model
+from numba.cuda import declare_device
+from numba.types import uint32
+from numba.core.datamodel.old_models import StructModel
+from numba.cuda.cudadecl import register_global
+from numba.types import Type
+
 
 # Prefixes:
 
-numba.config.CUDA_ENABLE_PYNVJITLINK = True
+import importlib
+
+if importlib.util.find_spec("pynvjitlink"):
+    numba.config.CUDA_ENABLE_PYNVJITLINK = True
 
 # Shim Stream:
-cuda_bf16_h = os.path.join(os.path.dirname(__file__), "cuda_bf16.h")
-entry_point = f"#include <{cuda_bf16_h}>"
+
+entry_point = (
+    "#include </home/wangm/numba-cuda/numba_cuda/numba/cuda/cuda_bf16.h>"
+)
 shim_stream = io.StringIO()
 shim_stream.write(entry_point)
 shim_obj = CUSource(shim_stream)
@@ -65,77 +70,77 @@ shim_obj = CUSource(shim_stream)
 # Structs:
 
 
-# Typing for unnamed1386971
-class _type_class_unnamed1386971(Type):
+# Typing for unnamed1401637
+class _type_class_unnamed1401637(Type):
     def __init__(self):
-        super().__init__(name="unnamed1386971")
+        super().__init__(name="unnamed1401637")
         self.alignof_ = 2
         self.bitwidth = 2 * 8
 
 
-_type_unnamed1386971 = _type_class_unnamed1386971()
+_type_unnamed1401637 = _type_class_unnamed1401637()
 
 
 # Make Python API for struct
-unnamed1386971 = type("unnamed1386971", (), {"_nbtype": _type_unnamed1386971})
+unnamed1401637 = type("unnamed1401637", (), {"_nbtype": _type_unnamed1401637})
 
-as_numba_type.register(unnamed1386971, _type_unnamed1386971)
+as_numba_type.register(unnamed1401637, _type_unnamed1401637)
 
 
-@register_model(_type_class_unnamed1386971)
-class _model_unnamed1386971(StructModel):
+@register_model(_type_class_unnamed1401637)
+class _model_unnamed1401637(StructModel):
     def __init__(self, dmm, fe_type):
         members = [("x", uint16)]
         super().__init__(dmm, fe_type, members)
 
 
 @register_attr
-class _attr_typing_unnamed1386971(AttributeTemplate):
-    key = globals()["unnamed1386971"]
+class _attr_typing_unnamed1401637(AttributeTemplate):
+    key = globals()["unnamed1401637"]
 
     def resolve_x(self, obj):
         return uint16
 
 
-make_attribute_wrapper(_type_class_unnamed1386971, "x", "x")
+make_attribute_wrapper(_type_class_unnamed1401637, "x", "x")
 
 
 @register
-class _ctor_template_unnamed1386971(ConcreteTemplate):
-    key = globals()["unnamed1386971"]
+class _ctor_template_unnamed1401637(ConcreteTemplate):
+    key = globals()["unnamed1401637"]
     cases = []
 
 
-register_global(unnamed1386971, Function(_ctor_template_unnamed1386971))
+register_global(unnamed1401637, Function(_ctor_template_unnamed1401637))
 
 
-# Typing for unnamed1387080
-class _type_class_unnamed1387080(Type):
+# Typing for unnamed1401746
+class _type_class_unnamed1401746(Type):
     def __init__(self):
-        super().__init__(name="unnamed1387080")
+        super().__init__(name="unnamed1401746")
         self.alignof_ = 4
         self.bitwidth = 4 * 8
 
 
-_type_unnamed1387080 = _type_class_unnamed1387080()
+_type_unnamed1401746 = _type_class_unnamed1401746()
 
 
 # Make Python API for struct
-unnamed1387080 = type("unnamed1387080", (), {"_nbtype": _type_unnamed1387080})
+unnamed1401746 = type("unnamed1401746", (), {"_nbtype": _type_unnamed1401746})
 
-as_numba_type.register(unnamed1387080, _type_unnamed1387080)
+as_numba_type.register(unnamed1401746, _type_unnamed1401746)
 
 
-@register_model(_type_class_unnamed1387080)
-class _model_unnamed1387080(StructModel):
+@register_model(_type_class_unnamed1401746)
+class _model_unnamed1401746(StructModel):
     def __init__(self, dmm, fe_type):
         members = [("x", uint16), ("y", uint16)]
         super().__init__(dmm, fe_type, members)
 
 
 @register_attr
-class _attr_typing_unnamed1387080(AttributeTemplate):
-    key = globals()["unnamed1387080"]
+class _attr_typing_unnamed1401746(AttributeTemplate):
+    key = globals()["unnamed1401746"]
 
     def resolve_x(self, obj):
         return uint16
@@ -144,19 +149,19 @@ class _attr_typing_unnamed1387080(AttributeTemplate):
         return uint16
 
 
-make_attribute_wrapper(_type_class_unnamed1387080, "x", "x")
+make_attribute_wrapper(_type_class_unnamed1401746, "x", "x")
 
 
-make_attribute_wrapper(_type_class_unnamed1387080, "y", "y")
+make_attribute_wrapper(_type_class_unnamed1401746, "y", "y")
 
 
 @register
-class _ctor_template_unnamed1387080(ConcreteTemplate):
-    key = globals()["unnamed1387080"]
+class _ctor_template_unnamed1401746(ConcreteTemplate):
+    key = globals()["unnamed1401746"]
     cases = []
 
 
-register_global(unnamed1387080, Function(_ctor_template_unnamed1387080))
+register_global(unnamed1401746, Function(_ctor_template_unnamed1401746))
 
 
 # Typing for __nv_bfloat16
@@ -234,7 +239,7 @@ def _lower___nv_bfloat16_void(shim_stream, shim_obj):
 _lower___nv_bfloat16_void(shim_stream, shim_obj)
 
 
-def _lower___nv_bfloat16__type_unnamed1386971(shim_stream, shim_obj):
+def _lower___nv_bfloat16__type_unnamed1401637(shim_stream, shim_obj):
     shim_raw_str = """
     extern "C" __device__ int
     ____nv_bfloat16____nv_bfloat16_2(int &ignore, __nv_bfloat16 *self , __nv_bfloat16_raw* hr) {
@@ -246,13 +251,13 @@ def _lower___nv_bfloat16__type_unnamed1386971(shim_stream, shim_obj):
 
     _ctor_decl___nv_bfloat16 = declare_device(
         "____nv_bfloat16____nv_bfloat16_2",
-        int32(CPointer(_type___nv_bfloat16), CPointer(_type_unnamed1386971)),
+        int32(CPointer(_type___nv_bfloat16), CPointer(_type_unnamed1401637)),
     )
 
     def __nv_bfloat16_device_caller(arg_0, arg_1):
         return _ctor_decl___nv_bfloat16(arg_0, arg_1)
 
-    @lower(__nv_bfloat16, _type_unnamed1386971)
+    @lower(__nv_bfloat16, _type_unnamed1401637)
     def ctor_impl(context, builder, sig, args):
         context._external_linkage.add(shim_obj)
         selfptr = builder.alloca(
@@ -270,7 +275,7 @@ def _lower___nv_bfloat16__type_unnamed1386971(shim_stream, shim_obj):
             signature(
                 int32,
                 CPointer(_type___nv_bfloat16),
-                CPointer(_type_unnamed1386971),
+                CPointer(_type_unnamed1401637),
             ),
             (selfptr, *argptrs),
         )
@@ -279,7 +284,7 @@ def _lower___nv_bfloat16__type_unnamed1386971(shim_stream, shim_obj):
         )
 
 
-_lower___nv_bfloat16__type_unnamed1386971(shim_stream, shim_obj)
+_lower___nv_bfloat16__type_unnamed1401637(shim_stream, shim_obj)
 
 
 def _lower___nv_bfloat16_float16(shim_stream, shim_obj):
@@ -773,7 +778,7 @@ class _ctor_template___nv_bfloat16(ConcreteTemplate):
         signature(
             _type___nv_bfloat16,
         ),
-        signature(_type___nv_bfloat16, _type_unnamed1386971),
+        signature(_type___nv_bfloat16, _type_unnamed1401637),
         signature(_type___nv_bfloat16, float16),
         signature(_type___nv_bfloat16, float32),
         signature(_type___nv_bfloat16, float64),
@@ -791,7 +796,7 @@ class _ctor_template___nv_bfloat16(ConcreteTemplate):
 register_global(__nv_bfloat16, Function(_ctor_template___nv_bfloat16))
 
 
-def _from___nv_bfloat16_to__type_unnamed1386971_lower(shim_stream, shim_obj):
+def _from___nv_bfloat16_to__type_unnamed1401637_lower(shim_stream, shim_obj):
     shim_raw_str = """
     extern "C" __device__ int
     ____nv_bfloat16_operator___nv_bfloat16_raw_1(__nv_bfloat16_raw &retval, __nv_bfloat16 *self) {
@@ -803,7 +808,7 @@ def _from___nv_bfloat16_to__type_unnamed1386971_lower(shim_stream, shim_obj):
 
     _op_decl___nv_bfloat16 = declare_device(
         "____nv_bfloat16_operator___nv_bfloat16_raw_1",
-        _type_unnamed1386971(
+        _type_unnamed1401637(
             CPointer(_type___nv_bfloat16),
         ),
     )
@@ -811,7 +816,7 @@ def _from___nv_bfloat16_to__type_unnamed1386971_lower(shim_stream, shim_obj):
     def _conversion_op_caller___nv_bfloat16(arg):
         return _op_decl___nv_bfloat16(arg)
 
-    @lower_cast(_type___nv_bfloat16, _type_unnamed1386971)
+    @lower_cast(_type___nv_bfloat16, _type_unnamed1401637)
     def impl(context, builder, fromty, toty, value):
         context._external_linkage.add(shim_obj)
         ptr = builder.alloca(
@@ -825,17 +830,17 @@ def _from___nv_bfloat16_to__type_unnamed1386971_lower(shim_stream, shim_obj):
             builder,
             _conversion_op_caller___nv_bfloat16,
             signature(
-                _type_unnamed1386971,
+                _type_unnamed1401637,
                 CPointer(_type___nv_bfloat16),
             ),
             (ptr,),
         )
 
 
-_from___nv_bfloat16_to__type_unnamed1386971_lower(shim_stream, shim_obj)
+_from___nv_bfloat16_to__type_unnamed1401637_lower(shim_stream, shim_obj)
 
 
-def _from___nv_bfloat16_to__type_unnamed1386971_lower(shim_stream, shim_obj):
+def _from___nv_bfloat16_to__type_unnamed1401637_lower(shim_stream, shim_obj):
     shim_raw_str = """
     extern "C" __device__ int
     ____nv_bfloat16_operator___nv_bfloat16_raw_2(__nv_bfloat16_raw &retval, __nv_bfloat16 *self) {
@@ -847,7 +852,7 @@ def _from___nv_bfloat16_to__type_unnamed1386971_lower(shim_stream, shim_obj):
 
     _op_decl___nv_bfloat16 = declare_device(
         "____nv_bfloat16_operator___nv_bfloat16_raw_2",
-        _type_unnamed1386971(
+        _type_unnamed1401637(
             CPointer(_type___nv_bfloat16),
         ),
     )
@@ -855,7 +860,7 @@ def _from___nv_bfloat16_to__type_unnamed1386971_lower(shim_stream, shim_obj):
     def _conversion_op_caller___nv_bfloat16(arg):
         return _op_decl___nv_bfloat16(arg)
 
-    @lower_cast(_type___nv_bfloat16, _type_unnamed1386971)
+    @lower_cast(_type___nv_bfloat16, _type_unnamed1401637)
     def impl(context, builder, fromty, toty, value):
         context._external_linkage.add(shim_obj)
         ptr = builder.alloca(
@@ -869,14 +874,14 @@ def _from___nv_bfloat16_to__type_unnamed1386971_lower(shim_stream, shim_obj):
             builder,
             _conversion_op_caller___nv_bfloat16,
             signature(
-                _type_unnamed1386971,
+                _type_unnamed1401637,
                 CPointer(_type___nv_bfloat16),
             ),
             (ptr,),
         )
 
 
-_from___nv_bfloat16_to__type_unnamed1386971_lower(shim_stream, shim_obj)
+_from___nv_bfloat16_to__type_unnamed1401637_lower(shim_stream, shim_obj)
 
 
 def _from___nv_bfloat16_to_float32_lower(shim_stream, shim_obj):
@@ -1696,7 +1701,7 @@ def _lower___nv_bfloat162__type___nv_bfloat162(shim_stream, shim_obj):
 _lower___nv_bfloat162__type___nv_bfloat162(shim_stream, shim_obj)
 
 
-def _lower___nv_bfloat162__type_unnamed1387080(shim_stream, shim_obj):
+def _lower___nv_bfloat162__type_unnamed1401746(shim_stream, shim_obj):
     shim_raw_str = """
     extern "C" __device__ int
     ____nv_bfloat162____nv_bfloat162_5(int &ignore, __nv_bfloat162 *self , __nv_bfloat162_raw* h2r) {
@@ -1708,13 +1713,13 @@ def _lower___nv_bfloat162__type_unnamed1387080(shim_stream, shim_obj):
 
     _ctor_decl___nv_bfloat162 = declare_device(
         "____nv_bfloat162____nv_bfloat162_5",
-        int32(CPointer(_type___nv_bfloat162), CPointer(_type_unnamed1387080)),
+        int32(CPointer(_type___nv_bfloat162), CPointer(_type_unnamed1401746)),
     )
 
     def __nv_bfloat162_device_caller(arg_0, arg_1):
         return _ctor_decl___nv_bfloat162(arg_0, arg_1)
 
-    @lower(__nv_bfloat162, _type_unnamed1387080)
+    @lower(__nv_bfloat162, _type_unnamed1401746)
     def ctor_impl(context, builder, sig, args):
         context._external_linkage.add(shim_obj)
         selfptr = builder.alloca(
@@ -1732,7 +1737,7 @@ def _lower___nv_bfloat162__type_unnamed1387080(shim_stream, shim_obj):
             signature(
                 int32,
                 CPointer(_type___nv_bfloat162),
-                CPointer(_type_unnamed1387080),
+                CPointer(_type_unnamed1401746),
             ),
             (selfptr, *argptrs),
         )
@@ -1741,7 +1746,7 @@ def _lower___nv_bfloat162__type_unnamed1387080(shim_stream, shim_obj):
         )
 
 
-_lower___nv_bfloat162__type_unnamed1387080(shim_stream, shim_obj)
+_lower___nv_bfloat162__type_unnamed1401746(shim_stream, shim_obj)
 
 
 @register
@@ -1756,14 +1761,14 @@ class _ctor_template___nv_bfloat162(ConcreteTemplate):
             _type___nv_bfloat162, _type___nv_bfloat16, _type___nv_bfloat16
         ),
         signature(_type___nv_bfloat162, _type___nv_bfloat162),
-        signature(_type___nv_bfloat162, _type_unnamed1387080),
+        signature(_type___nv_bfloat162, _type_unnamed1401746),
     ]
 
 
 register_global(__nv_bfloat162, Function(_ctor_template___nv_bfloat162))
 
 
-def _from___nv_bfloat162_to__type_unnamed1387080_lower(shim_stream, shim_obj):
+def _from___nv_bfloat162_to__type_unnamed1401746_lower(shim_stream, shim_obj):
     shim_raw_str = """
     extern "C" __device__ int
     ____nv_bfloat162_operator___nv_bfloat162_raw_1(__nv_bfloat162_raw &retval, __nv_bfloat162 *self) {
@@ -1775,7 +1780,7 @@ def _from___nv_bfloat162_to__type_unnamed1387080_lower(shim_stream, shim_obj):
 
     _op_decl___nv_bfloat162 = declare_device(
         "____nv_bfloat162_operator___nv_bfloat162_raw_1",
-        _type_unnamed1387080(
+        _type_unnamed1401746(
             CPointer(_type___nv_bfloat162),
         ),
     )
@@ -1783,7 +1788,7 @@ def _from___nv_bfloat162_to__type_unnamed1387080_lower(shim_stream, shim_obj):
     def _conversion_op_caller___nv_bfloat162(arg):
         return _op_decl___nv_bfloat162(arg)
 
-    @lower_cast(_type___nv_bfloat162, _type_unnamed1387080)
+    @lower_cast(_type___nv_bfloat162, _type_unnamed1401746)
     def impl(context, builder, fromty, toty, value):
         context._external_linkage.add(shim_obj)
         ptr = builder.alloca(
@@ -1797,14 +1802,14 @@ def _from___nv_bfloat162_to__type_unnamed1387080_lower(shim_stream, shim_obj):
             builder,
             _conversion_op_caller___nv_bfloat162,
             signature(
-                _type_unnamed1387080,
+                _type_unnamed1401746,
                 CPointer(_type___nv_bfloat162),
             ),
             (ptr,),
         )
 
 
-_from___nv_bfloat162_to__type_unnamed1387080_lower(shim_stream, shim_obj)
+_from___nv_bfloat162_to__type_unnamed1401746_lower(shim_stream, shim_obj)
 
 
 # Functions:
@@ -5064,7 +5069,7 @@ class _typing_operator_le(ConcreteTemplate):
 
 
 # Aliases:
-__nv_bfloat16_raw = unnamed1386971
-__nv_bfloat162_raw = unnamed1387080
+__nv_bfloat16_raw = unnamed1401637
+__nv_bfloat162_raw = unnamed1401746
 nv_bfloat16 = __nv_bfloat16
 nv_bfloat162 = __nv_bfloat162
