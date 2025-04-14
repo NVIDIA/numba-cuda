@@ -5,7 +5,9 @@ from .mappings import FILE_EXTENSION_MAP
 class LinkableCode:
     """An object that holds code to be linked from memory.
 
-    :param data: A buffer containing the data to link.
+    :param data: A buffer, StringIO or BytesIO containing the data to link.
+                 If a file object is passed, the content in the object is
+                 read when `data` property is accessed.
     :param name: The name of the file to be referenced in any compilation or
                  linking errors that may be produced.
     """
@@ -20,7 +22,7 @@ class LinkableCode:
 
     @property
     def data(self):
-        if isinstance(self._data, io.StringIO):
+        if isinstance(self._data, (io.StringIO, io.BytesIO)):
             return self._data.getvalue()
         return self._data
 
