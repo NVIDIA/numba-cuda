@@ -23,6 +23,21 @@ SEARCH_PRIORITY = [
 ]
 
 
+def _priority_index(label):
+    try:
+        return SEARCH_PRIORITY.index(label)
+    except ValueError:
+        return float("inf")
+
+
+def _find_first_valid_lazy(options):
+    sorted_options = sorted(options, key=lambda x: _priority_index(x[0]))
+    for label, fn in sorted_options:
+        value = fn()
+        if value:
+            return label, value
+
+
 def _build_options(pairs):
     """Sorts and returns a list of (label, value) tuples according to SEARCH_PRIORITY."""
     priority_index = {label: i for i, label in enumerate(SEARCH_PRIORITY)}
@@ -46,15 +61,15 @@ def _find_valid_path(options):
 def _get_libdevice_path_decision():
     options = _build_options(
         [
-            ("Conda environment", get_conda_ctk()),
-            ("Conda environment (NVIDIA package)", get_nvidia_libdevice_ctk()),
-            ("CUDA_HOME", get_cuda_home("nvvm", "libdevice")),
-            ("NVIDIA NVCC Wheel", get_libdevice_wheel()),
-            ("System", get_system_ctk("nvvm", "libdevice")),
-            ("Debian package", get_debian_pkg_libdevice()),
+            ("Conda environment", get_conda_ctk),
+            ("Conda environment (NVIDIA package)", get_nvidia_libdevice_ctk),
+            ("CUDA_HOME", lambda: get_cuda_home("nvvm", "libdevice")),
+            ("NVIDIA NVCC Wheel", get_libdevice_wheel),
+            ("System", lambda: get_system_ctk("nvvm", "libdevice")),
+            ("Debian package", get_debian_pkg_libdevice),
         ]
     )
-    return _find_valid_path(options)
+    return _find_first_valid_lazy(options)
 
 
 def _nvvm_lib_dir():
@@ -66,15 +81,13 @@ def _nvvm_lib_dir():
 
 def _get_nvvm_path_decision():
     options = [
-        ("Conda environment", get_conda_ctk()),
-        ("Conda environment (NVIDIA package)", get_nvidia_nvvm_ctk()),
-        ("NVIDIA NVCC Wheel", _get_nvvm_wheel()),
-        ("CUDA_HOME", get_cuda_home(*_nvvm_lib_dir())),
-        ("System", get_system_ctk(*_nvvm_lib_dir())),
+        ("Conda environment", get_conda_ctk),
+        ("Conda environment (NVIDIA package)", get_nvidia_nvvm_ctk),
+        ("NVIDIA NVCC Wheel", _get_nvvm_wheel),
+        ("CUDA_HOME", lambda: get_cuda_home(*_nvvm_lib_dir())),
+        ("System", lambda: get_system_ctk(*_nvvm_lib_dir())),
     ]
-
-    by, path = _find_valid_path(options)
-    return by, path
+    return _find_first_valid_lazy(options)
 
 
 def _get_nvrtc_system_ctk():
@@ -87,13 +100,13 @@ def _get_nvrtc_system_ctk():
 def _get_nvrtc_path_decision():
     options = _build_options(
         [
-            ("CUDA_HOME", get_cuda_home("nvrtc")),
-            ("Conda environment", get_conda_ctk()),
-            ("NVIDIA NVCC Wheel", _get_nvrtc_wheel()),
-            ("System", _get_nvrtc_system_ctk()),
+            ("CUDA_HOME", lambda: get_cuda_home("nvrtc")),
+            ("Conda environment", get_conda_ctk),
+            ("NVIDIA NVCC Wheel", _get_nvrtc_wheel),
+            ("System", _get_nvrtc_system_ctk),
         ]
     )
-    return _find_valid_path(options)
+    return _find_first_valid_lazy(options)
 
 
 def _get_nvvm_wheel():
@@ -139,7 +152,7 @@ def get_nvrtc_dso_path():
         )
         if lib_dir and os.path.exists(lib_dir):
             try:
-                major = get_major_cuda_version(lib_dir)
+                major = get_major_cuda_version()
                 if major == 11:
                     cu_ver = (
                         "11.2" if sys.platform.startswith("linux") else "112"
@@ -209,28 +222,31 @@ def _cuda_home_static_cudalib_path():
 def _get_cudalib_dir_path_decision():
     options = _build_options(
         [
-            ("Conda environment", get_conda_ctk()),
-            ("Conda environment (NVIDIA package)", get_nvidia_cudalib_ctk()),
-            ("CUDA_HOME", get_cuda_home(_cudalib_path())),
-            ("System", get_system_ctk(_cudalib_path())),
+            ("Conda environment", get_conda_ctk),
+            ("Conda environment (NVIDIA package)", get_nvidia_cudalib_ctk),
+            ("CUDA_HOME", lambda: get_cuda_home(_cudalib_path())),
+            ("System", lambda: get_system_ctk(_cudalib_path())),
         ]
     )
-    return _find_valid_path(options)
+    return _find_first_valid_lazy(options)
 
 
 def _get_static_cudalib_dir_path_decision():
     options = _build_options(
         [
-            ("Conda environment", get_conda_ctk()),
+            ("Conda environment", get_conda_ctk),
             (
                 "Conda environment (NVIDIA package)",
-                get_nvidia_static_cudalib_ctk(),
+                get_nvidia_static_cudalib_ctk,
             ),
-            ("CUDA_HOME", get_cuda_home(*_cuda_home_static_cudalib_path())),
-            ("System", get_system_ctk(_cudalib_path())),
+            (
+                "CUDA_HOME",
+                lambda: get_cuda_home(*_cuda_home_static_cudalib_path()),
+            ),
+            ("System", lambda: get_system_ctk(_cudalib_path())),
         ]
     )
-    return _find_valid_path(options)
+    return _find_first_valid_lazy(options)
 
 
 def _get_cudalib_dir():
