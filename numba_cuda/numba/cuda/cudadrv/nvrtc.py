@@ -2,10 +2,12 @@ from ctypes import byref, c_char, c_char_p, c_int, c_size_t, c_void_p, POINTER
 from enum import IntEnum
 from numba.cuda.cudadrv.error import (
     NvrtcError,
+    NvrtcBuiltinOperationFailure,
     NvrtcCompilationError,
     NvrtcSupportError,
 )
 from numba.cuda.cuda_paths import get_cuda_paths
+
 import functools
 import os
 import threading
@@ -65,6 +67,13 @@ class NVRTC:
     NVVM interface. Initialization is protected by a lock and uses the standard
     (for Numba) open_cudalib function to load the NVRTC library.
     """
+
+    _CU11_2ONLY_PROTOTYPES = {
+        # nvrtcResult nvrtcGetNumSupportedArchs(int *numArchs);
+        "nvrtcGetNumSupportedArchs": (nvrtc_result, POINTER(c_int)),
+        # nvrtcResult nvrtcGetSupportedArchs(int *supportedArchs);
+        "nvrtcGetSupportedArchs": (nvrtc_result, POINTER(c_int)),
+    }
 
     _CU12ONLY_PROTOTYPES = {
         # nvrtcResult nvrtcGetLTOIRSize(nvrtcProgram prog, size_t *ltoSizeRet);
@@ -139,6 +148,8 @@ class NVRTC:
 
                 from numba.cuda.cudadrv.runtime import get_version
 
+                if get_version() >= (11, 2):
+                    inst._PROTOTYPES |= inst._CU11_2ONLY_PROTOTYPES
                 if get_version() >= (12, 0):
                     inst._PROTOTYPES |= inst._CU12ONLY_PROTOTYPES
 
@@ -153,6 +164,11 @@ class NVRTC:
                         error = func(*args)
                         if error == NvrtcResult.NVRTC_ERROR_COMPILATION:
                             raise NvrtcCompilationError()
+                        elif (
+                            error
+                            == NvrtcResult.NVRTC_ERROR_BUILTIN_OPERATION_FAILURE
+                        ):
+                            raise NvrtcBuiltinOperationFailure()
                         elif error != NvrtcResult.NVRTC_SUCCESS:
                             try:
                                 error_name = NvrtcResult(error).name
@@ -167,6 +183,53 @@ class NVRTC:
                     setattr(inst, name, checked_call)
 
         return cls.__INSTANCE
+
+    def get_supported_archs(self):
+        """
+        Get Supported Architectures by NVRTC as list of arch tuples.
+        """
+        ver = self.get_version()
+        if ver < (11, 0):
+            raise RuntimeError(
+                "Unsupported CUDA version. CUDA 11.0 or higher is required."
+            )
+        elif ver == (11, 0):
+            return [
+                (3, 0),
+                (3, 2),
+                (3, 5),
+                (3, 7),
+                (5, 0),
+                (5, 2),
+                (5, 3),
+                (6, 0),
+                (6, 1),
+                (6, 2),
+                (7, 0),
+                (7, 2),
+                (7, 5),
+            ]
+        elif ver == (11, 1):
+            return [
+                (3, 5),
+                (3, 7),
+                (5, 0),
+                (5, 2),
+                (5, 3),
+                (6, 0),
+                (6, 1),
+                (6, 2),
+                (7, 0),
+                (7, 2),
+                (7, 5),
+                (8, 0),
+            ]
+        else:
+            num = c_int()
+            self.nvrtcGetNumSupportedArchs(byref(num))
+            archs = (c_int * num.value)()
+            self.nvrtcGetSupportedArchs(archs)
+            return [(archs[i] // 10, archs[i] % 10) for i in range(num.value)]
 
     def get_version(self):
         """
@@ -209,7 +272,7 @@ class NVRTC:
         try:
             self.nvrtcCompileProgram(program.handle, len(options), c_options)
             return False
-        except NvrtcCompilationError:
+        except (NvrtcCompilationError, NvrtcBuiltinOperationFailure):
             return True
 
     def destroy_program(self, program):
@@ -273,12 +336,36 @@ def compile(src, name, cc, ltoir=False):
     nvrtc = NVRTC()
     program = nvrtc.create_program(src, name)
 
+    version = nvrtc.get_version()
+    ver_str = lambda v: ".".join(v)
+    if version < (11, 0):
+        raise RuntimeError(
+            "Unsupported CUDA version. CUDA 11.0 or higher is required."
+        )
+    else:
+        supported_arch = nvrtc.get_supported_archs()
+        try:
+            found = max(filter(lambda v: v <= cc, [v for v in supported_arch]))
+        except ValueError:
+            raise RuntimeError(
+                f"Device compute capability {ver_str(cc)} is less than the "
+                f"minimum supported by NVRTC {ver_str(version)}. Supported "
+                "compute capabilities are "
+                f"{', '.join([ver_str(v) for v in supported_arch])}."
+            )
+
+        if found != cc:
+            warnings.warn(
+                f"Device compute capability {ver_str(cc)} is not supported by "
+                f"NVRTC {ver_str(version)}. Using {ver_str(found)} instead."
+            )
+
     # Compilation options:
     # - Compile for the current device's compute capability.
     # - The CUDA include path is added.
     # - Relocatable Device Code (rdc) is needed to prevent device functions
     #   being optimized away.
-    major, minor = cc
+    major, minor = found
     arch = f"--gpu-architecture=compute_{major}{minor}"
 
     cuda_include = [

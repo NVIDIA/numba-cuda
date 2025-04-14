@@ -32,5 +32,9 @@ class NvrtcCompilationError(NvrtcError):
     pass
 
 
+class NvrtcBuiltinOperationFailure(NvrtcError):
+    pass
+
+
 class NvrtcSupportError(ImportError):
     pass
