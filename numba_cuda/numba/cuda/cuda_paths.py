@@ -8,7 +8,6 @@ from pathlib import Path
 from numba.core.config import IS_WIN32
 from numba.misc.findlib import find_lib
 from numba import config
-import glob
 import ctypes
 
 
@@ -119,28 +118,12 @@ def _get_nvvm_wheel():
     return None
 
 
-def detect_nvrtc_major_cuda_version(lib_dir):
-    # TODO - is this a bad idea?
-    if sys.platform.startswith("linux"):
-        pattern = os.path.join(lib_dir, "libnvrtc.so.*")
-    elif sys.platform.startswith("win32"):
-        pattern = os.path.join(lib_dir, "nvrtc64_*.dll")
-    else:
-        raise NotImplementedError("Unsupported platform")
+def get_major_cuda_version():
+    # TODO: remove once cuda-python is
+    # a hard dependency
+    from numba.cuda.cudadrv.driver import get_version
 
-    candidates = glob.glob(pattern)
-    for lib in candidates:
-        match = re.search(
-            r"libnvrtc\.so\.(\d+)(?:\.(\d+))?$"
-            if sys.platform.startswith("linux")
-            else r"nvrtc64_(\d+)(\d)_0",
-            os.path.basename(lib),
-        )
-        if match:
-            major, _ = match.groups()
-            return int(major)
-
-    raise RuntimeError("CUDA version could not be detected")
+    return get_version()[0]
 
 
 def get_nvrtc_dso_path():
@@ -156,7 +139,7 @@ def get_nvrtc_dso_path():
         )
         if lib_dir and os.path.exists(lib_dir):
             try:
-                major = detect_nvrtc_major_cuda_version(lib_dir)
+                major = get_major_cuda_version(lib_dir)
                 if major == 11:
                     cu_ver = (
                         "11.2" if sys.platform.startswith("linux") else "112"
