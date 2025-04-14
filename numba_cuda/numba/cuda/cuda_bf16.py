@@ -3,49 +3,50 @@
 # Ast_canopy version: 0.3.0
 # Numbast version: 0.3.0
 # Generation command: /home/wangm/numbast/numbast/src/numbast/__main__.py --cfg-path configs/cuda_bf16.yml --output-dir numba_cuda/numba/cuda/
-# Static binding generator parameters: {'cfg_path': 'configs/cuda_bf16.yml', 'output_dir': 'numba_cuda/numba/cuda/', 'input_header': None, 'retain': None, 'types': None, 'datamodels': None, 'compute_capability': None, 'run_ruff_format': True}
+# Static binding generator parameters: {'cfg_path': 'configs/cuda_bf16.yml', 'output_dir': 'numba_cuda/numba/cuda/', 'entry_point': None, 'retain': None, 'types': None, 'datamodels': None, 'compute_capability': None, 'run_ruff_format': True}
 # Config file path (relative to the path of the generated binding): ../../../../configs/cuda_bf16.yml
 # Cudatoolkit version: (12, 8)
 # Default CUDA_HOME path: /home/wangm/micromamba/envs/numbast
 
 
 # Imports:
-from numba import types
-import numba
-from numba.cuda.cudadecl import register
-from numba.core.datamodel.old_models import StructModel
-from numba.core.extending import make_attribute_wrapper
-from numba.core.extending import register_model
+from numba.types import bool_
 from numba.types import uint64
-import operator
+from numba.types import float64
 from numba.cuda.cudadecl import register_attr
-from numba.types import Type
-from numba.core.datamodel.old_models import PrimitiveModel
-from numba.extending import as_numba_type
-import io
-from numba.types import uint32
-from numba.cuda import CUSource
 from numba.types import float16
-from numba.types import uint16
+from numba.core.datamodel.old_models import PrimitiveModel
+import io
+from numba.cuda.cudaimpl import lower
+from numba.core.datamodel.old_models import StructModel
+from numba.core.typing import signature
+from numba.types import int32
+from numba.types import float32
 from numba.types import uint8
+from numba import types
+from numba.extending import as_numba_type
+import operator
 from numba.cuda import declare_device
 from numba.core.typing.templates import AttributeTemplate
-from numba.types import float64
-from numba.core.typing.templates import ConcreteTemplate
-from numba.types import int32
-from numba.cuda.cudaimpl import lower
-from numba.types import int64
+from numba.core.extending import make_attribute_wrapper
+from numba.cuda.cudadecl import register
+from numba.types import int16
+from numba.types import Type
+from numba.cuda import CUSource
 from numba.types import Function
+from numba.types import int64
+from numba.types import CPointer
+from llvmlite import ir
+from numba.types import uint32
+from numba.types import uint16
 from numba.cuda.cudadecl import register_global
+from numba.core.extending import register_model
+from numba.core.typing.templates import ConcreteTemplate
+import numba
 from numba.types import Number
 from numba.core.extending import lower_cast
-from numba.core.typing import signature
-from numba.types import bool_
 from numba.types import int8
-from llvmlite import ir
-from numba.types import CPointer
-from numba.types import int16
-from numba.types import float32
+import os
 
 
 # Prefixes:
@@ -59,11 +60,11 @@ else:
 
 # Shim Stream:
 
-entry_point = (
-    "#include </home/wangm/numba-cuda/numba_cuda/numba/cuda/cuda_bf16.h>"
+shim_include = (
+    "#include <" + os.path.join(os.path.dirname(__file__), "cuda_bf16.h") + ">"
 )
 shim_stream = io.StringIO()
-shim_stream.write(entry_point)
+shim_stream.write(shim_include)
 shim_obj = CUSource(shim_stream)
 
 # Enums:
