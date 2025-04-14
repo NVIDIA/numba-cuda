@@ -36,6 +36,7 @@ def _find_first_valid_lazy(options):
         value = fn()
         if value:
             return label, value
+    return "<unknown>", None
 
 
 def _build_options(pairs):
