@@ -276,6 +276,8 @@ class _Kernel(serialize.ReduceMixin):
                         break
                     elif isinstance(file, (CUSource, PTXSource)):
                         asm = file.data.decode("utf-8")
+                    else:
+                        asm = ""
                 else:
                     if file.endswith("ptx") or file.endswith("cu"):
                         asm = cached_file_read(file)
