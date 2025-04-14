@@ -46,17 +46,15 @@ from numba.types import Number
 from numba.types import uint64
 from numba.types import float16
 from numba.cuda.cudaimpl import lower
-
+import os
 
 # Prefixes:
 
 numba.config.CUDA_ENABLE_PYNVJITLINK = True
 
 # Shim Stream:
-
-entry_point = (
-    "#include </home/wangm/numba-cuda/numba_cuda/numba/cuda/cuda_bf16.h>"
-)
+cuda_bf16_h = os.path.join(os.path.dirname(__file__), "cuda_bf16.h")
+entry_point = f"#include <{cuda_bf16_h}>"
 shim_stream = io.StringIO()
 shim_stream.write(entry_point)
 shim_obj = CUSource(shim_stream)
