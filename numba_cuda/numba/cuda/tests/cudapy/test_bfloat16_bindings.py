@@ -1,29 +1,31 @@
 from numba import config
 import numba.cuda as cuda
 from numba.cuda.testing import unittest, CUDATestCase
-from numba.cuda.cuda_bf16 import (
-    nv_bfloat16,
-    htrunc,
-    hceil,
-    hfloor,
-    hrint,
-    hsqrt,
-    hrsqrt,
-    hrcp,
-    hlog,
-    hlog2,
-    hlog10,
-    hcos,
-    hsin,
-    hexp,
-    hexp2,
-    hexp10,
-)
-
 import numpy as np
 
 from numba import int16, int32, int64, uint16, uint32, uint64, float32, float64
 from numba.types import float16
+
+if config.CUDA_ENABLE_PYNVJITLINK:
+    from numba.cuda.cuda_bf16 import (
+        nv_bfloat16,
+        htrunc,
+        hceil,
+        hfloor,
+        hrint,
+        hsqrt,
+        hrsqrt,
+        hrcp,
+        hlog,
+        hlog2,
+        hlog10,
+        hcos,
+        hsin,
+        hexp,
+        hexp2,
+        hexp10,
+    )
+
 
 dtypes = [int16, int32, int64, uint16, uint32, uint64, float32]
 

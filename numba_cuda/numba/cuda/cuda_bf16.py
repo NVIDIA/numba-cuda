@@ -10,42 +10,42 @@
 
 
 # Imports:
-from numba.cuda.cudaimpl import lower
-from numba.core.typing.templates import ConcreteTemplate
 from numba import types
-from numba.cuda.cudadecl import register_attr
-from numba.types import uint8
-from numba.types import float32
-from numba.types import bool_
-from numba.types import Function
-from numba.types import Number
-from numba.types import uint16
-from numba.core.datamodel.old_models import PrimitiveModel
-from numba.types import int64
-from numba.cuda.cudadecl import register
-from numba.types import CPointer
-from numba.types import int32
-from numba.core.typing import signature
-from numba.types import uint64
-from numba.core.extending import make_attribute_wrapper
-import io
-from numba.types import float16
-from numba.cuda import CUSource
-from numba.types import int16
 import numba
-from numba.core.extending import lower_cast
-from numba.types import int8
-from numba.extending import as_numba_type
-from numba.core.typing.templates import AttributeTemplate
-import operator
-from numba.types import float64
-from llvmlite import ir
-from numba.core.extending import register_model
-from numba.cuda import declare_device
-from numba.types import uint32
+from numba.cuda.cudadecl import register
 from numba.core.datamodel.old_models import StructModel
-from numba.cuda.cudadecl import register_global
+from numba.core.extending import make_attribute_wrapper
+from numba.core.extending import register_model
+from numba.types import uint64
+import operator
+from numba.cuda.cudadecl import register_attr
 from numba.types import Type
+from numba.core.datamodel.old_models import PrimitiveModel
+from numba.extending import as_numba_type
+import io
+from numba.types import uint32
+from numba.cuda import CUSource
+from numba.types import float16
+from numba.types import uint16
+from numba.types import uint8
+from numba.cuda import declare_device
+from numba.core.typing.templates import AttributeTemplate
+from numba.types import float64
+from numba.core.typing.templates import ConcreteTemplate
+from numba.types import int32
+from numba.cuda.cudaimpl import lower
+from numba.types import int64
+from numba.types import Function
+from numba.cuda.cudadecl import register_global
+from numba.types import Number
+from numba.core.extending import lower_cast
+from numba.core.typing import signature
+from numba.types import bool_
+from numba.types import int8
+from llvmlite import ir
+from numba.types import CPointer
+from numba.types import int16
+from numba.types import float32
 
 
 # Prefixes:
@@ -54,6 +54,8 @@ import importlib
 
 if importlib.util.find_spec("pynvjitlink"):
     numba.config.CUDA_ENABLE_PYNVJITLINK = True
+else:
+    raise RuntimeError("Numbast generated bindings require pynvjitlink.")
 
 # Shim Stream:
 
