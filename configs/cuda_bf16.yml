@@ -1,8 +1,8 @@
 Name: Numba Bfloat16
 Version: 0.0.1
-Entry Point: /usr/local/cuda/include/cuda_bf16.h
+Entry Point: ./numba_cuda/numba/cuda/cuda_bf16.h
 File List:
-    - /usr/local/cuda/include/cuda_bf16.h
+    - ./numba_cuda/numba/cuda/cuda_bf16.h
 Exclude: {}
 Types:
     __nv_bfloat16_raw: Number
