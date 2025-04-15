@@ -18,7 +18,8 @@ Data Models:
     __nv_bfloat162_raw: StructModel
     __nv_bfloat162: StructModel
     nv_bfloat162: StructModel
-Shim Include Override: os.path.join(os.path.dirname(__file__), "cuda_bf16.h")
+Shim Include Override:
+    os.path.join(os.path.abspath(os.path.dirname(__file__)), "cuda_bf16.h")
 Additional Import:
     - os
 Require Pynvjitlink: False
