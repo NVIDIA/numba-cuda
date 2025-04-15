@@ -50,11 +50,14 @@ if TEST_BIN_DIR:
     nrt_extern_ptx = make_linkable_code("nrt_extern.ptx", PTXSource, "rb")
 
 
-def allocate_shim():
+def allocate_deallocate_handle():
+    """
+    Handle to call NRT_Allocate and NRT_Free
+    """
     pass
 
 
-@cuda_decl_registry.register_global(allocate_shim)
+@cuda_decl_registry.register_global(allocate_deallocate_handle)
 class AllocateShimImpl(AbstractTemplate):
     def generic(self, args, kws):
         return signature(types.void)
@@ -62,21 +65,23 @@ class AllocateShimImpl(AbstractTemplate):
 
 # let there be a __device__ function expecting
 # a string_view* and returning size_type
-_allocate_shim = cuda.declare_device("extern_func", types.int32())
+device_fun_shim = cuda.declare_device(
+    "device_allocate_deallocate", types.int32()
+)
 
 
 # wrapper to turn the above into a python callable
-def call_allocate_shim():
-    return _allocate_shim()
+def call_device_fun_shim():
+    return device_fun_shim()
 
 
-@cuda_lower(allocate_shim)
-def allocate_shim_impl(context, builder, sig, args):
+@cuda_lower(allocate_deallocate_handle)
+def allocate_deallocate_impl(context, builder, sig, args):
     sig_ = types.int32()
     # call the external function, passing the pointer
     result = context.compile_internal(
         builder,
-        call_allocate_shim,
+        call_device_fun_shim,
         sig_,
         (),
     )
@@ -149,28 +154,6 @@ class TestNrtBasic(CUDATestCase):
 
         self.assertEqual(out_ary[0], 1)
 
-    def test_nrt_detect_linked_ptx_file(self):
-        src = f"#include <{get_include()}/nrt.cuh>"
-        src += """;
-                 extern "C" __device__ int extern_func(int* nb_retval){
-                     NRT_Allocate(1);
-                     return 0;
-                 }
-        """
-        cc = get_current_device().compute_capability
-        ptx, _ = compile(src, "external_nrt.cu", cc)
-        with tempfile.NamedTemporaryFile(
-            delete=True, mode="w+", suffix=".ptx", encoding="utf-8"
-        ) as f:
-            f.write(ptx)
-            f.flush()
-
-            @cuda.jit(link=[f.name])
-            def kernel():
-                allocate_shim()
-
-            kernel[1, 1]()
-
 
 class TestNrtLinking(CUDATestCase):
     def run(self, result=None):
@@ -180,8 +163,9 @@ class TestNrtLinking(CUDATestCase):
     def test_nrt_detect_linked_ptx_file(self):
         src = f"#include <{get_include()}/nrt.cuh>"
         src += """;
-                 extern "C" __device__ int extern_func(int* nb_retval){
-                     NRT_Allocate(1);
+                 extern "C" __device__ int device_allocate_deallocate(int* nb_retval){
+                     auto ptr = NRT_Allocate(1);
+                     NRT_Free(ptr);
                      return 0;
                  }
         """
@@ -195,7 +179,7 @@ class TestNrtLinking(CUDATestCase):
 
             @cuda.jit(link=[f.name])
             def kernel():
-                allocate_shim()
+                allocate_deallocate_handle()
 
             kernel[1, 1]()
 
@@ -215,7 +199,7 @@ class TestNrtLinking(CUDATestCase):
 
                 @cuda.jit(link=[code])
                 def kernel():
-                    allocate_shim()
+                    allocate_deallocate_handle()
 
                 kernel[1, 1]()
 
