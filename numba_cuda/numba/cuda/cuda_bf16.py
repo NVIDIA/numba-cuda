@@ -10,43 +10,43 @@
 
 
 # Imports:
-from numba.cuda import declare_device
-from numba.types import uint8
-from numba.types import Function
-from numba.core.datamodel.old_models import PrimitiveModel
-from numba.cuda.cudadecl import register_global
-from numba import types
-from numba.core.extending import register_model
-from numba.types import float16
-from numba.core.typing.templates import ConcreteTemplate
-from numba.types import Type
-from numba.cuda.cudaimpl import lower
-from numba.types import uint16
-import operator
-from numba.types import CPointer
-from numba.cuda import CUSource
-from numba.core.datamodel.old_models import StructModel
-from numba.cuda.cudadecl import register
-from numba.types import int32
-from llvmlite import ir
-from numba.types import int16
-from numba.cuda.cudadecl import register_attr
-from numba.types import float64
-from numba.types import int8
-from numba.core.typing.templates import AttributeTemplate
-from numba.types import int64
-from numba.types import float32
-from numba.types import uint32
-from numba.types import uint64
-from numba.types import Number
 import io
-from numba.core.extending import make_attribute_wrapper
-from numba.core.extending import lower_cast
-from numba.extending import as_numba_type
-from numba.types import bool_
-from numba.core.typing import signature
+import operator
 import os
 
+import numba
+from llvmlite import ir
+from numba import types
+from numba.core.datamodel.old_models import PrimitiveModel, StructModel
+from numba.core.extending import (
+    lower_cast,
+    make_attribute_wrapper,
+    register_model,
+)
+from numba.core.typing import signature
+from numba.core.typing.templates import AttributeTemplate, ConcreteTemplate
+from numba.cuda import CUSource, declare_device
+from numba.cuda.cudadecl import register, register_attr, register_global
+from numba.cuda.cudaimpl import lower
+from numba.extending import as_numba_type
+from numba.types import (
+    CPointer,
+    Function,
+    Number,
+    Type,
+    bool_,
+    float16,
+    float32,
+    float64,
+    int8,
+    int16,
+    int32,
+    int64,
+    uint8,
+    uint16,
+    uint32,
+    uint64,
+)
 
 # Setups:
 
