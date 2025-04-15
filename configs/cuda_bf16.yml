@@ -21,3 +21,4 @@ Data Models:
 Shim Include Override: os.path.join(os.path.dirname(__file__), "cuda_bf16.h")
 Additional Import:
     - os
+Require Pynvjitlink: False
