@@ -291,7 +291,8 @@ class _Kernel(serialize.ReduceMixin):
         if link_nrt:
             basedir = os.path.dirname(os.path.abspath(__file__))
             nrt_path = os.path.join(basedir, "runtime", "nrt.cu")
-            link.append(nrt_path)
+            nrt_src = cached_file_read(nrt_path)
+            link.append(CUSource(nrt_src, name="nrt.cu", nrt=True))
 
     @property
     def library(self):
