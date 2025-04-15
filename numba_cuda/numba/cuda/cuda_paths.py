@@ -10,6 +10,7 @@ from numba.misc.findlib import find_lib
 from numba import config
 import ctypes
 
+IS_LINUX = sys.platform == "linux"
 
 _env_path_tuple = namedtuple("_env_path_tuple", ["by", "info"])
 
@@ -135,7 +136,7 @@ def _get_nvvm_wheel():
 def get_major_cuda_version():
     # TODO: remove once cuda-python is
     # a hard dependency
-    from numba.cuda.cudadrv.driver import get_version
+    from numba.cuda.cudadrv.runtime import get_version
 
     return get_version()[0]
 
@@ -147,26 +148,22 @@ def get_nvrtc_dso_path():
             sp,
             "nvidia",
             "cuda_nvrtc",
-            ("lib" if sys.platform.startswith("linux") else "bin")
-            if sp
-            else None,
+            ("bin" if IS_WIN32 else "lib") if sp else None,
         )
         if lib_dir and os.path.exists(lib_dir):
             try:
                 major = get_major_cuda_version()
                 if major == 11:
-                    cu_ver = (
-                        "11.2" if sys.platform.startswith("linux") else "112"
-                    )
+                    cu_ver = "11.2" if IS_LINUX else "112"
                 elif major == 12:
-                    cu_ver = "12" if sys.platform.startswith("linux") else "120"
+                    cu_ver = "12" if IS_LINUX else "120"
                 else:
                     raise NotImplementedError(f"CUDA {major} is not supported")
 
                 return os.path.join(
                     lib_dir,
                     f"libnvrtc.so.{cu_ver}"
-                    if sys.platform.startswith("linux")
+                    if IS_LINUX
                     else f"nvrtc64_{cu_ver}_0.dll",
                 )
             except RuntimeError:
@@ -181,7 +178,7 @@ def _get_nvrtc_wheel():
         except OSError:
             pass
         else:
-            if sys.platform.startswith("win32"):
+            if IS_WIN32:
                 import win32api
 
                 # This absolute path will
@@ -196,7 +193,10 @@ def _get_nvrtc_wheel():
                         if re.match("^nvrtc-builtins.*.dll$", f)
                     ][0],
                 )
-                assert os.path.exists(builtins_path)
+                if not os.path.exists(builtins_path):
+                    raise RuntimeError(
+                        f'Path does not exist: "{builtins_path}"'
+                    )
         return Path(dso_path)
 
 
@@ -263,7 +263,7 @@ def _get_static_cudalib_dir():
 def get_system_ctk(*subdirs):
     """Return path to system-wide cudatoolkit; or, None if it doesn't exist."""
     # Linux?
-    if sys.platform.startswith("linux"):
+    if IS_LINUX:
         # Is cuda alias to /usr/local/cuda?
         # We are intentionally not getting versioned cuda installation.
         result = os.path.join("/usr/local/cuda", *subdirs)
