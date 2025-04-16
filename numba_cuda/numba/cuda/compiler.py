@@ -40,7 +40,7 @@ from numba.cuda.api import get_current_device
 from numba.cuda.cudadrv import nvvm
 from numba.cuda.descriptor import cuda_target
 from numba.cuda.target import CUDACABICallConv
-
+from numba.cuda import lowering
 
 def _nvvm_options_type(x):
     if x is None:
@@ -163,6 +163,17 @@ class CreateLibrary(LoweringPass):
         return True
 
 
+@register_pass(mutates_CFG=True, analysis_only=False)
+class CUDANativeLowering(NativeLowering):
+    """Lowering pass for a CUDA native function IR described solely in terms of
+     Numba's standard `numba.core.ir` nodes."""
+    _name = "cuda_native_lowering"
+
+    @property
+    def lowering_class(self):
+        return lowering.CUDALower
+
+
 class CUDABytecodeInterpreter(Interpreter):
     # Based on the superclass implementation, but names the resulting variable
     # "$bool<N>" instead of "bool<N>" - see Numba PR #9888:
@@ -251,7 +262,7 @@ class CUDACompiler(CompilerBase):
 
         # lower
         pm.add_pass(CreateLibrary, "create library")
-        pm.add_pass(NativeLowering, "native lowering")
+        pm.add_pass(CUDANativeLowering, "cuda native lowering")
         pm.add_pass(CUDABackend, "cuda backend")
 
         pm.finalize()
