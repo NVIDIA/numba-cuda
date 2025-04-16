@@ -1,5 +1,5 @@
 from llvmlite import ir
-from numba.core import (types, cgutils)
+from numba.core import types, cgutils
 from numba.core.debuginfo import DIBuilder
 from numba.cuda.types import GridGroup
 
@@ -65,9 +65,9 @@ class CUDADIBuilder(DIBuilder):
             # Do not emit llvm.dbg.declare on user variable alias
             return
         else:
-            int_type = ir.IntType,
+            int_type = (ir.IntType,)
             real_type = ir.FloatType, ir.DoubleType
-            if (isinstance(lltype, int_type + real_type)):
+            if isinstance(lltype, int_type + real_type):
                 # Start with scalar variable, swtiching llvm.dbg.declare
                 # to llvm.dbg.value
                 return
@@ -79,7 +79,7 @@ class CUDADIBuilder(DIBuilder):
                         datamodel=None, argidx=None):
         m = self.module
         fnty = ir.FunctionType(ir.VoidType(), [ir.MetaDataType()] * 3)
-        decl = cgutils.get_or_insert_function(m, fnty, 'llvm.dbg.value')
+        decl = cgutils.get_or_insert_function(m, fnty, "llvm.dbg.value")
 
         mdtype = self._var_type(lltype, size, datamodel)
         index = name.find('.')
@@ -94,14 +94,17 @@ class CUDADIBuilder(DIBuilder):
         else:
             self._vartypelinemap[key] = line
         arg_index = 0 if argidx is None else argidx
-        mdlocalvar = m.add_debug_info('DILocalVariable', {
-            'name': name,
-            'arg': arg_index,
-            'scope': self.subprograms[-1],
-            'file': self.difile,
-            'line': line,
-            'type': mdtype,
-        })
-        mdexpr = m.add_debug_info('DIExpression', {})
+        mdlocalvar = m.add_debug_info(
+            "DILocalVariable",
+             {
+                "name": name,
+                "arg": arg_index,
+                "scope": self.subprograms[-1],
+                "file": self.difile,
+                "line": line,
+                "type": mdtype,
+             }
+        )
+        mdexpr = m.add_debug_info("DIExpression", {})
 
         return builder.call(decl, [value, mdlocalvar, mdexpr])

@@ -42,6 +42,7 @@ from numba.cuda.descriptor import cuda_target
 from numba.cuda.target import CUDACABICallConv
 from numba.cuda import lowering
 
+
 def _nvvm_options_type(x):
     if x is None:
         return None
@@ -166,7 +167,8 @@ class CreateLibrary(LoweringPass):
 @register_pass(mutates_CFG=True, analysis_only=False)
 class CUDANativeLowering(NativeLowering):
     """Lowering pass for a CUDA native function IR described solely in terms of
-     Numba's standard `numba.core.ir` nodes."""
+    Numba's standard `numba.core.ir` nodes."""
+
     _name = "cuda_native_lowering"
 
     @property
