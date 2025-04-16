@@ -59,9 +59,18 @@ class CUDADIBuilder(DIBuilder):
         # For other cases, use upstream Numba implementation
         return super()._var_type(lltype, size, datamodel=datamodel)
 
-    def mark_variable(self, builder, allocavalue, name, lltype, size, line,
-                      datamodel=None, argidx=None):
-        if (name.startswith('$') or '.' in name):
+    def mark_variable(
+        self,
+        builder,
+        allocavalue,
+        name,
+        lltype,
+        size,
+        line,
+        datamodel=None,
+        argidx=None,
+    ):
+        if name.startswith("$") or "." in name:
             # Do not emit llvm.dbg.declare on user variable alias
             return
         else:
@@ -72,17 +81,34 @@ class CUDADIBuilder(DIBuilder):
                 # to llvm.dbg.value
                 return
             else:
-                return super().mark_variable(builder, allocavalue, name, lltype,
-                                             size, line, datamodel, argidx)
+                return super().mark_variable(
+                    builder,
+                    allocavalue,
+                    name,
+                    lltype,
+                    size,
+                    line,
+                    datamodel,
+                    argidx,
+                )
 
-    def update_variable(self, builder, value, name, lltype, size, line,
-                        datamodel=None, argidx=None):
+    def update_variable(
+        self,
+        builder,
+        value,
+        name,
+        lltype,
+        size,
+        line,
+        datamodel=None,
+        argidx=None,
+    ):
         m = self.module
         fnty = ir.FunctionType(ir.VoidType(), [ir.MetaDataType()] * 3)
         decl = cgutils.get_or_insert_function(m, fnty, "llvm.dbg.value")
 
         mdtype = self._var_type(lltype, size, datamodel)
-        index = name.find('.')
+        index = name.find(".")
         if index >= 0:
             name = name[:index]
         # Merge DILocalVariable nodes with same name and type but different
@@ -96,14 +122,14 @@ class CUDADIBuilder(DIBuilder):
         arg_index = 0 if argidx is None else argidx
         mdlocalvar = m.add_debug_info(
             "DILocalVariable",
-             {
+            {
                 "name": name,
                 "arg": arg_index,
                 "scope": self.subprograms[-1],
                 "file": self.difile,
                 "line": line,
                 "type": mdtype,
-             }
+            },
         )
         mdexpr = m.add_debug_info("DIExpression", {})
 
