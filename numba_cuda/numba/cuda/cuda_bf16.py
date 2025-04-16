@@ -193,7 +193,6 @@ def _lower___nv_bfloat16_void(shim_stream, shim_obj):
         return 0;
     }
         """
-    shim_stream.write(shim_raw_str)
 
     _ctor_decl___nv_bfloat16 = declare_device(
         "____nv_bfloat16____nv_bfloat16_1",
@@ -210,6 +209,7 @@ def _lower___nv_bfloat16_void(shim_stream, shim_obj):
     )
     def ctor_impl(context, builder, sig, args):
         context._external_linkage.add(shim_obj)
+        shim_stream.write(shim_raw_str)
         selfptr = builder.alloca(
             context.get_value_type(_type___nv_bfloat16), name="selfptr"
         )
@@ -244,7 +244,6 @@ def _lower___nv_bfloat16__type_unnamed1401637(shim_stream, shim_obj):
         return 0;
     }
         """
-    shim_stream.write(shim_raw_str)
 
     _ctor_decl___nv_bfloat16 = declare_device(
         "____nv_bfloat16____nv_bfloat16_2",
@@ -257,6 +256,7 @@ def _lower___nv_bfloat16__type_unnamed1401637(shim_stream, shim_obj):
     @lower(__nv_bfloat16, _type_unnamed1401637)
     def ctor_impl(context, builder, sig, args):
         context._external_linkage.add(shim_obj)
+        shim_stream.write(shim_raw_str)
         selfptr = builder.alloca(
             context.get_value_type(_type___nv_bfloat16), name="selfptr"
         )
@@ -292,7 +292,6 @@ def _lower___nv_bfloat16_float16(shim_stream, shim_obj):
         return 0;
     }
         """
-    shim_stream.write(shim_raw_str)
 
     _ctor_decl___nv_bfloat16 = declare_device(
         "____nv_bfloat16____nv_bfloat16_3",
@@ -305,6 +304,7 @@ def _lower___nv_bfloat16_float16(shim_stream, shim_obj):
     @lower(__nv_bfloat16, float16)
     def ctor_impl(context, builder, sig, args):
         context._external_linkage.add(shim_obj)
+        shim_stream.write(shim_raw_str)
         selfptr = builder.alloca(
             context.get_value_type(_type___nv_bfloat16), name="selfptr"
         )
@@ -336,7 +336,6 @@ def _lower___nv_bfloat16_float32(shim_stream, shim_obj):
         return 0;
     }
         """
-    shim_stream.write(shim_raw_str)
 
     _ctor_decl___nv_bfloat16 = declare_device(
         "____nv_bfloat16____nv_bfloat16_4",
@@ -349,6 +348,7 @@ def _lower___nv_bfloat16_float32(shim_stream, shim_obj):
     @lower(__nv_bfloat16, float32)
     def ctor_impl(context, builder, sig, args):
         context._external_linkage.add(shim_obj)
+        shim_stream.write(shim_raw_str)
         selfptr = builder.alloca(
             context.get_value_type(_type___nv_bfloat16), name="selfptr"
         )
@@ -380,7 +380,6 @@ def _lower___nv_bfloat16_float64(shim_stream, shim_obj):
         return 0;
     }
         """
-    shim_stream.write(shim_raw_str)
 
     _ctor_decl___nv_bfloat16 = declare_device(
         "____nv_bfloat16____nv_bfloat16_5",
@@ -393,6 +392,7 @@ def _lower___nv_bfloat16_float64(shim_stream, shim_obj):
     @lower(__nv_bfloat16, float64)
     def ctor_impl(context, builder, sig, args):
         context._external_linkage.add(shim_obj)
+        shim_stream.write(shim_raw_str)
         selfptr = builder.alloca(
             context.get_value_type(_type___nv_bfloat16), name="selfptr"
         )
@@ -424,7 +424,6 @@ def _lower___nv_bfloat16_int16(shim_stream, shim_obj):
         return 0;
     }
         """
-    shim_stream.write(shim_raw_str)
 
     _ctor_decl___nv_bfloat16 = declare_device(
         "____nv_bfloat16____nv_bfloat16_6",
@@ -437,6 +436,7 @@ def _lower___nv_bfloat16_int16(shim_stream, shim_obj):
     @lower(__nv_bfloat16, int16)
     def ctor_impl(context, builder, sig, args):
         context._external_linkage.add(shim_obj)
+        shim_stream.write(shim_raw_str)
         selfptr = builder.alloca(
             context.get_value_type(_type___nv_bfloat16), name="selfptr"
         )
@@ -468,7 +468,6 @@ def _lower___nv_bfloat16_uint16(shim_stream, shim_obj):
         return 0;
     }
         """
-    shim_stream.write(shim_raw_str)
 
     _ctor_decl___nv_bfloat16 = declare_device(
         "____nv_bfloat16____nv_bfloat16_7",
@@ -481,6 +480,7 @@ def _lower___nv_bfloat16_uint16(shim_stream, shim_obj):
     @lower(__nv_bfloat16, uint16)
     def ctor_impl(context, builder, sig, args):
         context._external_linkage.add(shim_obj)
+        shim_stream.write(shim_raw_str)
         selfptr = builder.alloca(
             context.get_value_type(_type___nv_bfloat16), name="selfptr"
         )
@@ -512,7 +512,6 @@ def _lower___nv_bfloat16_int32(shim_stream, shim_obj):
         return 0;
     }
         """
-    shim_stream.write(shim_raw_str)
 
     _ctor_decl___nv_bfloat16 = declare_device(
         "____nv_bfloat16____nv_bfloat16_8",
@@ -525,6 +524,7 @@ def _lower___nv_bfloat16_int32(shim_stream, shim_obj):
     @lower(__nv_bfloat16, int32)
     def ctor_impl(context, builder, sig, args):
         context._external_linkage.add(shim_obj)
+        shim_stream.write(shim_raw_str)
         selfptr = builder.alloca(
             context.get_value_type(_type___nv_bfloat16), name="selfptr"
         )
@@ -556,7 +556,6 @@ def _lower___nv_bfloat16_uint32(shim_stream, shim_obj):
         return 0;
     }
         """
-    shim_stream.write(shim_raw_str)
 
     _ctor_decl___nv_bfloat16 = declare_device(
         "____nv_bfloat16____nv_bfloat16_9",
@@ -569,6 +568,7 @@ def _lower___nv_bfloat16_uint32(shim_stream, shim_obj):
     @lower(__nv_bfloat16, uint32)
     def ctor_impl(context, builder, sig, args):
         context._external_linkage.add(shim_obj)
+        shim_stream.write(shim_raw_str)
         selfptr = builder.alloca(
             context.get_value_type(_type___nv_bfloat16), name="selfptr"
         )
@@ -600,7 +600,6 @@ def _lower___nv_bfloat16_int64(shim_stream, shim_obj):
         return 0;
     }
         """
-    shim_stream.write(shim_raw_str)
 
     _ctor_decl___nv_bfloat16 = declare_device(
         "____nv_bfloat16____nv_bfloat16_10",
@@ -613,6 +612,7 @@ def _lower___nv_bfloat16_int64(shim_stream, shim_obj):
     @lower(__nv_bfloat16, int64)
     def ctor_impl(context, builder, sig, args):
         context._external_linkage.add(shim_obj)
+        shim_stream.write(shim_raw_str)
         selfptr = builder.alloca(
             context.get_value_type(_type___nv_bfloat16), name="selfptr"
         )
@@ -644,7 +644,6 @@ def _lower___nv_bfloat16_uint64(shim_stream, shim_obj):
         return 0;
     }
         """
-    shim_stream.write(shim_raw_str)
 
     _ctor_decl___nv_bfloat16 = declare_device(
         "____nv_bfloat16____nv_bfloat16_11",
@@ -657,6 +656,7 @@ def _lower___nv_bfloat16_uint64(shim_stream, shim_obj):
     @lower(__nv_bfloat16, uint64)
     def ctor_impl(context, builder, sig, args):
         context._external_linkage.add(shim_obj)
+        shim_stream.write(shim_raw_str)
         selfptr = builder.alloca(
             context.get_value_type(_type___nv_bfloat16), name="selfptr"
         )
@@ -688,7 +688,6 @@ def _lower___nv_bfloat16_int64(shim_stream, shim_obj):
         return 0;
     }
         """
-    shim_stream.write(shim_raw_str)
 
     _ctor_decl___nv_bfloat16 = declare_device(
         "____nv_bfloat16____nv_bfloat16_12",
@@ -701,6 +700,7 @@ def _lower___nv_bfloat16_int64(shim_stream, shim_obj):
     @lower(__nv_bfloat16, int64)
     def ctor_impl(context, builder, sig, args):
         context._external_linkage.add(shim_obj)
+        shim_stream.write(shim_raw_str)
         selfptr = builder.alloca(
             context.get_value_type(_type___nv_bfloat16), name="selfptr"
         )
@@ -732,7 +732,6 @@ def _lower___nv_bfloat16_uint64(shim_stream, shim_obj):
         return 0;
     }
         """
-    shim_stream.write(shim_raw_str)
 
     _ctor_decl___nv_bfloat16 = declare_device(
         "____nv_bfloat16____nv_bfloat16_13",
@@ -745,6 +744,7 @@ def _lower___nv_bfloat16_uint64(shim_stream, shim_obj):
     @lower(__nv_bfloat16, uint64)
     def ctor_impl(context, builder, sig, args):
         context._external_linkage.add(shim_obj)
+        shim_stream.write(shim_raw_str)
         selfptr = builder.alloca(
             context.get_value_type(_type___nv_bfloat16), name="selfptr"
         )
@@ -801,7 +801,6 @@ def _from___nv_bfloat16_to__type_unnamed1401637_lower(shim_stream, shim_obj):
         return 0;
     }
         """
-    shim_stream.write(shim_raw_str)
 
     _op_decl___nv_bfloat16 = declare_device(
         "____nv_bfloat16_operator___nv_bfloat16_raw_1",
@@ -816,6 +815,7 @@ def _from___nv_bfloat16_to__type_unnamed1401637_lower(shim_stream, shim_obj):
     @lower_cast(_type___nv_bfloat16, _type_unnamed1401637)
     def impl(context, builder, fromty, toty, value):
         context._external_linkage.add(shim_obj)
+        shim_stream.write(shim_raw_str)
         ptr = builder.alloca(
             context.get_value_type(_type___nv_bfloat16), name="selfptr"
         )
@@ -845,7 +845,6 @@ def _from___nv_bfloat16_to__type_unnamed1401637_lower(shim_stream, shim_obj):
         return 0;
     }
         """
-    shim_stream.write(shim_raw_str)
 
     _op_decl___nv_bfloat16 = declare_device(
         "____nv_bfloat16_operator___nv_bfloat16_raw_2",
@@ -860,6 +859,7 @@ def _from___nv_bfloat16_to__type_unnamed1401637_lower(shim_stream, shim_obj):
     @lower_cast(_type___nv_bfloat16, _type_unnamed1401637)
     def impl(context, builder, fromty, toty, value):
         context._external_linkage.add(shim_obj)
+        shim_stream.write(shim_raw_str)
         ptr = builder.alloca(
             context.get_value_type(_type___nv_bfloat16), name="selfptr"
         )
@@ -889,7 +889,6 @@ def _from___nv_bfloat16_to_float32_lower(shim_stream, shim_obj):
         return 0;
     }
         """
-    shim_stream.write(shim_raw_str)
 
     _op_decl___nv_bfloat16 = declare_device(
         "____nv_bfloat16_operator_float_1",
@@ -904,6 +903,7 @@ def _from___nv_bfloat16_to_float32_lower(shim_stream, shim_obj):
     @lower_cast(_type___nv_bfloat16, float32)
     def impl(context, builder, fromty, toty, value):
         context._external_linkage.add(shim_obj)
+        shim_stream.write(shim_raw_str)
         ptr = builder.alloca(
             context.get_value_type(_type___nv_bfloat16), name="selfptr"
         )
@@ -933,7 +933,6 @@ def _from___nv_bfloat16_to_int8_lower(shim_stream, shim_obj):
         return 0;
     }
         """
-    shim_stream.write(shim_raw_str)
 
     _op_decl___nv_bfloat16 = declare_device(
         "____nv_bfloat16_operator_signed_char_1",
@@ -948,6 +947,7 @@ def _from___nv_bfloat16_to_int8_lower(shim_stream, shim_obj):
     @lower_cast(_type___nv_bfloat16, int8)
     def impl(context, builder, fromty, toty, value):
         context._external_linkage.add(shim_obj)
+        shim_stream.write(shim_raw_str)
         ptr = builder.alloca(
             context.get_value_type(_type___nv_bfloat16), name="selfptr"
         )
@@ -977,7 +977,6 @@ def _from___nv_bfloat16_to_uint8_lower(shim_stream, shim_obj):
         return 0;
     }
         """
-    shim_stream.write(shim_raw_str)
 
     _op_decl___nv_bfloat16 = declare_device(
         "____nv_bfloat16_operator_unsigned_char_1",
@@ -992,6 +991,7 @@ def _from___nv_bfloat16_to_uint8_lower(shim_stream, shim_obj):
     @lower_cast(_type___nv_bfloat16, uint8)
     def impl(context, builder, fromty, toty, value):
         context._external_linkage.add(shim_obj)
+        shim_stream.write(shim_raw_str)
         ptr = builder.alloca(
             context.get_value_type(_type___nv_bfloat16), name="selfptr"
         )
@@ -1021,7 +1021,6 @@ def _from___nv_bfloat16_to_int8_lower(shim_stream, shim_obj):
         return 0;
     }
         """
-    shim_stream.write(shim_raw_str)
 
     _op_decl___nv_bfloat16 = declare_device(
         "____nv_bfloat16_operator_char_1",
@@ -1036,6 +1035,7 @@ def _from___nv_bfloat16_to_int8_lower(shim_stream, shim_obj):
     @lower_cast(_type___nv_bfloat16, int8)
     def impl(context, builder, fromty, toty, value):
         context._external_linkage.add(shim_obj)
+        shim_stream.write(shim_raw_str)
         ptr = builder.alloca(
             context.get_value_type(_type___nv_bfloat16), name="selfptr"
         )
@@ -1065,7 +1065,6 @@ def _from___nv_bfloat16_to_int16_lower(shim_stream, shim_obj):
         return 0;
     }
         """
-    shim_stream.write(shim_raw_str)
 
     _op_decl___nv_bfloat16 = declare_device(
         "____nv_bfloat16_operator_short_1",
@@ -1080,6 +1079,7 @@ def _from___nv_bfloat16_to_int16_lower(shim_stream, shim_obj):
     @lower_cast(_type___nv_bfloat16, int16)
     def impl(context, builder, fromty, toty, value):
         context._external_linkage.add(shim_obj)
+        shim_stream.write(shim_raw_str)
         ptr = builder.alloca(
             context.get_value_type(_type___nv_bfloat16), name="selfptr"
         )
@@ -1109,7 +1109,6 @@ def _from___nv_bfloat16_to_uint16_lower(shim_stream, shim_obj):
         return 0;
     }
         """
-    shim_stream.write(shim_raw_str)
 
     _op_decl___nv_bfloat16 = declare_device(
         "____nv_bfloat16_operator_unsigned_short_1",
@@ -1124,6 +1123,7 @@ def _from___nv_bfloat16_to_uint16_lower(shim_stream, shim_obj):
     @lower_cast(_type___nv_bfloat16, uint16)
     def impl(context, builder, fromty, toty, value):
         context._external_linkage.add(shim_obj)
+        shim_stream.write(shim_raw_str)
         ptr = builder.alloca(
             context.get_value_type(_type___nv_bfloat16), name="selfptr"
         )
@@ -1153,7 +1153,6 @@ def _from___nv_bfloat16_to_int32_lower(shim_stream, shim_obj):
         return 0;
     }
         """
-    shim_stream.write(shim_raw_str)
 
     _op_decl___nv_bfloat16 = declare_device(
         "____nv_bfloat16_operator_int_1",
@@ -1168,6 +1167,7 @@ def _from___nv_bfloat16_to_int32_lower(shim_stream, shim_obj):
     @lower_cast(_type___nv_bfloat16, int32)
     def impl(context, builder, fromty, toty, value):
         context._external_linkage.add(shim_obj)
+        shim_stream.write(shim_raw_str)
         ptr = builder.alloca(
             context.get_value_type(_type___nv_bfloat16), name="selfptr"
         )
@@ -1197,7 +1197,6 @@ def _from___nv_bfloat16_to_uint32_lower(shim_stream, shim_obj):
         return 0;
     }
         """
-    shim_stream.write(shim_raw_str)
 
     _op_decl___nv_bfloat16 = declare_device(
         "____nv_bfloat16_operator_unsigned_int_1",
@@ -1212,6 +1211,7 @@ def _from___nv_bfloat16_to_uint32_lower(shim_stream, shim_obj):
     @lower_cast(_type___nv_bfloat16, uint32)
     def impl(context, builder, fromty, toty, value):
         context._external_linkage.add(shim_obj)
+        shim_stream.write(shim_raw_str)
         ptr = builder.alloca(
             context.get_value_type(_type___nv_bfloat16), name="selfptr"
         )
@@ -1241,7 +1241,6 @@ def _from___nv_bfloat16_to_int64_lower(shim_stream, shim_obj):
         return 0;
     }
         """
-    shim_stream.write(shim_raw_str)
 
     _op_decl___nv_bfloat16 = declare_device(
         "____nv_bfloat16_operator_long_1",
@@ -1256,6 +1255,7 @@ def _from___nv_bfloat16_to_int64_lower(shim_stream, shim_obj):
     @lower_cast(_type___nv_bfloat16, int64)
     def impl(context, builder, fromty, toty, value):
         context._external_linkage.add(shim_obj)
+        shim_stream.write(shim_raw_str)
         ptr = builder.alloca(
             context.get_value_type(_type___nv_bfloat16), name="selfptr"
         )
@@ -1285,7 +1285,6 @@ def _from___nv_bfloat16_to_uint64_lower(shim_stream, shim_obj):
         return 0;
     }
         """
-    shim_stream.write(shim_raw_str)
 
     _op_decl___nv_bfloat16 = declare_device(
         "____nv_bfloat16_operator_unsigned_long_1",
@@ -1300,6 +1299,7 @@ def _from___nv_bfloat16_to_uint64_lower(shim_stream, shim_obj):
     @lower_cast(_type___nv_bfloat16, uint64)
     def impl(context, builder, fromty, toty, value):
         context._external_linkage.add(shim_obj)
+        shim_stream.write(shim_raw_str)
         ptr = builder.alloca(
             context.get_value_type(_type___nv_bfloat16), name="selfptr"
         )
@@ -1329,7 +1329,6 @@ def _from___nv_bfloat16_to_int64_lower(shim_stream, shim_obj):
         return 0;
     }
         """
-    shim_stream.write(shim_raw_str)
 
     _op_decl___nv_bfloat16 = declare_device(
         "____nv_bfloat16_operator_long_long_1",
@@ -1344,6 +1343,7 @@ def _from___nv_bfloat16_to_int64_lower(shim_stream, shim_obj):
     @lower_cast(_type___nv_bfloat16, int64)
     def impl(context, builder, fromty, toty, value):
         context._external_linkage.add(shim_obj)
+        shim_stream.write(shim_raw_str)
         ptr = builder.alloca(
             context.get_value_type(_type___nv_bfloat16), name="selfptr"
         )
@@ -1373,7 +1373,6 @@ def _from___nv_bfloat16_to_uint64_lower(shim_stream, shim_obj):
         return 0;
     }
         """
-    shim_stream.write(shim_raw_str)
 
     _op_decl___nv_bfloat16 = declare_device(
         "____nv_bfloat16_operator_unsigned_long_long_1",
@@ -1388,6 +1387,7 @@ def _from___nv_bfloat16_to_uint64_lower(shim_stream, shim_obj):
     @lower_cast(_type___nv_bfloat16, uint64)
     def impl(context, builder, fromty, toty, value):
         context._external_linkage.add(shim_obj)
+        shim_stream.write(shim_raw_str)
         ptr = builder.alloca(
             context.get_value_type(_type___nv_bfloat16), name="selfptr"
         )
@@ -1417,7 +1417,6 @@ def _from___nv_bfloat16_to_bool__lower(shim_stream, shim_obj):
         return 0;
     }
         """
-    shim_stream.write(shim_raw_str)
 
     _op_decl___nv_bfloat16 = declare_device(
         "____nv_bfloat16_operator_bool_1",
@@ -1432,6 +1431,7 @@ def _from___nv_bfloat16_to_bool__lower(shim_stream, shim_obj):
     @lower_cast(_type___nv_bfloat16, bool_)
     def impl(context, builder, fromty, toty, value):
         context._external_linkage.add(shim_obj)
+        shim_stream.write(shim_raw_str)
         ptr = builder.alloca(
             context.get_value_type(_type___nv_bfloat16), name="selfptr"
         )
@@ -1502,7 +1502,6 @@ def _lower___nv_bfloat162_void(shim_stream, shim_obj):
         return 0;
     }
         """
-    shim_stream.write(shim_raw_str)
 
     _ctor_decl___nv_bfloat162 = declare_device(
         "____nv_bfloat162____nv_bfloat162_1",
@@ -1519,6 +1518,7 @@ def _lower___nv_bfloat162_void(shim_stream, shim_obj):
     )
     def ctor_impl(context, builder, sig, args):
         context._external_linkage.add(shim_obj)
+        shim_stream.write(shim_raw_str)
         selfptr = builder.alloca(
             context.get_value_type(_type___nv_bfloat162), name="selfptr"
         )
@@ -1553,7 +1553,6 @@ def _lower___nv_bfloat162__type___nv_bfloat162(shim_stream, shim_obj):
         return 0;
     }
         """
-    shim_stream.write(shim_raw_str)
 
     _ctor_decl___nv_bfloat162 = declare_device(
         "____nv_bfloat162____nv_bfloat162_2",
@@ -1566,6 +1565,7 @@ def _lower___nv_bfloat162__type___nv_bfloat162(shim_stream, shim_obj):
     @lower(__nv_bfloat162, _type___nv_bfloat162)
     def ctor_impl(context, builder, sig, args):
         context._external_linkage.add(shim_obj)
+        shim_stream.write(shim_raw_str)
         selfptr = builder.alloca(
             context.get_value_type(_type___nv_bfloat162), name="selfptr"
         )
@@ -1603,7 +1603,6 @@ def _lower___nv_bfloat162__type___nv_bfloat16__type___nv_bfloat16(
         return 0;
     }
         """
-    shim_stream.write(shim_raw_str)
 
     _ctor_decl___nv_bfloat162 = declare_device(
         "____nv_bfloat162____nv_bfloat162_3",
@@ -1620,6 +1619,7 @@ def _lower___nv_bfloat162__type___nv_bfloat16__type___nv_bfloat16(
     @lower(__nv_bfloat162, _type___nv_bfloat16, _type___nv_bfloat16)
     def ctor_impl(context, builder, sig, args):
         context._external_linkage.add(shim_obj)
+        shim_stream.write(shim_raw_str)
         selfptr = builder.alloca(
             context.get_value_type(_type___nv_bfloat162), name="selfptr"
         )
@@ -1658,7 +1658,6 @@ def _lower___nv_bfloat162__type___nv_bfloat162(shim_stream, shim_obj):
         return 0;
     }
         """
-    shim_stream.write(shim_raw_str)
 
     _ctor_decl___nv_bfloat162 = declare_device(
         "____nv_bfloat162____nv_bfloat162_4",
@@ -1671,6 +1670,7 @@ def _lower___nv_bfloat162__type___nv_bfloat162(shim_stream, shim_obj):
     @lower(__nv_bfloat162, _type___nv_bfloat162)
     def ctor_impl(context, builder, sig, args):
         context._external_linkage.add(shim_obj)
+        shim_stream.write(shim_raw_str)
         selfptr = builder.alloca(
             context.get_value_type(_type___nv_bfloat162), name="selfptr"
         )
@@ -1706,7 +1706,6 @@ def _lower___nv_bfloat162__type_unnamed1401746(shim_stream, shim_obj):
         return 0;
     }
         """
-    shim_stream.write(shim_raw_str)
 
     _ctor_decl___nv_bfloat162 = declare_device(
         "____nv_bfloat162____nv_bfloat162_5",
@@ -1719,6 +1718,7 @@ def _lower___nv_bfloat162__type_unnamed1401746(shim_stream, shim_obj):
     @lower(__nv_bfloat162, _type_unnamed1401746)
     def ctor_impl(context, builder, sig, args):
         context._external_linkage.add(shim_obj)
+        shim_stream.write(shim_raw_str)
         selfptr = builder.alloca(
             context.get_value_type(_type___nv_bfloat162), name="selfptr"
         )
@@ -1773,7 +1773,6 @@ def _from___nv_bfloat162_to__type_unnamed1401746_lower(shim_stream, shim_obj):
         return 0;
     }
         """
-    shim_stream.write(shim_raw_str)
 
     _op_decl___nv_bfloat162 = declare_device(
         "____nv_bfloat162_operator___nv_bfloat162_raw_1",
@@ -1788,6 +1787,7 @@ def _from___nv_bfloat162_to__type_unnamed1401746_lower(shim_stream, shim_obj):
     @lower_cast(_type___nv_bfloat162, _type_unnamed1401746)
     def impl(context, builder, fromty, toty, value):
         context._external_linkage.add(shim_obj)
+        shim_stream.write(shim_raw_str)
         ptr = builder.alloca(
             context.get_value_type(_type___nv_bfloat162), name="selfptr"
         )
@@ -1824,7 +1824,6 @@ def _make_bfloat162_1_lower(shim_stream, shim_obj):
         return 0;
     }
         """
-    shim_stream.write(shim_raw_str)
 
     make_bfloat162_1 = declare_device(
         "make_bfloat162_1",
@@ -1839,6 +1838,7 @@ def _make_bfloat162_1_lower(shim_stream, shim_obj):
     @lower(make_bfloat162, _type___nv_bfloat16, _type___nv_bfloat16)
     def impl(context, builder, sig, args):
         context._external_linkage.add(shim_obj)
+        shim_stream.write(shim_raw_str)
         ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
         for ptr, ty, arg in zip(ptrs, sig.args, args):
             builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
@@ -1870,7 +1870,6 @@ def _htrunc_1_lower(shim_stream, shim_obj):
         return 0;
     }
         """
-    shim_stream.write(shim_raw_str)
 
     htrunc_1 = declare_device(
         "htrunc_1", _type___nv_bfloat16(CPointer(_type___nv_bfloat16))
@@ -1882,6 +1881,7 @@ def _htrunc_1_lower(shim_stream, shim_obj):
     @lower(htrunc, _type___nv_bfloat16)
     def impl(context, builder, sig, args):
         context._external_linkage.add(shim_obj)
+        shim_stream.write(shim_raw_str)
         ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
         for ptr, ty, arg in zip(ptrs, sig.args, args):
             builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
@@ -1909,7 +1909,6 @@ def _hceil_1_lower(shim_stream, shim_obj):
         return 0;
     }
         """
-    shim_stream.write(shim_raw_str)
 
     hceil_1 = declare_device(
         "hceil_1", _type___nv_bfloat16(CPointer(_type___nv_bfloat16))
@@ -1921,6 +1920,7 @@ def _hceil_1_lower(shim_stream, shim_obj):
     @lower(hceil, _type___nv_bfloat16)
     def impl(context, builder, sig, args):
         context._external_linkage.add(shim_obj)
+        shim_stream.write(shim_raw_str)
         ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
         for ptr, ty, arg in zip(ptrs, sig.args, args):
             builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
@@ -1948,7 +1948,6 @@ def _hfloor_1_lower(shim_stream, shim_obj):
         return 0;
     }
         """
-    shim_stream.write(shim_raw_str)
 
     hfloor_1 = declare_device(
         "hfloor_1", _type___nv_bfloat16(CPointer(_type___nv_bfloat16))
@@ -1960,6 +1959,7 @@ def _hfloor_1_lower(shim_stream, shim_obj):
     @lower(hfloor, _type___nv_bfloat16)
     def impl(context, builder, sig, args):
         context._external_linkage.add(shim_obj)
+        shim_stream.write(shim_raw_str)
         ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
         for ptr, ty, arg in zip(ptrs, sig.args, args):
             builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
@@ -1987,7 +1987,6 @@ def _hrint_1_lower(shim_stream, shim_obj):
         return 0;
     }
         """
-    shim_stream.write(shim_raw_str)
 
     hrint_1 = declare_device(
         "hrint_1", _type___nv_bfloat16(CPointer(_type___nv_bfloat16))
@@ -1999,6 +1998,7 @@ def _hrint_1_lower(shim_stream, shim_obj):
     @lower(hrint, _type___nv_bfloat16)
     def impl(context, builder, sig, args):
         context._external_linkage.add(shim_obj)
+        shim_stream.write(shim_raw_str)
         ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
         for ptr, ty, arg in zip(ptrs, sig.args, args):
             builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
@@ -2026,7 +2026,6 @@ def _h2trunc_1_lower(shim_stream, shim_obj):
         return 0;
     }
         """
-    shim_stream.write(shim_raw_str)
 
     h2trunc_1 = declare_device(
         "h2trunc_1", _type___nv_bfloat162(CPointer(_type___nv_bfloat162))
@@ -2038,6 +2037,7 @@ def _h2trunc_1_lower(shim_stream, shim_obj):
     @lower(h2trunc, _type___nv_bfloat162)
     def impl(context, builder, sig, args):
         context._external_linkage.add(shim_obj)
+        shim_stream.write(shim_raw_str)
         ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
         for ptr, ty, arg in zip(ptrs, sig.args, args):
             builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
@@ -2065,7 +2065,6 @@ def _h2ceil_1_lower(shim_stream, shim_obj):
         return 0;
     }
         """
-    shim_stream.write(shim_raw_str)
 
     h2ceil_1 = declare_device(
         "h2ceil_1", _type___nv_bfloat162(CPointer(_type___nv_bfloat162))
@@ -2077,6 +2076,7 @@ def _h2ceil_1_lower(shim_stream, shim_obj):
     @lower(h2ceil, _type___nv_bfloat162)
     def impl(context, builder, sig, args):
         context._external_linkage.add(shim_obj)
+        shim_stream.write(shim_raw_str)
         ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
         for ptr, ty, arg in zip(ptrs, sig.args, args):
             builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
@@ -2104,7 +2104,6 @@ def _h2floor_1_lower(shim_stream, shim_obj):
         return 0;
     }
         """
-    shim_stream.write(shim_raw_str)
 
     h2floor_1 = declare_device(
         "h2floor_1", _type___nv_bfloat162(CPointer(_type___nv_bfloat162))
@@ -2116,6 +2115,7 @@ def _h2floor_1_lower(shim_stream, shim_obj):
     @lower(h2floor, _type___nv_bfloat162)
     def impl(context, builder, sig, args):
         context._external_linkage.add(shim_obj)
+        shim_stream.write(shim_raw_str)
         ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
         for ptr, ty, arg in zip(ptrs, sig.args, args):
             builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
@@ -2143,7 +2143,6 @@ def _h2rint_1_lower(shim_stream, shim_obj):
         return 0;
     }
         """
-    shim_stream.write(shim_raw_str)
 
     h2rint_1 = declare_device(
         "h2rint_1", _type___nv_bfloat162(CPointer(_type___nv_bfloat162))
@@ -2155,6 +2154,7 @@ def _h2rint_1_lower(shim_stream, shim_obj):
     @lower(h2rint, _type___nv_bfloat162)
     def impl(context, builder, sig, args):
         context._external_linkage.add(shim_obj)
+        shim_stream.write(shim_raw_str)
         ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
         for ptr, ty, arg in zip(ptrs, sig.args, args):
             builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
@@ -2182,7 +2182,6 @@ def _hsqrt_1_lower(shim_stream, shim_obj):
         return 0;
     }
         """
-    shim_stream.write(shim_raw_str)
 
     hsqrt_1 = declare_device(
         "hsqrt_1", _type___nv_bfloat16(CPointer(_type___nv_bfloat16))
@@ -2194,6 +2193,7 @@ def _hsqrt_1_lower(shim_stream, shim_obj):
     @lower(hsqrt, _type___nv_bfloat16)
     def impl(context, builder, sig, args):
         context._external_linkage.add(shim_obj)
+        shim_stream.write(shim_raw_str)
         ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
         for ptr, ty, arg in zip(ptrs, sig.args, args):
             builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
@@ -2221,7 +2221,6 @@ def _hrsqrt_1_lower(shim_stream, shim_obj):
         return 0;
     }
         """
-    shim_stream.write(shim_raw_str)
 
     hrsqrt_1 = declare_device(
         "hrsqrt_1", _type___nv_bfloat16(CPointer(_type___nv_bfloat16))
@@ -2233,6 +2232,7 @@ def _hrsqrt_1_lower(shim_stream, shim_obj):
     @lower(hrsqrt, _type___nv_bfloat16)
     def impl(context, builder, sig, args):
         context._external_linkage.add(shim_obj)
+        shim_stream.write(shim_raw_str)
         ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
         for ptr, ty, arg in zip(ptrs, sig.args, args):
             builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
@@ -2260,7 +2260,6 @@ def _hrcp_1_lower(shim_stream, shim_obj):
         return 0;
     }
         """
-    shim_stream.write(shim_raw_str)
 
     hrcp_1 = declare_device(
         "hrcp_1", _type___nv_bfloat16(CPointer(_type___nv_bfloat16))
@@ -2272,6 +2271,7 @@ def _hrcp_1_lower(shim_stream, shim_obj):
     @lower(hrcp, _type___nv_bfloat16)
     def impl(context, builder, sig, args):
         context._external_linkage.add(shim_obj)
+        shim_stream.write(shim_raw_str)
         ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
         for ptr, ty, arg in zip(ptrs, sig.args, args):
             builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
@@ -2299,7 +2299,6 @@ def _hlog_1_lower(shim_stream, shim_obj):
         return 0;
     }
         """
-    shim_stream.write(shim_raw_str)
 
     hlog_1 = declare_device(
         "hlog_1", _type___nv_bfloat16(CPointer(_type___nv_bfloat16))
@@ -2311,6 +2310,7 @@ def _hlog_1_lower(shim_stream, shim_obj):
     @lower(hlog, _type___nv_bfloat16)
     def impl(context, builder, sig, args):
         context._external_linkage.add(shim_obj)
+        shim_stream.write(shim_raw_str)
         ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
         for ptr, ty, arg in zip(ptrs, sig.args, args):
             builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
@@ -2338,7 +2338,6 @@ def _hlog2_1_lower(shim_stream, shim_obj):
         return 0;
     }
         """
-    shim_stream.write(shim_raw_str)
 
     hlog2_1 = declare_device(
         "hlog2_1", _type___nv_bfloat16(CPointer(_type___nv_bfloat16))
@@ -2350,6 +2349,7 @@ def _hlog2_1_lower(shim_stream, shim_obj):
     @lower(hlog2, _type___nv_bfloat16)
     def impl(context, builder, sig, args):
         context._external_linkage.add(shim_obj)
+        shim_stream.write(shim_raw_str)
         ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
         for ptr, ty, arg in zip(ptrs, sig.args, args):
             builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
@@ -2377,7 +2377,6 @@ def _hlog10_1_lower(shim_stream, shim_obj):
         return 0;
     }
         """
-    shim_stream.write(shim_raw_str)
 
     hlog10_1 = declare_device(
         "hlog10_1", _type___nv_bfloat16(CPointer(_type___nv_bfloat16))
@@ -2389,6 +2388,7 @@ def _hlog10_1_lower(shim_stream, shim_obj):
     @lower(hlog10, _type___nv_bfloat16)
     def impl(context, builder, sig, args):
         context._external_linkage.add(shim_obj)
+        shim_stream.write(shim_raw_str)
         ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
         for ptr, ty, arg in zip(ptrs, sig.args, args):
             builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
@@ -2416,7 +2416,6 @@ def _hexp_1_lower(shim_stream, shim_obj):
         return 0;
     }
         """
-    shim_stream.write(shim_raw_str)
 
     hexp_1 = declare_device(
         "hexp_1", _type___nv_bfloat16(CPointer(_type___nv_bfloat16))
@@ -2428,6 +2427,7 @@ def _hexp_1_lower(shim_stream, shim_obj):
     @lower(hexp, _type___nv_bfloat16)
     def impl(context, builder, sig, args):
         context._external_linkage.add(shim_obj)
+        shim_stream.write(shim_raw_str)
         ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
         for ptr, ty, arg in zip(ptrs, sig.args, args):
             builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
@@ -2455,7 +2455,6 @@ def _htanh_approx_1_lower(shim_stream, shim_obj):
         return 0;
     }
         """
-    shim_stream.write(shim_raw_str)
 
     htanh_approx_1 = declare_device(
         "htanh_approx_1", _type___nv_bfloat16(CPointer(_type___nv_bfloat16))
@@ -2467,6 +2466,7 @@ def _htanh_approx_1_lower(shim_stream, shim_obj):
     @lower(htanh_approx, _type___nv_bfloat16)
     def impl(context, builder, sig, args):
         context._external_linkage.add(shim_obj)
+        shim_stream.write(shim_raw_str)
         ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
         for ptr, ty, arg in zip(ptrs, sig.args, args):
             builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
@@ -2494,7 +2494,6 @@ def _h2tanh_approx_1_lower(shim_stream, shim_obj):
         return 0;
     }
         """
-    shim_stream.write(shim_raw_str)
 
     h2tanh_approx_1 = declare_device(
         "h2tanh_approx_1", _type___nv_bfloat162(CPointer(_type___nv_bfloat162))
@@ -2506,6 +2505,7 @@ def _h2tanh_approx_1_lower(shim_stream, shim_obj):
     @lower(h2tanh_approx, _type___nv_bfloat162)
     def impl(context, builder, sig, args):
         context._external_linkage.add(shim_obj)
+        shim_stream.write(shim_raw_str)
         ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
         for ptr, ty, arg in zip(ptrs, sig.args, args):
             builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
@@ -2533,7 +2533,6 @@ def _htanh_1_lower(shim_stream, shim_obj):
         return 0;
     }
         """
-    shim_stream.write(shim_raw_str)
 
     htanh_1 = declare_device(
         "htanh_1", _type___nv_bfloat16(CPointer(_type___nv_bfloat16))
@@ -2545,6 +2544,7 @@ def _htanh_1_lower(shim_stream, shim_obj):
     @lower(htanh, _type___nv_bfloat16)
     def impl(context, builder, sig, args):
         context._external_linkage.add(shim_obj)
+        shim_stream.write(shim_raw_str)
         ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
         for ptr, ty, arg in zip(ptrs, sig.args, args):
             builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
@@ -2572,7 +2572,6 @@ def _h2tanh_1_lower(shim_stream, shim_obj):
         return 0;
     }
         """
-    shim_stream.write(shim_raw_str)
 
     h2tanh_1 = declare_device(
         "h2tanh_1", _type___nv_bfloat162(CPointer(_type___nv_bfloat162))
@@ -2584,6 +2583,7 @@ def _h2tanh_1_lower(shim_stream, shim_obj):
     @lower(h2tanh, _type___nv_bfloat162)
     def impl(context, builder, sig, args):
         context._external_linkage.add(shim_obj)
+        shim_stream.write(shim_raw_str)
         ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
         for ptr, ty, arg in zip(ptrs, sig.args, args):
             builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
@@ -2611,7 +2611,6 @@ def _hexp2_1_lower(shim_stream, shim_obj):
         return 0;
     }
         """
-    shim_stream.write(shim_raw_str)
 
     hexp2_1 = declare_device(
         "hexp2_1", _type___nv_bfloat16(CPointer(_type___nv_bfloat16))
@@ -2623,6 +2622,7 @@ def _hexp2_1_lower(shim_stream, shim_obj):
     @lower(hexp2, _type___nv_bfloat16)
     def impl(context, builder, sig, args):
         context._external_linkage.add(shim_obj)
+        shim_stream.write(shim_raw_str)
         ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
         for ptr, ty, arg in zip(ptrs, sig.args, args):
             builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
@@ -2650,7 +2650,6 @@ def _hexp10_1_lower(shim_stream, shim_obj):
         return 0;
     }
         """
-    shim_stream.write(shim_raw_str)
 
     hexp10_1 = declare_device(
         "hexp10_1", _type___nv_bfloat16(CPointer(_type___nv_bfloat16))
@@ -2662,6 +2661,7 @@ def _hexp10_1_lower(shim_stream, shim_obj):
     @lower(hexp10, _type___nv_bfloat16)
     def impl(context, builder, sig, args):
         context._external_linkage.add(shim_obj)
+        shim_stream.write(shim_raw_str)
         ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
         for ptr, ty, arg in zip(ptrs, sig.args, args):
             builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
@@ -2689,7 +2689,6 @@ def _hcos_1_lower(shim_stream, shim_obj):
         return 0;
     }
         """
-    shim_stream.write(shim_raw_str)
 
     hcos_1 = declare_device(
         "hcos_1", _type___nv_bfloat16(CPointer(_type___nv_bfloat16))
@@ -2701,6 +2700,7 @@ def _hcos_1_lower(shim_stream, shim_obj):
     @lower(hcos, _type___nv_bfloat16)
     def impl(context, builder, sig, args):
         context._external_linkage.add(shim_obj)
+        shim_stream.write(shim_raw_str)
         ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
         for ptr, ty, arg in zip(ptrs, sig.args, args):
             builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
@@ -2728,7 +2728,6 @@ def _hsin_1_lower(shim_stream, shim_obj):
         return 0;
     }
         """
-    shim_stream.write(shim_raw_str)
 
     hsin_1 = declare_device(
         "hsin_1", _type___nv_bfloat16(CPointer(_type___nv_bfloat16))
@@ -2740,6 +2739,7 @@ def _hsin_1_lower(shim_stream, shim_obj):
     @lower(hsin, _type___nv_bfloat16)
     def impl(context, builder, sig, args):
         context._external_linkage.add(shim_obj)
+        shim_stream.write(shim_raw_str)
         ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
         for ptr, ty, arg in zip(ptrs, sig.args, args):
             builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
@@ -2767,7 +2767,6 @@ def _h2sqrt_1_lower(shim_stream, shim_obj):
         return 0;
     }
         """
-    shim_stream.write(shim_raw_str)
 
     h2sqrt_1 = declare_device(
         "h2sqrt_1", _type___nv_bfloat162(CPointer(_type___nv_bfloat162))
@@ -2779,6 +2778,7 @@ def _h2sqrt_1_lower(shim_stream, shim_obj):
     @lower(h2sqrt, _type___nv_bfloat162)
     def impl(context, builder, sig, args):
         context._external_linkage.add(shim_obj)
+        shim_stream.write(shim_raw_str)
         ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
         for ptr, ty, arg in zip(ptrs, sig.args, args):
             builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
@@ -2806,7 +2806,6 @@ def _h2rsqrt_1_lower(shim_stream, shim_obj):
         return 0;
     }
         """
-    shim_stream.write(shim_raw_str)
 
     h2rsqrt_1 = declare_device(
         "h2rsqrt_1", _type___nv_bfloat162(CPointer(_type___nv_bfloat162))
@@ -2818,6 +2817,7 @@ def _h2rsqrt_1_lower(shim_stream, shim_obj):
     @lower(h2rsqrt, _type___nv_bfloat162)
     def impl(context, builder, sig, args):
         context._external_linkage.add(shim_obj)
+        shim_stream.write(shim_raw_str)
         ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
         for ptr, ty, arg in zip(ptrs, sig.args, args):
             builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
@@ -2845,7 +2845,6 @@ def _h2rcp_1_lower(shim_stream, shim_obj):
         return 0;
     }
         """
-    shim_stream.write(shim_raw_str)
 
     h2rcp_1 = declare_device(
         "h2rcp_1", _type___nv_bfloat162(CPointer(_type___nv_bfloat162))
@@ -2857,6 +2856,7 @@ def _h2rcp_1_lower(shim_stream, shim_obj):
     @lower(h2rcp, _type___nv_bfloat162)
     def impl(context, builder, sig, args):
         context._external_linkage.add(shim_obj)
+        shim_stream.write(shim_raw_str)
         ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
         for ptr, ty, arg in zip(ptrs, sig.args, args):
             builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
@@ -2884,7 +2884,6 @@ def _h2log_1_lower(shim_stream, shim_obj):
         return 0;
     }
         """
-    shim_stream.write(shim_raw_str)
 
     h2log_1 = declare_device(
         "h2log_1", _type___nv_bfloat162(CPointer(_type___nv_bfloat162))
@@ -2896,6 +2895,7 @@ def _h2log_1_lower(shim_stream, shim_obj):
     @lower(h2log, _type___nv_bfloat162)
     def impl(context, builder, sig, args):
         context._external_linkage.add(shim_obj)
+        shim_stream.write(shim_raw_str)
         ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
         for ptr, ty, arg in zip(ptrs, sig.args, args):
             builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
@@ -2923,7 +2923,6 @@ def _h2log2_1_lower(shim_stream, shim_obj):
         return 0;
     }
         """
-    shim_stream.write(shim_raw_str)
 
     h2log2_1 = declare_device(
         "h2log2_1", _type___nv_bfloat162(CPointer(_type___nv_bfloat162))
@@ -2935,6 +2934,7 @@ def _h2log2_1_lower(shim_stream, shim_obj):
     @lower(h2log2, _type___nv_bfloat162)
     def impl(context, builder, sig, args):
         context._external_linkage.add(shim_obj)
+        shim_stream.write(shim_raw_str)
         ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
         for ptr, ty, arg in zip(ptrs, sig.args, args):
             builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
@@ -2962,7 +2962,6 @@ def _h2log10_1_lower(shim_stream, shim_obj):
         return 0;
     }
         """
-    shim_stream.write(shim_raw_str)
 
     h2log10_1 = declare_device(
         "h2log10_1", _type___nv_bfloat162(CPointer(_type___nv_bfloat162))
@@ -2974,6 +2973,7 @@ def _h2log10_1_lower(shim_stream, shim_obj):
     @lower(h2log10, _type___nv_bfloat162)
     def impl(context, builder, sig, args):
         context._external_linkage.add(shim_obj)
+        shim_stream.write(shim_raw_str)
         ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
         for ptr, ty, arg in zip(ptrs, sig.args, args):
             builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
@@ -3001,7 +3001,6 @@ def _h2exp_1_lower(shim_stream, shim_obj):
         return 0;
     }
         """
-    shim_stream.write(shim_raw_str)
 
     h2exp_1 = declare_device(
         "h2exp_1", _type___nv_bfloat162(CPointer(_type___nv_bfloat162))
@@ -3013,6 +3012,7 @@ def _h2exp_1_lower(shim_stream, shim_obj):
     @lower(h2exp, _type___nv_bfloat162)
     def impl(context, builder, sig, args):
         context._external_linkage.add(shim_obj)
+        shim_stream.write(shim_raw_str)
         ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
         for ptr, ty, arg in zip(ptrs, sig.args, args):
             builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
@@ -3040,7 +3040,6 @@ def _h2exp2_1_lower(shim_stream, shim_obj):
         return 0;
     }
         """
-    shim_stream.write(shim_raw_str)
 
     h2exp2_1 = declare_device(
         "h2exp2_1", _type___nv_bfloat162(CPointer(_type___nv_bfloat162))
@@ -3052,6 +3051,7 @@ def _h2exp2_1_lower(shim_stream, shim_obj):
     @lower(h2exp2, _type___nv_bfloat162)
     def impl(context, builder, sig, args):
         context._external_linkage.add(shim_obj)
+        shim_stream.write(shim_raw_str)
         ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
         for ptr, ty, arg in zip(ptrs, sig.args, args):
             builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
@@ -3079,7 +3079,6 @@ def _h2exp10_1_lower(shim_stream, shim_obj):
         return 0;
     }
         """
-    shim_stream.write(shim_raw_str)
 
     h2exp10_1 = declare_device(
         "h2exp10_1", _type___nv_bfloat162(CPointer(_type___nv_bfloat162))
@@ -3091,6 +3090,7 @@ def _h2exp10_1_lower(shim_stream, shim_obj):
     @lower(h2exp10, _type___nv_bfloat162)
     def impl(context, builder, sig, args):
         context._external_linkage.add(shim_obj)
+        shim_stream.write(shim_raw_str)
         ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
         for ptr, ty, arg in zip(ptrs, sig.args, args):
             builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
@@ -3118,7 +3118,6 @@ def _h2cos_1_lower(shim_stream, shim_obj):
         return 0;
     }
         """
-    shim_stream.write(shim_raw_str)
 
     h2cos_1 = declare_device(
         "h2cos_1", _type___nv_bfloat162(CPointer(_type___nv_bfloat162))
@@ -3130,6 +3129,7 @@ def _h2cos_1_lower(shim_stream, shim_obj):
     @lower(h2cos, _type___nv_bfloat162)
     def impl(context, builder, sig, args):
         context._external_linkage.add(shim_obj)
+        shim_stream.write(shim_raw_str)
         ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
         for ptr, ty, arg in zip(ptrs, sig.args, args):
             builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
@@ -3157,7 +3157,6 @@ def _h2sin_1_lower(shim_stream, shim_obj):
         return 0;
     }
         """
-    shim_stream.write(shim_raw_str)
 
     h2sin_1 = declare_device(
         "h2sin_1", _type___nv_bfloat162(CPointer(_type___nv_bfloat162))
@@ -3169,6 +3168,7 @@ def _h2sin_1_lower(shim_stream, shim_obj):
     @lower(h2sin, _type___nv_bfloat162)
     def impl(context, builder, sig, args):
         context._external_linkage.add(shim_obj)
+        shim_stream.write(shim_raw_str)
         ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
         for ptr, ty, arg in zip(ptrs, sig.args, args):
             builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
@@ -3196,7 +3196,6 @@ def _atomicAdd_1_lower(shim_stream, shim_obj):
         return 0;
     }
         """
-    shim_stream.write(shim_raw_str)
 
     atomicAdd_1 = declare_device(
         "atomicAdd_1",
@@ -3212,6 +3211,7 @@ def _atomicAdd_1_lower(shim_stream, shim_obj):
     @lower(atomicAdd, CPointer(_type___nv_bfloat162), _type___nv_bfloat162)
     def impl(context, builder, sig, args):
         context._external_linkage.add(shim_obj)
+        shim_stream.write(shim_raw_str)
         ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
         for ptr, ty, arg in zip(ptrs, sig.args, args):
             builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
@@ -3239,7 +3239,6 @@ def _atomicAdd_2_lower(shim_stream, shim_obj):
         return 0;
     }
         """
-    shim_stream.write(shim_raw_str)
 
     atomicAdd_2 = declare_device(
         "atomicAdd_2",
@@ -3255,6 +3254,7 @@ def _atomicAdd_2_lower(shim_stream, shim_obj):
     @lower(atomicAdd, CPointer(_type___nv_bfloat16), _type___nv_bfloat16)
     def impl(context, builder, sig, args):
         context._external_linkage.add(shim_obj)
+        shim_stream.write(shim_raw_str)
         ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
         for ptr, ty, arg in zip(ptrs, sig.args, args):
             builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
@@ -3282,7 +3282,6 @@ def _operator_add_1_lower(shim_stream, shim_obj):
         return 0;
     }
         """
-    shim_stream.write(shim_raw_str)
 
     operator_add_1 = declare_device(
         "operator_add_1",
@@ -3297,6 +3296,7 @@ def _operator_add_1_lower(shim_stream, shim_obj):
     @lower(operator.add, _type___nv_bfloat16, _type___nv_bfloat16)
     def impl(context, builder, sig, args):
         context._external_linkage.add(shim_obj)
+        shim_stream.write(shim_raw_str)
         ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
         for ptr, ty, arg in zip(ptrs, sig.args, args):
             builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
@@ -3324,7 +3324,6 @@ def _operator_sub_1_lower(shim_stream, shim_obj):
         return 0;
     }
         """
-    shim_stream.write(shim_raw_str)
 
     operator_sub_1 = declare_device(
         "operator_sub_1",
@@ -3339,6 +3338,7 @@ def _operator_sub_1_lower(shim_stream, shim_obj):
     @lower(operator.sub, _type___nv_bfloat16, _type___nv_bfloat16)
     def impl(context, builder, sig, args):
         context._external_linkage.add(shim_obj)
+        shim_stream.write(shim_raw_str)
         ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
         for ptr, ty, arg in zip(ptrs, sig.args, args):
             builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
@@ -3366,7 +3366,6 @@ def _operator_mul_1_lower(shim_stream, shim_obj):
         return 0;
     }
         """
-    shim_stream.write(shim_raw_str)
 
     operator_mul_1 = declare_device(
         "operator_mul_1",
@@ -3381,6 +3380,7 @@ def _operator_mul_1_lower(shim_stream, shim_obj):
     @lower(operator.mul, _type___nv_bfloat16, _type___nv_bfloat16)
     def impl(context, builder, sig, args):
         context._external_linkage.add(shim_obj)
+        shim_stream.write(shim_raw_str)
         ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
         for ptr, ty, arg in zip(ptrs, sig.args, args):
             builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
@@ -3408,7 +3408,6 @@ def _operator_truediv_1_lower(shim_stream, shim_obj):
         return 0;
     }
         """
-    shim_stream.write(shim_raw_str)
 
     operator_truediv_1 = declare_device(
         "operator_truediv_1",
@@ -3423,6 +3422,7 @@ def _operator_truediv_1_lower(shim_stream, shim_obj):
     @lower(operator.truediv, _type___nv_bfloat16, _type___nv_bfloat16)
     def impl(context, builder, sig, args):
         context._external_linkage.add(shim_obj)
+        shim_stream.write(shim_raw_str)
         ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
         for ptr, ty, arg in zip(ptrs, sig.args, args):
             builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
@@ -3450,7 +3450,6 @@ def _operator_iadd_1_lower(shim_stream, shim_obj):
         return 0;
     }
         """
-    shim_stream.write(shim_raw_str)
 
     operator_iadd_1 = declare_device(
         "operator_iadd_1",
@@ -3465,6 +3464,7 @@ def _operator_iadd_1_lower(shim_stream, shim_obj):
     @lower(operator.iadd, _type___nv_bfloat16, _type___nv_bfloat16)
     def impl(context, builder, sig, args):
         context._external_linkage.add(shim_obj)
+        shim_stream.write(shim_raw_str)
         ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
         for ptr, ty, arg in zip(ptrs, sig.args, args):
             builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
@@ -3492,7 +3492,6 @@ def _operator_isub_1_lower(shim_stream, shim_obj):
         return 0;
     }
         """
-    shim_stream.write(shim_raw_str)
 
     operator_isub_1 = declare_device(
         "operator_isub_1",
@@ -3507,6 +3506,7 @@ def _operator_isub_1_lower(shim_stream, shim_obj):
     @lower(operator.isub, _type___nv_bfloat16, _type___nv_bfloat16)
     def impl(context, builder, sig, args):
         context._external_linkage.add(shim_obj)
+        shim_stream.write(shim_raw_str)
         ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
         for ptr, ty, arg in zip(ptrs, sig.args, args):
             builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
@@ -3534,7 +3534,6 @@ def _operator_imul_1_lower(shim_stream, shim_obj):
         return 0;
     }
         """
-    shim_stream.write(shim_raw_str)
 
     operator_imul_1 = declare_device(
         "operator_imul_1",
@@ -3549,6 +3548,7 @@ def _operator_imul_1_lower(shim_stream, shim_obj):
     @lower(operator.imul, _type___nv_bfloat16, _type___nv_bfloat16)
     def impl(context, builder, sig, args):
         context._external_linkage.add(shim_obj)
+        shim_stream.write(shim_raw_str)
         ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
         for ptr, ty, arg in zip(ptrs, sig.args, args):
             builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
@@ -3576,7 +3576,6 @@ def _operator_itruediv_1_lower(shim_stream, shim_obj):
         return 0;
     }
         """
-    shim_stream.write(shim_raw_str)
 
     operator_itruediv_1 = declare_device(
         "operator_itruediv_1",
@@ -3591,6 +3590,7 @@ def _operator_itruediv_1_lower(shim_stream, shim_obj):
     @lower(operator.itruediv, _type___nv_bfloat16, _type___nv_bfloat16)
     def impl(context, builder, sig, args):
         context._external_linkage.add(shim_obj)
+        shim_stream.write(shim_raw_str)
         ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
         for ptr, ty, arg in zip(ptrs, sig.args, args):
             builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
@@ -3618,7 +3618,6 @@ def _operator_pos_1_lower(shim_stream, shim_obj):
         return 0;
     }
         """
-    shim_stream.write(shim_raw_str)
 
     operator_pos_1 = declare_device(
         "operator_pos_1", _type___nv_bfloat16(CPointer(_type___nv_bfloat16))
@@ -3630,6 +3629,7 @@ def _operator_pos_1_lower(shim_stream, shim_obj):
     @lower(operator.pos, _type___nv_bfloat16)
     def impl(context, builder, sig, args):
         context._external_linkage.add(shim_obj)
+        shim_stream.write(shim_raw_str)
         ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
         for ptr, ty, arg in zip(ptrs, sig.args, args):
             builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
@@ -3653,7 +3653,6 @@ def _operator_neg_1_lower(shim_stream, shim_obj):
         return 0;
     }
         """
-    shim_stream.write(shim_raw_str)
 
     operator_neg_1 = declare_device(
         "operator_neg_1", _type___nv_bfloat16(CPointer(_type___nv_bfloat16))
@@ -3665,6 +3664,7 @@ def _operator_neg_1_lower(shim_stream, shim_obj):
     @lower(operator.neg, _type___nv_bfloat16)
     def impl(context, builder, sig, args):
         context._external_linkage.add(shim_obj)
+        shim_stream.write(shim_raw_str)
         ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
         for ptr, ty, arg in zip(ptrs, sig.args, args):
             builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
@@ -3688,7 +3688,6 @@ def _operator_eq_1_lower(shim_stream, shim_obj):
         return 0;
     }
         """
-    shim_stream.write(shim_raw_str)
 
     operator_eq_1 = declare_device(
         "operator_eq_1",
@@ -3701,6 +3700,7 @@ def _operator_eq_1_lower(shim_stream, shim_obj):
     @lower(operator.eq, _type___nv_bfloat16, _type___nv_bfloat16)
     def impl(context, builder, sig, args):
         context._external_linkage.add(shim_obj)
+        shim_stream.write(shim_raw_str)
         ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
         for ptr, ty, arg in zip(ptrs, sig.args, args):
             builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
@@ -3728,7 +3728,6 @@ def _operator_ne_1_lower(shim_stream, shim_obj):
         return 0;
     }
         """
-    shim_stream.write(shim_raw_str)
 
     operator_ne_1 = declare_device(
         "operator_ne_1",
@@ -3741,6 +3740,7 @@ def _operator_ne_1_lower(shim_stream, shim_obj):
     @lower(operator.ne, _type___nv_bfloat16, _type___nv_bfloat16)
     def impl(context, builder, sig, args):
         context._external_linkage.add(shim_obj)
+        shim_stream.write(shim_raw_str)
         ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
         for ptr, ty, arg in zip(ptrs, sig.args, args):
             builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
@@ -3768,7 +3768,6 @@ def _operator_gt_1_lower(shim_stream, shim_obj):
         return 0;
     }
         """
-    shim_stream.write(shim_raw_str)
 
     operator_gt_1 = declare_device(
         "operator_gt_1",
@@ -3781,6 +3780,7 @@ def _operator_gt_1_lower(shim_stream, shim_obj):
     @lower(operator.gt, _type___nv_bfloat16, _type___nv_bfloat16)
     def impl(context, builder, sig, args):
         context._external_linkage.add(shim_obj)
+        shim_stream.write(shim_raw_str)
         ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
         for ptr, ty, arg in zip(ptrs, sig.args, args):
             builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
@@ -3808,7 +3808,6 @@ def _operator_lt_1_lower(shim_stream, shim_obj):
         return 0;
     }
         """
-    shim_stream.write(shim_raw_str)
 
     operator_lt_1 = declare_device(
         "operator_lt_1",
@@ -3821,6 +3820,7 @@ def _operator_lt_1_lower(shim_stream, shim_obj):
     @lower(operator.lt, _type___nv_bfloat16, _type___nv_bfloat16)
     def impl(context, builder, sig, args):
         context._external_linkage.add(shim_obj)
+        shim_stream.write(shim_raw_str)
         ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
         for ptr, ty, arg in zip(ptrs, sig.args, args):
             builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
@@ -3848,7 +3848,6 @@ def _operator_ge_1_lower(shim_stream, shim_obj):
         return 0;
     }
         """
-    shim_stream.write(shim_raw_str)
 
     operator_ge_1 = declare_device(
         "operator_ge_1",
@@ -3861,6 +3860,7 @@ def _operator_ge_1_lower(shim_stream, shim_obj):
     @lower(operator.ge, _type___nv_bfloat16, _type___nv_bfloat16)
     def impl(context, builder, sig, args):
         context._external_linkage.add(shim_obj)
+        shim_stream.write(shim_raw_str)
         ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
         for ptr, ty, arg in zip(ptrs, sig.args, args):
             builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
@@ -3888,7 +3888,6 @@ def _operator_le_1_lower(shim_stream, shim_obj):
         return 0;
     }
         """
-    shim_stream.write(shim_raw_str)
 
     operator_le_1 = declare_device(
         "operator_le_1",
@@ -3901,6 +3900,7 @@ def _operator_le_1_lower(shim_stream, shim_obj):
     @lower(operator.le, _type___nv_bfloat16, _type___nv_bfloat16)
     def impl(context, builder, sig, args):
         context._external_linkage.add(shim_obj)
+        shim_stream.write(shim_raw_str)
         ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
         for ptr, ty, arg in zip(ptrs, sig.args, args):
             builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
@@ -3928,7 +3928,6 @@ def _operator_add_2_lower(shim_stream, shim_obj):
         return 0;
     }
         """
-    shim_stream.write(shim_raw_str)
 
     operator_add_2 = declare_device(
         "operator_add_2",
@@ -3943,6 +3942,7 @@ def _operator_add_2_lower(shim_stream, shim_obj):
     @lower(operator.add, _type___nv_bfloat162, _type___nv_bfloat162)
     def impl(context, builder, sig, args):
         context._external_linkage.add(shim_obj)
+        shim_stream.write(shim_raw_str)
         ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
         for ptr, ty, arg in zip(ptrs, sig.args, args):
             builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
@@ -3970,7 +3970,6 @@ def _operator_sub_2_lower(shim_stream, shim_obj):
         return 0;
     }
         """
-    shim_stream.write(shim_raw_str)
 
     operator_sub_2 = declare_device(
         "operator_sub_2",
@@ -3985,6 +3984,7 @@ def _operator_sub_2_lower(shim_stream, shim_obj):
     @lower(operator.sub, _type___nv_bfloat162, _type___nv_bfloat162)
     def impl(context, builder, sig, args):
         context._external_linkage.add(shim_obj)
+        shim_stream.write(shim_raw_str)
         ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
         for ptr, ty, arg in zip(ptrs, sig.args, args):
             builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
@@ -4012,7 +4012,6 @@ def _operator_mul_2_lower(shim_stream, shim_obj):
         return 0;
     }
         """
-    shim_stream.write(shim_raw_str)
 
     operator_mul_2 = declare_device(
         "operator_mul_2",
@@ -4027,6 +4026,7 @@ def _operator_mul_2_lower(shim_stream, shim_obj):
     @lower(operator.mul, _type___nv_bfloat162, _type___nv_bfloat162)
     def impl(context, builder, sig, args):
         context._external_linkage.add(shim_obj)
+        shim_stream.write(shim_raw_str)
         ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
         for ptr, ty, arg in zip(ptrs, sig.args, args):
             builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
@@ -4054,7 +4054,6 @@ def _operator_truediv_2_lower(shim_stream, shim_obj):
         return 0;
     }
         """
-    shim_stream.write(shim_raw_str)
 
     operator_truediv_2 = declare_device(
         "operator_truediv_2",
@@ -4069,6 +4068,7 @@ def _operator_truediv_2_lower(shim_stream, shim_obj):
     @lower(operator.truediv, _type___nv_bfloat162, _type___nv_bfloat162)
     def impl(context, builder, sig, args):
         context._external_linkage.add(shim_obj)
+        shim_stream.write(shim_raw_str)
         ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
         for ptr, ty, arg in zip(ptrs, sig.args, args):
             builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
@@ -4096,7 +4096,6 @@ def _operator_iadd_2_lower(shim_stream, shim_obj):
         return 0;
     }
         """
-    shim_stream.write(shim_raw_str)
 
     operator_iadd_2 = declare_device(
         "operator_iadd_2",
@@ -4111,6 +4110,7 @@ def _operator_iadd_2_lower(shim_stream, shim_obj):
     @lower(operator.iadd, _type___nv_bfloat162, _type___nv_bfloat162)
     def impl(context, builder, sig, args):
         context._external_linkage.add(shim_obj)
+        shim_stream.write(shim_raw_str)
         ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
         for ptr, ty, arg in zip(ptrs, sig.args, args):
             builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
@@ -4138,7 +4138,6 @@ def _operator_isub_2_lower(shim_stream, shim_obj):
         return 0;
     }
         """
-    shim_stream.write(shim_raw_str)
 
     operator_isub_2 = declare_device(
         "operator_isub_2",
@@ -4153,6 +4152,7 @@ def _operator_isub_2_lower(shim_stream, shim_obj):
     @lower(operator.isub, _type___nv_bfloat162, _type___nv_bfloat162)
     def impl(context, builder, sig, args):
         context._external_linkage.add(shim_obj)
+        shim_stream.write(shim_raw_str)
         ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
         for ptr, ty, arg in zip(ptrs, sig.args, args):
             builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
@@ -4180,7 +4180,6 @@ def _operator_imul_2_lower(shim_stream, shim_obj):
         return 0;
     }
         """
-    shim_stream.write(shim_raw_str)
 
     operator_imul_2 = declare_device(
         "operator_imul_2",
@@ -4195,6 +4194,7 @@ def _operator_imul_2_lower(shim_stream, shim_obj):
     @lower(operator.imul, _type___nv_bfloat162, _type___nv_bfloat162)
     def impl(context, builder, sig, args):
         context._external_linkage.add(shim_obj)
+        shim_stream.write(shim_raw_str)
         ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
         for ptr, ty, arg in zip(ptrs, sig.args, args):
             builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
@@ -4222,7 +4222,6 @@ def _operator_itruediv_2_lower(shim_stream, shim_obj):
         return 0;
     }
         """
-    shim_stream.write(shim_raw_str)
 
     operator_itruediv_2 = declare_device(
         "operator_itruediv_2",
@@ -4237,6 +4236,7 @@ def _operator_itruediv_2_lower(shim_stream, shim_obj):
     @lower(operator.itruediv, _type___nv_bfloat162, _type___nv_bfloat162)
     def impl(context, builder, sig, args):
         context._external_linkage.add(shim_obj)
+        shim_stream.write(shim_raw_str)
         ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
         for ptr, ty, arg in zip(ptrs, sig.args, args):
             builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
@@ -4264,7 +4264,6 @@ def _operator_pos_2_lower(shim_stream, shim_obj):
         return 0;
     }
         """
-    shim_stream.write(shim_raw_str)
 
     operator_pos_2 = declare_device(
         "operator_pos_2", _type___nv_bfloat162(CPointer(_type___nv_bfloat162))
@@ -4276,6 +4275,7 @@ def _operator_pos_2_lower(shim_stream, shim_obj):
     @lower(operator.pos, _type___nv_bfloat162)
     def impl(context, builder, sig, args):
         context._external_linkage.add(shim_obj)
+        shim_stream.write(shim_raw_str)
         ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
         for ptr, ty, arg in zip(ptrs, sig.args, args):
             builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
@@ -4299,7 +4299,6 @@ def _operator_neg_2_lower(shim_stream, shim_obj):
         return 0;
     }
         """
-    shim_stream.write(shim_raw_str)
 
     operator_neg_2 = declare_device(
         "operator_neg_2", _type___nv_bfloat162(CPointer(_type___nv_bfloat162))
@@ -4311,6 +4310,7 @@ def _operator_neg_2_lower(shim_stream, shim_obj):
     @lower(operator.neg, _type___nv_bfloat162)
     def impl(context, builder, sig, args):
         context._external_linkage.add(shim_obj)
+        shim_stream.write(shim_raw_str)
         ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
         for ptr, ty, arg in zip(ptrs, sig.args, args):
             builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
@@ -4334,7 +4334,6 @@ def _operator_eq_2_lower(shim_stream, shim_obj):
         return 0;
     }
         """
-    shim_stream.write(shim_raw_str)
 
     operator_eq_2 = declare_device(
         "operator_eq_2",
@@ -4347,6 +4346,7 @@ def _operator_eq_2_lower(shim_stream, shim_obj):
     @lower(operator.eq, _type___nv_bfloat162, _type___nv_bfloat162)
     def impl(context, builder, sig, args):
         context._external_linkage.add(shim_obj)
+        shim_stream.write(shim_raw_str)
         ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
         for ptr, ty, arg in zip(ptrs, sig.args, args):
             builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
@@ -4374,7 +4374,6 @@ def _operator_ne_2_lower(shim_stream, shim_obj):
         return 0;
     }
         """
-    shim_stream.write(shim_raw_str)
 
     operator_ne_2 = declare_device(
         "operator_ne_2",
@@ -4387,6 +4386,7 @@ def _operator_ne_2_lower(shim_stream, shim_obj):
     @lower(operator.ne, _type___nv_bfloat162, _type___nv_bfloat162)
     def impl(context, builder, sig, args):
         context._external_linkage.add(shim_obj)
+        shim_stream.write(shim_raw_str)
         ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
         for ptr, ty, arg in zip(ptrs, sig.args, args):
             builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
@@ -4414,7 +4414,6 @@ def _operator_gt_2_lower(shim_stream, shim_obj):
         return 0;
     }
         """
-    shim_stream.write(shim_raw_str)
 
     operator_gt_2 = declare_device(
         "operator_gt_2",
@@ -4427,6 +4426,7 @@ def _operator_gt_2_lower(shim_stream, shim_obj):
     @lower(operator.gt, _type___nv_bfloat162, _type___nv_bfloat162)
     def impl(context, builder, sig, args):
         context._external_linkage.add(shim_obj)
+        shim_stream.write(shim_raw_str)
         ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
         for ptr, ty, arg in zip(ptrs, sig.args, args):
             builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
@@ -4454,7 +4454,6 @@ def _operator_lt_2_lower(shim_stream, shim_obj):
         return 0;
     }
         """
-    shim_stream.write(shim_raw_str)
 
     operator_lt_2 = declare_device(
         "operator_lt_2",
@@ -4467,6 +4466,7 @@ def _operator_lt_2_lower(shim_stream, shim_obj):
     @lower(operator.lt, _type___nv_bfloat162, _type___nv_bfloat162)
     def impl(context, builder, sig, args):
         context._external_linkage.add(shim_obj)
+        shim_stream.write(shim_raw_str)
         ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
         for ptr, ty, arg in zip(ptrs, sig.args, args):
             builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
@@ -4494,7 +4494,6 @@ def _operator_ge_2_lower(shim_stream, shim_obj):
         return 0;
     }
         """
-    shim_stream.write(shim_raw_str)
 
     operator_ge_2 = declare_device(
         "operator_ge_2",
@@ -4507,6 +4506,7 @@ def _operator_ge_2_lower(shim_stream, shim_obj):
     @lower(operator.ge, _type___nv_bfloat162, _type___nv_bfloat162)
     def impl(context, builder, sig, args):
         context._external_linkage.add(shim_obj)
+        shim_stream.write(shim_raw_str)
         ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
         for ptr, ty, arg in zip(ptrs, sig.args, args):
             builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
@@ -4534,7 +4534,6 @@ def _operator_le_2_lower(shim_stream, shim_obj):
         return 0;
     }
         """
-    shim_stream.write(shim_raw_str)
 
     operator_le_2 = declare_device(
         "operator_le_2",
@@ -4547,6 +4546,7 @@ def _operator_le_2_lower(shim_stream, shim_obj):
     @lower(operator.le, _type___nv_bfloat162, _type___nv_bfloat162)
     def impl(context, builder, sig, args):
         context._external_linkage.add(shim_obj)
+        shim_stream.write(shim_raw_str)
         ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
         for ptr, ty, arg in zip(ptrs, sig.args, args):
             builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
