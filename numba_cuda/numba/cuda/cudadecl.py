@@ -53,7 +53,7 @@ class Cuda_array_decl(CallableTemplate):
                 layout = "C"
             else:
                 if not isinstance(order, types.StringLiteral):
-                    msg = "layout must be a literal string)"
+                    msg = "'order' must be a literal string."
                     raise RequireLiteralValue(msg)
                 layout = order.literal_value
 
