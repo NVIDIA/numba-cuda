@@ -33,11 +33,11 @@ class TestCudaInline(CUDATestCase):
         pat = r"call [a-zA-Z0-9]* @"
         match = re.compile(pat).search(llvm_ir)
 
-        if inline == "always":
+        if inline == "always" or inline is True:
             # check that call was inlined
             self.assertIsNone(match, msg=llvm_ir)
         else:
-            assert inline == "never"
+            assert inline == "never" or inline is False
 
             # check that call was not inlined
             self.assertIsNotNone(match, msg=llvm_ir)
@@ -47,6 +47,12 @@ class TestCudaInline(CUDATestCase):
 
     def test_call_inline_never(self):
         self._test_call_inline("never")
+
+    def test_call_inline_true(self):
+        self._test_call_inline(True)
+
+    def test_call_inline_false(self):
+        self._test_call_inline(False)
 
 
 if __name__ == "__main__":
