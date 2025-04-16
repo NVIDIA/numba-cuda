@@ -8,8 +8,7 @@ from numba.np import numpy_support as nps
 
 from .extensions_usecases import test_struct_model_type, TestStruct
 
-recordwith2darray = np.dtype([('i', np.int32),
-                              ('j', np.float32, (3, 2))])
+recordwith2darray = np.dtype([("i", np.int32), ("j", np.float32, (3, 2))])
 
 
 class TestSharedMemoryIssue(CUDATestCase):
@@ -42,7 +41,6 @@ class TestSharedMemoryIssue(CUDATestCase):
         self._check_shared_array_size((2, 3), 6)
 
     def test_issue_1051_shared_size_broken_3d(self):
-
         self._check_shared_array_size((2, 3, 4), 24)
 
     def _check_shared_array_size_fp16(self, shape, expected, ty):
@@ -71,8 +69,9 @@ class TestSharedMemoryIssue(CUDATestCase):
 
         @cuda.jit
         def costs_func(d_block_costs):
-            s_features = cuda.shared.array((examples_per_block, num_weights),
-                                           float64)
+            s_features = cuda.shared.array(
+                (examples_per_block, num_weights), float64
+            )
             s_initialcost = cuda.shared.array(7, float64)  # Bug
 
             threadIdx = cuda.threadIdx.x
@@ -364,7 +363,7 @@ class TestSharedMemory(CUDATestCase):
         def sm_slice_copy(x, y, chunksize):
             dynsmem = cuda.shared.array(0, dtype=dt)
             sm1 = dynsmem[0:chunksize]
-            sm2 = dynsmem[chunksize:chunksize * 2]
+            sm2 = dynsmem[chunksize : chunksize * 2]
 
             tx = cuda.threadIdx.x
             bx = cuda.blockIdx.x
@@ -396,14 +395,16 @@ class TestSharedMemory(CUDATestCase):
         rgx = ".*Cannot infer the type of variable 'arr'.*"
 
         def unsupported_type():
-            arr = cuda.shared.array(10, dtype=np.dtype('O')) # noqa: F841
+            arr = cuda.shared.array(10, dtype=np.dtype("O"))  # noqa: F841
+
         with self.assertRaisesRegex(TypingError, rgx):
             cuda.jit(void())(unsupported_type)
 
         rgx = ".*Invalid NumPy dtype specified: 'int33'.*"
 
         def invalid_string_type():
-            arr = cuda.shared.array(10, dtype='int33') # noqa: F841
+            arr = cuda.shared.array(10, dtype="int33")  # noqa: F841
+
         with self.assertRaisesRegex(TypingError, rgx):
             cuda.jit(void())(invalid_string_type)
 
@@ -443,11 +444,11 @@ class TestSharedMemory(CUDATestCase):
         # Test col-major and row-major layout for the array
         @cuda.jit
         def linear_write(x):
-            dynsmem = cuda.shared.array((2,2), dtype=int32, layout=layout)
-            dynsmem[0,0] = 1
-            dynsmem[0,1] = 2
-            dynsmem[1,0] = 3
-            dynsmem[1,1] = 4
+            dynsmem = cuda.shared.array((2, 2), dtype=int32, layout=layout)
+            dynsmem[0, 0] = 1
+            dynsmem[0, 1] = 2
+            dynsmem[1, 0] = 3
+            dynsmem[1, 1] = 4
 
             dynsmem = dynsmem.reshape(4)
             x[0] = dynsmem[0]
@@ -460,11 +461,11 @@ class TestSharedMemory(CUDATestCase):
         self._test_dynshared_slice(linear_write, arr, expected)
 
     def test_layout_c(self):
-        self._test_layout('C', [1, 2, 3, 4])
+        self._test_layout("C", [1, 2, 3, 4])
 
     def test_layout_f(self):
-        self._test_layout('F', [1, 3, 2, 4])
+        self._test_layout("F", [1, 3, 2, 4])
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

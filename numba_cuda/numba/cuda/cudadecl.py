@@ -1,15 +1,23 @@
 import operator
 from numba.core import types
-from numba.core.typing.npydecl import (parse_dtype, parse_shape,
-                                       register_number_classes,
-                                       register_numpy_ufunc,
-                                       trigonometric_functions,
-                                       comparison_functions,
-                                       math_operations,
-                                       bit_twiddling_functions)
-from numba.core.typing.templates import (AttributeTemplate, ConcreteTemplate,
-                                         AbstractTemplate, CallableTemplate,
-                                         signature, Registry)
+from numba.core.typing.npydecl import (
+    parse_dtype,
+    parse_shape,
+    register_number_classes,
+    register_numpy_ufunc,
+    trigonometric_functions,
+    comparison_functions,
+    math_operations,
+    bit_twiddling_functions,
+)
+from numba.core.typing.templates import (
+    AttributeTemplate,
+    ConcreteTemplate,
+    AbstractTemplate,
+    CallableTemplate,
+    signature,
+    Registry,
+)
 from numba.cuda.types import dim3
 from numba.core.typeconv import Conversion
 from numba import cuda
@@ -26,22 +34,22 @@ register_number_classes(register_global)
 class Cuda_array_decl(CallableTemplate):
     def generic(self):
         def typer(shape, dtype, layout=None):
-
             # Only integer literals and tuples of integer literals are valid
             # shapes
             if isinstance(shape, types.Integer):
                 if not isinstance(shape, types.IntegerLiteral):
                     return None
             elif isinstance(shape, (types.Tuple, types.UniTuple)):
-                if any([not isinstance(s, types.IntegerLiteral)
-                        for s in shape]):
+                if any(
+                    [not isinstance(s, types.IntegerLiteral) for s in shape]
+                ):
                     return None
             else:
                 return None
-            
+
             # Only string literals are valid layouts
             if layout in (None, types.none):
-                layout_str = 'C'
+                layout_str = "C"
             else:
                 if not isinstance(layout, types.StringLiteral):
                     return None
@@ -72,6 +80,7 @@ class Cuda_const_array_like(CallableTemplate):
     def generic(self):
         def typer(ndarray):
             return ndarray
+
         return typer
 
 
@@ -103,22 +112,49 @@ class Cuda_syncwarp(ConcreteTemplate):
 class Cuda_shfl_sync_intrinsic(ConcreteTemplate):
     key = cuda.shfl_sync_intrinsic
     cases = [
-        signature(types.Tuple((types.i4, types.b1)),
-                  types.i4, types.i4, types.i4, types.i4, types.i4),
-        signature(types.Tuple((types.i8, types.b1)),
-                  types.i4, types.i4, types.i8, types.i4, types.i4),
-        signature(types.Tuple((types.f4, types.b1)),
-                  types.i4, types.i4, types.f4, types.i4, types.i4),
-        signature(types.Tuple((types.f8, types.b1)),
-                  types.i4, types.i4, types.f8, types.i4, types.i4),
+        signature(
+            types.Tuple((types.i4, types.b1)),
+            types.i4,
+            types.i4,
+            types.i4,
+            types.i4,
+            types.i4,
+        ),
+        signature(
+            types.Tuple((types.i8, types.b1)),
+            types.i4,
+            types.i4,
+            types.i8,
+            types.i4,
+            types.i4,
+        ),
+        signature(
+            types.Tuple((types.f4, types.b1)),
+            types.i4,
+            types.i4,
+            types.f4,
+            types.i4,
+            types.i4,
+        ),
+        signature(
+            types.Tuple((types.f8, types.b1)),
+            types.i4,
+            types.i4,
+            types.f8,
+            types.i4,
+            types.i4,
+        ),
     ]
 
 
 @register
 class Cuda_vote_sync_intrinsic(ConcreteTemplate):
     key = cuda.vote_sync_intrinsic
-    cases = [signature(types.Tuple((types.i4, types.b1)),
-                       types.i4, types.i4, types.b1)]
+    cases = [
+        signature(
+            types.Tuple((types.i4, types.b1)), types.i4, types.i4, types.b1
+        )
+    ]
 
 
 @register
@@ -161,6 +197,7 @@ class Cuda_popc(ConcreteTemplate):
     Supported types from `llvm.popc`
     [here](http://docs.nvidia.com/cuda/nvvm-ir-spec/index.html#bit-manipulations-intrinics)
     """
+
     key = cuda.popc
     cases = [
         signature(types.int8, types.int8),
@@ -180,6 +217,7 @@ class Cuda_fma(ConcreteTemplate):
     Supported types from `llvm.fma`
     [here](https://docs.nvidia.com/cuda/nvvm-ir-spec/index.html#standard-c-library-intrinics)
     """
+
     key = cuda.fma
     cases = [
         signature(types.float32, types.float32, types.float32, types.float32),
@@ -197,7 +235,6 @@ class Cuda_hfma(ConcreteTemplate):
 
 @register
 class Cuda_cbrt(ConcreteTemplate):
-
     key = cuda.cbrt
     cases = [
         signature(types.float32, types.float32),
@@ -220,6 +257,7 @@ class Cuda_clz(ConcreteTemplate):
     Supported types from `llvm.ctlz`
     [here](http://docs.nvidia.com/cuda/nvvm-ir-spec/index.html#bit-manipulations-intrinics)
     """
+
     key = cuda.clz
     cases = [
         signature(types.int8, types.int8),
@@ -239,6 +277,7 @@ class Cuda_ffs(ConcreteTemplate):
     Supported types from `llvm.cttz`
     [here](http://docs.nvidia.com/cuda/nvvm-ir-spec/index.html#bit-manipulations-intrinics)
     """
+
     key = cuda.ffs
     cases = [
         signature(types.uint32, types.int8),
@@ -262,10 +301,16 @@ class Cuda_selp(AbstractTemplate):
 
         # per docs
         # http://docs.nvidia.com/cuda/parallel-thread-execution/index.html#comparison-and-selection-instructions-selp
-        supported_types = (types.float64, types.float32,
-                           types.int16, types.uint16,
-                           types.int32, types.uint32,
-                           types.int64, types.uint64)
+        supported_types = (
+            types.float64,
+            types.float32,
+            types.int16,
+            types.uint16,
+            types.int32,
+            types.uint32,
+            types.int64,
+            types.uint64,
+        )
 
         if a != b or a not in supported_types:
             return
@@ -306,7 +351,6 @@ def _genfp16_binary(l_key):
 
 @register_global(float)
 class Float(AbstractTemplate):
-
     def generic(self, args, kws):
         assert not kws
 
@@ -321,10 +365,10 @@ def _genfp16_binary_comparison(l_key):
     class Cuda_fp16_cmp(ConcreteTemplate):
         key = l_key
 
-        cases = [
-            signature(types.b1, types.float16, types.float16)
-        ]
+        cases = [signature(types.b1, types.float16, types.float16)]
+
     return Cuda_fp16_cmp
+
 
 # If multiple ConcreteTemplates provide typing for a single function, then
 # function resolution will pick the first compatible typing it finds even if it
@@ -348,9 +392,10 @@ def _fp16_binary_operator(l_key, retty):
         def generic(self, args, kws):
             assert not kws
 
-            if len(args) == 2 and \
-                    (args[0] == types.float16 or args[1] == types.float16):
-                if (args[0] == types.float16):
+            if len(args) == 2 and (
+                args[0] == types.float16 or args[1] == types.float16
+            ):
+                if args[0] == types.float16:
                     convertible = self.context.can_convert(args[1], args[0])
                 else:
                     convertible = self.context.can_convert(args[0], args[1])
@@ -363,9 +408,11 @@ def _fp16_binary_operator(l_key, retty):
                 # 3. fp16 to int8 (safe conversion) -
                 #  - Conversion.safe
 
-                if (convertible == Conversion.exact) or \
-                   (convertible == Conversion.promote) or \
-                   (convertible == Conversion.safe):
+                if (
+                    (convertible == Conversion.exact)
+                    or (convertible == Conversion.promote)
+                    or (convertible == Conversion.safe)
+                ):
                     return signature(retty, types.float16, types.float16)
 
     return Cuda_fp16_operator
@@ -412,38 +459,42 @@ _genfp16_binary_operator(operator.itruediv)
 
 def _resolve_wrapped_unary(fname):
     link = tuple()
-    decl = declare_device_function_template(f'__numba_wrapper_{fname}',
-                                            types.float16,
-                                            (types.float16,),
-                                            link)
+    decl = declare_device_function_template(
+        f"__numba_wrapper_{fname}", types.float16, (types.float16,), link
+    )
     return types.Function(decl)
 
 
 def _resolve_wrapped_binary(fname):
     link = tuple()
-    decl = declare_device_function_template(f'__numba_wrapper_{fname}',
-                                            types.float16,
-                                            (types.float16, types.float16,),
-                                            link)
+    decl = declare_device_function_template(
+        f"__numba_wrapper_{fname}",
+        types.float16,
+        (
+            types.float16,
+            types.float16,
+        ),
+        link,
+    )
     return types.Function(decl)
 
 
-hsin_device = _resolve_wrapped_unary('hsin')
-hcos_device = _resolve_wrapped_unary('hcos')
-hlog_device = _resolve_wrapped_unary('hlog')
-hlog10_device = _resolve_wrapped_unary('hlog10')
-hlog2_device = _resolve_wrapped_unary('hlog2')
-hexp_device = _resolve_wrapped_unary('hexp')
-hexp10_device = _resolve_wrapped_unary('hexp10')
-hexp2_device = _resolve_wrapped_unary('hexp2')
-hsqrt_device = _resolve_wrapped_unary('hsqrt')
-hrsqrt_device = _resolve_wrapped_unary('hrsqrt')
-hfloor_device = _resolve_wrapped_unary('hfloor')
-hceil_device = _resolve_wrapped_unary('hceil')
-hrcp_device = _resolve_wrapped_unary('hrcp')
-hrint_device = _resolve_wrapped_unary('hrint')
-htrunc_device = _resolve_wrapped_unary('htrunc')
-hdiv_device = _resolve_wrapped_binary('hdiv')
+hsin_device = _resolve_wrapped_unary("hsin")
+hcos_device = _resolve_wrapped_unary("hcos")
+hlog_device = _resolve_wrapped_unary("hlog")
+hlog10_device = _resolve_wrapped_unary("hlog10")
+hlog2_device = _resolve_wrapped_unary("hlog2")
+hexp_device = _resolve_wrapped_unary("hexp")
+hexp10_device = _resolve_wrapped_unary("hexp10")
+hexp2_device = _resolve_wrapped_unary("hexp2")
+hsqrt_device = _resolve_wrapped_unary("hsqrt")
+hrsqrt_device = _resolve_wrapped_unary("hrsqrt")
+hfloor_device = _resolve_wrapped_unary("hfloor")
+hceil_device = _resolve_wrapped_unary("hceil")
+hrcp_device = _resolve_wrapped_unary("hrcp")
+hrint_device = _resolve_wrapped_unary("hrint")
+htrunc_device = _resolve_wrapped_unary("htrunc")
+hdiv_device = _resolve_wrapped_binary("hdiv")
 
 
 # generate atomic operations
@@ -463,15 +514,20 @@ def _gen(l_key, supported_types):
                 return signature(ary.dtype, ary, types.intp, ary.dtype)
             elif ary.ndim > 1:
                 return signature(ary.dtype, ary, idx, ary.dtype)
+
     return Cuda_atomic
 
 
-all_numba_types = (types.float64, types.float32,
-                   types.int32, types.uint32,
-                   types.int64, types.uint64)
+all_numba_types = (
+    types.float64,
+    types.float32,
+    types.int32,
+    types.uint32,
+    types.int64,
+    types.uint64,
+)
 
-integer_numba_types = (types.int32, types.uint32,
-                       types.int64, types.uint64)
+integer_numba_types = (types.int32, types.uint32, types.int64, types.uint64)
 
 unsigned_int_numba_types = (types.uint32, types.uint64)
 
@@ -819,5 +875,5 @@ for func in bit_twiddling_functions:
     register_numpy_ufunc(func, register_global)
 
 for func in math_operations:
-    if func in ('log', 'log2', 'log10'):
+    if func in ("log", "log2", "log10"):
         register_numpy_ufunc(func, register_global)

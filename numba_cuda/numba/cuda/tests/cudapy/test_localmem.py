@@ -31,32 +31,31 @@ def culocal1tuple(A, B):
         B[i] = C[i]
 
 
-@skip_on_cudasim('PTX inspection not available in cudasim')
+@skip_on_cudasim("PTX inspection not available in cudasim")
 class TestCudaLocalMem(CUDATestCase):
     def test_local_array(self):
         sig = (int32[:], int32[:])
         jculocal = cuda.jit(sig)(culocal)
-        self.assertTrue('.local' in jculocal.inspect_asm(sig))
-        A = np.arange(1000, dtype='int32')
+        self.assertTrue(".local" in jculocal.inspect_asm(sig))
+        A = np.arange(1000, dtype="int32")
         B = np.zeros_like(A)
         jculocal[1, 1](A, B)
         self.assertTrue(np.all(A == B))
 
     def test_local_array_1_tuple(self):
-        """Ensure that local arrays can be constructed with 1-tuple shape
-        """
-        jculocal = cuda.jit('void(int32[:], int32[:])')(culocal1tuple)
+        """Ensure that local arrays can be constructed with 1-tuple shape"""
+        jculocal = cuda.jit("void(int32[:], int32[:])")(culocal1tuple)
         # Don't check if .local is in the ptx because the optimizer
         # may reduce it to registers.
-        A = np.arange(5, dtype='int32')
+        A = np.arange(5, dtype="int32")
         B = np.zeros_like(A)
         jculocal[1, 1](A, B)
         self.assertTrue(np.all(A == B))
 
     def test_local_array_complex(self):
-        sig = 'void(complex128[:], complex128[:])'
+        sig = "void(complex128[:], complex128[:])"
         jculocalcomplex = cuda.jit(sig)(culocalcomplex)
-        A = (np.arange(100, dtype='complex128') - 1) / 2j
+        A = (np.arange(100, dtype="complex128") - 1) / 2j
         B = np.zeros_like(A)
         jculocalcomplex[1, 1](A, B)
         self.assertTrue(np.all(A == B))
@@ -64,7 +63,7 @@ class TestCudaLocalMem(CUDATestCase):
     def check_dtype(self, f, dtype):
         # Find the typing of the dtype argument to cuda.local.array
         annotation = next(iter(f.overloads.values()))._type_annotation
-        l_dtype = annotation.typemap['l'].dtype
+        l_dtype = annotation.typemap["l"].dtype
         # Ensure that the typing is correct
         self.assertEqual(l_dtype, dtype)
 
@@ -95,7 +94,7 @@ class TestCudaLocalMem(CUDATestCase):
         # Check that strings can be used to specify the dtype of a local array
         @cuda.jit(void(int32[::1]))
         def f(x):
-            l = cuda.local.array(10, dtype='int32')
+            l = cuda.local.array(10, dtype="int32")
             l[0] = x[0]
             x[0] = l[0]
 
@@ -106,9 +105,10 @@ class TestCudaLocalMem(CUDATestCase):
         # Check that strings of invalid dtypes cause a typing error
         re = ".*Invalid NumPy dtype specified: 'int33'.*"
         with self.assertRaisesRegex(TypingError, re):
+
             @cuda.jit(void(int32[::1]))
             def f(x):
-                l = cuda.local.array(10, dtype='int33')
+                l = cuda.local.array(10, dtype="int33")
                 l[0] = x[0]
                 x[0] = l[0]
 
@@ -163,11 +163,11 @@ class TestCudaLocalMem(CUDATestCase):
         # Test col-major and row-major layout for the array
         @cuda.jit
         def linear_write(x):
-            arr = cuda.local.array((2,2), dtype=int32, layout=layout)
-            arr[0,0] = 1
-            arr[0,1] = 2
-            arr[1,0] = 3
-            arr[1,1] = 4
+            arr = cuda.local.array((2, 2), dtype=int32, layout=layout)
+            arr[0, 0] = 1
+            arr[0, 1] = 2
+            arr[1, 0] = 3
+            arr[1, 1] = 4
 
             arr = arr.reshape(4)
             x[0] = arr[0]
@@ -182,11 +182,11 @@ class TestCudaLocalMem(CUDATestCase):
         np.testing.assert_array_equal(expected, result)
 
     def test_layout_c(self):
-        self._test_layout('C', [1, 2, 3, 4])
+        self._test_layout("C", [1, 2, 3, 4])
 
     def test_layout_f(self):
-        self._test_layout('F', [1, 3, 2, 4])
+        self._test_layout("F", [1, 3, 2, 4])
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()
