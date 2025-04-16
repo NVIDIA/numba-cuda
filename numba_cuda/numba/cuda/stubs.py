@@ -131,10 +131,13 @@ class shared(Stub):
     @stub_function
     def array(shape, dtype, order="C"):
         """
-        Allocate a shared array of the given *shape* and *type*. *shape* is
-        either an integer or a tuple of integers representing the array's
-        dimensions.  *type* is a :ref:`Numba type <numba-types>` of the
-        elements needing to be stored in the array.
+        Allocate a shared array of the given *shape*, *dtype* and *order*.
+        *shape* is either an integer or a tuple of integers representing the
+        array's dimensions. *dtype* is a :ref:`Numba type <numba-types>` of the
+        elements needing to be stored in the array. *order* is a string with
+        possible values {"C", "F"} that defines how to store multi-dimensional
+        data in row-major (C-style) or column-major (Fortran-style) order in
+        memory.
 
         The returned array-like object can be read and written to like any
         normal device array (e.g. through indexing).
@@ -151,10 +154,17 @@ class local(Stub):
     @stub_function
     def array(shape, dtype, order="C"):
         """
-        Allocate a local array of the given *shape* and *type*. The array is
-        private to the current thread, and resides in global memory. An
+        Allocate a local array of the given *shape*, *dtype* and *order*. The
+        array is private to the current thread, and resides in global memory. An
         array-like object is returned which can be read and written to like any
-        standard array (e.g.  through indexing).
+        standard array (e.g. through indexing).
+
+        *shape* is either an integer or a tuple of integers representing the
+        array's dimensions. *dtype* is a :ref:`Numba type <numba-types>` of the
+        elements needing to be stored in the array. *order* is a string with
+        possible values {"C", "F"} that defines how to store multi-dimensional
+        data in row-major (C-style) or column-major (Fortran-style) order in
+        memory.
         """
 
 
