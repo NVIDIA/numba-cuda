@@ -106,7 +106,7 @@ def cuda_shared_array_integer(context, builder, sig, args):
         symbol_name=_get_unique_smem_id("_cudapy_smem"),
         addrspace=nvvm.ADDRSPACE_SHARED,
         can_dynsized=True,
-        layout=layout,
+        order=layout,
     )
 
 
@@ -126,7 +126,7 @@ def cuda_shared_array_tuple(context, builder, sig, args):
         symbol_name=_get_unique_smem_id("_cudapy_smem"),
         addrspace=nvvm.ADDRSPACE_SHARED,
         can_dynsized=True,
-        layout=layout,
+        order=layout,
     )
 
 
@@ -144,7 +144,7 @@ def cuda_local_array_integer(context, builder, sig, args):
         symbol_name="_cudapy_lmem",
         addrspace=nvvm.ADDRSPACE_LOCAL,
         can_dynsized=False,
-        layout=layout,
+        order=layout,
     )
 
 
@@ -155,6 +155,7 @@ def cuda_local_array_integer(context, builder, sig, args):
 def ptx_lmem_alloc_array(context, builder, sig, args):
     shape = [s.literal_value for s in sig.args[0]]
     dtype = parse_dtype(sig.args[1])
+    layout = sig.return_type.layout
     return _generic_array(
         context,
         builder,
@@ -163,6 +164,7 @@ def ptx_lmem_alloc_array(context, builder, sig, args):
         symbol_name="_cudapy_lmem",
         addrspace=nvvm.ADDRSPACE_LOCAL,
         can_dynsized=False,
+        order=layout,
     )
 
 
@@ -1041,7 +1043,14 @@ def ptx_nanosleep(context, builder, sig, args):
 
 
 def _generic_array(
-    context, builder, shape, dtype, symbol_name, addrspace, can_dynsized=False
+    context,
+    builder,
+    shape,
+    dtype,
+    symbol_name,
+    addrspace,
+    can_dynsized=False,
+    order="C",
 ):
     elemcount = reduce(operator.mul, shape, 1)
 
@@ -1135,7 +1144,7 @@ def _generic_array(
 
     # Create array object
     ndim = len(shape)
-    aryty = types.Array(dtype=dtype, ndim=ndim, layout="C")
+    aryty = types.Array(dtype=dtype, ndim=ndim, layout=order)
     ary = context.make_array(aryty)(context, builder)
 
     context.populate_array(

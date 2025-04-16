@@ -440,11 +440,11 @@ class TestSharedMemory(CUDATestCase):
         for i, y in enumerate(arry):
             self.assertEqual(y, (nthreads - i - 1) * 2)
 
-    def _test_layout(self, layout, expected_linear):
+    def _test_layout(self, order, expected_linear):
         # Test col-major and row-major layout for the array
         @cuda.jit
         def linear_write(x):
-            dynsmem = cuda.shared.array((2, 2), dtype=int32, layout=layout)
+            dynsmem = cuda.shared.array((2, 2), dtype=int32, order=order)
             dynsmem[0, 0] = 1
             dynsmem[0, 1] = 2
             dynsmem[1, 0] = 3

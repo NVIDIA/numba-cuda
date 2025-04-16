@@ -129,7 +129,7 @@ class shared(Stub):
     _description_ = "<shared>"
 
     @stub_function
-    def array(shape, dtype, layout="C"):
+    def array(shape, dtype, order="C"):
         """
         Allocate a shared array of the given *shape* and *type*. *shape* is
         either an integer or a tuple of integers representing the array's
@@ -149,7 +149,7 @@ class local(Stub):
     _description_ = "<local>"
 
     @stub_function
-    def array(shape, dtype, layout="C"):
+    def array(shape, dtype, order="C"):
         """
         Allocate a local array of the given *shape* and *type*. The array is
         private to the current thread, and resides in global memory. An
