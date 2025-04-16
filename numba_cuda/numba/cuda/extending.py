@@ -14,6 +14,9 @@ def make_attribute_wrapper(typeclass, struct_attr, python_attr):
     Make an automatic attribute wrapper exposing member named *struct_attr*
     as a read-only attribute named *python_attr*.
     The given *typeclass*'s model must be a StructModel subclass.
+
+    Vendored from numba.core.extending with a change to consider the CUDA data
+    model manager.
     """
     from numba.core.typing.templates import AttributeTemplate
 
