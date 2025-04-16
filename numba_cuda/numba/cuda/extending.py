@@ -38,7 +38,7 @@ def make_attribute_wrapper(typeclass, struct_attr, python_attr):
         model = data_model_manager.lookup(typ)
         if not isinstance(model, StructModel):
             raise TypeError(
-                f"make_struct_attribute_wrapper() needs a type with a StructModel, but got {model}"
+                f"make_attribute_wrapper() needs a type with a StructModel, but got {model}"
             )
         return model.get_member_fe_type(struct_attr)
 
