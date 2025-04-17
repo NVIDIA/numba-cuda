@@ -11,6 +11,10 @@ else
   CTK_PACKAGES="cuda-cccl cuda-nvcc-impl cuda-nvrtc libcurand-dev"
 fi
 
+apt-get update
+apt remove --purge `dpkg --get-selections | grep cuda-nvvm | awk '{print $1}'` -y
+apt remove --purge `dpkg --get-selections | grep cuda-nvrtc | awk '{print $1}'` -y
+
 rapids-logger "Install testing dependencies"
 # TODO: Replace with rapids-dependency-file-generator
 rapids-mamba-retry create -n test \
