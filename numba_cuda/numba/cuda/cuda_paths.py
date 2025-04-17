@@ -104,6 +104,7 @@ def _get_nvrtc_path_decision():
         [
             ("CUDA_HOME", lambda: get_cuda_home("nvrtc")),
             ("Conda environment", get_conda_ctk),
+            ("Conda environment (NVIDIA package)", get_nvidia_cudalib_ctk),
             ("NVIDIA NVCC Wheel", _get_nvrtc_wheel),
             ("System", _get_nvrtc_system_ctk),
         ]
