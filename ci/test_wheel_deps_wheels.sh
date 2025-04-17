@@ -9,6 +9,7 @@ python -m pip install \
     psutil \
     cffi \
     cuda-python \
+    nvidia-cuda-runtime-cu12 \
     nvidia-curand-cu12 \
     nvidia-cuda-nvcc-cu12 \
     nvidia-cuda-nvrtc-cu12 \
