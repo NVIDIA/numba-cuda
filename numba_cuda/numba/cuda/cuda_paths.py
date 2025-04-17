@@ -10,8 +10,6 @@ from numba.misc.findlib import find_lib
 from numba import config
 import ctypes
 
-IS_LINUX = sys.platform == "linux"
-
 _env_path_tuple = namedtuple("_env_path_tuple", ["by", "info"])
 
 SEARCH_PRIORITY = [
@@ -25,10 +23,10 @@ SEARCH_PRIORITY = [
 
 
 def _priority_index(label):
-    try:
+    if label in SEARCH_PRIORITY:
         return SEARCH_PRIORITY.index(label)
-    except ValueError:
-        return float("inf")
+    else:
+        raise ValueError(f"Can't determine search priority for {label}")
 
 
 def _find_first_valid_lazy(options):
@@ -155,16 +153,16 @@ def get_nvrtc_dso_path():
             try:
                 major = get_major_cuda_version()
                 if major == 11:
-                    cu_ver = "11.2" if IS_LINUX else "112"
+                    cu_ver = "11.2" if not IS_WIN32 else "112"
                 elif major == 12:
-                    cu_ver = "12" if IS_LINUX else "120"
+                    cu_ver = "12" if not IS_WIN32 else "120"
                 else:
                     raise NotImplementedError(f"CUDA {major} is not supported")
 
                 return os.path.join(
                     lib_dir,
                     f"libnvrtc.so.{cu_ver}"
-                    if IS_LINUX
+                    if not IS_WIN32
                     else f"nvrtc64_{cu_ver}_0.dll",
                 )
             except RuntimeError:
@@ -275,7 +273,7 @@ def _get_static_cudalib_dir():
 def get_system_ctk(*subdirs):
     """Return path to system-wide cudatoolkit; or, None if it doesn't exist."""
     # Linux?
-    if IS_LINUX:
+    if not IS_WIN32:
         # Is cuda alias to /usr/local/cuda?
         # We are intentionally not getting versioned cuda installation.
         result = os.path.join("/usr/local/cuda", *subdirs)
