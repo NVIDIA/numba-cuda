@@ -222,8 +222,9 @@ def _cuda_home_static_cudalib_path():
 def _get_cudalib_wheel():
     """Get the cudalib path from the NVCC wheel."""
     site_paths = [site.getusersitepackages()] + site.getsitepackages()
+    libdir = not IS_WIN32 and "lib" or "bin"
     for sp in filter(None, site_paths):
-        cudalib_path = Path(sp, "nvidia", "cuda_runtime", "lib")
+        cudalib_path = Path(sp, "nvidia", "cuda_runtime", libdir)
         if cudalib_path.exists():
             return str(cudalib_path)
     return None
@@ -371,8 +372,20 @@ def get_cuda_home(*subdirs):
 
 def _get_nvvm_path():
     by, path = _get_nvvm_path_decision()
+
     if by == "NVIDIA NVCC Wheel":
-        path = os.path.join(path, "libnvvm.so")
+        platform_map = {
+            "linux": "libnvvm.so",
+            "win32": "nvvm64_40_0.dll",
+        }
+
+        for plat, dso_name in platform_map.items():
+            if sys.platform.startswith(plat):
+                break
+        else:
+            raise NotImplementedError("Unsupported platform")
+
+        path = os.path.join(path, dso_name)
     else:
         candidates = find_lib("nvvm", path)
         path = max(candidates) if candidates else None
