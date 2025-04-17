@@ -221,11 +221,22 @@ def _cuda_home_static_cudalib_path():
         return ("lib64",)
 
 
+def _get_cudalib_wheel():
+    """Get the cudalib path from the NVCC wheel."""
+    site_paths = [site.getusersitepackages()] + site.getsitepackages()
+    for sp in filter(None, site_paths):
+        cudalib_path = Path(sp, "nvidia", "cuda_runtime", "lib")
+        if cudalib_path.exists():
+            return str(cudalib_path)
+    return None
+
+
 def _get_cudalib_dir_path_decision():
     options = _build_options(
         [
             ("Conda environment", get_conda_ctk),
             ("Conda environment (NVIDIA package)", get_nvidia_cudalib_ctk),
+            ("NVIDIA NVCC Wheel", _get_cudalib_wheel),
             ("CUDA_HOME", lambda: get_cuda_home(_cudalib_path())),
             ("System", lambda: get_system_ctk(_cudalib_path())),
         ]
