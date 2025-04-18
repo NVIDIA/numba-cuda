@@ -153,17 +153,17 @@ def get_nvrtc_dso_path():
             try:
                 major = get_major_cuda_version()
                 if major == 11:
-                    cu_ver = "11.2" if not IS_WIN32 else "112"
+                    cu_ver = "112" if IS_WIN32 else "11.2"
                 elif major == 12:
-                    cu_ver = "12" if not IS_WIN32 else "120"
+                    cu_ver = "120" if IS_WIN32 else "12"
                 else:
                     raise NotImplementedError(f"CUDA {major} is not supported")
 
                 return os.path.join(
                     lib_dir,
-                    f"libnvrtc.so.{cu_ver}"
-                    if not IS_WIN32
-                    else f"nvrtc64_{cu_ver}_0.dll",
+                    f"nvrtc64_{cu_ver}_0.dll"
+                    if IS_WIN32
+                    else f"libnvrtc.so.{cu_ver}",
                 )
             except RuntimeError:
                 continue
@@ -222,7 +222,7 @@ def _cuda_home_static_cudalib_path():
 def _get_cudalib_wheel():
     """Get the cudalib path from the NVCC wheel."""
     site_paths = [site.getusersitepackages()] + site.getsitepackages()
-    libdir = not IS_WIN32 and "lib" or "bin"
+    libdir = "bin" if IS_WIN32 else "lib"
     for sp in filter(None, site_paths):
         cudalib_path = Path(sp, "nvidia", "cuda_runtime", libdir)
         if cudalib_path.exists():
