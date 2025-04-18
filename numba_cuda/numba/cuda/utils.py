@@ -1,6 +1,7 @@
 import os
 import warnings
 import traceback
+import functools
 
 
 def _readenv(name, ctor, default):
@@ -20,3 +21,9 @@ def _readenv(name, ctor, default):
             RuntimeWarning,
         )
         return default
+
+
+@functools.lru_cache(maxsize=None)
+def cached_file_read(filepath, how="r"):
+    with open(filepath, how) as f:
+        return f.read()
