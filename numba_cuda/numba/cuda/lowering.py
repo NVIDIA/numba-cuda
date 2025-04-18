@@ -28,13 +28,14 @@ class CUDALower(Lower):
                 # Emit debug value for scalar variable
                 sizeof = self.context.get_abi_sizeof(lltype)
                 datamodel = self.context.data_model_manager[fetype]
+                line = self.loc.line if argidx is None else self.defn_loc.line
                 self.debuginfo.update_variable(
                     self.builder,
                     value,
                     name,
                     lltype,
                     sizeof,
-                    self.loc.line,
+                    line,
                     datamodel,
                     argidx,
                 )
