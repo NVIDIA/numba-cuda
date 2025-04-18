@@ -81,7 +81,7 @@ class TestBlackScholes(CUDATestCase):
                 VOLATILITY,
             )
 
-        @cuda.jit(double(double), device=True, inline=True)
+        @cuda.jit(double(double), device=True, inline="always")
         def cnd_cuda(d):
             K = 1.0 / (1.0 + 0.2316419 * math.fabs(d))
             ret_val = (
