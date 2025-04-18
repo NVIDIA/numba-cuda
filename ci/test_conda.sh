@@ -9,7 +9,12 @@ if [ "${CUDA_VER%.*.*}" = "11" ]; then
   CTK_PACKAGES="cudatoolkit"
 else
   CTK_PACKAGES="cuda-cccl cuda-nvcc-impl cuda-nvrtc libcurand-dev"
+  apt-get update
+  apt remove --purge `dpkg --get-selections | grep cuda-nvvm | awk '{print $1}'` -y
+  apt remove --purge `dpkg --get-selections | grep cuda-nvrtc | awk '{print $1}'` -y
 fi
+
+
 
 rapids-logger "Install testing dependencies"
 # TODO: Replace with rapids-dependency-file-generator

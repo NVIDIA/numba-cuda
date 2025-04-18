@@ -50,8 +50,8 @@ def get_cudalib(lib, static=False):
     'libnvvm.so' for 'nvvm') so that we may attempt to load it using the system
     loader's search mechanism.
     """
-    if lib == "nvvm":
-        return get_cuda_paths()["nvvm"].info or _dllnamepattern % "nvvm"
+    if lib in {"nvrtc", "nvvm"}:
+        return get_cuda_paths()[lib].info or _dllnamepattern % lib
     else:
         dir_type = "static_cudalib_dir" if static else "cudalib_dir"
         libdir = get_cuda_paths()[dir_type].info
@@ -92,6 +92,8 @@ def check_static_lib(path):
 def _get_source_variable(lib, static=False):
     if lib == "nvvm":
         return get_cuda_paths()["nvvm"].by
+    elif lib == "nvrtc":
+        return get_cuda_paths()["nvrtc"].by
     elif lib == "libdevice":
         return get_cuda_paths()["libdevice"].by
     elif lib == "include_dir":
