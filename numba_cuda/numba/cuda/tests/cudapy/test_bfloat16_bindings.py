@@ -229,6 +229,22 @@ class Bfloat16Test(CUDATestCase):
 
         np.testing.assert_allclose(arr, [3.14], atol=1e-2)
 
+    def test_use_within_device_func(self):
+        @cuda.jit(device=True)
+        def add_bf16(a, b):
+            return a + b
+
+        @cuda.jit
+        def kernel(arr):
+            a = nv_bfloat16(3.14)
+            b = nv_bfloat16(5)
+            arr[0] = float32(hfloor(add_bf16(a, b)))
+
+        arr = np.zeros(1, np.float32)
+        kernel[1, 1](arr)
+
+        np.testing.assert_allclose(arr, [8], atol=1e-2)
+
 
 if __name__ == "__main__":
     unittest.main()
