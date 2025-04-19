@@ -251,7 +251,7 @@ class _Kernel(serialize.ReduceMixin):
         self._type_annotation = cres.type_annotation
         self._codelibrary = lib
         self.call_helper = cres.call_helper
-        self.compile_metadata = cres.metadata
+        self.metadata = cres.metadata
 
         # The following are referred to by the cache implementation. Note:
         # - There are no referenced environments in CUDA.
@@ -1072,59 +1072,42 @@ class CUDADispatcher(Dispatcher, serialize.ReduceMixin):
 
         Returns the `CompileResult`.
         """
-        with ExitStack() as scope:
-            kernel = None
+        if args not in self.overloads:
+            with self._compiling_counter:
+                debug = self.targetoptions.get("debug")
+                lineinfo = self.targetoptions.get("lineinfo")
+                inline = self.targetoptions.get("inline")
+                fastmath = self.targetoptions.get("fastmath")
 
-            def cb_compiler(dur):
-                if kernel is not None:
-                    self._callback_add_compiler_timer(dur, kernel)
+                nvvm_options = {
+                    "opt": 3 if self.targetoptions.get("opt") else 0,
+                    "fastmath": fastmath,
+                }
 
-            def cb_llvm(dur):
-                if kernel is not None:
-                    self._callback_add_llvm_timer(dur, kernel)
+                if debug:
+                    nvvm_options["g"] = None
 
-            scope.enter_context(
-                ev.install_timer("numba:compiler_lock", cb_compiler)
-            )
-            scope.enter_context(ev.install_timer("numba:llvm_lock", cb_llvm))
-            scope.enter_context(global_compiler_lock)
+                cc = get_current_device().compute_capability
+                cres = compile_cuda(
+                    self.py_func,
+                    return_type,
+                    args,
+                    debug=debug,
+                    lineinfo=lineinfo,
+                    inline=inline,
+                    fastmath=fastmath,
+                    nvvm_options=nvvm_options,
+                    cc=cc,
+                )
+                self.overloads[args] = cres
 
-            if args not in self.overloads:
-                with self._compiling_counter:
-                    debug = self.targetoptions.get("debug")
-                    lineinfo = self.targetoptions.get("lineinfo")
-                    inline = self.targetoptions.get("inline")
-                    fastmath = self.targetoptions.get("fastmath")
+                cres.target_context.insert_user_function(
+                    cres.entry_point, cres.fndesc, [cres.library]
+                )
+        else:
+            cres = self.overloads[args]
 
-                    nvvm_options = {
-                        "opt": 3 if self.targetoptions.get("opt") else 0,
-                        "fastmath": fastmath,
-                    }
-
-                    if debug:
-                        nvvm_options["g"] = None
-
-                    cc = get_current_device().compute_capability
-                    cres = compile_cuda(
-                        self.py_func,
-                        return_type,
-                        args,
-                        debug=debug,
-                        lineinfo=lineinfo,
-                        inline=inline,
-                        fastmath=fastmath,
-                        nvvm_options=nvvm_options,
-                        cc=cc,
-                    )
-                    self.overloads[args] = cres
-
-                    cres.target_context.insert_user_function(
-                        cres.entry_point, cres.fndesc, [cres.library]
-                    )
-            else:
-                cres = self.overloads[args]
-
-            return cres
+        return cres
 
     def add_overload(self, kernel, argtypes):
         c_sig = [a._code for a in argtypes]
@@ -1312,8 +1295,8 @@ class CUDADispatcher(Dispatcher, serialize.ReduceMixin):
         """
         return dict(py_func=self.py_func, targetoptions=self.targetoptions)
 
-    def _callback_add_timer(self, duration, kernel, lock_name):
-        md = kernel.compile_metadata
+    def _callback_add_timer(self, duration, kernel_or_cres, lock_name):
+        md = kernel_or_cres.metadata
         # md can be None when code is loaded from cache
         if md is not None:
             timers = md.setdefault("timers", {})
@@ -1324,22 +1307,23 @@ class CUDADispatcher(Dispatcher, serialize.ReduceMixin):
                 msg = f"'{lock_name} metadata is already defined."
                 raise AssertionError(msg)
 
-    def _callback_add_compiler_timer(self, duration, kernel):
+    def _callback_add_compiler_timer(self, duration, kernel_or_cres):
         return self._callback_add_timer(
-            duration, kernel, lock_name="compiler_lock"
+            duration, kernel_or_cres, lock_name="compiler_lock"
         )
 
-    def _callback_add_llvm_timer(self, duration, kernel):
-        return self._callback_add_timer(duration, kernel, lock_name="llvm_lock")
+    def _callback_add_llvm_timer(self, duration, kernel_or_cres):
+        return self._callback_add_timer(
+            duration, kernel_or_cres, lock_name="llvm_lock"
+        )
 
     def get_metadata(self, signature=None):
         """
         Obtain the compilation metadata for a given signature.
         """
         if signature is not None:
-            return self.overloads[signature].compile_metadata
+            return self.overloads[signature].metadata
         else:
             return dict(
-                (sig, self.overloads[sig].compile_metadata)
-                for sig in self.signatures
+                (sig, self.overloads[sig].metadata) for sig in self.signatures
             )
