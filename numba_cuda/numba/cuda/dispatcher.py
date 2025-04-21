@@ -330,6 +330,7 @@ class _Kernel(serialize.ReduceMixin):
         instance.lineinfo = lineinfo
         instance.call_helper = call_helper
         instance.extensions = extensions
+        instance.metadata = None
         return instance
 
     def _reduce_states(self):
