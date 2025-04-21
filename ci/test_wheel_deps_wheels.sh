@@ -25,15 +25,17 @@ test_dir = root + \"numba/cuda/tests/test_binary_generation/\"
 print(test_dir)
 "
 
-NUMBA_CUDA_TEST_BIN_DIR=$(python -c "$PY_SCRIPT")
-pushd $NUMBA_CUDA_TEST_BIN_DIR
-make
-popd
 
 rapids-logger "Install wheel"
 package=$(realpath wheel/numba_cuda*.whl)
 echo "Package path: $package"
 python -m pip install $package
+
+NUMBA_CUDA_TEST_BIN_DIR=$(python -c "$PY_SCRIPT")
+pushd $NUMBA_CUDA_TEST_BIN_DIR
+make
+popd
+
 
 rapids-logger "Check GPU usage"
 nvidia-smi
