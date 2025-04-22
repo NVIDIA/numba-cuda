@@ -1,3 +1,5 @@
+import re
+
 import numpy as np
 from numba import cuda, int32, int64, float32, float64
 from numba.cuda.testing import unittest, CUDATestCase, skip_on_cudasim
@@ -143,6 +145,33 @@ class TestCudaWarpOperations(CUDATestCase):
         exp = np.arange(nelem, dtype=np.int32) ^ xor
         compiled[1, nelem](ary, xor)
         self.assertTrue(np.all(ary == exp))
+
+    def test_shfl_sync_const_mode_val(self):
+        # Test `mode` argument is constant in shfl_sync calls.
+        # Related to https://github.com/NVIDIA/numba-cuda/pull/231
+        subtest = [
+            (use_shfl_sync_idx, 4),
+            (use_shfl_sync_up, 4),
+            (use_shfl_sync_down, 4),
+            (use_shfl_sync_xor, 16),
+        ]
+
+        args_re = r"\((.*)\)"
+        m = re.compile(args_re)
+
+        for func, value in subtest:
+            compiled = cuda.jit("void(int32[:], int32)")(func)
+            nelem = 32
+            ary = np.empty(nelem, dtype=np.int32)
+            compiled[1, nelem](ary, value)
+            irs = next(iter(compiled.inspect_llvm().values()))
+
+            for ir in irs.split("\n"):
+                if "call" in ir and "llvm.nvvm.shfl.sync.i32" in ir:
+                    args = m.search(ir).group(0)
+                    arglist = args.split(",")
+                    mode_arg = arglist[1]
+                    self.assertNotIn("%", mode_arg)
 
     def test_shfl_sync_types(self):
         types = int32, int64, float32, float64
