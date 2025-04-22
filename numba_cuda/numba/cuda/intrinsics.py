@@ -215,10 +215,53 @@ def integer_bit_count(i):
 def shfl_sync(typingctx, mask, value, src_lane):
     mode_value = 0
     clamp_value = 0x1F
-    return shfl_sync_intrinsic(typingctx, mask, mode_value, src_lane, clamp)
+    return shfl_sync_intrinsic(typingctx, mask, mode_value, value, src_lane,
+                               clamp_value)
 
-
+# @jit(device=True)
 @intrinsic
+def shfl_up_sync(typingctx, mask, value, delta):
+#    """
+#    Shuffles value across the masked warp and returns the value
+#    from (laneid - delta). If this is outside the warp, then the
+#    given value is returned.
+#    """
+    mode_value = 1
+    clamp_value = 0
+    return shfl_sync_intrinsic(typingctx, mask, mode_value, value, delta,
+                               clamp_value)
+#    return numba.cuda.shfl_sync_intrinsic(mask, 1, value, delta, 0)[0]
+#
+#
+# @jit(device=True)
+@intrinsic
+def shfl_down_sync(typingctx, mask, value, delta):
+#    """
+#    Shuffles value across the masked warp and returns the value
+#    from (laneid + delta). If this is outside the warp, then the
+#    given value is returned.
+#    """
+    mode_value = 2
+    clamp_value = 0x1F
+    return shfl_sync_intrinsic(typingctx, mask, mode_value, value, delta,
+                               clamp_value)
+#    return numba.cuda.shfl_sync_intrinsic(mask, 2, value, delta, 0x1F)[0]
+#
+#
+# @jit(device=True)
+@intrinsic
+def shfl_xor_sync(typingctx, mask, value, lane_mask):
+#    """
+#    Shuffles value across the masked warp and returns the value
+#    from (laneid ^ lane_mask).
+#    """
+    mode_value = 3
+    clamp_value = 0x1F
+    return shfl_sync_intrinsic(typingctx, mask, mode_value, value, lane_mask,
+                               clamp_value)
+#    return numba.cuda.shfl_sync_intrinsic(mask, 3, value, lane_mask, 0x1F)[0]
+
+
 def shfl_sync_intrinsic(typingctx, mask, mode, value, src_lane, clamp):
     mode_value = 0
     clamp_value = 0x1F
@@ -264,11 +307,11 @@ def shfl_sync_intrinsic(typingctx, mask, mode, value, src_lane, clamp):
         mode = ir.Constant(i32, mode_value)
         clamp = ir.Constant(i32, clamp_value)
         mask = builder.trunc(mask, i32)
-        value = builder.trunc(value, i32)
         index = builder.trunc(index, i32)
 
         func = cgutils.get_or_insert_function(lmod, fnty, fname)
         if value_type.bitwidth == 32:
+            value = builder.trunc(value, i32)
             ret = builder.call(func, (mask, mode, value, index, clamp))
             if value_type == types.float32:
                 rv = builder.extract_value(ret, 0)
@@ -276,8 +319,13 @@ def shfl_sync_intrinsic(typingctx, mask, mode, value, src_lane, clamp):
                 fv = builder.bitcast(rv, ir.FloatType())
                 ret = cgutils.make_anonymous_struct(builder, (fv, pred))
         else:
+            if value.type.width == 32:
+                value = builder.zext(value, ir.IntType(64))
             value1 = builder.trunc(value, ir.IntType(32))
-            value_lshr = builder.lshr(value, context.get_constant(types.i8, 32))
+            try:
+                value_lshr = builder.lshr(value, context.get_constant(types.i8, 32))
+            except ValueError:
+                breakpoint()
             value2 = builder.trunc(value_lshr, ir.IntType(32))
             ret1 = builder.call(func, (mask, mode, value1, index, clamp))
             ret2 = builder.call(func, (mask, mode, value2, index, clamp))
