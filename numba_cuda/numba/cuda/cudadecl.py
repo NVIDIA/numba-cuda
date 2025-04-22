@@ -776,9 +776,6 @@ class CudaModuleTemplate(AttributeTemplate):
     def resolve_syncwarp(self, mod):
         return types.Function(Cuda_syncwarp)
 
-    # def resolve_shfl_sync_intrinsic(self, mod):
-    #    return types.Function(Cuda_shfl_sync_intrinsic)
-
     def resolve_vote_sync_intrinsic(self, mod):
         return types.Function(Cuda_vote_sync_intrinsic)
 
