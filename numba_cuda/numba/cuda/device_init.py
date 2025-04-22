@@ -68,10 +68,10 @@ from .intrinsic_wrapper import (
     any_sync,
     eq_sync,
     ballot_sync,
-    shfl_sync,
-    shfl_up_sync,
-    shfl_down_sync,
-    shfl_xor_sync,
+    # shfl_sync,
+    # shfl_up_sync,
+    # shfl_down_sync,
+    # shfl_xor_sync,
 )
 
 from .kernels import reduction

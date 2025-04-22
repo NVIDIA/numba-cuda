@@ -205,3 +205,93 @@ def syncthreads_or(typingctx, predicate):
 @overload_method(types.Integer, "bit_count", target="cuda")
 def integer_bit_count(i):
     return lambda i: cuda.popc(i)
+
+
+# -------------------------------------------------------------------------------
+# shfl_sync
+
+
+@intrinsic
+def shfl_sync(typingctx, mask, value, src_lane):
+    mode_value = 0
+    clamp_value = 0x1F
+    return shfl_sync_intrinsic(typingctx, mask, mode_value, src_lane, clamp)
+
+
+@intrinsic
+def shfl_sync_intrinsic(typingctx, mask, mode, value, src_lane, clamp):
+    mode_value = 0
+    clamp_value = 0x1F
+
+    if value not in (types.i4, types.i8, types.f8, types.f8):
+        # XXX: More general typing ?
+        raise TypingError("Only 32- and 64-bit ints and floats")
+
+    if mask != types.int32 or src_lane != types.int32:
+        print(mask)
+        print(src_lane)
+        print("Warning: casting")
+        # raise TypingError("mask and value must be int32")
+
+    sig = signature(types.int32, mask, value, src_lane)
+
+    def codegen(context, builder, sig, args):
+        """
+        The NVVM intrinsic for shfl only supports i32, but the cuda intrinsic
+        function supports both 32 and 64 bit ints and floats, so for feature
+        parity, i64, f32, and f64 are implemented. Floats by way of bitcasting
+        the float to an int, then shuffling, then bitcasting back. And 64-bit
+        values by packing them into 2 32bit values, shuffling thoose, and then
+        packing back together."""
+        mask, value, index = args
+        value_type = sig.args[2]
+        if value_type in types.real_domain:
+            value = builder.bitcast(value, ir.IntType(value_type.bitwidth))
+        fname = "llvm.nvvm.shfl.sync.i32"
+        lmod = builder.module
+        fnty = ir.FunctionType(
+            ir.LiteralStructType((ir.IntType(32), ir.IntType(1))),
+            (
+                ir.IntType(32),
+                ir.IntType(32),
+                ir.IntType(32),
+                ir.IntType(32),
+                ir.IntType(32),
+            ),
+        )
+
+        i32 = ir.IntType(32)
+        mode = ir.Constant(i32, mode_value)
+        clamp = ir.Constant(i32, clamp_value)
+        mask = builder.trunc(mask, i32)
+        value = builder.trunc(value, i32)
+        index = builder.trunc(index, i32)
+
+        func = cgutils.get_or_insert_function(lmod, fnty, fname)
+        if value_type.bitwidth == 32:
+            ret = builder.call(func, (mask, mode, value, index, clamp))
+            if value_type == types.float32:
+                rv = builder.extract_value(ret, 0)
+                pred = builder.extract_value(ret, 1)
+                fv = builder.bitcast(rv, ir.FloatType())
+                ret = cgutils.make_anonymous_struct(builder, (fv, pred))
+        else:
+            value1 = builder.trunc(value, ir.IntType(32))
+            value_lshr = builder.lshr(value, context.get_constant(types.i8, 32))
+            value2 = builder.trunc(value_lshr, ir.IntType(32))
+            ret1 = builder.call(func, (mask, mode, value1, index, clamp))
+            ret2 = builder.call(func, (mask, mode, value2, index, clamp))
+            rv1 = builder.extract_value(ret1, 0)
+            rv2 = builder.extract_value(ret2, 0)
+            pred = builder.extract_value(ret1, 1)
+            rv1_64 = builder.zext(rv1, ir.IntType(64))
+            rv2_64 = builder.zext(rv2, ir.IntType(64))
+            rv_shl = builder.shl(rv2_64, context.get_constant(types.i8, 32))
+            rv = builder.or_(rv_shl, rv1_64)
+            if value_type == types.float64:
+                rv = builder.bitcast(rv, ir.DoubleType())
+            ret = cgutils.make_anonymous_struct(builder, (rv, pred))
+        return builder.extract_value(ret, 0)
+
+    print(sig)
+    return sig, codegen
