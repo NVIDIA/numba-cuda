@@ -13,7 +13,6 @@ from .stubs import (
     local,
     const,
     atomic,
-    #shfl_sync_intrinsic,
     vote_sync_intrinsic,
     match_any_sync,
     match_all_sync,

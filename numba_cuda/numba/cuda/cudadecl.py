@@ -100,45 +100,6 @@ class Cuda_syncwarp(ConcreteTemplate):
     cases = [signature(types.none), signature(types.none, types.i4)]
 
 
-# @register
-# class Cuda_shfl_sync_intrinsic(ConcreteTemplate):
-#    key = cuda.shfl_sync_intrinsic
-#    cases = [
-#        signature(
-#            types.Tuple((types.i4, types.b1)),
-#            types.i4,
-#            types.i4,
-#            types.i4,
-#            types.i4,
-#            types.i4,
-#        ),
-#        signature(
-#            types.Tuple((types.i8, types.b1)),
-#            types.i4,
-#            types.i4,
-#            types.i8,
-#            types.i4,
-#            types.i4,
-#        ),
-#        signature(
-#            types.Tuple((types.f4, types.b1)),
-#            types.i4,
-#            types.i4,
-#            types.f4,
-#            types.i4,
-#            types.i4,
-#        ),
-#        signature(
-#            types.Tuple((types.f8, types.b1)),
-#            types.i4,
-#            types.i4,
-#            types.f8,
-#            types.i4,
-#            types.i4,
-#        ),
-#    ]
-
-
 @register
 class Cuda_vote_sync_intrinsic(ConcreteTemplate):
     key = cuda.vote_sync_intrinsic
