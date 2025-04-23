@@ -1123,28 +1123,17 @@ class CUDADispatcher(Dispatcher, serialize.ReduceMixin):
         Compile and bind to the current context a version of this kernel
         specialized for the given signature.
         """
-        import threading
-
         with ExitStack() as scope:
             state = {"loaded_from_memory": False}
 
             def cb_compiler(dur, state=state):
-                print(f"{threading.get_ident()=}::compiler_lock_callback")
                 if not state["loaded_from_memory"]:
-                    print(
-                        f"{threading.get_ident()=}::compiler_lock_callback, cres is not None"
-                    )
                     self._callback_add_compiler_timer(dur, kernel)
 
             def cb_llvm(dur, state=state):
-                print(f"{threading.get_ident()=}::llvm_lock_callback")
                 if not state["loaded_from_memory"]:
-                    print(
-                        f"{threading.get_ident()=}::llvm_lock_callback, cres is not None"
-                    )
                     self._callback_add_llvm_timer(dur, kernel)
 
-            print(f"{threading.get_ident()=}:: installing timers")
             scope.enter_context(
                 ev.install_timer("numba:compiler_lock", cb_compiler)
             )
@@ -1165,7 +1154,6 @@ class CUDADispatcher(Dispatcher, serialize.ReduceMixin):
 
             # Can we load from the disk cache?
             kernel = self._cache.load_overload(sig, self.targetctx)
-            print(f"{threading.get_ident()=}:: kernel from cache: {kernel}")
 
             if kernel is not None:
                 self._cache_hits[sig] += 1
@@ -1313,9 +1301,6 @@ class CUDADispatcher(Dispatcher, serialize.ReduceMixin):
         return dict(py_func=self.py_func, targetoptions=self.targetoptions)
 
     def _callback_add_timer(self, duration, kernel_or_cres, lock_name):
-        import threading
-
-        print(f"{threading.get_ident()=}:: writing {lock_name} with {duration}")
         md = kernel_or_cres.metadata
         # md can be None when code is loaded from cache
         if md is not None:
