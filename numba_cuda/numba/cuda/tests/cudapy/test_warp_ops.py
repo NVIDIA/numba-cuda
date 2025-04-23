@@ -182,11 +182,12 @@ class TestCudaWarpOperations(CUDATestCase):
             np.float64(np.pi),
         )
         for typ, val in zip(types, values):
-            compiled = cuda.jit((typ[:], typ))(use_shfl_sync_with_val)
-            nelem = 32
-            ary = np.empty(nelem, dtype=val.dtype)
-            compiled[1, nelem](ary, val)
-            self.assertTrue(np.all(ary == val))
+            with self.subTest(typ=typ):
+                compiled = cuda.jit((typ[:], typ))(use_shfl_sync_with_val)
+                nelem = 32
+                ary = np.empty(nelem, dtype=val.dtype)
+                compiled[1, nelem](ary, val)
+                self.assertTrue(np.all(ary == val))
 
     def test_vote_sync_all(self):
         compiled = cuda.jit("void(int32[:], int32[:])")(use_vote_sync_all)
