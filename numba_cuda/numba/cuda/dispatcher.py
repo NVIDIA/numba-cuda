@@ -759,9 +759,6 @@ class CUDACache(Cache):
         # enforce that the current target is the CUDA target.
         from numba.core.target_extension import target_override
 
-        import threading
-
-        print(f"{threading.get_ident()=}:: in load_overload {sig}")
         with target_override("cuda"):
             return super().load_overload(sig, target_context)
 
