@@ -1126,19 +1126,19 @@ class CUDADispatcher(Dispatcher, serialize.ReduceMixin):
         import threading
 
         with ExitStack() as scope:
-            kernel = None
+            state = {"loaded_from_memory": False}
 
-            def cb_compiler(dur):
+            def cb_compiler(dur, state=state):
                 print(f"{threading.get_ident()=}::compiler_lock_callback")
-                if kernel is not None:
+                if not state["loaded_from_memory"]:
                     print(
                         f"{threading.get_ident()=}::compiler_lock_callback, cres is not None"
                     )
                     self._callback_add_compiler_timer(dur, kernel)
 
-            def cb_llvm(dur):
+            def cb_llvm(dur, state=state):
                 print(f"{threading.get_ident()=}::llvm_lock_callback")
-                if kernel is not None:
+                if not state["loaded_from_memory"]:
                     print(
                         f"{threading.get_ident()=}::llvm_lock_callback, cres is not None"
                     )
@@ -1160,6 +1160,7 @@ class CUDADispatcher(Dispatcher, serialize.ReduceMixin):
             else:
                 existing = self.overloads.get(argtypes)
                 if existing is not None:
+                    state["loaded_from_memory"] = True
                     return existing
 
             # Can we load from the disk cache?
