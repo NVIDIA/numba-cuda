@@ -47,11 +47,10 @@ class TestNumbaEvent(CUDATestCase):
             bar(x)
 
         foo[1, 1](1)
-        md = foo.get_metadata(foo.signatures[0])
-        foo_lock_duration = md["timers"]["compiler_lock"]
         md = bar.get_metadata(bar.signatures[0])
-        bar_lock_duration = md["timers"]["compiler_lock"]
-        self.assertGreater(foo_lock_duration, bar_lock_duration)
+        lock_duration = md["timers"]["compiler_lock"]
+        self.assertIsInstance(lock_duration, float)
+        self.assertGreater(lock_duration, 0)
 
     def test_llvm_lock_event_device(self):
         @cuda.jit(device=True)
@@ -63,11 +62,38 @@ class TestNumbaEvent(CUDATestCase):
             bar(x)
 
         foo[1, 1](1)
-        md = foo.get_metadata(foo.signatures[0])
-        foo_lock_duration = md["timers"]["llvm_lock"]
         md = bar.get_metadata(bar.signatures[0])
-        bar_lock_duration = md["timers"]["llvm_lock"]
-        self.assertGreater(foo_lock_duration, bar_lock_duration)
+        lock_duration = md["timers"]["llvm_lock"]
+        self.assertIsInstance(lock_duration, float)
+        self.assertGreater(lock_duration, 0)
+
+    def test_timing_properties(self):
+        @cuda.jit(device=True)
+        def bar(x):
+            _ = x + x
+
+        @cuda.jit
+        def foo(x):
+            bar(x)
+
+        foo[1, 1](1)
+
+        def get_timers(fn, prop):
+            md = fn.get_metadata(fn.signatures[0])
+            return md[prop]
+
+        foo_timers = get_timers(foo, "timers")
+        bar_timers = get_timers(bar, "timers")
+
+        # Check: time spent in bar() must be less than in foo()
+        self.assertLess(bar_timers["llvm_lock"], foo_timers["llvm_lock"])
+        self.assertLess(
+            bar_timers["compiler_lock"], foo_timers["compiler_lock"]
+        )
+
+        # Check: time spent in LLVM lock must be less than in compiler
+        self.assertLess(foo_timers["llvm_lock"], foo_timers["compiler_lock"])
+        self.assertLess(bar_timers["llvm_lock"], bar_timers["compiler_lock"])
 
 
 if __name__ == "__main__":
