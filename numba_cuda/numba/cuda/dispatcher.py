@@ -1076,42 +1076,64 @@ class CUDADispatcher(Dispatcher, serialize.ReduceMixin):
 
         Returns the `CompileResult`.
         """
-        if args not in self.overloads:
-            with self._compiling_counter:
-                debug = self.targetoptions.get("debug")
-                lineinfo = self.targetoptions.get("lineinfo")
-                inline = self.targetoptions.get("inline")
-                fastmath = self.targetoptions.get("fastmath")
+        with ExitStack() as scope:
+            state = {"loaded_from_memory": False, "kernel_compiled": None}
 
-                nvvm_options = {
-                    "opt": 3 if self.targetoptions.get("opt") else 0,
-                    "fastmath": fastmath,
-                }
+            def cb_compiler(dur, state=state):
+                if not state["loaded_from_memory"]:
+                    self._callback_add_compiler_timer(
+                        dur, state["kernel_compiled"]
+                    )
 
-                if debug:
-                    nvvm_options["g"] = None
+            def cb_llvm(dur, state=state):
+                if not state["loaded_from_memory"]:
+                    self._callback_add_llvm_timer(dur, state["kernel_compiled"])
 
-                cc = get_current_device().compute_capability
-                cres = compile_cuda(
-                    self.py_func,
-                    return_type,
-                    args,
-                    debug=debug,
-                    lineinfo=lineinfo,
-                    inline=inline,
-                    fastmath=fastmath,
-                    nvvm_options=nvvm_options,
-                    cc=cc,
-                )
-                self.overloads[args] = cres
+            scope.enter_context(
+                ev.install_timer("numba:compiler_lock", cb_compiler)
+            )
+            scope.enter_context(ev.install_timer("numba:llvm_lock", cb_llvm))
+            scope.enter_context(global_compiler_lock)
 
-                cres.target_context.insert_user_function(
-                    cres.entry_point, cres.fndesc, [cres.library]
-                )
-        else:
-            cres = self.overloads[args]
+            if args not in self.overloads:
+                with self._compiling_counter:
+                    debug = self.targetoptions.get("debug")
+                    lineinfo = self.targetoptions.get("lineinfo")
+                    inline = self.targetoptions.get("inline")
+                    fastmath = self.targetoptions.get("fastmath")
 
-        return cres
+                    nvvm_options = {
+                        "opt": 3 if self.targetoptions.get("opt") else 0,
+                        "fastmath": fastmath,
+                    }
+
+                    if debug:
+                        nvvm_options["g"] = None
+
+                    cc = get_current_device().compute_capability
+                    cres = compile_cuda(
+                        self.py_func,
+                        return_type,
+                        args,
+                        debug=debug,
+                        lineinfo=lineinfo,
+                        inline=inline,
+                        fastmath=fastmath,
+                        nvvm_options=nvvm_options,
+                        cc=cc,
+                    )
+                    self.overloads[args] = cres
+
+                    cres.target_context.insert_user_function(
+                        cres.entry_point, cres.fndesc, [cres.library]
+                    )
+                    state["loaded_from_memory"] = False
+                    state["kernel_compiled"] = cres
+            else:
+                state["loaded_from_memory"] = True
+                cres = self.overloads[args]
+
+            return cres
 
     def add_overload(self, kernel, argtypes):
         c_sig = [a._code for a in argtypes]

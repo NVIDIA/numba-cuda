@@ -48,9 +48,10 @@ class TestNumbaEvent(CUDATestCase):
 
         foo[1, 1](1)
         md = foo.get_metadata(foo.signatures[0])
-        lock_duration = md["timers"]["compiler_lock"]
-        self.assertIsInstance(lock_duration, float)
-        self.assertGreater(lock_duration, 0)
+        foo_lock_duration = md["timers"]["compiler_lock"]
+        md = bar.get_metadata(bar.signatures[0])
+        bar_lock_duration = md["timers"]["compiler_lock"]
+        self.assertGreater(foo_lock_duration, bar_lock_duration)
 
     def test_llvm_lock_event_device(self):
         @cuda.jit(device=True)
@@ -63,9 +64,10 @@ class TestNumbaEvent(CUDATestCase):
 
         foo[1, 1](1)
         md = foo.get_metadata(foo.signatures[0])
-        lock_duration = md["timers"]["llvm_lock"]
-        self.assertIsInstance(lock_duration, float)
-        self.assertGreater(lock_duration, 0)
+        foo_lock_duration = md["timers"]["llvm_lock"]
+        md = bar.get_metadata(bar.signatures[0])
+        bar_lock_duration = md["timers"]["llvm_lock"]
+        self.assertGreater(foo_lock_duration, bar_lock_duration)
 
 
 if __name__ == "__main__":
