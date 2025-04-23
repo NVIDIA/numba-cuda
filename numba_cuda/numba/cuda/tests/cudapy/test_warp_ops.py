@@ -160,18 +160,19 @@ class TestCudaWarpOperations(CUDATestCase):
         m = re.compile(args_re)
 
         for func, value in subtest:
-            compiled = cuda.jit("void(int32[:], int32)")(func)
-            nelem = 32
-            ary = np.empty(nelem, dtype=np.int32)
-            compiled[1, nelem](ary, value)
-            irs = next(iter(compiled.inspect_llvm().values()))
+            with self.subTest(func=func.__name__):
+                compiled = cuda.jit("void(int32[:], int32)")(func)
+                nelem = 32
+                ary = np.empty(nelem, dtype=np.int32)
+                compiled[1, nelem](ary, value)
+                irs = next(iter(compiled.inspect_llvm().values()))
 
-            for ir in irs.split("\n"):
-                if "call" in ir and "llvm.nvvm.shfl.sync.i32" in ir:
-                    args = m.search(ir).group(0)
-                    arglist = args.split(",")
-                    mode_arg = arglist[1]
-                    self.assertNotIn("%", mode_arg)
+                for ir in irs.split("\n"):
+                    if "call" in ir and "llvm.nvvm.shfl.sync.i32" in ir:
+                        args = m.search(ir).group(0)
+                        arglist = args.split(",")
+                        mode_arg = arglist[1]
+                        self.assertNotIn("%", mode_arg)
 
     def test_shfl_sync_types(self):
         types = int32, int64, float32, float64
