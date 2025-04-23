@@ -1124,15 +1124,17 @@ class CUDADispatcher(Dispatcher, serialize.ReduceMixin):
         specialized for the given signature.
         """
         with ExitStack() as scope:
-            state = {"loaded_from_memory": False}
+            state = {"loaded_from_memory": False, "kernel_compiled": None}
 
             def cb_compiler(dur, state=state):
                 if not state["loaded_from_memory"]:
-                    self._callback_add_compiler_timer(dur, kernel)
+                    self._callback_add_compiler_timer(
+                        dur, state["kernel_compiled"]
+                    )
 
             def cb_llvm(dur, state=state):
                 if not state["loaded_from_memory"]:
-                    self._callback_add_llvm_timer(dur, kernel)
+                    self._callback_add_llvm_timer(dur, state["kernel_compiled"])
 
             scope.enter_context(
                 ev.install_timer("numba:compiler_lock", cb_compiler)
@@ -1170,6 +1172,8 @@ class CUDADispatcher(Dispatcher, serialize.ReduceMixin):
 
             self.add_overload(kernel, argtypes)
 
+            state["loaded_from_memory"] = False
+            state["kernel_compiled"] = kernel
             return kernel
 
     def inspect_llvm(self, signature=None):
