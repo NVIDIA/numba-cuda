@@ -3,6 +3,7 @@ import re
 import numpy as np
 from numba import cuda, int32, int64, float32, float64
 from numba.cuda.testing import unittest, CUDATestCase, skip_on_cudasim
+from numba.cuda.compiler import compile_ptx
 from numba.core import config
 
 
@@ -173,6 +174,19 @@ class TestCudaWarpOperations(CUDATestCase):
                         arglist = args.split(",")
                         mode_arg = arglist[1]
                         self.assertNotIn("%", mode_arg)
+
+    def test_shfl_sync_const_mode_val_sm100(self):
+        # Test shfl_sync compiles with cc=(10, 0)
+        subtest = [
+            use_shfl_sync_idx,
+            use_shfl_sync_up,
+            use_shfl_sync_down,
+            use_shfl_sync_xor,
+        ]
+
+        for func in subtest:
+            with self.subTest(func=func.__name__):
+                compile_ptx(func, (int32[:], int32), cc=(10, 0))
 
     def test_shfl_sync_types(self):
         types = int32, int64, float32, float64
