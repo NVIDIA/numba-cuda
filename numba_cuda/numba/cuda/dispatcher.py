@@ -1325,36 +1325,3 @@ class CUDADispatcher(Dispatcher, serialize.ReduceMixin):
         Compiled definitions are discarded.
         """
         return dict(py_func=self.py_func, targetoptions=self.targetoptions)
-
-    def _callback_add_timer(self, duration, kernel_or_cres, lock_name):
-        md = kernel_or_cres.metadata
-        # md can be None when code is loaded from cache
-        if md is not None:
-            timers = md.setdefault("timers", {})
-            if lock_name not in timers:
-                # Only write if the metadata does not exist
-                timers[lock_name] = duration
-            else:
-                msg = f"'{lock_name} metadata is already defined."
-                raise AssertionError(msg)
-
-    def _callback_add_compiler_timer(self, duration, kernel_or_cres):
-        return self._callback_add_timer(
-            duration, kernel_or_cres, lock_name="compiler_lock"
-        )
-
-    def _callback_add_llvm_timer(self, duration, kernel_or_cres):
-        return self._callback_add_timer(
-            duration, kernel_or_cres, lock_name="llvm_lock"
-        )
-
-    def get_metadata(self, signature=None):
-        """
-        Obtain the compilation metadata for a given signature.
-        """
-        if signature is not None:
-            return self.overloads[signature].metadata
-        else:
-            return dict(
-                (sig, self.overloads[sig].metadata) for sig in self.signatures
-            )
