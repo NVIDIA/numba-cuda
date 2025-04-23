@@ -225,7 +225,7 @@ def _lower___nv_bfloat16_void(shim_stream, shim_obj):
         __nv_bfloat16,
     )
     def ctor_impl(context, builder, sig, args):
-        context._external_linkage.add(shim_obj)
+        context.active_code_library.add_linking_file(shim_obj)
         shim_stream.write_with_key(
             "____nv_bfloat16____nv_bfloat16_1", shim_raw_str
         )
@@ -274,7 +274,7 @@ def _lower___nv_bfloat16__type_unnamed1401637(shim_stream, shim_obj):
 
     @lower(__nv_bfloat16, _type_unnamed1401637)
     def ctor_impl(context, builder, sig, args):
-        context._external_linkage.add(shim_obj)
+        context.active_code_library.add_linking_file(shim_obj)
         shim_stream.write_with_key(
             "____nv_bfloat16____nv_bfloat16_2", shim_raw_str
         )
@@ -324,7 +324,7 @@ def _lower___nv_bfloat16_float16(shim_stream, shim_obj):
 
     @lower(__nv_bfloat16, float16)
     def ctor_impl(context, builder, sig, args):
-        context._external_linkage.add(shim_obj)
+        context.active_code_library.add_linking_file(shim_obj)
         shim_stream.write_with_key(
             "____nv_bfloat16____nv_bfloat16_3", shim_raw_str
         )
@@ -370,7 +370,7 @@ def _lower___nv_bfloat16_float32(shim_stream, shim_obj):
 
     @lower(__nv_bfloat16, float32)
     def ctor_impl(context, builder, sig, args):
-        context._external_linkage.add(shim_obj)
+        context.active_code_library.add_linking_file(shim_obj)
         shim_stream.write_with_key(
             "____nv_bfloat16____nv_bfloat16_4", shim_raw_str
         )
@@ -416,7 +416,7 @@ def _lower___nv_bfloat16_float64(shim_stream, shim_obj):
 
     @lower(__nv_bfloat16, float64)
     def ctor_impl(context, builder, sig, args):
-        context._external_linkage.add(shim_obj)
+        context.active_code_library.add_linking_file(shim_obj)
         shim_stream.write_with_key(
             "____nv_bfloat16____nv_bfloat16_5", shim_raw_str
         )
@@ -462,7 +462,7 @@ def _lower___nv_bfloat16_int16(shim_stream, shim_obj):
 
     @lower(__nv_bfloat16, int16)
     def ctor_impl(context, builder, sig, args):
-        context._external_linkage.add(shim_obj)
+        context.active_code_library.add_linking_file(shim_obj)
         shim_stream.write_with_key(
             "____nv_bfloat16____nv_bfloat16_6", shim_raw_str
         )
@@ -508,7 +508,7 @@ def _lower___nv_bfloat16_uint16(shim_stream, shim_obj):
 
     @lower(__nv_bfloat16, uint16)
     def ctor_impl(context, builder, sig, args):
-        context._external_linkage.add(shim_obj)
+        context.active_code_library.add_linking_file(shim_obj)
         shim_stream.write_with_key(
             "____nv_bfloat16____nv_bfloat16_7", shim_raw_str
         )
@@ -554,7 +554,7 @@ def _lower___nv_bfloat16_int32(shim_stream, shim_obj):
 
     @lower(__nv_bfloat16, int32)
     def ctor_impl(context, builder, sig, args):
-        context._external_linkage.add(shim_obj)
+        context.active_code_library.add_linking_file(shim_obj)
         shim_stream.write_with_key(
             "____nv_bfloat16____nv_bfloat16_8", shim_raw_str
         )
@@ -600,7 +600,7 @@ def _lower___nv_bfloat16_uint32(shim_stream, shim_obj):
 
     @lower(__nv_bfloat16, uint32)
     def ctor_impl(context, builder, sig, args):
-        context._external_linkage.add(shim_obj)
+        context.active_code_library.add_linking_file(shim_obj)
         shim_stream.write_with_key(
             "____nv_bfloat16____nv_bfloat16_9", shim_raw_str
         )
@@ -646,7 +646,7 @@ def _lower___nv_bfloat16_int64(shim_stream, shim_obj):
 
     @lower(__nv_bfloat16, int64)
     def ctor_impl(context, builder, sig, args):
-        context._external_linkage.add(shim_obj)
+        context.active_code_library.add_linking_file(shim_obj)
         shim_stream.write_with_key(
             "____nv_bfloat16____nv_bfloat16_10", shim_raw_str
         )
@@ -692,7 +692,7 @@ def _lower___nv_bfloat16_uint64(shim_stream, shim_obj):
 
     @lower(__nv_bfloat16, uint64)
     def ctor_impl(context, builder, sig, args):
-        context._external_linkage.add(shim_obj)
+        context.active_code_library.add_linking_file(shim_obj)
         shim_stream.write_with_key(
             "____nv_bfloat16____nv_bfloat16_11", shim_raw_str
         )
@@ -738,7 +738,7 @@ def _lower___nv_bfloat16_int64(shim_stream, shim_obj):
 
     @lower(__nv_bfloat16, int64)
     def ctor_impl(context, builder, sig, args):
-        context._external_linkage.add(shim_obj)
+        context.active_code_library.add_linking_file(shim_obj)
         shim_stream.write_with_key(
             "____nv_bfloat16____nv_bfloat16_12", shim_raw_str
         )
@@ -784,7 +784,7 @@ def _lower___nv_bfloat16_uint64(shim_stream, shim_obj):
 
     @lower(__nv_bfloat16, uint64)
     def ctor_impl(context, builder, sig, args):
-        context._external_linkage.add(shim_obj)
+        context.active_code_library.add_linking_file(shim_obj)
         shim_stream.write_with_key(
             "____nv_bfloat16____nv_bfloat16_13", shim_raw_str
         )
@@ -857,7 +857,7 @@ def _from___nv_bfloat16_to__type_unnamed1401637_lower(shim_stream, shim_obj):
 
     @lower_cast(_type___nv_bfloat16, _type_unnamed1401637)
     def impl(context, builder, fromty, toty, value):
-        context._external_linkage.add(shim_obj)
+        context.active_code_library.add_linking_file(shim_obj)
         shim_stream.write_with_key(
             "____nv_bfloat16_operator___nv_bfloat16_raw_1", shim_raw_str
         )
@@ -903,7 +903,7 @@ def _from___nv_bfloat16_to__type_unnamed1401637_lower(shim_stream, shim_obj):
 
     @lower_cast(_type___nv_bfloat16, _type_unnamed1401637)
     def impl(context, builder, fromty, toty, value):
-        context._external_linkage.add(shim_obj)
+        context.active_code_library.add_linking_file(shim_obj)
         shim_stream.write_with_key(
             "____nv_bfloat16_operator___nv_bfloat16_raw_2", shim_raw_str
         )
@@ -949,7 +949,7 @@ def _from___nv_bfloat16_to_float32_lower(shim_stream, shim_obj):
 
     @lower_cast(_type___nv_bfloat16, float32)
     def impl(context, builder, fromty, toty, value):
-        context._external_linkage.add(shim_obj)
+        context.active_code_library.add_linking_file(shim_obj)
         shim_stream.write_with_key(
             "____nv_bfloat16_operator_float_1", shim_raw_str
         )
@@ -995,7 +995,7 @@ def _from___nv_bfloat16_to_int8_lower(shim_stream, shim_obj):
 
     @lower_cast(_type___nv_bfloat16, int8)
     def impl(context, builder, fromty, toty, value):
-        context._external_linkage.add(shim_obj)
+        context.active_code_library.add_linking_file(shim_obj)
         shim_stream.write_with_key(
             "____nv_bfloat16_operator_signed_char_1", shim_raw_str
         )
@@ -1041,7 +1041,7 @@ def _from___nv_bfloat16_to_uint8_lower(shim_stream, shim_obj):
 
     @lower_cast(_type___nv_bfloat16, uint8)
     def impl(context, builder, fromty, toty, value):
-        context._external_linkage.add(shim_obj)
+        context.active_code_library.add_linking_file(shim_obj)
         shim_stream.write_with_key(
             "____nv_bfloat16_operator_unsigned_char_1", shim_raw_str
         )
@@ -1087,7 +1087,7 @@ def _from___nv_bfloat16_to_int8_lower(shim_stream, shim_obj):
 
     @lower_cast(_type___nv_bfloat16, int8)
     def impl(context, builder, fromty, toty, value):
-        context._external_linkage.add(shim_obj)
+        context.active_code_library.add_linking_file(shim_obj)
         shim_stream.write_with_key(
             "____nv_bfloat16_operator_char_1", shim_raw_str
         )
@@ -1133,7 +1133,7 @@ def _from___nv_bfloat16_to_int16_lower(shim_stream, shim_obj):
 
     @lower_cast(_type___nv_bfloat16, int16)
     def impl(context, builder, fromty, toty, value):
-        context._external_linkage.add(shim_obj)
+        context.active_code_library.add_linking_file(shim_obj)
         shim_stream.write_with_key(
             "____nv_bfloat16_operator_short_1", shim_raw_str
         )
@@ -1179,7 +1179,7 @@ def _from___nv_bfloat16_to_uint16_lower(shim_stream, shim_obj):
 
     @lower_cast(_type___nv_bfloat16, uint16)
     def impl(context, builder, fromty, toty, value):
-        context._external_linkage.add(shim_obj)
+        context.active_code_library.add_linking_file(shim_obj)
         shim_stream.write_with_key(
             "____nv_bfloat16_operator_unsigned_short_1", shim_raw_str
         )
@@ -1225,7 +1225,7 @@ def _from___nv_bfloat16_to_int32_lower(shim_stream, shim_obj):
 
     @lower_cast(_type___nv_bfloat16, int32)
     def impl(context, builder, fromty, toty, value):
-        context._external_linkage.add(shim_obj)
+        context.active_code_library.add_linking_file(shim_obj)
         shim_stream.write_with_key(
             "____nv_bfloat16_operator_int_1", shim_raw_str
         )
@@ -1271,7 +1271,7 @@ def _from___nv_bfloat16_to_uint32_lower(shim_stream, shim_obj):
 
     @lower_cast(_type___nv_bfloat16, uint32)
     def impl(context, builder, fromty, toty, value):
-        context._external_linkage.add(shim_obj)
+        context.active_code_library.add_linking_file(shim_obj)
         shim_stream.write_with_key(
             "____nv_bfloat16_operator_unsigned_int_1", shim_raw_str
         )
@@ -1317,7 +1317,7 @@ def _from___nv_bfloat16_to_int64_lower(shim_stream, shim_obj):
 
     @lower_cast(_type___nv_bfloat16, int64)
     def impl(context, builder, fromty, toty, value):
-        context._external_linkage.add(shim_obj)
+        context.active_code_library.add_linking_file(shim_obj)
         shim_stream.write_with_key(
             "____nv_bfloat16_operator_long_1", shim_raw_str
         )
@@ -1363,7 +1363,7 @@ def _from___nv_bfloat16_to_uint64_lower(shim_stream, shim_obj):
 
     @lower_cast(_type___nv_bfloat16, uint64)
     def impl(context, builder, fromty, toty, value):
-        context._external_linkage.add(shim_obj)
+        context.active_code_library.add_linking_file(shim_obj)
         shim_stream.write_with_key(
             "____nv_bfloat16_operator_unsigned_long_1", shim_raw_str
         )
@@ -1409,7 +1409,7 @@ def _from___nv_bfloat16_to_int64_lower(shim_stream, shim_obj):
 
     @lower_cast(_type___nv_bfloat16, int64)
     def impl(context, builder, fromty, toty, value):
-        context._external_linkage.add(shim_obj)
+        context.active_code_library.add_linking_file(shim_obj)
         shim_stream.write_with_key(
             "____nv_bfloat16_operator_long_long_1", shim_raw_str
         )
@@ -1455,7 +1455,7 @@ def _from___nv_bfloat16_to_uint64_lower(shim_stream, shim_obj):
 
     @lower_cast(_type___nv_bfloat16, uint64)
     def impl(context, builder, fromty, toty, value):
-        context._external_linkage.add(shim_obj)
+        context.active_code_library.add_linking_file(shim_obj)
         shim_stream.write_with_key(
             "____nv_bfloat16_operator_unsigned_long_long_1", shim_raw_str
         )
@@ -1501,7 +1501,7 @@ def _from___nv_bfloat16_to_bool__lower(shim_stream, shim_obj):
 
     @lower_cast(_type___nv_bfloat16, bool_)
     def impl(context, builder, fromty, toty, value):
-        context._external_linkage.add(shim_obj)
+        context.active_code_library.add_linking_file(shim_obj)
         shim_stream.write_with_key(
             "____nv_bfloat16_operator_bool_1", shim_raw_str
         )
@@ -1590,7 +1590,7 @@ def _lower___nv_bfloat162_void(shim_stream, shim_obj):
         __nv_bfloat162,
     )
     def ctor_impl(context, builder, sig, args):
-        context._external_linkage.add(shim_obj)
+        context.active_code_library.add_linking_file(shim_obj)
         shim_stream.write_with_key(
             "____nv_bfloat162____nv_bfloat162_1", shim_raw_str
         )
@@ -1639,7 +1639,7 @@ def _lower___nv_bfloat162__type___nv_bfloat162(shim_stream, shim_obj):
 
     @lower(__nv_bfloat162, _type___nv_bfloat162)
     def ctor_impl(context, builder, sig, args):
-        context._external_linkage.add(shim_obj)
+        context.active_code_library.add_linking_file(shim_obj)
         shim_stream.write_with_key(
             "____nv_bfloat162____nv_bfloat162_2", shim_raw_str
         )
@@ -1695,7 +1695,7 @@ def _lower___nv_bfloat162__type___nv_bfloat16__type___nv_bfloat16(
 
     @lower(__nv_bfloat162, _type___nv_bfloat16, _type___nv_bfloat16)
     def ctor_impl(context, builder, sig, args):
-        context._external_linkage.add(shim_obj)
+        context.active_code_library.add_linking_file(shim_obj)
         shim_stream.write_with_key(
             "____nv_bfloat162____nv_bfloat162_3", shim_raw_str
         )
@@ -1748,7 +1748,7 @@ def _lower___nv_bfloat162__type___nv_bfloat162(shim_stream, shim_obj):
 
     @lower(__nv_bfloat162, _type___nv_bfloat162)
     def ctor_impl(context, builder, sig, args):
-        context._external_linkage.add(shim_obj)
+        context.active_code_library.add_linking_file(shim_obj)
         shim_stream.write_with_key(
             "____nv_bfloat162____nv_bfloat162_4", shim_raw_str
         )
@@ -1798,7 +1798,7 @@ def _lower___nv_bfloat162__type_unnamed1401746(shim_stream, shim_obj):
 
     @lower(__nv_bfloat162, _type_unnamed1401746)
     def ctor_impl(context, builder, sig, args):
-        context._external_linkage.add(shim_obj)
+        context.active_code_library.add_linking_file(shim_obj)
         shim_stream.write_with_key(
             "____nv_bfloat162____nv_bfloat162_5", shim_raw_str
         )
@@ -1869,7 +1869,7 @@ def _from___nv_bfloat162_to__type_unnamed1401746_lower(shim_stream, shim_obj):
 
     @lower_cast(_type___nv_bfloat162, _type_unnamed1401746)
     def impl(context, builder, fromty, toty, value):
-        context._external_linkage.add(shim_obj)
+        context.active_code_library.add_linking_file(shim_obj)
         shim_stream.write_with_key(
             "____nv_bfloat162_operator___nv_bfloat162_raw_1", shim_raw_str
         )
@@ -1922,7 +1922,7 @@ def _make_bfloat162_1_lower(shim_stream, shim_obj):
 
     @lower(make_bfloat162, _type___nv_bfloat16, _type___nv_bfloat16)
     def impl(context, builder, sig, args):
-        context._external_linkage.add(shim_obj)
+        context.active_code_library.add_linking_file(shim_obj)
         shim_stream.write_with_key("make_bfloat162_1", shim_raw_str)
         ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
         for ptr, ty, arg in zip(ptrs, sig.args, args):
@@ -1965,7 +1965,7 @@ def _htrunc_1_lower(shim_stream, shim_obj):
 
     @lower(htrunc, _type___nv_bfloat16)
     def impl(context, builder, sig, args):
-        context._external_linkage.add(shim_obj)
+        context.active_code_library.add_linking_file(shim_obj)
         shim_stream.write_with_key("htrunc_1", shim_raw_str)
         ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
         for ptr, ty, arg in zip(ptrs, sig.args, args):
@@ -2004,7 +2004,7 @@ def _hceil_1_lower(shim_stream, shim_obj):
 
     @lower(hceil, _type___nv_bfloat16)
     def impl(context, builder, sig, args):
-        context._external_linkage.add(shim_obj)
+        context.active_code_library.add_linking_file(shim_obj)
         shim_stream.write_with_key("hceil_1", shim_raw_str)
         ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
         for ptr, ty, arg in zip(ptrs, sig.args, args):
@@ -2043,7 +2043,7 @@ def _hfloor_1_lower(shim_stream, shim_obj):
 
     @lower(hfloor, _type___nv_bfloat16)
     def impl(context, builder, sig, args):
-        context._external_linkage.add(shim_obj)
+        context.active_code_library.add_linking_file(shim_obj)
         shim_stream.write_with_key("hfloor_1", shim_raw_str)
         ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
         for ptr, ty, arg in zip(ptrs, sig.args, args):
@@ -2082,7 +2082,7 @@ def _hrint_1_lower(shim_stream, shim_obj):
 
     @lower(hrint, _type___nv_bfloat16)
     def impl(context, builder, sig, args):
-        context._external_linkage.add(shim_obj)
+        context.active_code_library.add_linking_file(shim_obj)
         shim_stream.write_with_key("hrint_1", shim_raw_str)
         ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
         for ptr, ty, arg in zip(ptrs, sig.args, args):
@@ -2121,7 +2121,7 @@ def _h2trunc_1_lower(shim_stream, shim_obj):
 
     @lower(h2trunc, _type___nv_bfloat162)
     def impl(context, builder, sig, args):
-        context._external_linkage.add(shim_obj)
+        context.active_code_library.add_linking_file(shim_obj)
         shim_stream.write_with_key("h2trunc_1", shim_raw_str)
         ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
         for ptr, ty, arg in zip(ptrs, sig.args, args):
@@ -2160,7 +2160,7 @@ def _h2ceil_1_lower(shim_stream, shim_obj):
 
     @lower(h2ceil, _type___nv_bfloat162)
     def impl(context, builder, sig, args):
-        context._external_linkage.add(shim_obj)
+        context.active_code_library.add_linking_file(shim_obj)
         shim_stream.write_with_key("h2ceil_1", shim_raw_str)
         ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
         for ptr, ty, arg in zip(ptrs, sig.args, args):
@@ -2199,7 +2199,7 @@ def _h2floor_1_lower(shim_stream, shim_obj):
 
     @lower(h2floor, _type___nv_bfloat162)
     def impl(context, builder, sig, args):
-        context._external_linkage.add(shim_obj)
+        context.active_code_library.add_linking_file(shim_obj)
         shim_stream.write_with_key("h2floor_1", shim_raw_str)
         ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
         for ptr, ty, arg in zip(ptrs, sig.args, args):
@@ -2238,7 +2238,7 @@ def _h2rint_1_lower(shim_stream, shim_obj):
 
     @lower(h2rint, _type___nv_bfloat162)
     def impl(context, builder, sig, args):
-        context._external_linkage.add(shim_obj)
+        context.active_code_library.add_linking_file(shim_obj)
         shim_stream.write_with_key("h2rint_1", shim_raw_str)
         ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
         for ptr, ty, arg in zip(ptrs, sig.args, args):
@@ -2277,7 +2277,7 @@ def _hsqrt_1_lower(shim_stream, shim_obj):
 
     @lower(hsqrt, _type___nv_bfloat16)
     def impl(context, builder, sig, args):
-        context._external_linkage.add(shim_obj)
+        context.active_code_library.add_linking_file(shim_obj)
         shim_stream.write_with_key("hsqrt_1", shim_raw_str)
         ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
         for ptr, ty, arg in zip(ptrs, sig.args, args):
@@ -2316,7 +2316,7 @@ def _hrsqrt_1_lower(shim_stream, shim_obj):
 
     @lower(hrsqrt, _type___nv_bfloat16)
     def impl(context, builder, sig, args):
-        context._external_linkage.add(shim_obj)
+        context.active_code_library.add_linking_file(shim_obj)
         shim_stream.write_with_key("hrsqrt_1", shim_raw_str)
         ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
         for ptr, ty, arg in zip(ptrs, sig.args, args):
@@ -2355,7 +2355,7 @@ def _hrcp_1_lower(shim_stream, shim_obj):
 
     @lower(hrcp, _type___nv_bfloat16)
     def impl(context, builder, sig, args):
-        context._external_linkage.add(shim_obj)
+        context.active_code_library.add_linking_file(shim_obj)
         shim_stream.write_with_key("hrcp_1", shim_raw_str)
         ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
         for ptr, ty, arg in zip(ptrs, sig.args, args):
@@ -2394,7 +2394,7 @@ def _hlog_1_lower(shim_stream, shim_obj):
 
     @lower(hlog, _type___nv_bfloat16)
     def impl(context, builder, sig, args):
-        context._external_linkage.add(shim_obj)
+        context.active_code_library.add_linking_file(shim_obj)
         shim_stream.write_with_key("hlog_1", shim_raw_str)
         ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
         for ptr, ty, arg in zip(ptrs, sig.args, args):
@@ -2433,7 +2433,7 @@ def _hlog2_1_lower(shim_stream, shim_obj):
 
     @lower(hlog2, _type___nv_bfloat16)
     def impl(context, builder, sig, args):
-        context._external_linkage.add(shim_obj)
+        context.active_code_library.add_linking_file(shim_obj)
         shim_stream.write_with_key("hlog2_1", shim_raw_str)
         ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
         for ptr, ty, arg in zip(ptrs, sig.args, args):
@@ -2472,7 +2472,7 @@ def _hlog10_1_lower(shim_stream, shim_obj):
 
     @lower(hlog10, _type___nv_bfloat16)
     def impl(context, builder, sig, args):
-        context._external_linkage.add(shim_obj)
+        context.active_code_library.add_linking_file(shim_obj)
         shim_stream.write_with_key("hlog10_1", shim_raw_str)
         ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
         for ptr, ty, arg in zip(ptrs, sig.args, args):
@@ -2511,7 +2511,7 @@ def _hexp_1_lower(shim_stream, shim_obj):
 
     @lower(hexp, _type___nv_bfloat16)
     def impl(context, builder, sig, args):
-        context._external_linkage.add(shim_obj)
+        context.active_code_library.add_linking_file(shim_obj)
         shim_stream.write_with_key("hexp_1", shim_raw_str)
         ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
         for ptr, ty, arg in zip(ptrs, sig.args, args):
@@ -2550,7 +2550,7 @@ def _htanh_approx_1_lower(shim_stream, shim_obj):
 
     @lower(htanh_approx, _type___nv_bfloat16)
     def impl(context, builder, sig, args):
-        context._external_linkage.add(shim_obj)
+        context.active_code_library.add_linking_file(shim_obj)
         shim_stream.write_with_key("htanh_approx_1", shim_raw_str)
         ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
         for ptr, ty, arg in zip(ptrs, sig.args, args):
@@ -2589,7 +2589,7 @@ def _h2tanh_approx_1_lower(shim_stream, shim_obj):
 
     @lower(h2tanh_approx, _type___nv_bfloat162)
     def impl(context, builder, sig, args):
-        context._external_linkage.add(shim_obj)
+        context.active_code_library.add_linking_file(shim_obj)
         shim_stream.write_with_key("h2tanh_approx_1", shim_raw_str)
         ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
         for ptr, ty, arg in zip(ptrs, sig.args, args):
@@ -2628,7 +2628,7 @@ def _htanh_1_lower(shim_stream, shim_obj):
 
     @lower(htanh, _type___nv_bfloat16)
     def impl(context, builder, sig, args):
-        context._external_linkage.add(shim_obj)
+        context.active_code_library.add_linking_file(shim_obj)
         shim_stream.write_with_key("htanh_1", shim_raw_str)
         ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
         for ptr, ty, arg in zip(ptrs, sig.args, args):
@@ -2667,7 +2667,7 @@ def _h2tanh_1_lower(shim_stream, shim_obj):
 
     @lower(h2tanh, _type___nv_bfloat162)
     def impl(context, builder, sig, args):
-        context._external_linkage.add(shim_obj)
+        context.active_code_library.add_linking_file(shim_obj)
         shim_stream.write_with_key("h2tanh_1", shim_raw_str)
         ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
         for ptr, ty, arg in zip(ptrs, sig.args, args):
@@ -2706,7 +2706,7 @@ def _hexp2_1_lower(shim_stream, shim_obj):
 
     @lower(hexp2, _type___nv_bfloat16)
     def impl(context, builder, sig, args):
-        context._external_linkage.add(shim_obj)
+        context.active_code_library.add_linking_file(shim_obj)
         shim_stream.write_with_key("hexp2_1", shim_raw_str)
         ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
         for ptr, ty, arg in zip(ptrs, sig.args, args):
@@ -2745,7 +2745,7 @@ def _hexp10_1_lower(shim_stream, shim_obj):
 
     @lower(hexp10, _type___nv_bfloat16)
     def impl(context, builder, sig, args):
-        context._external_linkage.add(shim_obj)
+        context.active_code_library.add_linking_file(shim_obj)
         shim_stream.write_with_key("hexp10_1", shim_raw_str)
         ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
         for ptr, ty, arg in zip(ptrs, sig.args, args):
@@ -2784,7 +2784,7 @@ def _hcos_1_lower(shim_stream, shim_obj):
 
     @lower(hcos, _type___nv_bfloat16)
     def impl(context, builder, sig, args):
-        context._external_linkage.add(shim_obj)
+        context.active_code_library.add_linking_file(shim_obj)
         shim_stream.write_with_key("hcos_1", shim_raw_str)
         ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
         for ptr, ty, arg in zip(ptrs, sig.args, args):
@@ -2823,7 +2823,7 @@ def _hsin_1_lower(shim_stream, shim_obj):
 
     @lower(hsin, _type___nv_bfloat16)
     def impl(context, builder, sig, args):
-        context._external_linkage.add(shim_obj)
+        context.active_code_library.add_linking_file(shim_obj)
         shim_stream.write_with_key("hsin_1", shim_raw_str)
         ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
         for ptr, ty, arg in zip(ptrs, sig.args, args):
@@ -2862,7 +2862,7 @@ def _h2sqrt_1_lower(shim_stream, shim_obj):
 
     @lower(h2sqrt, _type___nv_bfloat162)
     def impl(context, builder, sig, args):
-        context._external_linkage.add(shim_obj)
+        context.active_code_library.add_linking_file(shim_obj)
         shim_stream.write_with_key("h2sqrt_1", shim_raw_str)
         ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
         for ptr, ty, arg in zip(ptrs, sig.args, args):
@@ -2901,7 +2901,7 @@ def _h2rsqrt_1_lower(shim_stream, shim_obj):
 
     @lower(h2rsqrt, _type___nv_bfloat162)
     def impl(context, builder, sig, args):
-        context._external_linkage.add(shim_obj)
+        context.active_code_library.add_linking_file(shim_obj)
         shim_stream.write_with_key("h2rsqrt_1", shim_raw_str)
         ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
         for ptr, ty, arg in zip(ptrs, sig.args, args):
@@ -2940,7 +2940,7 @@ def _h2rcp_1_lower(shim_stream, shim_obj):
 
     @lower(h2rcp, _type___nv_bfloat162)
     def impl(context, builder, sig, args):
-        context._external_linkage.add(shim_obj)
+        context.active_code_library.add_linking_file(shim_obj)
         shim_stream.write_with_key("h2rcp_1", shim_raw_str)
         ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
         for ptr, ty, arg in zip(ptrs, sig.args, args):
@@ -2979,7 +2979,7 @@ def _h2log_1_lower(shim_stream, shim_obj):
 
     @lower(h2log, _type___nv_bfloat162)
     def impl(context, builder, sig, args):
-        context._external_linkage.add(shim_obj)
+        context.active_code_library.add_linking_file(shim_obj)
         shim_stream.write_with_key("h2log_1", shim_raw_str)
         ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
         for ptr, ty, arg in zip(ptrs, sig.args, args):
@@ -3018,7 +3018,7 @@ def _h2log2_1_lower(shim_stream, shim_obj):
 
     @lower(h2log2, _type___nv_bfloat162)
     def impl(context, builder, sig, args):
-        context._external_linkage.add(shim_obj)
+        context.active_code_library.add_linking_file(shim_obj)
         shim_stream.write_with_key("h2log2_1", shim_raw_str)
         ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
         for ptr, ty, arg in zip(ptrs, sig.args, args):
@@ -3057,7 +3057,7 @@ def _h2log10_1_lower(shim_stream, shim_obj):
 
     @lower(h2log10, _type___nv_bfloat162)
     def impl(context, builder, sig, args):
-        context._external_linkage.add(shim_obj)
+        context.active_code_library.add_linking_file(shim_obj)
         shim_stream.write_with_key("h2log10_1", shim_raw_str)
         ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
         for ptr, ty, arg in zip(ptrs, sig.args, args):
@@ -3096,7 +3096,7 @@ def _h2exp_1_lower(shim_stream, shim_obj):
 
     @lower(h2exp, _type___nv_bfloat162)
     def impl(context, builder, sig, args):
-        context._external_linkage.add(shim_obj)
+        context.active_code_library.add_linking_file(shim_obj)
         shim_stream.write_with_key("h2exp_1", shim_raw_str)
         ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
         for ptr, ty, arg in zip(ptrs, sig.args, args):
@@ -3135,7 +3135,7 @@ def _h2exp2_1_lower(shim_stream, shim_obj):
 
     @lower(h2exp2, _type___nv_bfloat162)
     def impl(context, builder, sig, args):
-        context._external_linkage.add(shim_obj)
+        context.active_code_library.add_linking_file(shim_obj)
         shim_stream.write_with_key("h2exp2_1", shim_raw_str)
         ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
         for ptr, ty, arg in zip(ptrs, sig.args, args):
@@ -3174,7 +3174,7 @@ def _h2exp10_1_lower(shim_stream, shim_obj):
 
     @lower(h2exp10, _type___nv_bfloat162)
     def impl(context, builder, sig, args):
-        context._external_linkage.add(shim_obj)
+        context.active_code_library.add_linking_file(shim_obj)
         shim_stream.write_with_key("h2exp10_1", shim_raw_str)
         ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
         for ptr, ty, arg in zip(ptrs, sig.args, args):
@@ -3213,7 +3213,7 @@ def _h2cos_1_lower(shim_stream, shim_obj):
 
     @lower(h2cos, _type___nv_bfloat162)
     def impl(context, builder, sig, args):
-        context._external_linkage.add(shim_obj)
+        context.active_code_library.add_linking_file(shim_obj)
         shim_stream.write_with_key("h2cos_1", shim_raw_str)
         ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
         for ptr, ty, arg in zip(ptrs, sig.args, args):
@@ -3252,7 +3252,7 @@ def _h2sin_1_lower(shim_stream, shim_obj):
 
     @lower(h2sin, _type___nv_bfloat162)
     def impl(context, builder, sig, args):
-        context._external_linkage.add(shim_obj)
+        context.active_code_library.add_linking_file(shim_obj)
         shim_stream.write_with_key("h2sin_1", shim_raw_str)
         ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
         for ptr, ty, arg in zip(ptrs, sig.args, args):
@@ -3295,7 +3295,7 @@ def _atomicAdd_1_lower(shim_stream, shim_obj):
 
     @lower(atomicAdd, CPointer(_type___nv_bfloat162), _type___nv_bfloat162)
     def impl(context, builder, sig, args):
-        context._external_linkage.add(shim_obj)
+        context.active_code_library.add_linking_file(shim_obj)
         shim_stream.write_with_key("atomicAdd_1", shim_raw_str)
         ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
         for ptr, ty, arg in zip(ptrs, sig.args, args):
@@ -3338,7 +3338,7 @@ def _atomicAdd_2_lower(shim_stream, shim_obj):
 
     @lower(atomicAdd, CPointer(_type___nv_bfloat16), _type___nv_bfloat16)
     def impl(context, builder, sig, args):
-        context._external_linkage.add(shim_obj)
+        context.active_code_library.add_linking_file(shim_obj)
         shim_stream.write_with_key("atomicAdd_2", shim_raw_str)
         ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
         for ptr, ty, arg in zip(ptrs, sig.args, args):
@@ -3380,7 +3380,7 @@ def _operator_add_1_lower(shim_stream, shim_obj):
 
     @lower(operator.add, _type___nv_bfloat16, _type___nv_bfloat16)
     def impl(context, builder, sig, args):
-        context._external_linkage.add(shim_obj)
+        context.active_code_library.add_linking_file(shim_obj)
         shim_stream.write_with_key("operator_add_1", shim_raw_str)
         ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
         for ptr, ty, arg in zip(ptrs, sig.args, args):
@@ -3422,7 +3422,7 @@ def _operator_sub_1_lower(shim_stream, shim_obj):
 
     @lower(operator.sub, _type___nv_bfloat16, _type___nv_bfloat16)
     def impl(context, builder, sig, args):
-        context._external_linkage.add(shim_obj)
+        context.active_code_library.add_linking_file(shim_obj)
         shim_stream.write_with_key("operator_sub_1", shim_raw_str)
         ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
         for ptr, ty, arg in zip(ptrs, sig.args, args):
@@ -3464,7 +3464,7 @@ def _operator_mul_1_lower(shim_stream, shim_obj):
 
     @lower(operator.mul, _type___nv_bfloat16, _type___nv_bfloat16)
     def impl(context, builder, sig, args):
-        context._external_linkage.add(shim_obj)
+        context.active_code_library.add_linking_file(shim_obj)
         shim_stream.write_with_key("operator_mul_1", shim_raw_str)
         ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
         for ptr, ty, arg in zip(ptrs, sig.args, args):
@@ -3506,7 +3506,7 @@ def _operator_truediv_1_lower(shim_stream, shim_obj):
 
     @lower(operator.truediv, _type___nv_bfloat16, _type___nv_bfloat16)
     def impl(context, builder, sig, args):
-        context._external_linkage.add(shim_obj)
+        context.active_code_library.add_linking_file(shim_obj)
         shim_stream.write_with_key("operator_truediv_1", shim_raw_str)
         ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
         for ptr, ty, arg in zip(ptrs, sig.args, args):
@@ -3548,7 +3548,7 @@ def _operator_iadd_1_lower(shim_stream, shim_obj):
 
     @lower(operator.iadd, _type___nv_bfloat16, _type___nv_bfloat16)
     def impl(context, builder, sig, args):
-        context._external_linkage.add(shim_obj)
+        context.active_code_library.add_linking_file(shim_obj)
         shim_stream.write_with_key("operator_iadd_1", shim_raw_str)
         ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
         for ptr, ty, arg in zip(ptrs, sig.args, args):
@@ -3590,7 +3590,7 @@ def _operator_isub_1_lower(shim_stream, shim_obj):
 
     @lower(operator.isub, _type___nv_bfloat16, _type___nv_bfloat16)
     def impl(context, builder, sig, args):
-        context._external_linkage.add(shim_obj)
+        context.active_code_library.add_linking_file(shim_obj)
         shim_stream.write_with_key("operator_isub_1", shim_raw_str)
         ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
         for ptr, ty, arg in zip(ptrs, sig.args, args):
@@ -3632,7 +3632,7 @@ def _operator_imul_1_lower(shim_stream, shim_obj):
 
     @lower(operator.imul, _type___nv_bfloat16, _type___nv_bfloat16)
     def impl(context, builder, sig, args):
-        context._external_linkage.add(shim_obj)
+        context.active_code_library.add_linking_file(shim_obj)
         shim_stream.write_with_key("operator_imul_1", shim_raw_str)
         ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
         for ptr, ty, arg in zip(ptrs, sig.args, args):
@@ -3674,7 +3674,7 @@ def _operator_itruediv_1_lower(shim_stream, shim_obj):
 
     @lower(operator.itruediv, _type___nv_bfloat16, _type___nv_bfloat16)
     def impl(context, builder, sig, args):
-        context._external_linkage.add(shim_obj)
+        context.active_code_library.add_linking_file(shim_obj)
         shim_stream.write_with_key("operator_itruediv_1", shim_raw_str)
         ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
         for ptr, ty, arg in zip(ptrs, sig.args, args):
@@ -3713,7 +3713,7 @@ def _operator_pos_1_lower(shim_stream, shim_obj):
 
     @lower(operator.pos, _type___nv_bfloat16)
     def impl(context, builder, sig, args):
-        context._external_linkage.add(shim_obj)
+        context.active_code_library.add_linking_file(shim_obj)
         shim_stream.write_with_key("operator_pos_1", shim_raw_str)
         ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
         for ptr, ty, arg in zip(ptrs, sig.args, args):
@@ -3748,7 +3748,7 @@ def _operator_neg_1_lower(shim_stream, shim_obj):
 
     @lower(operator.neg, _type___nv_bfloat16)
     def impl(context, builder, sig, args):
-        context._external_linkage.add(shim_obj)
+        context.active_code_library.add_linking_file(shim_obj)
         shim_stream.write_with_key("operator_neg_1", shim_raw_str)
         ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
         for ptr, ty, arg in zip(ptrs, sig.args, args):
@@ -3784,7 +3784,7 @@ def _operator_eq_1_lower(shim_stream, shim_obj):
 
     @lower(operator.eq, _type___nv_bfloat16, _type___nv_bfloat16)
     def impl(context, builder, sig, args):
-        context._external_linkage.add(shim_obj)
+        context.active_code_library.add_linking_file(shim_obj)
         shim_stream.write_with_key("operator_eq_1", shim_raw_str)
         ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
         for ptr, ty, arg in zip(ptrs, sig.args, args):
@@ -3824,7 +3824,7 @@ def _operator_ne_1_lower(shim_stream, shim_obj):
 
     @lower(operator.ne, _type___nv_bfloat16, _type___nv_bfloat16)
     def impl(context, builder, sig, args):
-        context._external_linkage.add(shim_obj)
+        context.active_code_library.add_linking_file(shim_obj)
         shim_stream.write_with_key("operator_ne_1", shim_raw_str)
         ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
         for ptr, ty, arg in zip(ptrs, sig.args, args):
@@ -3864,7 +3864,7 @@ def _operator_gt_1_lower(shim_stream, shim_obj):
 
     @lower(operator.gt, _type___nv_bfloat16, _type___nv_bfloat16)
     def impl(context, builder, sig, args):
-        context._external_linkage.add(shim_obj)
+        context.active_code_library.add_linking_file(shim_obj)
         shim_stream.write_with_key("operator_gt_1", shim_raw_str)
         ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
         for ptr, ty, arg in zip(ptrs, sig.args, args):
@@ -3904,7 +3904,7 @@ def _operator_lt_1_lower(shim_stream, shim_obj):
 
     @lower(operator.lt, _type___nv_bfloat16, _type___nv_bfloat16)
     def impl(context, builder, sig, args):
-        context._external_linkage.add(shim_obj)
+        context.active_code_library.add_linking_file(shim_obj)
         shim_stream.write_with_key("operator_lt_1", shim_raw_str)
         ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
         for ptr, ty, arg in zip(ptrs, sig.args, args):
@@ -3944,7 +3944,7 @@ def _operator_ge_1_lower(shim_stream, shim_obj):
 
     @lower(operator.ge, _type___nv_bfloat16, _type___nv_bfloat16)
     def impl(context, builder, sig, args):
-        context._external_linkage.add(shim_obj)
+        context.active_code_library.add_linking_file(shim_obj)
         shim_stream.write_with_key("operator_ge_1", shim_raw_str)
         ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
         for ptr, ty, arg in zip(ptrs, sig.args, args):
@@ -3984,7 +3984,7 @@ def _operator_le_1_lower(shim_stream, shim_obj):
 
     @lower(operator.le, _type___nv_bfloat16, _type___nv_bfloat16)
     def impl(context, builder, sig, args):
-        context._external_linkage.add(shim_obj)
+        context.active_code_library.add_linking_file(shim_obj)
         shim_stream.write_with_key("operator_le_1", shim_raw_str)
         ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
         for ptr, ty, arg in zip(ptrs, sig.args, args):
@@ -4026,7 +4026,7 @@ def _operator_add_2_lower(shim_stream, shim_obj):
 
     @lower(operator.add, _type___nv_bfloat162, _type___nv_bfloat162)
     def impl(context, builder, sig, args):
-        context._external_linkage.add(shim_obj)
+        context.active_code_library.add_linking_file(shim_obj)
         shim_stream.write_with_key("operator_add_2", shim_raw_str)
         ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
         for ptr, ty, arg in zip(ptrs, sig.args, args):
@@ -4068,7 +4068,7 @@ def _operator_sub_2_lower(shim_stream, shim_obj):
 
     @lower(operator.sub, _type___nv_bfloat162, _type___nv_bfloat162)
     def impl(context, builder, sig, args):
-        context._external_linkage.add(shim_obj)
+        context.active_code_library.add_linking_file(shim_obj)
         shim_stream.write_with_key("operator_sub_2", shim_raw_str)
         ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
         for ptr, ty, arg in zip(ptrs, sig.args, args):
@@ -4110,7 +4110,7 @@ def _operator_mul_2_lower(shim_stream, shim_obj):
 
     @lower(operator.mul, _type___nv_bfloat162, _type___nv_bfloat162)
     def impl(context, builder, sig, args):
-        context._external_linkage.add(shim_obj)
+        context.active_code_library.add_linking_file(shim_obj)
         shim_stream.write_with_key("operator_mul_2", shim_raw_str)
         ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
         for ptr, ty, arg in zip(ptrs, sig.args, args):
@@ -4152,7 +4152,7 @@ def _operator_truediv_2_lower(shim_stream, shim_obj):
 
     @lower(operator.truediv, _type___nv_bfloat162, _type___nv_bfloat162)
     def impl(context, builder, sig, args):
-        context._external_linkage.add(shim_obj)
+        context.active_code_library.add_linking_file(shim_obj)
         shim_stream.write_with_key("operator_truediv_2", shim_raw_str)
         ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
         for ptr, ty, arg in zip(ptrs, sig.args, args):
@@ -4194,7 +4194,7 @@ def _operator_iadd_2_lower(shim_stream, shim_obj):
 
     @lower(operator.iadd, _type___nv_bfloat162, _type___nv_bfloat162)
     def impl(context, builder, sig, args):
-        context._external_linkage.add(shim_obj)
+        context.active_code_library.add_linking_file(shim_obj)
         shim_stream.write_with_key("operator_iadd_2", shim_raw_str)
         ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
         for ptr, ty, arg in zip(ptrs, sig.args, args):
@@ -4236,7 +4236,7 @@ def _operator_isub_2_lower(shim_stream, shim_obj):
 
     @lower(operator.isub, _type___nv_bfloat162, _type___nv_bfloat162)
     def impl(context, builder, sig, args):
-        context._external_linkage.add(shim_obj)
+        context.active_code_library.add_linking_file(shim_obj)
         shim_stream.write_with_key("operator_isub_2", shim_raw_str)
         ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
         for ptr, ty, arg in zip(ptrs, sig.args, args):
@@ -4278,7 +4278,7 @@ def _operator_imul_2_lower(shim_stream, shim_obj):
 
     @lower(operator.imul, _type___nv_bfloat162, _type___nv_bfloat162)
     def impl(context, builder, sig, args):
-        context._external_linkage.add(shim_obj)
+        context.active_code_library.add_linking_file(shim_obj)
         shim_stream.write_with_key("operator_imul_2", shim_raw_str)
         ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
         for ptr, ty, arg in zip(ptrs, sig.args, args):
@@ -4320,7 +4320,7 @@ def _operator_itruediv_2_lower(shim_stream, shim_obj):
 
     @lower(operator.itruediv, _type___nv_bfloat162, _type___nv_bfloat162)
     def impl(context, builder, sig, args):
-        context._external_linkage.add(shim_obj)
+        context.active_code_library.add_linking_file(shim_obj)
         shim_stream.write_with_key("operator_itruediv_2", shim_raw_str)
         ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
         for ptr, ty, arg in zip(ptrs, sig.args, args):
@@ -4359,7 +4359,7 @@ def _operator_pos_2_lower(shim_stream, shim_obj):
 
     @lower(operator.pos, _type___nv_bfloat162)
     def impl(context, builder, sig, args):
-        context._external_linkage.add(shim_obj)
+        context.active_code_library.add_linking_file(shim_obj)
         shim_stream.write_with_key("operator_pos_2", shim_raw_str)
         ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
         for ptr, ty, arg in zip(ptrs, sig.args, args):
@@ -4394,7 +4394,7 @@ def _operator_neg_2_lower(shim_stream, shim_obj):
 
     @lower(operator.neg, _type___nv_bfloat162)
     def impl(context, builder, sig, args):
-        context._external_linkage.add(shim_obj)
+        context.active_code_library.add_linking_file(shim_obj)
         shim_stream.write_with_key("operator_neg_2", shim_raw_str)
         ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
         for ptr, ty, arg in zip(ptrs, sig.args, args):
@@ -4430,7 +4430,7 @@ def _operator_eq_2_lower(shim_stream, shim_obj):
 
     @lower(operator.eq, _type___nv_bfloat162, _type___nv_bfloat162)
     def impl(context, builder, sig, args):
-        context._external_linkage.add(shim_obj)
+        context.active_code_library.add_linking_file(shim_obj)
         shim_stream.write_with_key("operator_eq_2", shim_raw_str)
         ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
         for ptr, ty, arg in zip(ptrs, sig.args, args):
@@ -4470,7 +4470,7 @@ def _operator_ne_2_lower(shim_stream, shim_obj):
 
     @lower(operator.ne, _type___nv_bfloat162, _type___nv_bfloat162)
     def impl(context, builder, sig, args):
-        context._external_linkage.add(shim_obj)
+        context.active_code_library.add_linking_file(shim_obj)
         shim_stream.write_with_key("operator_ne_2", shim_raw_str)
         ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
         for ptr, ty, arg in zip(ptrs, sig.args, args):
@@ -4510,7 +4510,7 @@ def _operator_gt_2_lower(shim_stream, shim_obj):
 
     @lower(operator.gt, _type___nv_bfloat162, _type___nv_bfloat162)
     def impl(context, builder, sig, args):
-        context._external_linkage.add(shim_obj)
+        context.active_code_library.add_linking_file(shim_obj)
         shim_stream.write_with_key("operator_gt_2", shim_raw_str)
         ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
         for ptr, ty, arg in zip(ptrs, sig.args, args):
@@ -4550,7 +4550,7 @@ def _operator_lt_2_lower(shim_stream, shim_obj):
 
     @lower(operator.lt, _type___nv_bfloat162, _type___nv_bfloat162)
     def impl(context, builder, sig, args):
-        context._external_linkage.add(shim_obj)
+        context.active_code_library.add_linking_file(shim_obj)
         shim_stream.write_with_key("operator_lt_2", shim_raw_str)
         ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
         for ptr, ty, arg in zip(ptrs, sig.args, args):
@@ -4590,7 +4590,7 @@ def _operator_ge_2_lower(shim_stream, shim_obj):
 
     @lower(operator.ge, _type___nv_bfloat162, _type___nv_bfloat162)
     def impl(context, builder, sig, args):
-        context._external_linkage.add(shim_obj)
+        context.active_code_library.add_linking_file(shim_obj)
         shim_stream.write_with_key("operator_ge_2", shim_raw_str)
         ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
         for ptr, ty, arg in zip(ptrs, sig.args, args):
@@ -4630,7 +4630,7 @@ def _operator_le_2_lower(shim_stream, shim_obj):
 
     @lower(operator.le, _type___nv_bfloat162, _type___nv_bfloat162)
     def impl(context, builder, sig, args):
-        context._external_linkage.add(shim_obj)
+        context.active_code_library.add_linking_file(shim_obj)
         shim_stream.write_with_key("operator_le_2", shim_raw_str)
         ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
         for ptr, ty, arg in zip(ptrs, sig.args, args):

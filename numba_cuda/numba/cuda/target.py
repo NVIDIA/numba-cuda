@@ -76,7 +76,6 @@ class CUDATargetContext(BaseContext):
         self.data_model_manager = cuda_data_manager.chain(
             datamodel.default_manager
         )
-        self._external_linkage = set()
 
     @property
     def enable_nrt(self):
