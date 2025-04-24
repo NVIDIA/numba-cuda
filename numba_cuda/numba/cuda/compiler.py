@@ -118,10 +118,6 @@ class CUDABackend(LoweringPass):
         """
         lowered = state["cr"]
         signature = typing.signature(state.return_type, *state.args)
-        if "metadata" in state:
-            md = state["metadata"]
-        else:
-            md = None
 
         state.cr = cuda_compile_result(
             typing_context=state.typingctx,
@@ -132,7 +128,7 @@ class CUDABackend(LoweringPass):
             call_helper=lowered.call_helper,
             signature=signature,
             fndesc=lowered.fndesc,
-            metadata=md,
+            metadata=state.metadata,
         )
         return True
 
