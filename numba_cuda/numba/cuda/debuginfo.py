@@ -59,6 +59,30 @@ class CUDADIBuilder(DIBuilder):
         # For other cases, use upstream Numba implementation
         return super()._var_type(lltype, size, datamodel=datamodel)
 
+    def _di_subroutine_type(self, line, function, argmap):
+        # The function call conv needs encoding.
+        llfunc = function
+        md = []
+
+        # Create metadata type for return value
+        if len(llfunc.args) > 0:
+            lltype = llfunc.args[0].type
+            size = self.cgctx.get_abi_sizeof(lltype)
+            mdtype = self._var_type(lltype, size, datamodel=None)
+            md.append(mdtype)
+
+        # Create metadata type for arguments
+        for idx, (name, nbtype) in enumerate(argmap.items()):
+            datamodel = self.cgctx.data_model_manager[nbtype]
+            lltype = self.cgctx.get_value_type(nbtype)
+            size = self.cgctx.get_abi_sizeof(lltype)
+            mdtype = self._var_type(lltype, size, datamodel=datamodel)
+            md.append(mdtype)
+
+        return self.module.add_debug_info('DISubroutineType', {
+            'types': self.module.add_metadata(md),
+        })
+
     def mark_variable(
         self,
         builder,
