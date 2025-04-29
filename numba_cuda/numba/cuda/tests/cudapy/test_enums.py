@@ -6,6 +6,7 @@ import numpy as np
 
 from numba import int16, int32
 from numba import cuda, vectorize, njit
+from numba.core import types, typing
 from numba.cuda.testing import unittest, CUDATestCase, skip_on_cudasim
 from numba.tests.enum_usecases import (
     Color,
@@ -114,6 +115,23 @@ class EnumTest(CUDATestCase):
         expected = np.array([f(x) for x in arr], dtype=np.int64)
         got = cuda_func(arr)
         self.assertPreciseEqual(expected, got)
+
+    def test_int_enum_no_conversion(self):
+        # Ported from Numba PR #10047: "Fix IntEnumMember.can_convert_to() when
+        # no conversions found", https://github.com/numba/numba/pull/10047.
+
+        # The original test is intended to ensures that
+        # IntEnumMember.can_convert_to() handles the case when the typing
+        # context's can_convert() method returns None to signal no possible
+        # conversion. In Numba-CUDA, we had to patch the CUDA target context to
+        # work around this issue, because we cannot guarantee that the
+        # IntEnumMember method can be patched before instances are created.
+        ctx = cuda.descriptor.cuda_target.typing_context
+
+        int_enum_type = types.IntEnumMember(Shape, types.int64)
+        # Conversion of an int enum member to a 1D array would be invalid
+        invalid_toty = types.int64[::1]
+        self.assertIsNone(ctx.can_convert(int_enum_type, invalid_toty))
 
 
 if __name__ == "__main__":
