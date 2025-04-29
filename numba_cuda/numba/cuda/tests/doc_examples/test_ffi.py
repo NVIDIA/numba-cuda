@@ -2,7 +2,7 @@
 # "magictoken" is used for markers as beginning and ending of example text.
 
 import unittest
-from numba.cuda.testing import (CUDATestCase, skip_on_cudasim)
+from numba.cuda.testing import CUDATestCase, skip_on_cudasim
 from numba.tests.support import skip_unless_cffi
 
 
@@ -18,11 +18,12 @@ class TestFFI(CUDATestCase):
         # Path to the source containing the foreign function
         # (here assumed to be in a subdirectory called "ffi")
         basedir = os.path.dirname(os.path.abspath(__file__))
-        functions_cu = os.path.join(basedir, 'ffi', 'functions.cu')
+        functions_cu = os.path.join(basedir, "ffi", "functions.cu")
 
         # Declaration of the foreign function
-        mul = cuda.declare_device('mul_f32_f32', 'float32(float32, float32)',
-                                  link=functions_cu)
+        mul = cuda.declare_device(
+            "mul_f32_f32", "float32(float32, float32)", link=functions_cu
+        )
 
         # A kernel that calls mul; functions.cu is linked automatically due to
         # the call to mul.
@@ -52,25 +53,29 @@ class TestFFI(CUDATestCase):
         import os
 
         basedir = os.path.dirname(os.path.abspath(__file__))
-        functions_cu = os.path.join(basedir, 'ffi', 'functions.cu')
+        functions_cu = os.path.join(basedir, "ffi", "functions.cu")
 
         # magictoken.ex_from_buffer_decl.begin
-        signature = 'float32(CPointer(float32), int32)'
-        sum_reduce = cuda.declare_device('sum_reduce', signature,
-                                         link=functions_cu)
+        signature = "float32(CPointer(float32), int32)"
+        sum_reduce = cuda.declare_device(
+            "sum_reduce", signature, link=functions_cu
+        )
         # magictoken.ex_from_buffer_decl.end
 
         # magictoken.ex_from_buffer_kernel.begin
         import cffi
+
         ffi = cffi.FFI()
 
         @cuda.jit
         def reduction_caller(result, array):
             array_ptr = ffi.from_buffer(array)
             result[()] = sum_reduce(array_ptr, len(array))
+
         # magictoken.ex_from_buffer_kernel.end
 
         import numpy as np
+
         x = np.arange(10).astype(np.float32)
         r = np.ndarray((), dtype=np.float32)
 
@@ -81,5 +86,5 @@ class TestFFI(CUDATestCase):
         np.testing.assert_allclose(expected, actual)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()
