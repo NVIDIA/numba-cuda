@@ -1,4 +1,3 @@
-from numba import config
 import numba.cuda as cuda
 from numba.cuda.testing import unittest, CUDATestCase
 import numpy as np
@@ -32,7 +31,6 @@ dtypes = [int16, int32, int64, uint16, uint32, uint64, float32]
 @unittest.skipIf(
     (cuda.get_current_device().compute_capability < (8, 0)),
     "bfloat16 requires compute capability 8.0+",
-
 )
 class Bfloat16Test(CUDATestCase):
     def test_ctor(self):
