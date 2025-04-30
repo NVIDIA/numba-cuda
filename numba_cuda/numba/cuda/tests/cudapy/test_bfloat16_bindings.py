@@ -6,34 +6,33 @@ import numpy as np
 from numba import int16, int32, int64, uint16, uint32, uint64, float32, float64
 from numba.types import float16
 
-if config.CUDA_ENABLE_PYNVJITLINK:
-    from numba.cuda.cuda_bf16 import (
-        nv_bfloat16,
-        htrunc,
-        hceil,
-        hfloor,
-        hrint,
-        hsqrt,
-        hrsqrt,
-        hrcp,
-        hlog,
-        hlog2,
-        hlog10,
-        hcos,
-        hsin,
-        hexp,
-        hexp2,
-        hexp10,
-    )
+from numba.cuda.cuda_bf16 import (
+    nv_bfloat16,
+    htrunc,
+    hceil,
+    hfloor,
+    hrint,
+    hsqrt,
+    hrsqrt,
+    hrcp,
+    hlog,
+    hlog2,
+    hlog10,
+    hcos,
+    hsin,
+    hexp,
+    hexp2,
+    hexp10,
+)
 
 
 dtypes = [int16, int32, int64, uint16, uint32, uint64, float32]
 
 
 @unittest.skipIf(
-    (cuda.get_current_device().compute_capability < (8, 0))
-    or (not config.CUDA_ENABLE_PYNVJITLINK),
-    "bfloat16 require compute capability 8.0+ or pynvjitlink is not enabled",
+    (cuda.get_current_device().compute_capability < (8, 0)),
+    "bfloat16 requires compute capability 8.0+",
+
 )
 class Bfloat16Test(CUDATestCase):
     def test_ctor(self):
