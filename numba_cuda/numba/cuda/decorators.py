@@ -84,7 +84,8 @@ def jit(
     if isinstance(inline, bool):
         DeprecationWarning(
             "Passing bool to inline argument is deprecated, please refer to "
-            "numba's documentation for valid inputs."
+            "Numba's documentation on inlining: "
+            "https://numba.readthedocs.io/en/stable/developer/inlining.html"
         )
 
         inline = "always" if inline else "never"
