@@ -70,11 +70,7 @@ class _KeyedStringIO(io.StringIO):
 
 
 shim_defines = ""
-shim_include = (
-    "#include <"
-    + os.path.join(os.path.abspath(os.path.dirname(__file__)), "cuda_bf16.h")
-    + ">"
-)
+shim_include = "#include <cuda_bf16.h>"
 shim_prefix = shim_defines + "\n" + shim_include
 shim_stream = _KeyedStringIO()
 shim_stream.write(shim_prefix)
