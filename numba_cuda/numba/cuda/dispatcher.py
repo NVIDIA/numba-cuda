@@ -294,7 +294,7 @@ class _Kernel(serialize.ReduceMixin):
                         link_nrt = True
                         break
                     elif isinstance(file, (CUSource, PTXSource)):
-                        asm = file.data.decode("utf-8")
+                        asm = file.data
                     else:
                         asm = ""
                 else:
