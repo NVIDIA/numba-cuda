@@ -201,6 +201,8 @@ def _get_nvrtc_wheel():
 
 def _get_libdevice_paths():
     by, libdir = _get_libdevice_path_decision()
+    if not libdir:
+        return _env_path_tuple(by, None)
     out = os.path.join(libdir, "libdevice.10.bc")
     return _env_path_tuple(by, out)
 
