@@ -160,7 +160,7 @@ class TestNrtLinking(CUDATestCase):
 
     def test_nrt_detect_linked_ptx_file(self):
         src = f"#include <{get_include()}/nrt.cuh>"
-        src += """;
+        src += """
                  extern "C" __device__ int device_allocate_deallocate(int* nb_retval){
                      auto ptr = NRT_Allocate(1);
                      NRT_Free(ptr);

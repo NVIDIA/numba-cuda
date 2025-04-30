@@ -20,6 +20,7 @@ from numba.cuda.compiler import (
     kernel_fixup,
     ExternFunction,
 )
+import re
 from numba.cuda.cudadrv import driver
 from numba.cuda.cudadrv.linkable_code import LinkableCode, CUSource, PTXSource
 from numba.cuda.cudadrv.devices import get_context
@@ -263,10 +264,28 @@ class _Kernel(serialize.ReduceMixin):
         self.reload_init = []
 
     def maybe_link_nrt(self, link, tgt_ctx, asm):
+        """
+        Add the NRT source code to the link if the neccesary conditions are met:
+        If NRT is enabled for the CUDATargetContext, return True if we either
+        detect .extern .func decls of NRT functions in any file in the link or
+        any of the passed LinkableCode objects have NRT enabled. In the special
+        case of PTXSource or CUSource objects, the source code will be inspected
+        even if the NRT flag is not set.
+        """
         if not tgt_ctx.enable_nrt:
             return
 
-        nrt_in_asm = lambda asm: any(fn in asm for fn in self.NRT_functions)
+        def nrt_in_asm(asm):
+            all_nrt = "|".join(self.NRT_functions)
+            pattern = (
+                r"\.extern\s+\.func\s+(?:\s*\(.+\)\s*)?("
+                + all_nrt
+                + r")\s*\([^)]*\)\s*;"
+            )
+
+            nrt_in_asm = re.findall(pattern, asm)
+            return len(nrt_in_asm) > 0
+
         link_nrt = nrt_in_asm(asm)
         if not link_nrt:
             for file in link:
