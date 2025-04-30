@@ -63,8 +63,6 @@ class AllocateShimImpl(AbstractTemplate):
         return signature(types.void)
 
 
-# let there be a __device__ function expecting
-# a string_view* and returning size_type
 device_fun_shim = cuda.declare_device(
     "device_allocate_deallocate", types.int32()
 )

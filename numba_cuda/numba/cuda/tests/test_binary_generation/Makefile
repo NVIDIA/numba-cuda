@@ -63,5 +63,7 @@ all:
 
 	# Generate LTO-IR wrapped in a fatbin
 	nvcc $(NVCC_FLAGS) $(LTOIR_FLAGS) -o $(OUTPUT_DIR)/test_device_functions.ltoir.o test_device_functions.cu
+	nvcc $(NVCC_FLAGS) $(LTOIR_FLAGS) -o $(OUTPUT_DIR)/nrt_extern.ltoir.o nrt_extern.cu -I$(NRT_INCLUDE_DIR)
 	# Generate LTO-IR in a "raw" LTO-IR container
 	python generate_raw_ltoir.py --arch sm_$(GPU_CC) -o $(OUTPUT_DIR)/test_device_functions.ltoir test_device_functions.cu
+	python generate_raw_ltoir.py --arch sm_$(GPU_CC) -o $(OUTPUT_DIR)/nrt_extern.ltoir nrt_extern.cu --nrt=True

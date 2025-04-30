@@ -13,6 +13,8 @@ class LinkableCode:
     :param teardown_callback: A function called just prior to the unloading of
                               a module that has this code object linked into
                               it.
+    :param nrt: If True, assume this object contains NRT function calls and
+                add NRT source code to the final link.
     """
 
     def __init__(
