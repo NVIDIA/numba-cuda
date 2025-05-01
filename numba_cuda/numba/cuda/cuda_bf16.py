@@ -2,8 +2,8 @@
 # Generator Information:
 # Ast_canopy version: 0.3.0
 # Numbast version: 0.3.0
-# Generation command: /home/wangm/numbast/numbast/src/numbast/__main__.py --cfg-path configs/cuda_bf16.yml --output-dir numba_cuda/numba/cuda
-# Static binding generator parameters: {'cfg_path': 'configs/cuda_bf16.yml', 'output_dir': 'numba_cuda/numba/cuda', 'entry_point': None, 'retain': None, 'types': None, 'datamodels': None, 'compute_capability': None, 'run_ruff_format': True}
+# Generation command: /home/wangm/numbast/numbast/src/numbast/__main__.py --cfg-path configs/cuda_bf16.yml --output-dir numba_cuda/numba/cuda/
+# Static binding generator parameters: {'cfg_path': 'configs/cuda_bf16.yml', 'output_dir': 'numba_cuda/numba/cuda/', 'entry_point': None, 'retain': None, 'types': None, 'datamodels': None, 'compute_capability': None, 'run_ruff_format': True}
 # Config file path (relative to the path of the generated binding): ../../../../configs/cuda_bf16.yml
 # Cudatoolkit version: (12, 8)
 # Default CUDA_HOME path: /home/wangm/micromamba/envs/numbast
@@ -70,7 +70,7 @@ class _KeyedStringIO(io.StringIO):
 
 
 shim_defines = ""
-shim_include = "#include <cuda_bf16.h>"
+shim_include = "#include <" + "cuda_bf16.h" + ">"
 shim_prefix = shim_defines + "\n" + shim_include
 shim_stream = _KeyedStringIO()
 shim_stream.write(shim_prefix)
@@ -346,10 +346,7 @@ def _lower___nv_bfloat16_float16(shim_stream, shim_obj):
         )
 
 
-from numba.cuda.cudadrv.runtime import get_version
-
-if get_version() >= (12, 0):
-    _lower___nv_bfloat16_float16(shim_stream, shim_obj)
+_lower___nv_bfloat16_float16(shim_stream, shim_obj)
 
 
 def _lower___nv_bfloat16_float32(shim_stream, shim_obj):
