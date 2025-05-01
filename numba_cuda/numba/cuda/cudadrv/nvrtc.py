@@ -378,9 +378,10 @@ def compile(src, name, cc, ltoir=False):
     cudadrv_path = os.path.dirname(os.path.abspath(__file__))
     numba_cuda_path = os.path.dirname(cudadrv_path)
 
-    numba_include = (
-        f"-I{os.path.join(numba_cuda_path, 'include', str(nvrtc_ver_major))}"
-    )
+    if nvrtc_ver_major == 11:
+        numba_include = f"-I{os.path.join(numba_cuda_path, 'include', '11')}"
+    else:
+        numba_include = f"-I{os.path.join(numba_cuda_path, 'include', '12')}"
 
     nrt_path = os.path.join(numba_cuda_path, "runtime")
     nrt_include = f"-I{nrt_path}"
