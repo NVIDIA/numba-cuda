@@ -346,7 +346,10 @@ def _lower___nv_bfloat16_float16(shim_stream, shim_obj):
         )
 
 
-_lower___nv_bfloat16_float16(shim_stream, shim_obj)
+from numba.cuda.cudadrv.runtime import get_version
+
+if get_version() >= (12, 0):
+    _lower___nv_bfloat16_float16(shim_stream, shim_obj)
 
 
 def _lower___nv_bfloat16_float32(shim_stream, shim_obj):

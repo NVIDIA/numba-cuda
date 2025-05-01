@@ -24,6 +24,9 @@ from numba.cuda.cuda_bf16 import (
     hexp10,
 )
 
+from numba.cuda.cudadrv.runtime import get_version
+
+cuda_version = get_version()
 
 dtypes = [int16, int32, int64, uint16, uint32, uint64, float32]
 
@@ -44,9 +47,16 @@ class Bfloat16Test(CUDATestCase):
             f = nv_bfloat16(uint16(6))  # noqa: F841
             g = nv_bfloat16(uint32(7))  # noqa: F841
             h = nv_bfloat16(uint64(8))  # noqa: F841
-            i = nv_bfloat16(float16(9))  # noqa: F841
 
         simple_kernel[1, 1]()
+
+        if cuda_version >= (12, 0):
+
+            @cuda.jit
+            def simple_kernel_fp16():
+                i = nv_bfloat16(float16(9))  # noqa: F841
+
+            simple_kernel_fp16[1, 1]()
 
     def test_casts(self):
         @cuda.jit
