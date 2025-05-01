@@ -11,10 +11,12 @@ from numba.core.datamodel import models
 from numba.core import types, cgutils
 from numba.np import ufunc_db
 from numba.np.npyimpl import register_ufuncs
+
+from numba.cuda.target import CUDATargetContext
 from .cudadrv import nvvm
 from numba import cuda
 from numba.cuda import nvvmutils, stubs, errors
-from numba.cuda.types import dim3, CUDADispatcher
+from numba.cuda.types import dim3, CUDADispatcher, CUDAArray
 
 registry = Registry()
 lower = registry.lower
@@ -1029,7 +1031,13 @@ def ptx_nanosleep(context, builder, sig, args):
 
 
 def _generic_array(
-    context, builder, shape, dtype, symbol_name, addrspace, can_dynsized=False
+    context: CUDATargetContext,
+    builder: ir.IRBuilder,
+    shape,
+    dtype,
+    symbol_name,
+    addrspace,
+    can_dynsized=False,
 ):
     elemcount = reduce(operator.mul, shape, 1)
 
@@ -1049,7 +1057,7 @@ def _generic_array(
     if dtype not in types.number_domain and not other_supported_type:
         raise TypeError("unsupported type: %s" % dtype)
 
-    lldtype = context.get_data_type(dtype)
+    lldtype: ir.Type = context.get_data_type(dtype)
     laryty = ir.ArrayType(lldtype, elemcount)
 
     if addrspace == nvvm.ADDRSPACE_LOCAL:
@@ -1057,6 +1065,7 @@ def _generic_array(
         # NVVM is smart enough to only use local memory if no register is
         # available
         dataptr = cgutils.alloca_once(builder, laryty, name=symbol_name)
+        addrspace = nvvm.ADDRSPACE_GENERIC
     else:
         lmod = builder.module
 
@@ -1081,9 +1090,8 @@ def _generic_array(
 
             gvmem.initializer = ir.Constant(laryty, ir.Undefined)
 
-        # Convert to generic address-space
-        dataptr = builder.addrspacecast(
-            gvmem, ir.PointerType(ir.IntType(8)), "generic"
+        dataptr = builder.bitcast(
+            gvmem, ir.PointerType(lldtype, addrspace=gvmem.addrspace)
         )
 
     targetdata = ll.create_target_data(nvvm.NVVM().data_layout)
@@ -1123,7 +1131,7 @@ def _generic_array(
 
     # Create array object
     ndim = len(shape)
-    aryty = types.Array(dtype=dtype, ndim=ndim, layout="C")
+    aryty = CUDAArray(dtype=dtype, ndim=ndim, layout="C", addrspace=addrspace)
     ary = context.make_array(aryty)(context, builder)
 
     context.populate_array(
