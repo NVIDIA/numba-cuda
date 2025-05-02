@@ -366,13 +366,13 @@ class CUDACodeLibrary(serialize.ReduceMixin, CodeLibrary):
         nrt = False
         if self._linking_files:
             if (
-                len(self._linking_files) != 1
-                and self._linking_files[0] != NRT_LIBRARY
+                len(self._linking_files) == 1
+                and NRT_LIBRARY in self._linking_files
             ):
+                nrt = True
+            else:
                 msg = "Cannot pickle CUDACodeLibrary with linking files"
                 raise RuntimeError(msg)
-            else:
-                nrt = True
 
         if not self._finalized:
             raise RuntimeError("Cannot pickle unfinalized CUDACodeLibrary")

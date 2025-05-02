@@ -298,7 +298,9 @@ class _Kernel(serialize.ReduceMixin):
                     else:
                         asm = ""
                 else:
-                    if file.endswith("ptx") or file.endswith("cu"):
+                    if isinstance(file, bytes):
+                        continue
+                    elif file.endswith("ptx") or file.endswith("cu"):
                         asm = cached_file_read(file)
                     else:
                         # Not a PTX or CUDA source, skip it
