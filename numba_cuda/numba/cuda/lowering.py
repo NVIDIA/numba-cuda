@@ -13,10 +13,12 @@ class CUDALower(Lower):
         # variables immediately after a store instruction.
         if (
             self.context.enable_debuginfo
+            # Conditions used to elide stores in parent method
             and (
                 name not in self._singly_assigned_vars
                 or self._disable_sroa_like_opt
             )
+            # No emission of debuginfo for internal names
             and not name.startswith("$")
         ):
             # Emit debug value for user variable
