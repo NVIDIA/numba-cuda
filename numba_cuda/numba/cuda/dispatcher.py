@@ -30,7 +30,7 @@ from numba.cuda.errors import (
     normalize_kernel_dimensions,
 )
 from numba.cuda import types as cuda_types
-from numba.cuda.runtime.nrt import rtsys
+from numba.cuda.runtime.nrt import rtsys, NRT_LIBRARY
 from numba.cuda.utils import cached_file_read
 from numba.cuda.locks import module_init_lock
 
@@ -308,10 +308,7 @@ class _Kernel(serialize.ReduceMixin):
                     break
 
         if link_nrt:
-            basedir = os.path.dirname(os.path.abspath(__file__))
-            nrt_path = os.path.join(basedir, "runtime", "nrt.cu")
-            nrt_src = cached_file_read(nrt_path)
-            link.append(CUSource(nrt_src, name="nrt.cu", nrt=True))
+            link.append(NRT_LIBRARY)
 
     @property
     def library(self):

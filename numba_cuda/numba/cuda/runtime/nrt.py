@@ -13,7 +13,8 @@ from numba.cuda.cudadrv.driver import (
 )
 from numba.cuda.cudadrv import devices
 from numba.cuda.api import get_current_device
-from numba.cuda.utils import _readenv
+from numba.cuda.utils import _readenv, cached_file_read
+from numba.cuda.cudadrv.linkable_code import CUSource
 
 
 # Check environment variable or config for NRT statistics enablement
@@ -345,3 +346,9 @@ class _Runtime:
 
 # Create an instance of the runtime
 rtsys = _Runtime()
+
+
+basedir = os.path.dirname(os.path.abspath(__file__))
+nrt_path = os.path.join(basedir, "nrt.cu")
+nrt_src = cached_file_read(nrt_path)
+NRT_LIBRARY = CUSource(nrt_src, name="nrt.cu", nrt=True)
