@@ -372,19 +372,26 @@ def compile(src, name, cc, ltoir=False):
         f"-I{get_cuda_paths()['include_dir'].info}",
     ]
 
+    nvrtc_version = nvrtc.get_version()
+    nvrtc_ver_major = nvrtc_version[0]
+
     cudadrv_path = os.path.dirname(os.path.abspath(__file__))
     numba_cuda_path = os.path.dirname(cudadrv_path)
-    numba_include = f"-I{numba_cuda_path}"
+
+    if nvrtc_ver_major == 11:
+        numba_include = f"-I{os.path.join(numba_cuda_path, 'include', '11')}"
+    else:
+        numba_include = f"-I{os.path.join(numba_cuda_path, 'include', '12')}"
 
     nrt_path = os.path.join(numba_cuda_path, "runtime")
     nrt_include = f"-I{nrt_path}"
 
-    options = [arch, *cuda_include, numba_include, nrt_include, "-rdc", "true"]
+    options = [arch, numba_include, *cuda_include, nrt_include, "-rdc", "true"]
 
     if ltoir:
         options.append("-dlto")
 
-    if nvrtc.get_version() < (12, 0):
+    if nvrtc_version < (12, 0):
         options += ["-std=c++17"]
 
     # Compile the program
