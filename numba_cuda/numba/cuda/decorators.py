@@ -16,7 +16,7 @@ _msg_deprecated_signature_arg = (
 def jit(
     func_or_sig=None,
     device=False,
-    inline=False,
+    inline="never",
     link=[],
     debug=None,
     opt=None,
@@ -81,6 +81,15 @@ def jit(
         msg = _msg_deprecated_signature_arg.format("bind")
         raise DeprecationError(msg)
 
+    if isinstance(inline, bool):
+        DeprecationWarning(
+            "Passing bool to inline argument is deprecated, please refer to "
+            "Numba's documentation on inlining: "
+            "https://numba.readthedocs.io/en/stable/developer/inlining.html"
+        )
+
+        inline = "always" if inline else "never"
+
     debug = config.CUDA_DEBUGINFO_DEFAULT if debug is None else debug
     opt = (config.OPT != 0) if opt is None else opt
     fastmath = kws.get("fastmath", False)
@@ -130,6 +139,7 @@ def jit(
             targetoptions["opt"] = opt
             targetoptions["fastmath"] = fastmath
             targetoptions["device"] = device
+            targetoptions["inline"] = inline
             targetoptions["extensions"] = extensions
 
             disp = CUDADispatcher(func, targetoptions=targetoptions)
@@ -171,6 +181,7 @@ def jit(
                     return jit(
                         func,
                         device=device,
+                        inline=inline,
                         debug=debug,
                         opt=opt,
                         lineinfo=lineinfo,
@@ -194,6 +205,7 @@ def jit(
                 targetoptions["link"] = link
                 targetoptions["fastmath"] = fastmath
                 targetoptions["device"] = device
+                targetoptions["inline"] = inline
                 targetoptions["extensions"] = extensions
                 disp = CUDADispatcher(func_or_sig, targetoptions=targetoptions)
 

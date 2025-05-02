@@ -1,6 +1,9 @@
+import re
+
 import numpy as np
 from numba import cuda, int32, int64, float32, float64
 from numba.cuda.testing import unittest, CUDATestCase, skip_on_cudasim
+from numba.cuda.compiler import compile_ptx
 from numba.core import config
 
 
@@ -144,6 +147,47 @@ class TestCudaWarpOperations(CUDATestCase):
         compiled[1, nelem](ary, xor)
         self.assertTrue(np.all(ary == exp))
 
+    def test_shfl_sync_const_mode_val(self):
+        # Test `mode` argument is constant in shfl_sync calls.
+        # Related to https://github.com/NVIDIA/numba-cuda/pull/231
+        subtest = [
+            (use_shfl_sync_idx, 4),
+            (use_shfl_sync_up, 4),
+            (use_shfl_sync_down, 4),
+            (use_shfl_sync_xor, 16),
+        ]
+
+        args_re = r"\((.*)\)"
+        m = re.compile(args_re)
+
+        for func, value in subtest:
+            with self.subTest(func=func.__name__):
+                compiled = cuda.jit("void(int32[:], int32)")(func)
+                nelem = 32
+                ary = np.empty(nelem, dtype=np.int32)
+                compiled[1, nelem](ary, value)
+                irs = next(iter(compiled.inspect_llvm().values()))
+
+                for ir in irs.split("\n"):
+                    if "call" in ir and "llvm.nvvm.shfl.sync.i32" in ir:
+                        args = m.search(ir).group(0)
+                        arglist = args.split(",")
+                        mode_arg = arglist[1]
+                        self.assertNotIn("%", mode_arg)
+
+    def test_shfl_sync_const_mode_val_sm100(self):
+        # Test shfl_sync compiles with cc=(10, 0)
+        subtest = [
+            use_shfl_sync_idx,
+            use_shfl_sync_up,
+            use_shfl_sync_down,
+            use_shfl_sync_xor,
+        ]
+
+        for func in subtest:
+            with self.subTest(func=func.__name__):
+                compile_ptx(func, (int32[:], int32), cc=(10, 0))
+
     def test_shfl_sync_types(self):
         types = int32, int64, float32, float64
         values = (
@@ -153,11 +197,12 @@ class TestCudaWarpOperations(CUDATestCase):
             np.float64(np.pi),
         )
         for typ, val in zip(types, values):
-            compiled = cuda.jit((typ[:], typ))(use_shfl_sync_with_val)
-            nelem = 32
-            ary = np.empty(nelem, dtype=val.dtype)
-            compiled[1, nelem](ary, val)
-            self.assertTrue(np.all(ary == val))
+            with self.subTest(typ=typ):
+                compiled = cuda.jit((typ[:], typ))(use_shfl_sync_with_val)
+                nelem = 32
+                ary = np.empty(nelem, dtype=val.dtype)
+                compiled[1, nelem](ary, val)
+                self.assertTrue(np.all(ary == val))
 
     def test_vote_sync_all(self):
         compiled = cuda.jit("void(int32[:], int32[:])")(use_vote_sync_all)
