@@ -310,6 +310,52 @@ class TestCudaDebugInfo(CUDATestCase):
             with captured_stdout():
                 self._test_kernel_args_types()
 
+    def test_llvm_dbg_value(self):
+        sig = (types.int32, types.int32)
+
+        @cuda.jit("void(int32, int32)", debug=True, opt=False)
+        def f(x, y):
+            z = x  # noqa: F841
+            z = 100  # noqa: F841
+            z = y  # noqa: F841
+            z = True  # noqa: F841
+
+        llvm_ir = f.inspect_llvm(sig)
+        # Verify the call to llvm.dbg.declare is replaced by llvm.dbg.value
+        pat1 = r'call void @"llvm.dbg.declare"'
+        match = re.compile(pat1).search(llvm_ir)
+        self.assertIsNone(match, msg=llvm_ir)
+        pat2 = r'call void @"llvm.dbg.value"'
+        match = re.compile(pat2).search(llvm_ir)
+        self.assertIsNotNone(match, msg=llvm_ir)
+
+    def test_no_user_var_alias(self):
+        sig = (types.int32, types.int32)
+
+        @cuda.jit("void(int32, int32)", debug=True, opt=False)
+        def f(x, y):
+            z = x  # noqa: F841
+            z = y  # noqa: F841
+
+        llvm_ir = f.inspect_llvm(sig)
+        pat = r'!DILocalVariable.*name:\s+"z\$1".*'
+        match = re.compile(pat).search(llvm_ir)
+        self.assertIsNone(match, msg=llvm_ir)
+
+    def test_no_literal_type(self):
+        sig = (types.int32,)
+
+        @cuda.jit("void(int32)", debug=True, opt=False)
+        def f(x):
+            z = x  # noqa: F841
+            z = 100  # noqa: F841
+            z = True  # noqa: F841
+
+        llvm_ir = f.inspect_llvm(sig)
+        pat = r'!DIBasicType.*name:\s+"Literal.*'
+        match = re.compile(pat).search(llvm_ir)
+        self.assertIsNone(match, msg=llvm_ir)
+
 
 if __name__ == "__main__":
     unittest.main()
