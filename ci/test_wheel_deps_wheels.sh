@@ -3,16 +3,22 @@
 
 set -euo pipefail
 
+# cuRAND versions don't follow the toolkit versions - map toolkit versions to
+# appropriate cuRAND versions
+declare -A CTK_CURAND_VMAP=( ["12.8"]="10.3.9" ["12.9"]="10.3.10")
+CUDA_VER_MAJOR_MINOR=${CUDA_VER%.*}
+CURAND_VER="${CTK_CURAND_VMAP[${CUDA_VER_MAJOR_MINOR}]}"
+
 rapids-logger "Install testing dependencies"
 # TODO: Replace with rapids-dependency-file-generator
 python -m pip install \
     psutil \
     cffi \
-    cuda-python \
-    nvidia-cuda-runtime-cu12 \
-    nvidia-curand-cu12 \
-    nvidia-cuda-nvcc-cu12 \
-    nvidia-cuda-nvrtc-cu12 \
+    "cuda-python==${CUDA_VER_MAJOR_MINOR}.*" \
+    "nvidia-cuda-runtime-cu12==${CUDA_VER_MAJOR_MINOR}.*" \
+    "nvidia-curand-cu12==${CURAND_VER}.*" \
+    "nvidia-cuda-nvcc-cu12==${CUDA_VER_MAJOR_MINOR}.*" \
+    "nvidia-cuda-nvrtc-cu12==${CUDA_VER_MAJOR_MINOR}.*" \
     pynvjitlink-cu12 \
     pytest
 

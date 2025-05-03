@@ -142,6 +142,7 @@ jobs:
     - name: Run tests
       run: ${{ inputs.script }}
       env:
+        CUDA_VER: ${{ matrix.CUDA_VER }}
         GH_TOKEN: ${{ github.token }}
         RAPIDS_AUX_SECRET_1: ${{ secrets.RAPIDS_AUX_SECRET_1 }}
 
