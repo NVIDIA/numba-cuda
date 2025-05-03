@@ -1,5 +1,6 @@
 import operator
 from numba.core import types
+from numba.core.errors import RequireLiteralValue
 from numba.core.typing.npydecl import (
     parse_dtype,
     parse_shape,
@@ -33,7 +34,7 @@ register_number_classes(register_global)
 
 class Cuda_array_decl(CallableTemplate):
     def generic(self):
-        def typer(shape, dtype):
+        def typer(shape, dtype, order=None):
             # Only integer literals and tuples of integer literals are valid
             # shapes
             if isinstance(shape, types.Integer):
@@ -47,10 +48,19 @@ class Cuda_array_decl(CallableTemplate):
             else:
                 return None
 
+            # Only string literals are valid layouts
+            if order in (None, types.none):
+                layout = "C"
+            else:
+                if not isinstance(order, types.StringLiteral):
+                    msg = "'order' must be a literal string."
+                    raise RequireLiteralValue(msg)
+                layout = order.literal_value
+
             ndim = parse_shape(shape)
             nb_dtype = parse_dtype(dtype)
             if nb_dtype is not None and ndim is not None:
-                return types.Array(dtype=nb_dtype, ndim=ndim, layout="C")
+                return types.Array(dtype=nb_dtype, ndim=ndim, layout=layout)
 
         return typer
 
