@@ -2967,9 +2967,10 @@ class CUDALinker(Linker):
                 self.log.append(msg)
 
         logger = Logger()
-
+        if isinstance(cu, bytes):
+            cu = cu.decode("utf8")
         prog = Program(
-            cu.decode("utf-8"),
+            cu,
             "c++",
             ProgramOptions(
                 arch=self.arch,
@@ -2977,13 +2978,14 @@ class CUDALinker(Linker):
                 max_register_count=self.max_registers,
                 relocatable_device_code=True,
                 include_path=include_paths,
+                link_time_optimization=self.lto,
             ),
         )
         with warnings.catch_warnings():
             warnings.filterwarnings(
                 "ignore", message=("The CUDA driver version is older")
             )
-            obj = prog.compile("ptx", logs=logger)
+            obj = prog.compile("ptx" if not self.lto else "ltoir", logs=logger)
             if logger.log:
                 warnings.warn(f"NVRTC log messages: {'\n'.join(logger.log)}")
         self._object_codes.append(obj)

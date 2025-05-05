@@ -198,16 +198,16 @@ class TestLinker(CUDATestCase):
         for file in files:
             with self.subTest(file=file):
                 f = io.StringIO()
-                # with contextlib.redirect_stdout(f):
-                sig = "uint32(uint32, uint32)"
-                add_from_numba = cuda.declare_device("add_from_numba", sig)
+                with contextlib.redirect_stdout(f):
+                    sig = "uint32(uint32, uint32)"
+                    add_from_numba = cuda.declare_device("add_from_numba", sig)
 
-                @cuda.jit(link=[file], lto=True)
-                def kernel(result):
-                    result[0] = add_from_numba(1, 2)
+                    @cuda.jit(link=[file], lto=True)
+                    def kernel(result):
+                        result[0] = add_from_numba(1, 2)
 
-                result = cuda.device_array(1)
-                kernel[1, 1](result)
+                    result = cuda.device_array(1)
+                    kernel[1, 1](result)
                 assert result[0] == 3
 
                 self.assertTrue("ASSEMBLY (AFTER LTO)" in f.getvalue())

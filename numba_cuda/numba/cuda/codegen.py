@@ -224,8 +224,8 @@ class CUDACodeLibrary(serialize.ReduceMixin, CodeLibrary):
             # `-ptx` flag is meant to view the optimized PTX for LTO objects.
             # Non-LTO objects are not passed to linker.
             self._link_all(linker, cc, ignore_nonlto=True)
+            ptx = linker.get_linked_ptx()
 
-            ptx = linker.get_linked_ptx().decode
             if config.CUDA_USE_NVIDIA_BINDING:
                 ptx = ptx.code
             ptx = ptx.decode("utf-8")
