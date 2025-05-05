@@ -174,7 +174,7 @@ class TestArrayAddressAlignment(CUDATestCase):
 
         # Use regex pattern to match error message, handling potential ANSI
         # color codes which appear on CI.
-        expected_invalid_type_error_pattern = re.compile(
+        expected_invalid_type_error_regex = (
             r"RequireLiteralValue:.*alignment must be a constant integer"
         )
 
@@ -187,47 +187,46 @@ class TestArrayAddressAlignment(CUDATestCase):
                 dtype=dtype,
                 alignment=alignment,
             ):
+                if which == 0:
 
-                @cuda.jit
-                def f(local_array, shared_array, which):
-                    i = cuda.grid(1)
-                    if which == 0:
+                    @cuda.jit
+                    def f(dest_array):
+                        i = cuda.grid(1)
                         local_array = cuda.local.array(
                             shape=shape,
                             dtype=dtype,
                             alignment=alignment,
                         )
                         if i == 0:
-                            local_array[0] = local_array.ctypes.data
-                    else:
+                            dest_array[0] = local_array.ctypes.data
+                else:
+
+                    @cuda.jit
+                    def f(dest_array):
+                        i = cuda.grid(1)
                         shared_array = cuda.shared.array(
                             shape=shape,
                             dtype=dtype,
                             alignment=alignment,
                         )
                         if i == 0:
-                            shared_array[0] = shared_array.ctypes.data
+                            dest_array[0] = shared_array.ctypes.data
 
-                loc = np.zeros(1, dtype=np.uint64)
-                shrd = np.zeros(1, dtype=np.uint64)
+                array = np.zeros(1, dtype=np.uint64)
 
                 # The type of error we expect differs between an invalid value
                 # that is still an int, and an invalid type.
                 if isinstance(alignment, int):
-                    with self.assertRaises(ValueError) as raises:
-                        f[1, 1](loc, shrd, which)
-                    exc = str(raises.exception)
-                    self.assertIn("Alignment must be", exc)
-                else:
-                    with self.assertRaises(TypingError) as raises:
-                        f[1, 1](loc, shrd, which)
-                    exc = str(raises.exception)
-                    msg = (
-                        f"Error message '{exc}' does not match expected "
-                        f"regex pattern: {expected_invalid_type_error_pattern}"
+                    self.assertRaisesRegex(
+                        ValueError, r"Alignment must be.*", f[1, 1], array
                     )
-                    match = expected_invalid_type_error_pattern.search(exc)
-                    self.assertTrue(match, msg)
+                else:
+                    self.assertRaisesRegex(
+                        TypingError,
+                        expected_invalid_type_error_regex,
+                        f[1, 1],
+                        array,
+                    )
 
                 if NOISY:
                     print(".", end="", flush=True)
