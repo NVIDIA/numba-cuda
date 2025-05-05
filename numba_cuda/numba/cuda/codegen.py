@@ -129,6 +129,8 @@ class CUDACodeLibrary(serialize.ReduceMixin, CodeLibrary):
         self._nvvm_options = nvvm_options
         self._entry_name = entry_name
 
+        self.use_cooperative = False
+
     @property
     def llvm_strs(self):
         if self._llvm_strs is None:
