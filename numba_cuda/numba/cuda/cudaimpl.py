@@ -1,6 +1,7 @@
 from functools import reduce
 import operator
 import math
+import struct
 
 from llvmlite import ir
 import llvmlite.binding as ll
@@ -92,10 +93,61 @@ def _get_unique_smem_id(name):
     return "{0}_{1}".format(name, _unique_smem_id)
 
 
+def _validate_alignment(alignment: int):
+    """
+    Ensures that *alignment*, if not None, is a) greater than zero, b) a power
+    of two, and c) a multiple of the size of a pointer.  If any of these
+    conditions are not met, a ValueError is raised.  Otherwise, this
+    function returns None, indicating that the alignment is valid.
+    """
+    if alignment is None:
+        return
+    if not isinstance(alignment, int):
+        raise ValueError("Alignment must be an integer")
+    if alignment <= 0:
+        raise ValueError("Alignment must be positive")
+    if (alignment & (alignment - 1)) != 0:
+        raise ValueError("Alignment must be a power of 2")
+    pointer_size = struct.calcsize("P")
+    if (alignment % pointer_size) != 0:
+        msg = f"Alignment must be a multiple of {pointer_size}"
+        raise ValueError(msg)
+
+
+def _try_extract_and_validate_alignment(sig: types.Tuple):
+    """
+    Extracts and validates the alignment from the supplied signature.
+
+    Returns the alignment if it is present and is an integer literal;
+    otherwise, returns None.
+
+    N.B. Currently, this routine assumes the signature has exactly
+         three arguments, with the alignment (if present) as the third
+         argument, as is the case with the shared and local array
+         helper routines below.
+
+         If this routine is called from new places, you may need to
+         review this implicit assumption.
+    """
+    if len(sig.args) != 3:
+        return None
+
+    alignment_arg = sig.args[2]
+    if not isinstance(alignment_arg, types.IntegerLiteral):
+        return None
+
+    alignment_arg = alignment_arg.literal_value
+    _validate_alignment(alignment_arg)
+    return alignment_arg
+
+
 @lower(cuda.shared.array, types.IntegerLiteral, types.Any)
+@lower(cuda.shared.array, types.IntegerLiteral, types.Any, types.IntegerLiteral)
+@lower(cuda.shared.array, types.IntegerLiteral, types.Any, types.NoneType)
 def cuda_shared_array_integer(context, builder, sig, args):
     length = sig.args[0].literal_value
     dtype = parse_dtype(sig.args[1])
+    alignment = _try_extract_and_validate_alignment(sig)
     return _generic_array(
         context,
         builder,
@@ -104,14 +156,17 @@ def cuda_shared_array_integer(context, builder, sig, args):
         symbol_name=_get_unique_smem_id("_cudapy_smem"),
         addrspace=nvvm.ADDRSPACE_SHARED,
         can_dynsized=True,
+        alignment=alignment,
     )
 
 
-@lower(cuda.shared.array, types.Tuple, types.Any)
-@lower(cuda.shared.array, types.UniTuple, types.Any)
+@lower(cuda.shared.array, types.BaseTuple, types.Any)
+@lower(cuda.shared.array, types.BaseTuple, types.Any, types.IntegerLiteral)
+@lower(cuda.shared.array, types.BaseTuple, types.Any, types.NoneType)
 def cuda_shared_array_tuple(context, builder, sig, args):
     shape = [s.literal_value for s in sig.args[0]]
     dtype = parse_dtype(sig.args[1])
+    alignment = _try_extract_and_validate_alignment(sig)
     return _generic_array(
         context,
         builder,
@@ -120,13 +175,17 @@ def cuda_shared_array_tuple(context, builder, sig, args):
         symbol_name=_get_unique_smem_id("_cudapy_smem"),
         addrspace=nvvm.ADDRSPACE_SHARED,
         can_dynsized=True,
+        alignment=alignment,
     )
 
 
 @lower(cuda.local.array, types.IntegerLiteral, types.Any)
+@lower(cuda.local.array, types.IntegerLiteral, types.Any, types.IntegerLiteral)
+@lower(cuda.local.array, types.IntegerLiteral, types.Any, types.NoneType)
 def cuda_local_array_integer(context, builder, sig, args):
     length = sig.args[0].literal_value
     dtype = parse_dtype(sig.args[1])
+    alignment = _try_extract_and_validate_alignment(sig)
     return _generic_array(
         context,
         builder,
@@ -135,14 +194,17 @@ def cuda_local_array_integer(context, builder, sig, args):
         symbol_name="_cudapy_lmem",
         addrspace=nvvm.ADDRSPACE_LOCAL,
         can_dynsized=False,
+        alignment=alignment,
     )
 
 
-@lower(cuda.local.array, types.Tuple, types.Any)
-@lower(cuda.local.array, types.UniTuple, types.Any)
-def ptx_lmem_alloc_array(context, builder, sig, args):
+@lower(cuda.local.array, types.BaseTuple, types.Any)
+@lower(cuda.local.array, types.BaseTuple, types.Any, types.IntegerLiteral)
+@lower(cuda.local.array, types.BaseTuple, types.Any, types.NoneType)
+def cuda_local_array_tuple(context, builder, sig, args):
     shape = [s.literal_value for s in sig.args[0]]
     dtype = parse_dtype(sig.args[1])
+    alignment = _try_extract_and_validate_alignment(sig)
     return _generic_array(
         context,
         builder,
@@ -151,6 +213,7 @@ def ptx_lmem_alloc_array(context, builder, sig, args):
         symbol_name="_cudapy_lmem",
         addrspace=nvvm.ADDRSPACE_LOCAL,
         can_dynsized=False,
+        alignment=alignment,
     )
 
 
@@ -966,7 +1029,14 @@ def ptx_nanosleep(context, builder, sig, args):
 
 
 def _generic_array(
-    context, builder, shape, dtype, symbol_name, addrspace, can_dynsized=False
+    context,
+    builder,
+    shape,
+    dtype,
+    symbol_name,
+    addrspace,
+    can_dynsized=False,
+    alignment=None,
 ):
     elemcount = reduce(operator.mul, shape, 1)
 
@@ -994,6 +1064,14 @@ def _generic_array(
         # NVVM is smart enough to only use local memory if no register is
         # available
         dataptr = cgutils.alloca_once(builder, laryty, name=symbol_name)
+
+        # If the caller has specified a custom alignment, just set the align
+        # attribute on the alloca IR directly.  We don't do any additional
+        # hand-holding here like checking the underlying data type's alignment
+        # or rounding up to the next power of 2--those checks will have already
+        # been done by the time we see the alignment value.
+        if alignment is not None:
+            dataptr.align = alignment
     else:
         lmod = builder.module
 
@@ -1001,11 +1079,25 @@ def _generic_array(
         gvmem = cgutils.add_global_variable(
             lmod, laryty, symbol_name, addrspace
         )
-        # Specify alignment to avoid misalignment bug
-        align = context.get_abi_sizeof(lldtype)
-        # Alignment is required to be a power of 2 for shared memory. If it is
-        # not a power of 2 (e.g. for a Record array) then round up accordingly.
-        gvmem.align = 1 << (align - 1).bit_length()
+
+        # If the caller hasn't specified a custom alignment, obtain the
+        # underlying dtype alignment from the ABI and then round it up to
+        # a power of two.  Otherwise, just use the caller's alignment.
+        #
+        # N.B. The caller *could* provide a valid-but-smaller-than-natural
+        #      alignment here; we'll assume the caller knows what they're
+        #      doing and let that through without error.
+
+        if alignment is None:
+            abi_alignment = context.get_abi_alignment(lldtype)
+            # Alignment is required to be a power of 2 for shared memory.
+            # If it is not a power of 2 (e.g. for a Record array) then round
+            # up accordingly.
+            actual_alignment = 1 << (abi_alignment - 1).bit_length()
+        else:
+            actual_alignment = alignment
+
+        gvmem.align = actual_alignment
 
         if dynamic_smem:
             gvmem.linkage = "external"
