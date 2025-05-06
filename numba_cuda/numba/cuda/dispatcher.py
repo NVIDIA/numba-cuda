@@ -22,7 +22,7 @@ from numba.cuda.compiler import (
 )
 import re
 from numba.cuda.cudadrv import driver
-from numba.cuda.cudadrv.linkable_code import LinkableCode, CUSource, PTXSource
+from numba.cuda.cudadrv.linkable_code import LinkableCode
 from numba.cuda.cudadrv.devices import get_context
 from numba.cuda.descriptor import cuda_target
 from numba.cuda.errors import (
@@ -31,7 +31,6 @@ from numba.cuda.errors import (
 )
 from numba.cuda import types as cuda_types
 from numba.cuda.runtime.nrt import rtsys, NRT_LIBRARY
-from numba.cuda.utils import cached_file_read
 from numba.cuda.locks import module_init_lock
 
 from numba import cuda
@@ -293,21 +292,6 @@ class _Kernel(serialize.ReduceMixin):
                     if file.nrt:
                         link_nrt = True
                         break
-                    elif isinstance(file, (CUSource, PTXSource)):
-                        asm = file.data
-                    else:
-                        asm = ""
-                else:
-                    if isinstance(file, bytes):
-                        continue
-                    elif file.endswith("ptx") or file.endswith("cu"):
-                        asm = cached_file_read(file)
-                    else:
-                        # Not a PTX or CUDA source, skip it
-                        continue
-                if nrt_in_asm(asm):
-                    link_nrt = True
-                    break
 
         if link_nrt:
             link.append(NRT_LIBRARY)

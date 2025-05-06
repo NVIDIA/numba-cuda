@@ -13,7 +13,6 @@ from numba.core.typing import signature
 from numba.cuda.cudaimpl import lower as cuda_lower
 from numba import cuda
 from numba.cuda.runtime.nrt import rtsys, get_include
-import tempfile
 from numba.core.typing.templates import AbstractTemplate
 from numba.cuda.cudadrv.linkable_code import (
     CUSource,
@@ -169,17 +168,12 @@ class TestNrtLinking(CUDATestCase):
         """
         cc = get_current_device().compute_capability
         ptx, _ = compile(src, "external_nrt.cu", cc)
-        with tempfile.NamedTemporaryFile(
-            delete=True, mode="w+", suffix=".ptx", encoding="utf-8"
-        ) as f:
-            f.write(ptx)
-            f.flush()
 
-            @cuda.jit(link=[f.name])
-            def kernel():
-                allocate_deallocate_handle()
+        @cuda.jit(link=[PTXSource(ptx.encode(), nrt=True)])
+        def kernel():
+            allocate_deallocate_handle()
 
-            kernel[1, 1]()
+        kernel[1, 1]()
 
     @unittest.skipIf(not TEST_BIN_DIR, "necessary binaries not generated.")
     def test_nrt_detect_linkable_code(self):
