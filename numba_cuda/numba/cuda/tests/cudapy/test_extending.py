@@ -203,7 +203,7 @@ class TestExtendingLinkage(CUDATestCase):
         )
 
         if cuda.runtime.get_version()[0] < 12:
-            unittest.skip("CUDA 12 required for linking in-memory data")
+            self.skipTest("CUDA 12 required for linking in-memory data")
 
         lto = config.CUDA_ENABLE_PYNVJITLINK
 
