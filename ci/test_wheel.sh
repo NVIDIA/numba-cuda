@@ -8,7 +8,7 @@ rapids-logger "Install testing dependencies"
 python -m pip install \
     psutil \
     cffi \
-    "cuda-python=11.8.*" \
+    "cuda-python==11.8.*" \
     pytest
 
 
