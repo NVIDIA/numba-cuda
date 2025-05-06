@@ -87,5 +87,5 @@ class Object(LinkableCode):
 class LTOIR(LinkableCode):
     """An LTOIR file in memory."""
 
-    kind = "ltoir"
+    kind = FILE_EXTENSION_MAP["ltoir"]
     default_name = "<unnamed-ltoir>"

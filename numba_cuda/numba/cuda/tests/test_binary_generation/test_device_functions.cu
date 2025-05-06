@@ -17,3 +17,7 @@ extern "C" __device__ int add_from_numba(uint32_t *result, uint32_t a,
   *result = a + b;
   return 0;
 }
+
+extern "C" __device__ uint32_t add_cabi(uint32_t a, uint32_t b) {
+  return a + b;
+}

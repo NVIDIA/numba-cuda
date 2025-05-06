@@ -1,6 +1,8 @@
 from numba.cuda.testing import skip_on_cudasim, unittest, CUDATestCase
+from llvmlite import ir
 
 import numpy as np
+import os
 from numba import config, cuda, njit, types
 
 
@@ -158,6 +160,90 @@ class TestExtending(CUDATestCase):
 
         expected = np.asarray((x[0] + x[2], x[1] + x[3]))
         np.testing.assert_allclose(r, expected)
+
+
+TEST_BIN_DIR = os.getenv("NUMBA_CUDA_TEST_BIN_DIR")
+if TEST_BIN_DIR:
+    test_device_functions_a = os.path.join(
+        TEST_BIN_DIR, "test_device_functions.a"
+    )
+    test_device_functions_cubin = os.path.join(
+        TEST_BIN_DIR, "test_device_functions.cubin"
+    )
+    test_device_functions_cu = os.path.join(
+        TEST_BIN_DIR, "test_device_functions.cu"
+    )
+    test_device_functions_fatbin = os.path.join(
+        TEST_BIN_DIR, "test_device_functions.fatbin"
+    )
+    test_device_functions_fatbin_multi = os.path.join(
+        TEST_BIN_DIR, "test_device_functions_multi.fatbin"
+    )
+    test_device_functions_o = os.path.join(
+        TEST_BIN_DIR, "test_device_functions.o"
+    )
+    test_device_functions_ptx = os.path.join(
+        TEST_BIN_DIR, "test_device_functions.ptx"
+    )
+    test_device_functions_ltoir = os.path.join(
+        TEST_BIN_DIR, "test_device_functions.ltoir"
+    )
+
+
+class TestExtendingLinkage(CUDATestCase):
+    def test_extension_adds_linkable_code(self):
+        files = (
+            (test_device_functions_a, cuda.Archive),
+            (test_device_functions_cubin, cuda.Cubin),
+            (test_device_functions_cu, cuda.CUSource),
+            (test_device_functions_fatbin, cuda.Fatbin),
+            (test_device_functions_o, cuda.Object),
+            (test_device_functions_ptx, cuda.PTXSource),
+            (test_device_functions_ltoir, cuda.LTOIR),
+        )
+
+        lto = config.CUDA_ENABLE_PYNVJITLINK
+
+        for path, ctor in files:
+            if ctor == cuda.LTOIR and not lto:
+                # Don't try to test with LTOIR if LTO is not enabled
+                continue
+
+            with open(path, "rb") as f:
+                code_object = ctor(f.read())
+
+            def external_add(x, y):
+                return x + y
+
+            @type_callable(external_add)
+            def type_external_add(context):
+                def typer(x, y):
+                    if x == types.uint32 and y == types.uint32:
+                        return types.uint32
+
+                return typer
+
+            @lower_builtin(external_add, types.uint32, types.uint32)
+            def lower_external_add(context, builder, sig, args):
+                context.active_code_library.add_linking_file(code_object)
+                i32 = ir.IntType(32)
+                fnty = ir.FunctionType(i32, [i32, i32])
+                fn = cgutils.get_or_insert_function(
+                    builder.module, fnty, "add_cabi"
+                )
+                return builder.call(fn, args)
+
+            @cuda.jit(lto=lto)
+            def use_external_add(r, x, y):
+                r[0] = external_add(x[0], y[0])
+
+            r = np.zeros(1, dtype=np.uint32)
+            x = np.ones(1, dtype=np.uint32)
+            y = np.ones(1, dtype=np.uint32) * 2
+
+            use_external_add[1, 1](r, x, y)
+
+            np.testing.assert_equal(r[0], 3)
 
 
 if __name__ == "__main__":
