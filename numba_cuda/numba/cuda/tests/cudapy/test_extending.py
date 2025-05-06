@@ -202,6 +202,9 @@ class TestExtendingLinkage(CUDATestCase):
             (test_device_functions_ltoir, cuda.LTOIR),
         )
 
+        if cuda.runtime.get_version[0] < 12:
+            unittest.skip("CUDA 12 required for linking in-memory data")
+
         lto = config.CUDA_ENABLE_PYNVJITLINK
 
         for path, ctor in files:
