@@ -163,9 +163,7 @@ if __name__ == "__main__":
         help="compute arch to target (e.g. sm_87). Defaults to sm_50.",
         default="sm_50",
     )
-    parser.add_argument(
-        "--nrt", type=lambda x: x.lower() == "true", default=False
-    )
+    parser.add_argument("--nrt", action="store_true")
     args = parser.parse_args()
     outputpath = args.output
 
