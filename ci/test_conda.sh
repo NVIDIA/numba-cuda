@@ -62,7 +62,7 @@ test_dir = root + \"numba/cuda/tests/test_binary_generation/\"
 print(test_dir)
 "
 
-NUMBA_CUDA_TEST_BIN_DIR=$(python -c "$PY_SCRIPT")
+export NUMBA_CUDA_TEST_BIN_DIR=$(python -c "$PY_SCRIPT")
 pushd $NUMBA_CUDA_TEST_BIN_DIR
 make
 popd
