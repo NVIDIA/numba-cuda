@@ -19,6 +19,7 @@ test_dir = root + \"numba/cuda/tests/test_binary_generation/\"
 print(test_dir)
 "
 
+CUDA_VER_MAJOR_MINOR=${CUDA_VER%.*}
 if [ "${CUDA_VER_MAJOR_MINOR%.*}" == "11" ]
 then
   rapids-logger "Skipping test build for CUDA 11"
