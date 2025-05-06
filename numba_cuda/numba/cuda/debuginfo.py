@@ -79,9 +79,12 @@ class CUDADIBuilder(DIBuilder):
             mdtype = self._var_type(lltype, size, datamodel=datamodel)
             md.append(mdtype)
 
-        return self.module.add_debug_info('DISubroutineType', {
-            'types': self.module.add_metadata(md),
-        })
+        return self.module.add_debug_info(
+            "DISubroutineType",
+             {
+                "types": self.module.add_metadata(md),
+             },
+        )
 
     def mark_variable(
         self,
