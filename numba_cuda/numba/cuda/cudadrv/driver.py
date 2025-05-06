@@ -1625,7 +1625,6 @@ def load_module_image_ctypes(
 
     option_keys = (drvapi.cu_jit_option * len(options))(*options.keys())
     option_vals = (c_void_p * len(options))(*options.values())
-
     handle = drvapi.cu_module()
     try:
         driver.cuModuleLoadDataEx(
@@ -2762,7 +2761,11 @@ class Linker(metaclass=ABCMeta):
             else:
                 linker = CtypesLinker
 
-        return linker(max_registers, lineinfo, cc, lto, additional_flags)
+        params = (max_registers, lineinfo, cc)
+        if linker is CUDALinker:
+            params = (*params, lto, additional_flags)
+
+        return linker(*params)
 
     @abstractmethod
     def __init__(self, max_registers, lineinfo, cc):
