@@ -11,6 +11,19 @@ python -m pip install \
     cuda-python \
     pytest
 
+rapids-logger "Build tests"
+PY_SCRIPT="
+import numba_cuda
+root = numba_cuda.__file__.rstrip('__init__.py')
+test_dir = root + \"numba/cuda/tests/test_binary_generation/\"
+print(test_dir)
+"
+
+NUMBA_CUDA_TEST_BIN_DIR=$(python -c "$PY_SCRIPT")
+pushd $NUMBA_CUDA_TEST_BIN_DIR
+make
+popd
+
 rapids-logger "Install wheel"
 package=$(realpath wheel/numba_cuda*.whl)
 echo "Wheel path: $package"
