@@ -2798,6 +2798,10 @@ class Linker(metaclass=ABCMeta):
         self.add_ptx(ptx.encode(), ptx_name)
 
     @abstractmethod
+    def add_data(self, data, kind, name):
+        """Add in-memory data to the link"""
+
+    @abstractmethod
     def add_file(self, path, kind):
         """Add code from a file to the link"""
 
@@ -2948,6 +2952,10 @@ class MVCLinker(Linker):
         except CubinLinkerError as e:
             raise LinkerError from e
 
+    def add_data(self, data, kind, name):
+        msg = "Adding in-memory data unsupported in the MVC linker"
+        raise LinkerError(msg)
+
     def add_file(self, path, kind):
         try:
             from cubinlinker import CubinLinkerError
@@ -3046,23 +3054,60 @@ class CtypesLinker(Linker):
     def error_log(self):
         return self.linker_errors_buf.value.decode("utf8")
 
-    def add_ptx(self, ptx, name="<cudapy-ptx>"):
-        ptxbuf = c_char_p(ptx)
-        namebuf = c_char_p(name.encode("utf8"))
-        self._keep_alive += [ptxbuf, namebuf]
+    def add_cubin(self, cubin, name="<unnamed-cubin>"):
+        return self._add_data(enums.CU_JIT_INPUT_CUBIN, cubin, name)
+
+    def add_ptx(self, ptx, name="<unnamed-ptx>"):
+        return self._add_data(enums.CU_JIT_INPUT_PTX, ptx, name)
+
+    def add_object(self, object_, name="<unnamed-object>"):
+        return self._add_data(enums.CU_JIT_INPUT_OBJECT, object_, name)
+
+    def add_fatbin(self, fatbin, name="<unnamed-fatbin>"):
+        return self._add_data(enums.CU_JIT_INPUT_FATBINARY, fatbin, name)
+
+    def add_library(self, library, name="<unnamed-library>"):
+        return self._add_data(enums.CU_JIT_INPUT_LIBRARY, library, name)
+
+    def _add_data(self, input_type, data, name):
+        data_buffer = c_char_p(data)
+        name_buffer = c_char_p(name.encode("utf8"))
+        self._keep_alive += [data_buffer, name_buffer]
         try:
             driver.cuLinkAddData(
                 self.handle,
-                enums.CU_JIT_INPUT_PTX,
-                ptxbuf,
-                len(ptx),
-                namebuf,
+                input_type,
+                data_buffer,
+                len(data),
+                name_buffer,
                 0,
                 None,
                 None,
             )
         except CudaAPIError as e:
             raise LinkerError("%s\n%s" % (e, self.error_log))
+
+    def add_data(self, data, kind, name=None):
+        # We pass the name as **kwargs to ensure the default name for the input
+        # type is used if none is supplied
+        kws = {}
+        if name is not None:
+            kws["name"] = name
+
+        if kind == FILE_EXTENSION_MAP["cubin"]:
+            self.add_cubin(data, **kws)
+        elif kind == FILE_EXTENSION_MAP["fatbin"]:
+            self.add_fatbin(data, **kws)
+        elif kind == FILE_EXTENSION_MAP["a"]:
+            self.add_library(data, **kws)
+        elif kind == FILE_EXTENSION_MAP["ptx"]:
+            self.add_ptx(data, **kws)
+        elif kind == FILE_EXTENSION_MAP["o"]:
+            self.add_object(data, **kws)
+        elif kind == FILE_EXTENSION_MAP["ltoir"]:
+            raise LinkerError("Ctypes linker cannot link LTO-IR")
+        else:
+            raise LinkerError(f"Don't know how to link {kind}")
 
     def add_file(self, path, kind):
         pathbuf = c_char_p(path.encode("utf8"))
@@ -3151,16 +3196,57 @@ class CudaPythonLinker(Linker):
     def error_log(self):
         return self.linker_errors_buf.decode("utf8")
 
-    def add_ptx(self, ptx, name="<cudapy-ptx>"):
-        namebuf = name.encode("utf8")
-        self._keep_alive += [ptx, namebuf]
+    def add_cubin(self, cubin, name="<unnamed-cubin>"):
+        input_type = binding.CUjitInputType.CU_JIT_INPUT_CUBIN
+        return self._add_data(input_type, cubin, name)
+
+    def add_ptx(self, ptx, name="<unnamed-ptx>"):
+        input_type = binding.CUjitInputType.CU_JIT_INPUT_PTX
+        return self._add_data(input_type, ptx, name)
+
+    def add_object(self, object_, name="<unnamed-object>"):
+        input_type = binding.CUjitInputType.CU_JIT_INPUT_OBJECT
+        return self._add_data(input_type, object_, name)
+
+    def add_fatbin(self, fatbin, name="<unnamed-fatbin>"):
+        input_type = binding.CUjitInputType.CU_JIT_INPUT_FATBINARY
+        return self._add_data(input_type, fatbin, name)
+
+    def add_library(self, library, name="<unnamed-library>"):
+        input_type = binding.CUjitInputType.CU_JIT_INPUT_LIBRARY
+        return self._add_data(input_type, library, name)
+
+    def _add_data(self, input_type, data, name):
+        name_buffer = name.encode("utf8")
+        self._keep_alive += [data, name_buffer]
         try:
-            input_ptx = binding.CUjitInputType.CU_JIT_INPUT_PTX
             driver.cuLinkAddData(
-                self.handle, input_ptx, ptx, len(ptx), namebuf, 0, [], []
+                self.handle, input_type, data, len(data), name_buffer, 0, [], []
             )
         except CudaAPIError as e:
             raise LinkerError("%s\n%s" % (e, self.error_log))
+
+    def add_data(self, data, kind, name=None):
+        # We pass the name as **kwargs to ensure the default name for the input
+        # type is used if none is supplied
+        kws = {}
+        if name is not None:
+            kws["name"] = name
+
+        if kind == FILE_EXTENSION_MAP["cubin"]:
+            self.add_cubin(data, **kws)
+        elif kind == FILE_EXTENSION_MAP["fatbin"]:
+            self.add_fatbin(data, **kws)
+        elif kind == FILE_EXTENSION_MAP["a"]:
+            self.add_library(data, **kws)
+        elif kind == FILE_EXTENSION_MAP["ptx"]:
+            self.add_ptx(data, **kws)
+        elif kind == FILE_EXTENSION_MAP["o"]:
+            self.add_object(data, **kws)
+        elif kind == FILE_EXTENSION_MAP["ltoir"]:
+            raise LinkerError("CudaPythonLinker cannot link LTO-IR")
+        else:
+            raise LinkerError(f"Don't know how to link {kind}")
 
     def add_file(self, path, kind):
         pathbuf = path.encode("utf8")
