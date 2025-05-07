@@ -279,7 +279,7 @@ class _Kernel(serialize.ReduceMixin):
             + all_nrt
             + r")\s*\([^)]*\)\s*;"
         )
-
+        link_nrt = False
         nrt_in_asm = re.findall(pattern, asm)
         if len(nrt_in_asm) > 0:
             link_nrt = True
