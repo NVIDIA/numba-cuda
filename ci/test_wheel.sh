@@ -13,6 +13,11 @@ python -m pip install \
     "cuda-python==${CUDA_VER_MAJOR_MINOR%.*}.*" \
     pytest
 
+rapids-logger "Install wheel"
+package=$(realpath wheel/numba_cuda*.whl)
+echo "Wheel path: $package"
+python -m pip install $package
+
 
 GET_TEST_BINARY_DIR="
 import numba_cuda
@@ -33,11 +38,6 @@ else
   popd
 fi
 
-
-rapids-logger "Install wheel"
-package=$(realpath wheel/numba_cuda*.whl)
-echo "Wheel path: $package"
-python -m pip install $package
 
 rapids-logger "Check GPU usage"
 nvidia-smi
