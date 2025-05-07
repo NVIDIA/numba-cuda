@@ -10,7 +10,7 @@ rapids-logger "Install testing dependencies"
 python -m pip install \
     psutil \
     cffi \
-    "cuda-python==${CUDA_VER_MAJOR_MINOR}.*" \
+    "cuda-python==${CUDA_VER_MAJOR_MINOR%.*}.*" \
     pytest
 
 
