@@ -7,12 +7,7 @@ from numba import cuda, config
 from numba.cuda.cudadrv.linkable_code import CUSource
 from numba.cuda.testing import CUDATestCase, ContextResettingTestCase
 
-try:
-    from cuda.bindings.driver import cuModuleGetGlobal, cuMemcpyHtoD
-
-    CUDA_BINDINGS_AVAILABLE = True
-except ImportError:
-    CUDA_BINDINGS_AVAILABLE = False
+from cuda.bindings.driver import cuModuleGetGlobal, cuMemcpyHtoD
 
 if config.CUDA_USE_NVIDIA_BINDING:
     from cuda.cuda import CUmodule as cu_module_type
@@ -169,7 +164,6 @@ class TestModuleCallbacksAPICompleteness(CUDATestCase):
                 kernel[1, 1]()
 
 
-@unittest.skipUnless(CUDA_BINDINGS_AVAILABLE, "cuda.bindings not available")
 class TestModuleCallbacks(CUDATestCase):
     def setUp(self):
         super().setUp()
