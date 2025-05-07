@@ -264,28 +264,25 @@ class _Kernel(serialize.ReduceMixin):
 
     def maybe_link_nrt(self, link, tgt_ctx, asm):
         """
-        Add the NRT source code to the link if the neccesary conditions are met:
-        If NRT is enabled for the CUDATargetContext, return True if we either
-        detect .extern .func decls of NRT functions in any file in the link or
-        any of the passed LinkableCode objects have NRT enabled. In the special
-        case of PTXSource or CUSource objects, the source code will be inspected
-        even if the NRT flag is not set.
+        Add the NRT source code to the link if the neccesary conditions are met.
+        NRT must be enabled for the CUDATargetContext, and either NRT functions
+        must be detected in the kernel asm or an NRT enabled LinkableCode object
+        must be passed.
         """
+
         if not tgt_ctx.enable_nrt:
             return
 
-        def nrt_in_asm(asm):
-            all_nrt = "|".join(self.NRT_functions)
-            pattern = (
-                r"\.extern\s+\.func\s+(?:\s*\(.+\)\s*)?("
-                + all_nrt
-                + r")\s*\([^)]*\)\s*;"
-            )
+        all_nrt = "|".join(self.NRT_functions)
+        pattern = (
+            r"\.extern\s+\.func\s+(?:\s*\(.+\)\s*)?("
+            + all_nrt
+            + r")\s*\([^)]*\)\s*;"
+        )
 
-            nrt_in_asm = re.findall(pattern, asm)
-            return len(nrt_in_asm) > 0
-
-        link_nrt = nrt_in_asm(asm)
+        nrt_in_asm = re.findall(pattern, asm)
+        if len(nrt_in_asm) > 0:
+            link_nrt = True
         if not link_nrt:
             for file in link:
                 if isinstance(file, LinkableCode):
