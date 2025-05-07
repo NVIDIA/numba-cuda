@@ -21,7 +21,7 @@ from numba.core.typing.templates import (
 from numba.cuda.types import dim3
 from numba.core.typeconv import Conversion
 from numba import cuda
-from numba.cuda.compiler import declare_device_function_template
+from numba.cuda.compiler import declare_device_function
 
 registry = Registry()
 register = registry.register
@@ -422,7 +422,7 @@ _genfp16_binary_operator(operator.itruediv)
 
 def _resolve_wrapped_unary(fname):
     link = tuple()
-    decl = declare_device_function_template(
+    decl = declare_device_function(
         f"__numba_wrapper_{fname}", types.float16, (types.float16,), link
     )
     return types.Function(decl)
@@ -430,7 +430,7 @@ def _resolve_wrapped_unary(fname):
 
 def _resolve_wrapped_binary(fname):
     link = tuple()
-    decl = declare_device_function_template(
+    decl = declare_device_function(
         f"__numba_wrapper_{fname}",
         types.float16,
         (

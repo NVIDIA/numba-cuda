@@ -236,4 +236,6 @@ def declare_device(name, sig, link=None):
         msg = "Return type must be provided for device declarations"
         raise TypeError(msg)
 
-    return declare_device_function(name, restype, argtypes, link)
+    template = declare_device_function(name, restype, argtypes, link)
+
+    return template.key
