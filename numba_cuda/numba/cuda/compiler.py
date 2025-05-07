@@ -37,6 +37,7 @@ from numba.core.typed_passes import (
 from warnings import warn
 from numba.cuda import nvvmutils
 from numba.cuda.api import get_current_device
+from numba.cuda.codegen import ExternalCodeLibrary
 from numba.cuda.cudadrv import nvvm
 from numba.cuda.descriptor import cuda_target
 from numba.cuda.target import CUDACABICallConv
@@ -798,7 +799,12 @@ def declare_device_function_template(name, restype, argtypes, link):
         name=name, restype=restype, argtypes=argtypes
     )
     typingctx.insert_user_function(extfn, device_function_template)
-    targetctx.insert_user_function(extfn, fndesc)
+
+    lib = ExternalCodeLibrary(f"{name}_externals", targetctx.codegen())
+    for file in link:
+        lib.add_linking_file(file)
+
+    targetctx.insert_user_function(extfn, fndesc, libs=(lib,))
 
     return device_function_template
 
