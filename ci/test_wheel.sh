@@ -3,12 +3,14 @@
 
 set -euo pipefail
 
+CUDA_VER_MAJOR_MINOR=${CUDA_VER%.*}
+
 rapids-logger "Install testing dependencies"
 # TODO: Replace with rapids-dependency-file-generator
 python -m pip install \
     psutil \
     cffi \
-    "cuda-python==11.8.*" \
+    "cuda-python==${CUDA_VER_MAJOR_MINOR}.*" \
     pytest
 
 
@@ -19,7 +21,6 @@ test_dir = root + \"numba/cuda/tests/test_binary_generation/\"
 print(test_dir)
 "
 
-CUDA_VER_MAJOR_MINOR=${CUDA_VER%.*}
 if [ "${CUDA_VER_MAJOR_MINOR%.*}" == "11" ]
 then
   rapids-logger "Skipping test build for CUDA 11"
