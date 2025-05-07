@@ -4,6 +4,7 @@ from llvmlite import ir
 import numpy as np
 import os
 from numba import config, cuda, njit, types
+from numba.extending import overload
 
 
 class Interval:
@@ -265,6 +266,38 @@ class TestExtendingLinkage(CUDATestCase):
             use_external_add_kernel[1, 1](r, x, y)
 
             np.testing.assert_equal(r[0], 3)
+
+    def test_linked_called_through_overload(self):
+        cu_code = cuda.CUSource("""
+            extern "C" __device__
+            int bar(int *out, int a)
+            {
+              *out = a * 2;
+              return 0;
+            }
+        """)
+
+        bar = cuda.declare_device("bar", "int32(int32)", link=cu_code)
+
+        def bar_call(val):
+            pass
+
+        @overload(bar_call, target="cuda")
+        def ol_bar_call(a):
+            return lambda a: bar(a)
+
+        @cuda.jit("void(int32[::1], int32[::1])")
+        def foo(r, x):
+            i = cuda.grid(1)
+            if i < len(r):
+                r[i] = bar_call(x[i])
+
+        x = np.arange(10, dtype=np.int32)
+        r = np.empty_like(x)
+
+        foo[1, 32](r, x)
+
+        np.testing.assert_equal(r, x * 2)
 
 
 if __name__ == "__main__":
