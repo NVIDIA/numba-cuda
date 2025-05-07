@@ -3244,7 +3244,7 @@ class CudaPythonLinker(Linker):
         elif kind == FILE_EXTENSION_MAP["o"]:
             self.add_object(data, **kws)
         elif kind == FILE_EXTENSION_MAP["ltoir"]:
-            raise LinkerError("Ctypes linker cannot link LTO-IR")
+            raise LinkerError("CudaPythonLinker cannot link LTO-IR")
         else:
             raise LinkerError(f"Don't know how to link {kind}")
 
