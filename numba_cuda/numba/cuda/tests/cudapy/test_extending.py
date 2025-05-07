@@ -250,6 +250,22 @@ class TestExtendingLinkage(CUDATestCase):
 
             np.testing.assert_equal(r[0], 3)
 
+            @cuda.jit(lto=lto)
+            def use_external_add_device(x, y):
+                return external_add(x, y)
+
+            @cuda.jit(lto=lto)
+            def use_external_add_kernel(r, x, y):
+                r[0] = use_external_add_device(x[0], y[0])
+
+            r = np.zeros(1, dtype=np.uint32)
+            x = np.ones(1, dtype=np.uint32)
+            y = np.ones(1, dtype=np.uint32) * 2
+
+            use_external_add_kernel[1, 1](r, x, y)
+
+            np.testing.assert_equal(r[0], 3)
+
 
 if __name__ == "__main__":
     unittest.main()
