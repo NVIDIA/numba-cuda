@@ -49,7 +49,7 @@ from .drvapi import API_PROTOTYPES
 from .drvapi import cu_occupancy_b2d_size, cu_stream_callback_pyobj, cu_uuid
 from .mappings import FILE_EXTENSION_MAP
 from .linkable_code import LinkableCode, LTOIR, Fatbin, Object
-from numba.cuda.utils import _readenv
+from numba.cuda.utils import _readenv, cached_file_read
 from numba.cuda.cudadrv import enums, drvapi, nvrtc
 
 try:
@@ -2806,8 +2806,7 @@ class Linker(metaclass=ABCMeta):
         """Add code from a file to the link"""
 
     def add_cu_file(self, path):
-        with open(path, "rb") as f:
-            cu = f.read()
+        cu = cached_file_read(path, how="rb")
         self.add_cu(cu, os.path.basename(path))
 
     def add_file_guess_ext(self, path_or_code, ignore_nonlto=False):
@@ -2963,8 +2962,7 @@ class MVCLinker(Linker):
             raise ImportError(_MVC_ERROR_MESSAGE) from err
 
         try:
-            with open(path, "rb") as f:
-                data = f.read()
+            data = cached_file_read(path, how="rb")
         except FileNotFoundError:
             raise LinkerError(f"{path} not found")
 
@@ -3338,8 +3336,7 @@ class PyNvJitLinker(Linker):
 
     def add_file(self, path, kind):
         try:
-            with open(path, "rb") as f:
-                data = f.read()
+            data = cached_file_read(path, "rb")
         except FileNotFoundError:
             raise LinkerError(f"{path} not found")
 

@@ -16,16 +16,24 @@ class LinkableCode:
     :param teardown_callback: A function called just prior to the unloading of
                               a module that has this code object linked into
                               it.
+    :param nrt: If True, assume this object contains NRT function calls and
+                add NRT source code to the final link.
     """
 
     def __init__(
-        self, data, name=None, setup_callback=None, teardown_callback=None
+        self,
+        data,
+        name=None,
+        setup_callback=None,
+        teardown_callback=None,
+        nrt=False,
     ):
         if setup_callback and not callable(setup_callback):
             raise TypeError("setup_callback must be callable")
         if teardown_callback and not callable(teardown_callback):
             raise TypeError("teardown_callback must be callable")
 
+        self.nrt = nrt
         self._name = name
         self._data = data
         self.setup_callback = setup_callback

@@ -1,6 +1,5 @@
 import numpy as np
 import os
-import re
 import sys
 import ctypes
 import functools
@@ -21,7 +20,9 @@ from numba.cuda.compiler import (
     kernel_fixup,
     ExternFunction,
 )
+import re
 from numba.cuda.cudadrv import driver
+from numba.cuda.cudadrv.linkable_code import LinkableCode
 from numba.cuda.cudadrv.devices import get_context
 from numba.cuda.descriptor import cuda_target
 from numba.cuda.errors import (
@@ -29,7 +30,7 @@ from numba.cuda.errors import (
     normalize_kernel_dimensions,
 )
 from numba.cuda import types as cuda_types
-from numba.cuda.runtime.nrt import rtsys
+from numba.cuda.runtime.nrt import rtsys, NRT_LIBRARY
 from numba.cuda.locks import module_init_lock
 
 from numba import cuda
@@ -262,6 +263,13 @@ class _Kernel(serialize.ReduceMixin):
         self.reload_init = []
 
     def maybe_link_nrt(self, link, tgt_ctx, asm):
+        """
+        Add the NRT source code to the link if the neccesary conditions are met.
+        NRT must be enabled for the CUDATargetContext, and either NRT functions
+        must be detected in the kernel asm or an NRT enabled LinkableCode object
+        must be passed.
+        """
+
         if not tgt_ctx.enable_nrt:
             return
 
@@ -271,13 +279,19 @@ class _Kernel(serialize.ReduceMixin):
             + all_nrt
             + r")\s*\([^)]*\)\s*;"
         )
-
+        link_nrt = False
         nrt_in_asm = re.findall(pattern, asm)
+        if len(nrt_in_asm) > 0:
+            link_nrt = True
+        if not link_nrt:
+            for file in link:
+                if isinstance(file, LinkableCode):
+                    if file.nrt:
+                        link_nrt = True
+                        break
 
-        basedir = os.path.dirname(os.path.abspath(__file__))
-        if nrt_in_asm:
-            nrt_path = os.path.join(basedir, "runtime", "nrt.cu")
-            link.append(nrt_path)
+        if link_nrt:
+            link.append(NRT_LIBRARY)
 
     @property
     def library(self):

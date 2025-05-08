@@ -5,6 +5,7 @@ from numba.core.codegen import Codegen, CodeLibrary
 from .cudadrv import devices, driver, nvvm, runtime
 from numba.cuda.cudadrv.libs import get_cudalib
 from numba.cuda.cudadrv.linkable_code import LinkableCode
+from numba.cuda.runtime.nrt import NRT_LIBRARY
 
 import os
 import subprocess
@@ -362,9 +363,17 @@ class CUDACodeLibrary(serialize.ReduceMixin, CodeLibrary):
         but loaded functions are discarded. They are recreated when needed
         after deserialization.
         """
+        nrt = False
         if self._linking_files:
-            msg = "Cannot pickle CUDACodeLibrary with linking files"
-            raise RuntimeError(msg)
+            if (
+                len(self._linking_files) == 1
+                and NRT_LIBRARY in self._linking_files
+            ):
+                nrt = True
+            else:
+                msg = "Cannot pickle CUDACodeLibrary with linking files"
+                raise RuntimeError(msg)
+
         if not self._finalized:
             raise RuntimeError("Cannot pickle unfinalized CUDACodeLibrary")
         return dict(
@@ -378,6 +387,7 @@ class CUDACodeLibrary(serialize.ReduceMixin, CodeLibrary):
             max_registers=self._max_registers,
             nvvm_options=self._nvvm_options,
             needs_cudadevrt=self.needs_cudadevrt,
+            nrt=nrt,
         )
 
     @classmethod
@@ -393,6 +403,7 @@ class CUDACodeLibrary(serialize.ReduceMixin, CodeLibrary):
         max_registers,
         nvvm_options,
         needs_cudadevrt,
+        nrt,
     ):
         """
         Rebuild an instance.
@@ -409,6 +420,8 @@ class CUDACodeLibrary(serialize.ReduceMixin, CodeLibrary):
         instance.needs_cudadevrt = needs_cudadevrt
 
         instance._finalized = True
+        if nrt:
+            instance._linking_files = {NRT_LIBRARY}
 
         return instance
 
