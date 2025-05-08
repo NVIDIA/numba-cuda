@@ -310,6 +310,23 @@ class TestCudaDebugInfo(CUDATestCase):
             with captured_stdout():
                 self._test_kernel_args_types()
 
+    def test_kernel_args_names(self):
+        sig = (types.int32,)
+
+        @cuda.jit("void(int32)", debug=True, opt=False)
+        def f(x):
+            z = x  # noqa: F841
+
+        llvm_ir = f.inspect_llvm(sig)
+
+        # Verify argument name is not prefixed with "arg."
+        pat = r"define void @.*\(i32 %\"x\"\)"
+        match = re.compile(pat).search(llvm_ir)
+        self.assertIsNotNone(match, msg=llvm_ir)
+        pat = r"define void @.*\(i32 %\"arg\.x\"\)"
+        match = re.compile(pat).search(llvm_ir)
+        self.assertIsNone(match, msg=llvm_ir)
+
     def test_llvm_dbg_value(self):
         sig = (types.int32, types.int32)
 
