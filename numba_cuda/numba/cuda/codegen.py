@@ -22,7 +22,7 @@ def run_nvdisasm(cubin, flags):
     try:
         fd, fname = tempfile.mkstemp()
         with open(fname, "wb") as f:
-            f.write(cubin)
+            f.write(cubin.code)
 
         try:
             cp = subprocess.run(
@@ -225,8 +225,11 @@ class CUDACodeLibrary(serialize.ReduceMixin, CodeLibrary):
             # `-ptx` flag is meant to view the optimized PTX for LTO objects.
             # Non-LTO objects are not passed to linker.
             self._link_all(linker, cc, ignore_nonlto=True)
+            ptx = linker.get_linked_ptx()
 
-            ptx = linker.get_linked_ptx().decode("utf-8")
+            if config.CUDA_USE_NVIDIA_BINDING:
+                ptx = ptx.code
+            ptx = ptx.decode("utf-8")
 
             print(("ASSEMBLY (AFTER LTO) %s" % self._name).center(80, "-"))
             print(ptx)
@@ -239,7 +242,7 @@ class CUDACodeLibrary(serialize.ReduceMixin, CodeLibrary):
         cubin = linker.complete()
 
         self._cubin_cache[cc] = cubin
-        self._linkerinfo_cache[cc] = linker.info_log
+        # self._linkerinfo_cache[cc] = linker.info_log
 
         return cubin
 
@@ -257,7 +260,6 @@ class CUDACodeLibrary(serialize.ReduceMixin, CodeLibrary):
         cufunc = self._cufunc_cache.get(device.id, None)
         if cufunc:
             return cufunc
-
         cubin = self.get_cubin(cc=device.compute_capability)
         module = ctx.create_module_image(
             cubin, self._setup_functions, self._teardown_functions
