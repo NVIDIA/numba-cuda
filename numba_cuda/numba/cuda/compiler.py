@@ -129,6 +129,7 @@ class CUDABackend(LoweringPass):
             call_helper=lowered.call_helper,
             signature=signature,
             fndesc=lowered.fndesc,
+            metadata=state.metadata,
         )
         return True
 
