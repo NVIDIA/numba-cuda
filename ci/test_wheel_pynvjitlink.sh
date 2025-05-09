@@ -14,6 +14,12 @@ python -m pip install \
 rapids-logger "Install pynvjitlink"
 python -m pip install pynvjitlink-cu12
 
+
+rapids-logger "Install wheel"
+package=$(realpath wheel/numba_cuda*.whl)
+echo "Package path: $package"
+python -m pip install $package
+
 rapids-logger "Build tests"
 PY_SCRIPT="
 import numba_cuda
@@ -27,10 +33,6 @@ pushd $NUMBA_CUDA_TEST_BIN_DIR
 make
 popd
 
-rapids-logger "Install wheel"
-package=$(realpath wheel/numba_cuda*.whl)
-echo "Package path: $package"
-python -m pip install $package
 
 rapids-logger "Check GPU usage"
 nvidia-smi

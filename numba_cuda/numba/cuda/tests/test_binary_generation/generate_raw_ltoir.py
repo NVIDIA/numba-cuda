@@ -7,6 +7,7 @@ import subprocess
 import sys
 
 from cuda import nvrtc
+from numba.cuda.runtime.nrt import get_include
 
 # Magic number found at the start of an LTO-IR file
 LTOIR_MAGIC = 0x7F4E43ED
@@ -88,7 +89,9 @@ def get_ltoir(source, name, arch):
         nvrtc.nvrtcCreateProgram(source.encode(), name.encode(), 0, [], [])
     )
 
-    cuda_include_flags = determine_include_flags()
+    cuda_include_flags = determine_include_flags() + (
+        [f"-I{get_include()}"] if args.nrt else []
+    )
     if cuda_include_flags is None:
         print("Error determining CUDA include flags. Exiting.", file=sys.stderr)
         sys.exit(1)
@@ -160,7 +163,7 @@ if __name__ == "__main__":
         help="compute arch to target (e.g. sm_87). Defaults to sm_50.",
         default="sm_50",
     )
-
+    parser.add_argument("--nrt", action="store_true")
     args = parser.parse_args()
     outputpath = args.output
 

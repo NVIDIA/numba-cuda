@@ -17,6 +17,7 @@ def jit(
     func_or_sig=None,
     device=False,
     inline="never",
+    forceinline=False,
     link=[],
     debug=None,
     opt=None,
@@ -39,6 +40,14 @@ def jit(
        .. note:: A kernel cannot have any return value.
     :param device: Indicates whether this is a device function.
     :type device: bool
+    :param inline: Enables inlining at the Numba IR level when set to
+       ``"always"``. See `Notes on Inlining
+       <https://numba.readthedocs.io/en/stable/developer/inlining.html>`_.
+    :type inline: str
+    :param forceinline: Enables inlining at the NVVM IR level when set to
+       ``True``. This is accomplished by adding the ``alwaysinline`` function
+       attribute to the function definition.
+    :type forceinline: bool
     :param link: A list of files containing PTX or CUDA C/C++ source to link
        with the function
     :type link: list
@@ -85,7 +94,9 @@ def jit(
         DeprecationWarning(
             "Passing bool to inline argument is deprecated, please refer to "
             "Numba's documentation on inlining: "
-            "https://numba.readthedocs.io/en/stable/developer/inlining.html"
+            "https://numba.readthedocs.io/en/stable/developer/inlining.html. "
+            "You may have wanted the forceinline argument instead, to force "
+            "inlining at the NVVM IR level."
         )
 
         inline = "always" if inline else "never"
@@ -140,6 +151,7 @@ def jit(
             targetoptions["fastmath"] = fastmath
             targetoptions["device"] = device
             targetoptions["inline"] = inline
+            targetoptions["forceinline"] = forceinline
             targetoptions["extensions"] = extensions
 
             disp = CUDADispatcher(func, targetoptions=targetoptions)
@@ -182,6 +194,7 @@ def jit(
                         func,
                         device=device,
                         inline=inline,
+                        forceinline=forceinline,
                         debug=debug,
                         opt=opt,
                         lineinfo=lineinfo,
@@ -206,6 +219,7 @@ def jit(
                 targetoptions["fastmath"] = fastmath
                 targetoptions["device"] = device
                 targetoptions["inline"] = inline
+                targetoptions["forceinline"] = forceinline
                 targetoptions["extensions"] = extensions
                 disp = CUDADispatcher(func_or_sig, targetoptions=targetoptions)
 
@@ -236,4 +250,6 @@ def declare_device(name, sig, link=None):
         msg = "Return type must be provided for device declarations"
         raise TypeError(msg)
 
-    return declare_device_function(name, restype, argtypes, link)
+    template = declare_device_function(name, restype, argtypes, link)
+
+    return template.key
