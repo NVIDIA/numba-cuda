@@ -39,9 +39,19 @@ jobs:
       TEST_MATRIX: ${{ steps.compute-matrix.outputs.TEST_MATRIX }}
     steps:
       - uses: actions/checkout@v4
-      - name: Compute Build Matrix
+      - name: Compute Matrices
         id: compute-matrix
-        uses: ./.github/actions/compute-matrix
+        run: |
+          BUILD_MATRIX="$(yq '.build-matrix' ci/matrix.yml)"
+          TEST_MATRIX="$(yq '.test-matrix' ci/matrix.yml)"
+          {
+            echo 'BUILD_MATRIX<<EOF'
+            echo "${BUILD_MATRIX}"
+            echo 'EOF'
+            echo 'TEST_MATRIX<<EOF'
+            echo "${TEST_MATRIX}"
+            echo 'EOF'
+          } >> "${GITHUB_OUTPUT}"
   build-conda:
     needs:
       - compute-matrix
@@ -49,7 +59,7 @@ jobs:
     with:
       build_type: pull-request
       script: "ci/build_conda.sh"
-      matrix_filter: ${{ needs.compute-matrix.outputs.BUILD_MATRIX }}
+      matrix: ${{ needs.compute-matrix.outputs.BUILD_MATRIX }}
   test-conda:
     needs:
       - build-conda
@@ -78,6 +88,7 @@ jobs:
     with:
       build_type: pull-request
       script: "ci/build_wheel.sh"
+      matrix: ${{ needs.compute-matrix.outputs.BUILD_MATRIX }}
   test-wheels:
     needs:
       - build-wheels
