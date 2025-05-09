@@ -20,6 +20,7 @@ from numba.cuda._internal.cuda_bf16 import (
 from numba.extending import overload
 
 import math
+import sys
 
 
 def _make_unary(a, func):
@@ -73,9 +74,11 @@ def exp_ol(a):
     return _make_unary(a, hexp)
 
 
-@overload(math.exp2, target="cuda")
-def exp2_ol(a):
-    return _make_unary(a, hexp2)
+if (sys.version_info.major, sys.version_info.minor) >= (3, 10):
+
+    @overload(math.exp2, target="cuda")
+    def exp2_ol(a):
+        return _make_unary(a, hexp2)
 
 
 __all__ = [
