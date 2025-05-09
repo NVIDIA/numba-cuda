@@ -69,7 +69,7 @@ jobs:
       build_type: pull-request
       script: "ci/test_conda.sh"
       run_codecov: false
-      matrix_filter: ${{ needs.compute-matrix.outputs.TEST_MATRIX }}
+      matrix: ${{ needs.compute-matrix.outputs.TEST_MATRIX }}
   test-conda-pynvjitlink:
     needs:
       - build-conda
@@ -80,6 +80,7 @@ jobs:
       script: "ci/test_conda_pynvjitlink.sh"
       run_codecov: false
       # This selects "ARCH=amd64 and CUDA >=12, with the latest supported Python for each CUDA major version".
+      matrix: ${{ needs.compute-matrix.outputs.TEST_MATRIX }}
       matrix_filter: map(select(.ARCH == "amd64" and (.CUDA_VER | split(".") | .[0] | tonumber >= 12))) | group_by(.CUDA_VER|split(".")|map(tonumber)|.[0]) | map(max_by([(.PY_VER|split(".")|map(tonumber)), (.CUDA_VER|split(".")|map(tonumber))]))
   build-wheels:
     needs:
@@ -92,26 +93,32 @@ jobs:
   test-wheels:
     needs:
       - build-wheels
+      - compute-matrix
     uses: ./.github/workflows/wheels-test.yaml
     with:
       build_type: pull-request
       script: "ci/test_wheel.sh false"
+      matrix: ${{ needs.compute-matrix.outputs.TEST_MATRIX }}
   test-wheels-pynvjitlink:
     needs:
       - build-wheels
+      - compute-matrix
     uses: ./.github/workflows/wheels-test.yaml
     with:
       build_type: pull-request
       script: "ci/test_wheel_pynvjitlink.sh"
       # This selects "ARCH=amd64 and CUDA >=12, with the latest supported Python for each CUDA major version".
+      matrix: ${{ needs.compute-matrix.outputs.TEST_MATRIX }}
       matrix_filter: map(select(.ARCH == "amd64" and (.CUDA_VER | split(".") | .[0] | tonumber >= 12))) | group_by(.CUDA_VER|split(".")|map(tonumber)|.[0]) | map(max_by([(.PY_VER|split(".")|map(tonumber)), (.CUDA_VER|split(".")|map(tonumber))]))
   test-wheels-deps-wheels:
     needs:
       - build-wheels
+      - compute-matrix
     uses: ./.github/workflows/wheels-test.yaml
     with:
       build_type: pull-request
       script: "ci/test_wheel_deps_wheels.sh"
+      matrix: ${{ needs.compute-matrix.outputs.TEST_MATRIX }}
       matrix_filter: map(select(.ARCH == "amd64" and (.CUDA_VER | split(".") | .[0] | tonumber >= 12))) | group_by(.CUDA_VER|split(".")|map(tonumber)|.[0]) | map(max_by([(.PY_VER|split(".")|map(tonumber)), (.CUDA_VER|split(".")|map(tonumber))]))
   build-docs:
     needs:
