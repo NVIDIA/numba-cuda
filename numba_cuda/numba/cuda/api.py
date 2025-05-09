@@ -95,6 +95,14 @@ def is_float16_supported():
     return True
 
 
+def is_bfloat16_supported():
+    """Whether bfloat16 are supported.
+
+    bfloat16 are only supported on devices with compute capability >= 8.0
+    """
+    return current_context().device.supports_bfloat16
+
+
 @require_context
 def to_device(obj, stream=0, copy=True, to=None):
     """to_device(obj, stream=0, copy=True, to=None)

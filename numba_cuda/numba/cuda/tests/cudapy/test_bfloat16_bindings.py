@@ -5,7 +5,7 @@ import numpy as np
 from numba import int16, int32, int64, uint16, uint32, uint64, float32, float64
 from numba.types import float16
 
-from numba.cuda.cuda_bf16 import (
+from numba.cuda._internal.cuda_bf16 import (
     nv_bfloat16,
     htrunc,
     hceil,
