@@ -64,7 +64,8 @@ Bfloat16
 
 .. note::
 
-    Bfloat16 is a compute capability 8.0+ feature.
+    Bfloat16 is only supported with CUDA version 12.0+, and only supported on
+    device compute capability with 8.0+.
 
 To determine whether Numba supports compiling code that uses the ``bfloat16``
 type in the current configuration, use:

@@ -34,8 +34,9 @@ dtypes = [int16, int32, int64, uint16, uint32, uint64, float32]
 
 
 @unittest.skipIf(
-    (cuda.get_current_device().compute_capability < (8, 0)),
-    "bfloat16 requires compute capability 8.0+",
+    (cuda.get_current_device().compute_capability < (8, 0))
+    or (cuda_version < (12, 0)),
+    "bfloat16 requires compute capability 8.0+ and CUDA version 12+",
 )
 class Bfloat16Test(CUDATestCase):
     def test_ctor(self):
@@ -49,16 +50,9 @@ class Bfloat16Test(CUDATestCase):
             f = nv_bfloat16(uint16(6))  # noqa: F841
             g = nv_bfloat16(uint32(7))  # noqa: F841
             h = nv_bfloat16(uint64(8))  # noqa: F841
+            i = nv_bfloat16(float16(9))  # noqa: F841
 
         simple_kernel[1, 1]()
-
-        if cuda_version >= (12, 0):
-
-            @cuda.jit
-            def simple_kernel_fp16():
-                i = nv_bfloat16(float16(9))  # noqa: F841
-
-            simple_kernel_fp16[1, 1]()
 
     def test_casts(self):
         @cuda.jit

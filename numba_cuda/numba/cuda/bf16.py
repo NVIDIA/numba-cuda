@@ -20,9 +20,14 @@ from numba.cuda._internal.cuda_bf16 import (
     htanh_approx,
 )
 from numba.extending import overload
+from numba.cuda.cudadrv.runtime import get_version
 
 import math
-import sys
+
+if get_version() < (12, 0):
+    raise NotImplementedError(
+        "Minimum supported CUDA version for bfloat16 is 12."
+    )
 
 
 def _make_unary(a, func):
@@ -81,11 +86,14 @@ def exp_ol(a):
     return _make_unary(a, hexp)
 
 
-if (sys.version_info.major, sys.version_info.minor) >= (3, 10):
+try:
+    from math import exp2
 
-    @overload(math.exp2, target="cuda")
+    @overload(exp2, target="cuda")
     def exp2_ol(a):
         return _make_unary(a, hexp2)
+except ImportError:
+    pass
 
 
 __all__ = [
