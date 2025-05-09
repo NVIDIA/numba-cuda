@@ -22,6 +22,8 @@ from numba.cuda._internal.cuda_bf16 import (
     hexp,
     hexp2,
     hexp10,
+    htanh,
+    htanh_approx,
 )
 
 from numba.cuda.cudadrv.runtime import get_version
@@ -191,16 +193,18 @@ class Bfloat16Test(CUDATestCase):
             a[9] = float32(hlog10(x))
             a[10] = float32(hcos(x))
             a[11] = float32(hsin(x))
-            a[12] = float32(hexp(x))
-            a[13] = float32(hexp2(x))
-            a[14] = float32(hexp10(x))
+            a[12] = float32(htanh(x))
+            a[13] = float32(htanh_approx(x))
+            a[14] = float32(hexp(x))
+            a[15] = float32(hexp2(x))
+            a[16] = float32(hexp10(x))
 
-        a = np.zeros(15, dtype=np.float32)
+        a = np.zeros(17, dtype=np.float32)
         simple_kernel[1, 1](a)
 
         x = 3.14
         np.testing.assert_allclose(
-            a[:12],
+            a[:14],
             [
                 np.trunc(x),
                 np.ceil(x),
@@ -214,12 +218,14 @@ class Bfloat16Test(CUDATestCase):
                 np.log10(x),
                 np.cos(x),
                 np.sin(x),
+                np.tanh(x),
+                np.tanh(x),
             ],
             atol=1e-2,
         )
 
         np.testing.assert_allclose(
-            a[12:], [np.exp(x), np.exp2(x), np.power(10, x)], atol=1e2
+            a[14:], [np.exp(x), np.exp2(x), np.power(10, x)], atol=1e2
         )
 
     def test_check_bfloat16_type(self):
