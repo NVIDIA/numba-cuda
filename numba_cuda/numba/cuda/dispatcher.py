@@ -94,6 +94,7 @@ class _Kernel(serialize.ReduceMixin):
         lto=False,
         opt=True,
         device=False,
+        launch_bounds=None,
     ):
         if device:
             raise RuntimeError("Cannot compile a device function as a kernel")
@@ -120,6 +121,7 @@ class _Kernel(serialize.ReduceMixin):
         self.debug = debug
         self.lineinfo = lineinfo
         self.extensions = extensions or []
+        self.launch_bounds = launch_bounds
 
         nvvm_options = {"fastmath": fastmath, "opt": 3 if opt else 0}
 

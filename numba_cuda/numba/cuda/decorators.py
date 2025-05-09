@@ -23,6 +23,7 @@ def jit(
     opt=None,
     lineinfo=False,
     cache=False,
+    launch_bounds=None,
     **kws,
 ):
     """
@@ -153,6 +154,7 @@ def jit(
             targetoptions["inline"] = inline
             targetoptions["forceinline"] = forceinline
             targetoptions["extensions"] = extensions
+            targetoptions["launch_bounds"] = launch_bounds
 
             disp = CUDADispatcher(func, targetoptions=targetoptions)
 
@@ -200,6 +202,7 @@ def jit(
                         lineinfo=lineinfo,
                         link=link,
                         cache=cache,
+                        launch_bounds=launch_bounds,
                         **kws,
                     )
 
@@ -221,6 +224,7 @@ def jit(
                 targetoptions["inline"] = inline
                 targetoptions["forceinline"] = forceinline
                 targetoptions["extensions"] = extensions
+                targetoptions["launch_bounds"] = launch_bounds
                 disp = CUDADispatcher(func_or_sig, targetoptions=targetoptions)
 
                 if cache:
