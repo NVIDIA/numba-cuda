@@ -110,41 +110,41 @@ Math Intrinsics
 A number of math intrinsics that utilizes the device native computing feature
 on ``bfloat16`` are provided:
 
-.. function:: htrunc(h)
+.. function:: numba.cuda.bf16.htrunc(h)
     Round ``h`` to the nearest integer value that does not exceed ``h`` in magnitude.
 
-.. function:: hceil(h)
+.. function:: numba.cuda.bf16.hceil(h)
     Compute the smallest integer value not less than ``h``.
 
-.. function:: hfloor(h)
+.. function:: numba.cuda.bf16.hfloor(h)
     Calculate the largest integer value which is less than or equal to ``h``.
 
-.. function:: hrint(h)
+.. function:: numba.cuda.bf16.hrint(h)
     Round ``h`` to the nearest integer value in nv_bfloat16 floating-point format,
     with bfloat16way cases rounded to the nearest even integer value.
 
-.. function:: hsqrt(a)
+.. function:: numba.cuda.bf16.hsqrt(a)
     Calculates bfloat16 square root of input ``a`` in round-to-nearest-even mode.
 
-.. function:: hrsqrt(a)
+.. function:: numba.cuda.bf16.hrsqrt(a)
     Calculates bfloat16 reciprocal square root of input ``a`` in round-to-nearest-even mode.
 
-.. function:: hrcp(a)
+.. function:: numba.cuda.bf16.hrcp(a)
    Calculates bfloat16 reciprocal of input a in round-to-nearest-even mode.
 
-.. function:: hlog(a)
+.. function:: numba.cuda.bf16.hlog(a)
     Calculates bfloat16 natural logarithm of input ``a`` in round-to-nearest-even
     mode.
 
-.. function:: hlog2(a)
+.. function:: numba.cuda.bf16.hlog2(a)
     Calculates bfloat16 decimal logarithm of input ``a`` in round-to-nearest-even
     mode.
 
-.. function:: hlog10(a)
+.. function:: numba.cuda.bf16.hlog10(a)
     Calculates bfloat16 natural exponential function of input ``a`` in
     round-to-nearest-even mode.
 
-.. function:: hcos(a)
+.. function:: numba.cuda.bf16.hcos(a)
     Calculates bfloat16 cosine of input ``a`` in round-to-nearest-even mode.
 
 .. note::
@@ -153,7 +153,7 @@ on ``bfloat16`` are provided:
     to compiler optimizations. Specifically, use_fast_math mode changes cosf(float)
     into an intrinsic __cosf(float), which has less accurate numeric behavior.
 
-.. function:: hsin(a)
+.. function:: numba.cuda.bf16.hsin(a)
     Calculates bfloat16 sine of input ``a`` in round-to-nearest-even mode.
 
 .. note::
@@ -161,14 +161,26 @@ on ``bfloat16`` are provided:
     to compiler optimizations. Specifically, use_fast_math flag changes sinf(float)
     into an intrinsic __sinf(float), which has less accurate numeric behavior.
 
-.. function:: hexp(a)
+.. function:: numba.cuda.bf16.htanh(a)
+    Calculates bfloat16 hyperbolic tangent function: ``tanh(a)`` in round-to-nearest-even mode.
+
+.. function:: numba.cuda.bf16.htanh_approx(a)
+    Calculates approximate bfloat16 hyperbolic tangent function: ``tanh(a)``.
+    This operation uses HW acceleration on devices of compute capability 9.x and higher.
+
+.. note::
+    tanh_approx(0)      returns 0
+    tanh_approx(inf)    returns 1
+    tanh_approx(nan)    returns nan
+
+.. function:: numba.cuda.bf16.hexp(a)
     Calculates bfloat16 natural exponential function of input ``a`` in
     round-to-nearest-even mode.
 
-.. function:: hexp2(a)
+.. function:: numba.cuda.bf16.hexp2(a)
     Calculates bfloat16 binary exponential function of input ``a`` in
     round-to-nearest-even mode.
 
-.. function:: hexp10(h)
+.. function:: numba.cuda.bf16.hexp10(h)
     Calculates bfloat16 decimal exponential function of input ``a`` in
     round-to-nearest-even mode.
