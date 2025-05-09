@@ -3,22 +3,19 @@ import os
 import sys
 import ctypes
 import functools
-from collections import defaultdict
 
-from numba.core import config, ir, serialize, sigutils, types, typing, utils
+from numba.core import config, serialize, sigutils, types, typing, utils
 from numba.core.caching import Cache, CacheImpl
 from numba.core.compiler_lock import global_compiler_lock
 from numba.core.dispatcher import Dispatcher
 from numba.core.errors import NumbaPerformanceWarning
 from numba.core.typing.typeof import Purpose, typeof
-from numba.core.types.functions import Function
 from numba.cuda.api import get_current_device
 from numba.cuda.args import wrap_arg
 from numba.cuda.compiler import (
     compile_cuda,
     CUDACompiler,
     kernel_fixup,
-    ExternFunction,
 )
 import re
 from numba.cuda.cudadrv import driver
@@ -58,54 +55,6 @@ cuda_fp16_math_funcs = [
 ]
 
 reshape_funcs = ["nocopy_empty_reshape", "numba_attempt_nocopy_reshape"]
-
-
-def get_cres_link_objects(cres):
-    """Given a compile result, return a set of all linkable code objects that
-    are required for it to be fully linked."""
-
-    link_objects = set()
-
-    # List of calls into declared device functions
-    device_func_calls = [
-        (name, v)
-        for name, v in cres.fndesc.typemap.items()
-        if (isinstance(v, cuda_types.CUDADispatcher))
-    ]
-
-    # List of tuples with SSA name of calls and corresponding signature
-    call_signatures = [
-        (call.func.name, sig)
-        for call, sig in cres.fndesc.calltypes.items()
-        if (isinstance(call, ir.Expr) and call.op == "call")
-    ]
-
-    # Map SSA names to all invoked signatures
-    call_signature_d = defaultdict(list)
-    for name, sig in call_signatures:
-        call_signature_d[name].append(sig)
-
-    # Add the link objects from the current function's callees
-    for name, v in device_func_calls:
-        for sig in call_signature_d.get(name, []):
-            called_cres = v.dispatcher.overloads[sig.args]
-            called_link_objects = get_cres_link_objects(called_cres)
-            link_objects.update(called_link_objects)
-
-    # From this point onwards, we are only interested in ExternFunction
-    # declarations - these are the calls made directly in this function to
-    # them.
-    for name, v in cres.fndesc.typemap.items():
-        if not isinstance(v, Function):
-            continue
-
-        if not isinstance(v.typing_key, ExternFunction):
-            continue
-
-        for obj in v.typing_key.link:
-            link_objects.add(obj)
-
-    return link_objects
 
 
 class _Kernel(serialize.ReduceMixin):
@@ -237,9 +186,6 @@ class _Kernel(serialize.ReduceMixin):
         )
 
         self.maybe_link_nrt(link, tgt_ctx, asm)
-
-        for obj in get_cres_link_objects(cres):
-            lib.add_linking_file(obj)
 
         for filepath in link:
             lib.add_linking_file(filepath)
