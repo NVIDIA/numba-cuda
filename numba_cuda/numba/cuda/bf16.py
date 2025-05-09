@@ -16,6 +16,8 @@ from numba.cuda._internal.cuda_bf16 import (
     hexp,
     hexp2,
     hexp10,
+    htanh,
+    htanh_approx,
 )
 from numba.extending import overload
 
@@ -69,6 +71,11 @@ def sin_ol(a):
     return _make_unary(a, hsin)
 
 
+@overload(math.tanh, target="cuda")
+def tanh_ol(a):
+    return _make_unary(a, htanh)
+
+
 @overload(math.exp, target="cuda")
 def exp_ol(a):
     return _make_unary(a, hexp)
@@ -95,6 +102,8 @@ __all__ = [
     "hlog10",
     "hcos",
     "hsin",
+    "htanh",
+    "htanh_approx",
     "hexp",
     "hexp2",
     "hexp10",

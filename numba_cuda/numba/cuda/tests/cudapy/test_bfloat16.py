@@ -27,6 +27,7 @@ class TestBfloat16HighLevelBindings(CUDATestCase):
             math.log10,
             math.cos,
             math.sin,
+            math.tanh,
             math.exp,
             math.exp2,
         ]
