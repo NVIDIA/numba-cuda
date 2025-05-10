@@ -54,3 +54,134 @@ mutating vector components will be added in a future release.
     v1 = float32x2(1.0, 1.0)
     v2 = float32x2(1.0, -1.0)
     dotprod = v1.x * v2.x + v1.y * v2.y
+
+
+Narrow Data Types
+~~~~~~~~~~~~~~~~~
+
+Bfloat16
+--------
+
+.. note::
+
+    Bfloat16 is only supported with CUDA version 12.0+, and only supported on
+    device compute capability with 8.0+.
+
+To determine whether Numba supports compiling code that uses the ``bfloat16``
+type in the current configuration, use:
+
+.. function:: numba.cuda.is_bfloat16_supported()
+
+    Returns ``True`` if current device supports bfloat16. ``False`` otherwise.
+
+Data Movement and Casts
+***********************
+
+Construction a single instance of bfloat16 object takes 1 API:
+
+.. function:: numba.cuda.bf16.bfloat16(a)
+
+    Constructs a bfloat16 data from existing device scalar. Supported scalar types:
+    - float64
+    - float32
+    - int64
+    - int32
+    - uint64
+    - uint32
+    On cuda version 12.0+ machines, supports construction from ``float16``
+
+Conversely, ``bfloat16`` data can be cast back to existing native data type via
+``dtype(h)``, where ``dtype`` is one of the data types above (except float16),
+and ``X`` is a bfloat16 object.
+
+Arithmatics
+************
+
+A ``bfloat16`` data can be computed with another ``bfloat16`` data with many
+supported aritheatic operators. The list of supported operations:
+
+- Arithmatics (``+, -, *, /``)
+- Arithmatic assignment oeprators (``+=, -=, *=, /=``)
+- Logical operators (``==, !=, >, <, >=, <=``)
+- Unary arithmatics (``+, -``)
+
+Math Intrinsics
+***************
+
+A number of math intrinsics that utilizes the device native computing feature
+on ``bfloat16`` are provided:
+
+.. function:: numba.cuda.bf16.htrunc(h)
+    Round ``h`` to the nearest integer value that does not exceed ``h`` in magnitude.
+
+.. function:: numba.cuda.bf16.hceil(h)
+    Compute the smallest integer value not less than ``h``.
+
+.. function:: numba.cuda.bf16.hfloor(h)
+    Calculate the largest integer value which is less than or equal to ``h``.
+
+.. function:: numba.cuda.bf16.hrint(h)
+    Round ``h`` to the nearest integer value in nv_bfloat16 floating-point format,
+    with bfloat16way cases rounded to the nearest even integer value.
+
+.. function:: numba.cuda.bf16.hsqrt(a)
+    Calculates bfloat16 square root of input ``a`` in round-to-nearest-even mode.
+
+.. function:: numba.cuda.bf16.hrsqrt(a)
+    Calculates bfloat16 reciprocal square root of input ``a`` in round-to-nearest-even mode.
+
+.. function:: numba.cuda.bf16.hrcp(a)
+   Calculates bfloat16 reciprocal of input a in round-to-nearest-even mode.
+
+.. function:: numba.cuda.bf16.hlog(a)
+    Calculates bfloat16 natural logarithm of input ``a`` in round-to-nearest-even
+    mode.
+
+.. function:: numba.cuda.bf16.hlog2(a)
+    Calculates bfloat16 decimal logarithm of input ``a`` in round-to-nearest-even
+    mode.
+
+.. function:: numba.cuda.bf16.hlog10(a)
+    Calculates bfloat16 natural exponential function of input ``a`` in
+    round-to-nearest-even mode.
+
+.. function:: numba.cuda.bf16.hcos(a)
+    Calculates bfloat16 cosine of input ``a`` in round-to-nearest-even mode.
+
+.. note::
+
+    This function's implementation calls cosf(float) function and is exposed
+    to compiler optimizations. Specifically, use_fast_math mode changes cosf(float)
+    into an intrinsic __cosf(float), which has less accurate numeric behavior.
+
+.. function:: numba.cuda.bf16.hsin(a)
+    Calculates bfloat16 sine of input ``a`` in round-to-nearest-even mode.
+
+.. note::
+    This function's implementation calls sinf(float) function and is exposed
+    to compiler optimizations. Specifically, use_fast_math flag changes sinf(float)
+    into an intrinsic __sinf(float), which has less accurate numeric behavior.
+
+.. function:: numba.cuda.bf16.htanh(a)
+    Calculates bfloat16 hyperbolic tangent function: ``tanh(a)`` in round-to-nearest-even mode.
+
+.. function:: numba.cuda.bf16.htanh_approx(a)
+    Calculates approximate bfloat16 hyperbolic tangent function: ``tanh(a)``.
+    This operation uses HW acceleration on devices of compute capability 9.x and higher.
+
+.. note::
+    tanh_approx(0)      returns 0
+    tanh_approx(inf)    returns 1
+    tanh_approx(nan)    returns nan
+
+.. function:: numba.cuda.bf16.hexp(a)
+    Calculates bfloat16 natural exponential function of input ``a`` in
+    round-to-nearest-even mode.
+
+.. function:: numba.cuda.bf16.hexp2(a)
+    Calculates bfloat16 binary exponential function of input ``a`` in
+    round-to-nearest-even mode.
+
+.. function:: numba.cuda.bf16.hexp10(h)
+    Calculates bfloat16 decimal exponential function of input ``a`` in
+    round-to-nearest-even mode.

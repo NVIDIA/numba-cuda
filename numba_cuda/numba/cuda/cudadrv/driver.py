@@ -714,6 +714,10 @@ class Device(object):
     def supports_float16(self):
         return self.compute_capability >= (5, 3)
 
+    @property
+    def supports_bfloat16(self):
+        return self.compute_capability >= (8, 0)
+
 
 def met_requirement_for_device(device):
     if device.compute_capability < MIN_REQUIRED_CC:
