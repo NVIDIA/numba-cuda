@@ -25,17 +25,13 @@ from numba.cuda._internal.cuda_bf16 import (
     htanh,
     htanh_approx,
 )
-
-from numba.cuda.cudadrv.runtime import get_version
-
-cuda_version = get_version()
+from numba.cuda import is_bfloat16_supported
 
 dtypes = [int16, int32, int64, uint16, uint32, uint64, float32]
 
 
 @unittest.skipIf(
-    (cuda.get_current_device().compute_capability < (8, 0))
-    or (cuda_version < (12, 0)),
+    not is_bfloat16_supported(),
     "bfloat16 requires compute capability 8.0+ and CUDA version 12+",
 )
 class Bfloat16Test(CUDATestCase):

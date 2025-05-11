@@ -7,7 +7,7 @@ import math
 
 @unittest.skipIf(
     not cuda.is_bfloat16_supported(),
-    "bfloat16 requires compute capability 8.0+",
+    "bfloat16 requires compute capability 8.0+ and CUDA version>= 12.0",
 )
 class TestBfloat16HighLevelBindings(CUDATestCase):
     def test_use_type_in_kernel(self):

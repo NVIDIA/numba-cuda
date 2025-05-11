@@ -20,14 +20,8 @@ from numba.cuda._internal.cuda_bf16 import (
     htanh_approx,
 )
 from numba.extending import overload
-from numba.cuda.cudadrv.runtime import get_version
 
 import math
-
-if get_version() < (12, 0):
-    raise NotImplementedError(
-        "Minimum supported CUDA version for bfloat16 is 12."
-    )
 
 
 def _make_unary(a, func):
