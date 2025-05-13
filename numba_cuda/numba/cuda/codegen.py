@@ -356,7 +356,7 @@ class CUDACodeLibrary(serialize.ReduceMixin, CodeLibrary):
         self._linking_files.update(library._linking_files)
         self._setup_functions.extend(library._setup_functions)
         self._teardown_functions.extend(library._teardown_functions)
-        self.use_cooperative |= library.use_coorperative
+        self.use_cooperative |= library.use_cooperative
 
     def add_linking_file(self, path_or_obj):
         if isinstance(path_or_obj, LinkableCode):
