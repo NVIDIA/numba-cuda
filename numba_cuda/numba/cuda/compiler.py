@@ -1,5 +1,4 @@
 from llvmlite import ir
-from numba.core.typing.templates import ConcreteTemplate
 from numba.core import ir as numba_ir
 from numba.core import (
     cgutils,
@@ -37,6 +36,7 @@ from numba.core.typed_passes import (
 from warnings import warn
 from numba.cuda import nvvmutils
 from numba.cuda.api import get_current_device
+from numba.cuda.codegen import ExternalCodeLibrary
 from numba.cuda.cudadrv import nvvm
 from numba.cuda.descriptor import cuda_target
 from numba.cuda.target import CUDACABICallConv
@@ -278,7 +278,7 @@ def compile_cuda(
     args,
     debug=False,
     lineinfo=False,
-    inline=False,
+    forceinline=False,
     fastmath=False,
     nvvm_options=None,
     cc=None,
@@ -316,7 +316,7 @@ def compile_cuda(
     else:
         flags.error_model = "numpy"
 
-    if inline:
+    if forceinline:
         flags.forceinline = True
     if fastmath:
         flags.fastmath = True
@@ -574,6 +574,7 @@ def compile(
     abi="c",
     abi_info=None,
     output="ptx",
+    forceinline=False,
 ):
     """Compile a Python function to PTX or LTO-IR for a given set of argument
     types.
@@ -614,6 +615,11 @@ def compile(
     :type abi_info: dict
     :param output: Type of output to generate, either ``"ptx"`` or ``"ltoir"``.
     :type output: str
+    :param forceinline: Enables inlining at the NVVM IR level when set to
+                        ``True``. This is accomplished by adding the
+                        ``alwaysinline`` function attribute to the function
+                        definition. This is only valid when the output is
+                        ``"ltoir"``.
     :return: (code, resty): The compiled code and inferred return type
     :rtype: tuple
     """
@@ -625,6 +631,12 @@ def compile(
 
     if output not in ("ptx", "ltoir"):
         raise NotImplementedError(f"Unsupported output type: {output}")
+
+    if forceinline and not device:
+        raise ValueError("Cannot force-inline kernels")
+
+    if forceinline and output != "ltoir":
+        raise ValueError("Can only designate forced inlining in LTO-IR")
 
     debug = config.CUDA_DEBUGINFO_DEFAULT if debug is None else debug
     opt = (config.OPT != 0) if opt is None else opt
@@ -660,6 +672,7 @@ def compile(
         fastmath=fastmath,
         nvvm_options=nvvm_options,
         cc=cc,
+        forceinline=forceinline,
     )
     resty = cres.signature.return_type
 
@@ -699,6 +712,7 @@ def compile_for_current_device(
     abi="c",
     abi_info=None,
     output="ptx",
+    forceinline=False,
 ):
     """Compile a Python function to PTX or LTO-IR for a given signature for the
     current device's compute capabilility. This calls :func:`compile` with an
@@ -716,6 +730,7 @@ def compile_for_current_device(
         abi=abi,
         abi_info=abi_info,
         output=output,
+        forceinline=forceinline,
     )
 
 
@@ -730,6 +745,7 @@ def compile_ptx(
     opt=None,
     abi="numba",
     abi_info=None,
+    forceinline=False,
 ):
     """Compile a Python function to PTX for a given signature. See
     :func:`compile`. The defaults for this function are to compile a kernel
@@ -747,6 +763,7 @@ def compile_ptx(
         abi=abi,
         abi_info=abi_info,
         output="ptx",
+        forceinline=forceinline,
     )
 
 
@@ -760,6 +777,7 @@ def compile_ptx_for_current_device(
     opt=None,
     abi="numba",
     abi_info=None,
+    forceinline=False,
 ):
     """Compile a Python function to PTX for a given signature for the current
     device's compute capabilility. See :func:`compile_ptx`."""
@@ -775,36 +793,42 @@ def compile_ptx_for_current_device(
         opt=opt,
         abi=abi,
         abi_info=abi_info,
+        forceinline=forceinline,
     )
 
 
 def declare_device_function(name, restype, argtypes, link):
-    return declare_device_function_template(name, restype, argtypes, link).key
-
-
-def declare_device_function_template(name, restype, argtypes, link):
     from .descriptor import cuda_target
 
     typingctx = cuda_target.typing_context
     targetctx = cuda_target.target_context
     sig = typing.signature(restype, *argtypes)
-    extfn = ExternFunction(name, sig, link)
 
-    class device_function_template(ConcreteTemplate):
-        key = extfn
-        cases = [sig]
+    # extfn is the descriptor used to call the function from Python code, and
+    # is used as the key for typing and lowering.
+    extfn = ExternFunction(name, sig)
 
-    fndesc = funcdesc.ExternalFunctionDescriptor(
-        name=name, restype=restype, argtypes=argtypes
-    )
+    # Typing
+    device_function_template = typing.make_concrete_template(name, extfn, [sig])
     typingctx.insert_user_function(extfn, device_function_template)
-    targetctx.insert_user_function(extfn, fndesc)
+
+    # Lowering
+    lib = ExternalCodeLibrary(f"{name}_externals", targetctx.codegen())
+    for file in link:
+        lib.add_linking_file(file)
+
+    # ExternalFunctionDescriptor provides a lowering implementation for calling
+    # external functions
+    fndesc = funcdesc.ExternalFunctionDescriptor(name, restype, argtypes)
+    targetctx.insert_user_function(extfn, fndesc, libs=(lib,))
 
     return device_function_template
 
 
 class ExternFunction:
-    def __init__(self, name, sig, link):
+    """A descriptor that can be used to call the external function from within
+    a Python kernel."""
+
+    def __init__(self, name, sig):
         self.name = name
         self.sig = sig
-        self.link = link
