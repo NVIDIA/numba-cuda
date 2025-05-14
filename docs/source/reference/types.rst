@@ -100,8 +100,7 @@ and ``b`` is a bfloat16 object.
 Arithmetic
 **********
 
-A ``bfloat16`` data can be computed with another ``bfloat16`` data with many
-supported aritheatic operators. The list of supported operations:
+Supported arithmetic operations on ``bfloat`16`` operands are:
 
 - Arithmetic (``+``, ``-``, ``*``, ``/``)
 - Arithmetic assignment operators (``+=``, ``-=``, ``*=``, ``/=``)
