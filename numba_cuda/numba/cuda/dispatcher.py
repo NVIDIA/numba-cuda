@@ -87,6 +87,7 @@ class _Kernel(serialize.ReduceMixin):
         debug=False,
         lineinfo=False,
         inline=False,
+        forceinline=False,
         fastmath=False,
         extensions=None,
         max_registers=None,
@@ -132,7 +133,7 @@ class _Kernel(serialize.ReduceMixin):
             self.argtypes,
             debug=self.debug,
             lineinfo=lineinfo,
-            inline=inline,
+            forceinline=forceinline,
             fastmath=fastmath,
             nvvm_options=nvvm_options,
             cc=cc,
@@ -1033,7 +1034,7 @@ class CUDADispatcher(Dispatcher, serialize.ReduceMixin):
             with self._compiling_counter:
                 debug = self.targetoptions.get("debug")
                 lineinfo = self.targetoptions.get("lineinfo")
-                inline = self.targetoptions.get("inline")
+                forceinline = self.targetoptions.get("forceinline")
                 fastmath = self.targetoptions.get("fastmath")
 
                 nvvm_options = {
@@ -1051,7 +1052,7 @@ class CUDADispatcher(Dispatcher, serialize.ReduceMixin):
                     args,
                     debug=debug,
                     lineinfo=lineinfo,
-                    inline=inline,
+                    forceinline=forceinline,
                     fastmath=fastmath,
                     nvvm_options=nvvm_options,
                     cc=cc,
