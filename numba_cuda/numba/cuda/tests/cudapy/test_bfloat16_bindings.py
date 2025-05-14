@@ -5,7 +5,7 @@ import numpy as np
 from numba import int16, int32, int64, uint16, uint32, uint64, float32, float64
 from numba.types import float16
 
-from numba.cuda.cuda_bf16 import (
+from numba.cuda._internal.cuda_bf16 import (
     nv_bfloat16,
     htrunc,
     hceil,
@@ -22,21 +22,23 @@ from numba.cuda.cuda_bf16 import (
     hexp,
     hexp2,
     hexp10,
+    htanh,
+    htanh_approx,
 )
-
-from numba.cuda.cudadrv.runtime import get_version
-
-cuda_version = get_version()
 
 dtypes = [int16, int32, int64, uint16, uint32, uint64, float32]
 
 
-@unittest.skipIf(
-    (cuda.get_current_device().compute_capability < (8, 0)),
-    "bfloat16 requires compute capability 8.0+",
-)
 class Bfloat16Test(CUDATestCase):
+    def skip_unsupported(self):
+        if not cuda.is_bfloat16_supported():
+            self.skipTest(
+                "bfloat16 requires compute capability 8.0+ and CUDA version>= 12.0"
+            )
+
     def test_ctor(self):
+        self.skip_unsupported()
+
         @cuda.jit
         def simple_kernel():
             a = nv_bfloat16(float64(1.0))  # noqa: F841
@@ -47,18 +49,13 @@ class Bfloat16Test(CUDATestCase):
             f = nv_bfloat16(uint16(6))  # noqa: F841
             g = nv_bfloat16(uint32(7))  # noqa: F841
             h = nv_bfloat16(uint64(8))  # noqa: F841
+            i = nv_bfloat16(float16(9))  # noqa: F841
 
         simple_kernel[1, 1]()
 
-        if cuda_version >= (12, 0):
-
-            @cuda.jit
-            def simple_kernel_fp16():
-                i = nv_bfloat16(float16(9))  # noqa: F841
-
-            simple_kernel_fp16[1, 1]()
-
     def test_casts(self):
+        self.skip_unsupported()
+
         @cuda.jit
         def simple_kernel(b, c, d, e, f, g, h):
             a = nv_bfloat16(3.14)
@@ -90,6 +87,7 @@ class Bfloat16Test(CUDATestCase):
         assert h[0] == 3
 
     def test_ctor_cast_loop(self):
+        self.skip_unsupported()
         for dtype in dtypes:
             with self.subTest(dtype=dtype):
 
@@ -106,6 +104,8 @@ class Bfloat16Test(CUDATestCase):
                     assert a[0] == 3
 
     def test_arithmetic(self):
+        self.skip_unsupported()
+
         @cuda.jit
         def simple_kernel(arith, logic):
             # Binary Arithmetic Operators
@@ -175,6 +175,8 @@ class Bfloat16Test(CUDATestCase):
         )
 
     def test_math_func(self):
+        self.skip_unsupported()
+
         @cuda.jit
         def simple_kernel(a):
             x = nv_bfloat16(3.14)
@@ -191,16 +193,18 @@ class Bfloat16Test(CUDATestCase):
             a[9] = float32(hlog10(x))
             a[10] = float32(hcos(x))
             a[11] = float32(hsin(x))
-            a[12] = float32(hexp(x))
-            a[13] = float32(hexp2(x))
-            a[14] = float32(hexp10(x))
+            a[12] = float32(htanh(x))
+            a[13] = float32(htanh_approx(x))
+            a[14] = float32(hexp(x))
+            a[15] = float32(hexp2(x))
+            a[16] = float32(hexp10(x))
 
-        a = np.zeros(15, dtype=np.float32)
+        a = np.zeros(17, dtype=np.float32)
         simple_kernel[1, 1](a)
 
         x = 3.14
         np.testing.assert_allclose(
-            a[:12],
+            a[:14],
             [
                 np.trunc(x),
                 np.ceil(x),
@@ -214,15 +218,19 @@ class Bfloat16Test(CUDATestCase):
                 np.log10(x),
                 np.cos(x),
                 np.sin(x),
+                np.tanh(x),
+                np.tanh(x),
             ],
             atol=1e-2,
         )
 
         np.testing.assert_allclose(
-            a[12:], [np.exp(x), np.exp2(x), np.power(10, x)], atol=1e2
+            a[14:], [np.exp(x), np.exp2(x), np.power(10, x)], atol=1e2
         )
 
     def test_check_bfloat16_type(self):
+        self.skip_unsupported()
+
         @cuda.jit
         def kernel(arr):
             x = nv_bfloat16(3.14)
@@ -237,6 +245,8 @@ class Bfloat16Test(CUDATestCase):
         np.testing.assert_allclose(arr, [3.14], atol=1e-2)
 
     def test_use_within_device_func(self):
+        self.skip_unsupported()
+
         @cuda.jit(device=True)
         def add_bf16(a, b):
             return a + b
