@@ -14,7 +14,6 @@ from numba.cuda.cudadrv.runtime import get_version
 
 # NDarray device helper
 
-cuda_version = get_version()
 require_context = devices.require_context
 current_context = devices.get_context
 gpus = devices.gpus
@@ -102,6 +101,7 @@ def is_bfloat16_supported():
 
     bfloat16 are only supported on devices with compute capability >= 8.0 and cuda version >= 12.0
     """
+    cuda_version = get_version()
     return current_context().device.supports_bfloat16 and cuda_version >= (
         12,
         0,
