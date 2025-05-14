@@ -1,16 +1,20 @@
 from numba import cuda, float32
 from numba.cuda.bf16 import bfloat16
-from numba.cuda.testing import unittest, CUDATestCase
+from numba.cuda.testing import CUDATestCase
 
 import math
 
 
-@unittest.skipIf(
-    not cuda.is_bfloat16_supported(),
-    "bfloat16 requires compute capability 8.0+ and CUDA version>= 12.0",
-)
 class TestBfloat16HighLevelBindings(CUDATestCase):
+    def skip_unsupported(self):
+        if not cuda.is_bfloat16_supported():
+            self.skipTest(
+                "bfloat16 requires compute capability 8.0+ and CUDA version>= 12.0"
+            )
+
     def test_use_type_in_kernel(self):
+        self.skip_unsupported()
+
         @cuda.jit
         def kernel():
             bfloat16(3.14)
@@ -18,6 +22,7 @@ class TestBfloat16HighLevelBindings(CUDATestCase):
         kernel[1, 1]()
 
     def test_math_bindings(self):
+        self.skip_unsupported()
         functions = [
             math.trunc,
             math.ceil,

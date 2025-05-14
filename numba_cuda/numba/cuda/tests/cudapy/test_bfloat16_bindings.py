@@ -25,17 +25,20 @@ from numba.cuda._internal.cuda_bf16 import (
     htanh,
     htanh_approx,
 )
-from numba.cuda import is_bfloat16_supported
 
 dtypes = [int16, int32, int64, uint16, uint32, uint64, float32]
 
 
-@unittest.skipIf(
-    not is_bfloat16_supported(),
-    "bfloat16 requires compute capability 8.0+ and CUDA version 12+",
-)
 class Bfloat16Test(CUDATestCase):
+    def skip_unsupported(self):
+        if not cuda.is_bfloat16_supported():
+            self.skipTest(
+                "bfloat16 requires compute capability 8.0+ and CUDA version>= 12.0"
+            )
+
     def test_ctor(self):
+        self.skip_unsupported()
+
         @cuda.jit
         def simple_kernel():
             a = nv_bfloat16(float64(1.0))  # noqa: F841
@@ -51,6 +54,8 @@ class Bfloat16Test(CUDATestCase):
         simple_kernel[1, 1]()
 
     def test_casts(self):
+        self.skip_unsupported()
+
         @cuda.jit
         def simple_kernel(b, c, d, e, f, g, h):
             a = nv_bfloat16(3.14)
@@ -82,6 +87,7 @@ class Bfloat16Test(CUDATestCase):
         assert h[0] == 3
 
     def test_ctor_cast_loop(self):
+        self.skip_unsupported()
         for dtype in dtypes:
             with self.subTest(dtype=dtype):
 
@@ -98,6 +104,8 @@ class Bfloat16Test(CUDATestCase):
                     assert a[0] == 3
 
     def test_arithmetic(self):
+        self.skip_unsupported()
+
         @cuda.jit
         def simple_kernel(arith, logic):
             # Binary Arithmetic Operators
@@ -167,6 +175,8 @@ class Bfloat16Test(CUDATestCase):
         )
 
     def test_math_func(self):
+        self.skip_unsupported()
+
         @cuda.jit
         def simple_kernel(a):
             x = nv_bfloat16(3.14)
@@ -219,6 +229,8 @@ class Bfloat16Test(CUDATestCase):
         )
 
     def test_check_bfloat16_type(self):
+        self.skip_unsupported()
+
         @cuda.jit
         def kernel(arr):
             x = nv_bfloat16(3.14)
@@ -233,6 +245,8 @@ class Bfloat16Test(CUDATestCase):
         np.testing.assert_allclose(arr, [3.14], atol=1e-2)
 
     def test_use_within_device_func(self):
+        self.skip_unsupported()
+
         @cuda.jit(device=True)
         def add_bf16(a, b):
             return a + b
