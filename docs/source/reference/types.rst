@@ -65,45 +65,48 @@ Bfloat16
 .. note::
 
     Bfloat16 is only supported with CUDA version 12.0+, and only supported on
-    device compute capability with 8.0+.
+    devices with compute capability 8.0 or above.
 
-To determine whether Numba supports compiling code that uses the ``bfloat16``
-type in the current configuration, use:
+To determine whether ``bfloat16`` is supported in the current configuration,
+use:
 
 .. function:: numba.cuda.is_bfloat16_supported()
 
-    Returns ``True`` if current device supports bfloat16. ``False`` otherwise.
+    Returns ``True`` if the current device and toolkit support bfloat16.
+    ``False`` otherwise.
 
 Data Movement and Casts
 ***********************
 
-Construction a single instance of bfloat16 object takes 1 API:
+Construction of a single instance of a ``bfloat16`` object:
 
 .. function:: numba.cuda.bf16.bfloat16(a)
 
-    Constructs a bfloat16 data from existing device scalar. Supported scalar types:
-    - float64
-    - float32
-    - int64
-    - int32
-    - uint64
-    - uint32
-    On cuda version 12.0+ machines, supports construction from ``float16``
+    Constructs a ``bfloat16`` from existing device `scalar`. Supported scalar
+    types:
+
+    - ``float64``
+    - ``float32``
+    - ``float16``
+    - ``int64``
+    - ``int32``
+    - ``uint64``
+    - ``uint32``
 
 Conversely, ``bfloat16`` data can be cast back to existing native data type via
 ``dtype(h)``, where ``dtype`` is one of the data types above (except float16),
 and ``X`` is a bfloat16 object.
 
-Arithmatics
-************
+Arithmetic
+**********
 
 A ``bfloat16`` data can be computed with another ``bfloat16`` data with many
 supported aritheatic operators. The list of supported operations:
 
-- Arithmatics (``+, -, *, /``)
-- Arithmatic assignment oeprators (``+=, -=, *=, /=``)
-- Logical operators (``==, !=, >, <, >=, <=``)
-- Unary arithmatics (``+, -``)
+- Arithmetic (``+``, ``-``, ``*``, ``/``)
+- Arithmetic assignment operators (``+=``, ``-=``, ``*=``, ``/=``)
+- Logical operators (``==``, ``!=``, ``>``, ``<``, ``>=``, ``<=``)
+- Unary arithmetic (``+``, ``-``)
 
 Math Intrinsics
 ***************
@@ -122,7 +125,7 @@ on ``bfloat16`` are provided:
 
 .. function:: numba.cuda.bf16.hrint(h)
     Round ``h`` to the nearest integer value in nv_bfloat16 floating-point format,
-    with bfloat16way cases rounded to the nearest even integer value.
+    with halfway cases rounded to the nearest even integer value.
 
 .. function:: numba.cuda.bf16.hsqrt(a)
     Calculates bfloat16 square root of input ``a`` in round-to-nearest-even mode.
