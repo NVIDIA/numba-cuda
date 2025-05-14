@@ -10,6 +10,7 @@ import numpy as np
 from .cudadrv import devicearray, devices, driver
 from numba.core import config
 from numba.cuda.api_util import prepare_shape_strides_dtype
+from numba.cuda.cudadrv.runtime import get_version
 
 # NDarray device helper
 
@@ -93,6 +94,18 @@ def is_float16_supported():
     float16 is always supported in current versions of Numba - returns True.
     """
     return True
+
+
+def is_bfloat16_supported():
+    """Whether bfloat16 are supported.
+
+    bfloat16 are only supported on devices with compute capability >= 8.0 and cuda version >= 12.0
+    """
+    cuda_version = get_version()
+    return current_context().device.supports_bfloat16 and cuda_version >= (
+        12,
+        0,
+    )
 
 
 @require_context
