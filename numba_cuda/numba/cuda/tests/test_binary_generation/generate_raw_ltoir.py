@@ -7,7 +7,7 @@ import subprocess
 import sys
 
 from cuda import nvrtc
-from numba.cuda.runtime.nrt import get_include
+from numba.cuda.memory_management.nrt import get_include
 
 # Magic number found at the start of an LTO-IR file
 LTOIR_MAGIC = 0x7F4E43ED

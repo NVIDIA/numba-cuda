@@ -2,31 +2,42 @@ import numba.cuda as cuda
 from numba.cuda.testing import unittest, CUDATestCase
 import numpy as np
 
-from numba import int16, int32, int64, uint16, uint32, uint64, float32, float64
+from numba import (
+    config,
+    int16,
+    int32,
+    int64,
+    uint16,
+    uint32,
+    uint64,
+    float32,
+    float64,
+)
 from numba.types import float16
 
-from numba.cuda.cuda_bf16 import (
-    nv_bfloat16,
-    htrunc,
-    hceil,
-    hfloor,
-    hrint,
-    hsqrt,
-    hrsqrt,
-    hrcp,
-    hlog,
-    hlog2,
-    hlog10,
-    hcos,
-    hsin,
-    hexp,
-    hexp2,
-    hexp10,
-)
+if not config.ENABLE_CUDASIM:
+    from numba.cuda.cuda_bf16 import (
+        nv_bfloat16,
+        htrunc,
+        hceil,
+        hfloor,
+        hrint,
+        hsqrt,
+        hrsqrt,
+        hrcp,
+        hlog,
+        hlog2,
+        hlog10,
+        hcos,
+        hsin,
+        hexp,
+        hexp2,
+        hexp10,
+    )
 
-from numba.cuda.cudadrv.runtime import get_version
+    from numba.cuda.cudadrv.runtime import get_version
 
-cuda_version = get_version()
+    cuda_version = get_version()
 
 dtypes = [int16, int32, int64, uint16, uint32, uint64, float32]
 

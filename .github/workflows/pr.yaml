@@ -20,6 +20,7 @@ jobs:
       - build-conda
       - test-conda
       - test-conda-pynvjitlink
+      - test-simulator
       - build-wheels
       - test-wheels
       - test-wheels-pynvjitlink
@@ -82,6 +83,15 @@ jobs:
       # This selects "ARCH=amd64 and CUDA >=12, with the latest supported Python for each CUDA major version".
       matrix: ${{ needs.compute-matrix.outputs.TEST_MATRIX }}
       matrix_filter: map(select(.ARCH == "amd64" and (.CUDA_VER | split(".") | .[0] | tonumber >= 12))) | group_by(.CUDA_VER|split(".")|map(tonumber)|.[0]) | map(max_by([(.PY_VER|split(".")|map(tonumber)), (.CUDA_VER|split(".")|map(tonumber))]))
+  test-simulator:
+    needs:
+      - build-conda
+      - compute-matrix
+    uses: ./.github/workflows/simulator-test.yaml
+    with:
+      build_type: pull-request
+      script: "ci/test_simulator.sh"
+      matrix: ${{ needs.compute-matrix.outputs.BUILD_MATRIX }}
   build-wheels:
     needs:
       - compute-matrix
