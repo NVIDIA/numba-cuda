@@ -381,7 +381,7 @@ class Driver(object):
         else:
             variants = ("_v2", "")
 
-        if fname in ("cuCtxGetDevice", "cuCtxSynchronize"):
+        if fname in ("cuCtxGetCurrent", "cuCtxGetDevice", "cuCtxSynchronize"):
             return getattr(self.lib, fname)
 
         for variant in variants:
