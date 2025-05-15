@@ -229,7 +229,7 @@ def jit(
                 return disp
 
 
-def declare_device(name, sig, link=None, use_coorperative=False):
+def declare_device(name, sig, link=None, use_cooperative=False):
     """
     Declare the signature of a foreign function. Returns a descriptor that can
     be used to call the function from a Python kernel.
@@ -238,7 +238,7 @@ def declare_device(name, sig, link=None, use_coorperative=False):
     :type name: str
     :param sig: The Numba signature of the function.
     :param link: External code to link when calling the function.
-    :param use_coorperative: External code require launching with coorperative launch.
+    :param use_cooperative: External code require launching with coorperative launch.
     """
     if link is None:
         link = tuple()
@@ -252,7 +252,7 @@ def declare_device(name, sig, link=None, use_coorperative=False):
         raise TypeError(msg)
 
     template = declare_device_function(
-        name, restype, argtypes, link, use_coorperative
+        name, restype, argtypes, link, use_cooperative
     )
 
     return template.key
