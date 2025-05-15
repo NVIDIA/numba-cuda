@@ -423,7 +423,11 @@ _genfp16_binary_operator(operator.itruediv)
 def _resolve_wrapped_unary(fname):
     link = tuple()
     decl = declare_device_function(
-        f"__numba_wrapper_{fname}", types.float16, (types.float16,), link
+        f"__numba_wrapper_{fname}",
+        types.float16,
+        (types.float16,),
+        link,
+        use_cooperative=False,
     )
     return types.Function(decl)
 
@@ -438,6 +442,7 @@ def _resolve_wrapped_binary(fname):
             types.float16,
         ),
         link,
+        use_cooperative=False,
     )
     return types.Function(decl)
 

@@ -23,6 +23,7 @@ def _this_grid(typingctx):
     sig = signature(grid_group)
 
     def codegen(context, builder, sig, args):
+        context.active_code_library.use_cooperative = True
         one = context.get_constant(types.int32, 1)
         mod = builder.module
         return builder.call(
@@ -45,6 +46,7 @@ def _grid_group_sync(typingctx, group):
     sig = signature(types.int32, group)
 
     def codegen(context, builder, sig, args):
+        context.active_code_library.use_cooperative = True
         flags = context.get_constant(types.int32, 0)
         mod = builder.module
         return builder.call(
