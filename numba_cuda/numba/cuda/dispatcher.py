@@ -151,11 +151,8 @@ class _Kernel(serialize.ReduceMixin):
 
         asm = lib.get_asm_str()
 
-        # A kernel needs cooperative launch if grid_sync is being used.
-        self.cooperative = "cudaCGGetIntrinsicHandle" in asm
-        # Alternatively, the code paths contains functions that requires
-        # cooperative launch.
-        self.cooperative |= lib.use_cooperative
+        # The code paths contains functions that requires cooperative launch.
+        self.cooperative = lib.use_cooperative
         # We need to link against cudadevrt if grid sync is being used.
         if self.cooperative:
             lib.needs_cudadevrt = True
