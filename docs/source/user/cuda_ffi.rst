@@ -233,7 +233,58 @@ of NVRTC subject to the following considerations:
   on Linux and ``$env:CUDA_PATH\include`` on Windows. It can be modified using
   the environment variable :envvar:`NUMBA_CUDA_INCLUDE_PATH`.
 - The CUDA include directory will be made available to NVRTC on the include
-  path; additional includes are not supported.
+  path.
+- Additional search paths can be set to the environment variable
+   :envvar:`NUMBA_CUDA_RTC_EXTRA_SEARCH_PATHS`. Multiple paths should be colon
+   separated.
+
+Extra Search Path Example
+*************************
+
+This example demonstrates calling a foreign function which includes additional
+headers that does not exist in default Numba-CUDA search paths.
+
+The definition of the C++ template APIs are defined in two different locations:
+
+.. literalinclude:: ../../../numba_cuda/numba/cuda/tests/doc_examples/ffi/include/mul.cuh
+   :language: C
+   :caption: ``numba/cuda/tests/doc_examples/ffi/include/mul.cuh``
+   :linenos:
+
+.. literalinclude:: ../../../numba_cuda/numba/cuda/tests/data/include/add.cuh
+   :language: C
+   :caption: ``numba/cuda/tests/data/include/add.cuh``
+   :linenos:
+
+Neither header exists in the default search paths of Numba-CUDA, however, the
+foreign device function ``saxpy`` depends on them:
+
+.. literalinclude:: ../../../numba_cuda/numba/cuda/tests/doc_examples/ffi/saxpy.cu
+   :language: C
+   :caption: ``numba/cuda/tests/data/doc_examples/ffi/saxpy.cu``
+   :linenos:
+
+In the Python Code, assume ``mul_dir`` and ``add_dir`` are set to the folder that contains
+``mul.cuh`` and ``add.cuh`` respectively. Use ``:`` to join them to a single string and
+set to ``CUDA_RTC_EXTRA_SEARCH_PATHS`` in config.
+
+.. literalinclude:: ../../../numba_cuda/numba/cuda/tests/doc_examples/test_ffi.py
+   :language: python
+   :caption: from ``test_ex_extra_includes`` in ``numba/cuda/tests/doc_examples/test_ffi.py``
+   :start-after: magictoken.ex_extra_search_paths.begin
+   :end-before: magictoken.ex_extra_search_paths.end
+   :dedent: 8
+   :linenos:
+
+Next, use ``saxpy`` as intended.
+
+.. literalinclude:: ../../../numba_cuda/numba/cuda/tests/doc_examples/test_ffi.py
+   :language: python
+   :caption: from ``test_ex_extra_includes`` in ``numba/cuda/tests/doc_examples/test_ffi.py``
+   :start-after: magictoken.ex_extra_search_paths_kernel.begin
+   :end-before: magictoken.ex_extra_search_paths_kernel.end
+   :dedent: 8
+   :linenos:
 
 
 Complete Example
