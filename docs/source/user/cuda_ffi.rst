@@ -238,8 +238,8 @@ of NVRTC subject to the following considerations:
    :envvar:`NUMBA_CUDA_RTC_EXTRA_SEARCH_PATHS`. Multiple paths should be colon
    separated.
 
-Extra Search Path Example
-^^^^^^^^^^^^^^^^^^^^^^^^^
+Extra Search Paths Example
+~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 This example demonstrates calling a foreign function which includes additional
 headers that does not exist in default Numba-CUDA search paths.
