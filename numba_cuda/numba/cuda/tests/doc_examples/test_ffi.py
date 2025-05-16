@@ -97,7 +97,11 @@ class TestFFI(CUDATestCase):
         testdir = os.path.dirname(basedir)
         add_dir = os.path.join(testdir, "data", "include")
 
+        old_setting = config.CUDA_RTC_EXTRA_SEARCH_PATHS
+
         # magictoken.ex_extra_search_paths.begin
+        from numba import config
+
         includedir = ":".join([mul_dir, add_dir])
         config.CUDA_RTC_EXTRA_SEARCH_PATHS = includedir
         # magictoken.ex_extra_search_paths.end
@@ -127,6 +131,9 @@ class TestFFI(CUDATestCase):
 
         expected = a * X + Y
         np.testing.assert_equal(R, expected)
+
+        # Reset config setting
+        config.CUDA_RTC_EXTRA_SEARCH_PATHS = old_setting
 
 
 if __name__ == "__main__":
