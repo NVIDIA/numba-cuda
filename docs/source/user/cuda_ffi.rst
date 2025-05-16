@@ -239,7 +239,7 @@ of NVRTC subject to the following considerations:
    separated.
 
 Extra Search Path Example
-*************************
+^^^^^^^^^^^^^^^^^^^^^^^^^
 
 This example demonstrates calling a foreign function which includes additional
 headers that does not exist in default Numba-CUDA search paths.
