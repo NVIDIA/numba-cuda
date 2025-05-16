@@ -15,11 +15,11 @@ import os
 import threading
 import warnings
 
-RTC_ADDITIONAL_SEARCH_PATHS = _readenv(
-    "NUMBA_CUDA_RTC_ADDITIONAL_SEARCH_PATHS", str, ""
-) or getattr(config, "NUMBA_CUDA_RTC_ADDITIONAL_SEARCH_PATHS", "")
-if not hasattr(config, "NUMBA_CUDA_RTC_ADDITIONAL_SEARCH_PATHS"):
-    config.CUDA_RTC_ADDITIONAL_SEARCH_PATHS = RTC_ADDITIONAL_SEARCH_PATHS
+RTC_EXTRA_SEARCH_PATHS = _readenv(
+    "NUMBA_CUDA_RTC_EXTRA_SEARCH_PATHS", str, ""
+) or getattr(config, "NUMBA_CUDA_RTC_EXTRA_SEARCH_PATHS", "")
+if not hasattr(config, "NUMBA_CUDA_RTC_EXTRA_SEARCH_PATHS"):
+    config.CUDA_RTC_EXTRA_SEARCH_PATHS = RTC_EXTRA_SEARCH_PATHS
 
 # Opaque handle for compilation unit
 nvrtc_program = c_void_p
@@ -391,13 +391,11 @@ def compile(src, name, cc, ltoir=False):
     else:
         numba_include = f"-I{os.path.join(numba_cuda_path, 'include', '12')}"
 
-    if config.CUDA_RTC_ADDITIONAL_SEARCH_PATHS:
-        additional_search_paths = config.CUDA_RTC_ADDITIONAL_SEARCH_PATHS.split(
-            ":"
-        )
-        additional_includes = [f"-I{p}" for p in additional_search_paths]
+    if config.CUDA_RTC_EXTRA_SEARCH_PATHS:
+        extra_search_paths = config.CUDA_RTC_EXTRA_SEARCH_PATHS.split(":")
+        extra_includes = [f"-I{p}" for p in extra_search_paths]
     else:
-        additional_includes = []
+        extra_includes = []
 
     nrt_path = os.path.join(numba_cuda_path, "runtime")
     nrt_include = f"-I{nrt_path}"
@@ -407,7 +405,7 @@ def compile(src, name, cc, ltoir=False):
         numba_include,
         *cuda_include,
         nrt_include,
-        *additional_includes,
+        *extra_includes,
         "-rdc",
         "true",
     ]

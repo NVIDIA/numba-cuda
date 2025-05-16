@@ -85,7 +85,7 @@ class TestFFI(CUDATestCase):
         actual = r[()]
         np.testing.assert_allclose(expected, actual)
 
-    def test_ex_additional_includes(self):
+    def test_ex_extra_includes(self):
         import numpy as np
         from numba import cuda, config
         import os
@@ -97,10 +97,12 @@ class TestFFI(CUDATestCase):
         testdir = os.path.dirname(basedir)
         add_dir = os.path.join(testdir, "data", "include")
 
+        # magictoken.ex_extra_search_paths.begin
         includedir = ":".join([mul_dir, add_dir])
+        config.CUDA_RTC_EXTRA_SEARCH_PATHS = includedir
+        # magictoken.ex_extra_search_paths.end
 
-        config.CUDA_RTC_ADDITIONAL_SEARCH_PATHS = includedir
-
+        # magictoken.ex_extra_search_paths_kernel.begin
         sig = "float32(float32, float32, float32)"
         saxpy = cuda.declare_device("saxpy", sig=sig, link=saxpy_cu)
 
@@ -109,6 +111,8 @@ class TestFFI(CUDATestCase):
             i = cuda.grid(1)
             if i < len(res):
                 res[i] = saxpy(a, x[i], y[i])
+
+        # magictoken.ex_extra_search_paths_kernel.end
 
         size = 10_000
         a = 3.0
