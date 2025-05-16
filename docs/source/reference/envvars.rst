@@ -131,3 +131,8 @@ target.
    Use ``pynvjitlink`` for minor version compatibility. Requires the ``pynvjitlink``
    package to be installed. Provides minor version compatibility for driver versions
    greater than 12.0.
+
+.. envvar:: NUMBA_CUDA_RTC_ADDITIONAL_SEARCH_PATHS
+
+   A colon separated list of paths that Numba's NVRTC should search for when compiling
+   external functions.

@@ -6,12 +6,20 @@ from numba.cuda.cudadrv.error import (
     NvrtcCompilationError,
     NvrtcSupportError,
 )
+from numba import config
 from numba.cuda.cuda_paths import get_cuda_paths
+from numba.cuda.utils import _readenv
 
 import functools
 import os
 import threading
 import warnings
+
+RTC_ADDITIONAL_SEARCH_PATHS = _readenv(
+    "NUMBA_CUDA_RTC_ADDITIONAL_SEARCH_PATHS", str, ""
+) or getattr(config, "NUMBA_CUDA_RTC_ADDITIONAL_SEARCH_PATHS", "")
+if not hasattr(config, "NUMBA_CUDA_RTC_ADDITIONAL_SEARCH_PATHS"):
+    config.NUMBA_CUDA_RTC_ADDITIONAL_SEARCH_PATHS = RTC_ADDITIONAL_SEARCH_PATHS
 
 # Opaque handle for compilation unit
 nvrtc_program = c_void_p
@@ -383,10 +391,21 @@ def compile(src, name, cc, ltoir=False):
     else:
         numba_include = f"-I{os.path.join(numba_cuda_path, 'include', '12')}"
 
+    additional_search_paths = RTC_ADDITIONAL_SEARCH_PATHS.split(":")
+    additional_includes = [f"-I{p}" for p in additional_search_paths]
+
     nrt_path = os.path.join(numba_cuda_path, "runtime")
     nrt_include = f"-I{nrt_path}"
 
-    options = [arch, numba_include, *cuda_include, nrt_include, "-rdc", "true"]
+    options = [
+        arch,
+        numba_include,
+        *cuda_include,
+        nrt_include,
+        *additional_includes,
+        "-rdc",
+        "true",
+    ]
 
     if ltoir:
         options.append("-dlto")
