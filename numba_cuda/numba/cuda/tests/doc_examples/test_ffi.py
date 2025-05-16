@@ -85,6 +85,45 @@ class TestFFI(CUDATestCase):
         actual = r[()]
         np.testing.assert_allclose(expected, actual)
 
+    def test_ex_additional_includes(self):
+        import numpy as np
+        from numba import cuda, config
+        import os
+
+        basedir = os.path.dirname(os.path.abspath(__file__))
+        mul_dir = os.path.join(basedir, "ffi", "include")
+        saxpy_cu = os.path.join(basedir, "ffi", "saxpy.cu")
+
+        testdir = os.path.dirname(basedir)
+        add_dir = os.path.join(testdir, "data", "include")
+
+        includedir = ":".join([mul_dir, add_dir])
+
+        config.CUDA_RTC_ADDITIONAL_SEARCH_PATHS = includedir
+
+        sig = "float32(float32, float32, float32)"
+        saxpy = cuda.declare_device("saxpy", sig=sig, link=saxpy_cu)
+
+        @cuda.jit
+        def vector_saxpy(a, x, y, res):
+            i = cuda.grid(1)
+            if i < len(res):
+                res[i] = saxpy(a, x[i], y[i])
+
+        size = 10_000
+        a = 3.0
+        X = np.ones((size,), dtype="float32")
+        Y = np.ones((size,), dtype="float32")
+        R = np.zeros((size,), dtype="float32")
+
+        block_size = 32
+        num_blocks = (size // block_size) + 1
+
+        vector_saxpy[num_blocks, block_size](a, X, Y, R)
+
+        expected = a * X + Y
+        np.testing.assert_equal(R, expected)
+
 
 if __name__ == "__main__":
     unittest.main()

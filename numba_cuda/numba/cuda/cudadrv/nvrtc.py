@@ -19,7 +19,7 @@ RTC_ADDITIONAL_SEARCH_PATHS = _readenv(
     "NUMBA_CUDA_RTC_ADDITIONAL_SEARCH_PATHS", str, ""
 ) or getattr(config, "NUMBA_CUDA_RTC_ADDITIONAL_SEARCH_PATHS", "")
 if not hasattr(config, "NUMBA_CUDA_RTC_ADDITIONAL_SEARCH_PATHS"):
-    config.NUMBA_CUDA_RTC_ADDITIONAL_SEARCH_PATHS = RTC_ADDITIONAL_SEARCH_PATHS
+    config.CUDA_RTC_ADDITIONAL_SEARCH_PATHS = RTC_ADDITIONAL_SEARCH_PATHS
 
 # Opaque handle for compilation unit
 nvrtc_program = c_void_p
@@ -391,8 +391,13 @@ def compile(src, name, cc, ltoir=False):
     else:
         numba_include = f"-I{os.path.join(numba_cuda_path, 'include', '12')}"
 
-    additional_search_paths = RTC_ADDITIONAL_SEARCH_PATHS.split(":")
-    additional_includes = [f"-I{p}" for p in additional_search_paths]
+    if config.CUDA_RTC_ADDITIONAL_SEARCH_PATHS:
+        additional_search_paths = config.CUDA_RTC_ADDITIONAL_SEARCH_PATHS.split(
+            ":"
+        )
+        additional_includes = [f"-I{p}" for p in additional_search_paths]
+    else:
+        additional_includes = []
 
     nrt_path = os.path.join(numba_cuda_path, "runtime")
     nrt_include = f"-I{nrt_path}"
