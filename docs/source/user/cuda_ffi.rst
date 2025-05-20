@@ -235,16 +235,16 @@ of NVRTC subject to the following considerations:
 - The CUDA include directory will be made available to NVRTC on the include
   path.
 - Additional search paths can be set to the environment variable
-   :envvar:`NUMBA_CUDA_RTC_EXTRA_SEARCH_PATHS`. Multiple paths should be colon
-   separated.
+  :envvar:`NUMBA_CUDA_NVRTC_EXTRA_SEARCH_PATHS`. Multiple paths should be colon
+  separated.
 
 Extra Search Paths Example
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-This example demonstrates calling a foreign function which includes additional
-headers that does not exist in default Numba-CUDA search paths.
+This example demonstrates calling a foreign function that includes additional
+headers not in the default Numba-CUDA search paths.
 
-The definition of the C++ template APIs are defined in two different locations:
+The definitions of the C++ template APIs are in two different locations:
 
 .. literalinclude:: ../../../numba_cuda/numba/cuda/tests/doc_examples/ffi/include/mul.cuh
    :language: C
@@ -256,7 +256,7 @@ The definition of the C++ template APIs are defined in two different locations:
    :caption: ``numba/cuda/tests/data/include/add.cuh``
    :linenos:
 
-Neither header exists in the default search paths of Numba-CUDA, however, the
+Neither of the headers are in the default search paths of Numba-CUDA, but the
 foreign device function ``saxpy`` depends on them:
 
 .. literalinclude:: ../../../numba_cuda/numba/cuda/tests/doc_examples/ffi/saxpy.cu
@@ -264,9 +264,9 @@ foreign device function ``saxpy`` depends on them:
    :caption: ``numba/cuda/tests/data/doc_examples/ffi/saxpy.cu``
    :linenos:
 
-In the Python Code, assume ``mul_dir`` and ``add_dir`` are set to the folder that contains
-``mul.cuh`` and ``add.cuh`` respectively. Use ``:`` to join them to a single string and
-set to ``CUDA_RTC_EXTRA_SEARCH_PATHS`` in config.
+In the Python code, assume that ``mul_dir`` and ``add_dir`` are set to the
+paths that contain ``mul.cuh`` and ``add.cuh`` respectively. The paths are
+joined with ``:`` before setting ``config.CUDA_NVRTC_EXTRA_SEARCH_PATHS``:
 
 .. literalinclude:: ../../../numba_cuda/numba/cuda/tests/doc_examples/test_ffi.py
    :language: python
