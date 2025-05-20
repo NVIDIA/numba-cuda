@@ -276,7 +276,7 @@ joined with ``:`` before setting ``config.CUDA_NVRTC_EXTRA_SEARCH_PATHS``:
    :dedent: 8
    :linenos:
 
-Next, use ``saxpy`` as intended.
+Next, use ``saxpy`` as intended:
 
 .. literalinclude:: ../../../numba_cuda/numba/cuda/tests/doc_examples/test_ffi.py
    :language: python
