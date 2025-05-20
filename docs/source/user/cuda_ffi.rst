@@ -273,7 +273,7 @@ joined with ``:`` before setting ``config.CUDA_NVRTC_EXTRA_SEARCH_PATHS``:
    :caption: from ``test_ex_extra_includes`` in ``numba/cuda/tests/doc_examples/test_ffi.py``
    :start-after: magictoken.ex_extra_search_paths.begin
    :end-before: magictoken.ex_extra_search_paths.end
-   :dedent: 8
+   :dedent: 12
    :linenos:
 
 Next, use ``saxpy`` as intended.
@@ -283,7 +283,7 @@ Next, use ``saxpy`` as intended.
    :caption: from ``test_ex_extra_includes`` in ``numba/cuda/tests/doc_examples/test_ffi.py``
    :start-after: magictoken.ex_extra_search_paths_kernel.begin
    :end-before: magictoken.ex_extra_search_paths_kernel.end
-   :dedent: 8
+   :dedent: 12
    :linenos:
 
 

@@ -3,7 +3,7 @@
 
 import unittest
 from numba.cuda.testing import CUDATestCase, skip_on_cudasim
-from numba.tests.support import skip_unless_cffi
+from numba.tests.support import skip_unless_cffi, override_config
 
 
 @skip_unless_cffi
@@ -97,43 +97,40 @@ class TestFFI(CUDATestCase):
         testdir = os.path.dirname(basedir)
         add_dir = os.path.join(testdir, "data", "include")
 
-        old_setting = config.CUDA_NVRTC_EXTRA_SEARCH_PATHS
-
-        # magictoken.ex_extra_search_paths.begin
-        from numba import config
-
         includedir = ":".join([mul_dir, add_dir])
-        config.CUDA_NVRTC_EXTRA_SEARCH_PATHS = includedir
-        # magictoken.ex_extra_search_paths.end
+        with override_config("CUDA_NVRTC_EXTRA_SEARCH_PATHS", includedir):
+            # magictoken.ex_extra_search_paths.begin
+            from numba import config
 
-        # magictoken.ex_extra_search_paths_kernel.begin
-        sig = "float32(float32, float32, float32)"
-        saxpy = cuda.declare_device("saxpy", sig=sig, link=saxpy_cu)
+            includedir = ":".join([mul_dir, add_dir])
+            config.CUDA_NVRTC_EXTRA_SEARCH_PATHS = includedir
+            # magictoken.ex_extra_search_paths.end
 
-        @cuda.jit
-        def vector_saxpy(a, x, y, res):
-            i = cuda.grid(1)
-            if i < len(res):
-                res[i] = saxpy(a, x[i], y[i])
+            # magictoken.ex_extra_search_paths_kernel.begin
+            sig = "float32(float32, float32, float32)"
+            saxpy = cuda.declare_device("saxpy", sig=sig, link=saxpy_cu)
 
-        # magictoken.ex_extra_search_paths_kernel.end
+            @cuda.jit
+            def vector_saxpy(a, x, y, res):
+                i = cuda.grid(1)
+                if i < len(res):
+                    res[i] = saxpy(a, x[i], y[i])
 
-        size = 10_000
-        a = 3.0
-        X = np.ones((size,), dtype="float32")
-        Y = np.ones((size,), dtype="float32")
-        R = np.zeros((size,), dtype="float32")
+            # magictoken.ex_extra_search_paths_kernel.end
 
-        block_size = 32
-        num_blocks = (size // block_size) + 1
+            size = 10_000
+            a = 3.0
+            X = np.ones((size,), dtype="float32")
+            Y = np.ones((size,), dtype="float32")
+            R = np.zeros((size,), dtype="float32")
 
-        vector_saxpy[num_blocks, block_size](a, X, Y, R)
+            block_size = 32
+            num_blocks = (size // block_size) + 1
 
-        expected = a * X + Y
-        np.testing.assert_equal(R, expected)
+            vector_saxpy[num_blocks, block_size](a, X, Y, R)
 
-        # Reset config setting
-        config.CUDA_NVRTC_EXTRA_SEARCH_PATHS = old_setting
+            expected = a * X + Y
+            np.testing.assert_equal(R, expected)
 
 
 if __name__ == "__main__":
