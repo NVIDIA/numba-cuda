@@ -27,8 +27,8 @@ from numba.cuda.errors import (
     normalize_kernel_dimensions,
 )
 from numba.cuda import types as cuda_types
-from numba.cuda.runtime.nrt import rtsys, NRT_LIBRARY
 from numba.cuda.locks import module_init_lock
+from numba.cuda.memory_management.nrt import rtsys, NRT_LIBRARY
 
 from numba import cuda
 from numba import _dispatcher

@@ -476,12 +476,14 @@ class TestArrayMethod(CUDATestCase):
             host_array, dev_array.copy_to_host().astype(dtype)
         )
 
+    @skip_on_cudasim("Simulator does not use __array__()")
     @unittest.skipUnless(IS_NUMPY_2, "NumPy 1.x does not pass copy kwarg")
     def test_np_array_copy_false(self):
         dev_array = cuda.to_device(np.asarray([1.0, 2.0, 3.0]))
         with self.assertRaisesRegex(ValueError, "`copy=False` is not"):
             np.array(dev_array, copy=False)
 
+    @skip_on_cudasim("Simulator does not use __array__()")
     @unittest.skipUnless(IS_NUMPY_2, "NumPy 1.x does not pass copy kwarg")
     def test_np_array_copy_true(self):
         dev_array = cuda.to_device(np.asarray([1.0, 2.0, 3.0]))
