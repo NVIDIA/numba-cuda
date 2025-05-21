@@ -159,19 +159,19 @@ class TestCudaCooperativeGroups(CUDATestCase):
 
     @skip_unless_cc_60
     def test_external_cooperative_func(self):
-        sig = signature(
-            CPointer(int32),
-        )
-        cta_barrier = cuda.declare_device(
-            "cta_barrier", sig=sig, use_cooperative=True
-        )
-
         cudapy_test_path = os.path.dirname(__file__)
         tests_path = os.path.dirname(cudapy_test_path)
         data_path = os.path.join(tests_path, "data")
         src = os.path.join(data_path, "cta_barrier.cu")
 
-        @cuda.jit(link=[src])
+        sig = signature(
+            CPointer(int32),
+        )
+        cta_barrier = cuda.declare_device(
+            "cta_barrier", sig=sig, link=[src], use_cooperative=True
+        )
+
+        @cuda.jit
         def kernel():
             cta_barrier()
 
