@@ -447,6 +447,7 @@ class CUDACodeLibrary(serialize.ReduceMixin, CodeLibrary):
             nvvm_options=self._nvvm_options,
             needs_cudadevrt=self.needs_cudadevrt,
             nrt=nrt,
+            use_cooperative=self.use_cooperative,
         )
 
     @classmethod
@@ -463,6 +464,7 @@ class CUDACodeLibrary(serialize.ReduceMixin, CodeLibrary):
         nvvm_options,
         needs_cudadevrt,
         nrt,
+        use_cooperative,
     ):
         """
         Rebuild an instance.
@@ -477,6 +479,7 @@ class CUDACodeLibrary(serialize.ReduceMixin, CodeLibrary):
         instance._max_registers = max_registers
         instance._nvvm_options = nvvm_options
         instance.needs_cudadevrt = needs_cudadevrt
+        instance.use_cooperative = use_cooperative
 
         instance._finalized = True
         if nrt:
