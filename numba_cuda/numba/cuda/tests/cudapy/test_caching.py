@@ -226,6 +226,9 @@ class CUDACachingTest(SerialMixin, DispatcherCacheUsecasesTest):
 
 @skip_on_cudasim("Simulator does not implement caching")
 class CUDACooperativeGroupTest(SerialMixin, DispatcherCacheUsecasesTest):
+    # See Issue #9432: https://github.com/numba/numba/issues/9432
+    # If a cached function using CG sync was the first thing to compile,
+    # the compile would fail.
     here = os.path.dirname(__file__)
     usecases_file = os.path.join(here, "cg_cache_usecases.py")
     modname = "cuda_cooperative_caching_test_fodder"
