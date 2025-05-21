@@ -158,7 +158,7 @@ class TestCudaCooperativeGroups(CUDATestCase):
         self.assertEqual(blocks1d, blocks3d)
 
     @skip_unless_cc_60
-    def test_external_coorperative_func(self):
+    def test_external_cooperative_func(self):
         sig = signature(
             CPointer(int32),
         )

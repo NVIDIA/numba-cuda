@@ -238,7 +238,7 @@ def declare_device(name, sig, link=None, use_cooperative=False):
     :type name: str
     :param sig: The Numba signature of the function.
     :param link: External code to link when calling the function.
-    :param use_cooperative: External code require launching with coorperative launch.
+    :param use_cooperative: External code requires cooperative launch.
     """
     if link is None:
         link = tuple()

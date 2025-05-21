@@ -70,7 +70,7 @@ class ExternalCodeLibrary(CodeLibrary):
         self._setup_functions = []
         self._teardown_functions = []
 
-        self.use_coorperative = False
+        self.use_cooperative = False
 
     @property
     def modules(self):
