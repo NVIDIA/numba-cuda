@@ -290,7 +290,16 @@ class CUDATargetContext(BaseContext):
 
 
 class CUDACallConv(MinimalCallConv):
-    pass
+    def decorate_function(self, fn, args, fe_argtypes, noalias=False):
+        """
+        Set names and attributes of function arguments.
+        """
+        assert not noalias
+        arginfo = self._get_arg_packer(fe_argtypes)
+        # Do not prefix "arg." on argument name, so that nvvm compiler
+        # can track debug info of argument more accurately
+        arginfo.assign_names(self.get_arguments(fn), args)
+        fn.args[0].name = ".ret"
 
 
 class CUDACABICallConv(BaseCallConv):
