@@ -797,7 +797,7 @@ def compile_ptx_for_current_device(
     )
 
 
-def declare_device_function(name, restype, argtypes, link):
+def declare_device_function(name, restype, argtypes, link, use_cooperative):
     from .descriptor import cuda_target
 
     typingctx = cuda_target.typing_context
@@ -816,6 +816,7 @@ def declare_device_function(name, restype, argtypes, link):
     lib = ExternalCodeLibrary(f"{name}_externals", targetctx.codegen())
     for file in link:
         lib.add_linking_file(file)
+    lib.use_cooperative = use_cooperative
 
     # ExternalFunctionDescriptor provides a lowering implementation for calling
     # external functions

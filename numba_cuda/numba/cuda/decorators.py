@@ -229,7 +229,7 @@ def jit(
                 return disp
 
 
-def declare_device(name, sig, link=None):
+def declare_device(name, sig, link=None, use_cooperative=False):
     """
     Declare the signature of a foreign function. Returns a descriptor that can
     be used to call the function from a Python kernel.
@@ -238,6 +238,7 @@ def declare_device(name, sig, link=None):
     :type name: str
     :param sig: The Numba signature of the function.
     :param link: External code to link when calling the function.
+    :param use_cooperative: External code requires cooperative launch.
     """
     if link is None:
         link = tuple()
@@ -250,6 +251,8 @@ def declare_device(name, sig, link=None):
         msg = "Return type must be provided for device declarations"
         raise TypeError(msg)
 
-    template = declare_device_function(name, restype, argtypes, link)
+    template = declare_device_function(
+        name, restype, argtypes, link, use_cooperative
+    )
 
     return template.key

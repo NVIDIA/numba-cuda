@@ -1,8 +1,13 @@
 from __future__ import print_function
 
+import os
+
+import cffi
+
 import numpy as np
 
 from numba import config, cuda, int32
+from numba.types import CPointer
 from numba.cuda.testing import (
     unittest,
     CUDATestCase,
@@ -11,6 +16,9 @@ from numba.cuda.testing import (
     skip_if_cudadevrt_missing,
     skip_if_mvc_enabled,
 )
+from numba.core.typing import signature
+
+ffi = cffi.FFI()
 
 
 @cuda.jit
@@ -148,6 +156,32 @@ class TestCudaCooperativeGroups(CUDATestCase):
         blocks3d = overload.max_cooperative_grid_blocks((16, 4, 4))
         self.assertEqual(blocks1d, blocks2d)
         self.assertEqual(blocks1d, blocks3d)
+
+    @skip_unless_cc_60
+    def test_external_cooperative_func(self):
+        cudapy_test_path = os.path.dirname(__file__)
+        tests_path = os.path.dirname(cudapy_test_path)
+        data_path = os.path.join(tests_path, "data")
+        src = os.path.join(data_path, "cta_barrier.cu")
+
+        sig = signature(
+            CPointer(int32),
+        )
+        cta_barrier = cuda.declare_device(
+            "cta_barrier", sig=sig, link=[src], use_cooperative=True
+        )
+
+        @cuda.jit
+        def kernel():
+            cta_barrier()
+
+        block_size = 32
+        grid_size = 1024
+
+        kernel[grid_size, block_size]()
+
+        overload = kernel.overloads[()]
+        self.assertTrue(overload.cooperative)
 
 
 if __name__ == "__main__":

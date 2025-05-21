@@ -70,6 +70,8 @@ class ExternalCodeLibrary(CodeLibrary):
         self._setup_functions = []
         self._teardown_functions = []
 
+        self.use_cooperative = False
+
     @property
     def modules(self):
         # There are no LLVM IR modules in an ExternalCodeLibrary
@@ -180,6 +182,8 @@ class CUDACodeLibrary(serialize.ReduceMixin, CodeLibrary):
             nvvm_options = {}
         self._nvvm_options = nvvm_options
         self._entry_name = entry_name
+
+        self.use_cooperative = False
 
     @property
     def llvm_strs(self):
@@ -352,6 +356,7 @@ class CUDACodeLibrary(serialize.ReduceMixin, CodeLibrary):
         self._linking_files.update(library._linking_files)
         self._setup_functions.extend(library._setup_functions)
         self._teardown_functions.extend(library._teardown_functions)
+        self.use_cooperative |= library.use_cooperative
 
     def add_linking_file(self, path_or_obj):
         if isinstance(path_or_obj, LinkableCode):
@@ -442,6 +447,7 @@ class CUDACodeLibrary(serialize.ReduceMixin, CodeLibrary):
             nvvm_options=self._nvvm_options,
             needs_cudadevrt=self.needs_cudadevrt,
             nrt=nrt,
+            use_cooperative=self.use_cooperative,
         )
 
     @classmethod
@@ -458,6 +464,7 @@ class CUDACodeLibrary(serialize.ReduceMixin, CodeLibrary):
         nvvm_options,
         needs_cudadevrt,
         nrt,
+        use_cooperative,
     ):
         """
         Rebuild an instance.
@@ -472,6 +479,7 @@ class CUDACodeLibrary(serialize.ReduceMixin, CodeLibrary):
         instance._max_registers = max_registers
         instance._nvvm_options = nvvm_options
         instance.needs_cudadevrt = needs_cudadevrt
+        instance.use_cooperative = use_cooperative
 
         instance._finalized = True
         if nrt:
