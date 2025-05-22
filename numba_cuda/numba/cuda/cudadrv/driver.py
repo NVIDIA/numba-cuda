@@ -3006,37 +3006,19 @@ class CUDALinker(Linker):
         self._object_codes.append(obj)
 
     def add_ltoir(self, ltoir, name="<cudapy-ltoir>"):
-        obj = ObjectCode._init(ltoir, "ltoir")
+        obj = ObjectCode.from_ltoir(ltoir)
         self._object_codes.append(obj)
 
     def add_fatbin(self, fatbin, name="<cudapy-fatbin>"):
-        obj = ObjectCode._init(fatbin, "fatbin")
+        obj = ObjectCode.from_fatbin(fatbin)
         self._object_codes.append(obj)
 
     def add_object(self, obj, name="<cudapy-object>"):
-        # TODO - hack
-        from cuda.bindings import nvjitlink
-        from cuda.core.experimental import _linker
-
-        _linker._nvjitlink_input_types["object"] = nvjitlink.InputType.OBJECT
-        ObjectCode._supported_code_type = (
-            *ObjectCode._supported_code_type,
-            "object",
-        )
-        obj = ObjectCode._init(obj, "object")
+        obj = ObjectCode.from_object(obj)
         self._object_codes.append(obj)
 
     def add_library(self, lib, name="<cudapy-lib>"):
-        # TODO - hack
-        from cuda.bindings import nvjitlink
-        from cuda.core.experimental import _linker
-
-        _linker._nvjitlink_input_types["lib"] = nvjitlink.InputType.LIBRARY
-        ObjectCode._supported_code_type = (
-            *ObjectCode._supported_code_type,
-            "lib",
-        )
-        obj = ObjectCode._init(lib, "lib")
+        obj = ObjectCode.from_library(lib)
         self._object_codes.append(obj)
 
     def add_file(self, path, kind):
