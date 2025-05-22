@@ -13,7 +13,6 @@ from .stubs import (
     local,
     const,
     atomic,
-    shfl_sync_intrinsic,
     vote_sync_intrinsic,
     match_any_sync,
     match_all_sync,
@@ -40,6 +39,10 @@ from .intrinsics import (
     syncthreads_and,
     syncthreads_count,
     syncthreads_or,
+    shfl_sync,
+    shfl_up_sync,
+    shfl_down_sync,
+    shfl_xor_sync,
 )
 from .cudadrv.error import CudaSupportError
 from numba.cuda.cudadrv.driver import (
@@ -68,10 +71,6 @@ from .intrinsic_wrapper import (
     any_sync,
     eq_sync,
     ballot_sync,
-    shfl_sync,
-    shfl_up_sync,
-    shfl_down_sync,
-    shfl_xor_sync,
 )
 
 from .kernels import reduction

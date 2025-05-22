@@ -40,6 +40,8 @@ LTOIR_FLAGS := $(LTOIR_GENCODE) -dc
 
 OUTPUT_DIR := ./
 
+NRT_INCLUDE_DIR := $(shell python -c "from numba.cuda.runtime.nrt import get_include; print(get_include())")
+
 all:
 	@echo "GPU CC: $(GPU_CC)"
 	@echo "Alternative CC: $(ALT_CC)"
@@ -52,7 +54,16 @@ all:
 	nvcc $(NVCC_FLAGS) $(OBJECT_FLAGS) -o $(OUTPUT_DIR)/test_device_functions.o test_device_functions.cu
 	nvcc $(NVCC_FLAGS) $(LIBRARY_FLAGS) -o $(OUTPUT_DIR)/test_device_functions.a test_device_functions.cu
 
+	nvcc $(NVCC_FLAGS) $(CUBIN_FLAGS) -o $(OUTPUT_DIR)/nrt_extern.cubin nrt_extern.cu -I$(NRT_INCLUDE_DIR)
+	nvcc $(NVCC_FLAGS) $(FATBIN_FLAGS) -o $(OUTPUT_DIR)/nrt_extern.fatbin nrt_extern.cu -I$(NRT_INCLUDE_DIR)
+	nvcc $(NVCC_FLAGS) $(MULTI_FATBIN_FLAGS) -o $(OUTPUT_DIR)/nrt_extern_multi.fatbin nrt_extern.cu -I$(NRT_INCLUDE_DIR)
+	nvcc $(NVCC_FLAGS) $(PTX_FLAGS) -o $(OUTPUT_DIR)/nrt_extern.ptx nrt_extern.cu -I$(NRT_INCLUDE_DIR)
+	nvcc $(NVCC_FLAGS) $(OBJECT_FLAGS) -o $(OUTPUT_DIR)/nrt_extern.o nrt_extern.cu -I$(NRT_INCLUDE_DIR)
+	nvcc $(NVCC_FLAGS) $(LIBRARY_FLAGS) -o $(OUTPUT_DIR)/nrt_extern.a nrt_extern.cu -I$(NRT_INCLUDE_DIR)
+
 	# Generate LTO-IR wrapped in a fatbin
 	nvcc $(NVCC_FLAGS) $(LTOIR_FLAGS) -o $(OUTPUT_DIR)/test_device_functions.ltoir.o test_device_functions.cu
+	nvcc $(NVCC_FLAGS) $(LTOIR_FLAGS) -o $(OUTPUT_DIR)/nrt_extern.ltoir.o nrt_extern.cu -I$(NRT_INCLUDE_DIR)
 	# Generate LTO-IR in a "raw" LTO-IR container
 	python generate_raw_ltoir.py --arch sm_$(GPU_CC) -o $(OUTPUT_DIR)/test_device_functions.ltoir test_device_functions.cu
+	python generate_raw_ltoir.py --arch sm_$(GPU_CC) -o $(OUTPUT_DIR)/nrt_extern.ltoir nrt_extern.cu --nrt

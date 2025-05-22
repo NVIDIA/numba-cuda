@@ -18,6 +18,9 @@ on:
       script:
         type: string
         default: "ci/test_wheel.sh"
+      matrix:
+        type: string
+        required: true
       matrix_filter:
         type: string
         default: "."
@@ -70,29 +73,10 @@ jobs:
           fi
       - name: Compute test matrix
         id: compute-matrix
+        env:
+          TEST_MATRIX: ${{ inputs.matrix }}
         run: |
           set -eo pipefail
-
-          # please keep the matrices sorted in ascending order by the following:
-          #
-          #     [ARCH, PY_VER, CUDA_VER, LINUX_VER, GPU, DRIVER, DEPENDENCIES]
-          #
-          export MATRICES="
-            pull-request:
-              - { ARCH: 'amd64', PY_VER: '3.9',  CUDA_VER: '11.8.0', LINUX_VER: 'rockylinux8', GPU: 'l4',   DRIVER: 'latest', DEPENDENCIES: 'oldest' }
-              - { ARCH: 'amd64', PY_VER: '3.10', CUDA_VER: '11.8.0', LINUX_VER: 'rockylinux8', GPU: 'l4',   DRIVER: 'latest', DEPENDENCIES: 'latest' }
-              - { ARCH: 'amd64', PY_VER: '3.11', CUDA_VER: '12.0.1', LINUX_VER: 'ubuntu20.04', GPU: 'l4',   DRIVER: 'latest', DEPENDENCIES: 'latest' }
-              - { ARCH: 'amd64', PY_VER: '3.12', CUDA_VER: '12.2.2', LINUX_VER: 'ubuntu22.04', GPU: 'l4',   DRIVER: 'latest', DEPENDENCIES: 'latest' }
-              - { ARCH: 'amd64', PY_VER: '3.13', CUDA_VER: '12.8.0', LINUX_VER: 'ubuntu24.04', GPU: 'l4',   DRIVER: 'latest', DEPENDENCIES: 'latest' }
-              - { ARCH: 'arm64', PY_VER: '3.9',  CUDA_VER: '11.8.0', LINUX_VER: 'rockylinux8', GPU: 'a100', DRIVER: 'latest', DEPENDENCIES: 'oldest' }
-              - { ARCH: 'arm64', PY_VER: '3.10', CUDA_VER: '11.8.0', LINUX_VER: 'rockylinux8', GPU: 'a100', DRIVER: 'latest', DEPENDENCIES: 'latest' }
-              - { ARCH: 'arm64', PY_VER: '3.11', CUDA_VER: '12.0.1', LINUX_VER: 'ubuntu20.04', GPU: 'a100', DRIVER: 'latest', DEPENDENCIES: 'latest' }
-              - { ARCH: 'arm64', PY_VER: '3.12', CUDA_VER: '12.2.2', LINUX_VER: 'ubuntu22.04', GPU: 'a100', DRIVER: 'latest', DEPENDENCIES: 'latest' }
-              - { ARCH: 'arm64', PY_VER: '3.13', CUDA_VER: '12.8.0', LINUX_VER: 'ubuntu24.04', GPU: 'a100', DRIVER: 'latest', DEPENDENCIES: 'latest' }
-          "
-
-          TEST_MATRIX=$(yq -n 'env(MATRICES) | .[strenv(BUILD_TYPE)]')
-          export TEST_MATRIX
 
           MATRIX="$(
             yq -n -o json 'env(TEST_MATRIX)' | \
@@ -142,6 +126,7 @@ jobs:
     - name: Run tests
       run: ${{ inputs.script }}
       env:
+        CUDA_VER: ${{ matrix.CUDA_VER }}
         GH_TOKEN: ${{ github.token }}
         RAPIDS_AUX_SECRET_1: ${{ secrets.RAPIDS_AUX_SECRET_1 }}
 

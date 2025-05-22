@@ -1,5 +1,5 @@
 import operator
-from numba.core import types
+from numba.core import errors, types
 from numba.core.typing.npydecl import (
     parse_dtype,
     parse_shape,
@@ -21,7 +21,7 @@ from numba.core.typing.templates import (
 from numba.cuda.types import dim3
 from numba.core.typeconv import Conversion
 from numba import cuda
-from numba.cuda.compiler import declare_device_function_template
+from numba.cuda.compiler import declare_device_function
 
 registry = Registry()
 register = registry.register
@@ -33,7 +33,7 @@ register_number_classes(register_global)
 
 class Cuda_array_decl(CallableTemplate):
     def generic(self):
-        def typer(shape, dtype):
+        def typer(shape, dtype, alignment=None):
             # Only integer literals and tuples of integer literals are valid
             # shapes
             if isinstance(shape, types.Integer):
@@ -46,6 +46,16 @@ class Cuda_array_decl(CallableTemplate):
                     return None
             else:
                 return None
+
+            if alignment is not None:
+                permitted = (types.IntegerLiteral, types.NoneType)
+                if not isinstance(alignment, permitted):
+                    msg = "alignment must be a constant integer"
+                    raise errors.RequireLiteralValue(msg)
+
+            # N.B. We don't use alignment for typing; it's not part of
+            #      types.Array.  The value supplied to the array declaration
+            #      is handled in the lowering.
 
             ndim = parse_shape(shape)
             nb_dtype = parse_dtype(dtype)
@@ -98,45 +108,6 @@ class Cuda_threadfence_system(ConcreteTemplate):
 class Cuda_syncwarp(ConcreteTemplate):
     key = cuda.syncwarp
     cases = [signature(types.none), signature(types.none, types.i4)]
-
-
-@register
-class Cuda_shfl_sync_intrinsic(ConcreteTemplate):
-    key = cuda.shfl_sync_intrinsic
-    cases = [
-        signature(
-            types.Tuple((types.i4, types.b1)),
-            types.i4,
-            types.i4,
-            types.i4,
-            types.i4,
-            types.i4,
-        ),
-        signature(
-            types.Tuple((types.i8, types.b1)),
-            types.i4,
-            types.i4,
-            types.i8,
-            types.i4,
-            types.i4,
-        ),
-        signature(
-            types.Tuple((types.f4, types.b1)),
-            types.i4,
-            types.i4,
-            types.f4,
-            types.i4,
-            types.i4,
-        ),
-        signature(
-            types.Tuple((types.f8, types.b1)),
-            types.i4,
-            types.i4,
-            types.f8,
-            types.i4,
-            types.i4,
-        ),
-    ]
 
 
 @register
@@ -451,15 +422,19 @@ _genfp16_binary_operator(operator.itruediv)
 
 def _resolve_wrapped_unary(fname):
     link = tuple()
-    decl = declare_device_function_template(
-        f"__numba_wrapper_{fname}", types.float16, (types.float16,), link
+    decl = declare_device_function(
+        f"__numba_wrapper_{fname}",
+        types.float16,
+        (types.float16,),
+        link,
+        use_cooperative=False,
     )
     return types.Function(decl)
 
 
 def _resolve_wrapped_binary(fname):
     link = tuple()
-    decl = declare_device_function_template(
+    decl = declare_device_function(
         f"__numba_wrapper_{fname}",
         types.float16,
         (
@@ -467,6 +442,7 @@ def _resolve_wrapped_binary(fname):
             types.float16,
         ),
         link,
+        use_cooperative=False,
     )
     return types.Function(decl)
 
@@ -814,9 +790,6 @@ class CudaModuleTemplate(AttributeTemplate):
 
     def resolve_syncwarp(self, mod):
         return types.Function(Cuda_syncwarp)
-
-    def resolve_shfl_sync_intrinsic(self, mod):
-        return types.Function(Cuda_shfl_sync_intrinsic)
 
     def resolve_vote_sync_intrinsic(self, mod):
         return types.Function(Cuda_vote_sync_intrinsic)

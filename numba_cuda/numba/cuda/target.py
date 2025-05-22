@@ -59,6 +59,34 @@ class CUDATypingContext(typing.BaseContext):
         # continue with parent logic
         return super(CUDATypingContext, self).resolve_value_type(val)
 
+    def can_convert(self, fromty, toty):
+        """
+        Check whether conversion is possible from *fromty* to *toty*.
+        If successful, return a numba.typeconv.Conversion instance;
+        otherwise None is returned.
+        """
+
+        # This implementation works around the issue addressed in Numba PR
+        # #10047, "Fix IntEnumMember.can_convert_to() when no conversions
+        # found", https://github.com/numba/numba/pull/10047.
+        #
+        # This should be gated on the version of Numba that the fix is
+        # incorporated into, and eventually removed when the minimum supported
+        # Numba version includes the fix.
+
+        try:
+            return super().can_convert(fromty, toty)
+        except TypeError:
+            if isinstance(fromty, types.IntEnumMember):
+                # IntEnumMember fails to correctly handle impossible
+                # conversions - in this scenario the correct thing to do is to
+                # return None to signal that the conversion was not possible
+                return None
+            else:
+                # Any failure involving conversion from a non-IntEnumMember is
+                # almost certainly a real and separate issue
+                raise
+
 
 # -----------------------------------------------------------------------------
 # Implementation
@@ -262,7 +290,16 @@ class CUDATargetContext(BaseContext):
 
 
 class CUDACallConv(MinimalCallConv):
-    pass
+    def decorate_function(self, fn, args, fe_argtypes, noalias=False):
+        """
+        Set names and attributes of function arguments.
+        """
+        assert not noalias
+        arginfo = self._get_arg_packer(fe_argtypes)
+        # Do not prefix "arg." on argument name, so that nvvm compiler
+        # can track debug info of argument more accurately
+        arginfo.assign_names(self.get_arguments(fn), args)
+        fn.args[0].name = ".ret"
 
 
 class CUDACABICallConv(BaseCallConv):

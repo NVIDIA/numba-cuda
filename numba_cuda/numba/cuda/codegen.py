@@ -5,6 +5,7 @@ from numba.core.codegen import Codegen, CodeLibrary
 from .cudadrv import devices, driver, nvvm, runtime
 from numba.cuda.cudadrv.libs import get_cudalib
 from numba.cuda.cudadrv.linkable_code import LinkableCode
+from numba.cuda.runtime.nrt import NRT_LIBRARY
 
 import os
 import subprocess
@@ -55,6 +56,59 @@ def disassemble_cubin_for_cfg(cubin):
     # Request control flow graph in disassembly
     flags = ["-cfg"]
     return run_nvdisasm(cubin, flags)
+
+
+class ExternalCodeLibrary(CodeLibrary):
+    """Holds code produced externally, for linking with generated code."""
+
+    def __init__(self, codegen, name):
+        super().__init__(codegen, name)
+        # Files to link
+        self._linking_files = set()
+        # Setup and teardown functions for the module.
+        # The order is determined by the order they are added to the codelib.
+        self._setup_functions = []
+        self._teardown_functions = []
+
+        self.use_cooperative = False
+
+    @property
+    def modules(self):
+        # There are no LLVM IR modules in an ExternalCodeLibrary
+        return set()
+
+    def add_linking_file(self, path_or_obj):
+        # Adding new files after finalization is prohibited, in case the list
+        # of libraries has already been added to another code library; the
+        # newly-added files would be omitted from their linking process.
+        self._raise_if_finalized()
+
+        if isinstance(path_or_obj, LinkableCode):
+            if path_or_obj.setup_callback:
+                self._setup_functions.append(path_or_obj.setup_callback)
+            if path_or_obj.teardown_callback:
+                self._teardown_functions.append(path_or_obj.teardown_callback)
+
+        self._linking_files.add(path_or_obj)
+
+    def add_ir_module(self, module):
+        raise NotImplementedError("Cannot add LLVM IR to external code")
+
+    def add_linking_library(self, library):
+        raise NotImplementedError("Cannot add libraries to external code")
+
+    def finalize(self):
+        self._raise_if_finalized()
+        self._finalized = True
+
+    def get_asm_str(self):
+        raise NotImplementedError("No assembly for external code")
+
+    def get_llvm_str(self):
+        raise NotImplementedError("No LLVM IR for external code")
+
+    def get_function(self, name):
+        raise NotImplementedError("Cannot get function from external code")
 
 
 class CUDACodeLibrary(serialize.ReduceMixin, CodeLibrary):
@@ -128,6 +182,8 @@ class CUDACodeLibrary(serialize.ReduceMixin, CodeLibrary):
             nvvm_options = {}
         self._nvvm_options = nvvm_options
         self._entry_name = entry_name
+
+        self.use_cooperative = False
 
     @property
     def llvm_strs(self):
@@ -299,6 +355,10 @@ class CUDACodeLibrary(serialize.ReduceMixin, CodeLibrary):
         self._raise_if_finalized()
 
         self._linking_libraries.add(library)
+        self._linking_files.update(library._linking_files)
+        self._setup_functions.extend(library._setup_functions)
+        self._teardown_functions.extend(library._teardown_functions)
+        self.use_cooperative |= library.use_cooperative
 
     def add_linking_file(self, path_or_obj):
         if isinstance(path_or_obj, LinkableCode):
@@ -364,9 +424,17 @@ class CUDACodeLibrary(serialize.ReduceMixin, CodeLibrary):
         but loaded functions are discarded. They are recreated when needed
         after deserialization.
         """
+        nrt = False
         if self._linking_files:
-            msg = "Cannot pickle CUDACodeLibrary with linking files"
-            raise RuntimeError(msg)
+            if (
+                len(self._linking_files) == 1
+                and NRT_LIBRARY in self._linking_files
+            ):
+                nrt = True
+            else:
+                msg = "Cannot pickle CUDACodeLibrary with linking files"
+                raise RuntimeError(msg)
+
         if not self._finalized:
             raise RuntimeError("Cannot pickle unfinalized CUDACodeLibrary")
         return dict(
@@ -380,6 +448,8 @@ class CUDACodeLibrary(serialize.ReduceMixin, CodeLibrary):
             max_registers=self._max_registers,
             nvvm_options=self._nvvm_options,
             needs_cudadevrt=self.needs_cudadevrt,
+            nrt=nrt,
+            use_cooperative=self.use_cooperative,
         )
 
     @classmethod
@@ -395,6 +465,8 @@ class CUDACodeLibrary(serialize.ReduceMixin, CodeLibrary):
         max_registers,
         nvvm_options,
         needs_cudadevrt,
+        nrt,
+        use_cooperative,
     ):
         """
         Rebuild an instance.
@@ -409,8 +481,11 @@ class CUDACodeLibrary(serialize.ReduceMixin, CodeLibrary):
         instance._max_registers = max_registers
         instance._nvvm_options = nvvm_options
         instance.needs_cudadevrt = needs_cudadevrt
+        instance.use_cooperative = use_cooperative
 
         instance._finalized = True
+        if nrt:
+            instance._linking_files = {NRT_LIBRARY}
 
         return instance
 

@@ -16,7 +16,8 @@ _msg_deprecated_signature_arg = (
 def jit(
     func_or_sig=None,
     device=False,
-    inline=False,
+    inline="never",
+    forceinline=False,
     link=[],
     debug=None,
     opt=None,
@@ -39,6 +40,14 @@ def jit(
        .. note:: A kernel cannot have any return value.
     :param device: Indicates whether this is a device function.
     :type device: bool
+    :param inline: Enables inlining at the Numba IR level when set to
+       ``"always"``. See `Notes on Inlining
+       <https://numba.readthedocs.io/en/stable/developer/inlining.html>`_.
+    :type inline: str
+    :param forceinline: Enables inlining at the NVVM IR level when set to
+       ``True``. This is accomplished by adding the ``alwaysinline`` function
+       attribute to the function definition.
+    :type forceinline: bool
     :param link: A list of files containing PTX or CUDA C/C++ source to link
        with the function
     :type link: list
@@ -80,6 +89,17 @@ def jit(
     if kws.get("bind") is not None:
         msg = _msg_deprecated_signature_arg.format("bind")
         raise DeprecationError(msg)
+
+    if isinstance(inline, bool):
+        DeprecationWarning(
+            "Passing bool to inline argument is deprecated, please refer to "
+            "Numba's documentation on inlining: "
+            "https://numba.readthedocs.io/en/stable/developer/inlining.html. "
+            "You may have wanted the forceinline argument instead, to force "
+            "inlining at the NVVM IR level."
+        )
+
+        inline = "always" if inline else "never"
 
     debug = config.CUDA_DEBUGINFO_DEFAULT if debug is None else debug
     opt = (config.OPT != 0) if opt is None else opt
@@ -130,6 +150,8 @@ def jit(
             targetoptions["opt"] = opt
             targetoptions["fastmath"] = fastmath
             targetoptions["device"] = device
+            targetoptions["inline"] = inline
+            targetoptions["forceinline"] = forceinline
             targetoptions["extensions"] = extensions
 
             disp = CUDADispatcher(func, targetoptions=targetoptions)
@@ -171,6 +193,8 @@ def jit(
                     return jit(
                         func,
                         device=device,
+                        inline=inline,
+                        forceinline=forceinline,
                         debug=debug,
                         opt=opt,
                         lineinfo=lineinfo,
@@ -194,6 +218,8 @@ def jit(
                 targetoptions["link"] = link
                 targetoptions["fastmath"] = fastmath
                 targetoptions["device"] = device
+                targetoptions["inline"] = inline
+                targetoptions["forceinline"] = forceinline
                 targetoptions["extensions"] = extensions
                 disp = CUDADispatcher(func_or_sig, targetoptions=targetoptions)
 
@@ -203,7 +229,7 @@ def jit(
                 return disp
 
 
-def declare_device(name, sig, link=None):
+def declare_device(name, sig, link=None, use_cooperative=False):
     """
     Declare the signature of a foreign function. Returns a descriptor that can
     be used to call the function from a Python kernel.
@@ -212,6 +238,7 @@ def declare_device(name, sig, link=None):
     :type name: str
     :param sig: The Numba signature of the function.
     :param link: External code to link when calling the function.
+    :param use_cooperative: External code requires cooperative launch.
     """
     if link is None:
         link = tuple()
@@ -224,4 +251,8 @@ def declare_device(name, sig, link=None):
         msg = "Return type must be provided for device declarations"
         raise TypeError(msg)
 
-    return declare_device_function(name, restype, argtypes, link)
+    template = declare_device_function(
+        name, restype, argtypes, link, use_cooperative
+    )
+
+    return template.key
