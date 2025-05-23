@@ -171,12 +171,13 @@ class TestCudaCooperativeGroups(CUDATestCase):
             "cta_barrier", sig=sig, link=[src], use_cooperative=True
         )
 
-        @cuda.jit
+        @cuda.jit("void()")
         def kernel():
             cta_barrier()
 
+        overload = kernel.overloads[()]
         block_size = 32
-        grid_size = 1024
+        grid_size = overload.max_cooperative_grid_blocks(block_size)
 
         kernel[grid_size, block_size]()
 
