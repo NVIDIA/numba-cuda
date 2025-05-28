@@ -10,7 +10,7 @@ from numba.cuda.testing import CUDATestCase, ContextResettingTestCase
 from cuda.bindings.driver import cuModuleGetGlobal, cuMemcpyHtoD
 
 if config.CUDA_USE_NVIDIA_BINDING:
-    from cuda.cuda import CUmodule as cu_module_type
+    from cuda.bindings.driver import CUmodule as cu_module_type
 else:
     from numba.cuda.cudadrv.drvapi import cu_module as cu_module_type
 

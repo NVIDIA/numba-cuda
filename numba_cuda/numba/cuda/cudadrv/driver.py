@@ -69,7 +69,7 @@ except ImportError:
 USE_NV_BINDING = config.CUDA_USE_NVIDIA_BINDING
 
 if USE_NV_BINDING:
-    from cuda import cuda as binding
+    from cuda.bindings import driver as binding
 
     # There is no definition of the default stream in the Nvidia bindings (nor
     # is there at the C/C++ level), so we define it here so we don't need to
