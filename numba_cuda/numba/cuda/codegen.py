@@ -22,7 +22,10 @@ def run_nvdisasm(cubin, flags):
     try:
         fd, fname = tempfile.mkstemp()
         with open(fname, "wb") as f:
-            f.write(cubin.code)
+            if config.CUDA_USE_NVIDIA_BINDING:
+                f.write(cubin.code)
+            else:
+                f.write(cubin)
 
         try:
             cp = subprocess.run(
@@ -297,7 +300,7 @@ class CUDACodeLibrary(serialize.ReduceMixin, CodeLibrary):
         cubin = linker.complete()
 
         self._cubin_cache[cc] = cubin
-        # self._linkerinfo_cache[cc] = linker.info_log
+        self._linkerinfo_cache[cc] = linker.info_log
 
         return cubin
 

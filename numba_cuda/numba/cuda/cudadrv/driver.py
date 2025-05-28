@@ -2945,12 +2945,16 @@ class CUDALinker(Linker):
     def info_log(self):
         if not self.linker:
             raise ValueError("Not Initialized")
+        if self._complete:
+            return self._info_log
         return self.linker.get_info_log()
 
     @property
     def error_log(self):
         if not self.linker:
             raise ValueError("Not Initialized")
+        if self._complete:
+            return self._error_log
         return self.linker.get_error_log()
 
     def add_ptx(self, ptx, name="<cudapy-ptx>"):
@@ -3061,14 +3065,19 @@ class CUDALinker(Linker):
         self.linker = _CUDALinker(*self._object_codes, options=options)
 
         result = self.linker.link("ptx")
-        self.linker.close()
+        self.close()
         self._complete = True
         return result
+
+    def close(self):
+        self._info_log = self.linker.get_info_log()
+        self._error_log = self.linker.get_error_log()
+        self.linker.close()
 
     def complete(self):
         self.linker = _CUDALinker(*self._object_codes, options=self.options)
         result = self.linker.link("cubin")
-        self.linker.close()
+        self.close()
         self._complete = True
         return result
 
