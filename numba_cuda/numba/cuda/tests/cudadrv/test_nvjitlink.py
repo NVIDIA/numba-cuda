@@ -3,7 +3,6 @@ from numba.cuda.testing import skip_on_cudasim
 from numba.cuda.testing import CUDATestCase
 from numba.cuda.cudadrv.driver import PyNvJitLinker
 from numba.cuda import get_current_device
-import itertools
 
 from numba import cuda
 from numba import config
@@ -16,7 +15,7 @@ try:
 except ImportError:
     PYNVJITLINK_INSTALLED = False
 
-
+import itertools
 import os
 import io
 import contextlib
@@ -208,7 +207,7 @@ class TestLinker(CUDATestCase):
 
                     result = cuda.device_array(1)
                     kernel[1, 1](result)
-                assert result[0] == 3
+                    assert result[0] == 3
 
                 self.assertTrue("ASSEMBLY (AFTER LTO)" in f.getvalue())
 

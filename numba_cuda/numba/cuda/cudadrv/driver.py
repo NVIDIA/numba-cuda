@@ -2757,7 +2757,6 @@ class Linker(metaclass=ABCMeta):
             linker = CUDALinker
 
         elif config.CUDA_ENABLE_MINOR_VERSION_COMPATIBILITY:
-            # TODO - who handles MVC now?
             linker = MVCLinker
         else:
             if USE_NV_BINDING:
@@ -2920,7 +2919,6 @@ class CUDALinker(Linker):
         additional_flags=None,
     ):
         arch = f"sm_{cc[0] * 10 + cc[1]}"
-        # TODO: cuda-python/xyz
         if lto is False:
             lto = None
         self.options = _CUDALinkerOptions(
@@ -2940,6 +2938,16 @@ class CUDALinker(Linker):
         self._complete = False
         self._object_codes = []
         self.linker = None  # need at least one program
+
+        cuda_include = [
+            get_cuda_paths()["include_dir"].info,
+        ]
+
+        cudadrv_path = os.path.dirname(os.path.abspath(__file__))
+        numba_cuda_path = os.path.dirname(cudadrv_path)
+
+        nrt_path = os.path.join(numba_cuda_path, "runtime")
+        self._include_paths = cuda_include + [numba_cuda_path, nrt_path]
 
     @property
     def info_log(self):
@@ -2962,17 +2970,6 @@ class CUDALinker(Linker):
         self._object_codes.append(obj)
 
     def add_cu(self, cu, name="<cudapy-cu>"):
-        # TODO - vendor below logic somewhere common
-        cuda_include = [
-            get_cuda_paths()["include_dir"].info,
-        ]
-
-        cudadrv_path = os.path.dirname(os.path.abspath(__file__))
-        numba_cuda_path = os.path.dirname(cudadrv_path)
-
-        nrt_path = os.path.join(numba_cuda_path, "runtime")
-        include_paths = cuda_include + [numba_cuda_path, nrt_path]
-
         class Logger:
             def __init__(self):
                 self.log = []
@@ -2991,7 +2988,7 @@ class CUDALinker(Linker):
                 lineinfo=self.lineinfo,
                 max_register_count=self.max_registers,
                 relocatable_device_code=True,
-                include_path=include_paths,
+                include_path=self.include_paths,
                 link_time_optimization=self.lto,
             ),
         )
