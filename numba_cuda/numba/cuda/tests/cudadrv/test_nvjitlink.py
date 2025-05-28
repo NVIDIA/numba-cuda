@@ -15,7 +15,6 @@ try:
 except ImportError:
     PYNVJITLINK_INSTALLED = False
 
-
 import itertools
 import os
 import io

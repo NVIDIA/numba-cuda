@@ -28,6 +28,8 @@ requirements:
   run:
     - python
     - numba >=0.59.1
+    - cuda-python >=12.8.0
+    - cuda-core >=12.8.0
 
 about:
   home: {{ project_urls["Homepage"] }}

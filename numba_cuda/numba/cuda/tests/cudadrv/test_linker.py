@@ -1,13 +1,15 @@
 import numpy as np
 import warnings
+from numba import config
 from numba.cuda.testing import unittest
 from numba.cuda.testing import skip_on_cudasim, skip_if_cuda_includes_missing
 from numba.cuda.testing import CUDATestCase, test_data_dir
 from numba.cuda.cudadrv.driver import CudaAPIError, Linker, LinkerError
-from numba.cuda.cudadrv.error import NvrtcError
+from cuda.core.experimental._utils.cuda_utils import NVRTCError
 from numba.cuda import require_context
 from numba.tests.support import ignore_internal_warnings
 from numba import cuda, void, float64, int64, int32, typeof, float32
+from numba.cuda.cudadrv.error import NvrtcError
 
 
 CONST1D = np.arange(10, dtype=np.float64)
@@ -185,7 +187,11 @@ class TestLinker(CUDATestCase):
 
         link = str(test_data_dir / "error.cu")
 
-        with self.assertRaises(NvrtcError) as e:
+        if config.CUDA_USE_NVIDIA_BINDING:
+            errty = NVRTCError
+        else:
+            errty = NvrtcError
+        with self.assertRaises(errty) as e:
 
             @cuda.jit("void(int32)", link=[link])
             def kernel(x):
@@ -193,7 +199,7 @@ class TestLinker(CUDATestCase):
 
         msg = e.exception.args[0]
         # Check the error message refers to the NVRTC compile
-        self.assertIn("NVRTC Compilation failure", msg)
+        self.assertIn("NVRTC_ERROR_COMPILATION", msg)
         # Check the expected error in the CUDA source is reported
         self.assertIn('identifier "SYNTAX" is undefined', msg)
         # Check the filename is reported correctly
