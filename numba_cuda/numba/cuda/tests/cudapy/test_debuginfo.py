@@ -332,10 +332,10 @@ class TestCudaDebugInfo(CUDATestCase):
 
         @cuda.jit("void(int32, int32)", debug=True, opt=False)
         def f(x, y):
-            z = x  # noqa: F841
-            z = 100  # noqa: F841
-            z = y  # noqa: F841
-            z = True  # noqa: F841
+            z1 = x  # noqa: F841
+            z2 = 100  # noqa: F841
+            z3 = y  # noqa: F841
+            z4 = True  # noqa: F841
 
         llvm_ir = f.inspect_llvm(sig)
         # Verify the call to llvm.dbg.declare is replaced by llvm.dbg.value

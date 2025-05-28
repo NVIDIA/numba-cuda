@@ -78,7 +78,6 @@ class CUDALower(Lower):
         """
         Ensure the given variable has an allocated stack slot (if needed).
         """
-        #super()._alloca_var(name, fetype)
         # If the name is not handled yet and a store is needed
         if (name not in self.varmap and self.store_var_needed(name)):
             index = name.find(".")
