@@ -187,7 +187,7 @@ class TestLinker(CUDATestCase):
 
         link = str(test_data_dir / "error.cu")
 
-        if config.CUDA_USE_NVIDIA_BIDNING:
+        if config.CUDA_USE_NVIDIA_BINDING:
             errty = NVRTCError
         else:
             errty = NvrtcError

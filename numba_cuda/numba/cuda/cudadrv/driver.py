@@ -2948,6 +2948,10 @@ class CUDALinker(Linker):
 
         nrt_path = os.path.join(numba_cuda_path, "runtime")
         self._include_paths = cuda_include + [numba_cuda_path, nrt_path]
+        if config.CUDA_NVRTC_EXTRA_SEARCH_PATHS:
+            self._include_paths += config.CUDA_NVRTC_EXTRA_SEARCH_PATHS.split(
+                ":"
+            )
 
     @property
     def info_log(self):
@@ -3029,6 +3033,9 @@ class CUDALinker(Linker):
         except FileNotFoundError:
             raise LinkerError(f"{path} not found")
         name = pathlib.Path(path).name
+        self.add_data(data, kind, name)
+
+    def add_data(self, data, kind, name):
         if kind == FILE_EXTENSION_MAP["ptx"]:
             fn = self.add_ptx
         elif kind == FILE_EXTENSION_MAP["cubin"]:
