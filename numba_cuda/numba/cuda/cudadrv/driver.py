@@ -2988,7 +2988,7 @@ class CUDALinker(Linker):
                 lineinfo=self.lineinfo,
                 max_register_count=self.max_registers,
                 relocatable_device_code=True,
-                include_path=self.include_paths,
+                include_path=self._include_paths,
                 link_time_optimization=self.lto,
             ),
         )
