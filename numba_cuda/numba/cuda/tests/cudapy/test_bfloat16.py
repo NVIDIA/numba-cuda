@@ -27,10 +27,10 @@ class TestBfloat16HighLevelBindings(CUDATestCase):
         exp_functions = [math.exp]
         try:
             from math import exp2
+
             exp_functions += [exp2]
         except ImportError:
             pass
-
 
         functions = [
             math.trunc,
