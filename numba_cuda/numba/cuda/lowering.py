@@ -57,6 +57,7 @@ class CUDALower(Lower):
         # When debug info is enabled, walk through function body and mark
         # variables with polymorphic types.
         if self.context.enable_debuginfo and self._disable_sroa_like_opt:
+            poly_map = {}
             # pre-scan all blocks
             for block in self.blocks.values():
                 for x in block.find_insts(numba_ir.Assign):
@@ -65,14 +66,19 @@ class CUDALower(Lower):
                     ssa_name = x.target.name
                     index = ssa_name.find(".")
                     src_name = ssa_name[:index] if index > 0 else ssa_name
+                    # Check all the multi-versioned targets
                     if len(x.target.versioned_names) > 0:
                         fetype = self.typeof(ssa_name)
-                        if src_name not in self.poly_var_typ_map:
-                            self.poly_var_typ_map[src_name] = set()
+                        if src_name not in poly_map:
+                            poly_map[src_name] = set()
                         # deduplicate polymorphic types
                         if isinstance(fetype, types.Literal):
                             fetype = fetype.literal_type
-                        self.poly_var_typ_map[src_name].add(fetype)
+                        poly_map[src_name].add(fetype)
+            # Filter out multi-versioned but single typed variables
+            self.poly_var_typ_map = {
+                k : v for k, v in poly_map.items() if len(v) > 1
+            }
 
     def _alloca_var(self, name, fetype):
         """

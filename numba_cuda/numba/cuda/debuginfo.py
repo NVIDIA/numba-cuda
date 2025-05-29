@@ -77,7 +77,7 @@ class CUDADIBuilder(DIBuilder):
                         derived_type = m.add_debug_info(
                             "DIDerivedType",
                             {
-                                "tag": ir.DIToken('DW_TAG_member'),
+                                "tag": ir.DIToken("DW_TAG_member"),
                                 "name": membername,
                                 "baseType": basetype,
                                 # DW_TAG_member size is in bits
@@ -88,12 +88,13 @@ class CUDADIBuilder(DIBuilder):
                         if memberwidth > maxwidth:
                             maxwidth = memberwidth
 
+            fake_union_name = "dbg_poly_union"
             return m.add_debug_info(
                 "DICompositeType",
                 {
                     "file": self.difile,
-                    "tag": ir.DIToken('DW_TAG_union_type'),
-                    "name": 'dbg_poly_union',
+                    "tag": ir.DIToken("DW_TAG_union_type"),
+                    "name": fake_union_name,
                     "identifier": str(lltype),
                     "elements": m.add_metadata(meta),
                     "size": maxwidth,
