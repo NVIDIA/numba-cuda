@@ -193,6 +193,7 @@ if TEST_BIN_DIR:
 
 @skip_on_cudasim("Extensions not supported in the simulator")
 class TestExtendingLinkage(CUDATestCase):
+    @unittest.skipUnless(TEST_BIN_DIR, "Necessary binaries are not available")
     def test_extension_adds_linkable_code(self):
         cuda_major_version = cuda.runtime.get_version()[0]
 
