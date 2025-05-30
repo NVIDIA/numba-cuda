@@ -28,6 +28,7 @@ from numba.core.typing.templates import AttributeTemplate, ConcreteTemplate
 from numba.cuda import CUSource, declare_device
 from numba.cuda.cudadecl import register, register_attr, register_global
 from numba.cuda.cudaimpl import lower
+from numba.cuda.vector_types import vector_types
 from numba.extending import as_numba_type
 from numba.types import (
     CPointer,
@@ -45,7 +46,10 @@ from numba.types import (
     uint16,
     uint32,
     uint64,
+    void,
 )
+
+float32x2 = vector_types["float32x2"]
 
 # Setups:
 
@@ -1741,6 +1745,748 @@ _from___half2_to__type_unnamed1302366_lower(shim_stream, shim_obj)
 # Functions:
 
 
+def __double2half():
+    pass
+
+
+def ___double2half_1_lower(shim_stream, shim_obj):
+    shim_raw_str = """
+    extern "C" __device__ int
+    __double2half_1(__half &retval , double* a) {
+        retval = __double2half(*a);
+        return 0;
+    }
+        """
+
+    __double2half_1 = declare_device(
+        "__double2half_1", _type___half(CPointer(float64))
+    )
+
+    def __double2half_1_caller(arg_0):
+        return __double2half_1(arg_0)
+
+    @lower(__double2half, float64)
+    def impl(context, builder, sig, args):
+        context.active_code_library.add_linking_file(shim_obj)
+        shim_stream.write_with_key("__double2half_1", shim_raw_str)
+        ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
+        for ptr, ty, arg in zip(ptrs, sig.args, args):
+            builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
+
+        return context.compile_internal(
+            builder,
+            __double2half_1_caller,
+            signature(_type___half, CPointer(float64)),
+            ptrs,
+        )
+
+
+___double2half_1_lower(shim_stream, shim_obj)
+
+
+def __float2half():
+    pass
+
+
+def ___float2half_1_lower(shim_stream, shim_obj):
+    shim_raw_str = """
+    extern "C" __device__ int
+    __float2half_1(__half &retval , float* a) {
+        retval = __float2half(*a);
+        return 0;
+    }
+        """
+
+    __float2half_1 = declare_device(
+        "__float2half_1", _type___half(CPointer(float32))
+    )
+
+    def __float2half_1_caller(arg_0):
+        return __float2half_1(arg_0)
+
+    @lower(__float2half, float32)
+    def impl(context, builder, sig, args):
+        context.active_code_library.add_linking_file(shim_obj)
+        shim_stream.write_with_key("__float2half_1", shim_raw_str)
+        ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
+        for ptr, ty, arg in zip(ptrs, sig.args, args):
+            builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
+
+        return context.compile_internal(
+            builder,
+            __float2half_1_caller,
+            signature(_type___half, CPointer(float32)),
+            ptrs,
+        )
+
+
+___float2half_1_lower(shim_stream, shim_obj)
+
+
+def __float2half_rn():
+    pass
+
+
+def ___float2half_rn_1_lower(shim_stream, shim_obj):
+    shim_raw_str = """
+    extern "C" __device__ int
+    __float2half_rn_1(__half &retval , float* a) {
+        retval = __float2half_rn(*a);
+        return 0;
+    }
+        """
+
+    __float2half_rn_1 = declare_device(
+        "__float2half_rn_1", _type___half(CPointer(float32))
+    )
+
+    def __float2half_rn_1_caller(arg_0):
+        return __float2half_rn_1(arg_0)
+
+    @lower(__float2half_rn, float32)
+    def impl(context, builder, sig, args):
+        context.active_code_library.add_linking_file(shim_obj)
+        shim_stream.write_with_key("__float2half_rn_1", shim_raw_str)
+        ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
+        for ptr, ty, arg in zip(ptrs, sig.args, args):
+            builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
+
+        return context.compile_internal(
+            builder,
+            __float2half_rn_1_caller,
+            signature(_type___half, CPointer(float32)),
+            ptrs,
+        )
+
+
+___float2half_rn_1_lower(shim_stream, shim_obj)
+
+
+def __float2half_rz():
+    pass
+
+
+def ___float2half_rz_1_lower(shim_stream, shim_obj):
+    shim_raw_str = """
+    extern "C" __device__ int
+    __float2half_rz_1(__half &retval , float* a) {
+        retval = __float2half_rz(*a);
+        return 0;
+    }
+        """
+
+    __float2half_rz_1 = declare_device(
+        "__float2half_rz_1", _type___half(CPointer(float32))
+    )
+
+    def __float2half_rz_1_caller(arg_0):
+        return __float2half_rz_1(arg_0)
+
+    @lower(__float2half_rz, float32)
+    def impl(context, builder, sig, args):
+        context.active_code_library.add_linking_file(shim_obj)
+        shim_stream.write_with_key("__float2half_rz_1", shim_raw_str)
+        ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
+        for ptr, ty, arg in zip(ptrs, sig.args, args):
+            builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
+
+        return context.compile_internal(
+            builder,
+            __float2half_rz_1_caller,
+            signature(_type___half, CPointer(float32)),
+            ptrs,
+        )
+
+
+___float2half_rz_1_lower(shim_stream, shim_obj)
+
+
+def __float2half_rd():
+    pass
+
+
+def ___float2half_rd_1_lower(shim_stream, shim_obj):
+    shim_raw_str = """
+    extern "C" __device__ int
+    __float2half_rd_1(__half &retval , float* a) {
+        retval = __float2half_rd(*a);
+        return 0;
+    }
+        """
+
+    __float2half_rd_1 = declare_device(
+        "__float2half_rd_1", _type___half(CPointer(float32))
+    )
+
+    def __float2half_rd_1_caller(arg_0):
+        return __float2half_rd_1(arg_0)
+
+    @lower(__float2half_rd, float32)
+    def impl(context, builder, sig, args):
+        context.active_code_library.add_linking_file(shim_obj)
+        shim_stream.write_with_key("__float2half_rd_1", shim_raw_str)
+        ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
+        for ptr, ty, arg in zip(ptrs, sig.args, args):
+            builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
+
+        return context.compile_internal(
+            builder,
+            __float2half_rd_1_caller,
+            signature(_type___half, CPointer(float32)),
+            ptrs,
+        )
+
+
+___float2half_rd_1_lower(shim_stream, shim_obj)
+
+
+def __float2half_ru():
+    pass
+
+
+def ___float2half_ru_1_lower(shim_stream, shim_obj):
+    shim_raw_str = """
+    extern "C" __device__ int
+    __float2half_ru_1(__half &retval , float* a) {
+        retval = __float2half_ru(*a);
+        return 0;
+    }
+        """
+
+    __float2half_ru_1 = declare_device(
+        "__float2half_ru_1", _type___half(CPointer(float32))
+    )
+
+    def __float2half_ru_1_caller(arg_0):
+        return __float2half_ru_1(arg_0)
+
+    @lower(__float2half_ru, float32)
+    def impl(context, builder, sig, args):
+        context.active_code_library.add_linking_file(shim_obj)
+        shim_stream.write_with_key("__float2half_ru_1", shim_raw_str)
+        ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
+        for ptr, ty, arg in zip(ptrs, sig.args, args):
+            builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
+
+        return context.compile_internal(
+            builder,
+            __float2half_ru_1_caller,
+            signature(_type___half, CPointer(float32)),
+            ptrs,
+        )
+
+
+___float2half_ru_1_lower(shim_stream, shim_obj)
+
+
+def __half2float():
+    pass
+
+
+def ___half2float_1_lower(shim_stream, shim_obj):
+    shim_raw_str = """
+    extern "C" __device__ int
+    __half2float_1(float &retval , __half* a) {
+        retval = __half2float(*a);
+        return 0;
+    }
+        """
+
+    __half2float_1 = declare_device(
+        "__half2float_1", float32(CPointer(_type___half))
+    )
+
+    def __half2float_1_caller(arg_0):
+        return __half2float_1(arg_0)
+
+    @lower(__half2float, _type___half)
+    def impl(context, builder, sig, args):
+        context.active_code_library.add_linking_file(shim_obj)
+        shim_stream.write_with_key("__half2float_1", shim_raw_str)
+        ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
+        for ptr, ty, arg in zip(ptrs, sig.args, args):
+            builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
+
+        return context.compile_internal(
+            builder,
+            __half2float_1_caller,
+            signature(float32, CPointer(_type___half)),
+            ptrs,
+        )
+
+
+___half2float_1_lower(shim_stream, shim_obj)
+
+
+def __float2half2_rn():
+    pass
+
+
+def ___float2half2_rn_1_lower(shim_stream, shim_obj):
+    shim_raw_str = """
+    extern "C" __device__ int
+    __float2half2_rn_1(__half2 &retval , float* a) {
+        retval = __float2half2_rn(*a);
+        return 0;
+    }
+        """
+
+    __float2half2_rn_1 = declare_device(
+        "__float2half2_rn_1", _type___half2(CPointer(float32))
+    )
+
+    def __float2half2_rn_1_caller(arg_0):
+        return __float2half2_rn_1(arg_0)
+
+    @lower(__float2half2_rn, float32)
+    def impl(context, builder, sig, args):
+        context.active_code_library.add_linking_file(shim_obj)
+        shim_stream.write_with_key("__float2half2_rn_1", shim_raw_str)
+        ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
+        for ptr, ty, arg in zip(ptrs, sig.args, args):
+            builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
+
+        return context.compile_internal(
+            builder,
+            __float2half2_rn_1_caller,
+            signature(_type___half2, CPointer(float32)),
+            ptrs,
+        )
+
+
+___float2half2_rn_1_lower(shim_stream, shim_obj)
+
+
+def __floats2half2_rn():
+    pass
+
+
+def ___floats2half2_rn_1_lower(shim_stream, shim_obj):
+    shim_raw_str = """
+    extern "C" __device__ int
+    __floats2half2_rn_1(__half2 &retval , float* a, float* b) {
+        retval = __floats2half2_rn(*a, *b);
+        return 0;
+    }
+        """
+
+    __floats2half2_rn_1 = declare_device(
+        "__floats2half2_rn_1",
+        _type___half2(CPointer(float32), CPointer(float32)),
+    )
+
+    def __floats2half2_rn_1_caller(arg_0, arg_1):
+        return __floats2half2_rn_1(arg_0, arg_1)
+
+    @lower(__floats2half2_rn, float32, float32)
+    def impl(context, builder, sig, args):
+        context.active_code_library.add_linking_file(shim_obj)
+        shim_stream.write_with_key("__floats2half2_rn_1", shim_raw_str)
+        ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
+        for ptr, ty, arg in zip(ptrs, sig.args, args):
+            builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
+
+        return context.compile_internal(
+            builder,
+            __floats2half2_rn_1_caller,
+            signature(_type___half2, CPointer(float32), CPointer(float32)),
+            ptrs,
+        )
+
+
+___floats2half2_rn_1_lower(shim_stream, shim_obj)
+
+
+def __low2float():
+    pass
+
+
+def ___low2float_1_lower(shim_stream, shim_obj):
+    shim_raw_str = """
+    extern "C" __device__ int
+    __low2float_1(float &retval , __half2* a) {
+        retval = __low2float(*a);
+        return 0;
+    }
+        """
+
+    __low2float_1 = declare_device(
+        "__low2float_1", float32(CPointer(_type___half2))
+    )
+
+    def __low2float_1_caller(arg_0):
+        return __low2float_1(arg_0)
+
+    @lower(__low2float, _type___half2)
+    def impl(context, builder, sig, args):
+        context.active_code_library.add_linking_file(shim_obj)
+        shim_stream.write_with_key("__low2float_1", shim_raw_str)
+        ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
+        for ptr, ty, arg in zip(ptrs, sig.args, args):
+            builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
+
+        return context.compile_internal(
+            builder,
+            __low2float_1_caller,
+            signature(float32, CPointer(_type___half2)),
+            ptrs,
+        )
+
+
+___low2float_1_lower(shim_stream, shim_obj)
+
+
+def __high2float():
+    pass
+
+
+def ___high2float_1_lower(shim_stream, shim_obj):
+    shim_raw_str = """
+    extern "C" __device__ int
+    __high2float_1(float &retval , __half2* a) {
+        retval = __high2float(*a);
+        return 0;
+    }
+        """
+
+    __high2float_1 = declare_device(
+        "__high2float_1", float32(CPointer(_type___half2))
+    )
+
+    def __high2float_1_caller(arg_0):
+        return __high2float_1(arg_0)
+
+    @lower(__high2float, _type___half2)
+    def impl(context, builder, sig, args):
+        context.active_code_library.add_linking_file(shim_obj)
+        shim_stream.write_with_key("__high2float_1", shim_raw_str)
+        ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
+        for ptr, ty, arg in zip(ptrs, sig.args, args):
+            builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
+
+        return context.compile_internal(
+            builder,
+            __high2float_1_caller,
+            signature(float32, CPointer(_type___half2)),
+            ptrs,
+        )
+
+
+___high2float_1_lower(shim_stream, shim_obj)
+
+
+def __half2char_rz():
+    pass
+
+
+def ___half2char_rz_1_lower(shim_stream, shim_obj):
+    shim_raw_str = """
+    extern "C" __device__ int
+    __half2char_rz_1(signed char &retval , __half* h) {
+        retval = __half2char_rz(*h);
+        return 0;
+    }
+        """
+
+    __half2char_rz_1 = declare_device(
+        "__half2char_rz_1", int8(CPointer(_type___half))
+    )
+
+    def __half2char_rz_1_caller(arg_0):
+        return __half2char_rz_1(arg_0)
+
+    @lower(__half2char_rz, _type___half)
+    def impl(context, builder, sig, args):
+        context.active_code_library.add_linking_file(shim_obj)
+        shim_stream.write_with_key("__half2char_rz_1", shim_raw_str)
+        ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
+        for ptr, ty, arg in zip(ptrs, sig.args, args):
+            builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
+
+        return context.compile_internal(
+            builder,
+            __half2char_rz_1_caller,
+            signature(int8, CPointer(_type___half)),
+            ptrs,
+        )
+
+
+___half2char_rz_1_lower(shim_stream, shim_obj)
+
+
+def __half2uchar_rz():
+    pass
+
+
+def ___half2uchar_rz_1_lower(shim_stream, shim_obj):
+    shim_raw_str = """
+    extern "C" __device__ int
+    __half2uchar_rz_1(unsigned char &retval , __half* h) {
+        retval = __half2uchar_rz(*h);
+        return 0;
+    }
+        """
+
+    __half2uchar_rz_1 = declare_device(
+        "__half2uchar_rz_1", uint8(CPointer(_type___half))
+    )
+
+    def __half2uchar_rz_1_caller(arg_0):
+        return __half2uchar_rz_1(arg_0)
+
+    @lower(__half2uchar_rz, _type___half)
+    def impl(context, builder, sig, args):
+        context.active_code_library.add_linking_file(shim_obj)
+        shim_stream.write_with_key("__half2uchar_rz_1", shim_raw_str)
+        ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
+        for ptr, ty, arg in zip(ptrs, sig.args, args):
+            builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
+
+        return context.compile_internal(
+            builder,
+            __half2uchar_rz_1_caller,
+            signature(uint8, CPointer(_type___half)),
+            ptrs,
+        )
+
+
+___half2uchar_rz_1_lower(shim_stream, shim_obj)
+
+
+def __half2short_rz():
+    pass
+
+
+def ___half2short_rz_1_lower(shim_stream, shim_obj):
+    shim_raw_str = """
+    extern "C" __device__ int
+    __half2short_rz_1(short &retval , __half* h) {
+        retval = __half2short_rz(*h);
+        return 0;
+    }
+        """
+
+    __half2short_rz_1 = declare_device(
+        "__half2short_rz_1", int16(CPointer(_type___half))
+    )
+
+    def __half2short_rz_1_caller(arg_0):
+        return __half2short_rz_1(arg_0)
+
+    @lower(__half2short_rz, _type___half)
+    def impl(context, builder, sig, args):
+        context.active_code_library.add_linking_file(shim_obj)
+        shim_stream.write_with_key("__half2short_rz_1", shim_raw_str)
+        ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
+        for ptr, ty, arg in zip(ptrs, sig.args, args):
+            builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
+
+        return context.compile_internal(
+            builder,
+            __half2short_rz_1_caller,
+            signature(int16, CPointer(_type___half)),
+            ptrs,
+        )
+
+
+___half2short_rz_1_lower(shim_stream, shim_obj)
+
+
+def __half2ushort_rz():
+    pass
+
+
+def ___half2ushort_rz_1_lower(shim_stream, shim_obj):
+    shim_raw_str = """
+    extern "C" __device__ int
+    __half2ushort_rz_1(unsigned short &retval , __half* h) {
+        retval = __half2ushort_rz(*h);
+        return 0;
+    }
+        """
+
+    __half2ushort_rz_1 = declare_device(
+        "__half2ushort_rz_1", uint16(CPointer(_type___half))
+    )
+
+    def __half2ushort_rz_1_caller(arg_0):
+        return __half2ushort_rz_1(arg_0)
+
+    @lower(__half2ushort_rz, _type___half)
+    def impl(context, builder, sig, args):
+        context.active_code_library.add_linking_file(shim_obj)
+        shim_stream.write_with_key("__half2ushort_rz_1", shim_raw_str)
+        ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
+        for ptr, ty, arg in zip(ptrs, sig.args, args):
+            builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
+
+        return context.compile_internal(
+            builder,
+            __half2ushort_rz_1_caller,
+            signature(uint16, CPointer(_type___half)),
+            ptrs,
+        )
+
+
+___half2ushort_rz_1_lower(shim_stream, shim_obj)
+
+
+def __half2int_rz():
+    pass
+
+
+def ___half2int_rz_1_lower(shim_stream, shim_obj):
+    shim_raw_str = """
+    extern "C" __device__ int
+    __half2int_rz_1(int &retval , __half* h) {
+        retval = __half2int_rz(*h);
+        return 0;
+    }
+        """
+
+    __half2int_rz_1 = declare_device(
+        "__half2int_rz_1", int32(CPointer(_type___half))
+    )
+
+    def __half2int_rz_1_caller(arg_0):
+        return __half2int_rz_1(arg_0)
+
+    @lower(__half2int_rz, _type___half)
+    def impl(context, builder, sig, args):
+        context.active_code_library.add_linking_file(shim_obj)
+        shim_stream.write_with_key("__half2int_rz_1", shim_raw_str)
+        ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
+        for ptr, ty, arg in zip(ptrs, sig.args, args):
+            builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
+
+        return context.compile_internal(
+            builder,
+            __half2int_rz_1_caller,
+            signature(int32, CPointer(_type___half)),
+            ptrs,
+        )
+
+
+___half2int_rz_1_lower(shim_stream, shim_obj)
+
+
+def __half2uint_rz():
+    pass
+
+
+def ___half2uint_rz_1_lower(shim_stream, shim_obj):
+    shim_raw_str = """
+    extern "C" __device__ int
+    __half2uint_rz_1(unsigned int &retval , __half* h) {
+        retval = __half2uint_rz(*h);
+        return 0;
+    }
+        """
+
+    __half2uint_rz_1 = declare_device(
+        "__half2uint_rz_1", uint32(CPointer(_type___half))
+    )
+
+    def __half2uint_rz_1_caller(arg_0):
+        return __half2uint_rz_1(arg_0)
+
+    @lower(__half2uint_rz, _type___half)
+    def impl(context, builder, sig, args):
+        context.active_code_library.add_linking_file(shim_obj)
+        shim_stream.write_with_key("__half2uint_rz_1", shim_raw_str)
+        ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
+        for ptr, ty, arg in zip(ptrs, sig.args, args):
+            builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
+
+        return context.compile_internal(
+            builder,
+            __half2uint_rz_1_caller,
+            signature(uint32, CPointer(_type___half)),
+            ptrs,
+        )
+
+
+___half2uint_rz_1_lower(shim_stream, shim_obj)
+
+
+def __half2ll_rz():
+    pass
+
+
+def ___half2ll_rz_1_lower(shim_stream, shim_obj):
+    shim_raw_str = """
+    extern "C" __device__ int
+    __half2ll_rz_1(long long &retval , __half* h) {
+        retval = __half2ll_rz(*h);
+        return 0;
+    }
+        """
+
+    __half2ll_rz_1 = declare_device(
+        "__half2ll_rz_1", int64(CPointer(_type___half))
+    )
+
+    def __half2ll_rz_1_caller(arg_0):
+        return __half2ll_rz_1(arg_0)
+
+    @lower(__half2ll_rz, _type___half)
+    def impl(context, builder, sig, args):
+        context.active_code_library.add_linking_file(shim_obj)
+        shim_stream.write_with_key("__half2ll_rz_1", shim_raw_str)
+        ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
+        for ptr, ty, arg in zip(ptrs, sig.args, args):
+            builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
+
+        return context.compile_internal(
+            builder,
+            __half2ll_rz_1_caller,
+            signature(int64, CPointer(_type___half)),
+            ptrs,
+        )
+
+
+___half2ll_rz_1_lower(shim_stream, shim_obj)
+
+
+def __half2ull_rz():
+    pass
+
+
+def ___half2ull_rz_1_lower(shim_stream, shim_obj):
+    shim_raw_str = """
+    extern "C" __device__ int
+    __half2ull_rz_1(unsigned long long &retval , __half* h) {
+        retval = __half2ull_rz(*h);
+        return 0;
+    }
+        """
+
+    __half2ull_rz_1 = declare_device(
+        "__half2ull_rz_1", uint64(CPointer(_type___half))
+    )
+
+    def __half2ull_rz_1_caller(arg_0):
+        return __half2ull_rz_1(arg_0)
+
+    @lower(__half2ull_rz, _type___half)
+    def impl(context, builder, sig, args):
+        context.active_code_library.add_linking_file(shim_obj)
+        shim_stream.write_with_key("__half2ull_rz_1", shim_raw_str)
+        ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
+        for ptr, ty, arg in zip(ptrs, sig.args, args):
+            builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
+
+        return context.compile_internal(
+            builder,
+            __half2ull_rz_1_caller,
+            signature(uint64, CPointer(_type___half)),
+            ptrs,
+        )
+
+
+___half2ull_rz_1_lower(shim_stream, shim_obj)
+
+
 def make_half2():
     pass
 
@@ -1781,6 +2527,1722 @@ def _make_half2_1_lower(shim_stream, shim_obj):
 
 
 _make_half2_1_lower(shim_stream, shim_obj)
+
+
+def __float22half2_rn():
+    pass
+
+
+def ___float22half2_rn_1_lower(shim_stream, shim_obj):
+    shim_raw_str = """
+    extern "C" __device__ int
+    __float22half2_rn_1(__half2 &retval , float2* a) {
+        retval = __float22half2_rn(*a);
+        return 0;
+    }
+        """
+
+    __float22half2_rn_1 = declare_device(
+        "__float22half2_rn_1", _type___half2(CPointer(float32x2))
+    )
+
+    def __float22half2_rn_1_caller(arg_0):
+        return __float22half2_rn_1(arg_0)
+
+    @lower(__float22half2_rn, float32x2)
+    def impl(context, builder, sig, args):
+        context.active_code_library.add_linking_file(shim_obj)
+        shim_stream.write_with_key("__float22half2_rn_1", shim_raw_str)
+        ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
+        for ptr, ty, arg in zip(ptrs, sig.args, args):
+            builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
+
+        return context.compile_internal(
+            builder,
+            __float22half2_rn_1_caller,
+            signature(_type___half2, CPointer(float32x2)),
+            ptrs,
+        )
+
+
+___float22half2_rn_1_lower(shim_stream, shim_obj)
+
+
+def __half22float2():
+    pass
+
+
+def ___half22float2_1_lower(shim_stream, shim_obj):
+    shim_raw_str = """
+    extern "C" __device__ int
+    __half22float2_1(float2 &retval , __half2* a) {
+        retval = __half22float2(*a);
+        return 0;
+    }
+        """
+
+    __half22float2_1 = declare_device(
+        "__half22float2_1", float32x2(CPointer(_type___half2))
+    )
+
+    def __half22float2_1_caller(arg_0):
+        return __half22float2_1(arg_0)
+
+    @lower(__half22float2, _type___half2)
+    def impl(context, builder, sig, args):
+        context.active_code_library.add_linking_file(shim_obj)
+        shim_stream.write_with_key("__half22float2_1", shim_raw_str)
+        ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
+        for ptr, ty, arg in zip(ptrs, sig.args, args):
+            builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
+
+        return context.compile_internal(
+            builder,
+            __half22float2_1_caller,
+            signature(float32x2, CPointer(_type___half2)),
+            ptrs,
+        )
+
+
+___half22float2_1_lower(shim_stream, shim_obj)
+
+
+def __half2int_rn():
+    pass
+
+
+def ___half2int_rn_1_lower(shim_stream, shim_obj):
+    shim_raw_str = """
+    extern "C" __device__ int
+    __half2int_rn_1(int &retval , __half* h) {
+        retval = __half2int_rn(*h);
+        return 0;
+    }
+        """
+
+    __half2int_rn_1 = declare_device(
+        "__half2int_rn_1", int32(CPointer(_type___half))
+    )
+
+    def __half2int_rn_1_caller(arg_0):
+        return __half2int_rn_1(arg_0)
+
+    @lower(__half2int_rn, _type___half)
+    def impl(context, builder, sig, args):
+        context.active_code_library.add_linking_file(shim_obj)
+        shim_stream.write_with_key("__half2int_rn_1", shim_raw_str)
+        ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
+        for ptr, ty, arg in zip(ptrs, sig.args, args):
+            builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
+
+        return context.compile_internal(
+            builder,
+            __half2int_rn_1_caller,
+            signature(int32, CPointer(_type___half)),
+            ptrs,
+        )
+
+
+___half2int_rn_1_lower(shim_stream, shim_obj)
+
+
+def __half2int_rd():
+    pass
+
+
+def ___half2int_rd_1_lower(shim_stream, shim_obj):
+    shim_raw_str = """
+    extern "C" __device__ int
+    __half2int_rd_1(int &retval , __half* h) {
+        retval = __half2int_rd(*h);
+        return 0;
+    }
+        """
+
+    __half2int_rd_1 = declare_device(
+        "__half2int_rd_1", int32(CPointer(_type___half))
+    )
+
+    def __half2int_rd_1_caller(arg_0):
+        return __half2int_rd_1(arg_0)
+
+    @lower(__half2int_rd, _type___half)
+    def impl(context, builder, sig, args):
+        context.active_code_library.add_linking_file(shim_obj)
+        shim_stream.write_with_key("__half2int_rd_1", shim_raw_str)
+        ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
+        for ptr, ty, arg in zip(ptrs, sig.args, args):
+            builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
+
+        return context.compile_internal(
+            builder,
+            __half2int_rd_1_caller,
+            signature(int32, CPointer(_type___half)),
+            ptrs,
+        )
+
+
+___half2int_rd_1_lower(shim_stream, shim_obj)
+
+
+def __half2int_ru():
+    pass
+
+
+def ___half2int_ru_1_lower(shim_stream, shim_obj):
+    shim_raw_str = """
+    extern "C" __device__ int
+    __half2int_ru_1(int &retval , __half* h) {
+        retval = __half2int_ru(*h);
+        return 0;
+    }
+        """
+
+    __half2int_ru_1 = declare_device(
+        "__half2int_ru_1", int32(CPointer(_type___half))
+    )
+
+    def __half2int_ru_1_caller(arg_0):
+        return __half2int_ru_1(arg_0)
+
+    @lower(__half2int_ru, _type___half)
+    def impl(context, builder, sig, args):
+        context.active_code_library.add_linking_file(shim_obj)
+        shim_stream.write_with_key("__half2int_ru_1", shim_raw_str)
+        ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
+        for ptr, ty, arg in zip(ptrs, sig.args, args):
+            builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
+
+        return context.compile_internal(
+            builder,
+            __half2int_ru_1_caller,
+            signature(int32, CPointer(_type___half)),
+            ptrs,
+        )
+
+
+___half2int_ru_1_lower(shim_stream, shim_obj)
+
+
+def __int2half_rn():
+    pass
+
+
+def ___int2half_rn_1_lower(shim_stream, shim_obj):
+    shim_raw_str = """
+    extern "C" __device__ int
+    __int2half_rn_1(__half &retval , int* i) {
+        retval = __int2half_rn(*i);
+        return 0;
+    }
+        """
+
+    __int2half_rn_1 = declare_device(
+        "__int2half_rn_1", _type___half(CPointer(int32))
+    )
+
+    def __int2half_rn_1_caller(arg_0):
+        return __int2half_rn_1(arg_0)
+
+    @lower(__int2half_rn, int32)
+    def impl(context, builder, sig, args):
+        context.active_code_library.add_linking_file(shim_obj)
+        shim_stream.write_with_key("__int2half_rn_1", shim_raw_str)
+        ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
+        for ptr, ty, arg in zip(ptrs, sig.args, args):
+            builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
+
+        return context.compile_internal(
+            builder,
+            __int2half_rn_1_caller,
+            signature(_type___half, CPointer(int32)),
+            ptrs,
+        )
+
+
+___int2half_rn_1_lower(shim_stream, shim_obj)
+
+
+def __int2half_rz():
+    pass
+
+
+def ___int2half_rz_1_lower(shim_stream, shim_obj):
+    shim_raw_str = """
+    extern "C" __device__ int
+    __int2half_rz_1(__half &retval , int* i) {
+        retval = __int2half_rz(*i);
+        return 0;
+    }
+        """
+
+    __int2half_rz_1 = declare_device(
+        "__int2half_rz_1", _type___half(CPointer(int32))
+    )
+
+    def __int2half_rz_1_caller(arg_0):
+        return __int2half_rz_1(arg_0)
+
+    @lower(__int2half_rz, int32)
+    def impl(context, builder, sig, args):
+        context.active_code_library.add_linking_file(shim_obj)
+        shim_stream.write_with_key("__int2half_rz_1", shim_raw_str)
+        ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
+        for ptr, ty, arg in zip(ptrs, sig.args, args):
+            builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
+
+        return context.compile_internal(
+            builder,
+            __int2half_rz_1_caller,
+            signature(_type___half, CPointer(int32)),
+            ptrs,
+        )
+
+
+___int2half_rz_1_lower(shim_stream, shim_obj)
+
+
+def __int2half_rd():
+    pass
+
+
+def ___int2half_rd_1_lower(shim_stream, shim_obj):
+    shim_raw_str = """
+    extern "C" __device__ int
+    __int2half_rd_1(__half &retval , int* i) {
+        retval = __int2half_rd(*i);
+        return 0;
+    }
+        """
+
+    __int2half_rd_1 = declare_device(
+        "__int2half_rd_1", _type___half(CPointer(int32))
+    )
+
+    def __int2half_rd_1_caller(arg_0):
+        return __int2half_rd_1(arg_0)
+
+    @lower(__int2half_rd, int32)
+    def impl(context, builder, sig, args):
+        context.active_code_library.add_linking_file(shim_obj)
+        shim_stream.write_with_key("__int2half_rd_1", shim_raw_str)
+        ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
+        for ptr, ty, arg in zip(ptrs, sig.args, args):
+            builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
+
+        return context.compile_internal(
+            builder,
+            __int2half_rd_1_caller,
+            signature(_type___half, CPointer(int32)),
+            ptrs,
+        )
+
+
+___int2half_rd_1_lower(shim_stream, shim_obj)
+
+
+def __int2half_ru():
+    pass
+
+
+def ___int2half_ru_1_lower(shim_stream, shim_obj):
+    shim_raw_str = """
+    extern "C" __device__ int
+    __int2half_ru_1(__half &retval , int* i) {
+        retval = __int2half_ru(*i);
+        return 0;
+    }
+        """
+
+    __int2half_ru_1 = declare_device(
+        "__int2half_ru_1", _type___half(CPointer(int32))
+    )
+
+    def __int2half_ru_1_caller(arg_0):
+        return __int2half_ru_1(arg_0)
+
+    @lower(__int2half_ru, int32)
+    def impl(context, builder, sig, args):
+        context.active_code_library.add_linking_file(shim_obj)
+        shim_stream.write_with_key("__int2half_ru_1", shim_raw_str)
+        ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
+        for ptr, ty, arg in zip(ptrs, sig.args, args):
+            builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
+
+        return context.compile_internal(
+            builder,
+            __int2half_ru_1_caller,
+            signature(_type___half, CPointer(int32)),
+            ptrs,
+        )
+
+
+___int2half_ru_1_lower(shim_stream, shim_obj)
+
+
+def __half2short_rn():
+    pass
+
+
+def ___half2short_rn_1_lower(shim_stream, shim_obj):
+    shim_raw_str = """
+    extern "C" __device__ int
+    __half2short_rn_1(short &retval , __half* h) {
+        retval = __half2short_rn(*h);
+        return 0;
+    }
+        """
+
+    __half2short_rn_1 = declare_device(
+        "__half2short_rn_1", int16(CPointer(_type___half))
+    )
+
+    def __half2short_rn_1_caller(arg_0):
+        return __half2short_rn_1(arg_0)
+
+    @lower(__half2short_rn, _type___half)
+    def impl(context, builder, sig, args):
+        context.active_code_library.add_linking_file(shim_obj)
+        shim_stream.write_with_key("__half2short_rn_1", shim_raw_str)
+        ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
+        for ptr, ty, arg in zip(ptrs, sig.args, args):
+            builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
+
+        return context.compile_internal(
+            builder,
+            __half2short_rn_1_caller,
+            signature(int16, CPointer(_type___half)),
+            ptrs,
+        )
+
+
+___half2short_rn_1_lower(shim_stream, shim_obj)
+
+
+def __half2short_rd():
+    pass
+
+
+def ___half2short_rd_1_lower(shim_stream, shim_obj):
+    shim_raw_str = """
+    extern "C" __device__ int
+    __half2short_rd_1(short &retval , __half* h) {
+        retval = __half2short_rd(*h);
+        return 0;
+    }
+        """
+
+    __half2short_rd_1 = declare_device(
+        "__half2short_rd_1", int16(CPointer(_type___half))
+    )
+
+    def __half2short_rd_1_caller(arg_0):
+        return __half2short_rd_1(arg_0)
+
+    @lower(__half2short_rd, _type___half)
+    def impl(context, builder, sig, args):
+        context.active_code_library.add_linking_file(shim_obj)
+        shim_stream.write_with_key("__half2short_rd_1", shim_raw_str)
+        ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
+        for ptr, ty, arg in zip(ptrs, sig.args, args):
+            builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
+
+        return context.compile_internal(
+            builder,
+            __half2short_rd_1_caller,
+            signature(int16, CPointer(_type___half)),
+            ptrs,
+        )
+
+
+___half2short_rd_1_lower(shim_stream, shim_obj)
+
+
+def __half2short_ru():
+    pass
+
+
+def ___half2short_ru_1_lower(shim_stream, shim_obj):
+    shim_raw_str = """
+    extern "C" __device__ int
+    __half2short_ru_1(short &retval , __half* h) {
+        retval = __half2short_ru(*h);
+        return 0;
+    }
+        """
+
+    __half2short_ru_1 = declare_device(
+        "__half2short_ru_1", int16(CPointer(_type___half))
+    )
+
+    def __half2short_ru_1_caller(arg_0):
+        return __half2short_ru_1(arg_0)
+
+    @lower(__half2short_ru, _type___half)
+    def impl(context, builder, sig, args):
+        context.active_code_library.add_linking_file(shim_obj)
+        shim_stream.write_with_key("__half2short_ru_1", shim_raw_str)
+        ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
+        for ptr, ty, arg in zip(ptrs, sig.args, args):
+            builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
+
+        return context.compile_internal(
+            builder,
+            __half2short_ru_1_caller,
+            signature(int16, CPointer(_type___half)),
+            ptrs,
+        )
+
+
+___half2short_ru_1_lower(shim_stream, shim_obj)
+
+
+def __short2half_rn():
+    pass
+
+
+def ___short2half_rn_1_lower(shim_stream, shim_obj):
+    shim_raw_str = """
+    extern "C" __device__ int
+    __short2half_rn_1(__half &retval , short* i) {
+        retval = __short2half_rn(*i);
+        return 0;
+    }
+        """
+
+    __short2half_rn_1 = declare_device(
+        "__short2half_rn_1", _type___half(CPointer(int16))
+    )
+
+    def __short2half_rn_1_caller(arg_0):
+        return __short2half_rn_1(arg_0)
+
+    @lower(__short2half_rn, int16)
+    def impl(context, builder, sig, args):
+        context.active_code_library.add_linking_file(shim_obj)
+        shim_stream.write_with_key("__short2half_rn_1", shim_raw_str)
+        ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
+        for ptr, ty, arg in zip(ptrs, sig.args, args):
+            builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
+
+        return context.compile_internal(
+            builder,
+            __short2half_rn_1_caller,
+            signature(_type___half, CPointer(int16)),
+            ptrs,
+        )
+
+
+___short2half_rn_1_lower(shim_stream, shim_obj)
+
+
+def __short2half_rz():
+    pass
+
+
+def ___short2half_rz_1_lower(shim_stream, shim_obj):
+    shim_raw_str = """
+    extern "C" __device__ int
+    __short2half_rz_1(__half &retval , short* i) {
+        retval = __short2half_rz(*i);
+        return 0;
+    }
+        """
+
+    __short2half_rz_1 = declare_device(
+        "__short2half_rz_1", _type___half(CPointer(int16))
+    )
+
+    def __short2half_rz_1_caller(arg_0):
+        return __short2half_rz_1(arg_0)
+
+    @lower(__short2half_rz, int16)
+    def impl(context, builder, sig, args):
+        context.active_code_library.add_linking_file(shim_obj)
+        shim_stream.write_with_key("__short2half_rz_1", shim_raw_str)
+        ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
+        for ptr, ty, arg in zip(ptrs, sig.args, args):
+            builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
+
+        return context.compile_internal(
+            builder,
+            __short2half_rz_1_caller,
+            signature(_type___half, CPointer(int16)),
+            ptrs,
+        )
+
+
+___short2half_rz_1_lower(shim_stream, shim_obj)
+
+
+def __short2half_rd():
+    pass
+
+
+def ___short2half_rd_1_lower(shim_stream, shim_obj):
+    shim_raw_str = """
+    extern "C" __device__ int
+    __short2half_rd_1(__half &retval , short* i) {
+        retval = __short2half_rd(*i);
+        return 0;
+    }
+        """
+
+    __short2half_rd_1 = declare_device(
+        "__short2half_rd_1", _type___half(CPointer(int16))
+    )
+
+    def __short2half_rd_1_caller(arg_0):
+        return __short2half_rd_1(arg_0)
+
+    @lower(__short2half_rd, int16)
+    def impl(context, builder, sig, args):
+        context.active_code_library.add_linking_file(shim_obj)
+        shim_stream.write_with_key("__short2half_rd_1", shim_raw_str)
+        ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
+        for ptr, ty, arg in zip(ptrs, sig.args, args):
+            builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
+
+        return context.compile_internal(
+            builder,
+            __short2half_rd_1_caller,
+            signature(_type___half, CPointer(int16)),
+            ptrs,
+        )
+
+
+___short2half_rd_1_lower(shim_stream, shim_obj)
+
+
+def __short2half_ru():
+    pass
+
+
+def ___short2half_ru_1_lower(shim_stream, shim_obj):
+    shim_raw_str = """
+    extern "C" __device__ int
+    __short2half_ru_1(__half &retval , short* i) {
+        retval = __short2half_ru(*i);
+        return 0;
+    }
+        """
+
+    __short2half_ru_1 = declare_device(
+        "__short2half_ru_1", _type___half(CPointer(int16))
+    )
+
+    def __short2half_ru_1_caller(arg_0):
+        return __short2half_ru_1(arg_0)
+
+    @lower(__short2half_ru, int16)
+    def impl(context, builder, sig, args):
+        context.active_code_library.add_linking_file(shim_obj)
+        shim_stream.write_with_key("__short2half_ru_1", shim_raw_str)
+        ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
+        for ptr, ty, arg in zip(ptrs, sig.args, args):
+            builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
+
+        return context.compile_internal(
+            builder,
+            __short2half_ru_1_caller,
+            signature(_type___half, CPointer(int16)),
+            ptrs,
+        )
+
+
+___short2half_ru_1_lower(shim_stream, shim_obj)
+
+
+def __half2uint_rn():
+    pass
+
+
+def ___half2uint_rn_1_lower(shim_stream, shim_obj):
+    shim_raw_str = """
+    extern "C" __device__ int
+    __half2uint_rn_1(unsigned int &retval , __half* h) {
+        retval = __half2uint_rn(*h);
+        return 0;
+    }
+        """
+
+    __half2uint_rn_1 = declare_device(
+        "__half2uint_rn_1", uint32(CPointer(_type___half))
+    )
+
+    def __half2uint_rn_1_caller(arg_0):
+        return __half2uint_rn_1(arg_0)
+
+    @lower(__half2uint_rn, _type___half)
+    def impl(context, builder, sig, args):
+        context.active_code_library.add_linking_file(shim_obj)
+        shim_stream.write_with_key("__half2uint_rn_1", shim_raw_str)
+        ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
+        for ptr, ty, arg in zip(ptrs, sig.args, args):
+            builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
+
+        return context.compile_internal(
+            builder,
+            __half2uint_rn_1_caller,
+            signature(uint32, CPointer(_type___half)),
+            ptrs,
+        )
+
+
+___half2uint_rn_1_lower(shim_stream, shim_obj)
+
+
+def __half2uint_rd():
+    pass
+
+
+def ___half2uint_rd_1_lower(shim_stream, shim_obj):
+    shim_raw_str = """
+    extern "C" __device__ int
+    __half2uint_rd_1(unsigned int &retval , __half* h) {
+        retval = __half2uint_rd(*h);
+        return 0;
+    }
+        """
+
+    __half2uint_rd_1 = declare_device(
+        "__half2uint_rd_1", uint32(CPointer(_type___half))
+    )
+
+    def __half2uint_rd_1_caller(arg_0):
+        return __half2uint_rd_1(arg_0)
+
+    @lower(__half2uint_rd, _type___half)
+    def impl(context, builder, sig, args):
+        context.active_code_library.add_linking_file(shim_obj)
+        shim_stream.write_with_key("__half2uint_rd_1", shim_raw_str)
+        ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
+        for ptr, ty, arg in zip(ptrs, sig.args, args):
+            builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
+
+        return context.compile_internal(
+            builder,
+            __half2uint_rd_1_caller,
+            signature(uint32, CPointer(_type___half)),
+            ptrs,
+        )
+
+
+___half2uint_rd_1_lower(shim_stream, shim_obj)
+
+
+def __half2uint_ru():
+    pass
+
+
+def ___half2uint_ru_1_lower(shim_stream, shim_obj):
+    shim_raw_str = """
+    extern "C" __device__ int
+    __half2uint_ru_1(unsigned int &retval , __half* h) {
+        retval = __half2uint_ru(*h);
+        return 0;
+    }
+        """
+
+    __half2uint_ru_1 = declare_device(
+        "__half2uint_ru_1", uint32(CPointer(_type___half))
+    )
+
+    def __half2uint_ru_1_caller(arg_0):
+        return __half2uint_ru_1(arg_0)
+
+    @lower(__half2uint_ru, _type___half)
+    def impl(context, builder, sig, args):
+        context.active_code_library.add_linking_file(shim_obj)
+        shim_stream.write_with_key("__half2uint_ru_1", shim_raw_str)
+        ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
+        for ptr, ty, arg in zip(ptrs, sig.args, args):
+            builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
+
+        return context.compile_internal(
+            builder,
+            __half2uint_ru_1_caller,
+            signature(uint32, CPointer(_type___half)),
+            ptrs,
+        )
+
+
+___half2uint_ru_1_lower(shim_stream, shim_obj)
+
+
+def __uint2half_rn():
+    pass
+
+
+def ___uint2half_rn_1_lower(shim_stream, shim_obj):
+    shim_raw_str = """
+    extern "C" __device__ int
+    __uint2half_rn_1(__half &retval , unsigned int* i) {
+        retval = __uint2half_rn(*i);
+        return 0;
+    }
+        """
+
+    __uint2half_rn_1 = declare_device(
+        "__uint2half_rn_1", _type___half(CPointer(uint32))
+    )
+
+    def __uint2half_rn_1_caller(arg_0):
+        return __uint2half_rn_1(arg_0)
+
+    @lower(__uint2half_rn, uint32)
+    def impl(context, builder, sig, args):
+        context.active_code_library.add_linking_file(shim_obj)
+        shim_stream.write_with_key("__uint2half_rn_1", shim_raw_str)
+        ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
+        for ptr, ty, arg in zip(ptrs, sig.args, args):
+            builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
+
+        return context.compile_internal(
+            builder,
+            __uint2half_rn_1_caller,
+            signature(_type___half, CPointer(uint32)),
+            ptrs,
+        )
+
+
+___uint2half_rn_1_lower(shim_stream, shim_obj)
+
+
+def __uint2half_rz():
+    pass
+
+
+def ___uint2half_rz_1_lower(shim_stream, shim_obj):
+    shim_raw_str = """
+    extern "C" __device__ int
+    __uint2half_rz_1(__half &retval , unsigned int* i) {
+        retval = __uint2half_rz(*i);
+        return 0;
+    }
+        """
+
+    __uint2half_rz_1 = declare_device(
+        "__uint2half_rz_1", _type___half(CPointer(uint32))
+    )
+
+    def __uint2half_rz_1_caller(arg_0):
+        return __uint2half_rz_1(arg_0)
+
+    @lower(__uint2half_rz, uint32)
+    def impl(context, builder, sig, args):
+        context.active_code_library.add_linking_file(shim_obj)
+        shim_stream.write_with_key("__uint2half_rz_1", shim_raw_str)
+        ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
+        for ptr, ty, arg in zip(ptrs, sig.args, args):
+            builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
+
+        return context.compile_internal(
+            builder,
+            __uint2half_rz_1_caller,
+            signature(_type___half, CPointer(uint32)),
+            ptrs,
+        )
+
+
+___uint2half_rz_1_lower(shim_stream, shim_obj)
+
+
+def __uint2half_rd():
+    pass
+
+
+def ___uint2half_rd_1_lower(shim_stream, shim_obj):
+    shim_raw_str = """
+    extern "C" __device__ int
+    __uint2half_rd_1(__half &retval , unsigned int* i) {
+        retval = __uint2half_rd(*i);
+        return 0;
+    }
+        """
+
+    __uint2half_rd_1 = declare_device(
+        "__uint2half_rd_1", _type___half(CPointer(uint32))
+    )
+
+    def __uint2half_rd_1_caller(arg_0):
+        return __uint2half_rd_1(arg_0)
+
+    @lower(__uint2half_rd, uint32)
+    def impl(context, builder, sig, args):
+        context.active_code_library.add_linking_file(shim_obj)
+        shim_stream.write_with_key("__uint2half_rd_1", shim_raw_str)
+        ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
+        for ptr, ty, arg in zip(ptrs, sig.args, args):
+            builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
+
+        return context.compile_internal(
+            builder,
+            __uint2half_rd_1_caller,
+            signature(_type___half, CPointer(uint32)),
+            ptrs,
+        )
+
+
+___uint2half_rd_1_lower(shim_stream, shim_obj)
+
+
+def __uint2half_ru():
+    pass
+
+
+def ___uint2half_ru_1_lower(shim_stream, shim_obj):
+    shim_raw_str = """
+    extern "C" __device__ int
+    __uint2half_ru_1(__half &retval , unsigned int* i) {
+        retval = __uint2half_ru(*i);
+        return 0;
+    }
+        """
+
+    __uint2half_ru_1 = declare_device(
+        "__uint2half_ru_1", _type___half(CPointer(uint32))
+    )
+
+    def __uint2half_ru_1_caller(arg_0):
+        return __uint2half_ru_1(arg_0)
+
+    @lower(__uint2half_ru, uint32)
+    def impl(context, builder, sig, args):
+        context.active_code_library.add_linking_file(shim_obj)
+        shim_stream.write_with_key("__uint2half_ru_1", shim_raw_str)
+        ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
+        for ptr, ty, arg in zip(ptrs, sig.args, args):
+            builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
+
+        return context.compile_internal(
+            builder,
+            __uint2half_ru_1_caller,
+            signature(_type___half, CPointer(uint32)),
+            ptrs,
+        )
+
+
+___uint2half_ru_1_lower(shim_stream, shim_obj)
+
+
+def __half2ushort_rn():
+    pass
+
+
+def ___half2ushort_rn_1_lower(shim_stream, shim_obj):
+    shim_raw_str = """
+    extern "C" __device__ int
+    __half2ushort_rn_1(unsigned short &retval , __half* h) {
+        retval = __half2ushort_rn(*h);
+        return 0;
+    }
+        """
+
+    __half2ushort_rn_1 = declare_device(
+        "__half2ushort_rn_1", uint16(CPointer(_type___half))
+    )
+
+    def __half2ushort_rn_1_caller(arg_0):
+        return __half2ushort_rn_1(arg_0)
+
+    @lower(__half2ushort_rn, _type___half)
+    def impl(context, builder, sig, args):
+        context.active_code_library.add_linking_file(shim_obj)
+        shim_stream.write_with_key("__half2ushort_rn_1", shim_raw_str)
+        ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
+        for ptr, ty, arg in zip(ptrs, sig.args, args):
+            builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
+
+        return context.compile_internal(
+            builder,
+            __half2ushort_rn_1_caller,
+            signature(uint16, CPointer(_type___half)),
+            ptrs,
+        )
+
+
+___half2ushort_rn_1_lower(shim_stream, shim_obj)
+
+
+def __half2ushort_rd():
+    pass
+
+
+def ___half2ushort_rd_1_lower(shim_stream, shim_obj):
+    shim_raw_str = """
+    extern "C" __device__ int
+    __half2ushort_rd_1(unsigned short &retval , __half* h) {
+        retval = __half2ushort_rd(*h);
+        return 0;
+    }
+        """
+
+    __half2ushort_rd_1 = declare_device(
+        "__half2ushort_rd_1", uint16(CPointer(_type___half))
+    )
+
+    def __half2ushort_rd_1_caller(arg_0):
+        return __half2ushort_rd_1(arg_0)
+
+    @lower(__half2ushort_rd, _type___half)
+    def impl(context, builder, sig, args):
+        context.active_code_library.add_linking_file(shim_obj)
+        shim_stream.write_with_key("__half2ushort_rd_1", shim_raw_str)
+        ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
+        for ptr, ty, arg in zip(ptrs, sig.args, args):
+            builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
+
+        return context.compile_internal(
+            builder,
+            __half2ushort_rd_1_caller,
+            signature(uint16, CPointer(_type___half)),
+            ptrs,
+        )
+
+
+___half2ushort_rd_1_lower(shim_stream, shim_obj)
+
+
+def __half2ushort_ru():
+    pass
+
+
+def ___half2ushort_ru_1_lower(shim_stream, shim_obj):
+    shim_raw_str = """
+    extern "C" __device__ int
+    __half2ushort_ru_1(unsigned short &retval , __half* h) {
+        retval = __half2ushort_ru(*h);
+        return 0;
+    }
+        """
+
+    __half2ushort_ru_1 = declare_device(
+        "__half2ushort_ru_1", uint16(CPointer(_type___half))
+    )
+
+    def __half2ushort_ru_1_caller(arg_0):
+        return __half2ushort_ru_1(arg_0)
+
+    @lower(__half2ushort_ru, _type___half)
+    def impl(context, builder, sig, args):
+        context.active_code_library.add_linking_file(shim_obj)
+        shim_stream.write_with_key("__half2ushort_ru_1", shim_raw_str)
+        ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
+        for ptr, ty, arg in zip(ptrs, sig.args, args):
+            builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
+
+        return context.compile_internal(
+            builder,
+            __half2ushort_ru_1_caller,
+            signature(uint16, CPointer(_type___half)),
+            ptrs,
+        )
+
+
+___half2ushort_ru_1_lower(shim_stream, shim_obj)
+
+
+def __ushort2half_rn():
+    pass
+
+
+def ___ushort2half_rn_1_lower(shim_stream, shim_obj):
+    shim_raw_str = """
+    extern "C" __device__ int
+    __ushort2half_rn_1(__half &retval , unsigned short* i) {
+        retval = __ushort2half_rn(*i);
+        return 0;
+    }
+        """
+
+    __ushort2half_rn_1 = declare_device(
+        "__ushort2half_rn_1", _type___half(CPointer(uint16))
+    )
+
+    def __ushort2half_rn_1_caller(arg_0):
+        return __ushort2half_rn_1(arg_0)
+
+    @lower(__ushort2half_rn, uint16)
+    def impl(context, builder, sig, args):
+        context.active_code_library.add_linking_file(shim_obj)
+        shim_stream.write_with_key("__ushort2half_rn_1", shim_raw_str)
+        ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
+        for ptr, ty, arg in zip(ptrs, sig.args, args):
+            builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
+
+        return context.compile_internal(
+            builder,
+            __ushort2half_rn_1_caller,
+            signature(_type___half, CPointer(uint16)),
+            ptrs,
+        )
+
+
+___ushort2half_rn_1_lower(shim_stream, shim_obj)
+
+
+def __ushort2half_rz():
+    pass
+
+
+def ___ushort2half_rz_1_lower(shim_stream, shim_obj):
+    shim_raw_str = """
+    extern "C" __device__ int
+    __ushort2half_rz_1(__half &retval , unsigned short* i) {
+        retval = __ushort2half_rz(*i);
+        return 0;
+    }
+        """
+
+    __ushort2half_rz_1 = declare_device(
+        "__ushort2half_rz_1", _type___half(CPointer(uint16))
+    )
+
+    def __ushort2half_rz_1_caller(arg_0):
+        return __ushort2half_rz_1(arg_0)
+
+    @lower(__ushort2half_rz, uint16)
+    def impl(context, builder, sig, args):
+        context.active_code_library.add_linking_file(shim_obj)
+        shim_stream.write_with_key("__ushort2half_rz_1", shim_raw_str)
+        ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
+        for ptr, ty, arg in zip(ptrs, sig.args, args):
+            builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
+
+        return context.compile_internal(
+            builder,
+            __ushort2half_rz_1_caller,
+            signature(_type___half, CPointer(uint16)),
+            ptrs,
+        )
+
+
+___ushort2half_rz_1_lower(shim_stream, shim_obj)
+
+
+def __ushort2half_rd():
+    pass
+
+
+def ___ushort2half_rd_1_lower(shim_stream, shim_obj):
+    shim_raw_str = """
+    extern "C" __device__ int
+    __ushort2half_rd_1(__half &retval , unsigned short* i) {
+        retval = __ushort2half_rd(*i);
+        return 0;
+    }
+        """
+
+    __ushort2half_rd_1 = declare_device(
+        "__ushort2half_rd_1", _type___half(CPointer(uint16))
+    )
+
+    def __ushort2half_rd_1_caller(arg_0):
+        return __ushort2half_rd_1(arg_0)
+
+    @lower(__ushort2half_rd, uint16)
+    def impl(context, builder, sig, args):
+        context.active_code_library.add_linking_file(shim_obj)
+        shim_stream.write_with_key("__ushort2half_rd_1", shim_raw_str)
+        ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
+        for ptr, ty, arg in zip(ptrs, sig.args, args):
+            builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
+
+        return context.compile_internal(
+            builder,
+            __ushort2half_rd_1_caller,
+            signature(_type___half, CPointer(uint16)),
+            ptrs,
+        )
+
+
+___ushort2half_rd_1_lower(shim_stream, shim_obj)
+
+
+def __ushort2half_ru():
+    pass
+
+
+def ___ushort2half_ru_1_lower(shim_stream, shim_obj):
+    shim_raw_str = """
+    extern "C" __device__ int
+    __ushort2half_ru_1(__half &retval , unsigned short* i) {
+        retval = __ushort2half_ru(*i);
+        return 0;
+    }
+        """
+
+    __ushort2half_ru_1 = declare_device(
+        "__ushort2half_ru_1", _type___half(CPointer(uint16))
+    )
+
+    def __ushort2half_ru_1_caller(arg_0):
+        return __ushort2half_ru_1(arg_0)
+
+    @lower(__ushort2half_ru, uint16)
+    def impl(context, builder, sig, args):
+        context.active_code_library.add_linking_file(shim_obj)
+        shim_stream.write_with_key("__ushort2half_ru_1", shim_raw_str)
+        ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
+        for ptr, ty, arg in zip(ptrs, sig.args, args):
+            builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
+
+        return context.compile_internal(
+            builder,
+            __ushort2half_ru_1_caller,
+            signature(_type___half, CPointer(uint16)),
+            ptrs,
+        )
+
+
+___ushort2half_ru_1_lower(shim_stream, shim_obj)
+
+
+def __half2ull_rn():
+    pass
+
+
+def ___half2ull_rn_1_lower(shim_stream, shim_obj):
+    shim_raw_str = """
+    extern "C" __device__ int
+    __half2ull_rn_1(unsigned long long &retval , __half* h) {
+        retval = __half2ull_rn(*h);
+        return 0;
+    }
+        """
+
+    __half2ull_rn_1 = declare_device(
+        "__half2ull_rn_1", uint64(CPointer(_type___half))
+    )
+
+    def __half2ull_rn_1_caller(arg_0):
+        return __half2ull_rn_1(arg_0)
+
+    @lower(__half2ull_rn, _type___half)
+    def impl(context, builder, sig, args):
+        context.active_code_library.add_linking_file(shim_obj)
+        shim_stream.write_with_key("__half2ull_rn_1", shim_raw_str)
+        ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
+        for ptr, ty, arg in zip(ptrs, sig.args, args):
+            builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
+
+        return context.compile_internal(
+            builder,
+            __half2ull_rn_1_caller,
+            signature(uint64, CPointer(_type___half)),
+            ptrs,
+        )
+
+
+___half2ull_rn_1_lower(shim_stream, shim_obj)
+
+
+def __half2ull_rd():
+    pass
+
+
+def ___half2ull_rd_1_lower(shim_stream, shim_obj):
+    shim_raw_str = """
+    extern "C" __device__ int
+    __half2ull_rd_1(unsigned long long &retval , __half* h) {
+        retval = __half2ull_rd(*h);
+        return 0;
+    }
+        """
+
+    __half2ull_rd_1 = declare_device(
+        "__half2ull_rd_1", uint64(CPointer(_type___half))
+    )
+
+    def __half2ull_rd_1_caller(arg_0):
+        return __half2ull_rd_1(arg_0)
+
+    @lower(__half2ull_rd, _type___half)
+    def impl(context, builder, sig, args):
+        context.active_code_library.add_linking_file(shim_obj)
+        shim_stream.write_with_key("__half2ull_rd_1", shim_raw_str)
+        ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
+        for ptr, ty, arg in zip(ptrs, sig.args, args):
+            builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
+
+        return context.compile_internal(
+            builder,
+            __half2ull_rd_1_caller,
+            signature(uint64, CPointer(_type___half)),
+            ptrs,
+        )
+
+
+___half2ull_rd_1_lower(shim_stream, shim_obj)
+
+
+def __half2ull_ru():
+    pass
+
+
+def ___half2ull_ru_1_lower(shim_stream, shim_obj):
+    shim_raw_str = """
+    extern "C" __device__ int
+    __half2ull_ru_1(unsigned long long &retval , __half* h) {
+        retval = __half2ull_ru(*h);
+        return 0;
+    }
+        """
+
+    __half2ull_ru_1 = declare_device(
+        "__half2ull_ru_1", uint64(CPointer(_type___half))
+    )
+
+    def __half2ull_ru_1_caller(arg_0):
+        return __half2ull_ru_1(arg_0)
+
+    @lower(__half2ull_ru, _type___half)
+    def impl(context, builder, sig, args):
+        context.active_code_library.add_linking_file(shim_obj)
+        shim_stream.write_with_key("__half2ull_ru_1", shim_raw_str)
+        ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
+        for ptr, ty, arg in zip(ptrs, sig.args, args):
+            builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
+
+        return context.compile_internal(
+            builder,
+            __half2ull_ru_1_caller,
+            signature(uint64, CPointer(_type___half)),
+            ptrs,
+        )
+
+
+___half2ull_ru_1_lower(shim_stream, shim_obj)
+
+
+def __ull2half_rn():
+    pass
+
+
+def ___ull2half_rn_1_lower(shim_stream, shim_obj):
+    shim_raw_str = """
+    extern "C" __device__ int
+    __ull2half_rn_1(__half &retval , unsigned long long* i) {
+        retval = __ull2half_rn(*i);
+        return 0;
+    }
+        """
+
+    __ull2half_rn_1 = declare_device(
+        "__ull2half_rn_1", _type___half(CPointer(uint64))
+    )
+
+    def __ull2half_rn_1_caller(arg_0):
+        return __ull2half_rn_1(arg_0)
+
+    @lower(__ull2half_rn, uint64)
+    def impl(context, builder, sig, args):
+        context.active_code_library.add_linking_file(shim_obj)
+        shim_stream.write_with_key("__ull2half_rn_1", shim_raw_str)
+        ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
+        for ptr, ty, arg in zip(ptrs, sig.args, args):
+            builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
+
+        return context.compile_internal(
+            builder,
+            __ull2half_rn_1_caller,
+            signature(_type___half, CPointer(uint64)),
+            ptrs,
+        )
+
+
+___ull2half_rn_1_lower(shim_stream, shim_obj)
+
+
+def __ull2half_rz():
+    pass
+
+
+def ___ull2half_rz_1_lower(shim_stream, shim_obj):
+    shim_raw_str = """
+    extern "C" __device__ int
+    __ull2half_rz_1(__half &retval , unsigned long long* i) {
+        retval = __ull2half_rz(*i);
+        return 0;
+    }
+        """
+
+    __ull2half_rz_1 = declare_device(
+        "__ull2half_rz_1", _type___half(CPointer(uint64))
+    )
+
+    def __ull2half_rz_1_caller(arg_0):
+        return __ull2half_rz_1(arg_0)
+
+    @lower(__ull2half_rz, uint64)
+    def impl(context, builder, sig, args):
+        context.active_code_library.add_linking_file(shim_obj)
+        shim_stream.write_with_key("__ull2half_rz_1", shim_raw_str)
+        ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
+        for ptr, ty, arg in zip(ptrs, sig.args, args):
+            builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
+
+        return context.compile_internal(
+            builder,
+            __ull2half_rz_1_caller,
+            signature(_type___half, CPointer(uint64)),
+            ptrs,
+        )
+
+
+___ull2half_rz_1_lower(shim_stream, shim_obj)
+
+
+def __ull2half_rd():
+    pass
+
+
+def ___ull2half_rd_1_lower(shim_stream, shim_obj):
+    shim_raw_str = """
+    extern "C" __device__ int
+    __ull2half_rd_1(__half &retval , unsigned long long* i) {
+        retval = __ull2half_rd(*i);
+        return 0;
+    }
+        """
+
+    __ull2half_rd_1 = declare_device(
+        "__ull2half_rd_1", _type___half(CPointer(uint64))
+    )
+
+    def __ull2half_rd_1_caller(arg_0):
+        return __ull2half_rd_1(arg_0)
+
+    @lower(__ull2half_rd, uint64)
+    def impl(context, builder, sig, args):
+        context.active_code_library.add_linking_file(shim_obj)
+        shim_stream.write_with_key("__ull2half_rd_1", shim_raw_str)
+        ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
+        for ptr, ty, arg in zip(ptrs, sig.args, args):
+            builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
+
+        return context.compile_internal(
+            builder,
+            __ull2half_rd_1_caller,
+            signature(_type___half, CPointer(uint64)),
+            ptrs,
+        )
+
+
+___ull2half_rd_1_lower(shim_stream, shim_obj)
+
+
+def __ull2half_ru():
+    pass
+
+
+def ___ull2half_ru_1_lower(shim_stream, shim_obj):
+    shim_raw_str = """
+    extern "C" __device__ int
+    __ull2half_ru_1(__half &retval , unsigned long long* i) {
+        retval = __ull2half_ru(*i);
+        return 0;
+    }
+        """
+
+    __ull2half_ru_1 = declare_device(
+        "__ull2half_ru_1", _type___half(CPointer(uint64))
+    )
+
+    def __ull2half_ru_1_caller(arg_0):
+        return __ull2half_ru_1(arg_0)
+
+    @lower(__ull2half_ru, uint64)
+    def impl(context, builder, sig, args):
+        context.active_code_library.add_linking_file(shim_obj)
+        shim_stream.write_with_key("__ull2half_ru_1", shim_raw_str)
+        ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
+        for ptr, ty, arg in zip(ptrs, sig.args, args):
+            builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
+
+        return context.compile_internal(
+            builder,
+            __ull2half_ru_1_caller,
+            signature(_type___half, CPointer(uint64)),
+            ptrs,
+        )
+
+
+___ull2half_ru_1_lower(shim_stream, shim_obj)
+
+
+def __half2ll_rn():
+    pass
+
+
+def ___half2ll_rn_1_lower(shim_stream, shim_obj):
+    shim_raw_str = """
+    extern "C" __device__ int
+    __half2ll_rn_1(long long &retval , __half* h) {
+        retval = __half2ll_rn(*h);
+        return 0;
+    }
+        """
+
+    __half2ll_rn_1 = declare_device(
+        "__half2ll_rn_1", int64(CPointer(_type___half))
+    )
+
+    def __half2ll_rn_1_caller(arg_0):
+        return __half2ll_rn_1(arg_0)
+
+    @lower(__half2ll_rn, _type___half)
+    def impl(context, builder, sig, args):
+        context.active_code_library.add_linking_file(shim_obj)
+        shim_stream.write_with_key("__half2ll_rn_1", shim_raw_str)
+        ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
+        for ptr, ty, arg in zip(ptrs, sig.args, args):
+            builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
+
+        return context.compile_internal(
+            builder,
+            __half2ll_rn_1_caller,
+            signature(int64, CPointer(_type___half)),
+            ptrs,
+        )
+
+
+___half2ll_rn_1_lower(shim_stream, shim_obj)
+
+
+def __half2ll_rd():
+    pass
+
+
+def ___half2ll_rd_1_lower(shim_stream, shim_obj):
+    shim_raw_str = """
+    extern "C" __device__ int
+    __half2ll_rd_1(long long &retval , __half* h) {
+        retval = __half2ll_rd(*h);
+        return 0;
+    }
+        """
+
+    __half2ll_rd_1 = declare_device(
+        "__half2ll_rd_1", int64(CPointer(_type___half))
+    )
+
+    def __half2ll_rd_1_caller(arg_0):
+        return __half2ll_rd_1(arg_0)
+
+    @lower(__half2ll_rd, _type___half)
+    def impl(context, builder, sig, args):
+        context.active_code_library.add_linking_file(shim_obj)
+        shim_stream.write_with_key("__half2ll_rd_1", shim_raw_str)
+        ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
+        for ptr, ty, arg in zip(ptrs, sig.args, args):
+            builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
+
+        return context.compile_internal(
+            builder,
+            __half2ll_rd_1_caller,
+            signature(int64, CPointer(_type___half)),
+            ptrs,
+        )
+
+
+___half2ll_rd_1_lower(shim_stream, shim_obj)
+
+
+def __half2ll_ru():
+    pass
+
+
+def ___half2ll_ru_1_lower(shim_stream, shim_obj):
+    shim_raw_str = """
+    extern "C" __device__ int
+    __half2ll_ru_1(long long &retval , __half* h) {
+        retval = __half2ll_ru(*h);
+        return 0;
+    }
+        """
+
+    __half2ll_ru_1 = declare_device(
+        "__half2ll_ru_1", int64(CPointer(_type___half))
+    )
+
+    def __half2ll_ru_1_caller(arg_0):
+        return __half2ll_ru_1(arg_0)
+
+    @lower(__half2ll_ru, _type___half)
+    def impl(context, builder, sig, args):
+        context.active_code_library.add_linking_file(shim_obj)
+        shim_stream.write_with_key("__half2ll_ru_1", shim_raw_str)
+        ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
+        for ptr, ty, arg in zip(ptrs, sig.args, args):
+            builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
+
+        return context.compile_internal(
+            builder,
+            __half2ll_ru_1_caller,
+            signature(int64, CPointer(_type___half)),
+            ptrs,
+        )
+
+
+___half2ll_ru_1_lower(shim_stream, shim_obj)
+
+
+def __ll2half_rn():
+    pass
+
+
+def ___ll2half_rn_1_lower(shim_stream, shim_obj):
+    shim_raw_str = """
+    extern "C" __device__ int
+    __ll2half_rn_1(__half &retval , long long* i) {
+        retval = __ll2half_rn(*i);
+        return 0;
+    }
+        """
+
+    __ll2half_rn_1 = declare_device(
+        "__ll2half_rn_1", _type___half(CPointer(int64))
+    )
+
+    def __ll2half_rn_1_caller(arg_0):
+        return __ll2half_rn_1(arg_0)
+
+    @lower(__ll2half_rn, int64)
+    def impl(context, builder, sig, args):
+        context.active_code_library.add_linking_file(shim_obj)
+        shim_stream.write_with_key("__ll2half_rn_1", shim_raw_str)
+        ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
+        for ptr, ty, arg in zip(ptrs, sig.args, args):
+            builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
+
+        return context.compile_internal(
+            builder,
+            __ll2half_rn_1_caller,
+            signature(_type___half, CPointer(int64)),
+            ptrs,
+        )
+
+
+___ll2half_rn_1_lower(shim_stream, shim_obj)
+
+
+def __ll2half_rz():
+    pass
+
+
+def ___ll2half_rz_1_lower(shim_stream, shim_obj):
+    shim_raw_str = """
+    extern "C" __device__ int
+    __ll2half_rz_1(__half &retval , long long* i) {
+        retval = __ll2half_rz(*i);
+        return 0;
+    }
+        """
+
+    __ll2half_rz_1 = declare_device(
+        "__ll2half_rz_1", _type___half(CPointer(int64))
+    )
+
+    def __ll2half_rz_1_caller(arg_0):
+        return __ll2half_rz_1(arg_0)
+
+    @lower(__ll2half_rz, int64)
+    def impl(context, builder, sig, args):
+        context.active_code_library.add_linking_file(shim_obj)
+        shim_stream.write_with_key("__ll2half_rz_1", shim_raw_str)
+        ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
+        for ptr, ty, arg in zip(ptrs, sig.args, args):
+            builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
+
+        return context.compile_internal(
+            builder,
+            __ll2half_rz_1_caller,
+            signature(_type___half, CPointer(int64)),
+            ptrs,
+        )
+
+
+___ll2half_rz_1_lower(shim_stream, shim_obj)
+
+
+def __ll2half_rd():
+    pass
+
+
+def ___ll2half_rd_1_lower(shim_stream, shim_obj):
+    shim_raw_str = """
+    extern "C" __device__ int
+    __ll2half_rd_1(__half &retval , long long* i) {
+        retval = __ll2half_rd(*i);
+        return 0;
+    }
+        """
+
+    __ll2half_rd_1 = declare_device(
+        "__ll2half_rd_1", _type___half(CPointer(int64))
+    )
+
+    def __ll2half_rd_1_caller(arg_0):
+        return __ll2half_rd_1(arg_0)
+
+    @lower(__ll2half_rd, int64)
+    def impl(context, builder, sig, args):
+        context.active_code_library.add_linking_file(shim_obj)
+        shim_stream.write_with_key("__ll2half_rd_1", shim_raw_str)
+        ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
+        for ptr, ty, arg in zip(ptrs, sig.args, args):
+            builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
+
+        return context.compile_internal(
+            builder,
+            __ll2half_rd_1_caller,
+            signature(_type___half, CPointer(int64)),
+            ptrs,
+        )
+
+
+___ll2half_rd_1_lower(shim_stream, shim_obj)
+
+
+def __ll2half_ru():
+    pass
+
+
+def ___ll2half_ru_1_lower(shim_stream, shim_obj):
+    shim_raw_str = """
+    extern "C" __device__ int
+    __ll2half_ru_1(__half &retval , long long* i) {
+        retval = __ll2half_ru(*i);
+        return 0;
+    }
+        """
+
+    __ll2half_ru_1 = declare_device(
+        "__ll2half_ru_1", _type___half(CPointer(int64))
+    )
+
+    def __ll2half_ru_1_caller(arg_0):
+        return __ll2half_ru_1(arg_0)
+
+    @lower(__ll2half_ru, int64)
+    def impl(context, builder, sig, args):
+        context.active_code_library.add_linking_file(shim_obj)
+        shim_stream.write_with_key("__ll2half_ru_1", shim_raw_str)
+        ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
+        for ptr, ty, arg in zip(ptrs, sig.args, args):
+            builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
+
+        return context.compile_internal(
+            builder,
+            __ll2half_ru_1_caller,
+            signature(_type___half, CPointer(int64)),
+            ptrs,
+        )
+
+
+___ll2half_ru_1_lower(shim_stream, shim_obj)
 
 
 def htrunc():
@@ -2085,6 +4547,5376 @@ def _h2rint_1_lower(shim_stream, shim_obj):
 
 
 _h2rint_1_lower(shim_stream, shim_obj)
+
+
+def __half2half2():
+    pass
+
+
+def ___half2half2_1_lower(shim_stream, shim_obj):
+    shim_raw_str = """
+    extern "C" __device__ int
+    __half2half2_1(__half2 &retval , __half* a) {
+        retval = __half2half2(*a);
+        return 0;
+    }
+        """
+
+    __half2half2_1 = declare_device(
+        "__half2half2_1", _type___half2(CPointer(_type___half))
+    )
+
+    def __half2half2_1_caller(arg_0):
+        return __half2half2_1(arg_0)
+
+    @lower(__half2half2, _type___half)
+    def impl(context, builder, sig, args):
+        context.active_code_library.add_linking_file(shim_obj)
+        shim_stream.write_with_key("__half2half2_1", shim_raw_str)
+        ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
+        for ptr, ty, arg in zip(ptrs, sig.args, args):
+            builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
+
+        return context.compile_internal(
+            builder,
+            __half2half2_1_caller,
+            signature(_type___half2, CPointer(_type___half)),
+            ptrs,
+        )
+
+
+___half2half2_1_lower(shim_stream, shim_obj)
+
+
+def __lowhigh2highlow():
+    pass
+
+
+def ___lowhigh2highlow_1_lower(shim_stream, shim_obj):
+    shim_raw_str = """
+    extern "C" __device__ int
+    __lowhigh2highlow_1(__half2 &retval , __half2* a) {
+        retval = __lowhigh2highlow(*a);
+        return 0;
+    }
+        """
+
+    __lowhigh2highlow_1 = declare_device(
+        "__lowhigh2highlow_1", _type___half2(CPointer(_type___half2))
+    )
+
+    def __lowhigh2highlow_1_caller(arg_0):
+        return __lowhigh2highlow_1(arg_0)
+
+    @lower(__lowhigh2highlow, _type___half2)
+    def impl(context, builder, sig, args):
+        context.active_code_library.add_linking_file(shim_obj)
+        shim_stream.write_with_key("__lowhigh2highlow_1", shim_raw_str)
+        ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
+        for ptr, ty, arg in zip(ptrs, sig.args, args):
+            builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
+
+        return context.compile_internal(
+            builder,
+            __lowhigh2highlow_1_caller,
+            signature(_type___half2, CPointer(_type___half2)),
+            ptrs,
+        )
+
+
+___lowhigh2highlow_1_lower(shim_stream, shim_obj)
+
+
+def __lows2half2():
+    pass
+
+
+def ___lows2half2_1_lower(shim_stream, shim_obj):
+    shim_raw_str = """
+    extern "C" __device__ int
+    __lows2half2_1(__half2 &retval , __half2* a, __half2* b) {
+        retval = __lows2half2(*a, *b);
+        return 0;
+    }
+        """
+
+    __lows2half2_1 = declare_device(
+        "__lows2half2_1",
+        _type___half2(CPointer(_type___half2), CPointer(_type___half2)),
+    )
+
+    def __lows2half2_1_caller(arg_0, arg_1):
+        return __lows2half2_1(arg_0, arg_1)
+
+    @lower(__lows2half2, _type___half2, _type___half2)
+    def impl(context, builder, sig, args):
+        context.active_code_library.add_linking_file(shim_obj)
+        shim_stream.write_with_key("__lows2half2_1", shim_raw_str)
+        ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
+        for ptr, ty, arg in zip(ptrs, sig.args, args):
+            builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
+
+        return context.compile_internal(
+            builder,
+            __lows2half2_1_caller,
+            signature(
+                _type___half2, CPointer(_type___half2), CPointer(_type___half2)
+            ),
+            ptrs,
+        )
+
+
+___lows2half2_1_lower(shim_stream, shim_obj)
+
+
+def __highs2half2():
+    pass
+
+
+def ___highs2half2_1_lower(shim_stream, shim_obj):
+    shim_raw_str = """
+    extern "C" __device__ int
+    __highs2half2_1(__half2 &retval , __half2* a, __half2* b) {
+        retval = __highs2half2(*a, *b);
+        return 0;
+    }
+        """
+
+    __highs2half2_1 = declare_device(
+        "__highs2half2_1",
+        _type___half2(CPointer(_type___half2), CPointer(_type___half2)),
+    )
+
+    def __highs2half2_1_caller(arg_0, arg_1):
+        return __highs2half2_1(arg_0, arg_1)
+
+    @lower(__highs2half2, _type___half2, _type___half2)
+    def impl(context, builder, sig, args):
+        context.active_code_library.add_linking_file(shim_obj)
+        shim_stream.write_with_key("__highs2half2_1", shim_raw_str)
+        ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
+        for ptr, ty, arg in zip(ptrs, sig.args, args):
+            builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
+
+        return context.compile_internal(
+            builder,
+            __highs2half2_1_caller,
+            signature(
+                _type___half2, CPointer(_type___half2), CPointer(_type___half2)
+            ),
+            ptrs,
+        )
+
+
+___highs2half2_1_lower(shim_stream, shim_obj)
+
+
+def __high2half():
+    pass
+
+
+def ___high2half_1_lower(shim_stream, shim_obj):
+    shim_raw_str = """
+    extern "C" __device__ int
+    __high2half_1(__half &retval , __half2* a) {
+        retval = __high2half(*a);
+        return 0;
+    }
+        """
+
+    __high2half_1 = declare_device(
+        "__high2half_1", _type___half(CPointer(_type___half2))
+    )
+
+    def __high2half_1_caller(arg_0):
+        return __high2half_1(arg_0)
+
+    @lower(__high2half, _type___half2)
+    def impl(context, builder, sig, args):
+        context.active_code_library.add_linking_file(shim_obj)
+        shim_stream.write_with_key("__high2half_1", shim_raw_str)
+        ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
+        for ptr, ty, arg in zip(ptrs, sig.args, args):
+            builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
+
+        return context.compile_internal(
+            builder,
+            __high2half_1_caller,
+            signature(_type___half, CPointer(_type___half2)),
+            ptrs,
+        )
+
+
+___high2half_1_lower(shim_stream, shim_obj)
+
+
+def __low2half():
+    pass
+
+
+def ___low2half_1_lower(shim_stream, shim_obj):
+    shim_raw_str = """
+    extern "C" __device__ int
+    __low2half_1(__half &retval , __half2* a) {
+        retval = __low2half(*a);
+        return 0;
+    }
+        """
+
+    __low2half_1 = declare_device(
+        "__low2half_1", _type___half(CPointer(_type___half2))
+    )
+
+    def __low2half_1_caller(arg_0):
+        return __low2half_1(arg_0)
+
+    @lower(__low2half, _type___half2)
+    def impl(context, builder, sig, args):
+        context.active_code_library.add_linking_file(shim_obj)
+        shim_stream.write_with_key("__low2half_1", shim_raw_str)
+        ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
+        for ptr, ty, arg in zip(ptrs, sig.args, args):
+            builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
+
+        return context.compile_internal(
+            builder,
+            __low2half_1_caller,
+            signature(_type___half, CPointer(_type___half2)),
+            ptrs,
+        )
+
+
+___low2half_1_lower(shim_stream, shim_obj)
+
+
+def __hisinf():
+    pass
+
+
+def ___hisinf_1_lower(shim_stream, shim_obj):
+    shim_raw_str = """
+    extern "C" __device__ int
+    __hisinf_1(int &retval , __half* a) {
+        retval = __hisinf(*a);
+        return 0;
+    }
+        """
+
+    __hisinf_1 = declare_device("__hisinf_1", int32(CPointer(_type___half)))
+
+    def __hisinf_1_caller(arg_0):
+        return __hisinf_1(arg_0)
+
+    @lower(__hisinf, _type___half)
+    def impl(context, builder, sig, args):
+        context.active_code_library.add_linking_file(shim_obj)
+        shim_stream.write_with_key("__hisinf_1", shim_raw_str)
+        ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
+        for ptr, ty, arg in zip(ptrs, sig.args, args):
+            builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
+
+        return context.compile_internal(
+            builder,
+            __hisinf_1_caller,
+            signature(int32, CPointer(_type___half)),
+            ptrs,
+        )
+
+
+___hisinf_1_lower(shim_stream, shim_obj)
+
+
+def __halves2half2():
+    pass
+
+
+def ___halves2half2_1_lower(shim_stream, shim_obj):
+    shim_raw_str = """
+    extern "C" __device__ int
+    __halves2half2_1(__half2 &retval , __half* a, __half* b) {
+        retval = __halves2half2(*a, *b);
+        return 0;
+    }
+        """
+
+    __halves2half2_1 = declare_device(
+        "__halves2half2_1",
+        _type___half2(CPointer(_type___half), CPointer(_type___half)),
+    )
+
+    def __halves2half2_1_caller(arg_0, arg_1):
+        return __halves2half2_1(arg_0, arg_1)
+
+    @lower(__halves2half2, _type___half, _type___half)
+    def impl(context, builder, sig, args):
+        context.active_code_library.add_linking_file(shim_obj)
+        shim_stream.write_with_key("__halves2half2_1", shim_raw_str)
+        ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
+        for ptr, ty, arg in zip(ptrs, sig.args, args):
+            builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
+
+        return context.compile_internal(
+            builder,
+            __halves2half2_1_caller,
+            signature(
+                _type___half2, CPointer(_type___half), CPointer(_type___half)
+            ),
+            ptrs,
+        )
+
+
+___halves2half2_1_lower(shim_stream, shim_obj)
+
+
+def __low2half2():
+    pass
+
+
+def ___low2half2_1_lower(shim_stream, shim_obj):
+    shim_raw_str = """
+    extern "C" __device__ int
+    __low2half2_1(__half2 &retval , __half2* a) {
+        retval = __low2half2(*a);
+        return 0;
+    }
+        """
+
+    __low2half2_1 = declare_device(
+        "__low2half2_1", _type___half2(CPointer(_type___half2))
+    )
+
+    def __low2half2_1_caller(arg_0):
+        return __low2half2_1(arg_0)
+
+    @lower(__low2half2, _type___half2)
+    def impl(context, builder, sig, args):
+        context.active_code_library.add_linking_file(shim_obj)
+        shim_stream.write_with_key("__low2half2_1", shim_raw_str)
+        ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
+        for ptr, ty, arg in zip(ptrs, sig.args, args):
+            builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
+
+        return context.compile_internal(
+            builder,
+            __low2half2_1_caller,
+            signature(_type___half2, CPointer(_type___half2)),
+            ptrs,
+        )
+
+
+___low2half2_1_lower(shim_stream, shim_obj)
+
+
+def __high2half2():
+    pass
+
+
+def ___high2half2_1_lower(shim_stream, shim_obj):
+    shim_raw_str = """
+    extern "C" __device__ int
+    __high2half2_1(__half2 &retval , __half2* a) {
+        retval = __high2half2(*a);
+        return 0;
+    }
+        """
+
+    __high2half2_1 = declare_device(
+        "__high2half2_1", _type___half2(CPointer(_type___half2))
+    )
+
+    def __high2half2_1_caller(arg_0):
+        return __high2half2_1(arg_0)
+
+    @lower(__high2half2, _type___half2)
+    def impl(context, builder, sig, args):
+        context.active_code_library.add_linking_file(shim_obj)
+        shim_stream.write_with_key("__high2half2_1", shim_raw_str)
+        ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
+        for ptr, ty, arg in zip(ptrs, sig.args, args):
+            builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
+
+        return context.compile_internal(
+            builder,
+            __high2half2_1_caller,
+            signature(_type___half2, CPointer(_type___half2)),
+            ptrs,
+        )
+
+
+___high2half2_1_lower(shim_stream, shim_obj)
+
+
+def __half_as_short():
+    pass
+
+
+def ___half_as_short_1_lower(shim_stream, shim_obj):
+    shim_raw_str = """
+    extern "C" __device__ int
+    __half_as_short_1(short &retval , __half* h) {
+        retval = __half_as_short(*h);
+        return 0;
+    }
+        """
+
+    __half_as_short_1 = declare_device(
+        "__half_as_short_1", int16(CPointer(_type___half))
+    )
+
+    def __half_as_short_1_caller(arg_0):
+        return __half_as_short_1(arg_0)
+
+    @lower(__half_as_short, _type___half)
+    def impl(context, builder, sig, args):
+        context.active_code_library.add_linking_file(shim_obj)
+        shim_stream.write_with_key("__half_as_short_1", shim_raw_str)
+        ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
+        for ptr, ty, arg in zip(ptrs, sig.args, args):
+            builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
+
+        return context.compile_internal(
+            builder,
+            __half_as_short_1_caller,
+            signature(int16, CPointer(_type___half)),
+            ptrs,
+        )
+
+
+___half_as_short_1_lower(shim_stream, shim_obj)
+
+
+def __half_as_ushort():
+    pass
+
+
+def ___half_as_ushort_1_lower(shim_stream, shim_obj):
+    shim_raw_str = """
+    extern "C" __device__ int
+    __half_as_ushort_1(unsigned short &retval , __half* h) {
+        retval = __half_as_ushort(*h);
+        return 0;
+    }
+        """
+
+    __half_as_ushort_1 = declare_device(
+        "__half_as_ushort_1", uint16(CPointer(_type___half))
+    )
+
+    def __half_as_ushort_1_caller(arg_0):
+        return __half_as_ushort_1(arg_0)
+
+    @lower(__half_as_ushort, _type___half)
+    def impl(context, builder, sig, args):
+        context.active_code_library.add_linking_file(shim_obj)
+        shim_stream.write_with_key("__half_as_ushort_1", shim_raw_str)
+        ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
+        for ptr, ty, arg in zip(ptrs, sig.args, args):
+            builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
+
+        return context.compile_internal(
+            builder,
+            __half_as_ushort_1_caller,
+            signature(uint16, CPointer(_type___half)),
+            ptrs,
+        )
+
+
+___half_as_ushort_1_lower(shim_stream, shim_obj)
+
+
+def __short_as_half():
+    pass
+
+
+def ___short_as_half_1_lower(shim_stream, shim_obj):
+    shim_raw_str = """
+    extern "C" __device__ int
+    __short_as_half_1(__half &retval , short* i) {
+        retval = __short_as_half(*i);
+        return 0;
+    }
+        """
+
+    __short_as_half_1 = declare_device(
+        "__short_as_half_1", _type___half(CPointer(int16))
+    )
+
+    def __short_as_half_1_caller(arg_0):
+        return __short_as_half_1(arg_0)
+
+    @lower(__short_as_half, int16)
+    def impl(context, builder, sig, args):
+        context.active_code_library.add_linking_file(shim_obj)
+        shim_stream.write_with_key("__short_as_half_1", shim_raw_str)
+        ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
+        for ptr, ty, arg in zip(ptrs, sig.args, args):
+            builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
+
+        return context.compile_internal(
+            builder,
+            __short_as_half_1_caller,
+            signature(_type___half, CPointer(int16)),
+            ptrs,
+        )
+
+
+___short_as_half_1_lower(shim_stream, shim_obj)
+
+
+def __ushort_as_half():
+    pass
+
+
+def ___ushort_as_half_1_lower(shim_stream, shim_obj):
+    shim_raw_str = """
+    extern "C" __device__ int
+    __ushort_as_half_1(__half &retval , unsigned short* i) {
+        retval = __ushort_as_half(*i);
+        return 0;
+    }
+        """
+
+    __ushort_as_half_1 = declare_device(
+        "__ushort_as_half_1", _type___half(CPointer(uint16))
+    )
+
+    def __ushort_as_half_1_caller(arg_0):
+        return __ushort_as_half_1(arg_0)
+
+    @lower(__ushort_as_half, uint16)
+    def impl(context, builder, sig, args):
+        context.active_code_library.add_linking_file(shim_obj)
+        shim_stream.write_with_key("__ushort_as_half_1", shim_raw_str)
+        ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
+        for ptr, ty, arg in zip(ptrs, sig.args, args):
+            builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
+
+        return context.compile_internal(
+            builder,
+            __ushort_as_half_1_caller,
+            signature(_type___half, CPointer(uint16)),
+            ptrs,
+        )
+
+
+___ushort_as_half_1_lower(shim_stream, shim_obj)
+
+
+def __hmax():
+    pass
+
+
+def ___hmax_1_lower(shim_stream, shim_obj):
+    shim_raw_str = """
+    extern "C" __device__ int
+    __hmax_1(__half &retval , __half* a, __half* b) {
+        retval = __hmax(*a, *b);
+        return 0;
+    }
+        """
+
+    __hmax_1 = declare_device(
+        "__hmax_1", _type___half(CPointer(_type___half), CPointer(_type___half))
+    )
+
+    def __hmax_1_caller(arg_0, arg_1):
+        return __hmax_1(arg_0, arg_1)
+
+    @lower(__hmax, _type___half, _type___half)
+    def impl(context, builder, sig, args):
+        context.active_code_library.add_linking_file(shim_obj)
+        shim_stream.write_with_key("__hmax_1", shim_raw_str)
+        ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
+        for ptr, ty, arg in zip(ptrs, sig.args, args):
+            builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
+
+        return context.compile_internal(
+            builder,
+            __hmax_1_caller,
+            signature(
+                _type___half, CPointer(_type___half), CPointer(_type___half)
+            ),
+            ptrs,
+        )
+
+
+___hmax_1_lower(shim_stream, shim_obj)
+
+
+def __hmin():
+    pass
+
+
+def ___hmin_1_lower(shim_stream, shim_obj):
+    shim_raw_str = """
+    extern "C" __device__ int
+    __hmin_1(__half &retval , __half* a, __half* b) {
+        retval = __hmin(*a, *b);
+        return 0;
+    }
+        """
+
+    __hmin_1 = declare_device(
+        "__hmin_1", _type___half(CPointer(_type___half), CPointer(_type___half))
+    )
+
+    def __hmin_1_caller(arg_0, arg_1):
+        return __hmin_1(arg_0, arg_1)
+
+    @lower(__hmin, _type___half, _type___half)
+    def impl(context, builder, sig, args):
+        context.active_code_library.add_linking_file(shim_obj)
+        shim_stream.write_with_key("__hmin_1", shim_raw_str)
+        ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
+        for ptr, ty, arg in zip(ptrs, sig.args, args):
+            builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
+
+        return context.compile_internal(
+            builder,
+            __hmin_1_caller,
+            signature(
+                _type___half, CPointer(_type___half), CPointer(_type___half)
+            ),
+            ptrs,
+        )
+
+
+___hmin_1_lower(shim_stream, shim_obj)
+
+
+def __hmax2():
+    pass
+
+
+def ___hmax2_1_lower(shim_stream, shim_obj):
+    shim_raw_str = """
+    extern "C" __device__ int
+    __hmax2_1(__half2 &retval , __half2* a, __half2* b) {
+        retval = __hmax2(*a, *b);
+        return 0;
+    }
+        """
+
+    __hmax2_1 = declare_device(
+        "__hmax2_1",
+        _type___half2(CPointer(_type___half2), CPointer(_type___half2)),
+    )
+
+    def __hmax2_1_caller(arg_0, arg_1):
+        return __hmax2_1(arg_0, arg_1)
+
+    @lower(__hmax2, _type___half2, _type___half2)
+    def impl(context, builder, sig, args):
+        context.active_code_library.add_linking_file(shim_obj)
+        shim_stream.write_with_key("__hmax2_1", shim_raw_str)
+        ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
+        for ptr, ty, arg in zip(ptrs, sig.args, args):
+            builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
+
+        return context.compile_internal(
+            builder,
+            __hmax2_1_caller,
+            signature(
+                _type___half2, CPointer(_type___half2), CPointer(_type___half2)
+            ),
+            ptrs,
+        )
+
+
+___hmax2_1_lower(shim_stream, shim_obj)
+
+
+def __hmin2():
+    pass
+
+
+def ___hmin2_1_lower(shim_stream, shim_obj):
+    shim_raw_str = """
+    extern "C" __device__ int
+    __hmin2_1(__half2 &retval , __half2* a, __half2* b) {
+        retval = __hmin2(*a, *b);
+        return 0;
+    }
+        """
+
+    __hmin2_1 = declare_device(
+        "__hmin2_1",
+        _type___half2(CPointer(_type___half2), CPointer(_type___half2)),
+    )
+
+    def __hmin2_1_caller(arg_0, arg_1):
+        return __hmin2_1(arg_0, arg_1)
+
+    @lower(__hmin2, _type___half2, _type___half2)
+    def impl(context, builder, sig, args):
+        context.active_code_library.add_linking_file(shim_obj)
+        shim_stream.write_with_key("__hmin2_1", shim_raw_str)
+        ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
+        for ptr, ty, arg in zip(ptrs, sig.args, args):
+            builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
+
+        return context.compile_internal(
+            builder,
+            __hmin2_1_caller,
+            signature(
+                _type___half2, CPointer(_type___half2), CPointer(_type___half2)
+            ),
+            ptrs,
+        )
+
+
+___hmin2_1_lower(shim_stream, shim_obj)
+
+
+def __shfl_sync():
+    pass
+
+
+def ___shfl_sync_1_lower(shim_stream, shim_obj):
+    shim_raw_str = """
+    extern "C" __device__ int
+    __shfl_sync_1(__half2 &retval , unsigned int* mask, __half2* var, int* srcLane, int* width) {
+        retval = __shfl_sync(*mask, *var, *srcLane, *width);
+        return 0;
+    }
+        """
+
+    __shfl_sync_1 = declare_device(
+        "__shfl_sync_1",
+        _type___half2(
+            CPointer(uint32),
+            CPointer(_type___half2),
+            CPointer(int32),
+            CPointer(int32),
+        ),
+    )
+
+    def __shfl_sync_1_caller(arg_0, arg_1, arg_2, arg_3):
+        return __shfl_sync_1(arg_0, arg_1, arg_2, arg_3)
+
+    @lower(__shfl_sync, uint32, _type___half2, int32, int32)
+    def impl(context, builder, sig, args):
+        context.active_code_library.add_linking_file(shim_obj)
+        shim_stream.write_with_key("__shfl_sync_1", shim_raw_str)
+        ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
+        for ptr, ty, arg in zip(ptrs, sig.args, args):
+            builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
+
+        return context.compile_internal(
+            builder,
+            __shfl_sync_1_caller,
+            signature(
+                _type___half2,
+                CPointer(uint32),
+                CPointer(_type___half2),
+                CPointer(int32),
+                CPointer(int32),
+            ),
+            ptrs,
+        )
+
+
+___shfl_sync_1_lower(shim_stream, shim_obj)
+
+
+def __shfl_up_sync():
+    pass
+
+
+def ___shfl_up_sync_1_lower(shim_stream, shim_obj):
+    shim_raw_str = """
+    extern "C" __device__ int
+    __shfl_up_sync_1(__half2 &retval , unsigned int* mask, __half2* var, unsigned int* delta, int* width) {
+        retval = __shfl_up_sync(*mask, *var, *delta, *width);
+        return 0;
+    }
+        """
+
+    __shfl_up_sync_1 = declare_device(
+        "__shfl_up_sync_1",
+        _type___half2(
+            CPointer(uint32),
+            CPointer(_type___half2),
+            CPointer(uint32),
+            CPointer(int32),
+        ),
+    )
+
+    def __shfl_up_sync_1_caller(arg_0, arg_1, arg_2, arg_3):
+        return __shfl_up_sync_1(arg_0, arg_1, arg_2, arg_3)
+
+    @lower(__shfl_up_sync, uint32, _type___half2, uint32, int32)
+    def impl(context, builder, sig, args):
+        context.active_code_library.add_linking_file(shim_obj)
+        shim_stream.write_with_key("__shfl_up_sync_1", shim_raw_str)
+        ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
+        for ptr, ty, arg in zip(ptrs, sig.args, args):
+            builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
+
+        return context.compile_internal(
+            builder,
+            __shfl_up_sync_1_caller,
+            signature(
+                _type___half2,
+                CPointer(uint32),
+                CPointer(_type___half2),
+                CPointer(uint32),
+                CPointer(int32),
+            ),
+            ptrs,
+        )
+
+
+___shfl_up_sync_1_lower(shim_stream, shim_obj)
+
+
+def __shfl_down_sync():
+    pass
+
+
+def ___shfl_down_sync_1_lower(shim_stream, shim_obj):
+    shim_raw_str = """
+    extern "C" __device__ int
+    __shfl_down_sync_1(__half2 &retval , unsigned int* mask, __half2* var, unsigned int* delta, int* width) {
+        retval = __shfl_down_sync(*mask, *var, *delta, *width);
+        return 0;
+    }
+        """
+
+    __shfl_down_sync_1 = declare_device(
+        "__shfl_down_sync_1",
+        _type___half2(
+            CPointer(uint32),
+            CPointer(_type___half2),
+            CPointer(uint32),
+            CPointer(int32),
+        ),
+    )
+
+    def __shfl_down_sync_1_caller(arg_0, arg_1, arg_2, arg_3):
+        return __shfl_down_sync_1(arg_0, arg_1, arg_2, arg_3)
+
+    @lower(__shfl_down_sync, uint32, _type___half2, uint32, int32)
+    def impl(context, builder, sig, args):
+        context.active_code_library.add_linking_file(shim_obj)
+        shim_stream.write_with_key("__shfl_down_sync_1", shim_raw_str)
+        ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
+        for ptr, ty, arg in zip(ptrs, sig.args, args):
+            builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
+
+        return context.compile_internal(
+            builder,
+            __shfl_down_sync_1_caller,
+            signature(
+                _type___half2,
+                CPointer(uint32),
+                CPointer(_type___half2),
+                CPointer(uint32),
+                CPointer(int32),
+            ),
+            ptrs,
+        )
+
+
+___shfl_down_sync_1_lower(shim_stream, shim_obj)
+
+
+def __shfl_xor_sync():
+    pass
+
+
+def ___shfl_xor_sync_1_lower(shim_stream, shim_obj):
+    shim_raw_str = """
+    extern "C" __device__ int
+    __shfl_xor_sync_1(__half2 &retval , unsigned int* mask, __half2* var, int* laneMask, int* width) {
+        retval = __shfl_xor_sync(*mask, *var, *laneMask, *width);
+        return 0;
+    }
+        """
+
+    __shfl_xor_sync_1 = declare_device(
+        "__shfl_xor_sync_1",
+        _type___half2(
+            CPointer(uint32),
+            CPointer(_type___half2),
+            CPointer(int32),
+            CPointer(int32),
+        ),
+    )
+
+    def __shfl_xor_sync_1_caller(arg_0, arg_1, arg_2, arg_3):
+        return __shfl_xor_sync_1(arg_0, arg_1, arg_2, arg_3)
+
+    @lower(__shfl_xor_sync, uint32, _type___half2, int32, int32)
+    def impl(context, builder, sig, args):
+        context.active_code_library.add_linking_file(shim_obj)
+        shim_stream.write_with_key("__shfl_xor_sync_1", shim_raw_str)
+        ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
+        for ptr, ty, arg in zip(ptrs, sig.args, args):
+            builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
+
+        return context.compile_internal(
+            builder,
+            __shfl_xor_sync_1_caller,
+            signature(
+                _type___half2,
+                CPointer(uint32),
+                CPointer(_type___half2),
+                CPointer(int32),
+                CPointer(int32),
+            ),
+            ptrs,
+        )
+
+
+___shfl_xor_sync_1_lower(shim_stream, shim_obj)
+
+
+def ___shfl_sync_2_lower(shim_stream, shim_obj):
+    shim_raw_str = """
+    extern "C" __device__ int
+    __shfl_sync_2(__half &retval , unsigned int* mask, __half* var, int* srcLane, int* width) {
+        retval = __shfl_sync(*mask, *var, *srcLane, *width);
+        return 0;
+    }
+        """
+
+    __shfl_sync_2 = declare_device(
+        "__shfl_sync_2",
+        _type___half(
+            CPointer(uint32),
+            CPointer(_type___half),
+            CPointer(int32),
+            CPointer(int32),
+        ),
+    )
+
+    def __shfl_sync_2_caller(arg_0, arg_1, arg_2, arg_3):
+        return __shfl_sync_2(arg_0, arg_1, arg_2, arg_3)
+
+    @lower(__shfl_sync, uint32, _type___half, int32, int32)
+    def impl(context, builder, sig, args):
+        context.active_code_library.add_linking_file(shim_obj)
+        shim_stream.write_with_key("__shfl_sync_2", shim_raw_str)
+        ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
+        for ptr, ty, arg in zip(ptrs, sig.args, args):
+            builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
+
+        return context.compile_internal(
+            builder,
+            __shfl_sync_2_caller,
+            signature(
+                _type___half,
+                CPointer(uint32),
+                CPointer(_type___half),
+                CPointer(int32),
+                CPointer(int32),
+            ),
+            ptrs,
+        )
+
+
+___shfl_sync_2_lower(shim_stream, shim_obj)
+
+
+def ___shfl_up_sync_2_lower(shim_stream, shim_obj):
+    shim_raw_str = """
+    extern "C" __device__ int
+    __shfl_up_sync_2(__half &retval , unsigned int* mask, __half* var, unsigned int* delta, int* width) {
+        retval = __shfl_up_sync(*mask, *var, *delta, *width);
+        return 0;
+    }
+        """
+
+    __shfl_up_sync_2 = declare_device(
+        "__shfl_up_sync_2",
+        _type___half(
+            CPointer(uint32),
+            CPointer(_type___half),
+            CPointer(uint32),
+            CPointer(int32),
+        ),
+    )
+
+    def __shfl_up_sync_2_caller(arg_0, arg_1, arg_2, arg_3):
+        return __shfl_up_sync_2(arg_0, arg_1, arg_2, arg_3)
+
+    @lower(__shfl_up_sync, uint32, _type___half, uint32, int32)
+    def impl(context, builder, sig, args):
+        context.active_code_library.add_linking_file(shim_obj)
+        shim_stream.write_with_key("__shfl_up_sync_2", shim_raw_str)
+        ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
+        for ptr, ty, arg in zip(ptrs, sig.args, args):
+            builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
+
+        return context.compile_internal(
+            builder,
+            __shfl_up_sync_2_caller,
+            signature(
+                _type___half,
+                CPointer(uint32),
+                CPointer(_type___half),
+                CPointer(uint32),
+                CPointer(int32),
+            ),
+            ptrs,
+        )
+
+
+___shfl_up_sync_2_lower(shim_stream, shim_obj)
+
+
+def ___shfl_down_sync_2_lower(shim_stream, shim_obj):
+    shim_raw_str = """
+    extern "C" __device__ int
+    __shfl_down_sync_2(__half &retval , unsigned int* mask, __half* var, unsigned int* delta, int* width) {
+        retval = __shfl_down_sync(*mask, *var, *delta, *width);
+        return 0;
+    }
+        """
+
+    __shfl_down_sync_2 = declare_device(
+        "__shfl_down_sync_2",
+        _type___half(
+            CPointer(uint32),
+            CPointer(_type___half),
+            CPointer(uint32),
+            CPointer(int32),
+        ),
+    )
+
+    def __shfl_down_sync_2_caller(arg_0, arg_1, arg_2, arg_3):
+        return __shfl_down_sync_2(arg_0, arg_1, arg_2, arg_3)
+
+    @lower(__shfl_down_sync, uint32, _type___half, uint32, int32)
+    def impl(context, builder, sig, args):
+        context.active_code_library.add_linking_file(shim_obj)
+        shim_stream.write_with_key("__shfl_down_sync_2", shim_raw_str)
+        ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
+        for ptr, ty, arg in zip(ptrs, sig.args, args):
+            builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
+
+        return context.compile_internal(
+            builder,
+            __shfl_down_sync_2_caller,
+            signature(
+                _type___half,
+                CPointer(uint32),
+                CPointer(_type___half),
+                CPointer(uint32),
+                CPointer(int32),
+            ),
+            ptrs,
+        )
+
+
+___shfl_down_sync_2_lower(shim_stream, shim_obj)
+
+
+def ___shfl_xor_sync_2_lower(shim_stream, shim_obj):
+    shim_raw_str = """
+    extern "C" __device__ int
+    __shfl_xor_sync_2(__half &retval , unsigned int* mask, __half* var, int* laneMask, int* width) {
+        retval = __shfl_xor_sync(*mask, *var, *laneMask, *width);
+        return 0;
+    }
+        """
+
+    __shfl_xor_sync_2 = declare_device(
+        "__shfl_xor_sync_2",
+        _type___half(
+            CPointer(uint32),
+            CPointer(_type___half),
+            CPointer(int32),
+            CPointer(int32),
+        ),
+    )
+
+    def __shfl_xor_sync_2_caller(arg_0, arg_1, arg_2, arg_3):
+        return __shfl_xor_sync_2(arg_0, arg_1, arg_2, arg_3)
+
+    @lower(__shfl_xor_sync, uint32, _type___half, int32, int32)
+    def impl(context, builder, sig, args):
+        context.active_code_library.add_linking_file(shim_obj)
+        shim_stream.write_with_key("__shfl_xor_sync_2", shim_raw_str)
+        ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
+        for ptr, ty, arg in zip(ptrs, sig.args, args):
+            builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
+
+        return context.compile_internal(
+            builder,
+            __shfl_xor_sync_2_caller,
+            signature(
+                _type___half,
+                CPointer(uint32),
+                CPointer(_type___half),
+                CPointer(int32),
+                CPointer(int32),
+            ),
+            ptrs,
+        )
+
+
+___shfl_xor_sync_2_lower(shim_stream, shim_obj)
+
+
+def __ldg():
+    pass
+
+
+def ___ldg_1_lower(shim_stream, shim_obj):
+    shim_raw_str = """
+    extern "C" __device__ int
+    __ldg_1(__half2 &retval , __half2 ** ptr) {
+        retval = __ldg(*ptr);
+        return 0;
+    }
+        """
+
+    __ldg_1 = declare_device(
+        "__ldg_1", _type___half2(CPointer(CPointer(_type___half2)))
+    )
+
+    def __ldg_1_caller(arg_0):
+        return __ldg_1(arg_0)
+
+    @lower(__ldg, CPointer(_type___half2))
+    def impl(context, builder, sig, args):
+        context.active_code_library.add_linking_file(shim_obj)
+        shim_stream.write_with_key("__ldg_1", shim_raw_str)
+        ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
+        for ptr, ty, arg in zip(ptrs, sig.args, args):
+            builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
+
+        return context.compile_internal(
+            builder,
+            __ldg_1_caller,
+            signature(_type___half2, CPointer(CPointer(_type___half2))),
+            ptrs,
+        )
+
+
+___ldg_1_lower(shim_stream, shim_obj)
+
+
+def ___ldg_2_lower(shim_stream, shim_obj):
+    shim_raw_str = """
+    extern "C" __device__ int
+    __ldg_2(__half &retval , __half ** ptr) {
+        retval = __ldg(*ptr);
+        return 0;
+    }
+        """
+
+    __ldg_2 = declare_device(
+        "__ldg_2", _type___half(CPointer(CPointer(_type___half)))
+    )
+
+    def __ldg_2_caller(arg_0):
+        return __ldg_2(arg_0)
+
+    @lower(__ldg, CPointer(_type___half))
+    def impl(context, builder, sig, args):
+        context.active_code_library.add_linking_file(shim_obj)
+        shim_stream.write_with_key("__ldg_2", shim_raw_str)
+        ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
+        for ptr, ty, arg in zip(ptrs, sig.args, args):
+            builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
+
+        return context.compile_internal(
+            builder,
+            __ldg_2_caller,
+            signature(_type___half, CPointer(CPointer(_type___half))),
+            ptrs,
+        )
+
+
+___ldg_2_lower(shim_stream, shim_obj)
+
+
+def __ldcg():
+    pass
+
+
+def ___ldcg_1_lower(shim_stream, shim_obj):
+    shim_raw_str = """
+    extern "C" __device__ int
+    __ldcg_1(__half2 &retval , __half2 ** ptr) {
+        retval = __ldcg(*ptr);
+        return 0;
+    }
+        """
+
+    __ldcg_1 = declare_device(
+        "__ldcg_1", _type___half2(CPointer(CPointer(_type___half2)))
+    )
+
+    def __ldcg_1_caller(arg_0):
+        return __ldcg_1(arg_0)
+
+    @lower(__ldcg, CPointer(_type___half2))
+    def impl(context, builder, sig, args):
+        context.active_code_library.add_linking_file(shim_obj)
+        shim_stream.write_with_key("__ldcg_1", shim_raw_str)
+        ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
+        for ptr, ty, arg in zip(ptrs, sig.args, args):
+            builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
+
+        return context.compile_internal(
+            builder,
+            __ldcg_1_caller,
+            signature(_type___half2, CPointer(CPointer(_type___half2))),
+            ptrs,
+        )
+
+
+___ldcg_1_lower(shim_stream, shim_obj)
+
+
+def ___ldcg_2_lower(shim_stream, shim_obj):
+    shim_raw_str = """
+    extern "C" __device__ int
+    __ldcg_2(__half &retval , __half ** ptr) {
+        retval = __ldcg(*ptr);
+        return 0;
+    }
+        """
+
+    __ldcg_2 = declare_device(
+        "__ldcg_2", _type___half(CPointer(CPointer(_type___half)))
+    )
+
+    def __ldcg_2_caller(arg_0):
+        return __ldcg_2(arg_0)
+
+    @lower(__ldcg, CPointer(_type___half))
+    def impl(context, builder, sig, args):
+        context.active_code_library.add_linking_file(shim_obj)
+        shim_stream.write_with_key("__ldcg_2", shim_raw_str)
+        ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
+        for ptr, ty, arg in zip(ptrs, sig.args, args):
+            builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
+
+        return context.compile_internal(
+            builder,
+            __ldcg_2_caller,
+            signature(_type___half, CPointer(CPointer(_type___half))),
+            ptrs,
+        )
+
+
+___ldcg_2_lower(shim_stream, shim_obj)
+
+
+def __ldca():
+    pass
+
+
+def ___ldca_1_lower(shim_stream, shim_obj):
+    shim_raw_str = """
+    extern "C" __device__ int
+    __ldca_1(__half2 &retval , __half2 ** ptr) {
+        retval = __ldca(*ptr);
+        return 0;
+    }
+        """
+
+    __ldca_1 = declare_device(
+        "__ldca_1", _type___half2(CPointer(CPointer(_type___half2)))
+    )
+
+    def __ldca_1_caller(arg_0):
+        return __ldca_1(arg_0)
+
+    @lower(__ldca, CPointer(_type___half2))
+    def impl(context, builder, sig, args):
+        context.active_code_library.add_linking_file(shim_obj)
+        shim_stream.write_with_key("__ldca_1", shim_raw_str)
+        ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
+        for ptr, ty, arg in zip(ptrs, sig.args, args):
+            builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
+
+        return context.compile_internal(
+            builder,
+            __ldca_1_caller,
+            signature(_type___half2, CPointer(CPointer(_type___half2))),
+            ptrs,
+        )
+
+
+___ldca_1_lower(shim_stream, shim_obj)
+
+
+def ___ldca_2_lower(shim_stream, shim_obj):
+    shim_raw_str = """
+    extern "C" __device__ int
+    __ldca_2(__half &retval , __half ** ptr) {
+        retval = __ldca(*ptr);
+        return 0;
+    }
+        """
+
+    __ldca_2 = declare_device(
+        "__ldca_2", _type___half(CPointer(CPointer(_type___half)))
+    )
+
+    def __ldca_2_caller(arg_0):
+        return __ldca_2(arg_0)
+
+    @lower(__ldca, CPointer(_type___half))
+    def impl(context, builder, sig, args):
+        context.active_code_library.add_linking_file(shim_obj)
+        shim_stream.write_with_key("__ldca_2", shim_raw_str)
+        ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
+        for ptr, ty, arg in zip(ptrs, sig.args, args):
+            builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
+
+        return context.compile_internal(
+            builder,
+            __ldca_2_caller,
+            signature(_type___half, CPointer(CPointer(_type___half))),
+            ptrs,
+        )
+
+
+___ldca_2_lower(shim_stream, shim_obj)
+
+
+def __ldcs():
+    pass
+
+
+def ___ldcs_1_lower(shim_stream, shim_obj):
+    shim_raw_str = """
+    extern "C" __device__ int
+    __ldcs_1(__half2 &retval , __half2 ** ptr) {
+        retval = __ldcs(*ptr);
+        return 0;
+    }
+        """
+
+    __ldcs_1 = declare_device(
+        "__ldcs_1", _type___half2(CPointer(CPointer(_type___half2)))
+    )
+
+    def __ldcs_1_caller(arg_0):
+        return __ldcs_1(arg_0)
+
+    @lower(__ldcs, CPointer(_type___half2))
+    def impl(context, builder, sig, args):
+        context.active_code_library.add_linking_file(shim_obj)
+        shim_stream.write_with_key("__ldcs_1", shim_raw_str)
+        ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
+        for ptr, ty, arg in zip(ptrs, sig.args, args):
+            builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
+
+        return context.compile_internal(
+            builder,
+            __ldcs_1_caller,
+            signature(_type___half2, CPointer(CPointer(_type___half2))),
+            ptrs,
+        )
+
+
+___ldcs_1_lower(shim_stream, shim_obj)
+
+
+def ___ldcs_2_lower(shim_stream, shim_obj):
+    shim_raw_str = """
+    extern "C" __device__ int
+    __ldcs_2(__half &retval , __half ** ptr) {
+        retval = __ldcs(*ptr);
+        return 0;
+    }
+        """
+
+    __ldcs_2 = declare_device(
+        "__ldcs_2", _type___half(CPointer(CPointer(_type___half)))
+    )
+
+    def __ldcs_2_caller(arg_0):
+        return __ldcs_2(arg_0)
+
+    @lower(__ldcs, CPointer(_type___half))
+    def impl(context, builder, sig, args):
+        context.active_code_library.add_linking_file(shim_obj)
+        shim_stream.write_with_key("__ldcs_2", shim_raw_str)
+        ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
+        for ptr, ty, arg in zip(ptrs, sig.args, args):
+            builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
+
+        return context.compile_internal(
+            builder,
+            __ldcs_2_caller,
+            signature(_type___half, CPointer(CPointer(_type___half))),
+            ptrs,
+        )
+
+
+___ldcs_2_lower(shim_stream, shim_obj)
+
+
+def __ldlu():
+    pass
+
+
+def ___ldlu_1_lower(shim_stream, shim_obj):
+    shim_raw_str = """
+    extern "C" __device__ int
+    __ldlu_1(__half2 &retval , __half2 ** ptr) {
+        retval = __ldlu(*ptr);
+        return 0;
+    }
+        """
+
+    __ldlu_1 = declare_device(
+        "__ldlu_1", _type___half2(CPointer(CPointer(_type___half2)))
+    )
+
+    def __ldlu_1_caller(arg_0):
+        return __ldlu_1(arg_0)
+
+    @lower(__ldlu, CPointer(_type___half2))
+    def impl(context, builder, sig, args):
+        context.active_code_library.add_linking_file(shim_obj)
+        shim_stream.write_with_key("__ldlu_1", shim_raw_str)
+        ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
+        for ptr, ty, arg in zip(ptrs, sig.args, args):
+            builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
+
+        return context.compile_internal(
+            builder,
+            __ldlu_1_caller,
+            signature(_type___half2, CPointer(CPointer(_type___half2))),
+            ptrs,
+        )
+
+
+___ldlu_1_lower(shim_stream, shim_obj)
+
+
+def ___ldlu_2_lower(shim_stream, shim_obj):
+    shim_raw_str = """
+    extern "C" __device__ int
+    __ldlu_2(__half &retval , __half ** ptr) {
+        retval = __ldlu(*ptr);
+        return 0;
+    }
+        """
+
+    __ldlu_2 = declare_device(
+        "__ldlu_2", _type___half(CPointer(CPointer(_type___half)))
+    )
+
+    def __ldlu_2_caller(arg_0):
+        return __ldlu_2(arg_0)
+
+    @lower(__ldlu, CPointer(_type___half))
+    def impl(context, builder, sig, args):
+        context.active_code_library.add_linking_file(shim_obj)
+        shim_stream.write_with_key("__ldlu_2", shim_raw_str)
+        ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
+        for ptr, ty, arg in zip(ptrs, sig.args, args):
+            builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
+
+        return context.compile_internal(
+            builder,
+            __ldlu_2_caller,
+            signature(_type___half, CPointer(CPointer(_type___half))),
+            ptrs,
+        )
+
+
+___ldlu_2_lower(shim_stream, shim_obj)
+
+
+def __ldcv():
+    pass
+
+
+def ___ldcv_1_lower(shim_stream, shim_obj):
+    shim_raw_str = """
+    extern "C" __device__ int
+    __ldcv_1(__half2 &retval , __half2 ** ptr) {
+        retval = __ldcv(*ptr);
+        return 0;
+    }
+        """
+
+    __ldcv_1 = declare_device(
+        "__ldcv_1", _type___half2(CPointer(CPointer(_type___half2)))
+    )
+
+    def __ldcv_1_caller(arg_0):
+        return __ldcv_1(arg_0)
+
+    @lower(__ldcv, CPointer(_type___half2))
+    def impl(context, builder, sig, args):
+        context.active_code_library.add_linking_file(shim_obj)
+        shim_stream.write_with_key("__ldcv_1", shim_raw_str)
+        ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
+        for ptr, ty, arg in zip(ptrs, sig.args, args):
+            builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
+
+        return context.compile_internal(
+            builder,
+            __ldcv_1_caller,
+            signature(_type___half2, CPointer(CPointer(_type___half2))),
+            ptrs,
+        )
+
+
+___ldcv_1_lower(shim_stream, shim_obj)
+
+
+def ___ldcv_2_lower(shim_stream, shim_obj):
+    shim_raw_str = """
+    extern "C" __device__ int
+    __ldcv_2(__half &retval , __half ** ptr) {
+        retval = __ldcv(*ptr);
+        return 0;
+    }
+        """
+
+    __ldcv_2 = declare_device(
+        "__ldcv_2", _type___half(CPointer(CPointer(_type___half)))
+    )
+
+    def __ldcv_2_caller(arg_0):
+        return __ldcv_2(arg_0)
+
+    @lower(__ldcv, CPointer(_type___half))
+    def impl(context, builder, sig, args):
+        context.active_code_library.add_linking_file(shim_obj)
+        shim_stream.write_with_key("__ldcv_2", shim_raw_str)
+        ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
+        for ptr, ty, arg in zip(ptrs, sig.args, args):
+            builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
+
+        return context.compile_internal(
+            builder,
+            __ldcv_2_caller,
+            signature(_type___half, CPointer(CPointer(_type___half))),
+            ptrs,
+        )
+
+
+___ldcv_2_lower(shim_stream, shim_obj)
+
+
+def __stwb():
+    pass
+
+
+def ___stwb_1_lower(shim_stream, shim_obj):
+    shim_raw_str = """
+    extern "C" __device__ int
+    __stwb_1(int &retval , __half2 ** ptr, __half2* value) {
+        __stwb(*ptr, *value);
+        return 0;
+    }
+        """
+
+    __stwb_1 = declare_device(
+        "__stwb_1",
+        void(CPointer(CPointer(_type___half2)), CPointer(_type___half2)),
+    )
+
+    def __stwb_1_caller(arg_0, arg_1):
+        return __stwb_1(arg_0, arg_1)
+
+    @lower(__stwb, CPointer(_type___half2), _type___half2)
+    def impl(context, builder, sig, args):
+        context.active_code_library.add_linking_file(shim_obj)
+        shim_stream.write_with_key("__stwb_1", shim_raw_str)
+        ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
+        for ptr, ty, arg in zip(ptrs, sig.args, args):
+            builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
+
+        return context.compile_internal(
+            builder,
+            __stwb_1_caller,
+            signature(
+                void, CPointer(CPointer(_type___half2)), CPointer(_type___half2)
+            ),
+            ptrs,
+        )
+
+
+___stwb_1_lower(shim_stream, shim_obj)
+
+
+def ___stwb_2_lower(shim_stream, shim_obj):
+    shim_raw_str = """
+    extern "C" __device__ int
+    __stwb_2(int &retval , __half ** ptr, __half* value) {
+        __stwb(*ptr, *value);
+        return 0;
+    }
+        """
+
+    __stwb_2 = declare_device(
+        "__stwb_2",
+        void(CPointer(CPointer(_type___half)), CPointer(_type___half)),
+    )
+
+    def __stwb_2_caller(arg_0, arg_1):
+        return __stwb_2(arg_0, arg_1)
+
+    @lower(__stwb, CPointer(_type___half), _type___half)
+    def impl(context, builder, sig, args):
+        context.active_code_library.add_linking_file(shim_obj)
+        shim_stream.write_with_key("__stwb_2", shim_raw_str)
+        ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
+        for ptr, ty, arg in zip(ptrs, sig.args, args):
+            builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
+
+        return context.compile_internal(
+            builder,
+            __stwb_2_caller,
+            signature(
+                void, CPointer(CPointer(_type___half)), CPointer(_type___half)
+            ),
+            ptrs,
+        )
+
+
+___stwb_2_lower(shim_stream, shim_obj)
+
+
+def __stcg():
+    pass
+
+
+def ___stcg_1_lower(shim_stream, shim_obj):
+    shim_raw_str = """
+    extern "C" __device__ int
+    __stcg_1(int &retval , __half2 ** ptr, __half2* value) {
+        __stcg(*ptr, *value);
+        return 0;
+    }
+        """
+
+    __stcg_1 = declare_device(
+        "__stcg_1",
+        void(CPointer(CPointer(_type___half2)), CPointer(_type___half2)),
+    )
+
+    def __stcg_1_caller(arg_0, arg_1):
+        return __stcg_1(arg_0, arg_1)
+
+    @lower(__stcg, CPointer(_type___half2), _type___half2)
+    def impl(context, builder, sig, args):
+        context.active_code_library.add_linking_file(shim_obj)
+        shim_stream.write_with_key("__stcg_1", shim_raw_str)
+        ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
+        for ptr, ty, arg in zip(ptrs, sig.args, args):
+            builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
+
+        return context.compile_internal(
+            builder,
+            __stcg_1_caller,
+            signature(
+                void, CPointer(CPointer(_type___half2)), CPointer(_type___half2)
+            ),
+            ptrs,
+        )
+
+
+___stcg_1_lower(shim_stream, shim_obj)
+
+
+def ___stcg_2_lower(shim_stream, shim_obj):
+    shim_raw_str = """
+    extern "C" __device__ int
+    __stcg_2(int &retval , __half ** ptr, __half* value) {
+        __stcg(*ptr, *value);
+        return 0;
+    }
+        """
+
+    __stcg_2 = declare_device(
+        "__stcg_2",
+        void(CPointer(CPointer(_type___half)), CPointer(_type___half)),
+    )
+
+    def __stcg_2_caller(arg_0, arg_1):
+        return __stcg_2(arg_0, arg_1)
+
+    @lower(__stcg, CPointer(_type___half), _type___half)
+    def impl(context, builder, sig, args):
+        context.active_code_library.add_linking_file(shim_obj)
+        shim_stream.write_with_key("__stcg_2", shim_raw_str)
+        ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
+        for ptr, ty, arg in zip(ptrs, sig.args, args):
+            builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
+
+        return context.compile_internal(
+            builder,
+            __stcg_2_caller,
+            signature(
+                void, CPointer(CPointer(_type___half)), CPointer(_type___half)
+            ),
+            ptrs,
+        )
+
+
+___stcg_2_lower(shim_stream, shim_obj)
+
+
+def __stcs():
+    pass
+
+
+def ___stcs_1_lower(shim_stream, shim_obj):
+    shim_raw_str = """
+    extern "C" __device__ int
+    __stcs_1(int &retval , __half2 ** ptr, __half2* value) {
+        __stcs(*ptr, *value);
+        return 0;
+    }
+        """
+
+    __stcs_1 = declare_device(
+        "__stcs_1",
+        void(CPointer(CPointer(_type___half2)), CPointer(_type___half2)),
+    )
+
+    def __stcs_1_caller(arg_0, arg_1):
+        return __stcs_1(arg_0, arg_1)
+
+    @lower(__stcs, CPointer(_type___half2), _type___half2)
+    def impl(context, builder, sig, args):
+        context.active_code_library.add_linking_file(shim_obj)
+        shim_stream.write_with_key("__stcs_1", shim_raw_str)
+        ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
+        for ptr, ty, arg in zip(ptrs, sig.args, args):
+            builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
+
+        return context.compile_internal(
+            builder,
+            __stcs_1_caller,
+            signature(
+                void, CPointer(CPointer(_type___half2)), CPointer(_type___half2)
+            ),
+            ptrs,
+        )
+
+
+___stcs_1_lower(shim_stream, shim_obj)
+
+
+def ___stcs_2_lower(shim_stream, shim_obj):
+    shim_raw_str = """
+    extern "C" __device__ int
+    __stcs_2(int &retval , __half ** ptr, __half* value) {
+        __stcs(*ptr, *value);
+        return 0;
+    }
+        """
+
+    __stcs_2 = declare_device(
+        "__stcs_2",
+        void(CPointer(CPointer(_type___half)), CPointer(_type___half)),
+    )
+
+    def __stcs_2_caller(arg_0, arg_1):
+        return __stcs_2(arg_0, arg_1)
+
+    @lower(__stcs, CPointer(_type___half), _type___half)
+    def impl(context, builder, sig, args):
+        context.active_code_library.add_linking_file(shim_obj)
+        shim_stream.write_with_key("__stcs_2", shim_raw_str)
+        ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
+        for ptr, ty, arg in zip(ptrs, sig.args, args):
+            builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
+
+        return context.compile_internal(
+            builder,
+            __stcs_2_caller,
+            signature(
+                void, CPointer(CPointer(_type___half)), CPointer(_type___half)
+            ),
+            ptrs,
+        )
+
+
+___stcs_2_lower(shim_stream, shim_obj)
+
+
+def __stwt():
+    pass
+
+
+def ___stwt_1_lower(shim_stream, shim_obj):
+    shim_raw_str = """
+    extern "C" __device__ int
+    __stwt_1(int &retval , __half2 ** ptr, __half2* value) {
+        __stwt(*ptr, *value);
+        return 0;
+    }
+        """
+
+    __stwt_1 = declare_device(
+        "__stwt_1",
+        void(CPointer(CPointer(_type___half2)), CPointer(_type___half2)),
+    )
+
+    def __stwt_1_caller(arg_0, arg_1):
+        return __stwt_1(arg_0, arg_1)
+
+    @lower(__stwt, CPointer(_type___half2), _type___half2)
+    def impl(context, builder, sig, args):
+        context.active_code_library.add_linking_file(shim_obj)
+        shim_stream.write_with_key("__stwt_1", shim_raw_str)
+        ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
+        for ptr, ty, arg in zip(ptrs, sig.args, args):
+            builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
+
+        return context.compile_internal(
+            builder,
+            __stwt_1_caller,
+            signature(
+                void, CPointer(CPointer(_type___half2)), CPointer(_type___half2)
+            ),
+            ptrs,
+        )
+
+
+___stwt_1_lower(shim_stream, shim_obj)
+
+
+def ___stwt_2_lower(shim_stream, shim_obj):
+    shim_raw_str = """
+    extern "C" __device__ int
+    __stwt_2(int &retval , __half ** ptr, __half* value) {
+        __stwt(*ptr, *value);
+        return 0;
+    }
+        """
+
+    __stwt_2 = declare_device(
+        "__stwt_2",
+        void(CPointer(CPointer(_type___half)), CPointer(_type___half)),
+    )
+
+    def __stwt_2_caller(arg_0, arg_1):
+        return __stwt_2(arg_0, arg_1)
+
+    @lower(__stwt, CPointer(_type___half), _type___half)
+    def impl(context, builder, sig, args):
+        context.active_code_library.add_linking_file(shim_obj)
+        shim_stream.write_with_key("__stwt_2", shim_raw_str)
+        ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
+        for ptr, ty, arg in zip(ptrs, sig.args, args):
+            builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
+
+        return context.compile_internal(
+            builder,
+            __stwt_2_caller,
+            signature(
+                void, CPointer(CPointer(_type___half)), CPointer(_type___half)
+            ),
+            ptrs,
+        )
+
+
+___stwt_2_lower(shim_stream, shim_obj)
+
+
+def __heq2():
+    pass
+
+
+def ___heq2_1_lower(shim_stream, shim_obj):
+    shim_raw_str = """
+    extern "C" __device__ int
+    __heq2_1(__half2 &retval , __half2* a, __half2* b) {
+        retval = __heq2(*a, *b);
+        return 0;
+    }
+        """
+
+    __heq2_1 = declare_device(
+        "__heq2_1",
+        _type___half2(CPointer(_type___half2), CPointer(_type___half2)),
+    )
+
+    def __heq2_1_caller(arg_0, arg_1):
+        return __heq2_1(arg_0, arg_1)
+
+    @lower(__heq2, _type___half2, _type___half2)
+    def impl(context, builder, sig, args):
+        context.active_code_library.add_linking_file(shim_obj)
+        shim_stream.write_with_key("__heq2_1", shim_raw_str)
+        ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
+        for ptr, ty, arg in zip(ptrs, sig.args, args):
+            builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
+
+        return context.compile_internal(
+            builder,
+            __heq2_1_caller,
+            signature(
+                _type___half2, CPointer(_type___half2), CPointer(_type___half2)
+            ),
+            ptrs,
+        )
+
+
+___heq2_1_lower(shim_stream, shim_obj)
+
+
+def __hne2():
+    pass
+
+
+def ___hne2_1_lower(shim_stream, shim_obj):
+    shim_raw_str = """
+    extern "C" __device__ int
+    __hne2_1(__half2 &retval , __half2* a, __half2* b) {
+        retval = __hne2(*a, *b);
+        return 0;
+    }
+        """
+
+    __hne2_1 = declare_device(
+        "__hne2_1",
+        _type___half2(CPointer(_type___half2), CPointer(_type___half2)),
+    )
+
+    def __hne2_1_caller(arg_0, arg_1):
+        return __hne2_1(arg_0, arg_1)
+
+    @lower(__hne2, _type___half2, _type___half2)
+    def impl(context, builder, sig, args):
+        context.active_code_library.add_linking_file(shim_obj)
+        shim_stream.write_with_key("__hne2_1", shim_raw_str)
+        ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
+        for ptr, ty, arg in zip(ptrs, sig.args, args):
+            builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
+
+        return context.compile_internal(
+            builder,
+            __hne2_1_caller,
+            signature(
+                _type___half2, CPointer(_type___half2), CPointer(_type___half2)
+            ),
+            ptrs,
+        )
+
+
+___hne2_1_lower(shim_stream, shim_obj)
+
+
+def __hle2():
+    pass
+
+
+def ___hle2_1_lower(shim_stream, shim_obj):
+    shim_raw_str = """
+    extern "C" __device__ int
+    __hle2_1(__half2 &retval , __half2* a, __half2* b) {
+        retval = __hle2(*a, *b);
+        return 0;
+    }
+        """
+
+    __hle2_1 = declare_device(
+        "__hle2_1",
+        _type___half2(CPointer(_type___half2), CPointer(_type___half2)),
+    )
+
+    def __hle2_1_caller(arg_0, arg_1):
+        return __hle2_1(arg_0, arg_1)
+
+    @lower(__hle2, _type___half2, _type___half2)
+    def impl(context, builder, sig, args):
+        context.active_code_library.add_linking_file(shim_obj)
+        shim_stream.write_with_key("__hle2_1", shim_raw_str)
+        ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
+        for ptr, ty, arg in zip(ptrs, sig.args, args):
+            builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
+
+        return context.compile_internal(
+            builder,
+            __hle2_1_caller,
+            signature(
+                _type___half2, CPointer(_type___half2), CPointer(_type___half2)
+            ),
+            ptrs,
+        )
+
+
+___hle2_1_lower(shim_stream, shim_obj)
+
+
+def __hge2():
+    pass
+
+
+def ___hge2_1_lower(shim_stream, shim_obj):
+    shim_raw_str = """
+    extern "C" __device__ int
+    __hge2_1(__half2 &retval , __half2* a, __half2* b) {
+        retval = __hge2(*a, *b);
+        return 0;
+    }
+        """
+
+    __hge2_1 = declare_device(
+        "__hge2_1",
+        _type___half2(CPointer(_type___half2), CPointer(_type___half2)),
+    )
+
+    def __hge2_1_caller(arg_0, arg_1):
+        return __hge2_1(arg_0, arg_1)
+
+    @lower(__hge2, _type___half2, _type___half2)
+    def impl(context, builder, sig, args):
+        context.active_code_library.add_linking_file(shim_obj)
+        shim_stream.write_with_key("__hge2_1", shim_raw_str)
+        ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
+        for ptr, ty, arg in zip(ptrs, sig.args, args):
+            builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
+
+        return context.compile_internal(
+            builder,
+            __hge2_1_caller,
+            signature(
+                _type___half2, CPointer(_type___half2), CPointer(_type___half2)
+            ),
+            ptrs,
+        )
+
+
+___hge2_1_lower(shim_stream, shim_obj)
+
+
+def __hlt2():
+    pass
+
+
+def ___hlt2_1_lower(shim_stream, shim_obj):
+    shim_raw_str = """
+    extern "C" __device__ int
+    __hlt2_1(__half2 &retval , __half2* a, __half2* b) {
+        retval = __hlt2(*a, *b);
+        return 0;
+    }
+        """
+
+    __hlt2_1 = declare_device(
+        "__hlt2_1",
+        _type___half2(CPointer(_type___half2), CPointer(_type___half2)),
+    )
+
+    def __hlt2_1_caller(arg_0, arg_1):
+        return __hlt2_1(arg_0, arg_1)
+
+    @lower(__hlt2, _type___half2, _type___half2)
+    def impl(context, builder, sig, args):
+        context.active_code_library.add_linking_file(shim_obj)
+        shim_stream.write_with_key("__hlt2_1", shim_raw_str)
+        ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
+        for ptr, ty, arg in zip(ptrs, sig.args, args):
+            builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
+
+        return context.compile_internal(
+            builder,
+            __hlt2_1_caller,
+            signature(
+                _type___half2, CPointer(_type___half2), CPointer(_type___half2)
+            ),
+            ptrs,
+        )
+
+
+___hlt2_1_lower(shim_stream, shim_obj)
+
+
+def __hgt2():
+    pass
+
+
+def ___hgt2_1_lower(shim_stream, shim_obj):
+    shim_raw_str = """
+    extern "C" __device__ int
+    __hgt2_1(__half2 &retval , __half2* a, __half2* b) {
+        retval = __hgt2(*a, *b);
+        return 0;
+    }
+        """
+
+    __hgt2_1 = declare_device(
+        "__hgt2_1",
+        _type___half2(CPointer(_type___half2), CPointer(_type___half2)),
+    )
+
+    def __hgt2_1_caller(arg_0, arg_1):
+        return __hgt2_1(arg_0, arg_1)
+
+    @lower(__hgt2, _type___half2, _type___half2)
+    def impl(context, builder, sig, args):
+        context.active_code_library.add_linking_file(shim_obj)
+        shim_stream.write_with_key("__hgt2_1", shim_raw_str)
+        ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
+        for ptr, ty, arg in zip(ptrs, sig.args, args):
+            builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
+
+        return context.compile_internal(
+            builder,
+            __hgt2_1_caller,
+            signature(
+                _type___half2, CPointer(_type___half2), CPointer(_type___half2)
+            ),
+            ptrs,
+        )
+
+
+___hgt2_1_lower(shim_stream, shim_obj)
+
+
+def __hequ2():
+    pass
+
+
+def ___hequ2_1_lower(shim_stream, shim_obj):
+    shim_raw_str = """
+    extern "C" __device__ int
+    __hequ2_1(__half2 &retval , __half2* a, __half2* b) {
+        retval = __hequ2(*a, *b);
+        return 0;
+    }
+        """
+
+    __hequ2_1 = declare_device(
+        "__hequ2_1",
+        _type___half2(CPointer(_type___half2), CPointer(_type___half2)),
+    )
+
+    def __hequ2_1_caller(arg_0, arg_1):
+        return __hequ2_1(arg_0, arg_1)
+
+    @lower(__hequ2, _type___half2, _type___half2)
+    def impl(context, builder, sig, args):
+        context.active_code_library.add_linking_file(shim_obj)
+        shim_stream.write_with_key("__hequ2_1", shim_raw_str)
+        ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
+        for ptr, ty, arg in zip(ptrs, sig.args, args):
+            builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
+
+        return context.compile_internal(
+            builder,
+            __hequ2_1_caller,
+            signature(
+                _type___half2, CPointer(_type___half2), CPointer(_type___half2)
+            ),
+            ptrs,
+        )
+
+
+___hequ2_1_lower(shim_stream, shim_obj)
+
+
+def __hneu2():
+    pass
+
+
+def ___hneu2_1_lower(shim_stream, shim_obj):
+    shim_raw_str = """
+    extern "C" __device__ int
+    __hneu2_1(__half2 &retval , __half2* a, __half2* b) {
+        retval = __hneu2(*a, *b);
+        return 0;
+    }
+        """
+
+    __hneu2_1 = declare_device(
+        "__hneu2_1",
+        _type___half2(CPointer(_type___half2), CPointer(_type___half2)),
+    )
+
+    def __hneu2_1_caller(arg_0, arg_1):
+        return __hneu2_1(arg_0, arg_1)
+
+    @lower(__hneu2, _type___half2, _type___half2)
+    def impl(context, builder, sig, args):
+        context.active_code_library.add_linking_file(shim_obj)
+        shim_stream.write_with_key("__hneu2_1", shim_raw_str)
+        ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
+        for ptr, ty, arg in zip(ptrs, sig.args, args):
+            builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
+
+        return context.compile_internal(
+            builder,
+            __hneu2_1_caller,
+            signature(
+                _type___half2, CPointer(_type___half2), CPointer(_type___half2)
+            ),
+            ptrs,
+        )
+
+
+___hneu2_1_lower(shim_stream, shim_obj)
+
+
+def __hleu2():
+    pass
+
+
+def ___hleu2_1_lower(shim_stream, shim_obj):
+    shim_raw_str = """
+    extern "C" __device__ int
+    __hleu2_1(__half2 &retval , __half2* a, __half2* b) {
+        retval = __hleu2(*a, *b);
+        return 0;
+    }
+        """
+
+    __hleu2_1 = declare_device(
+        "__hleu2_1",
+        _type___half2(CPointer(_type___half2), CPointer(_type___half2)),
+    )
+
+    def __hleu2_1_caller(arg_0, arg_1):
+        return __hleu2_1(arg_0, arg_1)
+
+    @lower(__hleu2, _type___half2, _type___half2)
+    def impl(context, builder, sig, args):
+        context.active_code_library.add_linking_file(shim_obj)
+        shim_stream.write_with_key("__hleu2_1", shim_raw_str)
+        ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
+        for ptr, ty, arg in zip(ptrs, sig.args, args):
+            builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
+
+        return context.compile_internal(
+            builder,
+            __hleu2_1_caller,
+            signature(
+                _type___half2, CPointer(_type___half2), CPointer(_type___half2)
+            ),
+            ptrs,
+        )
+
+
+___hleu2_1_lower(shim_stream, shim_obj)
+
+
+def __hgeu2():
+    pass
+
+
+def ___hgeu2_1_lower(shim_stream, shim_obj):
+    shim_raw_str = """
+    extern "C" __device__ int
+    __hgeu2_1(__half2 &retval , __half2* a, __half2* b) {
+        retval = __hgeu2(*a, *b);
+        return 0;
+    }
+        """
+
+    __hgeu2_1 = declare_device(
+        "__hgeu2_1",
+        _type___half2(CPointer(_type___half2), CPointer(_type___half2)),
+    )
+
+    def __hgeu2_1_caller(arg_0, arg_1):
+        return __hgeu2_1(arg_0, arg_1)
+
+    @lower(__hgeu2, _type___half2, _type___half2)
+    def impl(context, builder, sig, args):
+        context.active_code_library.add_linking_file(shim_obj)
+        shim_stream.write_with_key("__hgeu2_1", shim_raw_str)
+        ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
+        for ptr, ty, arg in zip(ptrs, sig.args, args):
+            builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
+
+        return context.compile_internal(
+            builder,
+            __hgeu2_1_caller,
+            signature(
+                _type___half2, CPointer(_type___half2), CPointer(_type___half2)
+            ),
+            ptrs,
+        )
+
+
+___hgeu2_1_lower(shim_stream, shim_obj)
+
+
+def __hltu2():
+    pass
+
+
+def ___hltu2_1_lower(shim_stream, shim_obj):
+    shim_raw_str = """
+    extern "C" __device__ int
+    __hltu2_1(__half2 &retval , __half2* a, __half2* b) {
+        retval = __hltu2(*a, *b);
+        return 0;
+    }
+        """
+
+    __hltu2_1 = declare_device(
+        "__hltu2_1",
+        _type___half2(CPointer(_type___half2), CPointer(_type___half2)),
+    )
+
+    def __hltu2_1_caller(arg_0, arg_1):
+        return __hltu2_1(arg_0, arg_1)
+
+    @lower(__hltu2, _type___half2, _type___half2)
+    def impl(context, builder, sig, args):
+        context.active_code_library.add_linking_file(shim_obj)
+        shim_stream.write_with_key("__hltu2_1", shim_raw_str)
+        ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
+        for ptr, ty, arg in zip(ptrs, sig.args, args):
+            builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
+
+        return context.compile_internal(
+            builder,
+            __hltu2_1_caller,
+            signature(
+                _type___half2, CPointer(_type___half2), CPointer(_type___half2)
+            ),
+            ptrs,
+        )
+
+
+___hltu2_1_lower(shim_stream, shim_obj)
+
+
+def __hgtu2():
+    pass
+
+
+def ___hgtu2_1_lower(shim_stream, shim_obj):
+    shim_raw_str = """
+    extern "C" __device__ int
+    __hgtu2_1(__half2 &retval , __half2* a, __half2* b) {
+        retval = __hgtu2(*a, *b);
+        return 0;
+    }
+        """
+
+    __hgtu2_1 = declare_device(
+        "__hgtu2_1",
+        _type___half2(CPointer(_type___half2), CPointer(_type___half2)),
+    )
+
+    def __hgtu2_1_caller(arg_0, arg_1):
+        return __hgtu2_1(arg_0, arg_1)
+
+    @lower(__hgtu2, _type___half2, _type___half2)
+    def impl(context, builder, sig, args):
+        context.active_code_library.add_linking_file(shim_obj)
+        shim_stream.write_with_key("__hgtu2_1", shim_raw_str)
+        ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
+        for ptr, ty, arg in zip(ptrs, sig.args, args):
+            builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
+
+        return context.compile_internal(
+            builder,
+            __hgtu2_1_caller,
+            signature(
+                _type___half2, CPointer(_type___half2), CPointer(_type___half2)
+            ),
+            ptrs,
+        )
+
+
+___hgtu2_1_lower(shim_stream, shim_obj)
+
+
+def __heq2_mask():
+    pass
+
+
+def ___heq2_mask_1_lower(shim_stream, shim_obj):
+    shim_raw_str = """
+    extern "C" __device__ int
+    __heq2_mask_1(unsigned int &retval , __half2* a, __half2* b) {
+        retval = __heq2_mask(*a, *b);
+        return 0;
+    }
+        """
+
+    __heq2_mask_1 = declare_device(
+        "__heq2_mask_1",
+        uint32(CPointer(_type___half2), CPointer(_type___half2)),
+    )
+
+    def __heq2_mask_1_caller(arg_0, arg_1):
+        return __heq2_mask_1(arg_0, arg_1)
+
+    @lower(__heq2_mask, _type___half2, _type___half2)
+    def impl(context, builder, sig, args):
+        context.active_code_library.add_linking_file(shim_obj)
+        shim_stream.write_with_key("__heq2_mask_1", shim_raw_str)
+        ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
+        for ptr, ty, arg in zip(ptrs, sig.args, args):
+            builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
+
+        return context.compile_internal(
+            builder,
+            __heq2_mask_1_caller,
+            signature(uint32, CPointer(_type___half2), CPointer(_type___half2)),
+            ptrs,
+        )
+
+
+___heq2_mask_1_lower(shim_stream, shim_obj)
+
+
+def __hne2_mask():
+    pass
+
+
+def ___hne2_mask_1_lower(shim_stream, shim_obj):
+    shim_raw_str = """
+    extern "C" __device__ int
+    __hne2_mask_1(unsigned int &retval , __half2* a, __half2* b) {
+        retval = __hne2_mask(*a, *b);
+        return 0;
+    }
+        """
+
+    __hne2_mask_1 = declare_device(
+        "__hne2_mask_1",
+        uint32(CPointer(_type___half2), CPointer(_type___half2)),
+    )
+
+    def __hne2_mask_1_caller(arg_0, arg_1):
+        return __hne2_mask_1(arg_0, arg_1)
+
+    @lower(__hne2_mask, _type___half2, _type___half2)
+    def impl(context, builder, sig, args):
+        context.active_code_library.add_linking_file(shim_obj)
+        shim_stream.write_with_key("__hne2_mask_1", shim_raw_str)
+        ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
+        for ptr, ty, arg in zip(ptrs, sig.args, args):
+            builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
+
+        return context.compile_internal(
+            builder,
+            __hne2_mask_1_caller,
+            signature(uint32, CPointer(_type___half2), CPointer(_type___half2)),
+            ptrs,
+        )
+
+
+___hne2_mask_1_lower(shim_stream, shim_obj)
+
+
+def __hle2_mask():
+    pass
+
+
+def ___hle2_mask_1_lower(shim_stream, shim_obj):
+    shim_raw_str = """
+    extern "C" __device__ int
+    __hle2_mask_1(unsigned int &retval , __half2* a, __half2* b) {
+        retval = __hle2_mask(*a, *b);
+        return 0;
+    }
+        """
+
+    __hle2_mask_1 = declare_device(
+        "__hle2_mask_1",
+        uint32(CPointer(_type___half2), CPointer(_type___half2)),
+    )
+
+    def __hle2_mask_1_caller(arg_0, arg_1):
+        return __hle2_mask_1(arg_0, arg_1)
+
+    @lower(__hle2_mask, _type___half2, _type___half2)
+    def impl(context, builder, sig, args):
+        context.active_code_library.add_linking_file(shim_obj)
+        shim_stream.write_with_key("__hle2_mask_1", shim_raw_str)
+        ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
+        for ptr, ty, arg in zip(ptrs, sig.args, args):
+            builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
+
+        return context.compile_internal(
+            builder,
+            __hle2_mask_1_caller,
+            signature(uint32, CPointer(_type___half2), CPointer(_type___half2)),
+            ptrs,
+        )
+
+
+___hle2_mask_1_lower(shim_stream, shim_obj)
+
+
+def __hge2_mask():
+    pass
+
+
+def ___hge2_mask_1_lower(shim_stream, shim_obj):
+    shim_raw_str = """
+    extern "C" __device__ int
+    __hge2_mask_1(unsigned int &retval , __half2* a, __half2* b) {
+        retval = __hge2_mask(*a, *b);
+        return 0;
+    }
+        """
+
+    __hge2_mask_1 = declare_device(
+        "__hge2_mask_1",
+        uint32(CPointer(_type___half2), CPointer(_type___half2)),
+    )
+
+    def __hge2_mask_1_caller(arg_0, arg_1):
+        return __hge2_mask_1(arg_0, arg_1)
+
+    @lower(__hge2_mask, _type___half2, _type___half2)
+    def impl(context, builder, sig, args):
+        context.active_code_library.add_linking_file(shim_obj)
+        shim_stream.write_with_key("__hge2_mask_1", shim_raw_str)
+        ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
+        for ptr, ty, arg in zip(ptrs, sig.args, args):
+            builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
+
+        return context.compile_internal(
+            builder,
+            __hge2_mask_1_caller,
+            signature(uint32, CPointer(_type___half2), CPointer(_type___half2)),
+            ptrs,
+        )
+
+
+___hge2_mask_1_lower(shim_stream, shim_obj)
+
+
+def __hlt2_mask():
+    pass
+
+
+def ___hlt2_mask_1_lower(shim_stream, shim_obj):
+    shim_raw_str = """
+    extern "C" __device__ int
+    __hlt2_mask_1(unsigned int &retval , __half2* a, __half2* b) {
+        retval = __hlt2_mask(*a, *b);
+        return 0;
+    }
+        """
+
+    __hlt2_mask_1 = declare_device(
+        "__hlt2_mask_1",
+        uint32(CPointer(_type___half2), CPointer(_type___half2)),
+    )
+
+    def __hlt2_mask_1_caller(arg_0, arg_1):
+        return __hlt2_mask_1(arg_0, arg_1)
+
+    @lower(__hlt2_mask, _type___half2, _type___half2)
+    def impl(context, builder, sig, args):
+        context.active_code_library.add_linking_file(shim_obj)
+        shim_stream.write_with_key("__hlt2_mask_1", shim_raw_str)
+        ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
+        for ptr, ty, arg in zip(ptrs, sig.args, args):
+            builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
+
+        return context.compile_internal(
+            builder,
+            __hlt2_mask_1_caller,
+            signature(uint32, CPointer(_type___half2), CPointer(_type___half2)),
+            ptrs,
+        )
+
+
+___hlt2_mask_1_lower(shim_stream, shim_obj)
+
+
+def __hgt2_mask():
+    pass
+
+
+def ___hgt2_mask_1_lower(shim_stream, shim_obj):
+    shim_raw_str = """
+    extern "C" __device__ int
+    __hgt2_mask_1(unsigned int &retval , __half2* a, __half2* b) {
+        retval = __hgt2_mask(*a, *b);
+        return 0;
+    }
+        """
+
+    __hgt2_mask_1 = declare_device(
+        "__hgt2_mask_1",
+        uint32(CPointer(_type___half2), CPointer(_type___half2)),
+    )
+
+    def __hgt2_mask_1_caller(arg_0, arg_1):
+        return __hgt2_mask_1(arg_0, arg_1)
+
+    @lower(__hgt2_mask, _type___half2, _type___half2)
+    def impl(context, builder, sig, args):
+        context.active_code_library.add_linking_file(shim_obj)
+        shim_stream.write_with_key("__hgt2_mask_1", shim_raw_str)
+        ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
+        for ptr, ty, arg in zip(ptrs, sig.args, args):
+            builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
+
+        return context.compile_internal(
+            builder,
+            __hgt2_mask_1_caller,
+            signature(uint32, CPointer(_type___half2), CPointer(_type___half2)),
+            ptrs,
+        )
+
+
+___hgt2_mask_1_lower(shim_stream, shim_obj)
+
+
+def __hequ2_mask():
+    pass
+
+
+def ___hequ2_mask_1_lower(shim_stream, shim_obj):
+    shim_raw_str = """
+    extern "C" __device__ int
+    __hequ2_mask_1(unsigned int &retval , __half2* a, __half2* b) {
+        retval = __hequ2_mask(*a, *b);
+        return 0;
+    }
+        """
+
+    __hequ2_mask_1 = declare_device(
+        "__hequ2_mask_1",
+        uint32(CPointer(_type___half2), CPointer(_type___half2)),
+    )
+
+    def __hequ2_mask_1_caller(arg_0, arg_1):
+        return __hequ2_mask_1(arg_0, arg_1)
+
+    @lower(__hequ2_mask, _type___half2, _type___half2)
+    def impl(context, builder, sig, args):
+        context.active_code_library.add_linking_file(shim_obj)
+        shim_stream.write_with_key("__hequ2_mask_1", shim_raw_str)
+        ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
+        for ptr, ty, arg in zip(ptrs, sig.args, args):
+            builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
+
+        return context.compile_internal(
+            builder,
+            __hequ2_mask_1_caller,
+            signature(uint32, CPointer(_type___half2), CPointer(_type___half2)),
+            ptrs,
+        )
+
+
+___hequ2_mask_1_lower(shim_stream, shim_obj)
+
+
+def __hneu2_mask():
+    pass
+
+
+def ___hneu2_mask_1_lower(shim_stream, shim_obj):
+    shim_raw_str = """
+    extern "C" __device__ int
+    __hneu2_mask_1(unsigned int &retval , __half2* a, __half2* b) {
+        retval = __hneu2_mask(*a, *b);
+        return 0;
+    }
+        """
+
+    __hneu2_mask_1 = declare_device(
+        "__hneu2_mask_1",
+        uint32(CPointer(_type___half2), CPointer(_type___half2)),
+    )
+
+    def __hneu2_mask_1_caller(arg_0, arg_1):
+        return __hneu2_mask_1(arg_0, arg_1)
+
+    @lower(__hneu2_mask, _type___half2, _type___half2)
+    def impl(context, builder, sig, args):
+        context.active_code_library.add_linking_file(shim_obj)
+        shim_stream.write_with_key("__hneu2_mask_1", shim_raw_str)
+        ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
+        for ptr, ty, arg in zip(ptrs, sig.args, args):
+            builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
+
+        return context.compile_internal(
+            builder,
+            __hneu2_mask_1_caller,
+            signature(uint32, CPointer(_type___half2), CPointer(_type___half2)),
+            ptrs,
+        )
+
+
+___hneu2_mask_1_lower(shim_stream, shim_obj)
+
+
+def __hleu2_mask():
+    pass
+
+
+def ___hleu2_mask_1_lower(shim_stream, shim_obj):
+    shim_raw_str = """
+    extern "C" __device__ int
+    __hleu2_mask_1(unsigned int &retval , __half2* a, __half2* b) {
+        retval = __hleu2_mask(*a, *b);
+        return 0;
+    }
+        """
+
+    __hleu2_mask_1 = declare_device(
+        "__hleu2_mask_1",
+        uint32(CPointer(_type___half2), CPointer(_type___half2)),
+    )
+
+    def __hleu2_mask_1_caller(arg_0, arg_1):
+        return __hleu2_mask_1(arg_0, arg_1)
+
+    @lower(__hleu2_mask, _type___half2, _type___half2)
+    def impl(context, builder, sig, args):
+        context.active_code_library.add_linking_file(shim_obj)
+        shim_stream.write_with_key("__hleu2_mask_1", shim_raw_str)
+        ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
+        for ptr, ty, arg in zip(ptrs, sig.args, args):
+            builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
+
+        return context.compile_internal(
+            builder,
+            __hleu2_mask_1_caller,
+            signature(uint32, CPointer(_type___half2), CPointer(_type___half2)),
+            ptrs,
+        )
+
+
+___hleu2_mask_1_lower(shim_stream, shim_obj)
+
+
+def __hgeu2_mask():
+    pass
+
+
+def ___hgeu2_mask_1_lower(shim_stream, shim_obj):
+    shim_raw_str = """
+    extern "C" __device__ int
+    __hgeu2_mask_1(unsigned int &retval , __half2* a, __half2* b) {
+        retval = __hgeu2_mask(*a, *b);
+        return 0;
+    }
+        """
+
+    __hgeu2_mask_1 = declare_device(
+        "__hgeu2_mask_1",
+        uint32(CPointer(_type___half2), CPointer(_type___half2)),
+    )
+
+    def __hgeu2_mask_1_caller(arg_0, arg_1):
+        return __hgeu2_mask_1(arg_0, arg_1)
+
+    @lower(__hgeu2_mask, _type___half2, _type___half2)
+    def impl(context, builder, sig, args):
+        context.active_code_library.add_linking_file(shim_obj)
+        shim_stream.write_with_key("__hgeu2_mask_1", shim_raw_str)
+        ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
+        for ptr, ty, arg in zip(ptrs, sig.args, args):
+            builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
+
+        return context.compile_internal(
+            builder,
+            __hgeu2_mask_1_caller,
+            signature(uint32, CPointer(_type___half2), CPointer(_type___half2)),
+            ptrs,
+        )
+
+
+___hgeu2_mask_1_lower(shim_stream, shim_obj)
+
+
+def __hltu2_mask():
+    pass
+
+
+def ___hltu2_mask_1_lower(shim_stream, shim_obj):
+    shim_raw_str = """
+    extern "C" __device__ int
+    __hltu2_mask_1(unsigned int &retval , __half2* a, __half2* b) {
+        retval = __hltu2_mask(*a, *b);
+        return 0;
+    }
+        """
+
+    __hltu2_mask_1 = declare_device(
+        "__hltu2_mask_1",
+        uint32(CPointer(_type___half2), CPointer(_type___half2)),
+    )
+
+    def __hltu2_mask_1_caller(arg_0, arg_1):
+        return __hltu2_mask_1(arg_0, arg_1)
+
+    @lower(__hltu2_mask, _type___half2, _type___half2)
+    def impl(context, builder, sig, args):
+        context.active_code_library.add_linking_file(shim_obj)
+        shim_stream.write_with_key("__hltu2_mask_1", shim_raw_str)
+        ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
+        for ptr, ty, arg in zip(ptrs, sig.args, args):
+            builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
+
+        return context.compile_internal(
+            builder,
+            __hltu2_mask_1_caller,
+            signature(uint32, CPointer(_type___half2), CPointer(_type___half2)),
+            ptrs,
+        )
+
+
+___hltu2_mask_1_lower(shim_stream, shim_obj)
+
+
+def __hgtu2_mask():
+    pass
+
+
+def ___hgtu2_mask_1_lower(shim_stream, shim_obj):
+    shim_raw_str = """
+    extern "C" __device__ int
+    __hgtu2_mask_1(unsigned int &retval , __half2* a, __half2* b) {
+        retval = __hgtu2_mask(*a, *b);
+        return 0;
+    }
+        """
+
+    __hgtu2_mask_1 = declare_device(
+        "__hgtu2_mask_1",
+        uint32(CPointer(_type___half2), CPointer(_type___half2)),
+    )
+
+    def __hgtu2_mask_1_caller(arg_0, arg_1):
+        return __hgtu2_mask_1(arg_0, arg_1)
+
+    @lower(__hgtu2_mask, _type___half2, _type___half2)
+    def impl(context, builder, sig, args):
+        context.active_code_library.add_linking_file(shim_obj)
+        shim_stream.write_with_key("__hgtu2_mask_1", shim_raw_str)
+        ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
+        for ptr, ty, arg in zip(ptrs, sig.args, args):
+            builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
+
+        return context.compile_internal(
+            builder,
+            __hgtu2_mask_1_caller,
+            signature(uint32, CPointer(_type___half2), CPointer(_type___half2)),
+            ptrs,
+        )
+
+
+___hgtu2_mask_1_lower(shim_stream, shim_obj)
+
+
+def __hisnan2():
+    pass
+
+
+def ___hisnan2_1_lower(shim_stream, shim_obj):
+    shim_raw_str = """
+    extern "C" __device__ int
+    __hisnan2_1(__half2 &retval , __half2* a) {
+        retval = __hisnan2(*a);
+        return 0;
+    }
+        """
+
+    __hisnan2_1 = declare_device(
+        "__hisnan2_1", _type___half2(CPointer(_type___half2))
+    )
+
+    def __hisnan2_1_caller(arg_0):
+        return __hisnan2_1(arg_0)
+
+    @lower(__hisnan2, _type___half2)
+    def impl(context, builder, sig, args):
+        context.active_code_library.add_linking_file(shim_obj)
+        shim_stream.write_with_key("__hisnan2_1", shim_raw_str)
+        ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
+        for ptr, ty, arg in zip(ptrs, sig.args, args):
+            builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
+
+        return context.compile_internal(
+            builder,
+            __hisnan2_1_caller,
+            signature(_type___half2, CPointer(_type___half2)),
+            ptrs,
+        )
+
+
+___hisnan2_1_lower(shim_stream, shim_obj)
+
+
+def __hadd2():
+    pass
+
+
+def ___hadd2_1_lower(shim_stream, shim_obj):
+    shim_raw_str = """
+    extern "C" __device__ int
+    __hadd2_1(__half2 &retval , __half2* a, __half2* b) {
+        retval = __hadd2(*a, *b);
+        return 0;
+    }
+        """
+
+    __hadd2_1 = declare_device(
+        "__hadd2_1",
+        _type___half2(CPointer(_type___half2), CPointer(_type___half2)),
+    )
+
+    def __hadd2_1_caller(arg_0, arg_1):
+        return __hadd2_1(arg_0, arg_1)
+
+    @lower(__hadd2, _type___half2, _type___half2)
+    def impl(context, builder, sig, args):
+        context.active_code_library.add_linking_file(shim_obj)
+        shim_stream.write_with_key("__hadd2_1", shim_raw_str)
+        ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
+        for ptr, ty, arg in zip(ptrs, sig.args, args):
+            builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
+
+        return context.compile_internal(
+            builder,
+            __hadd2_1_caller,
+            signature(
+                _type___half2, CPointer(_type___half2), CPointer(_type___half2)
+            ),
+            ptrs,
+        )
+
+
+___hadd2_1_lower(shim_stream, shim_obj)
+
+
+def __hsub2():
+    pass
+
+
+def ___hsub2_1_lower(shim_stream, shim_obj):
+    shim_raw_str = """
+    extern "C" __device__ int
+    __hsub2_1(__half2 &retval , __half2* a, __half2* b) {
+        retval = __hsub2(*a, *b);
+        return 0;
+    }
+        """
+
+    __hsub2_1 = declare_device(
+        "__hsub2_1",
+        _type___half2(CPointer(_type___half2), CPointer(_type___half2)),
+    )
+
+    def __hsub2_1_caller(arg_0, arg_1):
+        return __hsub2_1(arg_0, arg_1)
+
+    @lower(__hsub2, _type___half2, _type___half2)
+    def impl(context, builder, sig, args):
+        context.active_code_library.add_linking_file(shim_obj)
+        shim_stream.write_with_key("__hsub2_1", shim_raw_str)
+        ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
+        for ptr, ty, arg in zip(ptrs, sig.args, args):
+            builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
+
+        return context.compile_internal(
+            builder,
+            __hsub2_1_caller,
+            signature(
+                _type___half2, CPointer(_type___half2), CPointer(_type___half2)
+            ),
+            ptrs,
+        )
+
+
+___hsub2_1_lower(shim_stream, shim_obj)
+
+
+def __hmul2():
+    pass
+
+
+def ___hmul2_1_lower(shim_stream, shim_obj):
+    shim_raw_str = """
+    extern "C" __device__ int
+    __hmul2_1(__half2 &retval , __half2* a, __half2* b) {
+        retval = __hmul2(*a, *b);
+        return 0;
+    }
+        """
+
+    __hmul2_1 = declare_device(
+        "__hmul2_1",
+        _type___half2(CPointer(_type___half2), CPointer(_type___half2)),
+    )
+
+    def __hmul2_1_caller(arg_0, arg_1):
+        return __hmul2_1(arg_0, arg_1)
+
+    @lower(__hmul2, _type___half2, _type___half2)
+    def impl(context, builder, sig, args):
+        context.active_code_library.add_linking_file(shim_obj)
+        shim_stream.write_with_key("__hmul2_1", shim_raw_str)
+        ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
+        for ptr, ty, arg in zip(ptrs, sig.args, args):
+            builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
+
+        return context.compile_internal(
+            builder,
+            __hmul2_1_caller,
+            signature(
+                _type___half2, CPointer(_type___half2), CPointer(_type___half2)
+            ),
+            ptrs,
+        )
+
+
+___hmul2_1_lower(shim_stream, shim_obj)
+
+
+def __hadd2_rn():
+    pass
+
+
+def ___hadd2_rn_1_lower(shim_stream, shim_obj):
+    shim_raw_str = """
+    extern "C" __device__ int
+    __hadd2_rn_1(__half2 &retval , __half2* a, __half2* b) {
+        retval = __hadd2_rn(*a, *b);
+        return 0;
+    }
+        """
+
+    __hadd2_rn_1 = declare_device(
+        "__hadd2_rn_1",
+        _type___half2(CPointer(_type___half2), CPointer(_type___half2)),
+    )
+
+    def __hadd2_rn_1_caller(arg_0, arg_1):
+        return __hadd2_rn_1(arg_0, arg_1)
+
+    @lower(__hadd2_rn, _type___half2, _type___half2)
+    def impl(context, builder, sig, args):
+        context.active_code_library.add_linking_file(shim_obj)
+        shim_stream.write_with_key("__hadd2_rn_1", shim_raw_str)
+        ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
+        for ptr, ty, arg in zip(ptrs, sig.args, args):
+            builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
+
+        return context.compile_internal(
+            builder,
+            __hadd2_rn_1_caller,
+            signature(
+                _type___half2, CPointer(_type___half2), CPointer(_type___half2)
+            ),
+            ptrs,
+        )
+
+
+___hadd2_rn_1_lower(shim_stream, shim_obj)
+
+
+def __hsub2_rn():
+    pass
+
+
+def ___hsub2_rn_1_lower(shim_stream, shim_obj):
+    shim_raw_str = """
+    extern "C" __device__ int
+    __hsub2_rn_1(__half2 &retval , __half2* a, __half2* b) {
+        retval = __hsub2_rn(*a, *b);
+        return 0;
+    }
+        """
+
+    __hsub2_rn_1 = declare_device(
+        "__hsub2_rn_1",
+        _type___half2(CPointer(_type___half2), CPointer(_type___half2)),
+    )
+
+    def __hsub2_rn_1_caller(arg_0, arg_1):
+        return __hsub2_rn_1(arg_0, arg_1)
+
+    @lower(__hsub2_rn, _type___half2, _type___half2)
+    def impl(context, builder, sig, args):
+        context.active_code_library.add_linking_file(shim_obj)
+        shim_stream.write_with_key("__hsub2_rn_1", shim_raw_str)
+        ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
+        for ptr, ty, arg in zip(ptrs, sig.args, args):
+            builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
+
+        return context.compile_internal(
+            builder,
+            __hsub2_rn_1_caller,
+            signature(
+                _type___half2, CPointer(_type___half2), CPointer(_type___half2)
+            ),
+            ptrs,
+        )
+
+
+___hsub2_rn_1_lower(shim_stream, shim_obj)
+
+
+def __hmul2_rn():
+    pass
+
+
+def ___hmul2_rn_1_lower(shim_stream, shim_obj):
+    shim_raw_str = """
+    extern "C" __device__ int
+    __hmul2_rn_1(__half2 &retval , __half2* a, __half2* b) {
+        retval = __hmul2_rn(*a, *b);
+        return 0;
+    }
+        """
+
+    __hmul2_rn_1 = declare_device(
+        "__hmul2_rn_1",
+        _type___half2(CPointer(_type___half2), CPointer(_type___half2)),
+    )
+
+    def __hmul2_rn_1_caller(arg_0, arg_1):
+        return __hmul2_rn_1(arg_0, arg_1)
+
+    @lower(__hmul2_rn, _type___half2, _type___half2)
+    def impl(context, builder, sig, args):
+        context.active_code_library.add_linking_file(shim_obj)
+        shim_stream.write_with_key("__hmul2_rn_1", shim_raw_str)
+        ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
+        for ptr, ty, arg in zip(ptrs, sig.args, args):
+            builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
+
+        return context.compile_internal(
+            builder,
+            __hmul2_rn_1_caller,
+            signature(
+                _type___half2, CPointer(_type___half2), CPointer(_type___half2)
+            ),
+            ptrs,
+        )
+
+
+___hmul2_rn_1_lower(shim_stream, shim_obj)
+
+
+def __h2div():
+    pass
+
+
+def ___h2div_1_lower(shim_stream, shim_obj):
+    shim_raw_str = """
+    extern "C" __device__ int
+    __h2div_1(__half2 &retval , __half2* a, __half2* b) {
+        retval = __h2div(*a, *b);
+        return 0;
+    }
+        """
+
+    __h2div_1 = declare_device(
+        "__h2div_1",
+        _type___half2(CPointer(_type___half2), CPointer(_type___half2)),
+    )
+
+    def __h2div_1_caller(arg_0, arg_1):
+        return __h2div_1(arg_0, arg_1)
+
+    @lower(__h2div, _type___half2, _type___half2)
+    def impl(context, builder, sig, args):
+        context.active_code_library.add_linking_file(shim_obj)
+        shim_stream.write_with_key("__h2div_1", shim_raw_str)
+        ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
+        for ptr, ty, arg in zip(ptrs, sig.args, args):
+            builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
+
+        return context.compile_internal(
+            builder,
+            __h2div_1_caller,
+            signature(
+                _type___half2, CPointer(_type___half2), CPointer(_type___half2)
+            ),
+            ptrs,
+        )
+
+
+___h2div_1_lower(shim_stream, shim_obj)
+
+
+def __habs2():
+    pass
+
+
+def ___habs2_1_lower(shim_stream, shim_obj):
+    shim_raw_str = """
+    extern "C" __device__ int
+    __habs2_1(__half2 &retval , __half2* a) {
+        retval = __habs2(*a);
+        return 0;
+    }
+        """
+
+    __habs2_1 = declare_device(
+        "__habs2_1", _type___half2(CPointer(_type___half2))
+    )
+
+    def __habs2_1_caller(arg_0):
+        return __habs2_1(arg_0)
+
+    @lower(__habs2, _type___half2)
+    def impl(context, builder, sig, args):
+        context.active_code_library.add_linking_file(shim_obj)
+        shim_stream.write_with_key("__habs2_1", shim_raw_str)
+        ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
+        for ptr, ty, arg in zip(ptrs, sig.args, args):
+            builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
+
+        return context.compile_internal(
+            builder,
+            __habs2_1_caller,
+            signature(_type___half2, CPointer(_type___half2)),
+            ptrs,
+        )
+
+
+___habs2_1_lower(shim_stream, shim_obj)
+
+
+def __hadd2_sat():
+    pass
+
+
+def ___hadd2_sat_1_lower(shim_stream, shim_obj):
+    shim_raw_str = """
+    extern "C" __device__ int
+    __hadd2_sat_1(__half2 &retval , __half2* a, __half2* b) {
+        retval = __hadd2_sat(*a, *b);
+        return 0;
+    }
+        """
+
+    __hadd2_sat_1 = declare_device(
+        "__hadd2_sat_1",
+        _type___half2(CPointer(_type___half2), CPointer(_type___half2)),
+    )
+
+    def __hadd2_sat_1_caller(arg_0, arg_1):
+        return __hadd2_sat_1(arg_0, arg_1)
+
+    @lower(__hadd2_sat, _type___half2, _type___half2)
+    def impl(context, builder, sig, args):
+        context.active_code_library.add_linking_file(shim_obj)
+        shim_stream.write_with_key("__hadd2_sat_1", shim_raw_str)
+        ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
+        for ptr, ty, arg in zip(ptrs, sig.args, args):
+            builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
+
+        return context.compile_internal(
+            builder,
+            __hadd2_sat_1_caller,
+            signature(
+                _type___half2, CPointer(_type___half2), CPointer(_type___half2)
+            ),
+            ptrs,
+        )
+
+
+___hadd2_sat_1_lower(shim_stream, shim_obj)
+
+
+def __hsub2_sat():
+    pass
+
+
+def ___hsub2_sat_1_lower(shim_stream, shim_obj):
+    shim_raw_str = """
+    extern "C" __device__ int
+    __hsub2_sat_1(__half2 &retval , __half2* a, __half2* b) {
+        retval = __hsub2_sat(*a, *b);
+        return 0;
+    }
+        """
+
+    __hsub2_sat_1 = declare_device(
+        "__hsub2_sat_1",
+        _type___half2(CPointer(_type___half2), CPointer(_type___half2)),
+    )
+
+    def __hsub2_sat_1_caller(arg_0, arg_1):
+        return __hsub2_sat_1(arg_0, arg_1)
+
+    @lower(__hsub2_sat, _type___half2, _type___half2)
+    def impl(context, builder, sig, args):
+        context.active_code_library.add_linking_file(shim_obj)
+        shim_stream.write_with_key("__hsub2_sat_1", shim_raw_str)
+        ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
+        for ptr, ty, arg in zip(ptrs, sig.args, args):
+            builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
+
+        return context.compile_internal(
+            builder,
+            __hsub2_sat_1_caller,
+            signature(
+                _type___half2, CPointer(_type___half2), CPointer(_type___half2)
+            ),
+            ptrs,
+        )
+
+
+___hsub2_sat_1_lower(shim_stream, shim_obj)
+
+
+def __hmul2_sat():
+    pass
+
+
+def ___hmul2_sat_1_lower(shim_stream, shim_obj):
+    shim_raw_str = """
+    extern "C" __device__ int
+    __hmul2_sat_1(__half2 &retval , __half2* a, __half2* b) {
+        retval = __hmul2_sat(*a, *b);
+        return 0;
+    }
+        """
+
+    __hmul2_sat_1 = declare_device(
+        "__hmul2_sat_1",
+        _type___half2(CPointer(_type___half2), CPointer(_type___half2)),
+    )
+
+    def __hmul2_sat_1_caller(arg_0, arg_1):
+        return __hmul2_sat_1(arg_0, arg_1)
+
+    @lower(__hmul2_sat, _type___half2, _type___half2)
+    def impl(context, builder, sig, args):
+        context.active_code_library.add_linking_file(shim_obj)
+        shim_stream.write_with_key("__hmul2_sat_1", shim_raw_str)
+        ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
+        for ptr, ty, arg in zip(ptrs, sig.args, args):
+            builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
+
+        return context.compile_internal(
+            builder,
+            __hmul2_sat_1_caller,
+            signature(
+                _type___half2, CPointer(_type___half2), CPointer(_type___half2)
+            ),
+            ptrs,
+        )
+
+
+___hmul2_sat_1_lower(shim_stream, shim_obj)
+
+
+def __hfma2():
+    pass
+
+
+def ___hfma2_1_lower(shim_stream, shim_obj):
+    shim_raw_str = """
+    extern "C" __device__ int
+    __hfma2_1(__half2 &retval , __half2* a, __half2* b, __half2* c) {
+        retval = __hfma2(*a, *b, *c);
+        return 0;
+    }
+        """
+
+    __hfma2_1 = declare_device(
+        "__hfma2_1",
+        _type___half2(
+            CPointer(_type___half2),
+            CPointer(_type___half2),
+            CPointer(_type___half2),
+        ),
+    )
+
+    def __hfma2_1_caller(arg_0, arg_1, arg_2):
+        return __hfma2_1(arg_0, arg_1, arg_2)
+
+    @lower(__hfma2, _type___half2, _type___half2, _type___half2)
+    def impl(context, builder, sig, args):
+        context.active_code_library.add_linking_file(shim_obj)
+        shim_stream.write_with_key("__hfma2_1", shim_raw_str)
+        ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
+        for ptr, ty, arg in zip(ptrs, sig.args, args):
+            builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
+
+        return context.compile_internal(
+            builder,
+            __hfma2_1_caller,
+            signature(
+                _type___half2,
+                CPointer(_type___half2),
+                CPointer(_type___half2),
+                CPointer(_type___half2),
+            ),
+            ptrs,
+        )
+
+
+___hfma2_1_lower(shim_stream, shim_obj)
+
+
+def __hfma2_sat():
+    pass
+
+
+def ___hfma2_sat_1_lower(shim_stream, shim_obj):
+    shim_raw_str = """
+    extern "C" __device__ int
+    __hfma2_sat_1(__half2 &retval , __half2* a, __half2* b, __half2* c) {
+        retval = __hfma2_sat(*a, *b, *c);
+        return 0;
+    }
+        """
+
+    __hfma2_sat_1 = declare_device(
+        "__hfma2_sat_1",
+        _type___half2(
+            CPointer(_type___half2),
+            CPointer(_type___half2),
+            CPointer(_type___half2),
+        ),
+    )
+
+    def __hfma2_sat_1_caller(arg_0, arg_1, arg_2):
+        return __hfma2_sat_1(arg_0, arg_1, arg_2)
+
+    @lower(__hfma2_sat, _type___half2, _type___half2, _type___half2)
+    def impl(context, builder, sig, args):
+        context.active_code_library.add_linking_file(shim_obj)
+        shim_stream.write_with_key("__hfma2_sat_1", shim_raw_str)
+        ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
+        for ptr, ty, arg in zip(ptrs, sig.args, args):
+            builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
+
+        return context.compile_internal(
+            builder,
+            __hfma2_sat_1_caller,
+            signature(
+                _type___half2,
+                CPointer(_type___half2),
+                CPointer(_type___half2),
+                CPointer(_type___half2),
+            ),
+            ptrs,
+        )
+
+
+___hfma2_sat_1_lower(shim_stream, shim_obj)
+
+
+def __hneg2():
+    pass
+
+
+def ___hneg2_1_lower(shim_stream, shim_obj):
+    shim_raw_str = """
+    extern "C" __device__ int
+    __hneg2_1(__half2 &retval , __half2* a) {
+        retval = __hneg2(*a);
+        return 0;
+    }
+        """
+
+    __hneg2_1 = declare_device(
+        "__hneg2_1", _type___half2(CPointer(_type___half2))
+    )
+
+    def __hneg2_1_caller(arg_0):
+        return __hneg2_1(arg_0)
+
+    @lower(__hneg2, _type___half2)
+    def impl(context, builder, sig, args):
+        context.active_code_library.add_linking_file(shim_obj)
+        shim_stream.write_with_key("__hneg2_1", shim_raw_str)
+        ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
+        for ptr, ty, arg in zip(ptrs, sig.args, args):
+            builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
+
+        return context.compile_internal(
+            builder,
+            __hneg2_1_caller,
+            signature(_type___half2, CPointer(_type___half2)),
+            ptrs,
+        )
+
+
+___hneg2_1_lower(shim_stream, shim_obj)
+
+
+def __habs():
+    pass
+
+
+def ___habs_1_lower(shim_stream, shim_obj):
+    shim_raw_str = """
+    extern "C" __device__ int
+    __habs_1(__half &retval , __half* a) {
+        retval = __habs(*a);
+        return 0;
+    }
+        """
+
+    __habs_1 = declare_device("__habs_1", _type___half(CPointer(_type___half)))
+
+    def __habs_1_caller(arg_0):
+        return __habs_1(arg_0)
+
+    @lower(__habs, _type___half)
+    def impl(context, builder, sig, args):
+        context.active_code_library.add_linking_file(shim_obj)
+        shim_stream.write_with_key("__habs_1", shim_raw_str)
+        ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
+        for ptr, ty, arg in zip(ptrs, sig.args, args):
+            builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
+
+        return context.compile_internal(
+            builder,
+            __habs_1_caller,
+            signature(_type___half, CPointer(_type___half)),
+            ptrs,
+        )
+
+
+___habs_1_lower(shim_stream, shim_obj)
+
+
+def __hadd():
+    pass
+
+
+def ___hadd_1_lower(shim_stream, shim_obj):
+    shim_raw_str = """
+    extern "C" __device__ int
+    __hadd_1(__half &retval , __half* a, __half* b) {
+        retval = __hadd(*a, *b);
+        return 0;
+    }
+        """
+
+    __hadd_1 = declare_device(
+        "__hadd_1", _type___half(CPointer(_type___half), CPointer(_type___half))
+    )
+
+    def __hadd_1_caller(arg_0, arg_1):
+        return __hadd_1(arg_0, arg_1)
+
+    @lower(__hadd, _type___half, _type___half)
+    def impl(context, builder, sig, args):
+        context.active_code_library.add_linking_file(shim_obj)
+        shim_stream.write_with_key("__hadd_1", shim_raw_str)
+        ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
+        for ptr, ty, arg in zip(ptrs, sig.args, args):
+            builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
+
+        return context.compile_internal(
+            builder,
+            __hadd_1_caller,
+            signature(
+                _type___half, CPointer(_type___half), CPointer(_type___half)
+            ),
+            ptrs,
+        )
+
+
+___hadd_1_lower(shim_stream, shim_obj)
+
+
+def __hsub():
+    pass
+
+
+def ___hsub_1_lower(shim_stream, shim_obj):
+    shim_raw_str = """
+    extern "C" __device__ int
+    __hsub_1(__half &retval , __half* a, __half* b) {
+        retval = __hsub(*a, *b);
+        return 0;
+    }
+        """
+
+    __hsub_1 = declare_device(
+        "__hsub_1", _type___half(CPointer(_type___half), CPointer(_type___half))
+    )
+
+    def __hsub_1_caller(arg_0, arg_1):
+        return __hsub_1(arg_0, arg_1)
+
+    @lower(__hsub, _type___half, _type___half)
+    def impl(context, builder, sig, args):
+        context.active_code_library.add_linking_file(shim_obj)
+        shim_stream.write_with_key("__hsub_1", shim_raw_str)
+        ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
+        for ptr, ty, arg in zip(ptrs, sig.args, args):
+            builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
+
+        return context.compile_internal(
+            builder,
+            __hsub_1_caller,
+            signature(
+                _type___half, CPointer(_type___half), CPointer(_type___half)
+            ),
+            ptrs,
+        )
+
+
+___hsub_1_lower(shim_stream, shim_obj)
+
+
+def __hmul():
+    pass
+
+
+def ___hmul_1_lower(shim_stream, shim_obj):
+    shim_raw_str = """
+    extern "C" __device__ int
+    __hmul_1(__half &retval , __half* a, __half* b) {
+        retval = __hmul(*a, *b);
+        return 0;
+    }
+        """
+
+    __hmul_1 = declare_device(
+        "__hmul_1", _type___half(CPointer(_type___half), CPointer(_type___half))
+    )
+
+    def __hmul_1_caller(arg_0, arg_1):
+        return __hmul_1(arg_0, arg_1)
+
+    @lower(__hmul, _type___half, _type___half)
+    def impl(context, builder, sig, args):
+        context.active_code_library.add_linking_file(shim_obj)
+        shim_stream.write_with_key("__hmul_1", shim_raw_str)
+        ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
+        for ptr, ty, arg in zip(ptrs, sig.args, args):
+            builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
+
+        return context.compile_internal(
+            builder,
+            __hmul_1_caller,
+            signature(
+                _type___half, CPointer(_type___half), CPointer(_type___half)
+            ),
+            ptrs,
+        )
+
+
+___hmul_1_lower(shim_stream, shim_obj)
+
+
+def __hadd_rn():
+    pass
+
+
+def ___hadd_rn_1_lower(shim_stream, shim_obj):
+    shim_raw_str = """
+    extern "C" __device__ int
+    __hadd_rn_1(__half &retval , __half* a, __half* b) {
+        retval = __hadd_rn(*a, *b);
+        return 0;
+    }
+        """
+
+    __hadd_rn_1 = declare_device(
+        "__hadd_rn_1",
+        _type___half(CPointer(_type___half), CPointer(_type___half)),
+    )
+
+    def __hadd_rn_1_caller(arg_0, arg_1):
+        return __hadd_rn_1(arg_0, arg_1)
+
+    @lower(__hadd_rn, _type___half, _type___half)
+    def impl(context, builder, sig, args):
+        context.active_code_library.add_linking_file(shim_obj)
+        shim_stream.write_with_key("__hadd_rn_1", shim_raw_str)
+        ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
+        for ptr, ty, arg in zip(ptrs, sig.args, args):
+            builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
+
+        return context.compile_internal(
+            builder,
+            __hadd_rn_1_caller,
+            signature(
+                _type___half, CPointer(_type___half), CPointer(_type___half)
+            ),
+            ptrs,
+        )
+
+
+___hadd_rn_1_lower(shim_stream, shim_obj)
+
+
+def __hsub_rn():
+    pass
+
+
+def ___hsub_rn_1_lower(shim_stream, shim_obj):
+    shim_raw_str = """
+    extern "C" __device__ int
+    __hsub_rn_1(__half &retval , __half* a, __half* b) {
+        retval = __hsub_rn(*a, *b);
+        return 0;
+    }
+        """
+
+    __hsub_rn_1 = declare_device(
+        "__hsub_rn_1",
+        _type___half(CPointer(_type___half), CPointer(_type___half)),
+    )
+
+    def __hsub_rn_1_caller(arg_0, arg_1):
+        return __hsub_rn_1(arg_0, arg_1)
+
+    @lower(__hsub_rn, _type___half, _type___half)
+    def impl(context, builder, sig, args):
+        context.active_code_library.add_linking_file(shim_obj)
+        shim_stream.write_with_key("__hsub_rn_1", shim_raw_str)
+        ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
+        for ptr, ty, arg in zip(ptrs, sig.args, args):
+            builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
+
+        return context.compile_internal(
+            builder,
+            __hsub_rn_1_caller,
+            signature(
+                _type___half, CPointer(_type___half), CPointer(_type___half)
+            ),
+            ptrs,
+        )
+
+
+___hsub_rn_1_lower(shim_stream, shim_obj)
+
+
+def __hmul_rn():
+    pass
+
+
+def ___hmul_rn_1_lower(shim_stream, shim_obj):
+    shim_raw_str = """
+    extern "C" __device__ int
+    __hmul_rn_1(__half &retval , __half* a, __half* b) {
+        retval = __hmul_rn(*a, *b);
+        return 0;
+    }
+        """
+
+    __hmul_rn_1 = declare_device(
+        "__hmul_rn_1",
+        _type___half(CPointer(_type___half), CPointer(_type___half)),
+    )
+
+    def __hmul_rn_1_caller(arg_0, arg_1):
+        return __hmul_rn_1(arg_0, arg_1)
+
+    @lower(__hmul_rn, _type___half, _type___half)
+    def impl(context, builder, sig, args):
+        context.active_code_library.add_linking_file(shim_obj)
+        shim_stream.write_with_key("__hmul_rn_1", shim_raw_str)
+        ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
+        for ptr, ty, arg in zip(ptrs, sig.args, args):
+            builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
+
+        return context.compile_internal(
+            builder,
+            __hmul_rn_1_caller,
+            signature(
+                _type___half, CPointer(_type___half), CPointer(_type___half)
+            ),
+            ptrs,
+        )
+
+
+___hmul_rn_1_lower(shim_stream, shim_obj)
+
+
+def __hdiv():
+    pass
+
+
+def ___hdiv_1_lower(shim_stream, shim_obj):
+    shim_raw_str = """
+    extern "C" __device__ int
+    __hdiv_1(__half &retval , __half* a, __half* b) {
+        retval = __hdiv(*a, *b);
+        return 0;
+    }
+        """
+
+    __hdiv_1 = declare_device(
+        "__hdiv_1", _type___half(CPointer(_type___half), CPointer(_type___half))
+    )
+
+    def __hdiv_1_caller(arg_0, arg_1):
+        return __hdiv_1(arg_0, arg_1)
+
+    @lower(__hdiv, _type___half, _type___half)
+    def impl(context, builder, sig, args):
+        context.active_code_library.add_linking_file(shim_obj)
+        shim_stream.write_with_key("__hdiv_1", shim_raw_str)
+        ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
+        for ptr, ty, arg in zip(ptrs, sig.args, args):
+            builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
+
+        return context.compile_internal(
+            builder,
+            __hdiv_1_caller,
+            signature(
+                _type___half, CPointer(_type___half), CPointer(_type___half)
+            ),
+            ptrs,
+        )
+
+
+___hdiv_1_lower(shim_stream, shim_obj)
+
+
+def __hadd_sat():
+    pass
+
+
+def ___hadd_sat_1_lower(shim_stream, shim_obj):
+    shim_raw_str = """
+    extern "C" __device__ int
+    __hadd_sat_1(__half &retval , __half* a, __half* b) {
+        retval = __hadd_sat(*a, *b);
+        return 0;
+    }
+        """
+
+    __hadd_sat_1 = declare_device(
+        "__hadd_sat_1",
+        _type___half(CPointer(_type___half), CPointer(_type___half)),
+    )
+
+    def __hadd_sat_1_caller(arg_0, arg_1):
+        return __hadd_sat_1(arg_0, arg_1)
+
+    @lower(__hadd_sat, _type___half, _type___half)
+    def impl(context, builder, sig, args):
+        context.active_code_library.add_linking_file(shim_obj)
+        shim_stream.write_with_key("__hadd_sat_1", shim_raw_str)
+        ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
+        for ptr, ty, arg in zip(ptrs, sig.args, args):
+            builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
+
+        return context.compile_internal(
+            builder,
+            __hadd_sat_1_caller,
+            signature(
+                _type___half, CPointer(_type___half), CPointer(_type___half)
+            ),
+            ptrs,
+        )
+
+
+___hadd_sat_1_lower(shim_stream, shim_obj)
+
+
+def __hsub_sat():
+    pass
+
+
+def ___hsub_sat_1_lower(shim_stream, shim_obj):
+    shim_raw_str = """
+    extern "C" __device__ int
+    __hsub_sat_1(__half &retval , __half* a, __half* b) {
+        retval = __hsub_sat(*a, *b);
+        return 0;
+    }
+        """
+
+    __hsub_sat_1 = declare_device(
+        "__hsub_sat_1",
+        _type___half(CPointer(_type___half), CPointer(_type___half)),
+    )
+
+    def __hsub_sat_1_caller(arg_0, arg_1):
+        return __hsub_sat_1(arg_0, arg_1)
+
+    @lower(__hsub_sat, _type___half, _type___half)
+    def impl(context, builder, sig, args):
+        context.active_code_library.add_linking_file(shim_obj)
+        shim_stream.write_with_key("__hsub_sat_1", shim_raw_str)
+        ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
+        for ptr, ty, arg in zip(ptrs, sig.args, args):
+            builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
+
+        return context.compile_internal(
+            builder,
+            __hsub_sat_1_caller,
+            signature(
+                _type___half, CPointer(_type___half), CPointer(_type___half)
+            ),
+            ptrs,
+        )
+
+
+___hsub_sat_1_lower(shim_stream, shim_obj)
+
+
+def __hmul_sat():
+    pass
+
+
+def ___hmul_sat_1_lower(shim_stream, shim_obj):
+    shim_raw_str = """
+    extern "C" __device__ int
+    __hmul_sat_1(__half &retval , __half* a, __half* b) {
+        retval = __hmul_sat(*a, *b);
+        return 0;
+    }
+        """
+
+    __hmul_sat_1 = declare_device(
+        "__hmul_sat_1",
+        _type___half(CPointer(_type___half), CPointer(_type___half)),
+    )
+
+    def __hmul_sat_1_caller(arg_0, arg_1):
+        return __hmul_sat_1(arg_0, arg_1)
+
+    @lower(__hmul_sat, _type___half, _type___half)
+    def impl(context, builder, sig, args):
+        context.active_code_library.add_linking_file(shim_obj)
+        shim_stream.write_with_key("__hmul_sat_1", shim_raw_str)
+        ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
+        for ptr, ty, arg in zip(ptrs, sig.args, args):
+            builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
+
+        return context.compile_internal(
+            builder,
+            __hmul_sat_1_caller,
+            signature(
+                _type___half, CPointer(_type___half), CPointer(_type___half)
+            ),
+            ptrs,
+        )
+
+
+___hmul_sat_1_lower(shim_stream, shim_obj)
+
+
+def __hfma():
+    pass
+
+
+def ___hfma_1_lower(shim_stream, shim_obj):
+    shim_raw_str = """
+    extern "C" __device__ int
+    __hfma_1(__half &retval , __half* a, __half* b, __half* c) {
+        retval = __hfma(*a, *b, *c);
+        return 0;
+    }
+        """
+
+    __hfma_1 = declare_device(
+        "__hfma_1",
+        _type___half(
+            CPointer(_type___half),
+            CPointer(_type___half),
+            CPointer(_type___half),
+        ),
+    )
+
+    def __hfma_1_caller(arg_0, arg_1, arg_2):
+        return __hfma_1(arg_0, arg_1, arg_2)
+
+    @lower(__hfma, _type___half, _type___half, _type___half)
+    def impl(context, builder, sig, args):
+        context.active_code_library.add_linking_file(shim_obj)
+        shim_stream.write_with_key("__hfma_1", shim_raw_str)
+        ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
+        for ptr, ty, arg in zip(ptrs, sig.args, args):
+            builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
+
+        return context.compile_internal(
+            builder,
+            __hfma_1_caller,
+            signature(
+                _type___half,
+                CPointer(_type___half),
+                CPointer(_type___half),
+                CPointer(_type___half),
+            ),
+            ptrs,
+        )
+
+
+___hfma_1_lower(shim_stream, shim_obj)
+
+
+def __hfma_sat():
+    pass
+
+
+def ___hfma_sat_1_lower(shim_stream, shim_obj):
+    shim_raw_str = """
+    extern "C" __device__ int
+    __hfma_sat_1(__half &retval , __half* a, __half* b, __half* c) {
+        retval = __hfma_sat(*a, *b, *c);
+        return 0;
+    }
+        """
+
+    __hfma_sat_1 = declare_device(
+        "__hfma_sat_1",
+        _type___half(
+            CPointer(_type___half),
+            CPointer(_type___half),
+            CPointer(_type___half),
+        ),
+    )
+
+    def __hfma_sat_1_caller(arg_0, arg_1, arg_2):
+        return __hfma_sat_1(arg_0, arg_1, arg_2)
+
+    @lower(__hfma_sat, _type___half, _type___half, _type___half)
+    def impl(context, builder, sig, args):
+        context.active_code_library.add_linking_file(shim_obj)
+        shim_stream.write_with_key("__hfma_sat_1", shim_raw_str)
+        ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
+        for ptr, ty, arg in zip(ptrs, sig.args, args):
+            builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
+
+        return context.compile_internal(
+            builder,
+            __hfma_sat_1_caller,
+            signature(
+                _type___half,
+                CPointer(_type___half),
+                CPointer(_type___half),
+                CPointer(_type___half),
+            ),
+            ptrs,
+        )
+
+
+___hfma_sat_1_lower(shim_stream, shim_obj)
+
+
+def __hneg():
+    pass
+
+
+def ___hneg_1_lower(shim_stream, shim_obj):
+    shim_raw_str = """
+    extern "C" __device__ int
+    __hneg_1(__half &retval , __half* a) {
+        retval = __hneg(*a);
+        return 0;
+    }
+        """
+
+    __hneg_1 = declare_device("__hneg_1", _type___half(CPointer(_type___half)))
+
+    def __hneg_1_caller(arg_0):
+        return __hneg_1(arg_0)
+
+    @lower(__hneg, _type___half)
+    def impl(context, builder, sig, args):
+        context.active_code_library.add_linking_file(shim_obj)
+        shim_stream.write_with_key("__hneg_1", shim_raw_str)
+        ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
+        for ptr, ty, arg in zip(ptrs, sig.args, args):
+            builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
+
+        return context.compile_internal(
+            builder,
+            __hneg_1_caller,
+            signature(_type___half, CPointer(_type___half)),
+            ptrs,
+        )
+
+
+___hneg_1_lower(shim_stream, shim_obj)
+
+
+def __hbeq2():
+    pass
+
+
+def ___hbeq2_1_lower(shim_stream, shim_obj):
+    shim_raw_str = """
+    extern "C" __device__ int
+    __hbeq2_1(bool &retval , __half2* a, __half2* b) {
+        retval = __hbeq2(*a, *b);
+        return 0;
+    }
+        """
+
+    __hbeq2_1 = declare_device(
+        "__hbeq2_1", bool_(CPointer(_type___half2), CPointer(_type___half2))
+    )
+
+    def __hbeq2_1_caller(arg_0, arg_1):
+        return __hbeq2_1(arg_0, arg_1)
+
+    @lower(__hbeq2, _type___half2, _type___half2)
+    def impl(context, builder, sig, args):
+        context.active_code_library.add_linking_file(shim_obj)
+        shim_stream.write_with_key("__hbeq2_1", shim_raw_str)
+        ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
+        for ptr, ty, arg in zip(ptrs, sig.args, args):
+            builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
+
+        return context.compile_internal(
+            builder,
+            __hbeq2_1_caller,
+            signature(bool_, CPointer(_type___half2), CPointer(_type___half2)),
+            ptrs,
+        )
+
+
+___hbeq2_1_lower(shim_stream, shim_obj)
+
+
+def __hbne2():
+    pass
+
+
+def ___hbne2_1_lower(shim_stream, shim_obj):
+    shim_raw_str = """
+    extern "C" __device__ int
+    __hbne2_1(bool &retval , __half2* a, __half2* b) {
+        retval = __hbne2(*a, *b);
+        return 0;
+    }
+        """
+
+    __hbne2_1 = declare_device(
+        "__hbne2_1", bool_(CPointer(_type___half2), CPointer(_type___half2))
+    )
+
+    def __hbne2_1_caller(arg_0, arg_1):
+        return __hbne2_1(arg_0, arg_1)
+
+    @lower(__hbne2, _type___half2, _type___half2)
+    def impl(context, builder, sig, args):
+        context.active_code_library.add_linking_file(shim_obj)
+        shim_stream.write_with_key("__hbne2_1", shim_raw_str)
+        ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
+        for ptr, ty, arg in zip(ptrs, sig.args, args):
+            builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
+
+        return context.compile_internal(
+            builder,
+            __hbne2_1_caller,
+            signature(bool_, CPointer(_type___half2), CPointer(_type___half2)),
+            ptrs,
+        )
+
+
+___hbne2_1_lower(shim_stream, shim_obj)
+
+
+def __hble2():
+    pass
+
+
+def ___hble2_1_lower(shim_stream, shim_obj):
+    shim_raw_str = """
+    extern "C" __device__ int
+    __hble2_1(bool &retval , __half2* a, __half2* b) {
+        retval = __hble2(*a, *b);
+        return 0;
+    }
+        """
+
+    __hble2_1 = declare_device(
+        "__hble2_1", bool_(CPointer(_type___half2), CPointer(_type___half2))
+    )
+
+    def __hble2_1_caller(arg_0, arg_1):
+        return __hble2_1(arg_0, arg_1)
+
+    @lower(__hble2, _type___half2, _type___half2)
+    def impl(context, builder, sig, args):
+        context.active_code_library.add_linking_file(shim_obj)
+        shim_stream.write_with_key("__hble2_1", shim_raw_str)
+        ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
+        for ptr, ty, arg in zip(ptrs, sig.args, args):
+            builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
+
+        return context.compile_internal(
+            builder,
+            __hble2_1_caller,
+            signature(bool_, CPointer(_type___half2), CPointer(_type___half2)),
+            ptrs,
+        )
+
+
+___hble2_1_lower(shim_stream, shim_obj)
+
+
+def __hbge2():
+    pass
+
+
+def ___hbge2_1_lower(shim_stream, shim_obj):
+    shim_raw_str = """
+    extern "C" __device__ int
+    __hbge2_1(bool &retval , __half2* a, __half2* b) {
+        retval = __hbge2(*a, *b);
+        return 0;
+    }
+        """
+
+    __hbge2_1 = declare_device(
+        "__hbge2_1", bool_(CPointer(_type___half2), CPointer(_type___half2))
+    )
+
+    def __hbge2_1_caller(arg_0, arg_1):
+        return __hbge2_1(arg_0, arg_1)
+
+    @lower(__hbge2, _type___half2, _type___half2)
+    def impl(context, builder, sig, args):
+        context.active_code_library.add_linking_file(shim_obj)
+        shim_stream.write_with_key("__hbge2_1", shim_raw_str)
+        ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
+        for ptr, ty, arg in zip(ptrs, sig.args, args):
+            builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
+
+        return context.compile_internal(
+            builder,
+            __hbge2_1_caller,
+            signature(bool_, CPointer(_type___half2), CPointer(_type___half2)),
+            ptrs,
+        )
+
+
+___hbge2_1_lower(shim_stream, shim_obj)
+
+
+def __hblt2():
+    pass
+
+
+def ___hblt2_1_lower(shim_stream, shim_obj):
+    shim_raw_str = """
+    extern "C" __device__ int
+    __hblt2_1(bool &retval , __half2* a, __half2* b) {
+        retval = __hblt2(*a, *b);
+        return 0;
+    }
+        """
+
+    __hblt2_1 = declare_device(
+        "__hblt2_1", bool_(CPointer(_type___half2), CPointer(_type___half2))
+    )
+
+    def __hblt2_1_caller(arg_0, arg_1):
+        return __hblt2_1(arg_0, arg_1)
+
+    @lower(__hblt2, _type___half2, _type___half2)
+    def impl(context, builder, sig, args):
+        context.active_code_library.add_linking_file(shim_obj)
+        shim_stream.write_with_key("__hblt2_1", shim_raw_str)
+        ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
+        for ptr, ty, arg in zip(ptrs, sig.args, args):
+            builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
+
+        return context.compile_internal(
+            builder,
+            __hblt2_1_caller,
+            signature(bool_, CPointer(_type___half2), CPointer(_type___half2)),
+            ptrs,
+        )
+
+
+___hblt2_1_lower(shim_stream, shim_obj)
+
+
+def __hbgt2():
+    pass
+
+
+def ___hbgt2_1_lower(shim_stream, shim_obj):
+    shim_raw_str = """
+    extern "C" __device__ int
+    __hbgt2_1(bool &retval , __half2* a, __half2* b) {
+        retval = __hbgt2(*a, *b);
+        return 0;
+    }
+        """
+
+    __hbgt2_1 = declare_device(
+        "__hbgt2_1", bool_(CPointer(_type___half2), CPointer(_type___half2))
+    )
+
+    def __hbgt2_1_caller(arg_0, arg_1):
+        return __hbgt2_1(arg_0, arg_1)
+
+    @lower(__hbgt2, _type___half2, _type___half2)
+    def impl(context, builder, sig, args):
+        context.active_code_library.add_linking_file(shim_obj)
+        shim_stream.write_with_key("__hbgt2_1", shim_raw_str)
+        ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
+        for ptr, ty, arg in zip(ptrs, sig.args, args):
+            builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
+
+        return context.compile_internal(
+            builder,
+            __hbgt2_1_caller,
+            signature(bool_, CPointer(_type___half2), CPointer(_type___half2)),
+            ptrs,
+        )
+
+
+___hbgt2_1_lower(shim_stream, shim_obj)
+
+
+def __hbequ2():
+    pass
+
+
+def ___hbequ2_1_lower(shim_stream, shim_obj):
+    shim_raw_str = """
+    extern "C" __device__ int
+    __hbequ2_1(bool &retval , __half2* a, __half2* b) {
+        retval = __hbequ2(*a, *b);
+        return 0;
+    }
+        """
+
+    __hbequ2_1 = declare_device(
+        "__hbequ2_1", bool_(CPointer(_type___half2), CPointer(_type___half2))
+    )
+
+    def __hbequ2_1_caller(arg_0, arg_1):
+        return __hbequ2_1(arg_0, arg_1)
+
+    @lower(__hbequ2, _type___half2, _type___half2)
+    def impl(context, builder, sig, args):
+        context.active_code_library.add_linking_file(shim_obj)
+        shim_stream.write_with_key("__hbequ2_1", shim_raw_str)
+        ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
+        for ptr, ty, arg in zip(ptrs, sig.args, args):
+            builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
+
+        return context.compile_internal(
+            builder,
+            __hbequ2_1_caller,
+            signature(bool_, CPointer(_type___half2), CPointer(_type___half2)),
+            ptrs,
+        )
+
+
+___hbequ2_1_lower(shim_stream, shim_obj)
+
+
+def __hbneu2():
+    pass
+
+
+def ___hbneu2_1_lower(shim_stream, shim_obj):
+    shim_raw_str = """
+    extern "C" __device__ int
+    __hbneu2_1(bool &retval , __half2* a, __half2* b) {
+        retval = __hbneu2(*a, *b);
+        return 0;
+    }
+        """
+
+    __hbneu2_1 = declare_device(
+        "__hbneu2_1", bool_(CPointer(_type___half2), CPointer(_type___half2))
+    )
+
+    def __hbneu2_1_caller(arg_0, arg_1):
+        return __hbneu2_1(arg_0, arg_1)
+
+    @lower(__hbneu2, _type___half2, _type___half2)
+    def impl(context, builder, sig, args):
+        context.active_code_library.add_linking_file(shim_obj)
+        shim_stream.write_with_key("__hbneu2_1", shim_raw_str)
+        ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
+        for ptr, ty, arg in zip(ptrs, sig.args, args):
+            builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
+
+        return context.compile_internal(
+            builder,
+            __hbneu2_1_caller,
+            signature(bool_, CPointer(_type___half2), CPointer(_type___half2)),
+            ptrs,
+        )
+
+
+___hbneu2_1_lower(shim_stream, shim_obj)
+
+
+def __hbleu2():
+    pass
+
+
+def ___hbleu2_1_lower(shim_stream, shim_obj):
+    shim_raw_str = """
+    extern "C" __device__ int
+    __hbleu2_1(bool &retval , __half2* a, __half2* b) {
+        retval = __hbleu2(*a, *b);
+        return 0;
+    }
+        """
+
+    __hbleu2_1 = declare_device(
+        "__hbleu2_1", bool_(CPointer(_type___half2), CPointer(_type___half2))
+    )
+
+    def __hbleu2_1_caller(arg_0, arg_1):
+        return __hbleu2_1(arg_0, arg_1)
+
+    @lower(__hbleu2, _type___half2, _type___half2)
+    def impl(context, builder, sig, args):
+        context.active_code_library.add_linking_file(shim_obj)
+        shim_stream.write_with_key("__hbleu2_1", shim_raw_str)
+        ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
+        for ptr, ty, arg in zip(ptrs, sig.args, args):
+            builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
+
+        return context.compile_internal(
+            builder,
+            __hbleu2_1_caller,
+            signature(bool_, CPointer(_type___half2), CPointer(_type___half2)),
+            ptrs,
+        )
+
+
+___hbleu2_1_lower(shim_stream, shim_obj)
+
+
+def __hbgeu2():
+    pass
+
+
+def ___hbgeu2_1_lower(shim_stream, shim_obj):
+    shim_raw_str = """
+    extern "C" __device__ int
+    __hbgeu2_1(bool &retval , __half2* a, __half2* b) {
+        retval = __hbgeu2(*a, *b);
+        return 0;
+    }
+        """
+
+    __hbgeu2_1 = declare_device(
+        "__hbgeu2_1", bool_(CPointer(_type___half2), CPointer(_type___half2))
+    )
+
+    def __hbgeu2_1_caller(arg_0, arg_1):
+        return __hbgeu2_1(arg_0, arg_1)
+
+    @lower(__hbgeu2, _type___half2, _type___half2)
+    def impl(context, builder, sig, args):
+        context.active_code_library.add_linking_file(shim_obj)
+        shim_stream.write_with_key("__hbgeu2_1", shim_raw_str)
+        ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
+        for ptr, ty, arg in zip(ptrs, sig.args, args):
+            builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
+
+        return context.compile_internal(
+            builder,
+            __hbgeu2_1_caller,
+            signature(bool_, CPointer(_type___half2), CPointer(_type___half2)),
+            ptrs,
+        )
+
+
+___hbgeu2_1_lower(shim_stream, shim_obj)
+
+
+def __hbltu2():
+    pass
+
+
+def ___hbltu2_1_lower(shim_stream, shim_obj):
+    shim_raw_str = """
+    extern "C" __device__ int
+    __hbltu2_1(bool &retval , __half2* a, __half2* b) {
+        retval = __hbltu2(*a, *b);
+        return 0;
+    }
+        """
+
+    __hbltu2_1 = declare_device(
+        "__hbltu2_1", bool_(CPointer(_type___half2), CPointer(_type___half2))
+    )
+
+    def __hbltu2_1_caller(arg_0, arg_1):
+        return __hbltu2_1(arg_0, arg_1)
+
+    @lower(__hbltu2, _type___half2, _type___half2)
+    def impl(context, builder, sig, args):
+        context.active_code_library.add_linking_file(shim_obj)
+        shim_stream.write_with_key("__hbltu2_1", shim_raw_str)
+        ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
+        for ptr, ty, arg in zip(ptrs, sig.args, args):
+            builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
+
+        return context.compile_internal(
+            builder,
+            __hbltu2_1_caller,
+            signature(bool_, CPointer(_type___half2), CPointer(_type___half2)),
+            ptrs,
+        )
+
+
+___hbltu2_1_lower(shim_stream, shim_obj)
+
+
+def __hbgtu2():
+    pass
+
+
+def ___hbgtu2_1_lower(shim_stream, shim_obj):
+    shim_raw_str = """
+    extern "C" __device__ int
+    __hbgtu2_1(bool &retval , __half2* a, __half2* b) {
+        retval = __hbgtu2(*a, *b);
+        return 0;
+    }
+        """
+
+    __hbgtu2_1 = declare_device(
+        "__hbgtu2_1", bool_(CPointer(_type___half2), CPointer(_type___half2))
+    )
+
+    def __hbgtu2_1_caller(arg_0, arg_1):
+        return __hbgtu2_1(arg_0, arg_1)
+
+    @lower(__hbgtu2, _type___half2, _type___half2)
+    def impl(context, builder, sig, args):
+        context.active_code_library.add_linking_file(shim_obj)
+        shim_stream.write_with_key("__hbgtu2_1", shim_raw_str)
+        ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
+        for ptr, ty, arg in zip(ptrs, sig.args, args):
+            builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
+
+        return context.compile_internal(
+            builder,
+            __hbgtu2_1_caller,
+            signature(bool_, CPointer(_type___half2), CPointer(_type___half2)),
+            ptrs,
+        )
+
+
+___hbgtu2_1_lower(shim_stream, shim_obj)
+
+
+def __heq():
+    pass
+
+
+def ___heq_1_lower(shim_stream, shim_obj):
+    shim_raw_str = """
+    extern "C" __device__ int
+    __heq_1(bool &retval , __half* a, __half* b) {
+        retval = __heq(*a, *b);
+        return 0;
+    }
+        """
+
+    __heq_1 = declare_device(
+        "__heq_1", bool_(CPointer(_type___half), CPointer(_type___half))
+    )
+
+    def __heq_1_caller(arg_0, arg_1):
+        return __heq_1(arg_0, arg_1)
+
+    @lower(__heq, _type___half, _type___half)
+    def impl(context, builder, sig, args):
+        context.active_code_library.add_linking_file(shim_obj)
+        shim_stream.write_with_key("__heq_1", shim_raw_str)
+        ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
+        for ptr, ty, arg in zip(ptrs, sig.args, args):
+            builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
+
+        return context.compile_internal(
+            builder,
+            __heq_1_caller,
+            signature(bool_, CPointer(_type___half), CPointer(_type___half)),
+            ptrs,
+        )
+
+
+___heq_1_lower(shim_stream, shim_obj)
+
+
+def __hne():
+    pass
+
+
+def ___hne_1_lower(shim_stream, shim_obj):
+    shim_raw_str = """
+    extern "C" __device__ int
+    __hne_1(bool &retval , __half* a, __half* b) {
+        retval = __hne(*a, *b);
+        return 0;
+    }
+        """
+
+    __hne_1 = declare_device(
+        "__hne_1", bool_(CPointer(_type___half), CPointer(_type___half))
+    )
+
+    def __hne_1_caller(arg_0, arg_1):
+        return __hne_1(arg_0, arg_1)
+
+    @lower(__hne, _type___half, _type___half)
+    def impl(context, builder, sig, args):
+        context.active_code_library.add_linking_file(shim_obj)
+        shim_stream.write_with_key("__hne_1", shim_raw_str)
+        ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
+        for ptr, ty, arg in zip(ptrs, sig.args, args):
+            builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
+
+        return context.compile_internal(
+            builder,
+            __hne_1_caller,
+            signature(bool_, CPointer(_type___half), CPointer(_type___half)),
+            ptrs,
+        )
+
+
+___hne_1_lower(shim_stream, shim_obj)
+
+
+def __hle():
+    pass
+
+
+def ___hle_1_lower(shim_stream, shim_obj):
+    shim_raw_str = """
+    extern "C" __device__ int
+    __hle_1(bool &retval , __half* a, __half* b) {
+        retval = __hle(*a, *b);
+        return 0;
+    }
+        """
+
+    __hle_1 = declare_device(
+        "__hle_1", bool_(CPointer(_type___half), CPointer(_type___half))
+    )
+
+    def __hle_1_caller(arg_0, arg_1):
+        return __hle_1(arg_0, arg_1)
+
+    @lower(__hle, _type___half, _type___half)
+    def impl(context, builder, sig, args):
+        context.active_code_library.add_linking_file(shim_obj)
+        shim_stream.write_with_key("__hle_1", shim_raw_str)
+        ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
+        for ptr, ty, arg in zip(ptrs, sig.args, args):
+            builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
+
+        return context.compile_internal(
+            builder,
+            __hle_1_caller,
+            signature(bool_, CPointer(_type___half), CPointer(_type___half)),
+            ptrs,
+        )
+
+
+___hle_1_lower(shim_stream, shim_obj)
+
+
+def __hge():
+    pass
+
+
+def ___hge_1_lower(shim_stream, shim_obj):
+    shim_raw_str = """
+    extern "C" __device__ int
+    __hge_1(bool &retval , __half* a, __half* b) {
+        retval = __hge(*a, *b);
+        return 0;
+    }
+        """
+
+    __hge_1 = declare_device(
+        "__hge_1", bool_(CPointer(_type___half), CPointer(_type___half))
+    )
+
+    def __hge_1_caller(arg_0, arg_1):
+        return __hge_1(arg_0, arg_1)
+
+    @lower(__hge, _type___half, _type___half)
+    def impl(context, builder, sig, args):
+        context.active_code_library.add_linking_file(shim_obj)
+        shim_stream.write_with_key("__hge_1", shim_raw_str)
+        ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
+        for ptr, ty, arg in zip(ptrs, sig.args, args):
+            builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
+
+        return context.compile_internal(
+            builder,
+            __hge_1_caller,
+            signature(bool_, CPointer(_type___half), CPointer(_type___half)),
+            ptrs,
+        )
+
+
+___hge_1_lower(shim_stream, shim_obj)
+
+
+def __hlt():
+    pass
+
+
+def ___hlt_1_lower(shim_stream, shim_obj):
+    shim_raw_str = """
+    extern "C" __device__ int
+    __hlt_1(bool &retval , __half* a, __half* b) {
+        retval = __hlt(*a, *b);
+        return 0;
+    }
+        """
+
+    __hlt_1 = declare_device(
+        "__hlt_1", bool_(CPointer(_type___half), CPointer(_type___half))
+    )
+
+    def __hlt_1_caller(arg_0, arg_1):
+        return __hlt_1(arg_0, arg_1)
+
+    @lower(__hlt, _type___half, _type___half)
+    def impl(context, builder, sig, args):
+        context.active_code_library.add_linking_file(shim_obj)
+        shim_stream.write_with_key("__hlt_1", shim_raw_str)
+        ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
+        for ptr, ty, arg in zip(ptrs, sig.args, args):
+            builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
+
+        return context.compile_internal(
+            builder,
+            __hlt_1_caller,
+            signature(bool_, CPointer(_type___half), CPointer(_type___half)),
+            ptrs,
+        )
+
+
+___hlt_1_lower(shim_stream, shim_obj)
+
+
+def __hgt():
+    pass
+
+
+def ___hgt_1_lower(shim_stream, shim_obj):
+    shim_raw_str = """
+    extern "C" __device__ int
+    __hgt_1(bool &retval , __half* a, __half* b) {
+        retval = __hgt(*a, *b);
+        return 0;
+    }
+        """
+
+    __hgt_1 = declare_device(
+        "__hgt_1", bool_(CPointer(_type___half), CPointer(_type___half))
+    )
+
+    def __hgt_1_caller(arg_0, arg_1):
+        return __hgt_1(arg_0, arg_1)
+
+    @lower(__hgt, _type___half, _type___half)
+    def impl(context, builder, sig, args):
+        context.active_code_library.add_linking_file(shim_obj)
+        shim_stream.write_with_key("__hgt_1", shim_raw_str)
+        ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
+        for ptr, ty, arg in zip(ptrs, sig.args, args):
+            builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
+
+        return context.compile_internal(
+            builder,
+            __hgt_1_caller,
+            signature(bool_, CPointer(_type___half), CPointer(_type___half)),
+            ptrs,
+        )
+
+
+___hgt_1_lower(shim_stream, shim_obj)
+
+
+def __hequ():
+    pass
+
+
+def ___hequ_1_lower(shim_stream, shim_obj):
+    shim_raw_str = """
+    extern "C" __device__ int
+    __hequ_1(bool &retval , __half* a, __half* b) {
+        retval = __hequ(*a, *b);
+        return 0;
+    }
+        """
+
+    __hequ_1 = declare_device(
+        "__hequ_1", bool_(CPointer(_type___half), CPointer(_type___half))
+    )
+
+    def __hequ_1_caller(arg_0, arg_1):
+        return __hequ_1(arg_0, arg_1)
+
+    @lower(__hequ, _type___half, _type___half)
+    def impl(context, builder, sig, args):
+        context.active_code_library.add_linking_file(shim_obj)
+        shim_stream.write_with_key("__hequ_1", shim_raw_str)
+        ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
+        for ptr, ty, arg in zip(ptrs, sig.args, args):
+            builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
+
+        return context.compile_internal(
+            builder,
+            __hequ_1_caller,
+            signature(bool_, CPointer(_type___half), CPointer(_type___half)),
+            ptrs,
+        )
+
+
+___hequ_1_lower(shim_stream, shim_obj)
+
+
+def __hneu():
+    pass
+
+
+def ___hneu_1_lower(shim_stream, shim_obj):
+    shim_raw_str = """
+    extern "C" __device__ int
+    __hneu_1(bool &retval , __half* a, __half* b) {
+        retval = __hneu(*a, *b);
+        return 0;
+    }
+        """
+
+    __hneu_1 = declare_device(
+        "__hneu_1", bool_(CPointer(_type___half), CPointer(_type___half))
+    )
+
+    def __hneu_1_caller(arg_0, arg_1):
+        return __hneu_1(arg_0, arg_1)
+
+    @lower(__hneu, _type___half, _type___half)
+    def impl(context, builder, sig, args):
+        context.active_code_library.add_linking_file(shim_obj)
+        shim_stream.write_with_key("__hneu_1", shim_raw_str)
+        ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
+        for ptr, ty, arg in zip(ptrs, sig.args, args):
+            builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
+
+        return context.compile_internal(
+            builder,
+            __hneu_1_caller,
+            signature(bool_, CPointer(_type___half), CPointer(_type___half)),
+            ptrs,
+        )
+
+
+___hneu_1_lower(shim_stream, shim_obj)
+
+
+def __hleu():
+    pass
+
+
+def ___hleu_1_lower(shim_stream, shim_obj):
+    shim_raw_str = """
+    extern "C" __device__ int
+    __hleu_1(bool &retval , __half* a, __half* b) {
+        retval = __hleu(*a, *b);
+        return 0;
+    }
+        """
+
+    __hleu_1 = declare_device(
+        "__hleu_1", bool_(CPointer(_type___half), CPointer(_type___half))
+    )
+
+    def __hleu_1_caller(arg_0, arg_1):
+        return __hleu_1(arg_0, arg_1)
+
+    @lower(__hleu, _type___half, _type___half)
+    def impl(context, builder, sig, args):
+        context.active_code_library.add_linking_file(shim_obj)
+        shim_stream.write_with_key("__hleu_1", shim_raw_str)
+        ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
+        for ptr, ty, arg in zip(ptrs, sig.args, args):
+            builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
+
+        return context.compile_internal(
+            builder,
+            __hleu_1_caller,
+            signature(bool_, CPointer(_type___half), CPointer(_type___half)),
+            ptrs,
+        )
+
+
+___hleu_1_lower(shim_stream, shim_obj)
+
+
+def __hgeu():
+    pass
+
+
+def ___hgeu_1_lower(shim_stream, shim_obj):
+    shim_raw_str = """
+    extern "C" __device__ int
+    __hgeu_1(bool &retval , __half* a, __half* b) {
+        retval = __hgeu(*a, *b);
+        return 0;
+    }
+        """
+
+    __hgeu_1 = declare_device(
+        "__hgeu_1", bool_(CPointer(_type___half), CPointer(_type___half))
+    )
+
+    def __hgeu_1_caller(arg_0, arg_1):
+        return __hgeu_1(arg_0, arg_1)
+
+    @lower(__hgeu, _type___half, _type___half)
+    def impl(context, builder, sig, args):
+        context.active_code_library.add_linking_file(shim_obj)
+        shim_stream.write_with_key("__hgeu_1", shim_raw_str)
+        ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
+        for ptr, ty, arg in zip(ptrs, sig.args, args):
+            builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
+
+        return context.compile_internal(
+            builder,
+            __hgeu_1_caller,
+            signature(bool_, CPointer(_type___half), CPointer(_type___half)),
+            ptrs,
+        )
+
+
+___hgeu_1_lower(shim_stream, shim_obj)
+
+
+def __hltu():
+    pass
+
+
+def ___hltu_1_lower(shim_stream, shim_obj):
+    shim_raw_str = """
+    extern "C" __device__ int
+    __hltu_1(bool &retval , __half* a, __half* b) {
+        retval = __hltu(*a, *b);
+        return 0;
+    }
+        """
+
+    __hltu_1 = declare_device(
+        "__hltu_1", bool_(CPointer(_type___half), CPointer(_type___half))
+    )
+
+    def __hltu_1_caller(arg_0, arg_1):
+        return __hltu_1(arg_0, arg_1)
+
+    @lower(__hltu, _type___half, _type___half)
+    def impl(context, builder, sig, args):
+        context.active_code_library.add_linking_file(shim_obj)
+        shim_stream.write_with_key("__hltu_1", shim_raw_str)
+        ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
+        for ptr, ty, arg in zip(ptrs, sig.args, args):
+            builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
+
+        return context.compile_internal(
+            builder,
+            __hltu_1_caller,
+            signature(bool_, CPointer(_type___half), CPointer(_type___half)),
+            ptrs,
+        )
+
+
+___hltu_1_lower(shim_stream, shim_obj)
+
+
+def __hgtu():
+    pass
+
+
+def ___hgtu_1_lower(shim_stream, shim_obj):
+    shim_raw_str = """
+    extern "C" __device__ int
+    __hgtu_1(bool &retval , __half* a, __half* b) {
+        retval = __hgtu(*a, *b);
+        return 0;
+    }
+        """
+
+    __hgtu_1 = declare_device(
+        "__hgtu_1", bool_(CPointer(_type___half), CPointer(_type___half))
+    )
+
+    def __hgtu_1_caller(arg_0, arg_1):
+        return __hgtu_1(arg_0, arg_1)
+
+    @lower(__hgtu, _type___half, _type___half)
+    def impl(context, builder, sig, args):
+        context.active_code_library.add_linking_file(shim_obj)
+        shim_stream.write_with_key("__hgtu_1", shim_raw_str)
+        ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
+        for ptr, ty, arg in zip(ptrs, sig.args, args):
+            builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
+
+        return context.compile_internal(
+            builder,
+            __hgtu_1_caller,
+            signature(bool_, CPointer(_type___half), CPointer(_type___half)),
+            ptrs,
+        )
+
+
+___hgtu_1_lower(shim_stream, shim_obj)
+
+
+def __hisnan():
+    pass
+
+
+def ___hisnan_1_lower(shim_stream, shim_obj):
+    shim_raw_str = """
+    extern "C" __device__ int
+    __hisnan_1(bool &retval , __half* a) {
+        retval = __hisnan(*a);
+        return 0;
+    }
+        """
+
+    __hisnan_1 = declare_device("__hisnan_1", bool_(CPointer(_type___half)))
+
+    def __hisnan_1_caller(arg_0):
+        return __hisnan_1(arg_0)
+
+    @lower(__hisnan, _type___half)
+    def impl(context, builder, sig, args):
+        context.active_code_library.add_linking_file(shim_obj)
+        shim_stream.write_with_key("__hisnan_1", shim_raw_str)
+        ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
+        for ptr, ty, arg in zip(ptrs, sig.args, args):
+            builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
+
+        return context.compile_internal(
+            builder,
+            __hisnan_1_caller,
+            signature(bool_, CPointer(_type___half)),
+            ptrs,
+        )
+
+
+___hisnan_1_lower(shim_stream, shim_obj)
+
+
+def __hmax_nan():
+    pass
+
+
+def ___hmax_nan_1_lower(shim_stream, shim_obj):
+    shim_raw_str = """
+    extern "C" __device__ int
+    __hmax_nan_1(__half &retval , __half* a, __half* b) {
+        retval = __hmax_nan(*a, *b);
+        return 0;
+    }
+        """
+
+    __hmax_nan_1 = declare_device(
+        "__hmax_nan_1",
+        _type___half(CPointer(_type___half), CPointer(_type___half)),
+    )
+
+    def __hmax_nan_1_caller(arg_0, arg_1):
+        return __hmax_nan_1(arg_0, arg_1)
+
+    @lower(__hmax_nan, _type___half, _type___half)
+    def impl(context, builder, sig, args):
+        context.active_code_library.add_linking_file(shim_obj)
+        shim_stream.write_with_key("__hmax_nan_1", shim_raw_str)
+        ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
+        for ptr, ty, arg in zip(ptrs, sig.args, args):
+            builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
+
+        return context.compile_internal(
+            builder,
+            __hmax_nan_1_caller,
+            signature(
+                _type___half, CPointer(_type___half), CPointer(_type___half)
+            ),
+            ptrs,
+        )
+
+
+___hmax_nan_1_lower(shim_stream, shim_obj)
+
+
+def __hmin_nan():
+    pass
+
+
+def ___hmin_nan_1_lower(shim_stream, shim_obj):
+    shim_raw_str = """
+    extern "C" __device__ int
+    __hmin_nan_1(__half &retval , __half* a, __half* b) {
+        retval = __hmin_nan(*a, *b);
+        return 0;
+    }
+        """
+
+    __hmin_nan_1 = declare_device(
+        "__hmin_nan_1",
+        _type___half(CPointer(_type___half), CPointer(_type___half)),
+    )
+
+    def __hmin_nan_1_caller(arg_0, arg_1):
+        return __hmin_nan_1(arg_0, arg_1)
+
+    @lower(__hmin_nan, _type___half, _type___half)
+    def impl(context, builder, sig, args):
+        context.active_code_library.add_linking_file(shim_obj)
+        shim_stream.write_with_key("__hmin_nan_1", shim_raw_str)
+        ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
+        for ptr, ty, arg in zip(ptrs, sig.args, args):
+            builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
+
+        return context.compile_internal(
+            builder,
+            __hmin_nan_1_caller,
+            signature(
+                _type___half, CPointer(_type___half), CPointer(_type___half)
+            ),
+            ptrs,
+        )
+
+
+___hmin_nan_1_lower(shim_stream, shim_obj)
+
+
+def __hfma_relu():
+    pass
+
+
+def ___hfma_relu_1_lower(shim_stream, shim_obj):
+    shim_raw_str = """
+    extern "C" __device__ int
+    __hfma_relu_1(__half &retval , __half* a, __half* b, __half* c) {
+        retval = __hfma_relu(*a, *b, *c);
+        return 0;
+    }
+        """
+
+    __hfma_relu_1 = declare_device(
+        "__hfma_relu_1",
+        _type___half(
+            CPointer(_type___half),
+            CPointer(_type___half),
+            CPointer(_type___half),
+        ),
+    )
+
+    def __hfma_relu_1_caller(arg_0, arg_1, arg_2):
+        return __hfma_relu_1(arg_0, arg_1, arg_2)
+
+    @lower(__hfma_relu, _type___half, _type___half, _type___half)
+    def impl(context, builder, sig, args):
+        context.active_code_library.add_linking_file(shim_obj)
+        shim_stream.write_with_key("__hfma_relu_1", shim_raw_str)
+        ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
+        for ptr, ty, arg in zip(ptrs, sig.args, args):
+            builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
+
+        return context.compile_internal(
+            builder,
+            __hfma_relu_1_caller,
+            signature(
+                _type___half,
+                CPointer(_type___half),
+                CPointer(_type___half),
+                CPointer(_type___half),
+            ),
+            ptrs,
+        )
+
+
+___hfma_relu_1_lower(shim_stream, shim_obj)
+
+
+def __hmax2_nan():
+    pass
+
+
+def ___hmax2_nan_1_lower(shim_stream, shim_obj):
+    shim_raw_str = """
+    extern "C" __device__ int
+    __hmax2_nan_1(__half2 &retval , __half2* a, __half2* b) {
+        retval = __hmax2_nan(*a, *b);
+        return 0;
+    }
+        """
+
+    __hmax2_nan_1 = declare_device(
+        "__hmax2_nan_1",
+        _type___half2(CPointer(_type___half2), CPointer(_type___half2)),
+    )
+
+    def __hmax2_nan_1_caller(arg_0, arg_1):
+        return __hmax2_nan_1(arg_0, arg_1)
+
+    @lower(__hmax2_nan, _type___half2, _type___half2)
+    def impl(context, builder, sig, args):
+        context.active_code_library.add_linking_file(shim_obj)
+        shim_stream.write_with_key("__hmax2_nan_1", shim_raw_str)
+        ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
+        for ptr, ty, arg in zip(ptrs, sig.args, args):
+            builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
+
+        return context.compile_internal(
+            builder,
+            __hmax2_nan_1_caller,
+            signature(
+                _type___half2, CPointer(_type___half2), CPointer(_type___half2)
+            ),
+            ptrs,
+        )
+
+
+___hmax2_nan_1_lower(shim_stream, shim_obj)
+
+
+def __hmin2_nan():
+    pass
+
+
+def ___hmin2_nan_1_lower(shim_stream, shim_obj):
+    shim_raw_str = """
+    extern "C" __device__ int
+    __hmin2_nan_1(__half2 &retval , __half2* a, __half2* b) {
+        retval = __hmin2_nan(*a, *b);
+        return 0;
+    }
+        """
+
+    __hmin2_nan_1 = declare_device(
+        "__hmin2_nan_1",
+        _type___half2(CPointer(_type___half2), CPointer(_type___half2)),
+    )
+
+    def __hmin2_nan_1_caller(arg_0, arg_1):
+        return __hmin2_nan_1(arg_0, arg_1)
+
+    @lower(__hmin2_nan, _type___half2, _type___half2)
+    def impl(context, builder, sig, args):
+        context.active_code_library.add_linking_file(shim_obj)
+        shim_stream.write_with_key("__hmin2_nan_1", shim_raw_str)
+        ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
+        for ptr, ty, arg in zip(ptrs, sig.args, args):
+            builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
+
+        return context.compile_internal(
+            builder,
+            __hmin2_nan_1_caller,
+            signature(
+                _type___half2, CPointer(_type___half2), CPointer(_type___half2)
+            ),
+            ptrs,
+        )
+
+
+___hmin2_nan_1_lower(shim_stream, shim_obj)
+
+
+def __hfma2_relu():
+    pass
+
+
+def ___hfma2_relu_1_lower(shim_stream, shim_obj):
+    shim_raw_str = """
+    extern "C" __device__ int
+    __hfma2_relu_1(__half2 &retval , __half2* a, __half2* b, __half2* c) {
+        retval = __hfma2_relu(*a, *b, *c);
+        return 0;
+    }
+        """
+
+    __hfma2_relu_1 = declare_device(
+        "__hfma2_relu_1",
+        _type___half2(
+            CPointer(_type___half2),
+            CPointer(_type___half2),
+            CPointer(_type___half2),
+        ),
+    )
+
+    def __hfma2_relu_1_caller(arg_0, arg_1, arg_2):
+        return __hfma2_relu_1(arg_0, arg_1, arg_2)
+
+    @lower(__hfma2_relu, _type___half2, _type___half2, _type___half2)
+    def impl(context, builder, sig, args):
+        context.active_code_library.add_linking_file(shim_obj)
+        shim_stream.write_with_key("__hfma2_relu_1", shim_raw_str)
+        ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
+        for ptr, ty, arg in zip(ptrs, sig.args, args):
+            builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
+
+        return context.compile_internal(
+            builder,
+            __hfma2_relu_1_caller,
+            signature(
+                _type___half2,
+                CPointer(_type___half2),
+                CPointer(_type___half2),
+                CPointer(_type___half2),
+            ),
+            ptrs,
+        )
+
+
+___hfma2_relu_1_lower(shim_stream, shim_obj)
+
+
+def __hcmadd():
+    pass
+
+
+def ___hcmadd_1_lower(shim_stream, shim_obj):
+    shim_raw_str = """
+    extern "C" __device__ int
+    __hcmadd_1(__half2 &retval , __half2* a, __half2* b, __half2* c) {
+        retval = __hcmadd(*a, *b, *c);
+        return 0;
+    }
+        """
+
+    __hcmadd_1 = declare_device(
+        "__hcmadd_1",
+        _type___half2(
+            CPointer(_type___half2),
+            CPointer(_type___half2),
+            CPointer(_type___half2),
+        ),
+    )
+
+    def __hcmadd_1_caller(arg_0, arg_1, arg_2):
+        return __hcmadd_1(arg_0, arg_1, arg_2)
+
+    @lower(__hcmadd, _type___half2, _type___half2, _type___half2)
+    def impl(context, builder, sig, args):
+        context.active_code_library.add_linking_file(shim_obj)
+        shim_stream.write_with_key("__hcmadd_1", shim_raw_str)
+        ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
+        for ptr, ty, arg in zip(ptrs, sig.args, args):
+            builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
+
+        return context.compile_internal(
+            builder,
+            __hcmadd_1_caller,
+            signature(
+                _type___half2,
+                CPointer(_type___half2),
+                CPointer(_type___half2),
+                CPointer(_type___half2),
+            ),
+            ptrs,
+        )
+
+
+___hcmadd_1_lower(shim_stream, shim_obj)
 
 
 def hsqrt():
@@ -4322,12 +12154,579 @@ _operator_le_2_lower(shim_stream, shim_obj)
 
 
 @register
+class _typing___double2half(ConcreteTemplate):
+    key = globals()["__double2half"]
+    cases = [signature(_type___half, float64)]
+
+
+register_global(__double2half, types.Function(_typing___double2half))
+
+
+@register
+class _typing___float2half(ConcreteTemplate):
+    key = globals()["__float2half"]
+    cases = [signature(_type___half, float32)]
+
+
+register_global(__float2half, types.Function(_typing___float2half))
+
+
+@register
+class _typing___float2half_rn(ConcreteTemplate):
+    key = globals()["__float2half_rn"]
+    cases = [signature(_type___half, float32)]
+
+
+register_global(__float2half_rn, types.Function(_typing___float2half_rn))
+
+
+@register
+class _typing___float2half_rz(ConcreteTemplate):
+    key = globals()["__float2half_rz"]
+    cases = [signature(_type___half, float32)]
+
+
+register_global(__float2half_rz, types.Function(_typing___float2half_rz))
+
+
+@register
+class _typing___float2half_rd(ConcreteTemplate):
+    key = globals()["__float2half_rd"]
+    cases = [signature(_type___half, float32)]
+
+
+register_global(__float2half_rd, types.Function(_typing___float2half_rd))
+
+
+@register
+class _typing___float2half_ru(ConcreteTemplate):
+    key = globals()["__float2half_ru"]
+    cases = [signature(_type___half, float32)]
+
+
+register_global(__float2half_ru, types.Function(_typing___float2half_ru))
+
+
+@register
+class _typing___half2float(ConcreteTemplate):
+    key = globals()["__half2float"]
+    cases = [signature(float32, _type___half)]
+
+
+register_global(__half2float, types.Function(_typing___half2float))
+
+
+@register
+class _typing___float2half2_rn(ConcreteTemplate):
+    key = globals()["__float2half2_rn"]
+    cases = [signature(_type___half2, float32)]
+
+
+register_global(__float2half2_rn, types.Function(_typing___float2half2_rn))
+
+
+@register
+class _typing___floats2half2_rn(ConcreteTemplate):
+    key = globals()["__floats2half2_rn"]
+    cases = [signature(_type___half2, float32, float32)]
+
+
+register_global(__floats2half2_rn, types.Function(_typing___floats2half2_rn))
+
+
+@register
+class _typing___low2float(ConcreteTemplate):
+    key = globals()["__low2float"]
+    cases = [signature(float32, _type___half2)]
+
+
+register_global(__low2float, types.Function(_typing___low2float))
+
+
+@register
+class _typing___high2float(ConcreteTemplate):
+    key = globals()["__high2float"]
+    cases = [signature(float32, _type___half2)]
+
+
+register_global(__high2float, types.Function(_typing___high2float))
+
+
+@register
+class _typing___half2char_rz(ConcreteTemplate):
+    key = globals()["__half2char_rz"]
+    cases = [signature(int8, _type___half)]
+
+
+register_global(__half2char_rz, types.Function(_typing___half2char_rz))
+
+
+@register
+class _typing___half2uchar_rz(ConcreteTemplate):
+    key = globals()["__half2uchar_rz"]
+    cases = [signature(uint8, _type___half)]
+
+
+register_global(__half2uchar_rz, types.Function(_typing___half2uchar_rz))
+
+
+@register
+class _typing___half2short_rz(ConcreteTemplate):
+    key = globals()["__half2short_rz"]
+    cases = [signature(int16, _type___half)]
+
+
+register_global(__half2short_rz, types.Function(_typing___half2short_rz))
+
+
+@register
+class _typing___half2ushort_rz(ConcreteTemplate):
+    key = globals()["__half2ushort_rz"]
+    cases = [signature(uint16, _type___half)]
+
+
+register_global(__half2ushort_rz, types.Function(_typing___half2ushort_rz))
+
+
+@register
+class _typing___half2int_rz(ConcreteTemplate):
+    key = globals()["__half2int_rz"]
+    cases = [signature(int32, _type___half)]
+
+
+register_global(__half2int_rz, types.Function(_typing___half2int_rz))
+
+
+@register
+class _typing___half2uint_rz(ConcreteTemplate):
+    key = globals()["__half2uint_rz"]
+    cases = [signature(uint32, _type___half)]
+
+
+register_global(__half2uint_rz, types.Function(_typing___half2uint_rz))
+
+
+@register
+class _typing___half2ll_rz(ConcreteTemplate):
+    key = globals()["__half2ll_rz"]
+    cases = [signature(int64, _type___half)]
+
+
+register_global(__half2ll_rz, types.Function(_typing___half2ll_rz))
+
+
+@register
+class _typing___half2ull_rz(ConcreteTemplate):
+    key = globals()["__half2ull_rz"]
+    cases = [signature(uint64, _type___half)]
+
+
+register_global(__half2ull_rz, types.Function(_typing___half2ull_rz))
+
+
+@register
 class _typing_make_half2(ConcreteTemplate):
     key = globals()["make_half2"]
     cases = [signature(_type___half2, _type___half, _type___half)]
 
 
 register_global(make_half2, types.Function(_typing_make_half2))
+
+
+@register
+class _typing___float22half2_rn(ConcreteTemplate):
+    key = globals()["__float22half2_rn"]
+    cases = [signature(_type___half2, float32x2)]
+
+
+register_global(__float22half2_rn, types.Function(_typing___float22half2_rn))
+
+
+@register
+class _typing___half22float2(ConcreteTemplate):
+    key = globals()["__half22float2"]
+    cases = [signature(float32x2, _type___half2)]
+
+
+register_global(__half22float2, types.Function(_typing___half22float2))
+
+
+@register
+class _typing___half2int_rn(ConcreteTemplate):
+    key = globals()["__half2int_rn"]
+    cases = [signature(int32, _type___half)]
+
+
+register_global(__half2int_rn, types.Function(_typing___half2int_rn))
+
+
+@register
+class _typing___half2int_rd(ConcreteTemplate):
+    key = globals()["__half2int_rd"]
+    cases = [signature(int32, _type___half)]
+
+
+register_global(__half2int_rd, types.Function(_typing___half2int_rd))
+
+
+@register
+class _typing___half2int_ru(ConcreteTemplate):
+    key = globals()["__half2int_ru"]
+    cases = [signature(int32, _type___half)]
+
+
+register_global(__half2int_ru, types.Function(_typing___half2int_ru))
+
+
+@register
+class _typing___int2half_rn(ConcreteTemplate):
+    key = globals()["__int2half_rn"]
+    cases = [signature(_type___half, int32)]
+
+
+register_global(__int2half_rn, types.Function(_typing___int2half_rn))
+
+
+@register
+class _typing___int2half_rz(ConcreteTemplate):
+    key = globals()["__int2half_rz"]
+    cases = [signature(_type___half, int32)]
+
+
+register_global(__int2half_rz, types.Function(_typing___int2half_rz))
+
+
+@register
+class _typing___int2half_rd(ConcreteTemplate):
+    key = globals()["__int2half_rd"]
+    cases = [signature(_type___half, int32)]
+
+
+register_global(__int2half_rd, types.Function(_typing___int2half_rd))
+
+
+@register
+class _typing___int2half_ru(ConcreteTemplate):
+    key = globals()["__int2half_ru"]
+    cases = [signature(_type___half, int32)]
+
+
+register_global(__int2half_ru, types.Function(_typing___int2half_ru))
+
+
+@register
+class _typing___half2short_rn(ConcreteTemplate):
+    key = globals()["__half2short_rn"]
+    cases = [signature(int16, _type___half)]
+
+
+register_global(__half2short_rn, types.Function(_typing___half2short_rn))
+
+
+@register
+class _typing___half2short_rd(ConcreteTemplate):
+    key = globals()["__half2short_rd"]
+    cases = [signature(int16, _type___half)]
+
+
+register_global(__half2short_rd, types.Function(_typing___half2short_rd))
+
+
+@register
+class _typing___half2short_ru(ConcreteTemplate):
+    key = globals()["__half2short_ru"]
+    cases = [signature(int16, _type___half)]
+
+
+register_global(__half2short_ru, types.Function(_typing___half2short_ru))
+
+
+@register
+class _typing___short2half_rn(ConcreteTemplate):
+    key = globals()["__short2half_rn"]
+    cases = [signature(_type___half, int16)]
+
+
+register_global(__short2half_rn, types.Function(_typing___short2half_rn))
+
+
+@register
+class _typing___short2half_rz(ConcreteTemplate):
+    key = globals()["__short2half_rz"]
+    cases = [signature(_type___half, int16)]
+
+
+register_global(__short2half_rz, types.Function(_typing___short2half_rz))
+
+
+@register
+class _typing___short2half_rd(ConcreteTemplate):
+    key = globals()["__short2half_rd"]
+    cases = [signature(_type___half, int16)]
+
+
+register_global(__short2half_rd, types.Function(_typing___short2half_rd))
+
+
+@register
+class _typing___short2half_ru(ConcreteTemplate):
+    key = globals()["__short2half_ru"]
+    cases = [signature(_type___half, int16)]
+
+
+register_global(__short2half_ru, types.Function(_typing___short2half_ru))
+
+
+@register
+class _typing___half2uint_rn(ConcreteTemplate):
+    key = globals()["__half2uint_rn"]
+    cases = [signature(uint32, _type___half)]
+
+
+register_global(__half2uint_rn, types.Function(_typing___half2uint_rn))
+
+
+@register
+class _typing___half2uint_rd(ConcreteTemplate):
+    key = globals()["__half2uint_rd"]
+    cases = [signature(uint32, _type___half)]
+
+
+register_global(__half2uint_rd, types.Function(_typing___half2uint_rd))
+
+
+@register
+class _typing___half2uint_ru(ConcreteTemplate):
+    key = globals()["__half2uint_ru"]
+    cases = [signature(uint32, _type___half)]
+
+
+register_global(__half2uint_ru, types.Function(_typing___half2uint_ru))
+
+
+@register
+class _typing___uint2half_rn(ConcreteTemplate):
+    key = globals()["__uint2half_rn"]
+    cases = [signature(_type___half, uint32)]
+
+
+register_global(__uint2half_rn, types.Function(_typing___uint2half_rn))
+
+
+@register
+class _typing___uint2half_rz(ConcreteTemplate):
+    key = globals()["__uint2half_rz"]
+    cases = [signature(_type___half, uint32)]
+
+
+register_global(__uint2half_rz, types.Function(_typing___uint2half_rz))
+
+
+@register
+class _typing___uint2half_rd(ConcreteTemplate):
+    key = globals()["__uint2half_rd"]
+    cases = [signature(_type___half, uint32)]
+
+
+register_global(__uint2half_rd, types.Function(_typing___uint2half_rd))
+
+
+@register
+class _typing___uint2half_ru(ConcreteTemplate):
+    key = globals()["__uint2half_ru"]
+    cases = [signature(_type___half, uint32)]
+
+
+register_global(__uint2half_ru, types.Function(_typing___uint2half_ru))
+
+
+@register
+class _typing___half2ushort_rn(ConcreteTemplate):
+    key = globals()["__half2ushort_rn"]
+    cases = [signature(uint16, _type___half)]
+
+
+register_global(__half2ushort_rn, types.Function(_typing___half2ushort_rn))
+
+
+@register
+class _typing___half2ushort_rd(ConcreteTemplate):
+    key = globals()["__half2ushort_rd"]
+    cases = [signature(uint16, _type___half)]
+
+
+register_global(__half2ushort_rd, types.Function(_typing___half2ushort_rd))
+
+
+@register
+class _typing___half2ushort_ru(ConcreteTemplate):
+    key = globals()["__half2ushort_ru"]
+    cases = [signature(uint16, _type___half)]
+
+
+register_global(__half2ushort_ru, types.Function(_typing___half2ushort_ru))
+
+
+@register
+class _typing___ushort2half_rn(ConcreteTemplate):
+    key = globals()["__ushort2half_rn"]
+    cases = [signature(_type___half, uint16)]
+
+
+register_global(__ushort2half_rn, types.Function(_typing___ushort2half_rn))
+
+
+@register
+class _typing___ushort2half_rz(ConcreteTemplate):
+    key = globals()["__ushort2half_rz"]
+    cases = [signature(_type___half, uint16)]
+
+
+register_global(__ushort2half_rz, types.Function(_typing___ushort2half_rz))
+
+
+@register
+class _typing___ushort2half_rd(ConcreteTemplate):
+    key = globals()["__ushort2half_rd"]
+    cases = [signature(_type___half, uint16)]
+
+
+register_global(__ushort2half_rd, types.Function(_typing___ushort2half_rd))
+
+
+@register
+class _typing___ushort2half_ru(ConcreteTemplate):
+    key = globals()["__ushort2half_ru"]
+    cases = [signature(_type___half, uint16)]
+
+
+register_global(__ushort2half_ru, types.Function(_typing___ushort2half_ru))
+
+
+@register
+class _typing___half2ull_rn(ConcreteTemplate):
+    key = globals()["__half2ull_rn"]
+    cases = [signature(uint64, _type___half)]
+
+
+register_global(__half2ull_rn, types.Function(_typing___half2ull_rn))
+
+
+@register
+class _typing___half2ull_rd(ConcreteTemplate):
+    key = globals()["__half2ull_rd"]
+    cases = [signature(uint64, _type___half)]
+
+
+register_global(__half2ull_rd, types.Function(_typing___half2ull_rd))
+
+
+@register
+class _typing___half2ull_ru(ConcreteTemplate):
+    key = globals()["__half2ull_ru"]
+    cases = [signature(uint64, _type___half)]
+
+
+register_global(__half2ull_ru, types.Function(_typing___half2ull_ru))
+
+
+@register
+class _typing___ull2half_rn(ConcreteTemplate):
+    key = globals()["__ull2half_rn"]
+    cases = [signature(_type___half, uint64)]
+
+
+register_global(__ull2half_rn, types.Function(_typing___ull2half_rn))
+
+
+@register
+class _typing___ull2half_rz(ConcreteTemplate):
+    key = globals()["__ull2half_rz"]
+    cases = [signature(_type___half, uint64)]
+
+
+register_global(__ull2half_rz, types.Function(_typing___ull2half_rz))
+
+
+@register
+class _typing___ull2half_rd(ConcreteTemplate):
+    key = globals()["__ull2half_rd"]
+    cases = [signature(_type___half, uint64)]
+
+
+register_global(__ull2half_rd, types.Function(_typing___ull2half_rd))
+
+
+@register
+class _typing___ull2half_ru(ConcreteTemplate):
+    key = globals()["__ull2half_ru"]
+    cases = [signature(_type___half, uint64)]
+
+
+register_global(__ull2half_ru, types.Function(_typing___ull2half_ru))
+
+
+@register
+class _typing___half2ll_rn(ConcreteTemplate):
+    key = globals()["__half2ll_rn"]
+    cases = [signature(int64, _type___half)]
+
+
+register_global(__half2ll_rn, types.Function(_typing___half2ll_rn))
+
+
+@register
+class _typing___half2ll_rd(ConcreteTemplate):
+    key = globals()["__half2ll_rd"]
+    cases = [signature(int64, _type___half)]
+
+
+register_global(__half2ll_rd, types.Function(_typing___half2ll_rd))
+
+
+@register
+class _typing___half2ll_ru(ConcreteTemplate):
+    key = globals()["__half2ll_ru"]
+    cases = [signature(int64, _type___half)]
+
+
+register_global(__half2ll_ru, types.Function(_typing___half2ll_ru))
+
+
+@register
+class _typing___ll2half_rn(ConcreteTemplate):
+    key = globals()["__ll2half_rn"]
+    cases = [signature(_type___half, int64)]
+
+
+register_global(__ll2half_rn, types.Function(_typing___ll2half_rn))
+
+
+@register
+class _typing___ll2half_rz(ConcreteTemplate):
+    key = globals()["__ll2half_rz"]
+    cases = [signature(_type___half, int64)]
+
+
+register_global(__ll2half_rz, types.Function(_typing___ll2half_rz))
+
+
+@register
+class _typing___ll2half_rd(ConcreteTemplate):
+    key = globals()["__ll2half_rd"]
+    cases = [signature(_type___half, int64)]
+
+
+register_global(__ll2half_rd, types.Function(_typing___ll2half_rd))
+
+
+@register
+class _typing___ll2half_ru(ConcreteTemplate):
+    key = globals()["__ll2half_ru"]
+    cases = [signature(_type___half, int64)]
+
+
+register_global(__ll2half_ru, types.Function(_typing___ll2half_ru))
 
 
 @register
@@ -4400,6 +12799,1109 @@ class _typing_h2rint(ConcreteTemplate):
 
 
 register_global(h2rint, types.Function(_typing_h2rint))
+
+
+@register
+class _typing___half2half2(ConcreteTemplate):
+    key = globals()["__half2half2"]
+    cases = [signature(_type___half2, _type___half)]
+
+
+register_global(__half2half2, types.Function(_typing___half2half2))
+
+
+@register
+class _typing___lowhigh2highlow(ConcreteTemplate):
+    key = globals()["__lowhigh2highlow"]
+    cases = [signature(_type___half2, _type___half2)]
+
+
+register_global(__lowhigh2highlow, types.Function(_typing___lowhigh2highlow))
+
+
+@register
+class _typing___lows2half2(ConcreteTemplate):
+    key = globals()["__lows2half2"]
+    cases = [signature(_type___half2, _type___half2, _type___half2)]
+
+
+register_global(__lows2half2, types.Function(_typing___lows2half2))
+
+
+@register
+class _typing___highs2half2(ConcreteTemplate):
+    key = globals()["__highs2half2"]
+    cases = [signature(_type___half2, _type___half2, _type___half2)]
+
+
+register_global(__highs2half2, types.Function(_typing___highs2half2))
+
+
+@register
+class _typing___high2half(ConcreteTemplate):
+    key = globals()["__high2half"]
+    cases = [signature(_type___half, _type___half2)]
+
+
+register_global(__high2half, types.Function(_typing___high2half))
+
+
+@register
+class _typing___low2half(ConcreteTemplate):
+    key = globals()["__low2half"]
+    cases = [signature(_type___half, _type___half2)]
+
+
+register_global(__low2half, types.Function(_typing___low2half))
+
+
+@register
+class _typing___hisinf(ConcreteTemplate):
+    key = globals()["__hisinf"]
+    cases = [signature(int32, _type___half)]
+
+
+register_global(__hisinf, types.Function(_typing___hisinf))
+
+
+@register
+class _typing___halves2half2(ConcreteTemplate):
+    key = globals()["__halves2half2"]
+    cases = [signature(_type___half2, _type___half, _type___half)]
+
+
+register_global(__halves2half2, types.Function(_typing___halves2half2))
+
+
+@register
+class _typing___low2half2(ConcreteTemplate):
+    key = globals()["__low2half2"]
+    cases = [signature(_type___half2, _type___half2)]
+
+
+register_global(__low2half2, types.Function(_typing___low2half2))
+
+
+@register
+class _typing___high2half2(ConcreteTemplate):
+    key = globals()["__high2half2"]
+    cases = [signature(_type___half2, _type___half2)]
+
+
+register_global(__high2half2, types.Function(_typing___high2half2))
+
+
+@register
+class _typing___half_as_short(ConcreteTemplate):
+    key = globals()["__half_as_short"]
+    cases = [signature(int16, _type___half)]
+
+
+register_global(__half_as_short, types.Function(_typing___half_as_short))
+
+
+@register
+class _typing___half_as_ushort(ConcreteTemplate):
+    key = globals()["__half_as_ushort"]
+    cases = [signature(uint16, _type___half)]
+
+
+register_global(__half_as_ushort, types.Function(_typing___half_as_ushort))
+
+
+@register
+class _typing___short_as_half(ConcreteTemplate):
+    key = globals()["__short_as_half"]
+    cases = [signature(_type___half, int16)]
+
+
+register_global(__short_as_half, types.Function(_typing___short_as_half))
+
+
+@register
+class _typing___ushort_as_half(ConcreteTemplate):
+    key = globals()["__ushort_as_half"]
+    cases = [signature(_type___half, uint16)]
+
+
+register_global(__ushort_as_half, types.Function(_typing___ushort_as_half))
+
+
+@register
+class _typing___hmax(ConcreteTemplate):
+    key = globals()["__hmax"]
+    cases = [signature(_type___half, _type___half, _type___half)]
+
+
+register_global(__hmax, types.Function(_typing___hmax))
+
+
+@register
+class _typing___hmin(ConcreteTemplate):
+    key = globals()["__hmin"]
+    cases = [signature(_type___half, _type___half, _type___half)]
+
+
+register_global(__hmin, types.Function(_typing___hmin))
+
+
+@register
+class _typing___hmax2(ConcreteTemplate):
+    key = globals()["__hmax2"]
+    cases = [signature(_type___half2, _type___half2, _type___half2)]
+
+
+register_global(__hmax2, types.Function(_typing___hmax2))
+
+
+@register
+class _typing___hmin2(ConcreteTemplate):
+    key = globals()["__hmin2"]
+    cases = [signature(_type___half2, _type___half2, _type___half2)]
+
+
+register_global(__hmin2, types.Function(_typing___hmin2))
+
+
+@register
+class _typing___shfl_sync(ConcreteTemplate):
+    key = globals()["__shfl_sync"]
+    cases = [
+        signature(_type___half2, uint32, _type___half2, int32, int32),
+        signature(_type___half, uint32, _type___half, int32, int32),
+    ]
+
+
+register_global(__shfl_sync, types.Function(_typing___shfl_sync))
+
+
+@register
+class _typing___shfl_up_sync(ConcreteTemplate):
+    key = globals()["__shfl_up_sync"]
+    cases = [
+        signature(_type___half2, uint32, _type___half2, uint32, int32),
+        signature(_type___half, uint32, _type___half, uint32, int32),
+    ]
+
+
+register_global(__shfl_up_sync, types.Function(_typing___shfl_up_sync))
+
+
+@register
+class _typing___shfl_down_sync(ConcreteTemplate):
+    key = globals()["__shfl_down_sync"]
+    cases = [
+        signature(_type___half2, uint32, _type___half2, uint32, int32),
+        signature(_type___half, uint32, _type___half, uint32, int32),
+    ]
+
+
+register_global(__shfl_down_sync, types.Function(_typing___shfl_down_sync))
+
+
+@register
+class _typing___shfl_xor_sync(ConcreteTemplate):
+    key = globals()["__shfl_xor_sync"]
+    cases = [
+        signature(_type___half2, uint32, _type___half2, int32, int32),
+        signature(_type___half, uint32, _type___half, int32, int32),
+    ]
+
+
+register_global(__shfl_xor_sync, types.Function(_typing___shfl_xor_sync))
+
+
+@register
+class _typing___ldg(ConcreteTemplate):
+    key = globals()["__ldg"]
+    cases = [
+        signature(_type___half2, CPointer(_type___half2)),
+        signature(_type___half, CPointer(_type___half)),
+    ]
+
+
+register_global(__ldg, types.Function(_typing___ldg))
+
+
+@register
+class _typing___ldcg(ConcreteTemplate):
+    key = globals()["__ldcg"]
+    cases = [
+        signature(_type___half2, CPointer(_type___half2)),
+        signature(_type___half, CPointer(_type___half)),
+    ]
+
+
+register_global(__ldcg, types.Function(_typing___ldcg))
+
+
+@register
+class _typing___ldca(ConcreteTemplate):
+    key = globals()["__ldca"]
+    cases = [
+        signature(_type___half2, CPointer(_type___half2)),
+        signature(_type___half, CPointer(_type___half)),
+    ]
+
+
+register_global(__ldca, types.Function(_typing___ldca))
+
+
+@register
+class _typing___ldcs(ConcreteTemplate):
+    key = globals()["__ldcs"]
+    cases = [
+        signature(_type___half2, CPointer(_type___half2)),
+        signature(_type___half, CPointer(_type___half)),
+    ]
+
+
+register_global(__ldcs, types.Function(_typing___ldcs))
+
+
+@register
+class _typing___ldlu(ConcreteTemplate):
+    key = globals()["__ldlu"]
+    cases = [
+        signature(_type___half2, CPointer(_type___half2)),
+        signature(_type___half, CPointer(_type___half)),
+    ]
+
+
+register_global(__ldlu, types.Function(_typing___ldlu))
+
+
+@register
+class _typing___ldcv(ConcreteTemplate):
+    key = globals()["__ldcv"]
+    cases = [
+        signature(_type___half2, CPointer(_type___half2)),
+        signature(_type___half, CPointer(_type___half)),
+    ]
+
+
+register_global(__ldcv, types.Function(_typing___ldcv))
+
+
+@register
+class _typing___stwb(ConcreteTemplate):
+    key = globals()["__stwb"]
+    cases = [
+        signature(void, CPointer(_type___half2), _type___half2),
+        signature(void, CPointer(_type___half), _type___half),
+    ]
+
+
+register_global(__stwb, types.Function(_typing___stwb))
+
+
+@register
+class _typing___stcg(ConcreteTemplate):
+    key = globals()["__stcg"]
+    cases = [
+        signature(void, CPointer(_type___half2), _type___half2),
+        signature(void, CPointer(_type___half), _type___half),
+    ]
+
+
+register_global(__stcg, types.Function(_typing___stcg))
+
+
+@register
+class _typing___stcs(ConcreteTemplate):
+    key = globals()["__stcs"]
+    cases = [
+        signature(void, CPointer(_type___half2), _type___half2),
+        signature(void, CPointer(_type___half), _type___half),
+    ]
+
+
+register_global(__stcs, types.Function(_typing___stcs))
+
+
+@register
+class _typing___stwt(ConcreteTemplate):
+    key = globals()["__stwt"]
+    cases = [
+        signature(void, CPointer(_type___half2), _type___half2),
+        signature(void, CPointer(_type___half), _type___half),
+    ]
+
+
+register_global(__stwt, types.Function(_typing___stwt))
+
+
+@register
+class _typing___heq2(ConcreteTemplate):
+    key = globals()["__heq2"]
+    cases = [signature(_type___half2, _type___half2, _type___half2)]
+
+
+register_global(__heq2, types.Function(_typing___heq2))
+
+
+@register
+class _typing___hne2(ConcreteTemplate):
+    key = globals()["__hne2"]
+    cases = [signature(_type___half2, _type___half2, _type___half2)]
+
+
+register_global(__hne2, types.Function(_typing___hne2))
+
+
+@register
+class _typing___hle2(ConcreteTemplate):
+    key = globals()["__hle2"]
+    cases = [signature(_type___half2, _type___half2, _type___half2)]
+
+
+register_global(__hle2, types.Function(_typing___hle2))
+
+
+@register
+class _typing___hge2(ConcreteTemplate):
+    key = globals()["__hge2"]
+    cases = [signature(_type___half2, _type___half2, _type___half2)]
+
+
+register_global(__hge2, types.Function(_typing___hge2))
+
+
+@register
+class _typing___hlt2(ConcreteTemplate):
+    key = globals()["__hlt2"]
+    cases = [signature(_type___half2, _type___half2, _type___half2)]
+
+
+register_global(__hlt2, types.Function(_typing___hlt2))
+
+
+@register
+class _typing___hgt2(ConcreteTemplate):
+    key = globals()["__hgt2"]
+    cases = [signature(_type___half2, _type___half2, _type___half2)]
+
+
+register_global(__hgt2, types.Function(_typing___hgt2))
+
+
+@register
+class _typing___hequ2(ConcreteTemplate):
+    key = globals()["__hequ2"]
+    cases = [signature(_type___half2, _type___half2, _type___half2)]
+
+
+register_global(__hequ2, types.Function(_typing___hequ2))
+
+
+@register
+class _typing___hneu2(ConcreteTemplate):
+    key = globals()["__hneu2"]
+    cases = [signature(_type___half2, _type___half2, _type___half2)]
+
+
+register_global(__hneu2, types.Function(_typing___hneu2))
+
+
+@register
+class _typing___hleu2(ConcreteTemplate):
+    key = globals()["__hleu2"]
+    cases = [signature(_type___half2, _type___half2, _type___half2)]
+
+
+register_global(__hleu2, types.Function(_typing___hleu2))
+
+
+@register
+class _typing___hgeu2(ConcreteTemplate):
+    key = globals()["__hgeu2"]
+    cases = [signature(_type___half2, _type___half2, _type___half2)]
+
+
+register_global(__hgeu2, types.Function(_typing___hgeu2))
+
+
+@register
+class _typing___hltu2(ConcreteTemplate):
+    key = globals()["__hltu2"]
+    cases = [signature(_type___half2, _type___half2, _type___half2)]
+
+
+register_global(__hltu2, types.Function(_typing___hltu2))
+
+
+@register
+class _typing___hgtu2(ConcreteTemplate):
+    key = globals()["__hgtu2"]
+    cases = [signature(_type___half2, _type___half2, _type___half2)]
+
+
+register_global(__hgtu2, types.Function(_typing___hgtu2))
+
+
+@register
+class _typing___heq2_mask(ConcreteTemplate):
+    key = globals()["__heq2_mask"]
+    cases = [signature(uint32, _type___half2, _type___half2)]
+
+
+register_global(__heq2_mask, types.Function(_typing___heq2_mask))
+
+
+@register
+class _typing___hne2_mask(ConcreteTemplate):
+    key = globals()["__hne2_mask"]
+    cases = [signature(uint32, _type___half2, _type___half2)]
+
+
+register_global(__hne2_mask, types.Function(_typing___hne2_mask))
+
+
+@register
+class _typing___hle2_mask(ConcreteTemplate):
+    key = globals()["__hle2_mask"]
+    cases = [signature(uint32, _type___half2, _type___half2)]
+
+
+register_global(__hle2_mask, types.Function(_typing___hle2_mask))
+
+
+@register
+class _typing___hge2_mask(ConcreteTemplate):
+    key = globals()["__hge2_mask"]
+    cases = [signature(uint32, _type___half2, _type___half2)]
+
+
+register_global(__hge2_mask, types.Function(_typing___hge2_mask))
+
+
+@register
+class _typing___hlt2_mask(ConcreteTemplate):
+    key = globals()["__hlt2_mask"]
+    cases = [signature(uint32, _type___half2, _type___half2)]
+
+
+register_global(__hlt2_mask, types.Function(_typing___hlt2_mask))
+
+
+@register
+class _typing___hgt2_mask(ConcreteTemplate):
+    key = globals()["__hgt2_mask"]
+    cases = [signature(uint32, _type___half2, _type___half2)]
+
+
+register_global(__hgt2_mask, types.Function(_typing___hgt2_mask))
+
+
+@register
+class _typing___hequ2_mask(ConcreteTemplate):
+    key = globals()["__hequ2_mask"]
+    cases = [signature(uint32, _type___half2, _type___half2)]
+
+
+register_global(__hequ2_mask, types.Function(_typing___hequ2_mask))
+
+
+@register
+class _typing___hneu2_mask(ConcreteTemplate):
+    key = globals()["__hneu2_mask"]
+    cases = [signature(uint32, _type___half2, _type___half2)]
+
+
+register_global(__hneu2_mask, types.Function(_typing___hneu2_mask))
+
+
+@register
+class _typing___hleu2_mask(ConcreteTemplate):
+    key = globals()["__hleu2_mask"]
+    cases = [signature(uint32, _type___half2, _type___half2)]
+
+
+register_global(__hleu2_mask, types.Function(_typing___hleu2_mask))
+
+
+@register
+class _typing___hgeu2_mask(ConcreteTemplate):
+    key = globals()["__hgeu2_mask"]
+    cases = [signature(uint32, _type___half2, _type___half2)]
+
+
+register_global(__hgeu2_mask, types.Function(_typing___hgeu2_mask))
+
+
+@register
+class _typing___hltu2_mask(ConcreteTemplate):
+    key = globals()["__hltu2_mask"]
+    cases = [signature(uint32, _type___half2, _type___half2)]
+
+
+register_global(__hltu2_mask, types.Function(_typing___hltu2_mask))
+
+
+@register
+class _typing___hgtu2_mask(ConcreteTemplate):
+    key = globals()["__hgtu2_mask"]
+    cases = [signature(uint32, _type___half2, _type___half2)]
+
+
+register_global(__hgtu2_mask, types.Function(_typing___hgtu2_mask))
+
+
+@register
+class _typing___hisnan2(ConcreteTemplate):
+    key = globals()["__hisnan2"]
+    cases = [signature(_type___half2, _type___half2)]
+
+
+register_global(__hisnan2, types.Function(_typing___hisnan2))
+
+
+@register
+class _typing___hadd2(ConcreteTemplate):
+    key = globals()["__hadd2"]
+    cases = [signature(_type___half2, _type___half2, _type___half2)]
+
+
+register_global(__hadd2, types.Function(_typing___hadd2))
+
+
+@register
+class _typing___hsub2(ConcreteTemplate):
+    key = globals()["__hsub2"]
+    cases = [signature(_type___half2, _type___half2, _type___half2)]
+
+
+register_global(__hsub2, types.Function(_typing___hsub2))
+
+
+@register
+class _typing___hmul2(ConcreteTemplate):
+    key = globals()["__hmul2"]
+    cases = [signature(_type___half2, _type___half2, _type___half2)]
+
+
+register_global(__hmul2, types.Function(_typing___hmul2))
+
+
+@register
+class _typing___hadd2_rn(ConcreteTemplate):
+    key = globals()["__hadd2_rn"]
+    cases = [signature(_type___half2, _type___half2, _type___half2)]
+
+
+register_global(__hadd2_rn, types.Function(_typing___hadd2_rn))
+
+
+@register
+class _typing___hsub2_rn(ConcreteTemplate):
+    key = globals()["__hsub2_rn"]
+    cases = [signature(_type___half2, _type___half2, _type___half2)]
+
+
+register_global(__hsub2_rn, types.Function(_typing___hsub2_rn))
+
+
+@register
+class _typing___hmul2_rn(ConcreteTemplate):
+    key = globals()["__hmul2_rn"]
+    cases = [signature(_type___half2, _type___half2, _type___half2)]
+
+
+register_global(__hmul2_rn, types.Function(_typing___hmul2_rn))
+
+
+@register
+class _typing___h2div(ConcreteTemplate):
+    key = globals()["__h2div"]
+    cases = [signature(_type___half2, _type___half2, _type___half2)]
+
+
+register_global(__h2div, types.Function(_typing___h2div))
+
+
+@register
+class _typing___habs2(ConcreteTemplate):
+    key = globals()["__habs2"]
+    cases = [signature(_type___half2, _type___half2)]
+
+
+register_global(__habs2, types.Function(_typing___habs2))
+
+
+@register
+class _typing___hadd2_sat(ConcreteTemplate):
+    key = globals()["__hadd2_sat"]
+    cases = [signature(_type___half2, _type___half2, _type___half2)]
+
+
+register_global(__hadd2_sat, types.Function(_typing___hadd2_sat))
+
+
+@register
+class _typing___hsub2_sat(ConcreteTemplate):
+    key = globals()["__hsub2_sat"]
+    cases = [signature(_type___half2, _type___half2, _type___half2)]
+
+
+register_global(__hsub2_sat, types.Function(_typing___hsub2_sat))
+
+
+@register
+class _typing___hmul2_sat(ConcreteTemplate):
+    key = globals()["__hmul2_sat"]
+    cases = [signature(_type___half2, _type___half2, _type___half2)]
+
+
+register_global(__hmul2_sat, types.Function(_typing___hmul2_sat))
+
+
+@register
+class _typing___hfma2(ConcreteTemplate):
+    key = globals()["__hfma2"]
+    cases = [
+        signature(_type___half2, _type___half2, _type___half2, _type___half2)
+    ]
+
+
+register_global(__hfma2, types.Function(_typing___hfma2))
+
+
+@register
+class _typing___hfma2_sat(ConcreteTemplate):
+    key = globals()["__hfma2_sat"]
+    cases = [
+        signature(_type___half2, _type___half2, _type___half2, _type___half2)
+    ]
+
+
+register_global(__hfma2_sat, types.Function(_typing___hfma2_sat))
+
+
+@register
+class _typing___hneg2(ConcreteTemplate):
+    key = globals()["__hneg2"]
+    cases = [signature(_type___half2, _type___half2)]
+
+
+register_global(__hneg2, types.Function(_typing___hneg2))
+
+
+@register
+class _typing___habs(ConcreteTemplate):
+    key = globals()["__habs"]
+    cases = [signature(_type___half, _type___half)]
+
+
+register_global(__habs, types.Function(_typing___habs))
+
+
+@register
+class _typing___hadd(ConcreteTemplate):
+    key = globals()["__hadd"]
+    cases = [signature(_type___half, _type___half, _type___half)]
+
+
+register_global(__hadd, types.Function(_typing___hadd))
+
+
+@register
+class _typing___hsub(ConcreteTemplate):
+    key = globals()["__hsub"]
+    cases = [signature(_type___half, _type___half, _type___half)]
+
+
+register_global(__hsub, types.Function(_typing___hsub))
+
+
+@register
+class _typing___hmul(ConcreteTemplate):
+    key = globals()["__hmul"]
+    cases = [signature(_type___half, _type___half, _type___half)]
+
+
+register_global(__hmul, types.Function(_typing___hmul))
+
+
+@register
+class _typing___hadd_rn(ConcreteTemplate):
+    key = globals()["__hadd_rn"]
+    cases = [signature(_type___half, _type___half, _type___half)]
+
+
+register_global(__hadd_rn, types.Function(_typing___hadd_rn))
+
+
+@register
+class _typing___hsub_rn(ConcreteTemplate):
+    key = globals()["__hsub_rn"]
+    cases = [signature(_type___half, _type___half, _type___half)]
+
+
+register_global(__hsub_rn, types.Function(_typing___hsub_rn))
+
+
+@register
+class _typing___hmul_rn(ConcreteTemplate):
+    key = globals()["__hmul_rn"]
+    cases = [signature(_type___half, _type___half, _type___half)]
+
+
+register_global(__hmul_rn, types.Function(_typing___hmul_rn))
+
+
+@register
+class _typing___hdiv(ConcreteTemplate):
+    key = globals()["__hdiv"]
+    cases = [signature(_type___half, _type___half, _type___half)]
+
+
+register_global(__hdiv, types.Function(_typing___hdiv))
+
+
+@register
+class _typing___hadd_sat(ConcreteTemplate):
+    key = globals()["__hadd_sat"]
+    cases = [signature(_type___half, _type___half, _type___half)]
+
+
+register_global(__hadd_sat, types.Function(_typing___hadd_sat))
+
+
+@register
+class _typing___hsub_sat(ConcreteTemplate):
+    key = globals()["__hsub_sat"]
+    cases = [signature(_type___half, _type___half, _type___half)]
+
+
+register_global(__hsub_sat, types.Function(_typing___hsub_sat))
+
+
+@register
+class _typing___hmul_sat(ConcreteTemplate):
+    key = globals()["__hmul_sat"]
+    cases = [signature(_type___half, _type___half, _type___half)]
+
+
+register_global(__hmul_sat, types.Function(_typing___hmul_sat))
+
+
+@register
+class _typing___hfma(ConcreteTemplate):
+    key = globals()["__hfma"]
+    cases = [signature(_type___half, _type___half, _type___half, _type___half)]
+
+
+register_global(__hfma, types.Function(_typing___hfma))
+
+
+@register
+class _typing___hfma_sat(ConcreteTemplate):
+    key = globals()["__hfma_sat"]
+    cases = [signature(_type___half, _type___half, _type___half, _type___half)]
+
+
+register_global(__hfma_sat, types.Function(_typing___hfma_sat))
+
+
+@register
+class _typing___hneg(ConcreteTemplate):
+    key = globals()["__hneg"]
+    cases = [signature(_type___half, _type___half)]
+
+
+register_global(__hneg, types.Function(_typing___hneg))
+
+
+@register
+class _typing___hbeq2(ConcreteTemplate):
+    key = globals()["__hbeq2"]
+    cases = [signature(bool_, _type___half2, _type___half2)]
+
+
+register_global(__hbeq2, types.Function(_typing___hbeq2))
+
+
+@register
+class _typing___hbne2(ConcreteTemplate):
+    key = globals()["__hbne2"]
+    cases = [signature(bool_, _type___half2, _type___half2)]
+
+
+register_global(__hbne2, types.Function(_typing___hbne2))
+
+
+@register
+class _typing___hble2(ConcreteTemplate):
+    key = globals()["__hble2"]
+    cases = [signature(bool_, _type___half2, _type___half2)]
+
+
+register_global(__hble2, types.Function(_typing___hble2))
+
+
+@register
+class _typing___hbge2(ConcreteTemplate):
+    key = globals()["__hbge2"]
+    cases = [signature(bool_, _type___half2, _type___half2)]
+
+
+register_global(__hbge2, types.Function(_typing___hbge2))
+
+
+@register
+class _typing___hblt2(ConcreteTemplate):
+    key = globals()["__hblt2"]
+    cases = [signature(bool_, _type___half2, _type___half2)]
+
+
+register_global(__hblt2, types.Function(_typing___hblt2))
+
+
+@register
+class _typing___hbgt2(ConcreteTemplate):
+    key = globals()["__hbgt2"]
+    cases = [signature(bool_, _type___half2, _type___half2)]
+
+
+register_global(__hbgt2, types.Function(_typing___hbgt2))
+
+
+@register
+class _typing___hbequ2(ConcreteTemplate):
+    key = globals()["__hbequ2"]
+    cases = [signature(bool_, _type___half2, _type___half2)]
+
+
+register_global(__hbequ2, types.Function(_typing___hbequ2))
+
+
+@register
+class _typing___hbneu2(ConcreteTemplate):
+    key = globals()["__hbneu2"]
+    cases = [signature(bool_, _type___half2, _type___half2)]
+
+
+register_global(__hbneu2, types.Function(_typing___hbneu2))
+
+
+@register
+class _typing___hbleu2(ConcreteTemplate):
+    key = globals()["__hbleu2"]
+    cases = [signature(bool_, _type___half2, _type___half2)]
+
+
+register_global(__hbleu2, types.Function(_typing___hbleu2))
+
+
+@register
+class _typing___hbgeu2(ConcreteTemplate):
+    key = globals()["__hbgeu2"]
+    cases = [signature(bool_, _type___half2, _type___half2)]
+
+
+register_global(__hbgeu2, types.Function(_typing___hbgeu2))
+
+
+@register
+class _typing___hbltu2(ConcreteTemplate):
+    key = globals()["__hbltu2"]
+    cases = [signature(bool_, _type___half2, _type___half2)]
+
+
+register_global(__hbltu2, types.Function(_typing___hbltu2))
+
+
+@register
+class _typing___hbgtu2(ConcreteTemplate):
+    key = globals()["__hbgtu2"]
+    cases = [signature(bool_, _type___half2, _type___half2)]
+
+
+register_global(__hbgtu2, types.Function(_typing___hbgtu2))
+
+
+@register
+class _typing___heq(ConcreteTemplate):
+    key = globals()["__heq"]
+    cases = [signature(bool_, _type___half, _type___half)]
+
+
+register_global(__heq, types.Function(_typing___heq))
+
+
+@register
+class _typing___hne(ConcreteTemplate):
+    key = globals()["__hne"]
+    cases = [signature(bool_, _type___half, _type___half)]
+
+
+register_global(__hne, types.Function(_typing___hne))
+
+
+@register
+class _typing___hle(ConcreteTemplate):
+    key = globals()["__hle"]
+    cases = [signature(bool_, _type___half, _type___half)]
+
+
+register_global(__hle, types.Function(_typing___hle))
+
+
+@register
+class _typing___hge(ConcreteTemplate):
+    key = globals()["__hge"]
+    cases = [signature(bool_, _type___half, _type___half)]
+
+
+register_global(__hge, types.Function(_typing___hge))
+
+
+@register
+class _typing___hlt(ConcreteTemplate):
+    key = globals()["__hlt"]
+    cases = [signature(bool_, _type___half, _type___half)]
+
+
+register_global(__hlt, types.Function(_typing___hlt))
+
+
+@register
+class _typing___hgt(ConcreteTemplate):
+    key = globals()["__hgt"]
+    cases = [signature(bool_, _type___half, _type___half)]
+
+
+register_global(__hgt, types.Function(_typing___hgt))
+
+
+@register
+class _typing___hequ(ConcreteTemplate):
+    key = globals()["__hequ"]
+    cases = [signature(bool_, _type___half, _type___half)]
+
+
+register_global(__hequ, types.Function(_typing___hequ))
+
+
+@register
+class _typing___hneu(ConcreteTemplate):
+    key = globals()["__hneu"]
+    cases = [signature(bool_, _type___half, _type___half)]
+
+
+register_global(__hneu, types.Function(_typing___hneu))
+
+
+@register
+class _typing___hleu(ConcreteTemplate):
+    key = globals()["__hleu"]
+    cases = [signature(bool_, _type___half, _type___half)]
+
+
+register_global(__hleu, types.Function(_typing___hleu))
+
+
+@register
+class _typing___hgeu(ConcreteTemplate):
+    key = globals()["__hgeu"]
+    cases = [signature(bool_, _type___half, _type___half)]
+
+
+register_global(__hgeu, types.Function(_typing___hgeu))
+
+
+@register
+class _typing___hltu(ConcreteTemplate):
+    key = globals()["__hltu"]
+    cases = [signature(bool_, _type___half, _type___half)]
+
+
+register_global(__hltu, types.Function(_typing___hltu))
+
+
+@register
+class _typing___hgtu(ConcreteTemplate):
+    key = globals()["__hgtu"]
+    cases = [signature(bool_, _type___half, _type___half)]
+
+
+register_global(__hgtu, types.Function(_typing___hgtu))
+
+
+@register
+class _typing___hisnan(ConcreteTemplate):
+    key = globals()["__hisnan"]
+    cases = [signature(bool_, _type___half)]
+
+
+register_global(__hisnan, types.Function(_typing___hisnan))
+
+
+@register
+class _typing___hmax_nan(ConcreteTemplate):
+    key = globals()["__hmax_nan"]
+    cases = [signature(_type___half, _type___half, _type___half)]
+
+
+register_global(__hmax_nan, types.Function(_typing___hmax_nan))
+
+
+@register
+class _typing___hmin_nan(ConcreteTemplate):
+    key = globals()["__hmin_nan"]
+    cases = [signature(_type___half, _type___half, _type___half)]
+
+
+register_global(__hmin_nan, types.Function(_typing___hmin_nan))
+
+
+@register
+class _typing___hfma_relu(ConcreteTemplate):
+    key = globals()["__hfma_relu"]
+    cases = [signature(_type___half, _type___half, _type___half, _type___half)]
+
+
+register_global(__hfma_relu, types.Function(_typing___hfma_relu))
+
+
+@register
+class _typing___hmax2_nan(ConcreteTemplate):
+    key = globals()["__hmax2_nan"]
+    cases = [signature(_type___half2, _type___half2, _type___half2)]
+
+
+register_global(__hmax2_nan, types.Function(_typing___hmax2_nan))
+
+
+@register
+class _typing___hmin2_nan(ConcreteTemplate):
+    key = globals()["__hmin2_nan"]
+    cases = [signature(_type___half2, _type___half2, _type___half2)]
+
+
+register_global(__hmin2_nan, types.Function(_typing___hmin2_nan))
+
+
+@register
+class _typing___hfma2_relu(ConcreteTemplate):
+    key = globals()["__hfma2_relu"]
+    cases = [
+        signature(_type___half2, _type___half2, _type___half2, _type___half2)
+    ]
+
+
+register_global(__hfma2_relu, types.Function(_typing___hfma2_relu))
+
+
+@register
+class _typing___hcmadd(ConcreteTemplate):
+    key = globals()["__hcmadd"]
+    cases = [
+        signature(_type___half2, _type___half2, _type___half2, _type___half2)
+    ]
+
+
+register_global(__hcmadd, types.Function(_typing___hcmadd))
 
 
 @register
@@ -4804,7 +14306,70 @@ _RECORD_SYMBOLS = ["unnamed1302257", "unnamed1302366", "__half", "__half2"]
 
 
 _FUNCTION_SYMBOLS = [
+    "__double2half",
+    "__float2half",
+    "__float2half_rn",
+    "__float2half_rz",
+    "__float2half_rd",
+    "__float2half_ru",
+    "__half2float",
+    "__float2half2_rn",
+    "__floats2half2_rn",
+    "__low2float",
+    "__high2float",
+    "__half2char_rz",
+    "__half2uchar_rz",
+    "__half2short_rz",
+    "__half2ushort_rz",
+    "__half2int_rz",
+    "__half2uint_rz",
+    "__half2ll_rz",
+    "__half2ull_rz",
     "make_half2",
+    "__float22half2_rn",
+    "__half22float2",
+    "__half2int_rn",
+    "__half2int_rd",
+    "__half2int_ru",
+    "__int2half_rn",
+    "__int2half_rz",
+    "__int2half_rd",
+    "__int2half_ru",
+    "__half2short_rn",
+    "__half2short_rd",
+    "__half2short_ru",
+    "__short2half_rn",
+    "__short2half_rz",
+    "__short2half_rd",
+    "__short2half_ru",
+    "__half2uint_rn",
+    "__half2uint_rd",
+    "__half2uint_ru",
+    "__uint2half_rn",
+    "__uint2half_rz",
+    "__uint2half_rd",
+    "__uint2half_ru",
+    "__half2ushort_rn",
+    "__half2ushort_rd",
+    "__half2ushort_ru",
+    "__ushort2half_rn",
+    "__ushort2half_rz",
+    "__ushort2half_rd",
+    "__ushort2half_ru",
+    "__half2ull_rn",
+    "__half2ull_rd",
+    "__half2ull_ru",
+    "__ull2half_rn",
+    "__ull2half_rz",
+    "__ull2half_rd",
+    "__ull2half_ru",
+    "__half2ll_rn",
+    "__half2ll_rd",
+    "__half2ll_ru",
+    "__ll2half_rn",
+    "__ll2half_rz",
+    "__ll2half_rd",
+    "__ll2half_ru",
     "htrunc",
     "hceil",
     "hfloor",
@@ -4813,6 +14378,137 @@ _FUNCTION_SYMBOLS = [
     "h2ceil",
     "h2floor",
     "h2rint",
+    "__half2half2",
+    "__lowhigh2highlow",
+    "__lows2half2",
+    "__highs2half2",
+    "__high2half",
+    "__low2half",
+    "__hisinf",
+    "__halves2half2",
+    "__low2half2",
+    "__high2half2",
+    "__half_as_short",
+    "__half_as_ushort",
+    "__short_as_half",
+    "__ushort_as_half",
+    "__hmax",
+    "__hmin",
+    "__hmax2",
+    "__hmin2",
+    "__shfl_sync",
+    "__shfl_up_sync",
+    "__shfl_down_sync",
+    "__shfl_xor_sync",
+    "__shfl_sync",
+    "__shfl_up_sync",
+    "__shfl_down_sync",
+    "__shfl_xor_sync",
+    "__ldg",
+    "__ldg",
+    "__ldcg",
+    "__ldcg",
+    "__ldca",
+    "__ldca",
+    "__ldcs",
+    "__ldcs",
+    "__ldlu",
+    "__ldlu",
+    "__ldcv",
+    "__ldcv",
+    "__stwb",
+    "__stwb",
+    "__stcg",
+    "__stcg",
+    "__stcs",
+    "__stcs",
+    "__stwt",
+    "__stwt",
+    "__heq2",
+    "__hne2",
+    "__hle2",
+    "__hge2",
+    "__hlt2",
+    "__hgt2",
+    "__hequ2",
+    "__hneu2",
+    "__hleu2",
+    "__hgeu2",
+    "__hltu2",
+    "__hgtu2",
+    "__heq2_mask",
+    "__hne2_mask",
+    "__hle2_mask",
+    "__hge2_mask",
+    "__hlt2_mask",
+    "__hgt2_mask",
+    "__hequ2_mask",
+    "__hneu2_mask",
+    "__hleu2_mask",
+    "__hgeu2_mask",
+    "__hltu2_mask",
+    "__hgtu2_mask",
+    "__hisnan2",
+    "__hadd2",
+    "__hsub2",
+    "__hmul2",
+    "__hadd2_rn",
+    "__hsub2_rn",
+    "__hmul2_rn",
+    "__h2div",
+    "__habs2",
+    "__hadd2_sat",
+    "__hsub2_sat",
+    "__hmul2_sat",
+    "__hfma2",
+    "__hfma2_sat",
+    "__hneg2",
+    "__habs",
+    "__hadd",
+    "__hsub",
+    "__hmul",
+    "__hadd_rn",
+    "__hsub_rn",
+    "__hmul_rn",
+    "__hdiv",
+    "__hadd_sat",
+    "__hsub_sat",
+    "__hmul_sat",
+    "__hfma",
+    "__hfma_sat",
+    "__hneg",
+    "__hbeq2",
+    "__hbne2",
+    "__hble2",
+    "__hbge2",
+    "__hblt2",
+    "__hbgt2",
+    "__hbequ2",
+    "__hbneu2",
+    "__hbleu2",
+    "__hbgeu2",
+    "__hbltu2",
+    "__hbgtu2",
+    "__heq",
+    "__hne",
+    "__hle",
+    "__hge",
+    "__hlt",
+    "__hgt",
+    "__hequ",
+    "__hneu",
+    "__hleu",
+    "__hgeu",
+    "__hltu",
+    "__hgtu",
+    "__hisnan",
+    "__hmax_nan",
+    "__hmin_nan",
+    "__hfma_relu",
+    "__hmax2_nan",
+    "__hmin2_nan",
+    "__hfma2_relu",
+    "__hcmadd",
     "hsqrt",
     "hrsqrt",
     "hrcp",
