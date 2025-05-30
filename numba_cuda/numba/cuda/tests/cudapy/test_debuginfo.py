@@ -373,6 +373,44 @@ class TestCudaDebugInfo(CUDATestCase):
         match = re.compile(pat).search(llvm_ir)
         self.assertIsNone(match, msg=llvm_ir)
 
+    def test_union_poly_types(self):
+        sig = (types.int32, types.int32)
+
+        @cuda.jit("void(int32, int32)", debug=True, opt=False)
+        def f(x, y):
+            foo = 100  # noqa: F841
+            foo = 2.34  # noqa: F841
+            foo = True  # noqa: F841
+            foo = 200  # noqa: F841
+
+        llvm_ir = f.inspect_llvm(sig)
+        # Extract the type node id
+        pat1 = r'!DILocalVariable\(.*name: "foo".*type: !(\d+)\)'
+        match = re.compile(pat1).search(llvm_ir)
+        self.assertIsNotNone(match, msg=llvm_ir)
+        mdnode_id = match.group(1)
+        # Verify the union type and extract the elements node id
+        pat2 = rf'!{mdnode_id} = distinct !DICompositeType\(elements: !(\d+),.*size: 64, tag: DW_TAG_union_type\)'  # noqa: E501
+        match = re.compile(pat2).search(llvm_ir)
+        self.assertIsNotNone(match, msg=llvm_ir)
+        mdnode_id = match.group(1)
+        # Extract the member node ids
+        pat3 = rf'!{{ !(\d+), !(\d+), !(\d+) }}'
+        match = re.compile(pat3).search(llvm_ir)
+        self.assertIsNotNone(match, msg=llvm_ir)
+        mdnode_id1 = match.group(1)
+        mdnode_id2 = match.group(2)
+        mdnode_id3 = match.group(3)
+        # Verify the member nodes
+        pat4 = rf'!{mdnode_id1} = !DIDerivedType(.*name: "_bool", size: 8, tag: DW_TAG_member)'  # noqa: E501
+        match = re.compile(pat4).search(llvm_ir)
+        self.assertIsNotNone(match, msg=llvm_ir)
+        pat5 = rf'!{mdnode_id2} = !DIDerivedType(.*name: "_float64", size: 64, tag: DW_TAG_member)'  # noqa: E501
+        match = re.compile(pat4).search(llvm_ir)
+        self.assertIsNotNone(match, msg=llvm_ir)
+        pat4 = rf'!{mdnode_id3} = !DIDerivedType(.*name: "_int64", size: 64, tag: DW_TAG_member)'  # noqa: E501
+        match = re.compile(pat4).search(llvm_ir)
+        self.assertIsNotNone(match, msg=llvm_ir)
 
 if __name__ == "__main__":
     unittest.main()

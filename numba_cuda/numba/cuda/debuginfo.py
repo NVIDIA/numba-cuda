@@ -70,9 +70,11 @@ class CUDADIBuilder(DIBuilder):
                         membersize = self.cgctx.get_abi_sizeof(dtype)
                         basetype = self._var_type(dtype, membersize, datamodel=mod)
                         if isinstance(mod.fe_type, types.Literal):
-                            membername = str(mod.fe_type.literal_type)
+                            typename = str(mod.fe_type.literal_type)
                         else:
-                            membername = str(mod.fe_type)
+                            typename = str(mod.fe_type)
+                        # Use a prefix "_" on type names as field names
+                        membername = "_" + typename
                         memberwidth = _BYTE_SIZE * membersize
                         derived_type = m.add_debug_info(
                             "DIDerivedType",
