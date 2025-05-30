@@ -299,12 +299,12 @@ class TestLinkerUsage(CUDATestCase):
 
     def test_linker_enabled_envvar(self):
         env = os.environ.copy()
-        env["NUMBA_CUDA_ENABLE_PYNVJITLINK"] = "1"
+        env.pop("NUMBA_CUDA_ENABLE_PYNVJITLINK", None)
         run_in_subprocess(self.src.format(config=""), env=env)
 
     def test_linker_disabled_envvar(self):
         env = os.environ.copy()
-        env.pop("NUMBA_CUDA_ENABLE_PYNVJITLINK", None)
+        env["NUMBA_CUDA_ENABLE_PYNVJITLINK"] = "0"
         with self.assertRaisesRegex(
             AssertionError, "LTO and additional flags require PyNvJitLinker"
         ):
