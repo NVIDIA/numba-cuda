@@ -67,6 +67,7 @@ Mapped memory
    :noindex:
 
 
+.. _cuda-managed-memory:
 
 Managed memory
 ==============
