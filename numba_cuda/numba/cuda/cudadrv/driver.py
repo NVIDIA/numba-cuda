@@ -82,13 +82,11 @@ _MVC_ERROR_MESSAGE = (
     "to be available"
 )
 
-# Enable pynvjitlink if the environment variables NUMBA_CUDA_ENABLE_PYNVJITLINK
-# or CUDA_ENABLE_PYNVJITLINK are set, or if the pynvjitlink module is found.
-ENABLE_PYNVJITLINK = (
-    _readenv("NUMBA_CUDA_ENABLE_PYNVJITLINK", bool, False)
-    or getattr(config, "CUDA_ENABLE_PYNVJITLINK", False)
-    or importlib.util.find_spec("pynvjitlink") is not None
-)
+# Enable pynvjitlink if the environment variable NUMBA_CUDA_ENABLE_PYNVJITLINK
+# is set or CUDA_ENABLE_PYNVJITLINK is set in the config
+ENABLE_PYNVJITLINK = _readenv(
+    "NUMBA_CUDA_ENABLE_PYNVJITLINK", bool, False
+) or getattr(config, "CUDA_ENABLE_PYNVJITLINK", False)
 if not hasattr(config, "CUDA_ENABLE_PYNVJITLINK"):
     config.CUDA_ENABLE_PYNVJITLINK = ENABLE_PYNVJITLINK
 
