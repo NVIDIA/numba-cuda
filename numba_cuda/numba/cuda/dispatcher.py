@@ -547,6 +547,10 @@ class _Kernel(serialize.ReduceMixin):
             for ax in range(devary.ndim):
                 kernelargs.append(c_intp(devary.strides[ax]))
 
+        elif isinstance(ty, types.CPointer):
+            # Pointer arguments should be a pointer-sized integer
+            kernelargs.append(ctypes.c_uint64(val))
+
         elif isinstance(ty, types.Integer):
             cval = getattr(ctypes, "c_%s" % ty)(val)
             kernelargs.append(cval)
