@@ -179,28 +179,7 @@ class _ctor_template_unnamed1302366(ConcreteTemplate):
 register_global(unnamed1302366, Function(_ctor_template_unnamed1302366))
 
 
-# Typing for __half
-class _type_class___half(Number):
-    def __init__(self):
-        super().__init__(name="__half")
-        self.alignof_ = 2
-        self.bitwidth = 2 * 8
-
-
-_type___half = _type_class___half()
-
-
-# Make Python API for struct
-__half = type("__half", (), {"_nbtype": _type___half})
-
-as_numba_type.register(__half, _type___half)
-
-
-@register_model(_type_class___half)
-class _model___half(PrimitiveModel):
-    def __init__(self, dmm, fe_type):
-        be_type = ir.IntType(fe_type.bitwidth)
-        super(_model___half, self).__init__(dmm, fe_type, be_type)
+__half = _type___half = numba.core.types.float16
 
 
 def _lower___half_void(shim_stream, shim_obj):
