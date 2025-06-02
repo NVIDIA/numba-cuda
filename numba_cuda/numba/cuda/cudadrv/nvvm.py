@@ -858,6 +858,13 @@ def set_cuda_kernel(function):
 
 
 def set_launch_bounds(kernel, launch_bounds):
+    # Based on: CUDA C / C++ Programming Guide 12.9, Section 8.38:
+    # https://docs.nvidia.com/cuda/archive/12.9.0/cuda-c-programming-guide/index.html#launch-bounds
+    # PTX ISA Specification Version 8.7, Section 11.4:
+    # https://docs.nvidia.com/cuda/archive/12.8.1/parallel-thread-execution/index.html#performance-tuning-directives
+    # NVVM IR Specification 12.9, Section 13:
+    # https://docs.nvidia.com/cuda/archive/12.9.0/nvvm-ir-spec/index.html#global-property-annotation
+
     if isinstance(launch_bounds, int):
         launch_bounds = (launch_bounds,)
 
@@ -866,9 +873,24 @@ def set_launch_bounds(kernel, launch_bounds):
         module, "nvvm.annotations"
     )
 
-    indices = "xyz"
-    for index, bound in zip(indices, launch_bounds):
-        mdstr = ir.MetaDataString(module, f"maxntid{index}")
+    # Note that only maxntidx is used even though NVVM IR and PTX allow
+    # maxntidy and maxntidz. This is because the thread block size limit
+    # pertains only to the total number of threads, and therefore bounds on
+    # individual dimensions may be exceeded anyway. To prevent an unsurprising
+    # interface, it is cleaner to only allow setting total size via maxntidx
+    # and assuming y and z to be 1 (as is the case in CUDA C/C++).
+
+    properties = (
+        # Max threads per block
+        "maxntidx",
+        # Min blocks per multiprocessor
+        "minctasm",
+        # Max blocks per cluster
+        "cluster_max_blocks",
+    )
+
+    for prop, bound in zip(properties, launch_bounds):
+        mdstr = ir.MetaDataString(module, prop)
         mdvalue = ir.Constant(ir.IntType(32), bound)
         md = module.add_metadata((kernel, mdstr, mdvalue))
         nvvm_annotations.add(md)
