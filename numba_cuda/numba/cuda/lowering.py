@@ -3,6 +3,7 @@ from llvmlite import ir
 from numba.core import ir as numba_ir
 from numba.core import types
 
+
 class CUDALower(Lower):
     def storevar(self, value, name, argidx=None):
         """
@@ -77,7 +78,7 @@ class CUDALower(Lower):
                         poly_map[src_name].add(fetype)
             # Filter out multi-versioned but single typed variables
             self.poly_var_typ_map = {
-                k : v for k, v in poly_map.items() if len(v) > 1
+                k: v for k, v in poly_map.items() if len(v) > 1
             }
 
     def _alloca_var(self, name, fetype):
@@ -85,7 +86,7 @@ class CUDALower(Lower):
         Ensure the given variable has an allocated stack slot (if needed).
         """
         # If the name is not handled yet and a store is needed
-        if (name not in self.varmap and self.store_var_needed(name)):
+        if name not in self.varmap and self.store_var_needed(name):
             index = name.find(".")
             src_name = name[:index] if index > 0 else name
             if src_name in self.poly_var_typ_map:
@@ -102,8 +103,9 @@ class CUDALower(Lower):
                     self.poly_var_loc_map[src_name] = ptr
                 # Any member of this union type shoud type cast ptr to fetype
                 lltype = self.context.get_value_type(fetype)
-                castptr = self.builder.bitcast(self.poly_var_loc_map[src_name],
-                                               ir.PointerType(lltype))
+                castptr = self.builder.bitcast(
+                    self.poly_var_loc_map[src_name], ir.PointerType(lltype)
+                )
                 # Remember the pointer
                 self.varmap[name] = castptr
 

@@ -61,14 +61,18 @@ class CUDADIBuilder(DIBuilder):
             # UnionModel is handled here to represent polymorphic types
             meta = []
             maxwidth = 0
-            for field, model in zip(datamodel._fields, datamodel.inner_models()):
+            for field, model in zip(
+                datamodel._fields, datamodel.inner_models()
+            ):
                 # Ignore the "tag" field, focus on the "payload" field which
                 # contains the data types in memory
                 if field == "payload":
                     for mod in model.inner_models():
                         dtype = mod.get_value_type()
                         membersize = self.cgctx.get_abi_sizeof(dtype)
-                        basetype = self._var_type(dtype, membersize, datamodel=mod)
+                        basetype = self._var_type(
+                            dtype, membersize, datamodel=mod
+                        )
                         if isinstance(mod.fe_type, types.Literal):
                             typename = str(mod.fe_type.literal_type)
                         else:
@@ -84,7 +88,7 @@ class CUDADIBuilder(DIBuilder):
                                 "baseType": basetype,
                                 # DW_TAG_member size is in bits
                                 "size": memberwidth,
-                            }
+                            },
                         )
                         meta.append(derived_type)
                         if memberwidth > maxwidth:
@@ -101,7 +105,7 @@ class CUDADIBuilder(DIBuilder):
                     "elements": m.add_metadata(meta),
                     "size": maxwidth,
                 },
-                is_distinct = True
+                is_distinct=True,
             )
         # For other cases, use upstream Numba implementation
         return super()._var_type(lltype, size, datamodel=datamodel)
