@@ -40,7 +40,7 @@ LTOIR_FLAGS := $(LTOIR_GENCODE) -dc
 
 OUTPUT_DIR := ./
 
-NRT_INCLUDE_DIR := $(shell python -c "from numba.cuda.runtime.nrt import get_include; print(get_include())")
+NRT_INCLUDE_DIR := $(shell python -c "from numba.cuda.memory_management.nrt import get_include; print(get_include())")
 
 all:
 	@echo "GPU CC: $(GPU_CC)"

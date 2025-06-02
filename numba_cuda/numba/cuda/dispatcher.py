@@ -27,8 +27,8 @@ from numba.cuda.errors import (
     normalize_kernel_dimensions,
 )
 from numba.cuda import types as cuda_types
-from numba.cuda.runtime.nrt import rtsys, NRT_LIBRARY
 from numba.cuda.locks import module_init_lock
+from numba.cuda.memory_management.nrt import rtsys, NRT_LIBRARY
 
 from numba import cuda
 from numba import _dispatcher
@@ -546,6 +546,10 @@ class _Kernel(serialize.ReduceMixin):
                 kernelargs.append(c_intp(devary.shape[ax]))
             for ax in range(devary.ndim):
                 kernelargs.append(c_intp(devary.strides[ax]))
+
+        elif isinstance(ty, types.CPointer):
+            # Pointer arguments should be a pointer-sized integer
+            kernelargs.append(ctypes.c_uint64(val))
 
         elif isinstance(ty, types.Integer):
             cval = getattr(ctypes, "c_%s" % ty)(val)

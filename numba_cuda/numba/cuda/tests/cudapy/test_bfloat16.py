@@ -23,6 +23,15 @@ class TestBfloat16HighLevelBindings(CUDATestCase):
 
     def test_math_bindings(self):
         self.skip_unsupported()
+
+        exp_functions = [math.exp]
+        try:
+            from math import exp2
+
+            exp_functions += [exp2]
+        except ImportError:
+            pass
+
         functions = [
             math.trunc,
             math.ceil,
@@ -33,9 +42,7 @@ class TestBfloat16HighLevelBindings(CUDATestCase):
             math.cos,
             math.sin,
             math.tanh,
-            math.exp,
-            math.exp2,
-        ]
+        ] + exp_functions
 
         for f in functions:
             with self.subTest(func=f):
@@ -49,7 +56,7 @@ class TestBfloat16HighLevelBindings(CUDATestCase):
                 arr = cuda.device_array((1,), dtype="float32")
                 kernel[1, 1](arr)
 
-                if f in (math.exp, math.exp2):
+                if f in exp_functions:
                     self.assertAlmostEqual(arr[0], f(3.14), delta=1e-1)
                 else:
                     self.assertAlmostEqual(arr[0], f(3.14), delta=1e-2)

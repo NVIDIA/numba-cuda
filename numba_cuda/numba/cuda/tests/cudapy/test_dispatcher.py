@@ -1,7 +1,18 @@
 import numpy as np
 import threading
 
-from numba import boolean, config, cuda, float32, float64, int32, int64, void
+from numba import (
+    boolean,
+    config,
+    cuda,
+    float32,
+    float64,
+    int32,
+    int64,
+    types,
+    uint32,
+    void,
+)
 from numba.core.errors import TypingError
 from numba.cuda.testing import skip_on_cudasim, unittest, CUDATestCase
 import math
@@ -465,6 +476,35 @@ class TestDispatcher(CUDATestCase):
 
         self.assertEqual("Add two integers, kernel version", add_kernel.__doc__)
         self.assertEqual("Add two integers, device version", add_device.__doc__)
+
+    @skip_on_cudasim("Cudasim does not have device pointers")
+    def test_dispatcher_cpointer_arguments(self):
+        ptr = types.CPointer(types.int32)
+        sig = void(ptr, int32, ptr, ptr, uint32)
+
+        @cuda.jit(sig)
+        def axpy(r, a, x, y, n):
+            i = cuda.grid(1)
+            if i < n:
+                r[i] = a * x[i] + y[i]
+
+        N = 16
+        a = 5
+        hx = np.arange(10, dtype=np.int32)
+        hy = np.arange(10, dtype=np.int32) * 2
+        dx = cuda.to_device(hx)
+        dy = cuda.to_device(hy)
+        dr = cuda.device_array_like(dx)
+
+        r_ptr = dr.__cuda_array_interface__["data"][0]
+        x_ptr = dx.__cuda_array_interface__["data"][0]
+        y_ptr = dy.__cuda_array_interface__["data"][0]
+
+        axpy[1, 32](r_ptr, a, x_ptr, y_ptr, N)
+
+        expected = a * hx + hy
+        actual = dr.copy_to_host()
+        np.testing.assert_equal(expected, actual)
 
 
 @skip_on_cudasim("CUDA simulator doesn't implement kernel properties")

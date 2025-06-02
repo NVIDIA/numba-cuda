@@ -20,6 +20,7 @@ jobs:
       - build-conda
       - test-conda
       - test-conda-pynvjitlink
+      - test-simulator
       - build-wheels
       - test-wheels
       - test-wheels-pynvjitlink
@@ -36,6 +37,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       BUILD_MATRIX: ${{ steps.compute-matrix.outputs.BUILD_MATRIX }}
+      SIMULATOR_MATRIX: ${{ steps.compute-matrix.outputs.SIMULATOR_MATRIX }}
       TEST_MATRIX: ${{ steps.compute-matrix.outputs.TEST_MATRIX }}
     steps:
       - uses: actions/checkout@v4
@@ -43,10 +45,14 @@ jobs:
         id: compute-matrix
         run: |
           BUILD_MATRIX="$(yq '.build-matrix' ci/matrix.yml)"
+          SIMULATOR_MATRIX="$(yq '.simulator-matrix' ci/matrix.yml)"
           TEST_MATRIX="$(yq '.test-matrix' ci/matrix.yml)"
           {
             echo 'BUILD_MATRIX<<EOF'
             echo "${BUILD_MATRIX}"
+            echo 'EOF'
+            echo 'SIMULATOR_MATRIX<<EOF'
+            echo "${SIMULATOR_MATRIX}"
             echo 'EOF'
             echo 'TEST_MATRIX<<EOF'
             echo "${TEST_MATRIX}"
@@ -82,6 +88,15 @@ jobs:
       # This selects "ARCH=amd64 and CUDA >=12, with the latest supported Python for each CUDA major version".
       matrix: ${{ needs.compute-matrix.outputs.TEST_MATRIX }}
       matrix_filter: map(select(.ARCH == "amd64" and (.CUDA_VER | split(".") | .[0] | tonumber >= 12))) | group_by(.CUDA_VER|split(".")|map(tonumber)|.[0]) | map(max_by([(.PY_VER|split(".")|map(tonumber)), (.CUDA_VER|split(".")|map(tonumber))]))
+  test-simulator:
+    needs:
+      - build-conda
+      - compute-matrix
+    uses: ./.github/workflows/simulator-test.yaml
+    with:
+      build_type: pull-request
+      script: "ci/test_simulator.sh"
+      matrix: ${{ needs.compute-matrix.outputs.SIMULATOR_MATRIX }}
   build-wheels:
     needs:
       - compute-matrix

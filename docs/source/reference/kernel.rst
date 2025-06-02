@@ -63,6 +63,33 @@ creating a specialized instance:
              get_const_mem_size, get_local_mem_per_thread
 
 
+Kernel Arguments
+----------------
+
+The following types are supported for kernel arguments:
+
+* Arrays of scalars and structured types. Considerations:
+
+  * NumPy arrays will be copied to the device prior to kernel invocation, and
+    copied back after the completion of kernel execution. Copying data between
+    the host and device within the flow of kernel launches is quite inefficient,
+    so this will cause a ``NumbaPerformanceWarning`` to be emitted. It is
+    recommended that data is copied to the device prior to kernel launch and
+    copied back as required, or that :ref:`managed memory <cuda-managed-memory>`
+    is used.
+  * Any object that exposes the :ref:`CUDA Array Interface
+    <cuda-array-interface>` will be treated as a device array and handled
+    accordingly.
+* Scalars. This includes floating point types, signed and unsigned integers,
+  complex types, and enum members.
+* Records. These may be either a NumPy record or a record obtained from a Numba
+  device array holding records. Similar considerations to those for NumPy arrays
+  apply with respect to copying data between host and device.
+* Tuples, where the tuples contain supported types. Nesting tuples, and tuple
+  subclasses (like :func:`namedtuple <collections.namedtuple>`) are supported.
+* Pointers. In order to use pointer arguments, an explicit signature must be
+  provided when declaring the kernel. See :ref:`cuda-cpointer-example`.
+
 
 Intrinsic Attributes and Functions
 ----------------------------------

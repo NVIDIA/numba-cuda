@@ -397,7 +397,7 @@ def compile(src, name, cc, ltoir=False):
     else:
         extra_includes = []
 
-    nrt_path = os.path.join(numba_cuda_path, "runtime")
+    nrt_path = os.path.join(numba_cuda_path, "memory_management")
     nrt_include = f"-I{nrt_path}"
 
     options = [
