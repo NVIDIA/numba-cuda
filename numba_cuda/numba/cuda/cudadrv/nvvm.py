@@ -857,6 +857,23 @@ def set_cuda_kernel(function):
     function.attributes.discard("noinline")
 
 
+def set_launch_bounds(kernel, launch_bounds):
+    if isinstance(launch_bounds, int):
+        launch_bounds = (launch_bounds,)
+
+    module = kernel.module
+    nvvm_annotations = cgutils.get_or_insert_named_metadata(
+        module, "nvvm.annotations"
+    )
+
+    indices = "xyz"
+    for index, bound in zip(indices, launch_bounds):
+        mdstr = ir.MetaDataString(module, f"maxntid{index}")
+        mdvalue = ir.Constant(ir.IntType(32), bound)
+        md = module.add_metadata((kernel, mdstr, mdvalue))
+        nvvm_annotations.add(md)
+
+
 def add_ir_version(mod):
     """Add NVVM IR version to module"""
     # We specify the IR version to match the current NVVM's IR version

@@ -18,7 +18,7 @@ from numba.cuda.compiler import (
     kernel_fixup,
 )
 import re
-from numba.cuda.cudadrv import driver
+from numba.cuda.cudadrv import driver, nvvm
 from numba.cuda.cudadrv.linkable_code import LinkableCode
 from numba.cuda.cudadrv.devices import get_context
 from numba.cuda.descriptor import cuda_target
@@ -147,6 +147,7 @@ class _Kernel(serialize.ReduceMixin):
         kernel = lib.get_function(cres.fndesc.llvm_func_name)
         lib._entry_name = cres.fndesc.llvm_func_name
         kernel_fixup(kernel, self.debug)
+        nvvm.set_launch_bounds(kernel, launch_bounds)
 
         if not link:
             link = []
