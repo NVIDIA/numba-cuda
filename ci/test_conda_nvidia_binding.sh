@@ -48,12 +48,6 @@ EXITCODE=0
 trap "EXITCODE=1" ERR
 set +e
 
-
-rapids-logger "Install pynvjitlink"
-set +u
-rapids-mamba-retry install -c rapidsai pynvjitlink
-set -u
-
 rapids-logger "Build tests"
 
 PY_SCRIPT="
