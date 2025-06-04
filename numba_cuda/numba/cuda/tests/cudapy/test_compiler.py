@@ -288,7 +288,7 @@ class TestCompileOnlyTests(unittest.TestCase):
             # Sleep for a variable time
             cuda.nanosleep(x)
 
-        ptx, resty = compile_ptx(use_nanosleep, (uint32,), cc=(7, 0))
+        ptx, resty = compile_ptx(use_nanosleep, (uint32,))
 
         nanosleep_count = 0
         for line in ptx.split("\n"):
