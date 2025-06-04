@@ -214,7 +214,7 @@ def _lower___half_void(shim_stream, shim_obj):
             builder.alloca(context.get_value_type(arg)) for arg in sig.args
         ]
         for ptr, ty, arg in zip(argptrs, sig.args, args):
-            builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
+            builder.store(arg, ptr, align=2)
 
         context.compile_internal(
             builder,
@@ -226,7 +226,7 @@ def _lower___half_void(shim_stream, shim_obj):
             (selfptr, *argptrs),
         )
         return builder.load(
-            selfptr, align=getattr(_type___half, "alignof_", None)
+            selfptr, align=2
         )
 
 
@@ -261,7 +261,7 @@ def _lower___half__type_unnamed1302257(shim_stream, shim_obj):
             builder.alloca(context.get_value_type(arg)) for arg in sig.args
         ]
         for ptr, ty, arg in zip(argptrs, sig.args, args):
-            builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
+            builder.store(arg, ptr, align=2)
 
         context.compile_internal(
             builder,
@@ -272,7 +272,7 @@ def _lower___half__type_unnamed1302257(shim_stream, shim_obj):
             (selfptr, *argptrs),
         )
         return builder.load(
-            selfptr, align=getattr(_type___half, "alignof_", None)
+            selfptr, align=2
         )
 
 
@@ -306,7 +306,7 @@ def _lower___half_float32(shim_stream, shim_obj):
             builder.alloca(context.get_value_type(arg)) for arg in sig.args
         ]
         for ptr, ty, arg in zip(argptrs, sig.args, args):
-            builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
+            builder.store(arg, ptr, align=2)
 
         context.compile_internal(
             builder,
@@ -315,7 +315,7 @@ def _lower___half_float32(shim_stream, shim_obj):
             (selfptr, *argptrs),
         )
         return builder.load(
-            selfptr, align=getattr(_type___half, "alignof_", None)
+            selfptr, align=2
         )
 
 
@@ -349,7 +349,7 @@ def _lower___half_float64(shim_stream, shim_obj):
             builder.alloca(context.get_value_type(arg)) for arg in sig.args
         ]
         for ptr, ty, arg in zip(argptrs, sig.args, args):
-            builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
+            builder.store(arg, ptr, align=2)
 
         context.compile_internal(
             builder,
@@ -358,7 +358,7 @@ def _lower___half_float64(shim_stream, shim_obj):
             (selfptr, *argptrs),
         )
         return builder.load(
-            selfptr, align=getattr(_type___half, "alignof_", None)
+            selfptr, align=2
         )
 
 
@@ -392,7 +392,7 @@ def _lower___half_int16(shim_stream, shim_obj):
             builder.alloca(context.get_value_type(arg)) for arg in sig.args
         ]
         for ptr, ty, arg in zip(argptrs, sig.args, args):
-            builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
+            builder.store(arg, ptr, align=2)
 
         context.compile_internal(
             builder,
@@ -401,7 +401,7 @@ def _lower___half_int16(shim_stream, shim_obj):
             (selfptr, *argptrs),
         )
         return builder.load(
-            selfptr, align=getattr(_type___half, "alignof_", None)
+            selfptr, align=2
         )
 
 
@@ -435,7 +435,7 @@ def _lower___half_uint16(shim_stream, shim_obj):
             builder.alloca(context.get_value_type(arg)) for arg in sig.args
         ]
         for ptr, ty, arg in zip(argptrs, sig.args, args):
-            builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
+            builder.store(arg, ptr, align=2)
 
         context.compile_internal(
             builder,
@@ -444,7 +444,7 @@ def _lower___half_uint16(shim_stream, shim_obj):
             (selfptr, *argptrs),
         )
         return builder.load(
-            selfptr, align=getattr(_type___half, "alignof_", None)
+            selfptr, align=2
         )
 
 
@@ -478,7 +478,7 @@ def _lower___half_int32(shim_stream, shim_obj):
             builder.alloca(context.get_value_type(arg)) for arg in sig.args
         ]
         for ptr, ty, arg in zip(argptrs, sig.args, args):
-            builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
+            builder.store(arg, ptr, align=2)
 
         context.compile_internal(
             builder,
@@ -487,7 +487,7 @@ def _lower___half_int32(shim_stream, shim_obj):
             (selfptr, *argptrs),
         )
         return builder.load(
-            selfptr, align=getattr(_type___half, "alignof_", None)
+            selfptr, align=2
         )
 
 
@@ -521,7 +521,7 @@ def _lower___half_uint32(shim_stream, shim_obj):
             builder.alloca(context.get_value_type(arg)) for arg in sig.args
         ]
         for ptr, ty, arg in zip(argptrs, sig.args, args):
-            builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
+            builder.store(arg, ptr, align=2)
 
         context.compile_internal(
             builder,
@@ -530,7 +530,7 @@ def _lower___half_uint32(shim_stream, shim_obj):
             (selfptr, *argptrs),
         )
         return builder.load(
-            selfptr, align=getattr(_type___half, "alignof_", None)
+            selfptr, align=2
         )
 
 
@@ -564,7 +564,7 @@ def _lower___half_int64(shim_stream, shim_obj):
             builder.alloca(context.get_value_type(arg)) for arg in sig.args
         ]
         for ptr, ty, arg in zip(argptrs, sig.args, args):
-            builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
+            builder.store(arg, ptr, align=2)
 
         context.compile_internal(
             builder,
@@ -573,7 +573,7 @@ def _lower___half_int64(shim_stream, shim_obj):
             (selfptr, *argptrs),
         )
         return builder.load(
-            selfptr, align=getattr(_type___half, "alignof_", None)
+            selfptr, align=2
         )
 
 
@@ -607,7 +607,7 @@ def _lower___half_uint64(shim_stream, shim_obj):
             builder.alloca(context.get_value_type(arg)) for arg in sig.args
         ]
         for ptr, ty, arg in zip(argptrs, sig.args, args):
-            builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
+            builder.store(arg, ptr, align=2)
 
         context.compile_internal(
             builder,
@@ -616,7 +616,7 @@ def _lower___half_uint64(shim_stream, shim_obj):
             (selfptr, *argptrs),
         )
         return builder.load(
-            selfptr, align=getattr(_type___half, "alignof_", None)
+            selfptr, align=2
         )
 
 
@@ -650,7 +650,7 @@ def _lower___half_int64(shim_stream, shim_obj):
             builder.alloca(context.get_value_type(arg)) for arg in sig.args
         ]
         for ptr, ty, arg in zip(argptrs, sig.args, args):
-            builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
+            builder.store(arg, ptr, align=2)
 
         context.compile_internal(
             builder,
@@ -659,7 +659,7 @@ def _lower___half_int64(shim_stream, shim_obj):
             (selfptr, *argptrs),
         )
         return builder.load(
-            selfptr, align=getattr(_type___half, "alignof_", None)
+            selfptr, align=2
         )
 
 
@@ -693,7 +693,7 @@ def _lower___half_uint64(shim_stream, shim_obj):
             builder.alloca(context.get_value_type(arg)) for arg in sig.args
         ]
         for ptr, ty, arg in zip(argptrs, sig.args, args):
-            builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
+            builder.store(arg, ptr, align=2)
 
         context.compile_internal(
             builder,
@@ -702,7 +702,7 @@ def _lower___half_uint64(shim_stream, shim_obj):
             (selfptr, *argptrs),
         )
         return builder.load(
-            selfptr, align=getattr(_type___half, "alignof_", None)
+            selfptr, align=2
         )
 
 
@@ -1454,7 +1454,7 @@ def _lower___half2_void(shim_stream, shim_obj):
             builder.alloca(context.get_value_type(arg)) for arg in sig.args
         ]
         for ptr, ty, arg in zip(argptrs, sig.args, args):
-            builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
+            builder.store(arg, ptr, align=2)
 
         context.compile_internal(
             builder,
@@ -1466,7 +1466,7 @@ def _lower___half2_void(shim_stream, shim_obj):
             (selfptr, *argptrs),
         )
         return builder.load(
-            selfptr, align=getattr(_type___half2, "alignof_", None)
+            selfptr, align=2
         )
 
 
