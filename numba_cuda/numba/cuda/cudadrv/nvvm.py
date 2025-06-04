@@ -428,6 +428,21 @@ _CUDA_CC_MIN_MAX_SUPPORT = {
     ],
 }
 
+# From CUDA 12.9 Release notes, Section 1.5.4, "Deprecated Architectures"
+# https://docs.nvidia.com/cuda/archive/12.9.0/cuda-toolkit-release-notes/index.html#deprecated-architectures
+#
+#   "Maxwell, Pascal, and Volta architectures are now feature-complete with no
+#   further enhancements planned. While CUDA Toolkit 12.x series will continue
+#   to support building applications for these architectures, offline
+#   compilation and library support will be removed in the next major CUDA
+#   Toolkit version release. Users should plan migration to newer
+#   architectures, as future toolkits will be unable to target Maxwell, Pascal,
+#   and Volta GPUs."
+#
+# In order to maintain compatibility with future toolkits, we use Turing (7.5)
+# as the default CC if it is not otherwise specified.
+LOWEST_CURRENT_CC = (7, 5)
+
 
 def ccs_supported_by_ctk(ctk_version):
     try:
@@ -443,13 +458,12 @@ def ccs_supported_by_ctk(ctk_version):
     except KeyError:
         # For unsupported CUDA toolkit versions, all we can do is assume all
         # non-deprecated versions we are aware of are supported.
-        return tuple(
-            [
-                cc
-                for cc in COMPUTE_CAPABILITIES
-                if cc >= config.CUDA_DEFAULT_PTX_CC
-            ]
-        )
+        #
+        # If the user has specified a non-default CC that is greater than the
+        # lowest non-deprecated one, then we should assume that instead.
+        MIN_CC = max(config.CUDA_DEFAULT_PTX_CC, LOWEST_CURRENT_CC)
+
+        return tuple([cc for cc in COMPUTE_CAPABILITIES if cc >= MIN_CC])
 
 
 def get_supported_ccs():
