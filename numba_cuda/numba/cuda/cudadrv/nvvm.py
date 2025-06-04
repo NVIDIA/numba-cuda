@@ -375,11 +375,8 @@ COMPUTE_CAPABILITIES = (
 )
 
 
-# Maps CTK version -> (min supported cc, max supported cc) inclusive
+# Maps CTK version -> (min supported cc, max supported cc) ranges, bounds inclusive
 _CUDA_CC_MIN_MAX_SUPPORT = {
-    (11, 1): [
-        ((3, 5), (8, 0)),
-    ],
     (11, 2): [
         ((3, 5), (8, 6)),
     ],
