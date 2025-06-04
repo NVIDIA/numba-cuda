@@ -401,8 +401,8 @@ def ccs_supported_by_ctk(ctk_version):
     try:
         # For supported versions, we look up the range of supported CCs
         return tuple(
-            [cc for cc in COMPUTE_CAPABILITIES if min_cc <= cc <= max_cc
-             for min_cc, max_cc in _CUDA_CC_MIN_MAX_SUPPORT[ctk_version]]
+            [cc for min_cc, max_cc in _CUDA_CC_MIN_MAX_SUPPORT[ctk_version]
+             for cc in COMPUTE_CAPABILITIES if min_cc <= cc <= max_cc]
         )
     except KeyError:
         # For unsupported CUDA toolkit versions, all we can do is assume all
