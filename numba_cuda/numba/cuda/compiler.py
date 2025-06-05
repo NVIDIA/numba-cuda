@@ -630,7 +630,7 @@ def compile(
 
                           If a scalar is provided, it is used as the maximum
                           number of threads per block.
-    :type launch_bounds: (int, tuple)
+    :type launch_bounds: int or tuple[int]
     :return: (code, resty): The compiled code and inferred return type
     :rtype: tuple
     """
