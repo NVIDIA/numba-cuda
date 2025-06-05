@@ -1,5 +1,5 @@
 from math import sqrt
-from numba import cuda, float32, int16, int32, int64, uint32, void
+from numba import cuda, float32, int16, int32, int64, types, uint32, void
 from numba.cuda import (
     compile,
     compile_for_current_device,
@@ -304,6 +304,56 @@ class TestCompileOnlyTests(unittest.TestCase):
                 f"expected {expected}"
             ),
         )
+
+
+@skip_on_cudasim("Compilation unsupported in the simulator")
+class TestCompileWithLaunchBounds(unittest.TestCase):
+    def _test_launch_bounds_common(self, launch_bounds):
+        def f():
+            pass
+
+        sig = "void()"
+        ptx, resty = cuda.compile_ptx(f, sig, launch_bounds=launch_bounds)
+        self.assertIsInstance(resty, types.NoneType)
+        self.assertRegex(ptx, r".maxntid\s+128,\s+1,\s+1")
+        return ptx
+
+    def test_launch_bounds_scalar(self):
+        launch_bounds = 128
+        ptx = self._test_launch_bounds_common(launch_bounds)
+
+        self.assertNotIn(".minnctapersm", ptx)
+        self.assertNotIn(".maxclusterrank", ptx)
+
+    def test_launch_bounds_tuple(self):
+        launch_bounds = (128,)
+        ptx = self._test_launch_bounds_common(launch_bounds)
+
+        self.assertNotIn(".minnctapersm", ptx)
+        self.assertNotIn(".maxclusterrank", ptx)
+
+    def test_launch_bounds_with_min_cta(self):
+        launch_bounds = (128, 2)
+        ptx = self._test_launch_bounds_common(launch_bounds)
+
+        self.assertRegex(ptx, r".minnctapersm\s+2")
+        self.assertNotIn(".maxclusterrank", ptx)
+
+    def test_launch_bounds_with_max_cluster_rank(self):
+        def f():
+            pass
+
+        launch_bounds = (128, 2, 4)
+        cc = (9, 0)
+        sig = "void()"
+        ptx, resty = cuda.compile_ptx(
+            f, sig, launch_bounds=launch_bounds, cc=cc
+        )
+        self.assertIsInstance(resty, types.NoneType)
+        self.assertRegex(ptx, r".maxntid\s+128,\s+1,\s+1")
+
+        self.assertRegex(ptx, r".minnctapersm\s+2")
+        self.assertRegex(ptx, r".maxclusterrank\s+4")
 
 
 if __name__ == "__main__":

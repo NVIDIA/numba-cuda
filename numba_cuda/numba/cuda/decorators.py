@@ -73,6 +73,16 @@ def jit(
     :type lineinfo: bool
     :param cache: If True, enables the file-based cache for this function.
     :type cache: bool
+    :param launch_bounds: Kernel launch bounds, specified as a scalar or a tuple
+                          of between one and three items. Tuple items provide:
+
+                          - The maximum number of threads per block,
+                          - The minimum number of blocks per SM,
+                          - The maximum number of blocks per cluster.
+
+                          If a scalar is provided, it is used as the maximum
+                          number of threads per block.
+    :type launch_bounds: (int, tuple)
     """
 
     if link and config.ENABLE_CUDASIM:
