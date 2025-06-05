@@ -30,9 +30,11 @@ cu12 = [
 test = [
     "psutil",
     "cffi",
+    "pytest",
+]
+test-cu12 = [
     "nvidia-curand-cu12",
     "pynvjitlink-cu12",
-    "pytest",
 ]
 
 [project.urls]

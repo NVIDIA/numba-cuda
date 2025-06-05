@@ -7,13 +7,14 @@ set -euo pipefail
 # appropriate cuRAND versions
 declare -A CTK_CURAND_VMAP=( ["12.8"]="10.3.9" ["12.9"]="10.3.10")
 CUDA_VER_MAJOR_MINOR=${CUDA_VER%.*}
+CUDA_VER_MAJOR=${CUDA_VER%.*.*}
 CURAND_VER="${CTK_CURAND_VMAP[${CUDA_VER_MAJOR_MINOR}]}"
 
 rapids-logger "Install wheel with test dependencies"
 package=$(realpath wheel/numba_cuda*.whl)
 echo "Package path: ${package}"
-# TODO: control version pinning to honor TEST_MATRIX once the cuda-toolkit metapackage is up
-python -m pip install "${package}"[cu12,test]
+# TODO: control minor version pinning to honor TEST_MATRIX once the cuda-toolkit metapackage is up
+python -m pip install "${package}[cu${CUDA_VER_MAJOR},test,test-cu${CUDA_VER_MAJOR}]"
 
 rapids-logger "Build tests"
 PY_SCRIPT="

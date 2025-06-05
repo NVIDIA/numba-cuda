@@ -3,22 +3,15 @@
 
 set -euo pipefail
 
-rapids-logger "Install testing dependencies"
-# TODO: Replace with rapids-dependency-file-generator
-python -m pip install \
-    psutil \
-    cffi \
-    cuda-python \
-    pytest
+CUDA_VER_MAJOR=${CUDA_VER%.*.*}
 
-rapids-logger "Install pynvjitlink"
-python -m pip install pynvjitlink-cu12
-
-
-rapids-logger "Install wheel"
+rapids-logger "Install wheel with testing dependencies"
 package=$(realpath wheel/numba_cuda*.whl)
 echo "Package path: $package"
-python -m pip install $package
+python -m pip install \
+    "${package}[test]" \
+    cuda-python \
+    "pynvjitlink-cu${CUDA_VER_MAJOR}"
 
 rapids-logger "Build tests"
 PY_SCRIPT="
