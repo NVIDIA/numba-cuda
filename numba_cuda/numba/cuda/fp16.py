@@ -61,37 +61,52 @@ from numba.cuda._internal.cuda_fp16 import (
     __ushort_as_half,
     __half_as_short,
     __half_as_ushort,
+    __habs as habs,
     __habs,
+    __hadd as hadd,
     __hadd,
     __hadd_rn,
     __hadd_sat,
     __hcmadd,
+    __hdiv as hdiv,
     __hdiv,
+    __heq as heq,
     __heq,
     __hequ,
+    __hfma as hfma,
     __hfma,
     __hfma_relu,
     __hfma_sat,
+    __hge as hge,
     __hge,
     __hgeu,
+    __hgt as hgt,
     __hgt,
     __hgtu,
     __hisinf,
     __hisnan,
+    __hle as hle,
     __hle,
     __hleu,
+    __hlt as hlt,
     __hlt,
     __hltu,
+    __hmax as hmax,
     __hmax,
     __hmax_nan,
+    __hmin as hmin,
     __hmin,
     __hmin_nan,
+    __hmul as hmul,
     __hmul,
     __hmul_rn,
     __hmul_sat,
+    __hne as hne,
     __hne,
+    __hneg as hneg,
     __hneg,
     __hneu,
+    __hsub as hsub,
     __hsub,
     __hsub_rn,
     __hsub_sat,
@@ -115,123 +130,4 @@ from numba.cuda._internal.cuda_fp16 import (
     htrunc,
 )
 
-"""
-def __double2half():
-def __float2half():
-def __float2half_rd():
-def __float2half_rn():
-def __float2half_ru():
-def __float2half_rz():
-def __int2half_rd():
-def __int2half_rn():
-def __int2half_ru():
-def __int2half_rz():
-def __ll2half_rd():
-def __ll2half_rn():
-def __ll2half_ru():
-def __ll2half_rz():
-def __short2half_rd():
-def __short2half_rn():
-def __short2half_ru():
-def __short2half_rz():
-def __uint2half_rd():
-def __uint2half_rn():
-def __uint2half_ru():
-def __uint2half_rz():
-def __ull2half_rd():
-def __ull2half_rn():
-def __ull2half_ru():
-def __ull2half_rz():
-def __ushort2half_rd():
-def __ushort2half_rn():
-def __ushort2half_ru():
-def __ushort2half_rz():
-
-def __half2char_rz():
-def __half2float():
-def __half2int_rd():
-def __half2int_rn():
-def __half2int_ru():
-def __half2int_rz():
-def __half2ll_rd():
-def __half2ll_rn():
-def __half2ll_ru():
-def __half2ll_rz():
-def __half2short_rd():
-def __half2short_rn():
-def __half2short_ru():
-def __half2short_rz():
-def __half2uchar_rz():
-def __half2uint_rd():
-def __half2uint_rn():
-def __half2uint_ru():
-def __half2uint_rz():
-def __half2ull_rd():
-def __half2ull_rn():
-def __half2ull_ru():
-def __half2ull_rz():
-def __half2ushort_rd():
-def __half2ushort_rn():
-def __half2ushort_ru():
-def __half2ushort_rz():
-
-def __short_as_half():
-def __ushort_as_half():
-
-def __half_as_short():
-def __half_as_ushort():
-
-def __habs():
-def __hadd():
-def __hadd_rn():
-def __hadd_sat():
-def __hcmadd():
-def __hdiv():
-def __heq():
-def __hequ():
-def __hfma():
-def __hfma_relu():
-def __hfma_sat():
-def __hge():
-def __hgeu():
-def __hgt():
-def __hgtu():
-def __hisinf():
-def __hisnan():
-def __hle():
-def __hleu():
-def __hlt():
-def __hltu():
-def __hmax():
-def __hmax_nan():
-def __hmin():
-def __hmin_nan():
-def __hmul():
-def __hmul_rn():
-def __hmul_sat():
-def __hne():
-def __hneg():
-def __hneu():
-def __hsub():
-def __hsub_rn():
-def __hsub_sat():
-def atomicAdd():
-def hceil():
-def hcos():
-def hexp():
-def hexp10():
-def hexp2():
-def hfloor():
-def hlog():
-def hlog10():
-def hlog2():
-def hrcp():
-def hrint():
-def hrsqrt():
-def hsin():
-def hsqrt():
-def htanh():
-def htanh_approx():
-def htrunc():
-"""
 __all__ = []
