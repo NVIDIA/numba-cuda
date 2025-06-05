@@ -11,9 +11,9 @@ CURAND_VER="${CTK_CURAND_VMAP[${CUDA_VER_MAJOR_MINOR}]}"
 
 rapids-logger "Install wheel with test dependencies"
 package=$(realpath wheel/numba_cuda*.whl)
-echo "Package path: $package"
+echo "Package path: ${package}"
 # TODO: control version pinning to honor TEST_MATRIX once the cuda-toolkit metapackage is up
-python -m pip install $package[cu12,test]
+python -m pip install "${package}"[cu12,test]
 
 rapids-logger "Build tests"
 PY_SCRIPT="
