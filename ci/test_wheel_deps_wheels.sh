@@ -53,7 +53,6 @@ rapids-logger "Show Numba system info"
 python -m numba --sysinfo
 
 # remove cuda-nvvm-12-5 leaving libnvvm.so from nvidia-cuda-nvcc-cu12 only
-apt-get update
 apt remove --purge `dpkg --get-selections | grep cuda-nvvm | awk '{print $1}'` -y
 apt remove --purge `dpkg --get-selections | grep cuda-nvrtc | awk '{print $1}'` -y
 
