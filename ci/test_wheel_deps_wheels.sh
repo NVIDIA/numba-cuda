@@ -9,25 +9,11 @@ declare -A CTK_CURAND_VMAP=( ["12.8"]="10.3.9" ["12.9"]="10.3.10")
 CUDA_VER_MAJOR_MINOR=${CUDA_VER%.*}
 CURAND_VER="${CTK_CURAND_VMAP[${CUDA_VER_MAJOR_MINOR}]}"
 
-rapids-logger "Install testing dependencies"
-# TODO: Replace with rapids-dependency-file-generator
-python -m pip install \
-    psutil \
-    cffi \
-    "cuda-python==${CUDA_VER_MAJOR_MINOR}.*" \
-    "nvidia-cuda-runtime-cu12==${CUDA_VER_MAJOR_MINOR}.*" \
-    "nvidia-curand-cu12==${CURAND_VER}.*" \
-    "nvidia-cuda-nvcc-cu12==${CUDA_VER_MAJOR_MINOR}.*" \
-    "nvidia-cuda-nvrtc-cu12==${CUDA_VER_MAJOR_MINOR}.*" \
-    pynvjitlink-cu12 \
-    pytest
-
-
-rapids-logger "Install wheel"
+rapids-logger "Install wheel with test dependencies"
 package=$(realpath wheel/numba_cuda*.whl)
 echo "Package path: $package"
-python -m pip install $package
-
+# TODO: control version pinning to honor TEST_MATRIX once the cuda-toolkit metapackage is up
+python -m pip install $package[cu12,test]
 
 rapids-logger "Build tests"
 PY_SCRIPT="

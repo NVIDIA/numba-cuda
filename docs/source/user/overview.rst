@@ -64,11 +64,15 @@ Conda users can install the CUDA Toolkit into a conda environment.
 
 For CUDA 12, ``cuda-nvcc`` and ``cuda-nvrtc`` are required::
 
-    $ conda install -c conda-forge cuda-nvcc cuda-nvrtc "cuda-version>=12.0"
+    $ conda install -c conda-forge numba-cuda cuda-nvcc cuda-nvrtc "cuda-version>=12.0"
+
+or::
+
+    $ pip install numba-cuda[cu12]
 
 For CUDA 11, ``cudatoolkit`` is required::
 
-    $ conda install -c conda-forge cudatoolkit "cuda-version>=11.2,<12.0"
+    $ conda install -c conda-forge numba-cuda cudatoolkit "cuda-version>=11.2,<12.0"
 
 If you are not using Conda or if you want to use a different version of CUDA
 toolkit, the following describes how Numba searches for a CUDA toolkit
