@@ -13,6 +13,7 @@
 import io
 import operator
 import os
+import math
 
 import numba
 from llvmlite import ir
@@ -225,9 +226,7 @@ def _lower___half_void(shim_stream, shim_obj):
             ),
             (selfptr, *argptrs),
         )
-        return builder.load(
-            selfptr, align=2
-        )
+        return builder.load(selfptr, align=2)
 
 
 _lower___half_void(shim_stream, shim_obj)
@@ -271,9 +270,7 @@ def _lower___half__type_unnamed1302257(shim_stream, shim_obj):
             ),
             (selfptr, *argptrs),
         )
-        return builder.load(
-            selfptr, align=2
-        )
+        return builder.load(selfptr, align=2)
 
 
 _lower___half__type_unnamed1302257(shim_stream, shim_obj)
@@ -314,9 +311,7 @@ def _lower___half_float32(shim_stream, shim_obj):
             signature(int32, CPointer(_type___half), CPointer(float32)),
             (selfptr, *argptrs),
         )
-        return builder.load(
-            selfptr, align=2
-        )
+        return builder.load(selfptr, align=2)
 
 
 _lower___half_float32(shim_stream, shim_obj)
@@ -357,9 +352,7 @@ def _lower___half_float64(shim_stream, shim_obj):
             signature(int32, CPointer(_type___half), CPointer(float64)),
             (selfptr, *argptrs),
         )
-        return builder.load(
-            selfptr, align=2
-        )
+        return builder.load(selfptr, align=2)
 
 
 _lower___half_float64(shim_stream, shim_obj)
@@ -400,9 +393,7 @@ def _lower___half_int16(shim_stream, shim_obj):
             signature(int32, CPointer(_type___half), CPointer(int16)),
             (selfptr, *argptrs),
         )
-        return builder.load(
-            selfptr, align=2
-        )
+        return builder.load(selfptr, align=2)
 
 
 _lower___half_int16(shim_stream, shim_obj)
@@ -443,9 +434,7 @@ def _lower___half_uint16(shim_stream, shim_obj):
             signature(int32, CPointer(_type___half), CPointer(uint16)),
             (selfptr, *argptrs),
         )
-        return builder.load(
-            selfptr, align=2
-        )
+        return builder.load(selfptr, align=2)
 
 
 _lower___half_uint16(shim_stream, shim_obj)
@@ -486,9 +475,7 @@ def _lower___half_int32(shim_stream, shim_obj):
             signature(int32, CPointer(_type___half), CPointer(int32)),
             (selfptr, *argptrs),
         )
-        return builder.load(
-            selfptr, align=2
-        )
+        return builder.load(selfptr, align=2)
 
 
 _lower___half_int32(shim_stream, shim_obj)
@@ -529,9 +516,7 @@ def _lower___half_uint32(shim_stream, shim_obj):
             signature(int32, CPointer(_type___half), CPointer(uint32)),
             (selfptr, *argptrs),
         )
-        return builder.load(
-            selfptr, align=2
-        )
+        return builder.load(selfptr, align=2)
 
 
 _lower___half_uint32(shim_stream, shim_obj)
@@ -572,9 +557,7 @@ def _lower___half_int64(shim_stream, shim_obj):
             signature(int32, CPointer(_type___half), CPointer(int64)),
             (selfptr, *argptrs),
         )
-        return builder.load(
-            selfptr, align=2
-        )
+        return builder.load(selfptr, align=2)
 
 
 _lower___half_int64(shim_stream, shim_obj)
@@ -615,9 +598,7 @@ def _lower___half_uint64(shim_stream, shim_obj):
             signature(int32, CPointer(_type___half), CPointer(uint64)),
             (selfptr, *argptrs),
         )
-        return builder.load(
-            selfptr, align=2
-        )
+        return builder.load(selfptr, align=2)
 
 
 _lower___half_uint64(shim_stream, shim_obj)
@@ -658,9 +639,7 @@ def _lower___half_int64(shim_stream, shim_obj):
             signature(int32, CPointer(_type___half), CPointer(int64)),
             (selfptr, *argptrs),
         )
-        return builder.load(
-            selfptr, align=2
-        )
+        return builder.load(selfptr, align=2)
 
 
 _lower___half_int64(shim_stream, shim_obj)
@@ -701,9 +680,7 @@ def _lower___half_uint64(shim_stream, shim_obj):
             signature(int32, CPointer(_type___half), CPointer(uint64)),
             (selfptr, *argptrs),
         )
-        return builder.load(
-            selfptr, align=2
-        )
+        return builder.load(selfptr, align=2)
 
 
 _lower___half_uint64(shim_stream, shim_obj)
@@ -1465,9 +1442,7 @@ def _lower___half2_void(shim_stream, shim_obj):
             ),
             (selfptr, *argptrs),
         )
-        return builder.load(
-            selfptr, align=2
-        )
+        return builder.load(selfptr, align=2)
 
 
 _lower___half2_void(shim_stream, shim_obj)
@@ -4243,6 +4218,7 @@ def _htrunc_1_lower(shim_stream, shim_obj):
         return htrunc_1(arg_0)
 
     @lower(htrunc, _type___half)
+    @lower(math.trunc, _type___half)
     def impl(context, builder, sig, args):
         context.active_code_library.add_linking_file(shim_obj)
         shim_stream.write_with_key("htrunc_1", shim_raw_str)
@@ -4280,6 +4256,7 @@ def _hceil_1_lower(shim_stream, shim_obj):
         return hceil_1(arg_0)
 
     @lower(hceil, _type___half)
+    @lower(math.ceil, _type___half)
     def impl(context, builder, sig, args):
         context.active_code_library.add_linking_file(shim_obj)
         shim_stream.write_with_key("hceil_1", shim_raw_str)
@@ -4317,6 +4294,7 @@ def _hfloor_1_lower(shim_stream, shim_obj):
         return hfloor_1(arg_0)
 
     @lower(hfloor, _type___half)
+    @lower(math.floor, _type___half)
     def impl(context, builder, sig, args):
         context.active_code_library.add_linking_file(shim_obj)
         shim_stream.write_with_key("hfloor_1", shim_raw_str)
@@ -9917,6 +9895,7 @@ def _hsqrt_1_lower(shim_stream, shim_obj):
         return hsqrt_1(arg_0)
 
     @lower(hsqrt, _type___half)
+    @lower(math.sqrt, _type___half)
     def impl(context, builder, sig, args):
         context.active_code_library.add_linking_file(shim_obj)
         shim_stream.write_with_key("hsqrt_1", shim_raw_str)
@@ -10028,6 +10007,7 @@ def _hlog_1_lower(shim_stream, shim_obj):
         return hlog_1(arg_0)
 
     @lower(hlog, _type___half)
+    @lower(math.log, _type___half)
     def impl(context, builder, sig, args):
         context.active_code_library.add_linking_file(shim_obj)
         shim_stream.write_with_key("hlog_1", shim_raw_str)
@@ -10102,6 +10082,7 @@ def _hlog10_1_lower(shim_stream, shim_obj):
         return hlog10_1(arg_0)
 
     @lower(hlog10, _type___half)
+    @lower(math.log10, _type___half)
     def impl(context, builder, sig, args):
         context.active_code_library.add_linking_file(shim_obj)
         shim_stream.write_with_key("hlog10_1", shim_raw_str)
@@ -10139,6 +10120,7 @@ def _hexp_1_lower(shim_stream, shim_obj):
         return hexp_1(arg_0)
 
     @lower(hexp, _type___half)
+    @lower(math.exp, _type___half)
     def impl(context, builder, sig, args):
         context.active_code_library.add_linking_file(shim_obj)
         shim_stream.write_with_key("hexp_1", shim_raw_str)
@@ -10254,6 +10236,7 @@ def _htanh_1_lower(shim_stream, shim_obj):
         return htanh_1(arg_0)
 
     @lower(htanh, _type___half)
+    @lower(math.tanh, _type___half)
     def impl(context, builder, sig, args):
         context.active_code_library.add_linking_file(shim_obj)
         shim_stream.write_with_key("htanh_1", shim_raw_str)
@@ -10330,6 +10313,7 @@ def _hexp2_1_lower(shim_stream, shim_obj):
         return hexp2_1(arg_0)
 
     @lower(hexp2, _type___half)
+    @lower(math.exp2, _type___half)
     def impl(context, builder, sig, args):
         context.active_code_library.add_linking_file(shim_obj)
         shim_stream.write_with_key("hexp2_1", shim_raw_str)
@@ -10404,6 +10388,7 @@ def _hcos_1_lower(shim_stream, shim_obj):
         return hcos_1(arg_0)
 
     @lower(hcos, _type___half)
+    @lower(math.cos, _type___half)
     def impl(context, builder, sig, args):
         context.active_code_library.add_linking_file(shim_obj)
         shim_stream.write_with_key("hcos_1", shim_raw_str)
@@ -10441,6 +10426,7 @@ def _hsin_1_lower(shim_stream, shim_obj):
         return hsin_1(arg_0)
 
     @lower(hsin, _type___half)
+    @lower(math.sin, _type___half)
     def impl(context, builder, sig, args):
         context.active_code_library.add_linking_file(shim_obj)
         shim_stream.write_with_key("hsin_1", shim_raw_str)
@@ -13472,6 +13458,12 @@ class _typing___habs(ConcreteTemplate):
 
 
 register_global(__habs, types.Function(_typing___habs))
+
+
+@register_global(abs)
+class _typing_abs(ConcreteTemplate):
+    key = abs
+    cases = [signature(_type___half, _type___half)]
 
 
 @register
