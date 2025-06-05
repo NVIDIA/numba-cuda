@@ -865,6 +865,9 @@ def set_launch_bounds(kernel, launch_bounds):
     # NVVM IR Specification 12.9, Section 13:
     # https://docs.nvidia.com/cuda/archive/12.9.0/nvvm-ir-spec/index.html#global-property-annotation
 
+    if launch_bounds is None:
+        return
+
     if isinstance(launch_bounds, int):
         launch_bounds = (launch_bounds,)
 
