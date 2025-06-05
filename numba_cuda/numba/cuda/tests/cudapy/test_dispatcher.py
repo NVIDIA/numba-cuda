@@ -797,7 +797,7 @@ class TestLaunchBounds(CUDATestCase):
         self.assertNotIn(".maxclusterrank", ptx)
 
     @unittest.skipUnless(
-        cc_X_or_above(8, 9), "CC 9.0 needed for max cluster rank"
+        cc_X_or_above(9, 0), "CC 9.0 needed for max cluster rank"
     )
     def test_launch_bounds_with_max_cluster_rank(self):
         launch_bounds = (128, 2, 4)
