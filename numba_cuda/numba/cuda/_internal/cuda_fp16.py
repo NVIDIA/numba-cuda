@@ -3038,6 +3038,11 @@ def ___short2half_rn_1_lower(shim_stream, shim_obj):
             ptrs,
         )
 
+    @lower_cast(int8, __half)
+    def int8_cast_impl(context, builder, fromty, toty, value):
+        int16_val = context.cast(builder, value, fromty, int16)
+        return impl(context, builder, signature(__half, int16), [int16_val])
+
 
 ___short2half_rn_1_lower(shim_stream, shim_obj)
 
