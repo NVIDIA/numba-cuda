@@ -39,7 +39,7 @@ class CUDATestCase(SerialMixin, TestCase):
         # Some linkers need the compute capability to be specified, so we
         # always specify it here.
         cc = devices.get_context().device.compute_capability
-        linker = driver.Linker.new(cc=cc)
+        linker = driver._Linker.new(cc=cc)
         if linker.lto:
             self.skipTest(reason)
 
