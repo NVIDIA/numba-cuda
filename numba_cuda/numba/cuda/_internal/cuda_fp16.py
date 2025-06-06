@@ -313,6 +313,10 @@ def _lower___half_float32(shim_stream, shim_obj):
         )
         return builder.load(selfptr, align=2)
 
+    @lower_cast(float32, __half)
+    def cast_impl(context, builder, fromty, toty, value):
+        return ctor_impl(context, builder, signature(__half, float32), [value])
+
 
 _lower___half_float32(shim_stream, shim_obj)
 
@@ -353,6 +357,10 @@ def _lower___half_float64(shim_stream, shim_obj):
             (selfptr, *argptrs),
         )
         return builder.load(selfptr, align=2)
+
+    @lower_cast(float64, __half)
+    def cast_impl(context, builder, fromty, toty, value):
+        return ctor_impl(context, builder, signature(__half, float64), [value])
 
 
 _lower___half_float64(shim_stream, shim_obj)
@@ -395,6 +403,10 @@ def _lower___half_int16(shim_stream, shim_obj):
         )
         return builder.load(selfptr, align=2)
 
+    @lower_cast(int16, __half)
+    def cast_impl(context, builder, fromty, toty, value):
+        return ctor_impl(context, builder, signature(__half, int16), [value])
+
 
 _lower___half_int16(shim_stream, shim_obj)
 
@@ -435,6 +447,10 @@ def _lower___half_uint16(shim_stream, shim_obj):
             (selfptr, *argptrs),
         )
         return builder.load(selfptr, align=2)
+
+    @lower_cast(uint16, __half)
+    def cast_impl(context, builder, fromty, toty, value):
+        return ctor_impl(context, builder, signature(__half, uint16), [value])
 
 
 _lower___half_uint16(shim_stream, shim_obj)
@@ -477,6 +493,10 @@ def _lower___half_int32(shim_stream, shim_obj):
         )
         return builder.load(selfptr, align=2)
 
+    @lower_cast(int32, __half)
+    def cast_impl(context, builder, fromty, toty, value):
+        return ctor_impl(context, builder, signature(__half, int32), [value])
+
 
 _lower___half_int32(shim_stream, shim_obj)
 
@@ -517,6 +537,10 @@ def _lower___half_uint32(shim_stream, shim_obj):
             (selfptr, *argptrs),
         )
         return builder.load(selfptr, align=2)
+
+    @lower_cast(uint32, __half)
+    def cast_impl(context, builder, fromty, toty, value):
+        return ctor_impl(context, builder, signature(__half, uint32), [value])
 
 
 _lower___half_uint32(shim_stream, shim_obj)
@@ -559,6 +583,10 @@ def _lower___half_int64(shim_stream, shim_obj):
         )
         return builder.load(selfptr, align=2)
 
+    @lower_cast(int64, __half)
+    def cast_impl(context, builder, fromty, toty, value):
+        return ctor_impl(context, builder, signature(__half, int64), [value])
+
 
 _lower___half_int64(shim_stream, shim_obj)
 
@@ -599,6 +627,10 @@ def _lower___half_uint64(shim_stream, shim_obj):
             (selfptr, *argptrs),
         )
         return builder.load(selfptr, align=2)
+
+    @lower_cast(uint64, __half)
+    def cast_impl(context, builder, fromty, toty, value):
+        return ctor_impl(context, builder, signature(__half, uint64), [value])
 
 
 _lower___half_uint64(shim_stream, shim_obj)
@@ -641,6 +673,10 @@ def _lower___half_int64(shim_stream, shim_obj):
         )
         return builder.load(selfptr, align=2)
 
+    @lower_cast(int64, __half)
+    def cast_impl(context, builder, fromty, toty, value):
+        return ctor_impl(context, builder, signature(__half, int64), [value])
+
 
 _lower___half_int64(shim_stream, shim_obj)
 
@@ -681,6 +717,10 @@ def _lower___half_uint64(shim_stream, shim_obj):
             (selfptr, *argptrs),
         )
         return builder.load(selfptr, align=2)
+
+    @lower_cast(uint64, __half)
+    def cast_impl(context, builder, fromty, toty, value):
+        return ctor_impl(context, builder, signature(__half, uint64), [value])
 
 
 _lower___half_uint64(shim_stream, shim_obj)
