@@ -3006,6 +3006,7 @@ class CUDALinker(Linker):
                 relocatable_device_code=True,
                 include_path=self._include_paths,
                 link_time_optimization=self.lto,
+                name=name,
             ),
         )
         with warnings.catch_warnings():
