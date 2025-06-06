@@ -20,6 +20,34 @@ license = { text = "BSD 2-clause" }
 requires-python = ">=3.9"
 dependencies = ["numba>=0.59.1"]
 
+[project.optional-dependencies]
+cu11 = [
+    "cuda-python==11.8.*",  # supports all CTK 11.x
+    "nvidia-cuda-nvcc-cu11",  # for libNVVM
+    "nvidia-cuda-runtime-cu11",
+    "nvidia-cuda-nvrtc-cu11",
+]
+cu12 = [
+    "cuda-python==12.9.*",  # supports all CTK 12.x
+    "nvidia-cuda-nvcc-cu12",  # for libNVVM
+    "nvidia-cuda-runtime-cu12",
+    "nvidia-cuda-nvrtc-cu12",
+]
+test = [
+    "psutil",
+    "cffi",
+    "pytest",
+]
+test-cu11 = [
+    "numba-cuda[test]",
+    "nvidia-curand-cu11",
+]
+test-cu12 = [
+    "numba-cuda[test]",
+    "nvidia-curand-cu12",
+    "pynvjitlink-cu12",
+]
+
 [project.urls]
 Homepage = "https://github.com/rapidsai/numba-cuda"
 Documentation = "https://github.com/rapidsai/numba-cuda/blob/main/README.md"
