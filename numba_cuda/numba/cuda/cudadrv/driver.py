@@ -2778,7 +2778,7 @@ class _LinkerBase(metaclass=ABCMeta):
 
         params = (max_registers, lineinfo, cc)
         if linker is _Linker:
-            params = (*params, lto, additional_flags)
+            params = (*params, True, additional_flags)
 
         return linker(*params)
 
@@ -3009,13 +3009,9 @@ class _Linker(_LinkerBase):
                 name=name,
             ),
         )
-        with warnings.catch_warnings():
-            warnings.filterwarnings(
-                "ignore", message=("The CUDA driver version is older")
-            )
-            obj = prog.compile("ptx" if not self.lto else "ltoir", logs=logger)
-            if logger.log:
-                warnings.warn(f"NVRTC log messages: {'\n'.join(logger.log)}")
+        obj = prog.compile("ptx" if not self.lto else "ltoir", logs=logger)
+        if logger.log:
+            warnings.warn(f"NVRTC log messages: {'\n'.join(logger.log)}")
         self._object_codes.append(obj)
         prog.close()
 

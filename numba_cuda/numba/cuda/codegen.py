@@ -274,7 +274,7 @@ class CUDACodeLibrary(serialize.ReduceMixin, CodeLibrary):
             return cubin
 
         if self._lto and config.DUMP_ASSEMBLY:
-            linker = driver.Linker.new(
+            linker = driver._Linker.new(
                 max_registers=self._max_registers,
                 cc=cc,
                 additional_flags=["-ptx"],
