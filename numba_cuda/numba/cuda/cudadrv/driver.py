@@ -3020,23 +3020,23 @@ class _Linker(_LinkerBase):
         prog.close()
 
     def add_cubin(self, cubin, name="<cudapy-cubin>"):
-        obj = ObjectCode.from_cubin(cubin)
+        obj = ObjectCode.from_cubin(cubin, name=name)
         self._object_codes.append(obj)
 
     def add_ltoir(self, ltoir, name="<cudapy-ltoir>"):
-        obj = ObjectCode.from_ltoir(ltoir)
+        obj = ObjectCode.from_ltoir(ltoir, name=name)
         self._object_codes.append(obj)
 
     def add_fatbin(self, fatbin, name="<cudapy-fatbin>"):
-        obj = ObjectCode.from_fatbin(fatbin)
+        obj = ObjectCode.from_fatbin(fatbin, name=name)
         self._object_codes.append(obj)
 
     def add_object(self, obj, name="<cudapy-object>"):
-        obj = ObjectCode.from_object(obj)
+        obj = ObjectCode.from_object(obj, name=name)
         self._object_codes.append(obj)
 
     def add_library(self, lib, name="<cudapy-lib>"):
-        obj = ObjectCode.from_library(lib)
+        obj = ObjectCode.from_library(lib, name=name)
         self._object_codes.append(obj)
 
     def add_file(self, path, kind):
