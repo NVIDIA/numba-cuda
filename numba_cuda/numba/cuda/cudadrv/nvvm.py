@@ -369,37 +369,79 @@ COMPUTE_CAPABILITIES = (
     (9, 0),
     (10, 0),
     (10, 1),
+    (10, 3),
     (12, 0),
+    (12, 1),
 )
 
 
 # Maps CTK version -> (min supported cc, max supported cc) inclusive
 _CUDA_CC_MIN_MAX_SUPPORT = {
-    (11, 1): ((3, 5), (8, 0)),
-    (11, 2): ((3, 5), (8, 6)),
-    (11, 3): ((3, 5), (8, 6)),
-    (11, 4): ((3, 5), (8, 7)),
-    (11, 5): ((3, 5), (8, 7)),
-    (11, 6): ((3, 5), (8, 7)),
-    (11, 7): ((3, 5), (8, 7)),
-    (11, 8): ((3, 5), (9, 0)),
-    (12, 0): ((5, 0), (9, 0)),
-    (12, 1): ((5, 0), (9, 0)),
-    (12, 2): ((5, 0), (9, 0)),
-    (12, 3): ((5, 0), (9, 0)),
-    (12, 4): ((5, 0), (9, 0)),
-    (12, 5): ((5, 0), (9, 0)),
-    (12, 6): ((5, 0), (9, 0)),
-    (12, 8): ((5, 0), (12, 0)),
+    (11, 1): [
+        ((3, 5), (8, 0)),
+    ],
+    (11, 2): [
+        ((3, 5), (8, 6)),
+    ],
+    (11, 3): [
+        ((3, 5), (8, 6)),
+    ],
+    (11, 4): [
+        ((3, 5), (8, 7)),
+    ],
+    (11, 5): [
+        ((3, 5), (8, 7)),
+    ],
+    (11, 6): [
+        ((3, 5), (8, 7)),
+    ],
+    (11, 7): [
+        ((3, 5), (8, 7)),
+    ],
+    (11, 8): [
+        ((3, 5), (9, 0)),
+    ],
+    (12, 0): [
+        ((5, 0), (9, 0)),
+    ],
+    (12, 1): [
+        ((5, 0), (9, 0)),
+    ],
+    (12, 2): [
+        ((5, 0), (9, 0)),
+    ],
+    (12, 3): [
+        ((5, 0), (9, 0)),
+    ],
+    (12, 4): [
+        ((5, 0), (9, 0)),
+    ],
+    (12, 5): [
+        ((5, 0), (9, 0)),
+    ],
+    (12, 6): [
+        ((5, 0), (9, 0)),
+    ],
+    (12, 8): [
+        ((5, 0), (10, 1)),
+        ((12, 0), (12, 0)),
+    ],
+    (12, 9): [
+        ((5, 0), (12, 1)),
+    ],
 }
 
 
 def ccs_supported_by_ctk(ctk_version):
     try:
         # For supported versions, we look up the range of supported CCs
-        min_cc, max_cc = _CUDA_CC_MIN_MAX_SUPPORT[ctk_version]
         return tuple(
-            [cc for cc in COMPUTE_CAPABILITIES if min_cc <= cc <= max_cc]
+            [
+                cc
+                for min_cc, max_cc in _CUDA_CC_MIN_MAX_SUPPORT[ctk_version]
+                for cc in COMPUTE_CAPABILITIES
+                if min_cc <= cc <= max_cc
+            ]
         )
     except KeyError:
         # For unsupported CUDA toolkit versions, all we can do is assume all
