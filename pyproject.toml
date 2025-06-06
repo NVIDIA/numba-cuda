@@ -39,9 +39,11 @@ test = [
     "pytest",
 ]
 test-cu11 = [
+    "numba-cuda[test]",
     "nvidia-curand-cu11",
 ]
 test-cu12 = [
+    "numba-cuda[test]",
     "nvidia-curand-cu12",
     "pynvjitlink-cu12",
 ]
