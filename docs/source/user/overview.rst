@@ -87,9 +87,9 @@ installation.
 CUDA Bindings
 ~~~~~~~~~~~~~
 
-Numba supports interacting with the CUDA Driver API via the `NVIDIA CUDA Python
-bindings <https://nvidia.github.io/cuda-python/>`_ and its own Cython-based
-bindings. Functionality is equivalent between the two bindings. The
+Numba supports interacting with the CUDA Driver API via either the `NVIDIA CUDA
+Python bindings <https://nvidia.github.io/cuda-python/>`_ or its own ctypes-based
+bindings. Functionality is equivalent between the two binding choices. The
 ctypes-based bindings are presently the default, but the NVIDIA bindings will
 be used by default (if they are available in the environment) in a future Numba
 release.
