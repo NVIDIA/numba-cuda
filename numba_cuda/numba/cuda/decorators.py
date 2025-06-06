@@ -82,7 +82,7 @@ def jit(
 
                           If a scalar is provided, it is used as the maximum
                           number of threads per block.
-    :type launch_bounds: int or tuple[int]
+    :type launch_bounds: int | tuple[int]
     """
 
     if link and config.ENABLE_CUDASIM:
