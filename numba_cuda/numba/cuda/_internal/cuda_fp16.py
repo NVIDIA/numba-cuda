@@ -1999,7 +1999,7 @@ def ___half2float_1_lower(shim_stream, shim_obj):
         shim_stream.write_with_key("__half2float_1", shim_raw_str)
         ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
         for ptr, ty, arg in zip(ptrs, sig.args, args):
-            builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
+            builder.store(arg, ptr, align=2)
 
         return context.compile_internal(
             builder,
@@ -2007,6 +2007,18 @@ def ___half2float_1_lower(shim_stream, shim_obj):
             signature(float32, CPointer(_type___half)),
             ptrs,
         )
+
+    @lower_cast(__half, types.Complex)
+    def complex_cast(context, builder, fromty, toty, val):
+        float32_val = impl(
+            context, builder, signature(types.float32, __half), [val]
+        )
+        cmplx = context.make_complex(builder, toty)
+        cmplx.real = context.cast(
+            builder, float32_val, types.float32, toty.underlying_float
+        )
+        cmplx.imag = context.get_constant(toty.underlying_float, 0)
+        return cmplx._getvalue()
 
 
 ___half2float_1_lower(shim_stream, shim_obj)
