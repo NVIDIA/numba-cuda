@@ -43,8 +43,8 @@ import numpy as np
 from collections import namedtuple, deque
 
 from cuda.core.experimental import (
-    Linker as _CUDALinker,
-    LinkerOptions as _CUDALinkerOptions,
+    Linker,
+    LinkerOptions,
     ObjectCode,
     Program,
     ProgramOptions,
@@ -2745,7 +2745,7 @@ def launch_kernel(
         )
 
 
-class Linker(metaclass=ABCMeta):
+class _LinkerBase(metaclass=ABCMeta):
     """Abstract base class for linkers"""
 
     @classmethod
@@ -2766,18 +2766,18 @@ class Linker(metaclass=ABCMeta):
         if config.CUDA_ENABLE_PYNVJITLINK and driver_ver < (12, 0):
             raise ValueError("Enabling pynvjitlink requires CUDA 12.")
         if config.CUDA_ENABLE_PYNVJITLINK:
-            linker = CUDALinker
+            linker = _Linker
 
         elif config.CUDA_ENABLE_MINOR_VERSION_COMPATIBILITY:
             linker = MVCLinker
         else:
             if USE_NV_BINDING:
-                linker = CUDALinker
+                linker = _Linker
             else:
                 linker = CtypesLinker
 
         params = (max_registers, lineinfo, cc)
-        if linker is CUDALinker:
+        if linker is _Linker:
             params = (*params, lto, additional_flags)
 
         return linker(*params)
@@ -2921,7 +2921,7 @@ class Linker(metaclass=ABCMeta):
         """
 
 
-class CUDALinker(Linker):
+class _Linker(_LinkerBase):
     def __init__(
         self,
         max_registers=None,
@@ -2933,7 +2933,7 @@ class CUDALinker(Linker):
         arch = f"sm_{cc[0] * 10 + cc[1]}"
         if lto is False:
             lto = None
-        self.options = _CUDALinkerOptions(
+        self.options = LinkerOptions(
             max_register_count=max_registers,
             lineinfo=lineinfo,
             arch=arch,
@@ -3071,7 +3071,7 @@ class CUDALinker(Linker):
         fn(data, name)
 
     def get_linked_ptx(self):
-        options = _CUDALinkerOptions(
+        options = LinkerOptions(
             max_register_count=self.max_registers,
             lineinfo=self.lineinfo,
             arch=self.arch,
@@ -3079,7 +3079,7 @@ class CUDALinker(Linker):
             ptx=True,
         )
 
-        self.linker = _CUDALinker(*self._object_codes, options=options)
+        self.linker = Linker(*self._object_codes, options=options)
 
         result = self.linker.link("ptx")
         self.close()
@@ -3092,7 +3092,7 @@ class CUDALinker(Linker):
         self.linker.close()
 
     def complete(self):
-        self.linker = _CUDALinker(*self._object_codes, options=self.options)
+        self.linker = Linker(*self._object_codes, options=self.options)
         result = self.linker.link("cubin")
         self.close()
         self._complete = True

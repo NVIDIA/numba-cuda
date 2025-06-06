@@ -293,7 +293,7 @@ class CUDACodeLibrary(serialize.ReduceMixin, CodeLibrary):
             print(ptx)
             print("=" * 80)
 
-        linker = driver.Linker.new(
+        linker = driver._Linker.new(
             max_registers=self._max_registers, cc=cc, lto=self._lto
         )
         self._link_all(linker, cc, ignore_nonlto=False)
