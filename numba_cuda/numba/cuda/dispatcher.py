@@ -18,7 +18,7 @@ from numba.cuda.compiler import (
     kernel_fixup,
 )
 import re
-from numba.cuda.cudadrv import driver
+from numba.cuda.cudadrv import driver, nvvm
 from numba.cuda.cudadrv.linkable_code import LinkableCode
 from numba.cuda.cudadrv.devices import get_context
 from numba.cuda.descriptor import cuda_target
@@ -94,6 +94,7 @@ class _Kernel(serialize.ReduceMixin):
         lto=False,
         opt=True,
         device=False,
+        launch_bounds=None,
     ):
         if device:
             raise RuntimeError("Cannot compile a device function as a kernel")
@@ -120,6 +121,7 @@ class _Kernel(serialize.ReduceMixin):
         self.debug = debug
         self.lineinfo = lineinfo
         self.extensions = extensions or []
+        self.launch_bounds = launch_bounds
 
         nvvm_options = {"fastmath": fastmath, "opt": 3 if opt else 0}
 
@@ -145,6 +147,7 @@ class _Kernel(serialize.ReduceMixin):
         kernel = lib.get_function(cres.fndesc.llvm_func_name)
         lib._entry_name = cres.fndesc.llvm_func_name
         kernel_fixup(kernel, self.debug)
+        nvvm.set_launch_bounds(kernel, launch_bounds)
 
         if not link:
             link = []
