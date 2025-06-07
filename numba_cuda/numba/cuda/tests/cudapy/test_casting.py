@@ -8,6 +8,7 @@ from numba.cuda.testing import CUDATestCase, skip_on_cudasim, skip_unless_cc_53
 from numba.types import float16, float32
 import itertools
 import unittest
+import numba.cuda.fp16
 
 
 def native_cast(x):

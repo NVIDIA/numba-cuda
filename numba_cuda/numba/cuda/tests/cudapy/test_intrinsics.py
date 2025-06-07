@@ -2,6 +2,7 @@ import itertools
 import numpy as np
 import operator
 import re
+import numba.cuda.fp16
 from numba import cuda, int64
 from numba.cuda import compile_ptx
 from numba.core.errors import TypingError
