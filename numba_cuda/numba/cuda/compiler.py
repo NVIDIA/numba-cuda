@@ -662,7 +662,12 @@ def compile(
 
     args, return_type = sigutils.normalize_signature(sig)
 
-    cc = cc or config.CUDA_DEFAULT_PTX_CC
+    # If the user has used the config variable to specify a non-default that is
+    # greater than the lowest non-deprecated one, then we should default to
+    # their specified CC instead of the lowest non-deprecated one.
+    MIN_CC = max(config.CUDA_DEFAULT_PTX_CC, nvvm.LOWEST_CURRENT_CC)
+    cc = cc or MIN_CC
+
     cres = compile_cuda(
         pyfunc,
         return_type,
