@@ -449,8 +449,10 @@ def _lower___half_uint16(shim_stream, shim_obj):
         return builder.load(selfptr, align=2)
 
     @lower_cast(uint16, __half)
+    @lower_cast(uint8, __half)
     def cast_impl(context, builder, fromty, toty, value):
-        return ctor_impl(context, builder, signature(__half, uint16), [value])
+        uint16_val = ctor_impl(context, builder, signature(__half, uint16), [value])
+        return context.cast(builder, uint16_val, uint16, toty)
 
 
 _lower___half_uint16(shim_stream, shim_obj)
@@ -8083,6 +8085,7 @@ def ___habs_1_lower(shim_stream, shim_obj):
         return __habs_1(arg_0)
 
     @lower(__habs, _type___half)
+    @lower(math.fabs, _type___half)
     def impl(context, builder, sig, args):
         context.active_code_library.add_linking_file(shim_obj)
         shim_stream.write_with_key("__habs_1", shim_raw_str)
@@ -10109,6 +10112,7 @@ def _hlog2_1_lower(shim_stream, shim_obj):
         return hlog2_1(arg_0)
 
     @lower(hlog2, _type___half)
+    @lower(math.log2, _type___half)
     def impl(context, builder, sig, args):
         context.active_code_library.add_linking_file(shim_obj)
         shim_stream.write_with_key("hlog2_1", shim_raw_str)
