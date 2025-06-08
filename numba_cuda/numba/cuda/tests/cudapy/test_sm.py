@@ -1,5 +1,4 @@
 from numba import cuda, int32, float64, void
-import numba.cuda.fp16
 from numba.core.errors import TypingError
 from numba.core import types
 from numba.cuda.testing import unittest, CUDATestCase, skip_on_cudasim
@@ -55,6 +54,7 @@ class TestSharedMemoryIssue(CUDATestCase):
         self.assertEqual(result[0], expected)
 
     def test_issue_fp16_support(self):
+        import numba.cuda.fp16
         self._check_shared_array_size_fp16(2, 2, types.float16)
         self._check_shared_array_size_fp16(2, 2, np.float16)
 
