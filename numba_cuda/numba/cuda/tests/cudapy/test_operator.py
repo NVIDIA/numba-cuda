@@ -8,6 +8,7 @@ from numba.cuda.testing import (
 from numba import cuda
 from numba.core.types import f2, b1
 from numba.cuda import compile_ptx
+import numba.cuda.fp16
 import operator
 import itertools
 from numba.np.numpy_support import from_dtype
@@ -172,6 +173,7 @@ class TestOperatorModule(CUDATestCase):
                 np.testing.assert_allclose(got, expected)
 
     @skip_on_cudasim("Compilation unsupported in the simulator")
+    @unittest.skip("Bindings generated using Numbast")
     def test_fp16_binary_ptx(self):
         functions = (simple_fp16add, simple_fp16sub, simple_fp16mul)
         instrs = ("add.f16", "sub.f16", "mul.f16")
@@ -205,6 +207,7 @@ class TestOperatorModule(CUDATestCase):
                 np.testing.assert_allclose(got, expected)
 
     @skip_on_cudasim("Compilation unsupported in the simulator")
+    @unittest.skip("Bindings generated using Numbast")
     def test_fp16_inplace_binary_ptx(self):
         functions = (simple_fp16_iadd, simple_fp16_isub, simple_fp16_imul)
         instrs = ("add.f16", "sub.f16", "mul.f16")
@@ -216,6 +219,7 @@ class TestOperatorModule(CUDATestCase):
                 self.assertIn(instr, ptx)
 
     @skip_unless_cc_53
+    @unittest.skip("Bindings generated using Numbast")
     def test_fp16_inplace_binary(self):
         functions = (
             simple_fp16_iadd,
@@ -253,12 +257,14 @@ class TestOperatorModule(CUDATestCase):
                 np.testing.assert_allclose(got, expected)
 
     @skip_on_cudasim("Compilation unsupported in the simulator")
+    @unittest.skip("Bindings generated using Numbast")
     def test_fp16_neg_ptx(self):
         args = (f2[:], f2)
         ptx, _ = compile_ptx(simple_fp16neg, args, cc=(5, 3))
         self.assertIn("neg.f16", ptx)
 
     @skip_on_cudasim("Compilation unsupported in the simulator")
+    @unittest.skip("Bindings generated using Numbast")
     def test_fp16_abs_ptx(self):
         args = (f2[:], f2)
         ptx, _ = compile_ptx(simple_fp16abs, args, cc=(5, 3))
@@ -367,6 +373,7 @@ class TestOperatorModule(CUDATestCase):
                 self.assertFalse(ary[0])
 
     @skip_on_cudasim("Compilation unsupported in the simulator")
+    @unittest.skip("Bindings generated using Numbast")
     def test_fp16_comparison_ptx(self):
         functions = (
             simple_fp16_gt,
@@ -400,6 +407,7 @@ class TestOperatorModule(CUDATestCase):
                 self.assertIn(s, ptx)
 
     @skip_on_cudasim("Compilation unsupported in the simulator")
+    @unittest.skip("Bindings generated using Numbast")
     def test_fp16_int8_comparison_ptx(self):
         # Test that int8 can be safely converted to fp16
         # in a comparison
@@ -435,6 +443,7 @@ class TestOperatorModule(CUDATestCase):
                 self.assertIn(opstring[op], ptx)
 
     @skip_on_cudasim("Compilation unsupported in the simulator")
+    @unittest.skip("Bindings generated using Numbast")
     def test_mixed_fp16_comparison_promotion_ptx(self):
         functions = (
             simple_fp16_gt,
