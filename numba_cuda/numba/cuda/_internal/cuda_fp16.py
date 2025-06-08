@@ -2008,6 +2008,13 @@ def ___half2float_1_lower(shim_stream, shim_obj):
             ptrs,
         )
 
+    @lower_cast(__half, types.float64)
+    def double_cast(context, builder, fromty, toty, val):
+        float32_val = impl(
+            context, builder, signature(types.float32, __half), [val]
+        )
+        return context.cast(builder, float32_val, types.float32, toty)
+
     @lower_cast(__half, types.Complex)
     def complex_cast(context, builder, fromty, toty, val):
         float32_val = impl(
