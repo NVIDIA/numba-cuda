@@ -1,4 +1,5 @@
 from numba import cuda, int32, float64, void
+import numba.cuda.fp16
 from numba.core.errors import TypingError
 from numba.core import types
 from numba.cuda.testing import unittest, CUDATestCase, skip_on_cudasim
