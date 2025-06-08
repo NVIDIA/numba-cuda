@@ -778,7 +778,7 @@ def _from___half_to__type_unnamed1302257_lower(shim_stream, shim_obj):
         ptr = builder.alloca(
             context.get_value_type(_type___half), name="selfptr"
         )
-        builder.store(value, ptr, align=getattr(_type___half, "align", None))
+        builder.store(value, ptr, align=2)
 
         return context.compile_internal(
             builder,
@@ -822,7 +822,7 @@ def _from___half_to__type_unnamed1302257_lower(shim_stream, shim_obj):
         ptr = builder.alloca(
             context.get_value_type(_type___half), name="selfptr"
         )
-        builder.store(value, ptr, align=getattr(_type___half, "align", None))
+        builder.store(value, ptr, align=2)
 
         return context.compile_internal(
             builder,
@@ -864,7 +864,7 @@ def _from___half_to_float32_lower(shim_stream, shim_obj):
         ptr = builder.alloca(
             context.get_value_type(_type___half), name="selfptr"
         )
-        builder.store(value, ptr, align=getattr(_type___half, "align", None))
+        builder.store(value, ptr, align=2)
 
         return context.compile_internal(
             builder,
@@ -908,7 +908,7 @@ def _from___half_to_int8_lower(shim_stream, shim_obj):
         ptr = builder.alloca(
             context.get_value_type(_type___half), name="selfptr"
         )
-        builder.store(value, ptr, align=getattr(_type___half, "align", None))
+        builder.store(value, ptr, align=2)
 
         return context.compile_internal(
             builder,
@@ -952,7 +952,7 @@ def _from___half_to_uint8_lower(shim_stream, shim_obj):
         ptr = builder.alloca(
             context.get_value_type(_type___half), name="selfptr"
         )
-        builder.store(value, ptr, align=getattr(_type___half, "align", None))
+        builder.store(value, ptr, align=2)
 
         return context.compile_internal(
             builder,
@@ -994,7 +994,7 @@ def _from___half_to_int8_lower(shim_stream, shim_obj):
         ptr = builder.alloca(
             context.get_value_type(_type___half), name="selfptr"
         )
-        builder.store(value, ptr, align=getattr(_type___half, "align", None))
+        builder.store(value, ptr, align=2)
 
         return context.compile_internal(
             builder,
@@ -1036,7 +1036,7 @@ def _from___half_to_int16_lower(shim_stream, shim_obj):
         ptr = builder.alloca(
             context.get_value_type(_type___half), name="selfptr"
         )
-        builder.store(value, ptr, align=getattr(_type___half, "align", None))
+        builder.store(value, ptr, align=2)
 
         return context.compile_internal(
             builder,
@@ -1080,7 +1080,7 @@ def _from___half_to_uint16_lower(shim_stream, shim_obj):
         ptr = builder.alloca(
             context.get_value_type(_type___half), name="selfptr"
         )
-        builder.store(value, ptr, align=getattr(_type___half, "align", None))
+        builder.store(value, ptr, align=2)
 
         return context.compile_internal(
             builder,
@@ -1122,7 +1122,7 @@ def _from___half_to_int32_lower(shim_stream, shim_obj):
         ptr = builder.alloca(
             context.get_value_type(_type___half), name="selfptr"
         )
-        builder.store(value, ptr, align=getattr(_type___half, "align", None))
+        builder.store(value, ptr, align=2)
 
         return context.compile_internal(
             builder,
@@ -1166,7 +1166,7 @@ def _from___half_to_uint32_lower(shim_stream, shim_obj):
         ptr = builder.alloca(
             context.get_value_type(_type___half), name="selfptr"
         )
-        builder.store(value, ptr, align=getattr(_type___half, "align", None))
+        builder.store(value, ptr, align=2)
 
         return context.compile_internal(
             builder,
@@ -1208,7 +1208,7 @@ def _from___half_to_int64_lower(shim_stream, shim_obj):
         ptr = builder.alloca(
             context.get_value_type(_type___half), name="selfptr"
         )
-        builder.store(value, ptr, align=getattr(_type___half, "align", None))
+        builder.store(value, ptr, align=2)
 
         return context.compile_internal(
             builder,
@@ -1252,7 +1252,7 @@ def _from___half_to_uint64_lower(shim_stream, shim_obj):
         ptr = builder.alloca(
             context.get_value_type(_type___half), name="selfptr"
         )
-        builder.store(value, ptr, align=getattr(_type___half, "align", None))
+        builder.store(value, ptr, align=2)
 
         return context.compile_internal(
             builder,
@@ -1296,7 +1296,7 @@ def _from___half_to_int64_lower(shim_stream, shim_obj):
         ptr = builder.alloca(
             context.get_value_type(_type___half), name="selfptr"
         )
-        builder.store(value, ptr, align=getattr(_type___half, "align", None))
+        builder.store(value, ptr, align=2)
 
         return context.compile_internal(
             builder,
@@ -1340,7 +1340,7 @@ def _from___half_to_uint64_lower(shim_stream, shim_obj):
         ptr = builder.alloca(
             context.get_value_type(_type___half), name="selfptr"
         )
-        builder.store(value, ptr, align=getattr(_type___half, "align", None))
+        builder.store(value, ptr, align=2)
 
         return context.compile_internal(
             builder,
@@ -1382,7 +1382,7 @@ def _from___half_to_bool__lower(shim_stream, shim_obj):
         ptr = builder.alloca(
             context.get_value_type(_type___half), name="selfptr"
         )
-        builder.store(value, ptr, align=getattr(_type___half, "align", None))
+        builder.store(value, ptr, align=2)
 
         return context.compile_internal(
             builder,
