@@ -3080,7 +3080,7 @@ class _Linker(_LinkerBase):
         result = self.linker.link("ptx")
         self.close()
         self._complete = True
-        return result
+        return result.code
 
     def close(self):
         self._info_log = self.linker.get_info_log()

@@ -284,9 +284,6 @@ class CUDACodeLibrary(serialize.ReduceMixin, CodeLibrary):
             # Non-LTO objects are not passed to linker.
             self._link_all(linker, cc, ignore_nonlto=True)
             ptx = linker.get_linked_ptx()
-
-            if config.CUDA_USE_NVIDIA_BINDING:
-                ptx = ptx.code
             ptx = ptx.decode("utf-8")
 
             print(("ASSEMBLY (AFTER LTO) %s" % self._name).center(80, "-"))
