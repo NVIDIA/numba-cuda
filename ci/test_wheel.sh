@@ -5,19 +5,12 @@ set -euo pipefail
 
 CUDA_VER_MAJOR_MINOR=${CUDA_VER%.*}
 
-rapids-logger "Install testing dependencies"
-# TODO: Replace with rapids-dependency-file-generator
-python -m pip install \
-    psutil \
-    cffi \
-    "cuda-python==${CUDA_VER_MAJOR_MINOR%.*}.*" \
-    pytest
-
-rapids-logger "Install wheel"
+rapids-logger "Install wheel with test dependencies"
 package=$(realpath wheel/numba_cuda*.whl)
-echo "Wheel path: $package"
-python -m pip install $package
-
+echo "Package path: ${package}"
+python -m pip install \
+    "${package}[test]" \
+    "cuda-python==${CUDA_VER_MAJOR_MINOR%.*}.*"
 
 GET_TEST_BINARY_DIR="
 import numba_cuda

@@ -178,7 +178,7 @@ class TestOperatorModule(CUDATestCase):
         args = (f2[:], f2, f2)
         for fn, instr in zip(functions, instrs):
             with self.subTest(instr=instr):
-                ptx, _ = compile_ptx(fn, args, cc=(5, 3))
+                ptx, _ = compile_ptx(fn, args)
                 self.assertIn(instr, ptx)
 
     @skip_unless_cc_53
@@ -212,7 +212,7 @@ class TestOperatorModule(CUDATestCase):
 
         for fn, instr in zip(functions, instrs):
             with self.subTest(instr=instr):
-                ptx, _ = compile_ptx(fn, args, cc=(5, 3))
+                ptx, _ = compile_ptx(fn, args)
                 self.assertIn(instr, ptx)
 
     @skip_unless_cc_53
@@ -255,13 +255,13 @@ class TestOperatorModule(CUDATestCase):
     @skip_on_cudasim("Compilation unsupported in the simulator")
     def test_fp16_neg_ptx(self):
         args = (f2[:], f2)
-        ptx, _ = compile_ptx(simple_fp16neg, args, cc=(5, 3))
+        ptx, _ = compile_ptx(simple_fp16neg, args)
         self.assertIn("neg.f16", ptx)
 
     @skip_on_cudasim("Compilation unsupported in the simulator")
     def test_fp16_abs_ptx(self):
         args = (f2[:], f2)
-        ptx, _ = compile_ptx(simple_fp16abs, args, cc=(5, 3))
+        ptx, _ = compile_ptx(simple_fp16abs, args)
 
         self.assertIn("abs.f16", ptx)
 
@@ -396,7 +396,7 @@ class TestOperatorModule(CUDATestCase):
 
         for fn, op, s in zip(functions, ops, opstring):
             with self.subTest(op=op):
-                ptx, _ = compile_ptx(fn, args, cc=(5, 3))
+                ptx, _ = compile_ptx(fn, args)
                 self.assertIn(s, ptx)
 
     @skip_on_cudasim("Compilation unsupported in the simulator")
@@ -431,7 +431,7 @@ class TestOperatorModule(CUDATestCase):
         for fn, op in zip(functions, ops):
             with self.subTest(op=op):
                 args = (b1[:], f2, from_dtype(np.int8))
-                ptx, _ = compile_ptx(fn, args, cc=(5, 3))
+                ptx, _ = compile_ptx(fn, args)
                 self.assertIn(opstring[op], ptx)
 
     @skip_on_cudasim("Compilation unsupported in the simulator")
@@ -475,7 +475,7 @@ class TestOperatorModule(CUDATestCase):
             with self.subTest(op=op, ty=ty):
                 arg2_ty = np.result_type(np.float16, ty)
                 args = (b1[:], f2, from_dtype(arg2_ty))
-                ptx, _ = compile_ptx(fn, args, cc=(5, 3))
+                ptx, _ = compile_ptx(fn, args)
 
                 ops = opstring[op] + opsuffix[arg2_ty]
                 self.assertIn(ops, ptx)
