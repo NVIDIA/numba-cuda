@@ -64,11 +64,19 @@ Conda users can install the CUDA Toolkit into a conda environment.
 
 For CUDA 12, ``cuda-nvcc`` and ``cuda-nvrtc`` are required::
 
-    $ conda install -c conda-forge cuda-nvcc cuda-nvrtc "cuda-version>=12.0"
+    $ conda install -c conda-forge numba-cuda cuda-nvcc cuda-nvrtc "cuda-version>=12.0"
+
+Alternatively, you can install all CUDA 12 dependencies from PyPI via ``pip``::
+
+    $ pip install numba-cuda[cu12]
 
 For CUDA 11, ``cudatoolkit`` is required::
 
-    $ conda install -c conda-forge cudatoolkit "cuda-version>=11.2,<12.0"
+    $ conda install -c conda-forge numba-cuda cudatoolkit "cuda-version>=11.2,<12.0"
+
+or::
+
+    $ pip install numba-cuda[cu11]
 
 If you are not using Conda or if you want to use a different version of CUDA
 toolkit, the following describes how Numba searches for a CUDA toolkit
@@ -79,9 +87,9 @@ installation.
 CUDA Bindings
 ~~~~~~~~~~~~~
 
-Numba supports interacting with the CUDA Driver API via the `NVIDIA CUDA Python
-bindings <https://nvidia.github.io/cuda-python/>`_ and its own ctypes-based
-bindings. Functionality is equivalent between the two bindings. The
+Numba supports interacting with the CUDA Driver API via either the `NVIDIA CUDA
+Python bindings <https://nvidia.github.io/cuda-python/>`_ or its own ctypes-based
+bindings. Functionality is equivalent between the two binding choices. The
 ctypes-based bindings are presently the default, but the NVIDIA bindings will
 be used by default (if they are available in the environment) in a future Numba
 release.
@@ -94,7 +102,8 @@ if you are using Conda, or::
 
    $ pip install cuda-python
 
-if you are using pip.
+if you are using pip. Note that the bracket notation ``[cuXX]`` introduced above
+will bring in this dependency for you.
 
 The use of the NVIDIA bindings is enabled by setting the environment variable
 :envvar:`NUMBA_CUDA_USE_NVIDIA_BINDING` to ``"1"``.

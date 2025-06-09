@@ -118,30 +118,17 @@ class TestFastMathOption(CUDATestCase):
         def tanh_kernel(r, x):
             r[0] = tanh(x)
 
-        def tanh_common_test(cc, criterion):
-            fastptx, _ = compile_ptx(
-                tanh_kernel, (float32[::1], float32), fastmath=True, cc=cc
-            )
-            precptx, _ = compile_ptx(
-                tanh_kernel, (float32[::1], float32), cc=cc
-            )
-            criterion.check(self, fastptx, precptx)
+        fastptx, _ = compile_ptx(
+            tanh_kernel, (float32[::1], float32), fastmath=True
+        )
+        precptx, _ = compile_ptx(tanh_kernel, (float32[::1], float32))
 
-        tanh_common_test(
-            cc=(7, 5),
-            criterion=FastMathCriterion(
-                fast_expected=["tanh.approx.f32 "],
-                prec_unexpected=["tanh.approx.f32 "],
-            ),
+        criterion = FastMathCriterion(
+            fast_expected=["tanh.approx.f32 "],
+            prec_unexpected=["tanh.approx.f32 "],
         )
 
-        tanh_common_test(
-            cc=(7, 0),
-            criterion=FastMathCriterion(
-                fast_expected=["ex2.approx.ftz.f32 ", "rcp.approx.ftz.f32 "],
-                prec_unexpected=["tanh.approx.f32 "],
-            ),
-        )
+        criterion.check(self, fastptx, precptx)
 
     def test_expf(self):
         self._test_fast_math_unary(

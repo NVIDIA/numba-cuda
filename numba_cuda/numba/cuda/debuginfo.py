@@ -2,6 +2,7 @@ from llvmlite import ir
 from numba.core import types, cgutils
 from numba.core.debuginfo import DIBuilder
 from numba.cuda.types import GridGroup
+from numba.core.datamodel.models import UnionModel
 
 _BYTE_SIZE = 8
 
@@ -16,6 +17,7 @@ class CUDADIBuilder(DIBuilder):
         is_bool = False
         is_int_literal = False
         is_grid_group = False
+        m = self.module
 
         if isinstance(lltype, ir.IntType):
             if datamodel is None:
@@ -36,7 +38,6 @@ class CUDADIBuilder(DIBuilder):
                     is_grid_group = True
 
         if is_bool or is_int_literal or is_grid_group:
-            m = self.module
             bitsize = _BYTE_SIZE * size
             # Boolean type workaround until upstream Numba is fixed
             if is_bool:
@@ -56,6 +57,56 @@ class CUDADIBuilder(DIBuilder):
                 },
             )
 
+        if isinstance(datamodel, UnionModel):
+            # UnionModel is handled here to represent polymorphic types
+            meta = []
+            maxwidth = 0
+            for field, model in zip(
+                datamodel._fields, datamodel.inner_models()
+            ):
+                # Ignore the "tag" field, focus on the "payload" field which
+                # contains the data types in memory
+                if field == "payload":
+                    for mod in model.inner_models():
+                        dtype = mod.get_value_type()
+                        membersize = self.cgctx.get_abi_sizeof(dtype)
+                        basetype = self._var_type(
+                            dtype, membersize, datamodel=mod
+                        )
+                        if isinstance(mod.fe_type, types.Literal):
+                            typename = str(mod.fe_type.literal_type)
+                        else:
+                            typename = str(mod.fe_type)
+                        # Use a prefix "_" on type names as field names
+                        membername = "_" + typename
+                        memberwidth = _BYTE_SIZE * membersize
+                        derived_type = m.add_debug_info(
+                            "DIDerivedType",
+                            {
+                                "tag": ir.DIToken("DW_TAG_member"),
+                                "name": membername,
+                                "baseType": basetype,
+                                # DW_TAG_member size is in bits
+                                "size": memberwidth,
+                            },
+                        )
+                        meta.append(derived_type)
+                        if memberwidth > maxwidth:
+                            maxwidth = memberwidth
+
+            fake_union_name = "dbg_poly_union"
+            return m.add_debug_info(
+                "DICompositeType",
+                {
+                    "file": self.difile,
+                    "tag": ir.DIToken("DW_TAG_union_type"),
+                    "name": fake_union_name,
+                    "identifier": str(lltype),
+                    "elements": m.add_metadata(meta),
+                    "size": maxwidth,
+                },
+                is_distinct=True,
+            )
         # For other cases, use upstream Numba implementation
         return super()._var_type(lltype, size, datamodel=datamodel)
 

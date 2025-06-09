@@ -30,7 +30,8 @@ class TestNvvmDriver(unittest.TestCase):
             self.skipTest("-gen-lto unavailable in this toolkit version")
 
         nvvmir = self.get_nvvmir()
-        ltoir = nvvm.compile_ir(nvvmir, opt=3, gen_lto=None, arch="compute_52")
+        arch = "compute_%d%d" % nvvm.LOWEST_CURRENT_CC
+        ltoir = nvvm.compile_ir(nvvmir, opt=3, gen_lto=None, arch=arch)
 
         # Verify we correctly passed the option by checking if we got LTOIR
         # from NVVM (by looking for the expected magic number for LTOIR)
@@ -138,9 +139,9 @@ class TestNvvmDriver(unittest.TestCase):
 class TestArchOption(unittest.TestCase):
     def test_get_arch_option(self):
         # Test returning the nearest lowest arch.
-        self.assertEqual(nvvm.get_arch_option(5, 3), "compute_53")
         self.assertEqual(nvvm.get_arch_option(7, 5), "compute_75")
         self.assertEqual(nvvm.get_arch_option(7, 7), "compute_75")
+        self.assertEqual(nvvm.get_arch_option(8, 8), "compute_87")
         # Test known arch.
         supported_cc = nvvm.get_supported_ccs()
         for arch in supported_cc:
