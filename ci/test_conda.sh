@@ -7,11 +7,16 @@ set -euo pipefail
 
 if [ "${CUDA_VER%.*.*}" = "11" ]; then
   CTK_PACKAGES="cudatoolkit=11"
+  # 11.8 Packages test with Python 3.9 and 3.10, so use a NumPy that is
+  # available for those Python versions
+  NUMPY_VERSION=2.0
 else
   CTK_PACKAGES="cuda-cccl cuda-nvcc-impl cuda-nvrtc libcurand-dev"
   apt-get update
   apt remove --purge `dpkg --get-selections | grep cuda-nvvm | awk '{print $1}'` -y
   apt remove --purge `dpkg --get-selections | grep cuda-nvrtc | awk '{print $1}'` -y
+  # Use the latest supported NumPy
+  NUMPY_VERSION=2.2
 fi
 
 
@@ -28,7 +33,8 @@ rapids-mamba-retry create -n test \
     psutil \
     pytest \
     cffi \
-    python=${RAPIDS_PY_VERSION}
+    python=${RAPIDS_PY_VERSION} \
+    numpy=${NUMPY_VERSION}
 
 # Temporarily allow unbound variables for conda activation.
 set +u
