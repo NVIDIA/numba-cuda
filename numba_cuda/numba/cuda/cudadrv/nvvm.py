@@ -871,6 +871,12 @@ def set_launch_bounds(kernel, launch_bounds):
     if isinstance(launch_bounds, int):
         launch_bounds = (launch_bounds,)
 
+    if (n := len(launch_bounds)) > 3:
+        raise ValueError(
+            f"Got {n} launch bounds: {launch_bounds}. A maximum of three are supported: "
+            "(max_threads_per_block, min_blocks_per_sm, max_blocks_per_cluster)"
+        )
+
     module = kernel.module
     nvvm_annotations = cgutils.get_or_insert_named_metadata(
         module, "nvvm.annotations"

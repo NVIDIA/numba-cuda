@@ -355,6 +355,16 @@ class TestCompileWithLaunchBounds(unittest.TestCase):
         self.assertRegex(ptx, r".minnctapersm\s+2")
         self.assertRegex(ptx, r".maxclusterrank\s+4")
 
+    def test_too_many_launch_bounds(self):
+        def f():
+            pass
+
+        sig = "void()"
+        launch_bounds = (128, 2, 4, 8)
+
+        with self.assertRaisesRegex(ValueError, "Got 4 launch bounds:"):
+            cuda.compile_ptx(f, sig, launch_bounds=launch_bounds)
+
 
 if __name__ == "__main__":
     unittest.main()

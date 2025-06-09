@@ -806,6 +806,11 @@ class TestLaunchBounds(CUDATestCase):
         self.assertRegex(ptx, r".minnctapersm\s+2")
         self.assertRegex(ptx, r".maxclusterrank\s+4")
 
+    def test_too_many_launch_bounds(self):
+        launch_bounds = (128, 2, 4, 8)
+        with self.assertRaisesRegex(ValueError, "Got 4 launch bounds:"):
+            cuda.jit("void()", launch_bounds=launch_bounds)(lambda: None)
+
 
 if __name__ == "__main__":
     unittest.main()
