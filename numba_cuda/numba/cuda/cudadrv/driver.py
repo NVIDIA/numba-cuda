@@ -57,15 +57,6 @@ try:
 except ImportError:
     NvJitLinker, NvJitLinkError = None, None
 
-USE_NV_BINDING = config.CUDA_USE_NVIDIA_BINDING
-
-if USE_NV_BINDING:
-    from cuda import cuda as binding
-
-    # There is no definition of the default stream in the Nvidia bindings (nor
-    # is there at the C/C++ level), so we define it here so we don't need to
-    # use a magic number 0 in places where we want the default stream.
-    CU_STREAM_DEFAULT = 0
 
 MIN_REQUIRED_CC = (3, 5)
 SUPPORTS_IPC = sys.platform.startswith("linux")
@@ -82,23 +73,41 @@ _MVC_ERROR_MESSAGE = (
     "to be available"
 )
 
+
 # Enable pynvjitlink if the environment variables NUMBA_CUDA_ENABLE_PYNVJITLINK
 # or CUDA_ENABLE_PYNVJITLINK are set, or if the pynvjitlink module is found. If
 # explicitly disabled, do not use pynvjitlink, even if present in the env.
-_pynvjitlink_enabled_in_env = _readenv(
-    "NUMBA_CUDA_ENABLE_PYNVJITLINK", bool, None
+def _get_option(name, fallback):
+    env_val = _readenv(name, bool, None)
+    if env_val is not None:
+        return env_val
+    cfg_val = getattr(config, name, None)
+    if cfg_val is not None:
+        return cfg_val
+    return fallback
+
+
+# Determine if pynvjitlink is enabled
+ENABLE_PYNVJITLINK = _get_option(
+    "CUDA_ENABLE_PYNVJITLINK",
+    fallback=importlib.util.find_spec("pynvjitlink") is not None,
 )
-_pynvjitlink_enabled_in_cfg = getattr(config, "CUDA_ENABLE_PYNVJITLINK", None)
+config.CUDA_ENABLE_PYNVJITLINK = getattr(
+    config, "CUDA_ENABLE_PYNVJITLINK", ENABLE_PYNVJITLINK
+)
 
-if _pynvjitlink_enabled_in_env is not None:
-    ENABLE_PYNVJITLINK = _pynvjitlink_enabled_in_env
-elif _pynvjitlink_enabled_in_cfg is not None:
-    ENABLE_PYNVJITLINK = _pynvjitlink_enabled_in_cfg
-else:
-    ENABLE_PYNVJITLINK = importlib.util.find_spec("pynvjitlink") is not None
+# Determine if the Nvidia binding is enabled
+USE_NV_BINDING = _get_option("CUDA_USE_NVIDIA_BINDING", fallback=False)
+config.CUDA_USE_NVIDIA_BINDING = USE_NV_BINDING
 
-if not hasattr(config, "CUDA_ENABLE_PYNVJITLINK"):
-    config.CUDA_ENABLE_PYNVJITLINK = ENABLE_PYNVJITLINK
+
+if USE_NV_BINDING:
+    from cuda import cuda as binding
+
+    # There is no definition of the default stream in the Nvidia bindings (nor
+    # is there at the C/C++ level), so we define it here so we don't need to
+    # use a magic number 0 in places where we want the default stream.
+    CU_STREAM_DEFAULT = 0
 
 
 def make_logger():

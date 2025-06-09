@@ -1,5 +1,6 @@
-from numba import runtests
 from numba.core import config
+
+from numba import runtests
 from numba.cuda.compiler import (
     compile,
     compile_for_current_device,
@@ -9,9 +10,6 @@ from numba.cuda.compiler import (
 from .utils import _readenv
 
 
-config.CUDA_USE_NVIDIA_BINDING = _readenv(
-    "NUMBA_CUDA_USE_NVIDIA_BINDING", bool, True
-)
 if config.ENABLE_CUDASIM:
     from .simulator_init import *
 else:
