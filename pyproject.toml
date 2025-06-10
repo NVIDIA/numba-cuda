@@ -112,7 +112,7 @@ exclude = [
 # Slightly long line in the standard version file
 "numba_cuda/_version.py" = ["E501"]
 # "Unused" imports / potentially undefined names in init files
-"numba_cuda/numba/cuda/__init__.py" = ["F401", "F403", "F405"]
+"numba_cuda/numba/cuda/__init__.py" = ["F401", "F403", "F405", "E402"]
 "numba_cuda/numba/cuda/simulator/__init__.py" = ["F401", "F403"]
 "numba_cuda/numba/cuda/simulator/cudadrv/__init__.py" = ["F401"]
 # Ignore star imports", " unused imports", " and "may be defined by star imports"

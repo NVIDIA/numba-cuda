@@ -49,7 +49,7 @@ from .drvapi import API_PROTOTYPES
 from .drvapi import cu_occupancy_b2d_size, cu_stream_callback_pyobj, cu_uuid
 from .mappings import FILE_EXTENSION_MAP
 from .linkable_code import LinkableCode, LTOIR, Fatbin, Object
-from numba.cuda.utils import _readenv, cached_file_read
+from numba.cuda.utils import cached_file_read
 from numba.cuda.cudadrv import enums, drvapi, nvrtc
 
 try:
@@ -73,38 +73,10 @@ _MVC_ERROR_MESSAGE = (
     "to be available"
 )
 
-
-# Enable pynvjitlink if the environment variables NUMBA_CUDA_ENABLE_PYNVJITLINK
-# or CUDA_ENABLE_PYNVJITLINK are set, or if the pynvjitlink module is found. If
-# explicitly disabled, do not use pynvjitlink, even if present in the env.
-_pynvjitlink_enabled_in_env = _readenv(
-    "NUMBA_CUDA_ENABLE_PYNVJITLINK", bool, None
-)
-_pynvjitlink_enabled_in_cfg = getattr(config, "CUDA_ENABLE_PYNVJITLINK", None)
-
-if _pynvjitlink_enabled_in_env is not None:
-    ENABLE_PYNVJITLINK = _pynvjitlink_enabled_in_env
-elif _pynvjitlink_enabled_in_cfg is not None:
-    ENABLE_PYNVJITLINK = _pynvjitlink_enabled_in_cfg
-else:
-    ENABLE_PYNVJITLINK = importlib.util.find_spec("pynvjitlink") is not None
-
-if not hasattr(config, "CUDA_ENABLE_PYNVJITLINK"):
-    config.CUDA_ENABLE_PYNVJITLINK = ENABLE_PYNVJITLINK
-
-# Upstream numba sets CUDA_USE_NVIDIA_BINDING to 0 by default, so it always
-# exists. Override, but not if explicitly set to 0 in the envioronment.
-_nvidia_binding_enabled_in_env = _readenv(
-    "NUMBA_CUDA_USE_NVIDIA_BINDING", bool, None
-)
-if _nvidia_binding_enabled_in_env is False:
-    USE_NV_BINDING = False
-else:
-    USE_NV_BINDING = True
-    config.CUDA_USE_NVIDIA_BINDING = USE_NV_BINDING
+USE_NV_BINDING = config.CUDA_USE_NVIDIA_BINDING
 
 if USE_NV_BINDING:
-    from cuda import cuda as binding
+    from cuda.bindings import driver as binding
 
     # There is no definition of the default stream in the Nvidia bindings (nor
     # is there at the C/C++ level), so we define it here so we don't need to
@@ -185,7 +157,7 @@ def locate_driver_and_loader():
             )
         if not os.path.isfile(envpath):
             raise ValueError(
-                "NUMBA_CUDA_DRIVER %s is not a valid file "
+                "NUMBA_CUDA_DR IVER %s is not a valid file "
                 "path.  Note it must be a filepath of the .so/"
                 ".dll/.dylib or the driver" % envpath
             )
@@ -3203,7 +3175,6 @@ class CudaPythonLinker(Linker):
 
         raw_keys = list(options.keys())
         raw_values = list(options.values())
-
         self.handle = driver.cuLinkCreate(len(raw_keys), raw_keys, raw_values)
 
         weakref.finalize(self, driver.cuLinkDestroy, self.handle)

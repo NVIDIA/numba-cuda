@@ -2,9 +2,9 @@ from numba import config
 from . import enums
 
 if config.CUDA_USE_NVIDIA_BINDING:
-    from cuda import cuda
+    from cuda.bindings import driver
 
-    jitty = cuda.CUjitInputType
+    jitty = driver.CUjitInputType
     FILE_EXTENSION_MAP = {
         "o": jitty.CU_JIT_INPUT_OBJECT,
         "ptx": jitty.CU_JIT_INPUT_PTX,
