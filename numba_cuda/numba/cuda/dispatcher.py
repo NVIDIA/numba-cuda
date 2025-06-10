@@ -41,6 +41,7 @@ from numba.cuda.errors import (
     missing_launch_config_msg,
     normalize_kernel_dimensions,
 )
+from numba.cuda.launchconfig import launch_config_ctx
 from numba.cuda.typing.templates import fold_arguments
 from numba.cuda.cudadrv.linkable_code import LinkableCode
 from numba.cuda.cudadrv.devices import get_context
@@ -1016,10 +1017,16 @@ class CUDADispatcher(serialize.ReduceMixin, _MemoMixin, _DispatcherBase):
         """
         Compile if necessary and invoke this kernel with *args*.
         """
-        if self.specialized:
-            kernel = next(iter(self.overloads.values()))
-        else:
-            kernel = _dispatcher.Dispatcher._cuda_call(self, *args)
+        with launch_config_ctx(
+            griddim=griddim,
+            blockdim=blockdim,
+            stream=stream,
+            sharedmem=sharedmem,
+        ):
+            if self.specialized:
+                kernel = next(iter(self.overloads.values()))
+            else:
+                kernel = _dispatcher.Dispatcher._cuda_call(self, *args)
 
         kernel.launch(args, griddim, blockdim, stream, sharedmem)
 
