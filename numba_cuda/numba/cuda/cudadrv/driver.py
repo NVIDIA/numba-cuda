@@ -100,8 +100,8 @@ _nvidia_binding_enabled_in_env = _readenv(
 if _nvidia_binding_enabled_in_env is False:
     USE_NV_BINDING = False
 else:
-    config.CUDA_USE_NVIDIA_BINDING = True
-    USE_NV_BINDING = config.CUDA_USE_NVIDIA_BINDING
+    USE_NV_BINDING = True
+    config.CUDA_USE_NVIDIA_BINDING = USE_NV_BINDING
 
 if USE_NV_BINDING:
     from cuda import cuda as binding
