@@ -11,8 +11,7 @@ rapids-mamba-retry create -n test \
     psutil \
     pytest \
     cffi \
-    python=${RAPIDS_PY_VERSION} \
-    numpy=2.2
+    python=${RAPIDS_PY_VERSION}
 
 # Temporarily allow unbound variables for conda activation.
 set +u
