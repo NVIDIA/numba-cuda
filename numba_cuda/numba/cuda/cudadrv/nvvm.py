@@ -910,6 +910,54 @@ def set_cuda_kernel(function):
     function.attributes.discard("noinline")
 
 
+def set_launch_bounds(kernel, launch_bounds):
+    # Based on: CUDA C / C++ Programming Guide 12.9, Section 8.38:
+    # https://docs.nvidia.com/cuda/archive/12.9.0/cuda-c-programming-guide/index.html#launch-bounds
+    # PTX ISA Specification Version 8.7, Section 11.4:
+    # https://docs.nvidia.com/cuda/archive/12.8.1/parallel-thread-execution/index.html#performance-tuning-directives
+    # NVVM IR Specification 12.9, Section 13:
+    # https://docs.nvidia.com/cuda/archive/12.9.0/nvvm-ir-spec/index.html#global-property-annotation
+
+    if launch_bounds is None:
+        return
+
+    if isinstance(launch_bounds, int):
+        launch_bounds = (launch_bounds,)
+
+    if (n := len(launch_bounds)) > 3:
+        raise ValueError(
+            f"Got {n} launch bounds: {launch_bounds}. A maximum of three are supported: "
+            "(max_threads_per_block, min_blocks_per_sm, max_blocks_per_cluster)"
+        )
+
+    module = kernel.module
+    nvvm_annotations = cgutils.get_or_insert_named_metadata(
+        module, "nvvm.annotations"
+    )
+
+    # Note that only maxntidx is used even though NVVM IR and PTX allow
+    # maxntidy and maxntidz. This is because the thread block size limit
+    # pertains only to the total number of threads, and therefore bounds on
+    # individual dimensions may be exceeded anyway. To prevent an unsurprising
+    # interface, it is cleaner to only allow setting total size via maxntidx
+    # and assuming y and z to be 1 (as is the case in CUDA C/C++).
+
+    properties = (
+        # Max threads per block
+        "maxntidx",
+        # Min blocks per multiprocessor
+        "minctasm",
+        # Max blocks per cluster
+        "cluster_max_blocks",
+    )
+
+    for prop, bound in zip(properties, launch_bounds):
+        mdstr = ir.MetaDataString(module, prop)
+        mdvalue = ir.Constant(ir.IntType(32), bound)
+        md = module.add_metadata((kernel, mdstr, mdvalue))
+        nvvm_annotations.add(md)
+
+
 def add_ir_version(mod):
     """Add NVVM IR version to module"""
     # We specify the IR version to match the current NVVM's IR version
