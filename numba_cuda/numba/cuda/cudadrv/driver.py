@@ -77,29 +77,31 @@ _MVC_ERROR_MESSAGE = (
 # Enable pynvjitlink if the environment variables NUMBA_CUDA_ENABLE_PYNVJITLINK
 # or CUDA_ENABLE_PYNVJITLINK are set, or if the pynvjitlink module is found. If
 # explicitly disabled, do not use pynvjitlink, even if present in the env.
-def _get_option(name, fallback):
-    env_val = _readenv("NUMBA_" + name, bool, None)
-    if env_val is not None:
-        return env_val
-    cfg_val = getattr(config, name, None)
-    if cfg_val is not None:
-        return cfg_val
-    return fallback
-
-
-ENABLE_PYNVJITLINK = _get_option(
-    "CUDA_ENABLE_PYNVJITLINK",
-    fallback=importlib.util.find_spec("pynvjitlink") is not None,
+_pynvjitlink_enabled_in_env = _readenv(
+    "NUMBA_CUDA_ENABLE_PYNVJITLINK", bool, None
 )
+_pynvjitlink_enabled_in_cfg = getattr(config, "CUDA_ENABLE_PYNVJITLINK", None)
+
+if _pynvjitlink_enabled_in_env is not None:
+    ENABLE_PYNVJITLINK = _pynvjitlink_enabled_in_env
+elif _pynvjitlink_enabled_in_cfg is not None:
+    ENABLE_PYNVJITLINK = _pynvjitlink_enabled_in_cfg
+else:
+    ENABLE_PYNVJITLINK = importlib.util.find_spec("pynvjitlink") is not None
+
 if not hasattr(config, "CUDA_ENABLE_PYNVJITLINK"):
     config.CUDA_ENABLE_PYNVJITLINK = ENABLE_PYNVJITLINK
 
-
-USE_NV_BINDING = _get_option("CUDA_USE_NVIDIA_BINDING", fallback=False)
-if USE_NV_BINDING:
-    from cuda import cuda as binding
-config.CUDA_USE_NVIDIA_BINDING = USE_NV_BINDING
-
+# Upstream numba sets CUDA_USE_NVIDIA_BINDING to 0 by default, so it always
+# exists. Override, but not if explicitly set to 0 in the envioronment.
+_nvidia_binding_enabled_in_env = _readenv(
+    "NUMBA_CUDA_USE_NVIDIA_BINDING", bool, None
+)
+if _nvidia_binding_enabled_in_env is False:
+    USE_NV_BINDING = False
+else:
+    config.CUDA_USE_NVIDIA_BINDING = True
+    USE_NV_BINDING = config.CUDA_USE_NVIDIA_BINDING
 
 if USE_NV_BINDING:
     from cuda import cuda as binding
