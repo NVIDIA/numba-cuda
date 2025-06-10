@@ -198,6 +198,24 @@ class TestCudaLineInfo(CUDATestCase):
             "debug and lineinfo are mutually exclusive", str(w[0].message)
         )
 
+    def test_lineinfo_with_compile_internal(self):
+        # Calling a function implemented using compile_internal should not
+        # enable full debug info generation. See Numba-CUDA Issue #271,
+        # https://github.com/NVIDIA/numba-cuda/issues/271
+
+        @cuda.jit("void(complex128[::1], complex128[::1])", lineinfo=True)
+        def complex_abs_use(r, x):
+            r[0] = abs(x[0])
+
+        cc = cuda.get_current_device().compute_capability
+        ov = complex_abs_use.overloads[complex_abs_use.signatures[0]]
+        ptx = ov.inspect_asm(cc)
+
+        target = ".target sm_%s%s" % cc
+        target_debug = f"{target}, debug"
+        self.assertIn(target, ptx)
+        self.assertNotIn(target_debug, ptx)
+
 
 if __name__ == "__main__":
     unittest.main()
