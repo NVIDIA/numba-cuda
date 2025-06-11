@@ -832,6 +832,8 @@ class CUDADispatcher(Dispatcher, serialize.ReduceMixin):
         Compile if necessary and invoke this kernel with *args*.
         """
         with launch_config_ctx(
+            dispatcher=self,
+            args=args,
             griddim=griddim,
             blockdim=blockdim,
             stream=stream,
@@ -842,7 +844,7 @@ class CUDADispatcher(Dispatcher, serialize.ReduceMixin):
             else:
                 kernel = _dispatcher.Dispatcher._cuda_call(self, *args)
 
-        kernel.launch(args, griddim, blockdim, stream, sharedmem)
+            kernel.launch(args, griddim, blockdim, stream, sharedmem)
 
     def _compile_for_args(self, *args, **kws):
         # Based on _DispatcherBase._compile_for_args.
