@@ -3,7 +3,10 @@ from __future__ import annotations
 from dataclasses import dataclass
 from contextvars import ContextVar
 from contextlib import contextmanager
-from typing import Any, Tuple, Optional
+from typing import Any, Tuple, Optional, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from numba.cuda.dispatcher import CUDADispatcher
 
 
 @dataclass(frozen=True, slots=True)
@@ -13,16 +16,19 @@ class LaunchConfig:
     and retrieving from a thread-local ContextVar.
     """
 
+    dispatcher: "CUDADispatcher"
+    args: Tuple[Any, ...]
     griddim: Tuple[int, int, int]
     blockdim: Tuple[int, int, int]
     stream: Any
     sharedmem: int
 
     def __str__(self) -> str:
+        a = ", ".join(map(str, self.args))
         g = "×".join(map(str, self.griddim))
         b = "×".join(map(str, self.blockdim))
         return (
-            f"<LaunchConfig grid={g}, block={b}, "
+            f"<LaunchConfig args=[{a}], grid={g}, block={b}, "
             f"stream={self.stream}, smem={self.sharedmem}B>"
         )
 
@@ -44,6 +50,8 @@ def current_launch_config() -> Optional[LaunchConfig]:
 @contextmanager
 def launch_config_ctx(
     *,
+    dispatcher: "CUDADispatcher",
+    args: Tuple[Any, ...],
     griddim: Tuple[int, int, int],
     blockdim: Tuple[int, int, int],
     stream: Any,
@@ -54,7 +62,7 @@ def launch_config_ctx(
     The previous value (if any) is restored automatically.
     """
     token = _launch_config_var.set(
-        LaunchConfig(griddim, blockdim, stream, sharedmem)
+        LaunchConfig(dispatcher, args, griddim, blockdim, stream, sharedmem)
     )
     try:
         yield
