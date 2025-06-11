@@ -157,7 +157,7 @@ def locate_driver_and_loader():
             )
         if not os.path.isfile(envpath):
             raise ValueError(
-                "NUMBA_CUDA_DR IVER %s is not a valid file "
+                "NUMBA_CUDA_DRIVER %s is not a valid file "
                 "path.  Note it must be a filepath of the .so/"
                 ".dll/.dylib or the driver" % envpath
             )
