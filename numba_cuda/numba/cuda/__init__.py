@@ -31,6 +31,17 @@ if _nvidia_binding_enabled_in_env is False:
 else:
     USE_NV_BINDING = True
     config.CUDA_USE_NVIDIA_BINDING = USE_NV_BINDING
+if config.CUDA_USE_NVIDIA_BINDING:
+    if not importlib.util.find_spec("cuda.bindings"):
+        raise ImportError(
+            "CUDA bindings not found. Please install through "
+            "the cuda-bindings[cuXY] package where XY is the "
+            "required CUDA version. Alternatively, install "
+            "numba-cuda-cuXY to install the required binding "
+            "automatically. If no CUDA bindings are desired, "
+            "set NUMBA_CUDA_USE_NVIDIA_BINDING=0 to enable "
+            "ctypes bindings."
+        )
 
 if config.ENABLE_CUDASIM:
     from .simulator_init import *
