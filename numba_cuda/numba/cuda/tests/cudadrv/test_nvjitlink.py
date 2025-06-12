@@ -57,8 +57,6 @@ if TEST_BIN_DIR:
 )
 @skip_on_cudasim("Linking unsupported in the simulator")
 class TestLinker(CUDATestCase):
-    _NUMBA_NVIDIA_BINDING_0_ENV = {"NUMBA_CUDA_USE_NVIDIA_BINDING": "0"}
-
     def test_nvjitlink_create(self):
         patched_linker = PyNvJitLinker(cc=(7, 5))
         assert "-arch=sm_75" in patched_linker.options

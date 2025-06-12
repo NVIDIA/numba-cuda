@@ -104,8 +104,6 @@ def simple_lmem(A, B, dty):
 
 @skip_on_cudasim("Linking unsupported in the simulator")
 class TestLinker(CUDATestCase):
-    _NUMBA_NVIDIA_BINDING_0_ENV = {"NUMBA_CUDA_USE_NVIDIA_BINDING": "0"}
-
     @require_context
     def test_linker_basic(self):
         """Simply go through the constructor and destructor"""

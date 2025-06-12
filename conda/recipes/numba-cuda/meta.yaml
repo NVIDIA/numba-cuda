@@ -28,6 +28,7 @@ requirements:
   run:
     - python
     - numba >=0.59.1
+    - cuda-bindings
 
 about:
   home: {{ project_urls["Homepage"] }}
