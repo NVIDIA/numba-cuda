@@ -55,6 +55,7 @@ class TestSharedMemoryIssue(CUDATestCase):
 
     def test_issue_fp16_support(self):
         import numba.cuda.fp16
+
         self._check_shared_array_size_fp16(2, 2, types.float16)
         self._check_shared_array_size_fp16(2, 2, np.float16)
 
