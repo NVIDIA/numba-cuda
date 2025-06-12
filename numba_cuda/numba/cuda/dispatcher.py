@@ -26,6 +26,7 @@ from numba.cuda.errors import (
     missing_launch_config_msg,
     normalize_kernel_dimensions,
 )
+from numba.cuda.launchconfig import launch_config_ctx
 from numba.cuda import types as cuda_types
 from numba.cuda.locks import module_init_lock
 from numba.cuda.memory_management.nrt import rtsys, NRT_LIBRARY
@@ -830,12 +831,20 @@ class CUDADispatcher(Dispatcher, serialize.ReduceMixin):
         """
         Compile if necessary and invoke this kernel with *args*.
         """
-        if self.specialized:
-            kernel = next(iter(self.overloads.values()))
-        else:
-            kernel = _dispatcher.Dispatcher._cuda_call(self, *args)
+        with launch_config_ctx(
+            dispatcher=self,
+            args=args,
+            griddim=griddim,
+            blockdim=blockdim,
+            stream=stream,
+            sharedmem=sharedmem,
+        ):
+            if self.specialized:
+                kernel = next(iter(self.overloads.values()))
+            else:
+                kernel = _dispatcher.Dispatcher._cuda_call(self, *args)
 
-        kernel.launch(args, griddim, blockdim, stream, sharedmem)
+            kernel.launch(args, griddim, blockdim, stream, sharedmem)
 
     def _compile_for_args(self, *args, **kws):
         # Based on _DispatcherBase._compile_for_args.
