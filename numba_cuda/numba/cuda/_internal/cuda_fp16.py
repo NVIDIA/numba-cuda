@@ -13535,12 +13535,6 @@ class _typing___habs(ConcreteTemplate):
 register_global(__habs, types.Function(_typing___habs))
 
 
-@register_global(abs)
-class _typing_abs(ConcreteTemplate):
-    key = abs
-    cases = [signature(_type___half, _type___half)]
-
-
 @register
 class _typing___hadd(ConcreteTemplate):
     key = globals()["__hadd"]
@@ -14196,6 +14190,19 @@ class _typing_atomicAdd(ConcreteTemplate):
 register_global(atomicAdd, types.Function(_typing_atomicAdd))
 
 
+def _genfp16_unary_operator(l_key):
+    @register_global(l_key)
+    class Cuda_fp16_unary(AbstractTemplate):
+        key = l_key
+
+        def generic(self, args, kws):
+            assert not kws
+            if len(args) == 1 and args[0] == types.float16:
+                return signature(types.float16, types.float16)
+
+    return Cuda_fp16_unary
+
+
 def _fp16_binary_operator(l_key, retty):
     @register_global(l_key)
     class Cuda_fp16_operator(AbstractTemplate):
@@ -14238,6 +14245,9 @@ def _genfp16_binary_operator(op):
     return _fp16_binary_operator(op, types.float16)
 
 
+_genfp16_unary_operator(abs)
+_genfp16_unary_operator(operator.neg)
+_genfp16_unary_operator(operator.pos)
 _genfp16_binary_operator(operator.add)
 _genfp16_binary_operator(operator.iadd)
 _genfp16_binary_operator(operator.sub)
@@ -14252,22 +14262,6 @@ _genfp16_comparison_operator(operator.ge)
 _genfp16_comparison_operator(operator.gt)
 _genfp16_comparison_operator(operator.le)
 _genfp16_comparison_operator(operator.lt)
-
-
-@register_global(operator.pos)
-class _typing_operator_pos(ConcreteTemplate):
-    cases = [
-        signature(_type___half, _type___half),
-        signature(_type___half2, _type___half2),
-    ]
-
-
-@register_global(operator.neg)
-class _typing_operator_neg(ConcreteTemplate):
-    cases = [
-        signature(_type___half, _type___half),
-        signature(_type___half2, _type___half2),
-    ]
 
 
 # Aliases:
