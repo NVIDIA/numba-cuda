@@ -35,7 +35,7 @@ from warnings import warn
 from numba.cuda import nvvmutils
 from numba.cuda.api import get_current_device
 from numba.cuda.codegen import ExternalCodeLibrary
-from numba.cuda.cudadrv import nvvm
+from numba.cuda.cudadrv import nvvm, nvrtc
 from numba.cuda.descriptor import cuda_target
 from numba.cuda.flags import CUDAFlags
 from numba.cuda.target import CUDACABICallConv
@@ -640,7 +640,7 @@ def compile(
     # If the user has used the config variable to specify a non-default that is
     # greater than the lowest non-deprecated one, then we should default to
     # their specified CC instead of the lowest non-deprecated one.
-    MIN_CC = max(config.CUDA_DEFAULT_PTX_CC, nvvm.LOWEST_CURRENT_CC)
+    MIN_CC = max(config.CUDA_DEFAULT_PTX_CC, nvrtc.get_lowest_supported_cc())
     cc = cc or MIN_CC
 
     cres = compile_cuda(

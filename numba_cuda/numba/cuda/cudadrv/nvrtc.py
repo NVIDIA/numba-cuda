@@ -1,6 +1,7 @@
 from ctypes import byref, c_char, c_char_p, c_int, c_size_t, c_void_p, POINTER
 from enum import IntEnum
 from numba.cuda.cudadrv.error import (
+    CCSupportError,
     NvrtcError,
     NvrtcBuiltinOperationFailure,
     NvrtcCompilationError,
@@ -195,52 +196,16 @@ class NVRTC:
 
         return cls.__INSTANCE
 
+    @functools.cache
     def get_supported_archs(self):
         """
         Get Supported Architectures by NVRTC as list of arch tuples.
         """
-        ver = self.get_version()
-        if ver < (11, 0):
-            raise RuntimeError(
-                "Unsupported CUDA version. CUDA 11.0 or higher is required."
-            )
-        elif ver == (11, 0):
-            return [
-                (3, 0),
-                (3, 2),
-                (3, 5),
-                (3, 7),
-                (5, 0),
-                (5, 2),
-                (5, 3),
-                (6, 0),
-                (6, 1),
-                (6, 2),
-                (7, 0),
-                (7, 2),
-                (7, 5),
-            ]
-        elif ver == (11, 1):
-            return [
-                (3, 5),
-                (3, 7),
-                (5, 0),
-                (5, 2),
-                (5, 3),
-                (6, 0),
-                (6, 1),
-                (6, 2),
-                (7, 0),
-                (7, 2),
-                (7, 5),
-                (8, 0),
-            ]
-        else:
-            num = c_int()
-            self.nvrtcGetNumSupportedArchs(byref(num))
-            archs = (c_int * num.value)()
-            self.nvrtcGetSupportedArchs(archs)
-            return [(archs[i] // 10, archs[i] % 10) for i in range(num.value)]
+        num = c_int()
+        self.nvrtcGetNumSupportedArchs(byref(num))
+        archs = (c_int * num.value)()
+        self.nvrtcGetSupportedArchs(archs)
+        return [(archs[i] // 10, archs[i] % 10) for i in range(num.value)]
 
     def get_version(self):
         """
@@ -349,9 +314,9 @@ def compile(src, name, cc, ltoir=False):
 
     version = nvrtc.get_version()
     ver_str = lambda v: ".".join(v)
-    if version < (11, 0):
+    if version < (11, 2):
         raise RuntimeError(
-            "Unsupported CUDA version. CUDA 11.0 or higher is required."
+            "Unsupported CUDA version. CUDA 11.2 or higher is required."
         )
     else:
         supported_arch = nvrtc.get_supported_archs()
@@ -474,3 +439,51 @@ def compile(src, name, cc, ltoir=False):
         else:
             ptx = nvrtc.get_ptx(program)
             return ptx, log
+
+
+def find_closest_arch(mycc):
+    """
+    Given a compute capability, return the closest compute capability supported
+    by the CUDA toolkit.
+
+    :param mycc: Compute capability as a tuple ``(MAJOR, MINOR)``
+    :return: Closest supported CC as a tuple ``(MAJOR, MINOR)``
+    """
+    supported_ccs = get_supported_ccs()
+
+    for i, cc in enumerate(supported_ccs):
+        if cc == mycc:
+            # Matches
+            return cc
+        elif cc > mycc:
+            # Exceeded
+            if i == 0:
+                # CC lower than supported
+                msg = (
+                    "GPU compute capability %d.%d is not supported"
+                    "(requires >=%d.%d)" % (mycc + cc)
+                )
+                raise CCSupportError(msg)
+            else:
+                # return the previous CC
+                return supported_ccs[i - 1]
+
+    # CC higher than supported
+    return supported_ccs[-1]  # Choose the highest
+
+
+def get_arch_option(major, minor):
+    """Matches with the closest architecture option"""
+    if config.FORCE_CUDA_CC:
+        arch = config.FORCE_CUDA_CC
+    else:
+        arch = find_closest_arch((major, minor))
+    return "compute_%d%d" % arch
+
+
+def get_lowest_supported_cc():
+    return min(get_supported_ccs())
+
+
+def get_supported_ccs():
+    return NVRTC().get_supported_archs()
