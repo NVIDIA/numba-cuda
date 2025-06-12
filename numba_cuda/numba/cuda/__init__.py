@@ -34,8 +34,8 @@ else:
 if config.CUDA_USE_NVIDIA_BINDING:
     if not importlib.util.find_spec("cuda.bindings"):
         raise ImportError(
-            "CUDA bindings not found. Please install through "
-            "the cuda-bindings package. Alternatively, install "
+            "CUDA bindings not found. Please pip install the "
+            "cuda-bindings package. Alternatively, install "
             "numba-cuda[cuXY], where XY is the required CUDA "
             "version, to install the binding automatically. "
             "If no CUDA bindings are desired, set the env var "
