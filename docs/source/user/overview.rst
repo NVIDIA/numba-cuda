@@ -2,11 +2,9 @@
 Overview
 ========
 
-Numba supports CUDA GPU programming by directly compiling a restricted subset
-of Python code into CUDA kernels and device functions following the CUDA
-execution model.  Kernels written in Numba appear to have direct access
-to NumPy arrays.  NumPy arrays are transferred between the CPU and the
-GPU automatically.
+Numba-CUDA supports programming NVIDIA CUDA GPUs by directly compiling a
+restricted subset of Python code into CUDA kernels and device functions
+following the CUDA execution model.
 
 
 Terminology
@@ -31,34 +29,29 @@ C language offered by NVidia.  Therefore, it is recommended you read the
 official `CUDA C programming guide <http://docs.nvidia.com/cuda/cuda-c-programming-guide>`_.
 
 
-Requirements
+Supported GPUs
+==============
+
+Numba supports all NVIDIA GPUs that are supported by the CUDA Toolkit it uses.
+Presently for CUDA 11 this ranges from Compute Capabilities 3.5 to 9.0, and for
+CUDA 12 this ranges from 5.0 to 12.1, depending on the exact installed version.
+
+
+.. _numba-cuda-installation:
+
+Installation
 ============
 
-Supported GPUs
---------------
+CUDA Toolkits
+-------------
 
-Numba supports CUDA-enabled GPUs with Compute Capability 3.5 or greater.
-Support for devices with Compute Capability less than 5.0 is deprecated, and
-will be removed in a future Numba release.
+Numba-CUDA aims to support all minor versions of the two most recent CUDA
+Toolkit releases. Presently 11 and 12 are supported; CUDA 11.2 is the minimum
+required, because older releases (11.0 and 11.1) have a version of NVVM based on
+previous and incompatible LLVM versions.
 
-Devices with Compute Capability 5.0 or greater include (but are not limited to):
-
-- Embedded platforms: NVIDIA Jetson Nano, Jetson Orin Nano, TX1, TX2, Xavier
-  NX, AGX Xavier, AGX Orin.
-- Desktop / Server GPUs: All GPUs with Maxwell microarchitecture or later. E.g.
-  GTX 9 / 10 / 16 series, RTX 20 / 30 / 40 / 50 series, Quadro / Tesla L / M /
-  P / V / RTX series, RTX A series, RTX Ada / SFF, A / L series, H100, B100.
-- Laptop GPUs: All GPUs with Maxwell microarchitecture or later. E.g. MX series,
-  Quadro M / P / T series (mobile), RTX 20 / 30 series (mobile), RTX A / Ada
-  series (mobile).
-
-Software
---------
-
-Numba aims to support CUDA Toolkit versions released within the last 3 years.
-Presently 11.2 is the minimum required toolkit version. An NVIDIA driver
-sufficient for the toolkit version is also required (see also
-:ref:`minor-version-compatibility`).
+For further information of version compatibility between toolkit and driver
+versions, refer to :ref:`minor-version-compatibility`.
 
 Conda users can install the CUDA Toolkit into a conda environment.
 
@@ -82,6 +75,7 @@ If you are not using Conda or if you want to use a different version of CUDA
 toolkit, the following describes how Numba searches for a CUDA toolkit
 installation.
 
+
 .. _cuda-bindings:
 
 CUDA Bindings
@@ -90,23 +84,31 @@ CUDA Bindings
 Numba supports interacting with the CUDA Driver API via either the `NVIDIA CUDA
 Python bindings <https://nvidia.github.io/cuda-python/>`_ or its own ctypes-based
 bindings. Functionality is equivalent between the two binding choices. The
+NVIDIA bindings are the default, and the ctypes bindings are now deprecated.
+
 ctypes-based bindings are presently the default, but the NVIDIA bindings will
 be used by default (if they are available in the environment) in a future Numba
 release.
 
-You can install the NVIDIA bindings with::
+If the NVIDIA bindings are not present in your environment, you can install them
+with::
 
-   $ conda install -c conda-forge cuda-python
+   $ conda install -c conda-forge cuda-bindings
 
 if you are using Conda, or::
 
-   $ pip install cuda-python
+   $ pip install cuda-bindings[cu11]
 
-if you are using pip. Note that the bracket notation ``[cuXX]`` introduced above
-will bring in this dependency for you.
+for CUDA 11 bindings with pip, or
 
-The use of the NVIDIA bindings is enabled by setting the environment variable
-:envvar:`NUMBA_CUDA_USE_NVIDIA_BINDING` to ``"1"``.
+   $ pip install cuda-bindings[cu12]
+
+for CUDA 12 bindings with pip. Note that the bracket notation
+``numba-cuda[cuXX]`` introduced above will bring in this dependency for you.
+
+The use of the ctypes bindings is enabled by setting the environment variable
+:envvar:`NUMBA_CUDA_USE_NVIDIA_BINDING` to ``"0"``.
+
 
 .. _cudatoolkit-lookup:
 
@@ -130,13 +132,3 @@ are also installed by the CUDA SDK installer, so there is no need to do both.
 If the ``libcuda`` library is in a non-standard location, users can set
 environment variable ``NUMBA_CUDA_DRIVER`` to the file path (not the directory
 path) of the shared library file.
-
-
-Missing CUDA Features
-=====================
-
-Numba does not implement all features of CUDA, yet.  Some missing features
-are listed below:
-
-* dynamic parallelism
-* texture memory

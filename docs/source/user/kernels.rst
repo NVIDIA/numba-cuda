@@ -1,3 +1,4 @@
+.. _writing-cuda-kernels:
 
 ====================
 Writing CUDA Kernels
