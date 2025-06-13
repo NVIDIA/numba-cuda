@@ -1256,6 +1256,12 @@ class _PendingDeallocs(object):
             while self._cons:
                 [dtor, handle, size] = self._cons.popleft()
                 _logger.info("dealloc: %s %s bytes", dtor.__name__, size)
+                # The EMM plugin interface uses CUdeviceptr instances when the
+                # NVIDIA binding is enabled, but the other interfaces use ctypes
+                # objects, so we have to check what kind of object we have here.
+                # binding_types = (binding.CUdeviceptr, binding.CUmodule)
+                # if USE_NV_BINDING and not isinstance(handle, binding_types):
+                #    handle = handle.value
                 dtor(handle)
             self._size = 0
 
@@ -1538,21 +1544,25 @@ class Context(object):
 
     def get_default_stream(self):
         if USE_NV_BINDING:
-            handle = binding.CUstream(CU_STREAM_DEFAULT)
+            handle = drvapi.cu_stream(int(binding.CUstream(CU_STREAM_DEFAULT)))
         else:
             handle = drvapi.cu_stream(drvapi.CU_STREAM_DEFAULT)
         return Stream(weakref.proxy(self), handle, None)
 
     def get_legacy_default_stream(self):
         if USE_NV_BINDING:
-            handle = binding.CUstream(binding.CU_STREAM_LEGACY)
+            handle = drvapi.cu_stream(
+                int(binding.CUstream(binding.CU_STREAM_LEGACY))
+            )
         else:
             handle = drvapi.cu_stream(drvapi.CU_STREAM_LEGACY)
         return Stream(weakref.proxy(self), handle, None)
 
     def get_per_thread_default_stream(self):
         if USE_NV_BINDING:
-            handle = binding.CUstream(binding.CU_STREAM_PER_THREAD)
+            handle = drvapi.cu_stream(
+                int(binding.CUstream(binding.CU_STREAM_PER_THREAD))
+            )
         else:
             handle = drvapi.cu_stream(drvapi.CU_STREAM_PER_THREAD)
         return Stream(weakref.proxy(self), handle, None)
@@ -1564,7 +1574,7 @@ class Context(object):
             # default stream, which we define also as CU_STREAM_DEFAULT when
             # the NV binding is in use).
             flags = binding.CUstream_flags.CU_STREAM_DEFAULT.value
-            handle = driver.cuStreamCreate(flags)
+            handle = drvapi.cu_stream(int(driver.cuStreamCreate(flags)))
         else:
             handle = drvapi.cu_stream()
             driver.cuStreamCreate(byref(handle), 0)
@@ -1578,7 +1588,7 @@ class Context(object):
         if not isinstance(ptr, int):
             raise TypeError("ptr for external stream must be an int")
         if USE_NV_BINDING:
-            handle = binding.CUstream(ptr)
+            handle = drvapi.cu_stream(int(binding.CUstream(ptr)))
         else:
             handle = drvapi.cu_stream(ptr)
         return Stream(weakref.proxy(self), handle, None, external=True)
@@ -1588,7 +1598,7 @@ class Context(object):
         if not timing:
             flags |= enums.CU_EVENT_DISABLE_TIMING
         if USE_NV_BINDING:
-            handle = driver.cuEventCreate(flags)
+            handle = drvapi.cu_event(int(driver.cuEventCreate(flags)))
         else:
             handle = drvapi.cu_event()
             driver.cuEventCreate(byref(handle), flags)
@@ -2089,9 +2099,11 @@ class MemoryPointer(object):
     def memset(self, byte, count=None, stream=0):
         count = self.size if count is None else count
         if stream:
-            driver.cuMemsetD8Async(
-                self.device_pointer, byte, count, stream.handle
-            )
+            if USE_NV_BINDING:
+                handle = stream.handle.value
+            else:
+                handle = stream.handle
+            driver.cuMemsetD8Async(self.device_pointer, byte, count, handle)
         else:
             driver.cuMemsetD8(self.device_pointer, byte, count)
 
@@ -2329,27 +2341,16 @@ class Stream(object):
             weakref.finalize(self, finalizer)
 
     def __int__(self):
-        if USE_NV_BINDING:
-            return int(self.handle)
-        else:
-            # The default stream's handle.value is 0, which gives `None`
-            return self.handle.value or drvapi.CU_STREAM_DEFAULT
+        # The default stream's handle.value is 0, which gives `None`
+        return self.handle.value or drvapi.CU_STREAM_DEFAULT
 
     def __repr__(self):
-        if USE_NV_BINDING:
-            default_streams = {
-                CU_STREAM_DEFAULT: "<Default CUDA stream on %s>",
-                binding.CU_STREAM_LEGACY: "<Legacy default CUDA stream on %s>",
-                binding.CU_STREAM_PER_THREAD: "<Per-thread default CUDA stream on %s>",
-            }
-            ptr = int(self.handle) or 0
-        else:
-            default_streams = {
-                drvapi.CU_STREAM_DEFAULT: "<Default CUDA stream on %s>",
-                drvapi.CU_STREAM_LEGACY: "<Legacy default CUDA stream on %s>",
-                drvapi.CU_STREAM_PER_THREAD: "<Per-thread default CUDA stream on %s>",
-            }
-            ptr = self.handle.value or drvapi.CU_STREAM_DEFAULT
+        default_streams = {
+            drvapi.CU_STREAM_DEFAULT: "<Default CUDA stream on %s>",
+            drvapi.CU_STREAM_LEGACY: "<Legacy default CUDA stream on %s>",
+            drvapi.CU_STREAM_PER_THREAD: "<Per-thread default CUDA stream on %s>",
+        }
+        ptr = self.handle.value or drvapi.CU_STREAM_DEFAULT
 
         if ptr in default_streams:
             return default_streams[ptr] % self.context
@@ -2363,7 +2364,11 @@ class Stream(object):
         Wait for all commands in this stream to execute. This will commit any
         pending memory transfers.
         """
-        driver.cuStreamSynchronize(self.handle)
+        if USE_NV_BINDING:
+            handle = self.handle.value
+        else:
+            handle = self.handle
+        driver.cuStreamSynchronize(handle)
 
     @contextlib.contextmanager
     def auto_synchronize(self):
@@ -2401,9 +2406,11 @@ class Stream(object):
             stream_callback = binding.CUstreamCallback(ptr)
             # The callback needs to receive a pointer to the data PyObject
             data = id(data)
+            handle = int(self.handle)
         else:
             stream_callback = self._stream_callback
-        driver.cuStreamAddCallback(self.handle, stream_callback, data, 0)
+            handle = self.handle
+        driver.cuStreamAddCallback(handle, stream_callback, data, 0)
 
     @staticmethod
     @cu_stream_callback_pyobj
@@ -2471,27 +2478,35 @@ class Event(object):
         completed.
         """
         if USE_NV_BINDING:
-            hstream = stream.handle if stream else binding.CUstream(0)
+            hstream = stream.handle.value if stream else binding.CUstream(0)
+            handle = self.handle.value
         else:
             hstream = stream.handle if stream else 0
-        driver.cuEventRecord(self.handle, hstream)
+            handle = self.handle
+        driver.cuEventRecord(handle, hstream)
 
     def synchronize(self):
         """
         Synchronize the host thread for the completion of the event.
         """
-        driver.cuEventSynchronize(self.handle)
+        if USE_NV_BINDING:
+            handle = self.handle.value
+        else:
+            handle = self.handle
+        driver.cuEventSynchronize(handle)
 
     def wait(self, stream=0):
         """
         All future works submitted to stream will wait util the event completes.
         """
         if USE_NV_BINDING:
-            hstream = stream.handle if stream else binding.CUstream(0)
+            hstream = stream.handle.value if stream else binding.CUstream(0)
+            handle = self.handle.value
         else:
             hstream = stream.handle if stream else 0
+            handle = self.handle
         flags = 0
-        driver.cuStreamWaitEvent(hstream, self.handle, flags)
+        driver.cuStreamWaitEvent(hstream, handle, flags)
 
     def elapsed_time(self, evtend):
         return event_elapsed_time(self, evtend)
@@ -2502,7 +2517,9 @@ def event_elapsed_time(evtstart, evtend):
     Compute the elapsed time between two events in milliseconds.
     """
     if USE_NV_BINDING:
-        return driver.cuEventElapsedTime(evtstart.handle, evtend.handle)
+        return driver.cuEventElapsedTime(
+            evtstart.handle.value, evtend.handle.value
+        )
     else:
         msec = c_float()
         driver.cuEventElapsedTime(byref(msec), evtstart.handle, evtend.handle)
@@ -3480,7 +3497,11 @@ def host_to_device(dst, src, size, stream=0):
     if stream:
         assert isinstance(stream, Stream)
         fn = driver.cuMemcpyHtoDAsync
-        varargs.append(stream.handle)
+        if USE_NV_BINDING:
+            handle = stream.handle.value
+        else:
+            handle = stream.handle
+        varargs.append(handle)
     else:
         fn = driver.cuMemcpyHtoD
 
@@ -3498,7 +3519,11 @@ def device_to_host(dst, src, size, stream=0):
     if stream:
         assert isinstance(stream, Stream)
         fn = driver.cuMemcpyDtoHAsync
-        varargs.append(stream.handle)
+        if USE_NV_BINDING:
+            handle = stream.handle.value
+        else:
+            handle = stream.handle
+        varargs.append(handle)
     else:
         fn = driver.cuMemcpyDtoH
 
@@ -3516,7 +3541,11 @@ def device_to_device(dst, src, size, stream=0):
     if stream:
         assert isinstance(stream, Stream)
         fn = driver.cuMemcpyDtoDAsync
-        varargs.append(stream.handle)
+        if USE_NV_BINDING:
+            handle = stream.handle.value
+        else:
+            handle = stream.handle
+        varargs.append(handle)
     else:
         fn = driver.cuMemcpyDtoD
 
@@ -3537,7 +3566,11 @@ def device_memset(dst, val, size, stream=0):
     if stream:
         assert isinstance(stream, Stream)
         fn = driver.cuMemsetD8Async
-        varargs.append(stream.handle)
+        if USE_NV_BINDING:
+            handle = stream.handle.value
+        else:
+            handle = stream.handle
+        varargs.append(handle)
     else:
         fn = driver.cuMemsetD8
 
