@@ -457,11 +457,10 @@ class _Kernel(serialize.ReduceMixin):
             self._prepare_args(t, v, stream, retr, kernelargs)
 
         if driver.USE_NV_BINDING:
-            zero_stream = driver.binding.CUstream(0)
+            stream_handle = stream and stream.handle.value or 0
         else:
             zero_stream = None
-
-        stream_handle = stream and stream.handle or zero_stream
+            stream_handle = stream and stream.handle or zero_stream
 
         # Invoke kernel
         driver.launch_kernel(
@@ -588,8 +587,6 @@ class _Kernel(serialize.ReduceMixin):
         elif isinstance(ty, types.Record):
             devrec = wrap_arg(val).to_device(retr, stream)
             ptr = devrec.device_ctypes_pointer
-            if driver.USE_NV_BINDING:
-                ptr = ctypes.c_void_p(int(ptr))
             kernelargs.append(ptr)
 
         elif isinstance(ty, types.BaseTuple):

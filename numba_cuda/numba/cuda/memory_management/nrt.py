@@ -113,10 +113,13 @@ class _Runtime:
             self._compile_memsys_module()
 
         # Allocate space for NRT_MemSys
-        ptr, nbytes = self._memsys_module.get_global_symbol("memsys_size")
         memsys_size = ctypes.c_uint64()
+        ptr, nbytes = self._memsys_module.get_global_symbol("memsys_size")
+        device_memsys_size = ptr.device_ctypes_pointer
+        if USE_NV_BINDING:
+            device_memsys_size = device_memsys_size.value
         driver.cuMemcpyDtoH(
-            ctypes.addressof(memsys_size), ptr.device_ctypes_pointer, nbytes
+            ctypes.addressof(memsys_size), device_memsys_size, nbytes
         )
         self._memsys = device_array(
             (memsys_size.value,), dtype="i1", stream=stream
@@ -144,18 +147,6 @@ class _Runtime:
             params,
             cooperative=False,
         )
-
-    def _ctypes_pointer(self, array):
-        """
-        Given an array, return a ctypes pointer to the data suitable for
-        passing to ``launch_kernel``.
-        """
-        ptr = array.device_ctypes_pointer
-
-        if USE_NV_BINDING:
-            ptr = ctypes.c_void_p(int(ptr))
-
-        return ptr
 
     def ensure_initialized(self, stream=None):
         """
@@ -206,7 +197,7 @@ class _Runtime:
         context
         """
         enabled_ar = cuda.managed_array(1, np.uint8)
-        enabled_ptr = self._ctypes_pointer(enabled_ar)
+        enabled_ptr = enabled_ar.device_ctypes_pointer
 
         self._single_thread_launch(
             self._memsys_module,
@@ -233,7 +224,7 @@ class _Runtime:
         )
 
         stats_for_read = cuda.managed_array(1, dt)
-        stats_ptr = self._ctypes_pointer(stats_for_read)
+        stats_ptr = stats_for_read.device_ctypes_pointer
 
         self._single_thread_launch(
             self._memsys_module, stream, "NRT_MemSys_read", [stats_ptr]
@@ -264,7 +255,7 @@ class _Runtime:
         Get a single stat from the memsys
         """
         got = cuda.managed_array(1, np.uint64)
-        got_ptr = self._ctypes_pointer(got)
+        got_ptr = got.device_ctypes_pointer
 
         self._single_thread_launch(
             self._memsys_module, stream, f"NRT_MemSys_read_{stat}", [got_ptr]
@@ -327,7 +318,7 @@ class _Runtime:
                 "Please allocate NRT Memsys first before setting to module."
             )
 
-        memsys_ptr = self._ctypes_pointer(self._memsys)
+        memsys_ptr = self._memsys.device_ctypes_pointer
 
         self._single_thread_launch(
             module, stream, "NRT_MemSys_set", [memsys_ptr]
