@@ -2772,7 +2772,7 @@ class _LinkerBase(metaclass=ABCMeta):
 
         params = (max_registers, lineinfo, cc)
         if linker is _Linker:
-            params = (*params, True, additional_flags)
+            params = (*params, driver_ver >= (12, 0), additional_flags)
 
         return linker(*params)
 
