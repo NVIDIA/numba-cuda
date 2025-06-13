@@ -65,22 +65,6 @@ Python bindings <https://nvidia.github.io/cuda-python/>`_ or its own ctypes-base
 bindings. Functionality is equivalent between the two binding choices. The
 NVIDIA bindings are the default, and the ctypes bindings are now deprecated.
 
-If the NVIDIA bindings are not present in your environment, you can install them
-with::
-
-   $ conda install -c conda-forge cuda-bindings
-
-if you are using Conda, or::
-
-   $ pip install cuda-bindings[cu11]
-
-for CUDA 11 bindings with pip, or::
-
-   $ pip install cuda-bindings[cu12]
-
-for CUDA 12 bindings with pip. Note that the bracket notation
-``numba-cuda[cuXX]`` introduced above will bring in this dependency for you.
-
 If you do not want to use the NVIDIA bindings, the (deprecated) ctypes bindings
 can be enabled by setting the environment variable
 :envvar:`NUMBA_CUDA_USE_NVIDIA_BINDING` to ``"0"``.
