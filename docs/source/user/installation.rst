@@ -32,9 +32,9 @@ Installation with a Python package manager
 
 Conda users can install the CUDA Toolkit into a conda environment.
 
-For CUDA 12, ``cuda-nvcc`` and ``cuda-nvrtc`` are required::
+For CUDA 12::
 
-    $ conda install -c conda-forge numba-cuda cuda-nvcc cuda-nvrtc "cuda-version>=12.0"
+    $ conda install -c conda-forge numba-cuda "cuda-version>=12.0"
 
 Alternatively, you can install all CUDA 12 dependencies from PyPI via ``pip``::
 
