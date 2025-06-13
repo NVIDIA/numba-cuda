@@ -3005,7 +3005,8 @@ class _Linker(_LinkerBase):
         )
         obj = prog.compile("ptx" if not self.lto else "ltoir", logs=logger)
         if logger.log:
-            warnings.warn(f"NVRTC log messages: {'\n'.join(logger.log)}")
+            joined_logs = "\n".join(logger.log)
+            warnings.warn(f"NVRTC log messages: {joined_logs}")
         self._object_codes.append(obj)
         prog.close()
 
