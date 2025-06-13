@@ -18,7 +18,7 @@ authors = [
 ]
 license = { text = "BSD 2-clause" }
 requires-python = ">=3.9"
-dependencies = ["numba>=0.59.1", "cuda-bindings>=12.9.0", "cuda-core==0.2.0"]
+dependencies = ["numba>=0.59.1"]
 
 [project.optional-dependencies]
 cu11 = [
@@ -36,6 +36,7 @@ cu12 = [
     "nvidia-cuda-nvcc-cu12",  # for libNVVM
     "nvidia-cuda-runtime-cu12",
     "nvidia-cuda-nvrtc-cu12",
+    "nvidia-nvjitlink-cu12"
 ]
 test = [
     "psutil",
