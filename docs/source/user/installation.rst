@@ -88,10 +88,20 @@ can be enabled by setting the environment variable
 
 .. _cudatoolkit-lookup:
 
-Setting CUDA Installation Path
-------------------------------
+CUDA Driver and Toolkit search paths
+------------------------------------
 
-Numba searches for a CUDA toolkit installation in the following order:
+Default behavior
+~~~~~~~~~~~~~~~~
+
+When using the NVIDIA bindings, searches for the CUDA driver and toolkit
+libraries use its `built-in path-finding logic <https://github.com/NVIDIA/cuda-python/tree/main/cuda_bindings/cuda/bindings/_path_finder>`_.
+
+Ctypes bindings (deprecated) behavior
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+When using the ctypes bindings, Numba searches for a CUDA toolkit installation
+in the following order:
 
 1. Conda-installed CUDA Toolkit packages
 2. Pip-installed CUDA Toolkit packages
@@ -103,9 +113,9 @@ Numba searches for a CUDA toolkit installation in the following order:
 
 In addition to the CUDA toolkit libraries, which can be installed by conda into
 an environment or installed system-wide by the `CUDA SDK installer
-<https://developer.nvidia.com/cuda-downloads>`_, the CUDA target in Numba
-also requires an up-to-date NVIDIA graphics driver.  Updated graphics drivers
-are also installed by the CUDA SDK installer, so there is no need to do both.
-If the ``libcuda`` library is in a non-standard location, users can set
-environment variable :envvar:`NUMBA_CUDA_DRIVER` to the file path (not the
-directory path) of the shared library file.
+<https://developer.nvidia.com/cuda-downloads>`_, the CUDA target in Numba also
+requires an up-to-date NVIDIA driver.  Updated NVIDIA drivers are also installed
+by the CUDA SDK installer, so there is no need to do both. If the ``libcuda``
+library is in a non-standard location, users can set environment variable
+:envvar:`NUMBA_CUDA_DRIVER` to the file path (not the directory path) of the
+shared library file.
