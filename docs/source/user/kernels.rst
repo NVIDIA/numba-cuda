@@ -48,7 +48,7 @@ Programming model
 =================
 
 Most CUDA programming facilities exposed by Numba map directly to the CUDA
-C language offered by NVidia.  Therefore, it is recommended you read the
+C language offered by NVIDIA. Therefore, it is recommended you read the
 official `CUDA C programming guide <http://docs.nvidia.com/cuda/cuda-c-programming-guide>`_.
 
 
