@@ -10,7 +10,8 @@ package=$(realpath wheel/numba_cuda*.whl)
 echo "Package path: ${package}"
 python -m pip install \
     "${package}[test]" \
-    "cuda-python==${CUDA_VER_MAJOR_MINOR%.*}.*"
+    "cuda-python==${CUDA_VER_MAJOR_MINOR%.*}.*" \
+    "cuda-core==0.3.0"
 
 GET_TEST_BINARY_DIR="
 import numba_cuda
