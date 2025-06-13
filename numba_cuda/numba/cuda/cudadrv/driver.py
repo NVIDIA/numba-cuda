@@ -490,11 +490,11 @@ class Driver(object):
         with self.get_active_context() as ac:
             if ac.devnum is not None:
                 if USE_NV_BINDING:
-                    return driver.cuCtxPopCurrent()
+                    popped = drvapi.cu_context(int(driver.cuCtxPopCurrent()))
                 else:
                     popped = drvapi.cu_context()
                     driver.cuCtxPopCurrent(byref(popped))
-                    return popped
+                return popped
 
     def get_active_context(self):
         """Returns an instance of ``_ActiveContext``."""
@@ -538,6 +538,8 @@ class _ActiveContext(object):
                 hctx = driver.cuCtxGetCurrent()
                 if int(hctx) == 0:
                     hctx = None
+                else:
+                    hctx = drvapi.cu_context(int(hctx))
             else:
                 hctx = drvapi.cu_context(0)
                 driver.cuCtxGetCurrent(byref(hctx))
@@ -716,6 +718,7 @@ class Device(object):
         # create primary context
         if USE_NV_BINDING:
             hctx = driver.cuDevicePrimaryCtxRetain(self.id)
+            hctx = drvapi.cu_context(int(hctx))
         else:
             hctx = drvapi.cu_context()
             driver.cuDevicePrimaryCtxRetain(byref(hctx), self.id)
@@ -1430,7 +1433,10 @@ class Context(object):
         """
         Pushes this context on the current CPU Thread.
         """
-        driver.cuCtxPushCurrent(self.handle)
+        if USE_NV_BINDING:
+            driver.cuCtxPushCurrent(self.handle.value)
+        else:
+            driver.cuCtxPushCurrent(self.handle)
         self.prepare_for_use()
 
     def pop(self):
@@ -1439,10 +1445,7 @@ class Context(object):
         must be at the top of the context stack, otherwise an error will occur.
         """
         popped = driver.pop_active_context()
-        if USE_NV_BINDING:
-            assert int(popped) == int(self.handle)
-        else:
-            assert popped.value == self.handle.value
+        assert popped.value == self.handle.value
 
     def memalloc(self, bytesize):
         return self.memory_manager.memalloc(bytesize)
