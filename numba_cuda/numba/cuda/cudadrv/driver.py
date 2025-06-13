@@ -57,7 +57,7 @@ from .drvapi import API_PROTOTYPES
 from .drvapi import cu_occupancy_b2d_size, cu_stream_callback_pyobj, cu_uuid
 from .mappings import FILE_EXTENSION_MAP
 from .linkable_code import LinkableCode, LTOIR, Fatbin, Object
-from numba.cuda.utils import _readenv, cached_file_read
+from numba.cuda.utils import cached_file_read
 from numba.cuda.cudadrv import enums, drvapi, nvrtc
 from numba.cuda.cuda_paths import get_cuda_paths
 
@@ -65,6 +65,7 @@ try:
     from pynvjitlink.api import NvJitLinker, NvJitLinkError
 except ImportError:
     NvJitLinker, NvJitLinkError = None, None
+
 
 USE_NV_BINDING = config.CUDA_USE_NVIDIA_BINDING
 
@@ -75,6 +76,7 @@ if USE_NV_BINDING:
     # is there at the C/C++ level), so we define it here so we don't need to
     # use a magic number 0 in places where we want the default stream.
     CU_STREAM_DEFAULT = 0
+
 
 MIN_REQUIRED_CC = (3, 5)
 SUPPORTS_IPC = sys.platform.startswith("linux")
@@ -91,23 +93,15 @@ _MVC_ERROR_MESSAGE = (
     "to be available"
 )
 
-# Enable pynvjitlink if the environment variables NUMBA_CUDA_ENABLE_PYNVJITLINK
-# or CUDA_ENABLE_PYNVJITLINK are set, or if the pynvjitlink module is found. If
-# explicitly disabled, do not use pynvjitlink, even if present in the env.
-_pynvjitlink_enabled_in_env = _readenv(
-    "NUMBA_CUDA_ENABLE_PYNVJITLINK", bool, None
-)
-_pynvjitlink_enabled_in_cfg = getattr(config, "CUDA_ENABLE_PYNVJITLINK", None)
+USE_NV_BINDING = config.CUDA_USE_NVIDIA_BINDING
 
-if _pynvjitlink_enabled_in_env is not None:
-    ENABLE_PYNVJITLINK = _pynvjitlink_enabled_in_env
-elif _pynvjitlink_enabled_in_cfg is not None:
-    ENABLE_PYNVJITLINK = _pynvjitlink_enabled_in_cfg
-else:
-    ENABLE_PYNVJITLINK = importlib.util.find_spec("pynvjitlink") is not None
+if USE_NV_BINDING:
+    from cuda.bindings import driver as binding
 
-if not hasattr(config, "CUDA_ENABLE_PYNVJITLINK"):
-    config.CUDA_ENABLE_PYNVJITLINK = ENABLE_PYNVJITLINK
+    # There is no definition of the default stream in the Nvidia bindings (nor
+    # is there at the C/C++ level), so we define it here so we don't need to
+    # use a magic number 0 in places where we want the default stream.
+    CU_STREAM_DEFAULT = 0
 
 
 def make_logger():
