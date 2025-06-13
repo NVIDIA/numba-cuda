@@ -1,7 +1,13 @@
+.. _writing-cuda-kernels:
 
 ====================
 Writing CUDA Kernels
 ====================
+
+Numba-CUDA supports programming NVIDIA CUDA GPUs by directly compiling a
+restricted subset of Python code into CUDA kernels and device functions
+following the CUDA execution model.
+
 
 Introduction
 ============
@@ -22,6 +28,28 @@ off-chip memory that's connected to the GPU itself), on-chip
 For all but the simplest algorithms, it is important that you carefully
 consider how to use and access memory in order to minimize bandwidth
 requirements and contention.
+
+
+Terminology
+===========
+
+Several important terms in the topic of CUDA programming are listed here:
+
+- *host*: the CPU
+- *device*: the GPU
+- *host memory*: the system main memory
+- *device memory*: onboard memory on a GPU card
+- *kernels*: a GPU function launched by the host and executed on the device
+- *device function*: a GPU function executed on the device which can only be
+  called from the device (i.e. from a kernel or another device function)
+
+
+Programming model
+=================
+
+Most CUDA programming facilities exposed by Numba map directly to the CUDA
+C language offered by NVIDIA. Therefore, it is recommended you read the
+official `CUDA C programming guide <http://docs.nvidia.com/cuda/cuda-c-programming-guide>`_.
 
 
 Kernel declaration
