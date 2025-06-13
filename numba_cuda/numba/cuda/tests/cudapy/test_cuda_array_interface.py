@@ -12,10 +12,9 @@ from unittest.mock import call, patch
 @skip_on_cudasim("CUDA Array Interface is not supported in the simulator")
 class TestCudaArrayInterface(ContextResettingTestCase):
     def assertPointersEqual(self, a, b):
-        if driver.USE_NV_BINDING:
-            self.assertEqual(
-                int(a.device_ctypes_pointer), int(b.device_ctypes_pointer)
-            )
+        self.assertEqual(
+            a.device_ctypes_pointer.value, b.device_ctypes_pointer.value
+        )
 
     def test_as_cuda_array(self):
         h_arr = np.arange(10)

@@ -588,8 +588,6 @@ class _Kernel(serialize.ReduceMixin):
         elif isinstance(ty, types.Record):
             devrec = wrap_arg(val).to_device(retr, stream)
             ptr = devrec.device_ctypes_pointer
-            if driver.USE_NV_BINDING:
-                ptr = ctypes.c_void_p(int(ptr))
             kernelargs.append(ptr)
 
         elif isinstance(ty, types.BaseTuple):
