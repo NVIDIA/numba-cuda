@@ -42,7 +42,7 @@ Alternatively, you can install all CUDA 12 dependencies from PyPI via ``pip``::
 
 For CUDA 11, ``cudatoolkit`` is required::
 
-    $ conda install -c conda-forge numba-cuda cudatoolkit "cuda-version>=11.2,<12.0"
+    $ conda install -c conda-forge numba-cuda "cuda-version>=11.2,<12.0"
 
 or::
 
