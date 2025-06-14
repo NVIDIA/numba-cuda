@@ -2939,20 +2939,20 @@ class _Linker(_LinkerBase):
         arch = f"sm_{cc[0] * 10 + cc[1]}"
         if lto is False:
             lto = None
-        self.options = LinkerOptions(
-            max_register_count=max_registers,
-            lineinfo=lineinfo,
-            arch=arch,
-            link_time_optimization=lto,
-        )
 
-        self.max_registers = max_registers
+        self.max_registers = max_registers if max_registers else None
         self.lineinfo = lineinfo
         self.cc = cc
         self.arch = arch
         self.lto = lto
         self.additional_flags = additional_flags
 
+        self.options = LinkerOptions(
+            max_register_count=self.max_registers,
+            lineinfo=lineinfo,
+            arch=arch,
+            link_time_optimization=lto,
+        )
         self._complete = False
         self._object_codes = []
         self.linker = None  # need at least one program
