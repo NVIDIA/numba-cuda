@@ -71,6 +71,7 @@ USE_NV_BINDING = config.CUDA_USE_NVIDIA_BINDING
 
 if USE_NV_BINDING:
     from cuda.bindings import driver as binding
+    from cuda.bindings.nvrtc import nvrtcVersion, nvrtcResult
 
     # There is no definition of the default stream in the Nvidia bindings (nor
     # is there at the C/C++ level), so we define it here so we don't need to
@@ -2969,6 +2970,13 @@ class _Linker(_LinkerBase):
             self._include_paths += config.CUDA_NVRTC_EXTRA_SEARCH_PATHS.split(
                 ":"
             )
+        nvrtc_result, major, minor = nvrtcVersion()
+        if nvrtc_result != nvrtcResult.NVRTC_SUCCESS:
+            raise RuntimeError("NVRTC Error: {nvrtc_result}")
+        if major < 12:
+            self.std = "c++17"
+        else:
+            self.std = None
 
     @property
     def info_log(self):
@@ -3012,6 +3020,7 @@ class _Linker(_LinkerBase):
                 include_path=self._include_paths,
                 link_time_optimization=self.lto,
                 name=name,
+                std=self.std,
             ),
         )
         obj = prog.compile("ptx" if not self.lto else "ltoir", logs=logger)
