@@ -2783,7 +2783,7 @@ class _LinkerBase(metaclass=ABCMeta):
 
         params = (max_registers, lineinfo, cc)
         if linker is _Linker:
-            params = (*params, driver_ver >= (12, 0), additional_flags)
+            params = (*params, _have_nvjitlink(), additional_flags)
 
         return linker(*params)
 
