@@ -128,6 +128,17 @@ def make_logger():
     return logger
 
 
+@functools.cache
+def _have_nvjitlink():
+    with warnings.catch_warnings(record=True) as w:
+        warnings.simplefilter("always")
+        LinkerOptions()
+        for warning in w:
+            if "nvJitLink is not installed" in str(warning.message):
+                return False
+    return True
+
+
 class DeadMemoryError(RuntimeError):
     pass
 
