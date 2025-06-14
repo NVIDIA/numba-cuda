@@ -1007,7 +1007,7 @@ class CUDADispatcher(Dispatcher, serialize.ReduceMixin):
         A (template, pysig, args, kws) tuple is returned.
         """
         # Fold keyword arguments and resolve default values
-        pysig, args = self._compiler.fold_argument_types(args, kws)
+        pysig, args = self.fold_argument_types(args, kws)
         kws = {}
 
         # Ensure an exactly-matching overload is available if we can
