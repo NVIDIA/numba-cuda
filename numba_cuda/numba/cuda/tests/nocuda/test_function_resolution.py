@@ -8,6 +8,7 @@ from numba.cuda.cudadrv import nvvm
 @skip_on_cudasim("Skip on simulator due to use of cuda_target")
 class TestFunctionResolution(unittest.TestCase):
     def test_fp16_binary_operators(self):
+        import numba.cuda.fp16
         from numba.cuda.descriptor import cuda_target
 
         ops = (
@@ -29,6 +30,7 @@ class TestFunctionResolution(unittest.TestCase):
             )
 
     def test_fp16_unary_operators(self):
+        import numba.cuda.fp16
         from numba.cuda.descriptor import cuda_target
 
         ops = (operator.neg, abs)
