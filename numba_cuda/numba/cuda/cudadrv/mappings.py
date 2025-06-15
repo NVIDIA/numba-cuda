@@ -2,17 +2,16 @@ from numba import config
 from . import enums
 
 if config.CUDA_USE_NVIDIA_BINDING:
-    from cuda.bindings import driver
+    from cuda.bindings.driver import CUjitInputType
 
-    jitty = driver.CUjitInputType
     FILE_EXTENSION_MAP = {
-        "o": jitty.CU_JIT_INPUT_OBJECT,
-        "ptx": jitty.CU_JIT_INPUT_PTX,
-        "a": jitty.CU_JIT_INPUT_LIBRARY,
-        "lib": jitty.CU_JIT_INPUT_LIBRARY,
-        "cubin": jitty.CU_JIT_INPUT_CUBIN,
-        "fatbin": jitty.CU_JIT_INPUT_FATBINARY,
-        "ltoir": jitty.CU_JIT_INPUT_NVVM,
+        "o": CUjitInputType.CU_JIT_INPUT_OBJECT,
+        "ptx": CUjitInputType.CU_JIT_INPUT_PTX,
+        "a": CUjitInputType.CU_JIT_INPUT_LIBRARY,
+        "lib": CUjitInputType.CU_JIT_INPUT_LIBRARY,
+        "cubin": CUjitInputType.CU_JIT_INPUT_CUBIN,
+        "fatbin": CUjitInputType.CU_JIT_INPUT_FATBINARY,
+        "ltoir": CUjitInputType.CU_JIT_INPUT_NVVM,
     }
 else:
     FILE_EXTENSION_MAP = {
