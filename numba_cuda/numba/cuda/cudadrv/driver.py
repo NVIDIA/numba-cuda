@@ -2939,7 +2939,7 @@ class _Linker(_LinkerBase):
         arch = f"sm_{cc[0] * 10 + cc[1]}"
         if lto is False:
             lto = None
-
+        self._include_paths = []
         self.max_registers = max_registers if max_registers else None
         self.lineinfo = lineinfo
         self.cc = cc
@@ -2965,7 +2965,6 @@ class _Linker(_LinkerBase):
         numba_cuda_path = os.path.dirname(cudadrv_path)
 
         nrt_path = os.path.join(numba_cuda_path, "memory_management")
-        self._include_paths = cuda_include + [numba_cuda_path, nrt_path]
         if config.CUDA_NVRTC_EXTRA_SEARCH_PATHS:
             self._include_paths += config.CUDA_NVRTC_EXTRA_SEARCH_PATHS.split(
                 ":"
@@ -2977,6 +2976,14 @@ class _Linker(_LinkerBase):
             self.std = "c++17"
         else:
             self.std = None
+
+        if major == 11:
+            numba_include = f"{os.path.join(numba_cuda_path, 'include', '11')}"
+        else:
+            numba_include = f"{os.path.join(numba_cuda_path, 'include', '12')}"
+
+        nrt_path = os.path.join(numba_cuda_path, "memory_management")
+        self._include_paths += [numba_include, cuda_include, nrt_path]
 
     @property
     def info_log(self):
