@@ -32,7 +32,10 @@ else:
     USE_NV_BINDING = True
     config.CUDA_USE_NVIDIA_BINDING = USE_NV_BINDING
 if config.CUDA_USE_NVIDIA_BINDING:
-    if not importlib.util.find_spec("cuda.bindings"):
+    if not (
+        importlib.util.find_spec("cuda")
+        and importlib.util.find_spec("cuda.bindings")
+    ):
         raise ImportError(
             "CUDA bindings not found. Please pip install the "
             "cuda-bindings package. Alternatively, install "
