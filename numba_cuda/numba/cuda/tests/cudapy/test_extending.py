@@ -1,5 +1,5 @@
 from numba.cuda.testing import skip_on_cudasim, unittest, CUDATestCase
-from numba.cuda.driver import _have_nvjitlink
+from numba.cuda.cudadrv.driver import _have_nvjitlink
 from llvmlite import ir
 
 import numpy as np
