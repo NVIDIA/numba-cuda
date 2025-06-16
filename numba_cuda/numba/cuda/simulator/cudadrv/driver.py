@@ -67,3 +67,7 @@ PyNvJitLinker = None
 
 if config.ENABLE_CUDASIM:
     config.CUDA_ENABLE_PYNVJITLINK = False
+
+
+def _have_nvjitlink():
+    return False
