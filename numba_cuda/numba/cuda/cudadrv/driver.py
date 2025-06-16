@@ -42,11 +42,6 @@ import importlib
 import numpy as np
 from collections import namedtuple, deque
 
-from cuda.core.experimental import (
-    Linker,
-    LinkerOptions,
-    ObjectCode,
-)
 
 from numba import mviewbuf
 from numba.core import utils, serialize, config
@@ -68,6 +63,11 @@ USE_NV_BINDING = config.CUDA_USE_NVIDIA_BINDING
 
 if USE_NV_BINDING:
     from cuda.bindings import driver as binding
+    from cuda.core.experimental import (
+        Linker,
+        LinkerOptions,
+        ObjectCode,
+    )
 
     # There is no definition of the default stream in the Nvidia bindings (nor
     # is there at the C/C++ level), so we define it here so we don't need to
