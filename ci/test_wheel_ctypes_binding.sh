@@ -11,7 +11,6 @@ echo "Package path: $package"
 python -m pip install \
     "${package}[test]" \
     cuda-python \
-    "pynvjitlink-cu${CUDA_VER_MAJOR}"
 
 rapids-logger "Build tests"
 PY_SCRIPT="
@@ -38,6 +37,6 @@ rapids-logger "Show Numba system info"
 python -m numba --sysinfo
 
 rapids-logger "Run Tests"
-NUMBA_CUDA_USE_NVIDIA_BINDING=1 NUMBA_CUDA_TEST_BIN_DIR=$NUMBA_CUDA_TEST_BIN_DIR python -m numba.runtests numba.cuda.tests -v
+NUMBA_CUDA_USE_NVIDIA_BINDING=0 NUMBA_CUDA_TEST_BIN_DIR=$NUMBA_CUDA_TEST_BIN_DIR python -m numba.runtests numba.cuda.tests -v
 
 popd

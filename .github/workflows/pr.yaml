@@ -19,11 +19,11 @@ jobs:
       - compute-matrix
       - build-conda
       - test-conda
-      - test-conda-nvidia-binding
+      - test-conda-ctypes-binding
       - test-simulator
       - build-wheels
       - test-wheels
-      - test-wheels-nvidia-binding
+      - test-wheels-ctypes-binding
       - test-wheels-deps-wheels
       - build-docs
     secrets: inherit
@@ -76,14 +76,14 @@ jobs:
       script: "ci/test_conda.sh"
       run_codecov: false
       matrix: ${{ needs.compute-matrix.outputs.TEST_MATRIX }}
-  test-conda-nvidia-binding:
+  test-conda-ctypes-binding:
     needs:
       - build-conda
       - compute-matrix
     uses: ./.github/workflows/conda-python-tests.yaml
     with:
       build_type: pull-request
-      script: "ci/test_conda_nvidia_binding.sh"
+      script: "ci/test_conda_ctypes_binding.sh"
       run_codecov: false
       # This selects "ARCH=amd64 and CUDA >=12, with the latest supported Python for each CUDA major version".
       matrix: ${{ needs.compute-matrix.outputs.TEST_MATRIX }}
@@ -114,14 +114,14 @@ jobs:
       build_type: pull-request
       script: "ci/test_wheel.sh false"
       matrix: ${{ needs.compute-matrix.outputs.TEST_MATRIX }}
-  test-wheels-nvidia-binding:
+  test-wheels-ctypes-binding:
     needs:
       - build-wheels
       - compute-matrix
     uses: ./.github/workflows/wheels-test.yaml
     with:
       build_type: pull-request
-      script: "ci/test_wheel_nvidia_binding.sh"
+      script: "ci/test_wheel_ctypes_binding.sh"
       # This selects "ARCH=amd64 and CUDA >=12, with the latest supported Python for each CUDA major version".
       matrix: ${{ needs.compute-matrix.outputs.TEST_MATRIX }}
       matrix_filter: map(select(.ARCH == "amd64" and (.CUDA_VER | split(".") | .[0] | tonumber >= 12))) | group_by(.CUDA_VER|split(".")|map(tonumber)|.[0]) | map(max_by([(.PY_VER|split(".")|map(tonumber)), (.CUDA_VER|split(".")|map(tonumber))]))
