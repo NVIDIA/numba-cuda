@@ -3149,7 +3149,7 @@ class MVCLinker(Linker):
             raise LinkerError from e
 
 
-class CtypesLinker(Linker):
+class CtypesLinker(_LinkerBase):
     """
     Links for current device if no CC given
     """
