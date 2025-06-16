@@ -6,7 +6,7 @@ import numpy as np
 from numba import cuda, config
 from numba.core.runtime.nrt import _nrt_mstats
 from numba.cuda.cudadrv.driver import (
-    Linker,
+    _Linker,
     driver,
     launch_kernel,
     USE_NV_BINDING,
@@ -80,7 +80,7 @@ class _Runtime:
         cc = get_current_device().compute_capability
 
         # Create a new linker instance and add the cu file
-        linker = Linker.new(cc=cc)
+        linker = _Linker.new(cc=cc)
         linker.add_cu_file(memsys_mod)
 
         # Complete the linker and create a module from it
