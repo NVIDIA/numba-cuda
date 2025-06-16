@@ -2,7 +2,7 @@ from numba.cuda.testing import unittest
 from numba.cuda.testing import skip_on_cudasim
 from numba.cuda.testing import CUDATestCase
 from numba.cuda import get_current_device
-from numba.cuda.cudadrv.driver import _Linker
+from numba.cuda.cudadrv.driver import _Linker, _have_nvjitlink
 
 from numba import cuda
 from numba import config
@@ -42,8 +42,10 @@ if TEST_BIN_DIR:
 
 
 @unittest.skipIf(
-    not config.CUDA_USE_NVIDIA_BINDING or not TEST_BIN_DIR,
-    "NVIDIA cuda bindings not enabled",
+    not config.CUDA_USE_NVIDIA_BINDING
+    or not TEST_BIN_DIR
+    or not _have_nvjitlink(),
+    "NVIDIA cuda bindings not enabled or nvJitLink not installed or new enough (>12.3)",
 )
 @skip_on_cudasim("Linking unsupported in the simulator")
 class TestLinker(CUDATestCase):
