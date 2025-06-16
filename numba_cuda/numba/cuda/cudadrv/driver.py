@@ -3054,7 +3054,7 @@ class _Linker(_LinkerBase):
         return result
 
 
-class MVCLinker(Linker):
+class MVCLinker(_LinkerBase):
     """
     Linker supporting Minor Version Compatibility, backed by the cubinlinker
     package.
