@@ -46,8 +46,6 @@ from cuda.core.experimental import (
     Linker,
     LinkerOptions,
     ObjectCode,
-    Program,
-    ProgramOptions,
 )
 
 from numba import mviewbuf
@@ -59,7 +57,6 @@ from .mappings import FILE_EXTENSION_MAP
 from .linkable_code import LinkableCode, LTOIR, Fatbin, Object
 from numba.cuda.utils import cached_file_read
 from numba.cuda.cudadrv import enums, drvapi, nvrtc
-from numba.cuda.cuda_paths import get_cuda_paths
 
 try:
     from pynvjitlink.api import NvJitLinker, NvJitLinkError
@@ -71,7 +68,6 @@ USE_NV_BINDING = config.CUDA_USE_NVIDIA_BINDING
 
 if USE_NV_BINDING:
     from cuda.bindings import driver as binding
-    from cuda.bindings.nvrtc import nvrtcVersion, nvrtcResult
 
     # There is no definition of the default stream in the Nvidia bindings (nor
     # is there at the C/C++ level), so we define it here so we don't need to
@@ -2939,7 +2935,6 @@ class _Linker(_LinkerBase):
         arch = f"sm_{cc[0] * 10 + cc[1]}"
         if lto is False:
             lto = None
-        self._include_paths = []
         self.max_registers = max_registers if max_registers else None
         self.lineinfo = lineinfo
         self.cc = cc
@@ -2956,34 +2951,6 @@ class _Linker(_LinkerBase):
         self._complete = False
         self._object_codes = []
         self.linker = None  # need at least one program
-
-        cuda_include = [
-            get_cuda_paths()["include_dir"].info,
-        ]
-
-        cudadrv_path = os.path.dirname(os.path.abspath(__file__))
-        numba_cuda_path = os.path.dirname(cudadrv_path)
-
-        nrt_path = os.path.join(numba_cuda_path, "memory_management")
-        if config.CUDA_NVRTC_EXTRA_SEARCH_PATHS:
-            self._include_paths += config.CUDA_NVRTC_EXTRA_SEARCH_PATHS.split(
-                ":"
-            )
-        nvrtc_result, major, minor = nvrtcVersion()
-        if nvrtc_result != nvrtcResult.NVRTC_SUCCESS:
-            raise RuntimeError("NVRTC Error: {nvrtc_result}")
-        if major < 12:
-            self.std = "c++17"
-        else:
-            self.std = None
-
-        if major == 11:
-            numba_include = f"{os.path.join(numba_cuda_path, 'include', '11')}"
-        else:
-            numba_include = f"{os.path.join(numba_cuda_path, 'include', '12')}"
-
-        nrt_path = os.path.join(numba_cuda_path, "memory_management")
-        self._include_paths += [numba_include, cuda_include, nrt_path]
 
     @property
     def info_log(self):
@@ -3006,36 +2973,11 @@ class _Linker(_LinkerBase):
         self._object_codes.append(obj)
 
     def add_cu(self, cu, name="<cudapy-cu>"):
-        class Logger:
-            def __init__(self):
-                self.log = []
-
-            def write(self, msg):
-                self.log.append(msg)
-
-        logger = Logger()
-        if isinstance(cu, bytes):
-            cu = cu.decode("utf8")
-        prog = Program(
-            cu,
-            "c++",
-            ProgramOptions(
-                arch=self.arch,
-                lineinfo=self.lineinfo,
-                max_register_count=self.max_registers,
-                relocatable_device_code=True,
-                include_path=self._include_paths,
-                link_time_optimization=self.lto,
-                name=name,
-                std=self.std,
-            ),
-        )
-        obj = prog.compile("ptx" if not self.lto else "ltoir", logs=logger)
-        if logger.log:
-            joined_logs = "\n".join(logger.log)
-            warnings.warn(f"NVRTC log messages: {joined_logs}")
+        with driver.get_active_context() as ac:
+            dev = driver.get_device(ac.devnum)
+            cc = dev.compute_capability
+        obj, log = nvrtc.compile(cu, name, cc, ltoir=self.lto)
         self._object_codes.append(obj)
-        prog.close()
 
     def add_cubin(self, cubin, name="<cudapy-cubin>"):
         obj = ObjectCode.from_cubin(cubin, name=name)
