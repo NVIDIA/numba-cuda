@@ -2760,18 +2760,13 @@ class _LinkerBase(metaclass=ABCMeta):
         additional_flags=None,
     ):
         driver_ver = driver.get_version()
-        if config.CUDA_ENABLE_MINOR_VERSION_COMPATIBILITY and driver_ver >= (
-            12,
-            0,
-        ):
-            raise ValueError("Use CUDA_ENABLE_PYNVJITLINK for CUDA >= 12.0 MVC")
-        if config.CUDA_ENABLE_PYNVJITLINK and driver_ver < (12, 0):
-            raise ValueError("Enabling pynvjitlink requires CUDA 12.")
-        if config.CUDA_ENABLE_PYNVJITLINK:
-            linker = _Linker
-
-        elif config.CUDA_ENABLE_MINOR_VERSION_COMPATIBILITY:
-            linker = MVCLinker
+        if driver_ver <= (12, 0):
+            if config.CUDA_ENABLE_MINOR_VERSION_COMPATIBILITY:
+                linker = MVCLinker
+            elif USE_NV_BINDING:
+                linker = _Linker
+            else:
+                linker = CtypesLinker
         else:
             if USE_NV_BINDING:
                 linker = _Linker
