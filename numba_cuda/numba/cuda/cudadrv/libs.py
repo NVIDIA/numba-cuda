@@ -51,7 +51,9 @@ def get_cudalib(lib, static=False):
     loader's search mechanism.
     """
     if lib in {"nvrtc", "nvvm"}:
-        return get_cuda_paths()[lib].info or _dllnamepattern % lib
+        from cuda.bindings import path_finder
+
+        return path_finder._load_nvidia_dynamic_library(lib).abs_path
     else:
         dir_type = "static_cudalib_dir" if static else "cudalib_dir"
         libdir = get_cuda_paths()[dir_type].info
