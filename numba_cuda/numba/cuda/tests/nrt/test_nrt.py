@@ -169,7 +169,14 @@ class TestNrtLinking(CUDATestCase):
         cc = get_current_device().compute_capability
         ptx, _ = compile(src, "external_nrt.cu", cc)
 
-        @cuda.jit(link=[PTXSource(ptx.code, nrt=True)])
+        @cuda.jit(
+            link=[
+                PTXSource(
+                    ptx.code if config.CUDA_USE_NVIDIA_BINDING else ptx,
+                    nrt=True,
+                )
+            ]
+        )
         def kernel():
             allocate_deallocate_handle()
 

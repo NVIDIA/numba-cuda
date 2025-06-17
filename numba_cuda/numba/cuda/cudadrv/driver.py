@@ -127,6 +127,8 @@ def make_logger():
 
 @functools.cache
 def _have_nvjitlink():
+    if not USE_NV_BINDING:
+        return False
     with warnings.catch_warnings(record=True) as w:
         warnings.simplefilter("always")
         LinkerOptions()

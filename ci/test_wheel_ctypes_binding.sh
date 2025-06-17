@@ -11,6 +11,7 @@ echo "Package path: $package"
 python -m pip install \
     "${package}[test]" \
     cuda-python \
+    "cuda-core==0.3.0"
 
 rapids-logger "Build tests"
 PY_SCRIPT="

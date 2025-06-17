@@ -197,7 +197,12 @@ class TestLinker(CUDATestCase):
 
         msg = e.exception.args[0]
         # Check the error message refers to the NVRTC compile
-        self.assertIn("NVRTC_ERROR_COMPILATION", msg)
+        nvrtc_err_str = (
+            "NVRTC_ERROR_COMPILATION"
+            if config.CUDA_USE_NVIDIA_BINDING
+            else "NVRTC compilation failed"
+        )
+        self.assertIn(nvrtc_err_str, msg)
         # Check the expected error in the CUDA source is reported
         self.assertIn('identifier "SYNTAX" is undefined', msg)
         # Check the filename is reported correctly
