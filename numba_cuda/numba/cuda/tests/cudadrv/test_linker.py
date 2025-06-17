@@ -200,7 +200,7 @@ class TestLinker(CUDATestCase):
         nvrtc_err_str = (
             "NVRTC_ERROR_COMPILATION"
             if config.CUDA_USE_NVIDIA_BINDING
-            else "NVRTC compilation failed"
+            else "NVRTC Compilation failure"
         )
         self.assertIn(nvrtc_err_str, msg)
         # Check the expected error in the CUDA source is reported

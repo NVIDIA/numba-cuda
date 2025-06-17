@@ -172,7 +172,9 @@ class TestNrtLinking(CUDATestCase):
         @cuda.jit(
             link=[
                 PTXSource(
-                    ptx.code if config.CUDA_USE_NVIDIA_BINDING else ptx,
+                    ptx.code
+                    if config.CUDA_USE_NVIDIA_BINDING
+                    else ptx.encode(),
                     nrt=True,
                 )
             ]
