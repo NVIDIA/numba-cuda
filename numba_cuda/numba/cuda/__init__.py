@@ -7,7 +7,7 @@ from .utils import _readenv
 # 1. Config setting "CUDA_ENABLE_PYNVJITLINK" (highest priority)
 # 2. Environment variable "NUMBA_CUDA_ENABLE_PYNVJITLINK"
 # 3. Auto-detection of pynvjitlink module (lowest priority)
-if not hasattr(config, "CUDA_ENABLE_PYNVJITLINK"):
+if getattr(config, "CUDA_ENABLE_PYNVJITLINK", None) is None:
     if (
         _pynvjitlink_enabled_in_env := _readenv(
             "NUMBA_CUDA_ENABLE_PYNVJITLINK", bool, None
