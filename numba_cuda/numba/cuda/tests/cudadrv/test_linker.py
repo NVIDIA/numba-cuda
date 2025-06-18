@@ -109,7 +109,7 @@ class TestLinker(CUDATestCase):
     @require_context
     def test_linker_basic(self):
         """Simply go through the constructor and destructor"""
-        linker = _Linker.new(cc=(5, 3))
+        linker = _Linker.new(cc=(7, 5))
         del linker
 
     def _test_linking(self, eager):
