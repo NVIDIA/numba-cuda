@@ -46,8 +46,8 @@ if ENABLE_PYNVJITLINK:
     if USE_NV_BINDING:
         warnings.warn(
             "Explicitly enabling PyNvJitLink no longer necessary. "
-            "To link through the driver, set the ctypes bindings  "
-            "through NUMBA_CUDA_USE_NVIDIA_BINDING=0. "
+            "NVIDIA Binding enabled. cuda.core will be used "
+            "to link, not pynvjitlink."
         )
     else:
         raise RuntimeError("nvJitLink requires the NVIDIA CUDA bindings. ")
