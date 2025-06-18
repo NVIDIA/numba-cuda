@@ -1,4 +1,5 @@
 from numba.cuda.testing import skip_on_cudasim, unittest, CUDATestCase
+from numba.cuda.cudadrv.driver import _have_nvjitlink
 from llvmlite import ir
 
 import numpy as np
@@ -210,7 +211,7 @@ class TestExtendingLinkage(CUDATestCase):
             (test_device_functions_ltoir, cuda.LTOIR),
         )
 
-        lto = config.CUDA_ENABLE_PYNVJITLINK
+        lto = _have_nvjitlink()
 
         for path, ctor in files:
             if ctor == cuda.LTOIR and not lto:

@@ -2,6 +2,8 @@ import importlib
 from numba import runtests
 from numba.core import config
 from .utils import _readenv
+import warnings
+
 
 # Enable pynvjitlink based on the following precedence:
 # 1. Config setting "CUDA_ENABLE_PYNVJITLINK" (highest priority)
@@ -43,6 +45,16 @@ if config.CUDA_USE_NVIDIA_BINDING:
             "NUMBA_CUDA_USE_NVIDIA_BINDING=0 to enable ctypes "
             "bindings."
         )
+
+if config.CUDA_ENABLE_PYNVJITLINK:
+    if USE_NV_BINDING:
+        warnings.warn(
+            "Explicitly enabling PyNvJitLink no longer necessary. "
+            "NVIDIA Binding enabled. cuda.core will be used "
+            "to link, not pynvjitlink."
+        )
+    else:
+        raise RuntimeError("nvJitLink requires the NVIDIA CUDA bindings. ")
 
 if config.ENABLE_CUDASIM:
     from .simulator_init import *

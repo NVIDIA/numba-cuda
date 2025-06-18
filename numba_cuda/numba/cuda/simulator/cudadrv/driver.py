@@ -34,10 +34,10 @@ class FakeDriver(object):
 driver = FakeDriver()
 
 
-class Linker:
+class _Linker:
     @classmethod
     def new(cls, max_registers=0, lineinfo=False, cc=None):
-        return Linker()
+        return _Linker()
 
     @property
     def lto(self):
@@ -67,3 +67,7 @@ PyNvJitLinker = None
 
 if config.ENABLE_CUDASIM:
     config.CUDA_ENABLE_PYNVJITLINK = False
+
+
+def _have_nvjitlink():
+    return False
