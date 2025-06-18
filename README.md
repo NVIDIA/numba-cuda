@@ -12,17 +12,10 @@ tracker](https://github.com/NVIDIA/numba-cuda/issues).
 To raise questions or initiate discussions, please use the [Numba Discourse
 forum](https://numba.discourse.group).
 
-## Installation with pip
+## Installation with pip or conda
 
-```shell
-pip install numba-cuda
-```
+Please refer to the [Installation documentation](https://nvidia.github.io/numba-cuda/user/installation.html#installation-with-a-python-package-manager).
 
-## Installation with Conda
-
-```shell
-conda install -c conda-forge numba-cuda
-```
 
 ## Installation from source
 
@@ -31,6 +24,8 @@ Install as an editable install:
 ```
 pip install -e .
 ```
+
+If you want to manage all run-time dependencies yourself, also pass the `--no-deps` flag.
 
 ## Running tests
 

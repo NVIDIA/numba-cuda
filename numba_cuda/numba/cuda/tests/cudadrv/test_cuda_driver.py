@@ -1,4 +1,4 @@
-from ctypes import byref, c_int, c_void_p, sizeof
+from ctypes import byref, c_int, sizeof
 
 from numba.cuda.cudadrv.driver import (
     host_to_device,
@@ -94,7 +94,6 @@ class TestCudaDriver(CUDATestCase):
         stream = 0
 
         if _driver.USE_NV_BINDING:
-            ptr = c_void_p(int(ptr))
             stream = _driver.binding.CUstream(stream)
 
         launch_kernel(
@@ -129,8 +128,6 @@ class TestCudaDriver(CUDATestCase):
             host_to_device(memory, array, sizeof(array), stream=stream)
 
             ptr = memory.device_ctypes_pointer
-            if _driver.USE_NV_BINDING:
-                ptr = c_void_p(int(ptr))
 
             launch_kernel(
                 function.handle,  # Kernel

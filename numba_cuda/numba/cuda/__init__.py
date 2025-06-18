@@ -4,21 +4,22 @@ from numba.core import config
 from .utils import _readenv
 import warnings
 
-# Enable pynvjitlink if the environment variables NUMBA_CUDA_ENABLE_PYNVJITLINK
-# or CUDA_ENABLE_PYNVJITLINK are set, or if the pynvjitlink module is found. If
-# explicitly disabled, do not use pynvjitlink, even if present in the env.
-_pynvjitlink_enabled_in_env = _readenv(
-    "NUMBA_CUDA_ENABLE_PYNVJITLINK", bool, None
-)
-_pynvjitlink_enabled_in_cfg = getattr(config, "CUDA_ENABLE_PYNVJITLINK", None)
 
-if _pynvjitlink_enabled_in_env is not None:
-    ENABLE_PYNVJITLINK = _pynvjitlink_enabled_in_env
-elif _pynvjitlink_enabled_in_cfg is not None:
-    ENABLE_PYNVJITLINK = _pynvjitlink_enabled_in_cfg
-else:
-    ENABLE_PYNVJITLINK = importlib.util.find_spec("pynvjitlink") is not None
-
+# Enable pynvjitlink based on the following precedence:
+# 1. Config setting "CUDA_ENABLE_PYNVJITLINK" (highest priority)
+# 2. Environment variable "NUMBA_CUDA_ENABLE_PYNVJITLINK"
+# 3. Auto-detection of pynvjitlink module (lowest priority)
+if getattr(config, "CUDA_ENABLE_PYNVJITLINK", None) is None:
+    if (
+        _pynvjitlink_enabled_in_env := _readenv(
+            "NUMBA_CUDA_ENABLE_PYNVJITLINK", bool, None
+        )
+    ) is not None:
+        config.CUDA_ENABLE_PYNVJITLINK = _pynvjitlink_enabled_in_env
+    else:
+        config.CUDA_ENABLE_PYNVJITLINK = (
+            importlib.util.find_spec("pynvjitlink") is not None
+        )
 
 # Upstream numba sets CUDA_USE_NVIDIA_BINDING to 0 by default, so it always
 # exists. Override, but not if explicitly set to 0 in the envioronment.
@@ -31,7 +32,10 @@ else:
     USE_NV_BINDING = True
     config.CUDA_USE_NVIDIA_BINDING = USE_NV_BINDING
 if config.CUDA_USE_NVIDIA_BINDING:
-    if not importlib.util.find_spec("cuda.bindings"):
+    if not (
+        importlib.util.find_spec("cuda")
+        and importlib.util.find_spec("cuda.bindings")
+    ):
         raise ImportError(
             "CUDA bindings not found. Please pip install the "
             "cuda-bindings package. Alternatively, install "
@@ -42,7 +46,7 @@ if config.CUDA_USE_NVIDIA_BINDING:
             "bindings."
         )
 
-if ENABLE_PYNVJITLINK:
+if config.CUDA_ENABLE_PYNVJITLINK:
     if USE_NV_BINDING:
         warnings.warn(
             "Explicitly enabling PyNvJitLink no longer necessary. "

@@ -121,16 +121,10 @@ class DeviceNDArrayBase(_devicearray.DeviceArray):
 
     @property
     def __cuda_array_interface__(self):
-        if _driver.USE_NV_BINDING:
-            if self.device_ctypes_pointer is not None:
-                ptr = int(self.device_ctypes_pointer)
-            else:
-                ptr = 0
+        if self.device_ctypes_pointer.value is not None:
+            ptr = self.device_ctypes_pointer.value
         else:
-            if self.device_ctypes_pointer.value is not None:
-                ptr = self.device_ctypes_pointer.value
-            else:
-                ptr = 0
+            ptr = 0
 
         return {
             "shape": tuple(self.shape),
@@ -204,10 +198,7 @@ class DeviceNDArrayBase(_devicearray.DeviceArray):
     def device_ctypes_pointer(self):
         """Returns the ctypes pointer to the GPU data buffer"""
         if self.gpu_data is None:
-            if _driver.USE_NV_BINDING:
-                return _driver.binding.CUdeviceptr(0)
-            else:
-                return c_void_p(0)
+            return c_void_p(0)
         else:
             return self.gpu_data.device_ctypes_pointer
 

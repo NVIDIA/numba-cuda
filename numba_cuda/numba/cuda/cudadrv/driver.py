@@ -2119,6 +2119,8 @@ class MemoryPointer(object):
 
     @property
     def device_ctypes_pointer(self):
+        if USE_NV_BINDING:
+            return drvapi.cu_device_ptr(int(self.device_pointer))
         return self.device_pointer
 
     @property
@@ -3328,8 +3330,8 @@ def device_extents(devmem):
     """
     devptr = device_ctypes_pointer(devmem)
     if USE_NV_BINDING:
-        s, n = driver.cuMemGetAddressRange(devptr)
-        return s, binding.CUdeviceptr(int(s) + n)
+        s, n = driver.cuMemGetAddressRange(devptr.value)
+        return int(s), int(binding.CUdeviceptr(int(s) + n))
     else:
         s = drvapi.cu_device_ptr()
         n = c_size_t()
@@ -3346,10 +3348,7 @@ def device_memory_size(devmem):
     sz = getattr(devmem, "_cuda_memsize_", None)
     if sz is None:
         s, e = device_extents(devmem)
-        if USE_NV_BINDING:
-            sz = int(e) - int(s)
-        else:
-            sz = e - s
+        sz = e - s
         devmem._cuda_memsize_ = sz
     assert sz >= 0, "{} length array".format(sz)
     return sz
@@ -3415,10 +3414,7 @@ def host_memory_size(obj):
 
 def device_pointer(obj):
     "Get the device pointer as an integer"
-    if USE_NV_BINDING:
-        return obj.device_ctypes_pointer
-    else:
-        return device_ctypes_pointer(obj).value
+    return device_ctypes_pointer(obj).value
 
 
 def device_ctypes_pointer(obj):
