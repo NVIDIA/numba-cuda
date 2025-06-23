@@ -2,7 +2,7 @@ from numba.core.lowering import Lower
 from llvmlite import ir
 from numba.core import ir as numba_ir
 from numba.core import types
-
+from llvmlite.ir import Constant
 
 class CUDALower(Lower):
     def storevar(self, value, name, argidx=None):
@@ -54,6 +54,9 @@ class CUDALower(Lower):
 
         self.poly_var_typ_map = {}
         self.poly_var_loc_map = {}
+        self.poly_var_set = set()
+        self.poly_cleaned = False
+        self.lastblk = max(self.blocks.keys())
 
         # When debug info is enabled, walk through function body and mark
         # variables with polymorphic types.
@@ -90,9 +93,10 @@ class CUDALower(Lower):
             index = name.find(".")
             src_name = name[:index] if index > 0 else name
             if src_name in self.poly_var_typ_map:
-                dtype = types.UnionType(self.poly_var_typ_map[src_name])
-                datamodel = self.context.data_model_manager[dtype]
+                self.poly_var_set.add(name)
                 if src_name not in self.poly_var_loc_map:
+                    dtype = types.UnionType(self.poly_var_typ_map[src_name])
+                    datamodel = self.context.data_model_manager[dtype]
                     # UnionType has sorted set of types, max at last index
                     maxsizetype = dtype.types[-1]
                     # Create a single element aggregate type
@@ -101,13 +105,7 @@ class CUDALower(Lower):
                     ptr = self.alloca_lltype(src_name, lltype, datamodel)
                     # save the location of the union type for polymorphic var
                     self.poly_var_loc_map[src_name] = ptr
-                # Any member of this union type shoud type cast ptr to fetype
-                lltype = self.context.get_value_type(fetype)
-                castptr = self.builder.bitcast(
-                    self.poly_var_loc_map[src_name], ir.PointerType(lltype)
-                )
-                # Remember the pointer
-                self.varmap[name] = castptr
+                return
 
         super()._alloca_var(name, fetype)
 
@@ -120,3 +118,38 @@ class CUDALower(Lower):
             # lowering with debuginfo
             or self._disable_sroa_like_opt
         )
+
+    def delvar(self, name):
+        """
+        Delete the given variable.
+        """
+        if name in self.poly_var_set:
+            if (
+                self._cur_ir_block == self.blocks[self.lastblk]
+                and not self.poly_cleaned
+            ):
+                # Decref, zero-fill the debug union for polymorphic only
+                # at the last block
+                for k,v in self.poly_var_loc_map.items():
+                    self.decref(self.typeof(k), self.builder.load(v))
+                    self.builder.store(Constant(v.type.pointee, None), v)
+                    self.poly_cleaned = True
+            return
+
+        super().delvar(name)
+
+    def getvar(self, name):
+        """
+        Get a pointer to the given variable's slot.
+        """
+        if name in self.poly_var_set:
+            index = name.find(".")
+            src_name = name[:index] if index > 0 else name
+            fetype = self.typeof(name)
+            lltype = self.context.get_value_type(fetype)
+            castptr = self.builder.bitcast(
+                self.poly_var_loc_map[src_name], ir.PointerType(lltype)
+            )
+            return castptr
+        else:
+            return super().getvar(name)
