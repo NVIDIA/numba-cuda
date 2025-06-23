@@ -4,6 +4,7 @@ from numba.core import ir as numba_ir
 from numba.core import types
 from llvmlite.ir import Constant
 
+
 class CUDALower(Lower):
     def storevar(self, value, name, argidx=None):
         """
@@ -130,7 +131,7 @@ class CUDALower(Lower):
             ):
                 # Decref, zero-fill the debug union for polymorphic only
                 # at the last block
-                for k,v in self.poly_var_loc_map.items():
+                for k, v in self.poly_var_loc_map.items():
                     self.decref(self.typeof(k), self.builder.load(v))
                     self.builder.store(Constant(v.type.pointee, None), v)
                     self.poly_cleaned = True
