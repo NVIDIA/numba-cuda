@@ -22,7 +22,7 @@ print(test_dir)
 
 NUMBA_CUDA_TEST_BIN_DIR=$(python -c "$PY_SCRIPT")
 pushd $NUMBA_CUDA_TEST_BIN_DIR
-make
+NUMBA_CUDA_USE_NVIDIA_BINDING=0 make
 popd
 
 
