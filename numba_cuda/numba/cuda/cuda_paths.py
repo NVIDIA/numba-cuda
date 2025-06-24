@@ -9,6 +9,7 @@ from numba.core.config import IS_WIN32
 from numba.misc.findlib import find_lib
 from numba import config
 import ctypes
+import warnings
 
 _env_path_tuple = namedtuple("_env_path_tuple", ["by", "info"])
 
@@ -417,6 +418,11 @@ def get_cuda_paths():
 
     Note: The result of the function is cached.
     """
+    warnings.warn(
+        "get_cuda_paths() is deprecated, use `cuda.bindings.path_finder`.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
     # Check cache
     if hasattr(get_cuda_paths, "_cached_result"):
         return get_cuda_paths._cached_result
