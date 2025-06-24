@@ -93,6 +93,7 @@ def check_static_lib(path):
 
 
 def _get_source_variable(lib, static=False):
+    # remove? only used in test()
     if lib == "nvvm":
         return get_cuda_paths()["nvvm"].by
     elif lib == "nvrtc":
