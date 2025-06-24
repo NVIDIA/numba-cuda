@@ -11,7 +11,7 @@ echo "Package path: ${package}"
 python -m pip install \
     "${package}[test]" \
     "cuda-python==${CUDA_VER_MAJOR_MINOR%.*}.*" \
-    "cuda-core==0.3.0"
+    "cuda-core==0.3.*"
 
 GET_TEST_BINARY_DIR="
 import numba_cuda
