@@ -450,7 +450,7 @@ def compile(src, name, cc, ltoir=False):
             options.append("-dlto")
 
         if nvrtc_version < (12, 0):
-            options += ["-std=c++17"]
+            options.append("-std=c++17")
 
         # Compile the program
         compile_error = nvrtc.compile_program(program, options)

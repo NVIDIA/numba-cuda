@@ -49,9 +49,9 @@ if config.CUDA_USE_NVIDIA_BINDING:
 if config.CUDA_ENABLE_PYNVJITLINK:
     if USE_NV_BINDING:
         warnings.warn(
-            "Explicitly enabling PyNvJitLink no longer necessary. "
-            "NVIDIA Binding enabled. cuda.core will be used "
-            "to link, not pynvjitlink."
+            "Explicitly enabling pynvjitlink is no longer necessary. "
+            "NVIDIA bindings are enabled. cuda.core will be used "
+            "in place of pynvjitlink."
         )
     else:
         raise RuntimeError("nvJitLink requires the NVIDIA CUDA bindings. ")

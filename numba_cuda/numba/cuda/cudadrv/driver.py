@@ -2764,7 +2764,7 @@ class _LinkerBase(metaclass=ABCMeta):
         additional_flags=None,
     ):
         driver_ver = driver.get_version()
-        if driver_ver <= (12, 0):
+        if driver_ver < (12, 0):
             if config.CUDA_ENABLE_MINOR_VERSION_COMPATIBILITY:
                 linker = MVCLinker
             elif USE_NV_BINDING:
@@ -2931,7 +2931,7 @@ class _Linker(_LinkerBase):
         lto=None,
         additional_flags=None,
     ):
-        arch = f"sm_{cc[0] * 10 + cc[1]}"
+        arch = f"sm_{cc[0]}{cc[1]}"
         if lto is False:
             lto = None
         self.max_registers = max_registers if max_registers else None
