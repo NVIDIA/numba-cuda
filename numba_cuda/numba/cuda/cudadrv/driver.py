@@ -2780,6 +2780,9 @@ class _LinkerBase(metaclass=ABCMeta):
         params = (max_registers, lineinfo, cc)
         if linker is _Linker:
             params = (*params, lto, additional_flags)
+        else:
+            if lto or additional_flags:
+                raise ValueError("LTO and additional flags require nvjitlink")
 
         return linker(*params)
 
@@ -2936,6 +2939,9 @@ class _Linker(_LinkerBase):
         self.lineinfo = lineinfo
         self.cc = cc
         self.arch = arch
+        if lto is False:
+            # WAR for apparent nvjitlink issue
+            lto = None
         self.lto = lto
         self.additional_flags = additional_flags
 
@@ -2966,7 +2972,7 @@ class _Linker(_LinkerBase):
         raise RuntimeError("Link not yet complete.")
 
     def add_ptx(self, ptx, name="<cudapy-ptx>"):
-        obj = ObjectCode.from_ptx(ptx)
+        obj = ObjectCode.from_ptx(ptx, name=name)
         self._object_codes.append(obj)
 
     def add_cu(self, cu, name="<cudapy-cu>"):
