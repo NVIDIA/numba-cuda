@@ -304,7 +304,7 @@ class TestLinkerUsage(CUDATestCase):
         env = os.environ.copy()
         env["NUMBA_CUDA_ENABLE_PYNVJITLINK"] = "0"
         with self.assertRaisesRegex(
-            AssertionError, "LTO and additional flags require PyNvJitLinker"
+            AssertionError, "LTO requires pynvjitlink, which is not enabled"
         ):
             # Actual error raised is `ValueError`, but `run_in_subprocess`
             # reraises as AssertionError.
@@ -323,7 +323,7 @@ class TestLinkerUsage(CUDATestCase):
         env.pop("NUMBA_CUDA_ENABLE_PYNVJITLINK", None)
         with override_config("CUDA_ENABLE_PYNVJITLINK", False):
             with self.assertRaisesRegex(
-                AssertionError, "LTO and additional flags require PyNvJitLinker"
+                AssertionError, "LTO requires pynvjitlink, which is not enabled"
             ):
                 run_in_subprocess(
                     self.src.format(
