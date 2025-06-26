@@ -24,6 +24,7 @@ def jit(
     lineinfo=False,
     cache=False,
     launch_bounds=None,
+    lto=None,
     **kws,
 ):
     """
@@ -83,6 +84,10 @@ def jit(
                           If a scalar is provided, it is used as the maximum
                           number of threads per block.
     :type launch_bounds: int | tuple[int]
+    :param lto: Whether to enable LTO. If unspecified, LTO is enabled by
+                default when pynvjitlink is available, except for kernels where
+                ``debug=True``.
+    :type lto: bool
     """
 
     if link and config.ENABLE_CUDASIM:
@@ -136,6 +141,13 @@ def jit(
     if device and kws.get("link"):
         raise ValueError("link keyword invalid for device function")
 
+    if lto is None:
+        # Default to using LTO if pynvjitlink is available and we're not debugging
+        lto = config.CUDA_ENABLE_PYNVJITLINK and not debug
+    else:
+        if lto and not config.CUDA_ENABLE_PYNVJITLINK:
+            raise RuntimeError("LTO requires pynvjitlink, which is not enabled")
+
     if sigutils.is_signature(func_or_sig):
         signatures = [func_or_sig]
         specialized = True
@@ -165,6 +177,7 @@ def jit(
             targetoptions["forceinline"] = forceinline
             targetoptions["extensions"] = extensions
             targetoptions["launch_bounds"] = launch_bounds
+            targetoptions["lto"] = lto
 
             disp = CUDADispatcher(func, targetoptions=targetoptions)
 
@@ -235,6 +248,7 @@ def jit(
                 targetoptions["forceinline"] = forceinline
                 targetoptions["extensions"] = extensions
                 targetoptions["launch_bounds"] = launch_bounds
+                targetoptions["lto"] = lto
                 disp = CUDADispatcher(func_or_sig, targetoptions=targetoptions)
 
                 if cache:

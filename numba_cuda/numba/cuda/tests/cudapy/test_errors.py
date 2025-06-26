@@ -1,6 +1,7 @@
 from numba import cuda
 from numba.core.errors import TypingError
 from numba.cuda.testing import unittest, CUDATestCase, skip_on_cudasim
+from numba.tests.support import override_config
 
 
 def noop(x):
@@ -88,6 +89,17 @@ class TestJitErrors(CUDATestCase):
         excstr = str(raises.exception)
         self.assertIn("resolving callee type: type(CUDADispatcher", excstr)
         self.assertIn("NameError: name 'floor' is not defined", excstr)
+
+    @skip_on_cudasim("Simulator does not use pynvjitlink")
+    def test_lto_without_pynvjitlink_error(self):
+        with self.assertRaisesRegex(RuntimeError, "LTO requires pynvjitlink"):
+            with override_config("CUDA_ENABLE_PYNVJITLINK", False):
+
+                @cuda.jit(lto=True)
+                def f():
+                    pass
+
+                f[1, 1]()
 
 
 if __name__ == "__main__":
