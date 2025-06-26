@@ -131,12 +131,17 @@ def _have_nvjitlink():
         return False
     try:
         from cuda.bindings._internal import nvjitlink as nvjitlink_internal
+        from cuda.bindings._internal.utils import NotSupportedError
     except ImportError:
         return False
-
-    return (
-        nvjitlink_internal._inspect_function_pointer("__nvJitLinkVersion") != 0
-    )
+    try:
+        return (
+            nvjitlink_internal._inspect_function_pointer("__nvJitLinkVersion")
+            != 0
+        )
+    except NotSupportedError:
+        # no driver
+        return False
 
 
 class DeadMemoryError(RuntimeError):
