@@ -2957,7 +2957,7 @@ class _Linker(_LinkerBase):
             raise ValueError("Not Initialized")
         if self._complete:
             return self._info_log
-        return self.linker.get_info_log()
+        raise RuntimeError("Link not yet complete.")
 
     @property
     def error_log(self):
@@ -2965,7 +2965,7 @@ class _Linker(_LinkerBase):
             raise ValueError("Not Initialized")
         if self._complete:
             return self._error_log
-        return self.linker.get_error_log()
+        raise RuntimeError("Link not yet complete.")
 
     def add_ptx(self, ptx, name="<cudapy-ptx>"):
         obj = ObjectCode.from_ptx(ptx)
@@ -2976,6 +2976,11 @@ class _Linker(_LinkerBase):
             dev = driver.get_device(ac.devnum)
             cc = dev.compute_capability
         obj, log = nvrtc.compile(cu, name, cc, ltoir=self.lto)
+
+        if not self.lto and config.DUMP_ASSEMBLY:
+            print(("ASSEMBLY %s" % name).center(80, "-"))
+            print(obj.code)
+
         self._object_codes.append(obj)
 
     def add_cubin(self, cubin, name="<cudapy-cubin>"):
@@ -3000,8 +3005,7 @@ class _Linker(_LinkerBase):
 
     def add_file(self, path, kind):
         try:
-            with open(path, "rb") as f:
-                data = f.read()
+            data = cached_file_read(path, how="rb")
         except FileNotFoundError:
             raise LinkerError(f"{path} not found")
         name = pathlib.Path(path).name
