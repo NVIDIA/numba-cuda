@@ -12,6 +12,7 @@
 # Imports:
 import io
 import operator
+import math
 
 import numba
 from llvmlite import ir
@@ -4342,6 +4343,7 @@ def _lower__ZL6htrunc6__half_1(shim_stream, shim_obj):
         return _ZL6htrunc6__half_1(arg_0)
 
     @lower(htrunc, _type___half)
+    @lower(math.trunc, _type___half)
     def impl(context, builder, sig, args):
         context.active_code_library.add_linking_file(shim_obj)
         shim_stream.write_with_key("_ZL6htrunc6__half_1", shim_raw_str)
@@ -4381,6 +4383,7 @@ def _lower__ZL5hceil6__half_1(shim_stream, shim_obj):
         return _ZL5hceil6__half_1(arg_0)
 
     @lower(hceil, _type___half)
+    @lower(math.ceil, _type___half)
     def impl(context, builder, sig, args):
         context.active_code_library.add_linking_file(shim_obj)
         shim_stream.write_with_key("_ZL5hceil6__half_1", shim_raw_str)
@@ -4420,6 +4423,7 @@ def _lower__ZL6hfloor6__half_1(shim_stream, shim_obj):
         return _ZL6hfloor6__half_1(arg_0)
 
     @lower(hfloor, _type___half)
+    @lower(math.floor, _type___half)
     def impl(context, builder, sig, args):
         context.active_code_library.add_linking_file(shim_obj)
         shim_stream.write_with_key("_ZL6hfloor6__half_1", shim_raw_str)
@@ -8199,6 +8203,7 @@ def _lower__ZL6__habs6__half_1(shim_stream, shim_obj):
         return _ZL6__habs6__half_1(arg_0)
 
     @lower(__habs, _type___half)
+    @lower(math.fabs, _type___half)
     def impl(context, builder, sig, args):
         context.active_code_library.add_linking_file(shim_obj)
         shim_stream.write_with_key("_ZL6__habs6__half_1", shim_raw_str)
@@ -10113,6 +10118,7 @@ def _lower__ZL5hsqrt6__half_1(shim_stream, shim_obj):
         return _ZL5hsqrt6__half_1(arg_0)
 
     @lower(hsqrt, _type___half)
+    @lower(math.sqrt, _type___half)
     def impl(context, builder, sig, args):
         context.active_code_library.add_linking_file(shim_obj)
         shim_stream.write_with_key("_ZL5hsqrt6__half_1", shim_raw_str)
@@ -10230,6 +10236,7 @@ def _lower__ZL4hlog6__half_1(shim_stream, shim_obj):
         return _ZL4hlog6__half_1(arg_0)
 
     @lower(hlog, _type___half)
+    @lower(math.log, _type___half)
     def impl(context, builder, sig, args):
         context.active_code_library.add_linking_file(shim_obj)
         shim_stream.write_with_key("_ZL4hlog6__half_1", shim_raw_str)
@@ -10269,6 +10276,7 @@ def _lower__ZL5hlog26__half_1(shim_stream, shim_obj):
         return _ZL5hlog26__half_1(arg_0)
 
     @lower(hlog2, _type___half)
+    @lower(math.log2, _type___half)
     def impl(context, builder, sig, args):
         context.active_code_library.add_linking_file(shim_obj)
         shim_stream.write_with_key("_ZL5hlog26__half_1", shim_raw_str)
@@ -10308,6 +10316,7 @@ def _lower__ZL6hlog106__half_1(shim_stream, shim_obj):
         return _ZL6hlog106__half_1(arg_0)
 
     @lower(hlog10, _type___half)
+    @lower(math.log10, _type___half)
     def impl(context, builder, sig, args):
         context.active_code_library.add_linking_file(shim_obj)
         shim_stream.write_with_key("_ZL6hlog106__half_1", shim_raw_str)
@@ -10347,6 +10356,7 @@ def _lower__ZL4hexp6__half_1(shim_stream, shim_obj):
         return _ZL4hexp6__half_1(arg_0)
 
     @lower(hexp, _type___half)
+    @lower(math.exp, _type___half)
     def impl(context, builder, sig, args):
         context.active_code_library.add_linking_file(shim_obj)
         shim_stream.write_with_key("_ZL4hexp6__half_1", shim_raw_str)
@@ -10464,6 +10474,7 @@ def _lower__ZL5htanh6__half_1(shim_stream, shim_obj):
         return _ZL5htanh6__half_1(arg_0)
 
     @lower(htanh, _type___half)
+    @lower(math.tanh, _type___half)
     def impl(context, builder, sig, args):
         context.active_code_library.add_linking_file(shim_obj)
         shim_stream.write_with_key("_ZL5htanh6__half_1", shim_raw_str)
@@ -10542,6 +10553,7 @@ def _lower__ZL5hexp26__half_1(shim_stream, shim_obj):
         return _ZL5hexp26__half_1(arg_0)
 
     @lower(hexp2, _type___half)
+    @lower(math.exp2, _type___half)
     def impl(context, builder, sig, args):
         context.active_code_library.add_linking_file(shim_obj)
         shim_stream.write_with_key("_ZL5hexp26__half_1", shim_raw_str)
@@ -10620,6 +10632,7 @@ def _lower__ZL4hcos6__half_1(shim_stream, shim_obj):
         return _ZL4hcos6__half_1(arg_0)
 
     @lower(hcos, _type___half)
+    @lower(math.cos, _type___half)
     def impl(context, builder, sig, args):
         context.active_code_library.add_linking_file(shim_obj)
         shim_stream.write_with_key("_ZL4hcos6__half_1", shim_raw_str)
@@ -10659,6 +10672,7 @@ def _lower__ZL4hsin6__half_1(shim_stream, shim_obj):
         return _ZL4hsin6__half_1(arg_0)
 
     @lower(hsin, _type___half)
+    @lower(math.sin, _type___half)
     def impl(context, builder, sig, args):
         context.active_code_library.add_linking_file(shim_obj)
         shim_stream.write_with_key("_ZL4hsin6__half_1", shim_raw_str)
