@@ -129,7 +129,10 @@ def make_logger():
 def _have_nvjitlink():
     if not USE_NV_BINDING:
         return False
-    from cuda.bindings._internal import nvjitlink as nvjitlink_internal
+    try:
+        from cuda.bindings._internal import nvjitlink as nvjitlink_internal
+    except ImportError:
+        return False
 
     return (
         nvjitlink_internal._inspect_function_pointer("__nvJitLinkVersion") != 0
