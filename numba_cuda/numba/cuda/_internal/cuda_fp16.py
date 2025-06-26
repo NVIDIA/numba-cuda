@@ -22,8 +22,13 @@ from numba.core.extending import (
     make_attribute_wrapper,
     register_model,
 )
+import numba.core.typeconv
 from numba.core.typing import signature
-from numba.core.typing.templates import AttributeTemplate, ConcreteTemplate
+from numba.core.typing.templates import (
+    AbstractTemplate,
+    AttributeTemplate,
+    ConcreteTemplate,
+)
 from numba.cuda import CUSource, declare_device
 from numba.cuda.cudadecl import register, register_attr, register_global
 from numba.cuda.cudaimpl import lower
@@ -8131,6 +8136,7 @@ def _lower__ZL6__habs6__half_1(shim_stream, shim_obj):
         return _ZL6__habs6__half_1(arg_0)
 
     @lower(__habs, _type___half)
+    @lower(abs, _type___half)
     def impl(context, builder, sig, args):
         context.active_code_library.add_linking_file(shim_obj)
         shim_stream.write_with_key("_ZL6__habs6__half_1", shim_raw_str)
@@ -14301,132 +14307,78 @@ class _typing_atomicAdd(ConcreteTemplate):
 register_global(atomicAdd, types.Function(_typing_atomicAdd))
 
 
-@register_global(operator.add)
-class _typing_operator_add(ConcreteTemplate):
-    cases = [
-        signature(_type___half, _type___half, _type___half),
-        signature(_type___half2, _type___half2, _type___half2),
-    ]
+def _genfp16_unary_operator(l_key):
+    @register_global(l_key)
+    class Cuda_fp16_unary(AbstractTemplate):
+        key = l_key
+
+        def generic(self, args, kws):
+            assert not kws
+            if len(args) == 1 and args[0] == types.float16:
+                return signature(types.float16, types.float16)
+
+    return Cuda_fp16_unary
 
 
-@register_global(operator.sub)
-class _typing_operator_sub(ConcreteTemplate):
-    cases = [
-        signature(_type___half, _type___half, _type___half),
-        signature(_type___half2, _type___half2, _type___half2),
-    ]
+def _fp16_binary_operator(l_key, retty):
+    @register_global(l_key)
+    class Cuda_fp16_operator(AbstractTemplate):
+        key = l_key
+
+        def generic(self, args, kws):
+            assert not kws
+
+            if len(args) == 2 and (
+                args[0] == types.float16 or args[1] == types.float16
+            ):
+                if args[0] == types.float16:
+                    convertible = self.context.can_convert(args[1], args[0])
+                else:
+                    convertible = self.context.can_convert(args[0], args[1])
+                # We allow three cases here:
+                #
+                # 1. fp16 to fp16 - Conversion.exact
+                # 2. fp16 to other types fp16 can be promoted to
+                #  - Conversion.promote
+                # 3. fp16 to int8 (safe conversion) -
+                #  - Conversion.safe
+
+                if (
+                    (convertible == numba.core.typeconv.Conversion.exact)
+                    or (convertible == numba.core.typeconv.Conversion.promote)
+                    or (convertible == numba.core.typeconv.Conversion.safe)
+                ):
+                    return signature(retty, types.float16, types.float16)
+
+    return Cuda_fp16_operator
 
 
-@register_global(operator.mul)
-class _typing_operator_mul(ConcreteTemplate):
-    cases = [
-        signature(_type___half, _type___half, _type___half),
-        signature(_type___half2, _type___half2, _type___half2),
-    ]
+def _genfp16_comparison_operator(op):
+    return _fp16_binary_operator(op, types.b1)
 
 
-@register_global(operator.truediv)
-class _typing_operator_truediv(ConcreteTemplate):
-    cases = [
-        signature(_type___half, _type___half, _type___half),
-        signature(_type___half2, _type___half2, _type___half2),
-    ]
+def _genfp16_binary_operator(op):
+    return _fp16_binary_operator(op, types.float16)
 
 
-@register_global(operator.iadd)
-class _typing_operator_iadd(ConcreteTemplate):
-    cases = [
-        signature(_type___half, _type___half, _type___half),
-        signature(_type___half2, _type___half2, _type___half2),
-    ]
-
-
-@register_global(operator.isub)
-class _typing_operator_isub(ConcreteTemplate):
-    cases = [
-        signature(_type___half, _type___half, _type___half),
-        signature(_type___half2, _type___half2, _type___half2),
-    ]
-
-
-@register_global(operator.imul)
-class _typing_operator_imul(ConcreteTemplate):
-    cases = [
-        signature(_type___half, _type___half, _type___half),
-        signature(_type___half2, _type___half2, _type___half2),
-    ]
-
-
-@register_global(operator.itruediv)
-class _typing_operator_itruediv(ConcreteTemplate):
-    cases = [
-        signature(_type___half, _type___half, _type___half),
-        signature(_type___half2, _type___half2, _type___half2),
-    ]
-
-
-@register_global(operator.pos)
-class _typing_operator_pos(ConcreteTemplate):
-    cases = [
-        signature(_type___half, _type___half),
-        signature(_type___half2, _type___half2),
-    ]
-
-
-@register_global(operator.neg)
-class _typing_operator_neg(ConcreteTemplate):
-    cases = [
-        signature(_type___half, _type___half),
-        signature(_type___half2, _type___half2),
-    ]
-
-
-@register_global(operator.eq)
-class _typing_operator_eq(ConcreteTemplate):
-    cases = [
-        signature(bool_, _type___half, _type___half),
-        signature(bool_, _type___half2, _type___half2),
-    ]
-
-
-@register_global(operator.ne)
-class _typing_operator_ne(ConcreteTemplate):
-    cases = [
-        signature(bool_, _type___half, _type___half),
-        signature(bool_, _type___half2, _type___half2),
-    ]
-
-
-@register_global(operator.gt)
-class _typing_operator_gt(ConcreteTemplate):
-    cases = [
-        signature(bool_, _type___half, _type___half),
-        signature(bool_, _type___half2, _type___half2),
-    ]
-
-
-@register_global(operator.lt)
-class _typing_operator_lt(ConcreteTemplate):
-    cases = [
-        signature(bool_, _type___half, _type___half),
-        signature(bool_, _type___half2, _type___half2),
-    ]
-
-
-@register_global(operator.ge)
-class _typing_operator_ge(ConcreteTemplate):
-    cases = [
-        signature(bool_, _type___half, _type___half),
-        signature(bool_, _type___half2, _type___half2),
-    ]
-
-
-@register_global(operator.le)
-class _typing_operator_le(ConcreteTemplate):
-    cases = [
-        signature(bool_, _type___half, _type___half),
-        signature(bool_, _type___half2, _type___half2),
-    ]
+_genfp16_unary_operator(abs)
+_genfp16_unary_operator(operator.abs)
+_genfp16_unary_operator(operator.neg)
+_genfp16_unary_operator(operator.pos)
+_genfp16_binary_operator(operator.add)
+_genfp16_binary_operator(operator.iadd)
+_genfp16_binary_operator(operator.sub)
+_genfp16_binary_operator(operator.isub)
+_genfp16_binary_operator(operator.mul)
+_genfp16_binary_operator(operator.imul)
+_genfp16_binary_operator(operator.truediv)
+_genfp16_binary_operator(operator.itruediv)
+_genfp16_comparison_operator(operator.eq)
+_genfp16_comparison_operator(operator.ne)
+_genfp16_comparison_operator(operator.ge)
+_genfp16_comparison_operator(operator.gt)
+_genfp16_comparison_operator(operator.le)
+_genfp16_comparison_operator(operator.lt)
 
 
 # Aliases:
