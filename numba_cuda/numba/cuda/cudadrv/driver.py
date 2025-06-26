@@ -2779,7 +2779,7 @@ class _LinkerBase(metaclass=ABCMeta):
 
         params = (max_registers, lineinfo, cc)
         if linker is _Linker:
-            params = (*params, _have_nvjitlink(), additional_flags)
+            params = (*params, lto, additional_flags)
 
         return linker(*params)
 
