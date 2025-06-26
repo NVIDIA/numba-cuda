@@ -91,7 +91,7 @@ class _Kernel(serialize.ReduceMixin):
         fastmath=False,
         extensions=None,
         max_registers=None,
-        lto=False,
+        lto=None,
         opt=True,
         device=False,
         launch_bounds=None,
@@ -129,6 +129,16 @@ class _Kernel(serialize.ReduceMixin):
             nvvm_options["g"] = None
 
         cc = get_current_device().compute_capability
+
+        if lto is None:
+            lto = driver._have_nvjitlink()
+        else:
+            if lto and not driver._have_nvjitlink():
+                raise RuntimeError(
+                    "LTO requires nvjitlink, which is not available"
+                    "or not sufficiently recent (>=12.3)"
+                )
+
         cres = compile_cuda(
             self.py_func,
             types.void,
