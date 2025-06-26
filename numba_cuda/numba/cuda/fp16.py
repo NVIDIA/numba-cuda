@@ -131,6 +131,86 @@ from numba.cuda._internal.cuda_fp16 import (
     htrunc,
 )
 
+from numba.extending import overload
+import math
+
+
+def _make_unary(a, func):
+    if isinstance(a, types.Float) and a.bitwidth == 16:
+        return lambda a: func(a)
+
+
+# Bind low++ bindings to math APIs
+@overload(math.trunc, target="cuda")
+def trunc_ol(a):
+    return _make_unary(a, htrunc)
+
+
+@overload(math.ceil, target="cuda")
+def ceil_ol(a):
+    return _make_unary(a, hceil)
+
+
+@overload(math.floor, target="cuda")
+def floor_ol(a):
+    return _make_unary(a, hfloor)
+
+
+@overload(math.fabs, target="cuda")
+def fabs_ol(a):
+    return _make_unary(a, habs)
+
+
+@overload(math.sqrt, target="cuda")
+def sqrt_ol(a):
+    return _make_unary(a, hsqrt)
+
+
+@overload(math.log, target="cuda")
+def log_ol(a):
+    return _make_unary(a, hlog)
+
+
+@overload(math.log2, target="cuda")
+def log2_ol(a):
+    return _make_unary(a, hlog2)
+
+
+@overload(math.log10, target="cuda")
+def log10_ol(a):
+    return _make_unary(a, hlog10)
+
+
+@overload(math.exp, target="cuda")
+def exp_ol(a):
+    return _make_unary(a, hexp)
+
+
+@overload(math.tanh, target="cuda")
+def tanh_ol(a):
+    return _make_unary(a, htanh)
+
+
+@overload(math.cos, target="cuda")
+def cos_ol(a):
+    return _make_unary(a, hcos)
+
+
+@overload(math.sin, target="cuda")
+def sin_ol(a):
+    return _make_unary(a, hsin)
+
+
+try:
+    from math import exp2
+
+    @overload(exp2, target="cuda")
+    def exp2_ol(a):
+        return _make_unary(a, hexp2)
+except ImportError:
+    pass
+
+
 __all__ = [
     "habs",
     "hadd",
