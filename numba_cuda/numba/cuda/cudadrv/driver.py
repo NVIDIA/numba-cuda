@@ -129,13 +129,11 @@ def make_logger():
 def _have_nvjitlink():
     if not USE_NV_BINDING:
         return False
-    with warnings.catch_warnings(record=True) as w:
-        warnings.simplefilter("always")
-        LinkerOptions()
-        for warning in w:
-            if "nvJitLink is not installed" in str(warning.message):
-                return False
-    return True
+    from cuda.bindings._internal import nvjitlink as nvjitlink_internal
+
+    return (
+        nvjitlink_internal._inspect_function_pointer("__nvJitLinkVersion") != 0
+    )
 
 
 class DeadMemoryError(RuntimeError):
