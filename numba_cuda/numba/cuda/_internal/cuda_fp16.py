@@ -322,6 +322,10 @@ def _lower__ZN6__halfC1Ef(shim_stream, shim_obj):
             selfptr, align=getattr(_type___half, "alignof_", None)
         )
 
+    @lower_cast(float32, __half)
+    def cast_impl(context, builder, fromty, toty, value):
+        return ctor_impl(context, builder, signature(__half, float32), [value])
+
 
 _lower__ZN6__halfC1Ef(shim_stream, shim_obj)
 
@@ -365,6 +369,10 @@ def _lower__ZN6__halfC1Ed(shim_stream, shim_obj):
         return builder.load(
             selfptr, align=getattr(_type___half, "alignof_", None)
         )
+
+    @lower_cast(float64, __half)
+    def cast_impl(context, builder, fromty, toty, value):
+        return ctor_impl(context, builder, signature(__half, float64), [value])
 
 
 _lower__ZN6__halfC1Ed(shim_stream, shim_obj)
@@ -410,6 +418,10 @@ def _lower__ZN6__halfC1Es(shim_stream, shim_obj):
             selfptr, align=getattr(_type___half, "alignof_", None)
         )
 
+    @lower_cast(int16, __half)
+    def cast_impl(context, builder, fromty, toty, value):
+        return ctor_impl(context, builder, signature(__half, int16), [value])
+
 
 _lower__ZN6__halfC1Es(shim_stream, shim_obj)
 
@@ -453,6 +465,14 @@ def _lower__ZN6__halfC1Et(shim_stream, shim_obj):
         return builder.load(
             selfptr, align=getattr(_type___half, "alignof_", None)
         )
+
+    @lower_cast(uint16, __half)
+    @lower_cast(uint8, __half)
+    def cast_impl(context, builder, fromty, toty, value):
+        uint16_val = ctor_impl(
+            context, builder, signature(__half, uint16), [value]
+        )
+        return context.cast(builder, uint16_val, uint16, toty)
 
 
 _lower__ZN6__halfC1Et(shim_stream, shim_obj)
@@ -498,6 +518,10 @@ def _lower__ZN6__halfC1Ei(shim_stream, shim_obj):
             selfptr, align=getattr(_type___half, "alignof_", None)
         )
 
+    @lower_cast(int32, __half)
+    def cast_impl(context, builder, fromty, toty, value):
+        return ctor_impl(context, builder, signature(__half, int32), [value])
+
 
 _lower__ZN6__halfC1Ei(shim_stream, shim_obj)
 
@@ -541,6 +565,10 @@ def _lower__ZN6__halfC1Ej(shim_stream, shim_obj):
         return builder.load(
             selfptr, align=getattr(_type___half, "alignof_", None)
         )
+
+    @lower_cast(uint32, __half)
+    def cast_impl(context, builder, fromty, toty, value):
+        return ctor_impl(context, builder, signature(__half, uint32), [value])
 
 
 _lower__ZN6__halfC1Ej(shim_stream, shim_obj)
@@ -586,6 +614,10 @@ def _lower__ZN6__halfC1El(shim_stream, shim_obj):
             selfptr, align=getattr(_type___half, "alignof_", None)
         )
 
+    @lower_cast(int64, __half)
+    def cast_impl(context, builder, fromty, toty, value):
+        return ctor_impl(context, builder, signature(__half, int64), [value])
+
 
 _lower__ZN6__halfC1El(shim_stream, shim_obj)
 
@@ -629,6 +661,10 @@ def _lower__ZN6__halfC1Em(shim_stream, shim_obj):
         return builder.load(
             selfptr, align=getattr(_type___half, "alignof_", None)
         )
+
+    @lower_cast(uint64, __half)
+    def cast_impl(context, builder, fromty, toty, value):
+        return ctor_impl(context, builder, signature(__half, uint64), [value])
 
 
 _lower__ZN6__halfC1Em(shim_stream, shim_obj)
@@ -674,6 +710,10 @@ def _lower__ZN6__halfC1Ex(shim_stream, shim_obj):
             selfptr, align=getattr(_type___half, "alignof_", None)
         )
 
+    @lower_cast(int64, __half)
+    def cast_impl(context, builder, fromty, toty, value):
+        return ctor_impl(context, builder, signature(__half, int64), [value])
+
 
 _lower__ZN6__halfC1Ex(shim_stream, shim_obj)
 
@@ -717,6 +757,10 @@ def _lower__ZN6__halfC1Ey(shim_stream, shim_obj):
         return builder.load(
             selfptr, align=getattr(_type___half, "alignof_", None)
         )
+
+    @lower_cast(uint64, __half)
+    def cast_impl(context, builder, fromty, toty, value):
+        return ctor_impl(context, builder, signature(__half, uint64), [value])
 
 
 _lower__ZN6__halfC1Ey(shim_stream, shim_obj)
@@ -2000,6 +2044,25 @@ def _lower__ZL12__half2float6__half_1(shim_stream, shim_obj):
             ptrs,
         )
 
+    @lower_cast(__half, types.float64)
+    def double_cast(context, builder, fromty, toty, val):
+        float32_val = impl(
+            context, builder, signature(types.float32, __half), [val]
+        )
+        return context.cast(builder, float32_val, types.float32, toty)
+
+    @lower_cast(__half, types.Complex)
+    def complex_cast(context, builder, fromty, toty, val):
+        float32_val = impl(
+            context, builder, signature(types.float32, __half), [val]
+        )
+        cmplx = context.make_complex(builder, toty)
+        cmplx.real = context.cast(
+            builder, float32_val, types.float32, toty.underlying_float
+        )
+        cmplx.imag = context.get_constant(toty.underlying_float, 0)
+        return cmplx._getvalue()
+
 
 _lower__ZL12__half2float6__half_1(shim_stream, shim_obj)
 
@@ -3033,6 +3096,11 @@ def _lower__ZL15__short2half_rns_1(shim_stream, shim_obj):
             signature(_type___half, CPointer(int16)),
             ptrs,
         )
+
+    @lower_cast(int8, __half)
+    def int8_cast_impl(context, builder, fromty, toty, value):
+        int16_val = context.cast(builder, value, fromty, int16)
+        return impl(context, builder, signature(__half, int16), [int16_val])
 
 
 _lower__ZL15__short2half_rns_1(shim_stream, shim_obj)
