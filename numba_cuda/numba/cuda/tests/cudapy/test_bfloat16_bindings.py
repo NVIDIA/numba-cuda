@@ -1,4 +1,5 @@
 import numba.cuda as cuda
+import numba.cuda.fp16
 from numba.cuda.testing import unittest, CUDATestCase
 import numpy as np
 

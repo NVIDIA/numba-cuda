@@ -4,6 +4,7 @@ from numba import cuda, int32, complex128, void
 from numba.core import types
 from numba.core.errors import TypingError
 from numba.cuda.testing import unittest, CUDATestCase, skip_on_cudasim
+import numba.cuda.fp16
 from .extensions_usecases import test_struct_model_type, TestStruct
 
 
