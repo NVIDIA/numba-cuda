@@ -4,6 +4,7 @@ from numba.core.errors import DeprecationError, NumbaInvalidConfigWarning
 from numba.cuda.compiler import declare_device_function
 from numba.cuda.dispatcher import CUDADispatcher
 from numba.cuda.simulator.kernel import FakeCUDAKernel
+from numba.cuda.cudadrv.driver import _have_nvjitlink
 
 
 _msg_deprecated_signature_arg = (
@@ -143,10 +144,13 @@ def jit(
 
     if lto is None:
         # Default to using LTO if pynvjitlink is available and we're not debugging
-        lto = config.CUDA_ENABLE_PYNVJITLINK and not debug
+        lto = _have_nvjitlink() and not debug
     else:
-        if lto and not config.CUDA_ENABLE_PYNVJITLINK:
-            raise RuntimeError("LTO requires pynvjitlink, which is not enabled")
+        if lto and not _have_nvjitlink():
+            raise RuntimeError(
+                "LTO requires nvjitlink, which is not available"
+                "or not sufficiently recent (>=12.3)"
+            )
 
     if sigutils.is_signature(func_or_sig):
         signatures = [func_or_sig]

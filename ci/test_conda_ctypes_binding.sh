@@ -48,12 +48,6 @@ EXITCODE=0
 trap "EXITCODE=1" ERR
 set +e
 
-
-rapids-logger "Install pynvjitlink"
-set +u
-rapids-mamba-retry install -c rapidsai pynvjitlink
-set -u
-
 rapids-logger "Build tests"
 
 PY_SCRIPT="
@@ -70,7 +64,7 @@ popd
 
 
 rapids-logger "Run Tests"
-NUMBA_CUDA_ENABLE_PYNVJITLINK=1 NUMBA_CUDA_TEST_BIN_DIR=$NUMBA_CUDA_TEST_BIN_DIR python -m numba.runtests numba.cuda.tests -v
+NUMBA_CUDA_USE_NVIDIA_BINDING=0 NUMBA_CUDA_TEST_BIN_DIR=$NUMBA_CUDA_TEST_BIN_DIR python -m numba.runtests numba.cuda.tests -v
 
 popd
 

@@ -2,11 +2,16 @@ import importlib
 from numba import runtests
 from numba.core import config
 from .utils import _readenv
+import warnings
+
 
 # Enable pynvjitlink based on the following precedence:
 # 1. Config setting "CUDA_ENABLE_PYNVJITLINK" (highest priority)
 # 2. Environment variable "NUMBA_CUDA_ENABLE_PYNVJITLINK"
 # 3. Auto-detection of pynvjitlink module (lowest priority)
+
+pynvjitlink_auto_enabled = False
+
 if getattr(config, "CUDA_ENABLE_PYNVJITLINK", None) is None:
     if (
         _pynvjitlink_enabled_in_env := _readenv(
@@ -15,9 +20,10 @@ if getattr(config, "CUDA_ENABLE_PYNVJITLINK", None) is None:
     ) is not None:
         config.CUDA_ENABLE_PYNVJITLINK = _pynvjitlink_enabled_in_env
     else:
-        config.CUDA_ENABLE_PYNVJITLINK = (
+        pynvjitlink_auto_enabled = (
             importlib.util.find_spec("pynvjitlink") is not None
         )
+        config.CUDA_ENABLE_PYNVJITLINK = pynvjitlink_auto_enabled
 
 # Upstream numba sets CUDA_USE_NVIDIA_BINDING to 0 by default, so it always
 # exists. Override, but not if explicitly set to 0 in the envioronment.
@@ -43,6 +49,21 @@ if config.CUDA_USE_NVIDIA_BINDING:
             "NUMBA_CUDA_USE_NVIDIA_BINDING=0 to enable ctypes "
             "bindings."
         )
+
+if config.CUDA_ENABLE_PYNVJITLINK:
+    if USE_NV_BINDING:
+        warnings.warn(
+            "Explicitly enabling pynvjitlink is no longer necessary. "
+            "NVIDIA bindings are enabled. cuda.core will be used "
+            "in place of pynvjitlink."
+        )
+    elif pynvjitlink_auto_enabled:
+        # Ignore the fact that pynvjitlink is enabled, because that was an
+        # automatic decision based on discovering pynvjitlink was present; the
+        # user didn't ask for it
+        pass
+    else:
+        raise RuntimeError("nvJitLink requires the NVIDIA CUDA bindings. ")
 
 if config.ENABLE_CUDASIM:
     from .simulator_init import *

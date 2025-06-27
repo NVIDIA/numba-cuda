@@ -129,6 +129,7 @@ class _Kernel(serialize.ReduceMixin):
             nvvm_options["g"] = None
 
         cc = get_current_device().compute_capability
+
         cres = compile_cuda(
             self.py_func,
             types.void,

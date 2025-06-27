@@ -42,6 +42,7 @@ import importlib
 import numpy as np
 from collections import namedtuple, deque
 
+
 from numba import mviewbuf
 from numba.core import utils, serialize, config
 from .error import CudaSupportError, CudaDriverError
@@ -56,6 +57,22 @@ try:
     from pynvjitlink.api import NvJitLinker, NvJitLinkError
 except ImportError:
     NvJitLinker, NvJitLinkError = None, None
+
+
+USE_NV_BINDING = config.CUDA_USE_NVIDIA_BINDING
+
+if USE_NV_BINDING:
+    from cuda.bindings import driver as binding
+    from cuda.core.experimental import (
+        Linker,
+        LinkerOptions,
+        ObjectCode,
+    )
+
+    # There is no definition of the default stream in the Nvidia bindings (nor
+    # is there at the C/C++ level), so we define it here so we don't need to
+    # use a magic number 0 in places where we want the default stream.
+    CU_STREAM_DEFAULT = 0
 
 
 MIN_REQUIRED_CC = (3, 5)
@@ -106,6 +123,25 @@ def make_logger():
             # otherwise, put a null handler
             logger.addHandler(logging.NullHandler())
     return logger
+
+
+@functools.cache
+def _have_nvjitlink():
+    if not USE_NV_BINDING:
+        return False
+    try:
+        from cuda.bindings._internal import nvjitlink as nvjitlink_internal
+        from cuda.bindings._internal.utils import NotSupportedError
+    except ImportError:
+        return False
+    try:
+        return (
+            nvjitlink_internal._inspect_function_pointer("__nvJitLinkVersion")
+            != 0
+        )
+    except NotSupportedError:
+        # no driver
+        return False
 
 
 class DeadMemoryError(RuntimeError):
@@ -1472,7 +1508,7 @@ class Context(object):
         if isinstance(ptx, str):
             ptx = ptx.encode("utf8")
         if USE_NV_BINDING:
-            image = ptx
+            image = ObjectCode.from_ptx(ptx)
         else:
             image = c_char_p(ptx)
         return self.create_module_image(image)
@@ -1615,7 +1651,6 @@ def load_module_image_ctypes(
 
     option_keys = (drvapi.cu_jit_option * len(options))(*options.keys())
     option_vals = (c_void_p * len(options))(*options.values())
-
     handle = drvapi.cu_module()
     try:
         driver.cuModuleLoadDataEx(
@@ -1662,7 +1697,7 @@ def load_module_image_cuda_python(
 
     try:
         handle = driver.cuModuleLoadDataEx(
-            image, len(options), option_keys, option_vals
+            image.code, len(options), option_keys, option_vals
         )
     except CudaAPIError as e:
         err_string = jiterrors.decode("utf-8")
@@ -2722,7 +2757,7 @@ def launch_kernel(
         )
 
 
-class Linker(metaclass=ABCMeta):
+class _LinkerBase(metaclass=ABCMeta):
     """Abstract base class for linkers"""
 
     @classmethod
@@ -2735,30 +2770,27 @@ class Linker(metaclass=ABCMeta):
         additional_flags=None,
     ):
         driver_ver = driver.get_version()
-        if config.CUDA_ENABLE_MINOR_VERSION_COMPATIBILITY and driver_ver >= (
-            12,
-            0,
-        ):
-            raise ValueError("Use CUDA_ENABLE_PYNVJITLINK for CUDA >= 12.0 MVC")
-        if config.CUDA_ENABLE_PYNVJITLINK and driver_ver < (12, 0):
-            raise ValueError("Enabling pynvjitlink requires CUDA 12.")
-        if config.CUDA_ENABLE_PYNVJITLINK:
-            linker = PyNvJitLinker
-
-        elif config.CUDA_ENABLE_MINOR_VERSION_COMPATIBILITY:
-            linker = MVCLinker
+        if driver_ver < (12, 0):
+            if config.CUDA_ENABLE_MINOR_VERSION_COMPATIBILITY:
+                linker = MVCLinker
+            elif USE_NV_BINDING:
+                linker = _Linker
+            else:
+                linker = CtypesLinker
         else:
             if USE_NV_BINDING:
-                linker = CudaPythonLinker
+                linker = _Linker
             else:
                 linker = CtypesLinker
 
-        if linker is PyNvJitLinker:
-            return linker(max_registers, lineinfo, cc, lto, additional_flags)
-        elif additional_flags or lto:
-            raise ValueError("LTO and additional flags require PyNvJitLinker")
+        params = (max_registers, lineinfo, cc)
+        if linker is _Linker:
+            params = (*params, lto, additional_flags)
         else:
-            return linker(max_registers, lineinfo, cc)
+            if lto or additional_flags:
+                raise ValueError("LTO and additional flags require nvjitlink")
+
+        return linker(*params)
 
     @abstractmethod
     def __init__(self, max_registers, lineinfo, cc):
@@ -2786,7 +2818,6 @@ class Linker(metaclass=ABCMeta):
         with driver.get_active_context() as ac:
             dev = driver.get_device(ac.devnum)
             cc = dev.compute_capability
-
         ptx, log = nvrtc.compile(cu, name, cc)
 
         if config.DUMP_ASSEMBLY:
@@ -2821,7 +2852,6 @@ class Linker(metaclass=ABCMeta):
         LTO-ed portion of the PTX when linker is added with objects that can be
         both LTO-ed and not LTO-ed.
         """
-
         if isinstance(path_or_code, str):
             ext = pathlib.Path(path_or_code).suffix
             if ext == "":
@@ -2901,7 +2931,148 @@ class Linker(metaclass=ABCMeta):
         """
 
 
-class MVCLinker(Linker):
+class _Linker(_LinkerBase):
+    def __init__(
+        self,
+        max_registers=None,
+        lineinfo=False,
+        cc=None,
+        lto=None,
+        additional_flags=None,
+    ):
+        arch = f"sm_{cc[0]}{cc[1]}"
+        self.max_registers = max_registers if max_registers else None
+        self.lineinfo = lineinfo
+        self.cc = cc
+        self.arch = arch
+        if lto is False:
+            # WAR for apparent nvjitlink issue
+            lto = None
+        self.lto = lto
+        self.additional_flags = additional_flags
+
+        self.options = LinkerOptions(
+            max_register_count=self.max_registers,
+            lineinfo=lineinfo,
+            arch=arch,
+            link_time_optimization=lto,
+        )
+        self._complete = False
+        self._object_codes = []
+        self.linker = None  # need at least one program
+
+    @property
+    def info_log(self):
+        if not self.linker:
+            raise ValueError("Not Initialized")
+        if self._complete:
+            return self._info_log
+        raise RuntimeError("Link not yet complete.")
+
+    @property
+    def error_log(self):
+        if not self.linker:
+            raise ValueError("Not Initialized")
+        if self._complete:
+            return self._error_log
+        raise RuntimeError("Link not yet complete.")
+
+    def add_ptx(self, ptx, name="<cudapy-ptx>"):
+        obj = ObjectCode.from_ptx(ptx, name=name)
+        self._object_codes.append(obj)
+
+    def add_cu(self, cu, name="<cudapy-cu>"):
+        with driver.get_active_context() as ac:
+            dev = driver.get_device(ac.devnum)
+            cc = dev.compute_capability
+        obj, log = nvrtc.compile(cu, name, cc, ltoir=self.lto)
+
+        if not self.lto and config.DUMP_ASSEMBLY:
+            print(("ASSEMBLY %s" % name).center(80, "-"))
+            print(obj.code)
+
+        self._object_codes.append(obj)
+
+    def add_cubin(self, cubin, name="<cudapy-cubin>"):
+        obj = ObjectCode.from_cubin(cubin, name=name)
+        self._object_codes.append(obj)
+
+    def add_ltoir(self, ltoir, name="<cudapy-ltoir>"):
+        obj = ObjectCode.from_ltoir(ltoir, name=name)
+        self._object_codes.append(obj)
+
+    def add_fatbin(self, fatbin, name="<cudapy-fatbin>"):
+        obj = ObjectCode.from_fatbin(fatbin, name=name)
+        self._object_codes.append(obj)
+
+    def add_object(self, obj, name="<cudapy-object>"):
+        obj = ObjectCode.from_object(obj, name=name)
+        self._object_codes.append(obj)
+
+    def add_library(self, lib, name="<cudapy-lib>"):
+        obj = ObjectCode.from_library(lib, name=name)
+        self._object_codes.append(obj)
+
+    def add_file(self, path, kind):
+        try:
+            data = cached_file_read(path, how="rb")
+        except FileNotFoundError:
+            raise LinkerError(f"{path} not found")
+        name = pathlib.Path(path).name
+        self.add_data(data, kind, name)
+
+    def add_data(self, data, kind, name):
+        if kind == FILE_EXTENSION_MAP["ptx"]:
+            fn = self.add_ptx
+        elif kind == FILE_EXTENSION_MAP["cubin"]:
+            fn = self.add_cubin
+        elif kind == "cu":
+            fn = self.add_cu
+        elif (
+            kind == FILE_EXTENSION_MAP["lib"] or kind == FILE_EXTENSION_MAP["a"]
+        ):
+            fn = self.add_library
+        elif kind == FILE_EXTENSION_MAP["fatbin"]:
+            fn = self.add_fatbin
+        elif kind == FILE_EXTENSION_MAP["o"]:
+            fn = self.add_object
+        elif kind == FILE_EXTENSION_MAP["ltoir"]:
+            fn = self.add_ltoir
+        else:
+            raise LinkerError(f"Don't know how to link {kind}")
+
+        fn(data, name)
+
+    def get_linked_ptx(self):
+        options = LinkerOptions(
+            max_register_count=self.max_registers,
+            lineinfo=self.lineinfo,
+            arch=self.arch,
+            link_time_optimization=True,
+            ptx=True,
+        )
+
+        self.linker = Linker(*self._object_codes, options=options)
+
+        result = self.linker.link("ptx")
+        self.close()
+        self._complete = True
+        return result.code
+
+    def close(self):
+        self._info_log = self.linker.get_info_log()
+        self._error_log = self.linker.get_error_log()
+        self.linker.close()
+
+    def complete(self):
+        self.linker = Linker(*self._object_codes, options=self.options)
+        result = self.linker.link("cubin")
+        self.close()
+        self._complete = True
+        return result
+
+
+class MVCLinker(_LinkerBase):
     """
     Linker supporting Minor Version Compatibility, backed by the cubinlinker
     package.
@@ -2996,7 +3167,7 @@ class MVCLinker(Linker):
             raise LinkerError from e
 
 
-class CtypesLinker(Linker):
+class CtypesLinker(_LinkerBase):
     """
     Links for current device if no CC given
     """
@@ -3137,266 +3308,6 @@ class CtypesLinker(Linker):
         # We return a copy of the cubin because it's owned by the linker
         cubin_ptr = ctypes.cast(cubin_buf, ctypes.POINTER(ctypes.c_char))
         return bytes(np.ctypeslib.as_array(cubin_ptr, shape=(size,)))
-
-
-class CudaPythonLinker(Linker):
-    """
-    Links for current device if no CC given
-    """
-
-    def __init__(self, max_registers=0, lineinfo=False, cc=None):
-        super().__init__(max_registers, lineinfo, cc)
-
-        logsz = config.CUDA_LOG_SIZE
-        linkerinfo = bytearray(logsz)
-        linkererrors = bytearray(logsz)
-
-        jit_option = binding.CUjit_option
-
-        options = {
-            jit_option.CU_JIT_INFO_LOG_BUFFER: linkerinfo,
-            jit_option.CU_JIT_INFO_LOG_BUFFER_SIZE_BYTES: logsz,
-            jit_option.CU_JIT_ERROR_LOG_BUFFER: linkererrors,
-            jit_option.CU_JIT_ERROR_LOG_BUFFER_SIZE_BYTES: logsz,
-            jit_option.CU_JIT_LOG_VERBOSE: 1,
-        }
-        if max_registers:
-            options[jit_option.CU_JIT_MAX_REGISTERS] = max_registers
-        if lineinfo:
-            options[jit_option.CU_JIT_GENERATE_LINE_INFO] = 1
-
-        if cc is None:
-            # No option value is needed, but we need something as a placeholder
-            options[jit_option.CU_JIT_TARGET_FROM_CUCONTEXT] = 1
-        else:
-            cc_val = cc[0] * 10 + cc[1]
-            cc_enum = getattr(
-                binding.CUjit_target, f"CU_TARGET_COMPUTE_{cc_val}"
-            )
-            options[jit_option.CU_JIT_TARGET] = cc_enum
-
-        raw_keys = list(options.keys())
-        raw_values = list(options.values())
-        self.handle = driver.cuLinkCreate(len(raw_keys), raw_keys, raw_values)
-
-        weakref.finalize(self, driver.cuLinkDestroy, self.handle)
-
-        self.linker_info_buf = linkerinfo
-        self.linker_errors_buf = linkererrors
-
-        self._keep_alive = [linkerinfo, linkererrors, raw_keys, raw_values]
-
-    @property
-    def info_log(self):
-        return self.linker_info_buf.decode("utf8")
-
-    @property
-    def error_log(self):
-        return self.linker_errors_buf.decode("utf8")
-
-    def add_cubin(self, cubin, name="<unnamed-cubin>"):
-        input_type = binding.CUjitInputType.CU_JIT_INPUT_CUBIN
-        return self._add_data(input_type, cubin, name)
-
-    def add_ptx(self, ptx, name="<unnamed-ptx>"):
-        input_type = binding.CUjitInputType.CU_JIT_INPUT_PTX
-        return self._add_data(input_type, ptx, name)
-
-    def add_object(self, object_, name="<unnamed-object>"):
-        input_type = binding.CUjitInputType.CU_JIT_INPUT_OBJECT
-        return self._add_data(input_type, object_, name)
-
-    def add_fatbin(self, fatbin, name="<unnamed-fatbin>"):
-        input_type = binding.CUjitInputType.CU_JIT_INPUT_FATBINARY
-        return self._add_data(input_type, fatbin, name)
-
-    def add_library(self, library, name="<unnamed-library>"):
-        input_type = binding.CUjitInputType.CU_JIT_INPUT_LIBRARY
-        return self._add_data(input_type, library, name)
-
-    def _add_data(self, input_type, data, name):
-        name_buffer = name.encode("utf8")
-        self._keep_alive += [data, name_buffer]
-        try:
-            driver.cuLinkAddData(
-                self.handle, input_type, data, len(data), name_buffer, 0, [], []
-            )
-        except CudaAPIError as e:
-            raise LinkerError("%s\n%s" % (e, self.error_log))
-
-    def add_data(self, data, kind, name=None):
-        # We pass the name as **kwargs to ensure the default name for the input
-        # type is used if none is supplied
-        kws = {}
-        if name is not None:
-            kws["name"] = name
-
-        if kind == FILE_EXTENSION_MAP["cubin"]:
-            self.add_cubin(data, **kws)
-        elif kind == FILE_EXTENSION_MAP["fatbin"]:
-            self.add_fatbin(data, **kws)
-        elif kind == FILE_EXTENSION_MAP["a"]:
-            self.add_library(data, **kws)
-        elif kind == FILE_EXTENSION_MAP["ptx"]:
-            self.add_ptx(data, **kws)
-        elif kind == FILE_EXTENSION_MAP["o"]:
-            self.add_object(data, **kws)
-        elif kind == FILE_EXTENSION_MAP["ltoir"]:
-            raise LinkerError("CudaPythonLinker cannot link LTO-IR")
-        else:
-            raise LinkerError(f"Don't know how to link {kind}")
-
-    def add_file(self, path, kind):
-        pathbuf = path.encode("utf8")
-        self._keep_alive.append(pathbuf)
-
-        try:
-            driver.cuLinkAddFile(self.handle, kind, pathbuf, 0, [], [])
-        except CudaAPIError as e:
-            if e.code == binding.CUresult.CUDA_ERROR_FILE_NOT_FOUND:
-                msg = f"{path} not found"
-            else:
-                msg = "%s\n%s" % (e, self.error_log)
-            raise LinkerError(msg)
-
-    def complete(self):
-        try:
-            cubin_buf, size = driver.cuLinkComplete(self.handle)
-        except CudaAPIError as e:
-            raise LinkerError("%s\n%s" % (e, self.error_log))
-
-        assert size > 0, "linker returned a zero sized cubin"
-        del self._keep_alive[:]
-        # We return a copy of the cubin because it's owned by the linker
-        cubin_ptr = ctypes.cast(cubin_buf, ctypes.POINTER(ctypes.c_char))
-        return bytes(np.ctypeslib.as_array(cubin_ptr, shape=(size,)))
-
-
-class PyNvJitLinker(Linker):
-    def __init__(
-        self,
-        max_registers=None,
-        lineinfo=False,
-        cc=None,
-        lto=False,
-        additional_flags=None,
-    ):
-        if NvJitLinker is None:
-            raise ImportError(
-                "Using pynvjitlink requires the pynvjitlink package to be "
-                "available"
-            )
-
-        if config.CUDA_ENABLE_MINOR_VERSION_COMPATIBILITY:
-            raise ValueError(
-                "Can't set CUDA_ENABLE_MINOR_VERSION_COMPATIBILITY and "
-                "CUDA_ENABLE_PYNVJITLINK at the same time"
-            )
-
-        if cc is None:
-            raise RuntimeError("PyNvJitLinker requires CC to be specified")
-        if not any(isinstance(cc, t) for t in [list, tuple]):
-            raise TypeError("`cc` must be a list or tuple of length 2")
-
-        sm_ver = f"{cc[0] * 10 + cc[1]}"
-        arch = f"-arch=sm_{sm_ver}"
-        options = [arch]
-        if max_registers:
-            options.append(f"-maxrregcount={max_registers}")
-        if lineinfo:
-            options.append("-lineinfo")
-        if lto:
-            options.append("-lto")
-        if additional_flags is not None:
-            options.extend(additional_flags)
-
-        self._linker = NvJitLinker(*options)
-        self.lto = lto
-        self.options = options
-
-    @property
-    def info_log(self):
-        return self._linker.info_log
-
-    @property
-    def error_log(self):
-        return self._linker.error_log
-
-    def add_ptx(self, ptx, name="<cudapy-ptx>"):
-        self._linker.add_ptx(ptx, name)
-
-    def add_fatbin(self, fatbin, name="<external-fatbin>"):
-        self._linker.add_fatbin(fatbin, name)
-
-    def add_ltoir(self, ltoir, name="<external-ltoir>"):
-        self._linker.add_ltoir(ltoir, name)
-
-    def add_object(self, obj, name="<external-object>"):
-        self._linker.add_object(obj, name)
-
-    def add_file(self, path, kind):
-        try:
-            data = cached_file_read(path, "rb")
-        except FileNotFoundError:
-            raise LinkerError(f"{path} not found")
-
-        name = pathlib.Path(path).name
-        self.add_data(data, kind, name)
-
-    def add_cu(self, cu, name):
-        """Add CUDA source in a string to the link. The name of the source
-        file should be specified in `name`."""
-        with driver.get_active_context() as ac:
-            dev = driver.get_device(ac.devnum)
-            cc = dev.compute_capability
-
-        program, log = nvrtc.compile(cu, name, cc, ltoir=self.lto)
-
-        if not self.lto and config.DUMP_ASSEMBLY:
-            print(("ASSEMBLY %s" % name).center(80, "-"))
-            print(program)
-            print("=" * 80)
-
-        suffix = ".ltoir" if self.lto else ".ptx"
-        program_name = os.path.splitext(name)[0] + suffix
-        # Link the program's PTX or LTOIR using the normal linker mechanism
-        if self.lto:
-            self.add_ltoir(program, program_name)
-        else:
-            self.add_ptx(program.encode(), program_name)
-
-    def add_data(self, data, kind, name):
-        if kind == FILE_EXTENSION_MAP["cubin"]:
-            fn = self._linker.add_cubin
-        elif kind == FILE_EXTENSION_MAP["fatbin"]:
-            fn = self._linker.add_fatbin
-        elif kind == FILE_EXTENSION_MAP["a"]:
-            fn = self._linker.add_library
-        elif kind == FILE_EXTENSION_MAP["ptx"]:
-            return self.add_ptx(data, name)
-        elif kind == FILE_EXTENSION_MAP["o"]:
-            fn = self._linker.add_object
-        elif kind == FILE_EXTENSION_MAP["ltoir"]:
-            fn = self._linker.add_ltoir
-        else:
-            raise LinkerError(f"Don't know how to link {kind}")
-
-        try:
-            fn(data, name)
-        except NvJitLinkError as e:
-            raise LinkerError from e
-
-    def get_linked_ptx(self):
-        try:
-            return self._linker.get_linked_ptx()
-        except NvJitLinkError as e:
-            raise LinkerError from e
-
-    def complete(self):
-        try:
-            return self._linker.get_linked_cubin()
-        except NvJitLinkError as e:
-            raise LinkerError from e
 
 
 # -----------------------------------------------------------------------------
