@@ -458,11 +458,10 @@ class _Kernel(serialize.ReduceMixin):
             self._prepare_args(t, v, stream, retr, kernelargs)
 
         if driver.USE_NV_BINDING:
-            zero_stream = driver.binding.CUstream(0)
+            stream_handle = stream and stream.handle.value or 0
         else:
             zero_stream = None
-
-        stream_handle = stream and stream.handle or zero_stream
+            stream_handle = stream and stream.handle or zero_stream
 
         # Invoke kernel
         driver.launch_kernel(
