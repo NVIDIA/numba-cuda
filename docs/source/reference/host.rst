@@ -229,20 +229,3 @@ stream, and the stream must remain valid whilst the Numba ``Stream`` object is
 in use.
 
 .. autofunction:: numba.cuda.external_stream
-
-
-Runtime
--------
-
-Numba generally uses the Driver API, but it provides a simple wrapper to the
-Runtime API so that the version of the runtime in use can be queried. This is
-accessed through ``cuda.runtime``, which is an instance of the
-:class:`numba.cuda.cudadrv.runtime.Runtime` class:
-
-.. autoclass:: numba.cuda.cudadrv.runtime.Runtime
-   :members: get_version, is_supported_version, supported_versions
-
-Whether the current runtime is officially supported and tested with the current
-version of Numba can also be queried:
-
-.. autofunction:: numba.cuda.is_supported_version
