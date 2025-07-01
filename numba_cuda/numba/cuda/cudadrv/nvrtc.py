@@ -80,20 +80,6 @@ class NVRTC:
     (for Numba) open_cudalib function to load the NVRTC library.
     """
 
-    _CU11_2ONLY_PROTOTYPES = {
-        # nvrtcResult nvrtcGetNumSupportedArchs(int *numArchs);
-        "nvrtcGetNumSupportedArchs": (nvrtc_result, POINTER(c_int)),
-        # nvrtcResult nvrtcGetSupportedArchs(int *supportedArchs);
-        "nvrtcGetSupportedArchs": (nvrtc_result, POINTER(c_int)),
-    }
-
-    _CU12ONLY_PROTOTYPES = {
-        # nvrtcResult nvrtcGetLTOIRSize(nvrtcProgram prog, size_t *ltoSizeRet);
-        "nvrtcGetLTOIRSize": (nvrtc_result, nvrtc_program, POINTER(c_size_t)),
-        # nvrtcResult nvrtcGetLTOIR(nvrtcProgram prog, char *lto);
-        "nvrtcGetLTOIR": (nvrtc_result, nvrtc_program, c_char_p),
-    }
-
     _PROTOTYPES = {
         # nvrtcResult nvrtcVersion(int *major, int *minor)
         "nvrtcVersion": (nvrtc_result, POINTER(c_int), POINTER(c_int)),
@@ -141,6 +127,14 @@ class NVRTC:
         ),
         # nvrtcResult nvrtcGetProgramLog(nvrtcProgram prog, char *log);
         "nvrtcGetProgramLog": (nvrtc_result, nvrtc_program, c_char_p),
+        # nvrtcResult nvrtcGetNumSupportedArchs(int *numArchs);
+        "nvrtcGetNumSupportedArchs": (nvrtc_result, POINTER(c_int)),
+        # nvrtcResult nvrtcGetSupportedArchs(int *supportedArchs);
+        "nvrtcGetSupportedArchs": (nvrtc_result, POINTER(c_int)),
+        # nvrtcResult nvrtcGetLTOIRSize(nvrtcProgram prog, size_t *ltoSizeRet);
+        "nvrtcGetLTOIRSize": (nvrtc_result, nvrtc_program, POINTER(c_size_t)),
+        # nvrtcResult nvrtcGetLTOIR(nvrtcProgram prog, char *lto);
+        "nvrtcGetLTOIR": (nvrtc_result, nvrtc_program, c_char_p),
     }
 
     # Singleton reference
@@ -158,18 +152,18 @@ class NVRTC:
                     cls.__INSTANCE = None
                     raise NvrtcSupportError("NVRTC cannot be loaded") from e
 
-                from numba.cuda.cudadrv.runtime import get_version
-
-                if get_version() >= (11, 2):
-                    inst._PROTOTYPES |= inst._CU11_2ONLY_PROTOTYPES
-                if get_version() >= (12, 0):
-                    inst._PROTOTYPES |= inst._CU12ONLY_PROTOTYPES
-
                 # Find & populate functions
                 for name, proto in inst._PROTOTYPES.items():
-                    func = getattr(lib, name)
-                    func.restype = proto[0]
-                    func.argtypes = proto[1:]
+                    try:
+                        func = getattr(lib, name)
+                        func.restype = proto[0]
+                        func.argtypes = proto[1:]
+                    except AttributeError:
+                        if "LTOIR" in name:
+                            # CUDA 11 does not have LTOIR functions; ignore
+                            continue
+                        else:
+                            raise
 
                     @functools.wraps(func)
                     def checked_call(*args, func=func, name=name):
