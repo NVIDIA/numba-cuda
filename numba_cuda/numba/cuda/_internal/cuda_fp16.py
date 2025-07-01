@@ -18,20 +18,19 @@ from llvmlite import ir
 from numba import types
 from numba.core.datamodel import PrimitiveModel, StructModel
 from numba.core.extending import (
-    lower_cast,
     make_attribute_wrapper,
     register_model,
 )
+from numba.core.imputils import Registry as TargetRegistry, lower_cast
 import numba.core.typeconv
 from numba.core.typing import signature
 from numba.core.typing.templates import (
+    Registry as TypingRegistry,
     AbstractTemplate,
     AttributeTemplate,
     ConcreteTemplate,
 )
 from numba.cuda import CUSource, declare_device
-from numba.cuda.cudadecl import register, register_attr, register_global
-from numba.cuda.cudaimpl import lower
 from numba.cuda.vector_types import vector_types
 from numba.extending import as_numba_type
 from numba.types import (
@@ -52,6 +51,15 @@ from numba.types import (
     uint64,
     void,
 )
+
+typing_registry = TypingRegistry()
+register = typing_registry.register
+register_attr = typing_registry.register_attr
+register_global = typing_registry.register_global
+target_registry = TargetRegistry()
+lower = target_registry.lower
+lower_attr = target_registry.lower_getattr
+lower_constant = target_registry.lower_constant
 
 float32x2 = vector_types["float32x2"]
 
