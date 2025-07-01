@@ -1,5 +1,7 @@
 import numba.core.types as types
 from numba.cuda._internal.cuda_fp16 import (
+    typing_registry,
+    target_registry,
     __half,
     __double2half,
     __float2half,
