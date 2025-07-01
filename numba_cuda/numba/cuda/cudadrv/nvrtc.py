@@ -342,8 +342,10 @@ def compile(src, name, cc, ltoir=False):
     else:
         arch = f"--gpu-architecture=compute_{major}{minor}"
 
-    cuda_include = [
-        f"{get_cuda_paths()['include_dir'].info}",
+    cuda_include_dir = get_cuda_paths()["include_dir"].info
+    cuda_includes = [
+        f"{cuda_include_dir}",
+        f"{os.path.join(cuda_include_dir, 'cccl')}",
     ]
 
     nvrtc_version = nvrtc.get_version()
@@ -364,7 +366,7 @@ def compile(src, name, cc, ltoir=False):
 
     nrt_include = os.path.join(numba_cuda_path, "memory_management")
 
-    includes = [numba_include, *cuda_include, nrt_include, *extra_includes]
+    includes = [numba_include, *cuda_includes, nrt_include, *extra_includes]
 
     if config.CUDA_USE_NVIDIA_BINDING:
         options = ProgramOptions(
