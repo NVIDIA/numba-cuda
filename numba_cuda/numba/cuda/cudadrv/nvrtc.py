@@ -1,6 +1,7 @@
 from ctypes import byref, c_char, c_char_p, c_int, c_size_t, c_void_p, POINTER
 from enum import IntEnum
 from numba.cuda.cudadrv.error import (
+    CCSupportError,
     NvrtcError,
     NvrtcBuiltinOperationFailure,
     NvrtcCompilationError,
@@ -79,20 +80,6 @@ class NVRTC:
     (for Numba) open_cudalib function to load the NVRTC library.
     """
 
-    _CU11_2ONLY_PROTOTYPES = {
-        # nvrtcResult nvrtcGetNumSupportedArchs(int *numArchs);
-        "nvrtcGetNumSupportedArchs": (nvrtc_result, POINTER(c_int)),
-        # nvrtcResult nvrtcGetSupportedArchs(int *supportedArchs);
-        "nvrtcGetSupportedArchs": (nvrtc_result, POINTER(c_int)),
-    }
-
-    _CU12ONLY_PROTOTYPES = {
-        # nvrtcResult nvrtcGetLTOIRSize(nvrtcProgram prog, size_t *ltoSizeRet);
-        "nvrtcGetLTOIRSize": (nvrtc_result, nvrtc_program, POINTER(c_size_t)),
-        # nvrtcResult nvrtcGetLTOIR(nvrtcProgram prog, char *lto);
-        "nvrtcGetLTOIR": (nvrtc_result, nvrtc_program, c_char_p),
-    }
-
     _PROTOTYPES = {
         # nvrtcResult nvrtcVersion(int *major, int *minor)
         "nvrtcVersion": (nvrtc_result, POINTER(c_int), POINTER(c_int)),
@@ -140,6 +127,14 @@ class NVRTC:
         ),
         # nvrtcResult nvrtcGetProgramLog(nvrtcProgram prog, char *log);
         "nvrtcGetProgramLog": (nvrtc_result, nvrtc_program, c_char_p),
+        # nvrtcResult nvrtcGetNumSupportedArchs(int *numArchs);
+        "nvrtcGetNumSupportedArchs": (nvrtc_result, POINTER(c_int)),
+        # nvrtcResult nvrtcGetSupportedArchs(int *supportedArchs);
+        "nvrtcGetSupportedArchs": (nvrtc_result, POINTER(c_int)),
+        # nvrtcResult nvrtcGetLTOIRSize(nvrtcProgram prog, size_t *ltoSizeRet);
+        "nvrtcGetLTOIRSize": (nvrtc_result, nvrtc_program, POINTER(c_size_t)),
+        # nvrtcResult nvrtcGetLTOIR(nvrtcProgram prog, char *lto);
+        "nvrtcGetLTOIR": (nvrtc_result, nvrtc_program, c_char_p),
     }
 
     # Singleton reference
@@ -157,18 +152,18 @@ class NVRTC:
                     cls.__INSTANCE = None
                     raise NvrtcSupportError("NVRTC cannot be loaded") from e
 
-                from numba.cuda.cudadrv.runtime import get_version
-
-                if get_version() >= (11, 2):
-                    inst._PROTOTYPES |= inst._CU11_2ONLY_PROTOTYPES
-                if get_version() >= (12, 0):
-                    inst._PROTOTYPES |= inst._CU12ONLY_PROTOTYPES
-
                 # Find & populate functions
                 for name, proto in inst._PROTOTYPES.items():
-                    func = getattr(lib, name)
-                    func.restype = proto[0]
-                    func.argtypes = proto[1:]
+                    try:
+                        func = getattr(lib, name)
+                        func.restype = proto[0]
+                        func.argtypes = proto[1:]
+                    except AttributeError:
+                        if "LTOIR" in name:
+                            # CUDA 11 does not have LTOIR functions; ignore
+                            continue
+                        else:
+                            raise
 
                     @functools.wraps(func)
                     def checked_call(*args, func=func, name=name):
@@ -195,52 +190,16 @@ class NVRTC:
 
         return cls.__INSTANCE
 
+    @functools.cache
     def get_supported_archs(self):
         """
         Get Supported Architectures by NVRTC as list of arch tuples.
         """
-        ver = self.get_version()
-        if ver < (11, 0):
-            raise RuntimeError(
-                "Unsupported CUDA version. CUDA 11.0 or higher is required."
-            )
-        elif ver == (11, 0):
-            return [
-                (3, 0),
-                (3, 2),
-                (3, 5),
-                (3, 7),
-                (5, 0),
-                (5, 2),
-                (5, 3),
-                (6, 0),
-                (6, 1),
-                (6, 2),
-                (7, 0),
-                (7, 2),
-                (7, 5),
-            ]
-        elif ver == (11, 1):
-            return [
-                (3, 5),
-                (3, 7),
-                (5, 0),
-                (5, 2),
-                (5, 3),
-                (6, 0),
-                (6, 1),
-                (6, 2),
-                (7, 0),
-                (7, 2),
-                (7, 5),
-                (8, 0),
-            ]
-        else:
-            num = c_int()
-            self.nvrtcGetNumSupportedArchs(byref(num))
-            archs = (c_int * num.value)()
-            self.nvrtcGetSupportedArchs(archs)
-            return [(archs[i] // 10, archs[i] % 10) for i in range(num.value)]
+        num = c_int()
+        self.nvrtcGetNumSupportedArchs(byref(num))
+        archs = (c_int * num.value)()
+        self.nvrtcGetSupportedArchs(archs)
+        return [(archs[i] // 10, archs[i] % 10) for i in range(num.value)]
 
     def get_version(self):
         """
@@ -349,9 +308,9 @@ def compile(src, name, cc, ltoir=False):
 
     version = nvrtc.get_version()
     ver_str = lambda v: ".".join(v)
-    if version < (11, 0):
+    if version < (11, 2):
         raise RuntimeError(
-            "Unsupported CUDA version. CUDA 11.0 or higher is required."
+            "Unsupported CUDA version. CUDA 11.2 or higher is required."
         )
     else:
         supported_arch = nvrtc.get_supported_archs()
@@ -383,8 +342,10 @@ def compile(src, name, cc, ltoir=False):
     else:
         arch = f"--gpu-architecture=compute_{major}{minor}"
 
-    cuda_include = [
-        f"{get_cuda_paths()['include_dir'].info}",
+    cuda_include_dir = get_cuda_paths()["include_dir"].info
+    cuda_includes = [
+        f"{cuda_include_dir}",
+        f"{os.path.join(cuda_include_dir, 'cccl')}",
     ]
 
     nvrtc_version = nvrtc.get_version()
@@ -405,7 +366,7 @@ def compile(src, name, cc, ltoir=False):
 
     nrt_include = os.path.join(numba_cuda_path, "memory_management")
 
-    includes = [numba_include, *cuda_include, nrt_include, *extra_includes]
+    includes = [numba_include, *cuda_includes, nrt_include, *extra_includes]
 
     if config.CUDA_USE_NVIDIA_BINDING:
         options = ProgramOptions(
@@ -474,3 +435,51 @@ def compile(src, name, cc, ltoir=False):
         else:
             ptx = nvrtc.get_ptx(program)
             return ptx, log
+
+
+def find_closest_arch(mycc):
+    """
+    Given a compute capability, return the closest compute capability supported
+    by the CUDA toolkit.
+
+    :param mycc: Compute capability as a tuple ``(MAJOR, MINOR)``
+    :return: Closest supported CC as a tuple ``(MAJOR, MINOR)``
+    """
+    supported_ccs = get_supported_ccs()
+
+    for i, cc in enumerate(supported_ccs):
+        if cc == mycc:
+            # Matches
+            return cc
+        elif cc > mycc:
+            # Exceeded
+            if i == 0:
+                # CC lower than supported
+                msg = (
+                    "GPU compute capability %d.%d is not supported"
+                    "(requires >=%d.%d)" % (mycc + cc)
+                )
+                raise CCSupportError(msg)
+            else:
+                # return the previous CC
+                return supported_ccs[i - 1]
+
+    # CC higher than supported
+    return supported_ccs[-1]  # Choose the highest
+
+
+def get_arch_option(major, minor):
+    """Matches with the closest architecture option"""
+    if config.FORCE_CUDA_CC:
+        arch = config.FORCE_CUDA_CC
+    else:
+        arch = find_closest_arch((major, minor))
+    return "compute_%d%d" % arch
+
+
+def get_lowest_supported_cc():
+    return min(get_supported_ccs())
+
+
+def get_supported_ccs():
+    return NVRTC().get_supported_archs()

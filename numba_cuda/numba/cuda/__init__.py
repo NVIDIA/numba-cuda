@@ -83,6 +83,19 @@ from numba.cuda.compiler import (
 implementation = "NVIDIA"
 
 
+# The default compute capability as set by the upstream Numba implementation.
+config_default_cc = config.CUDA_DEFAULT_PTX_CC
+
+# The default compute capability for Numba-CUDA. This will usually override the
+# upstream Numba built-in default of 5.0, unless the user has set it even
+# higher, in which case we should use the user-specified value. This default is
+# aligned with recent toolkit versions.
+numba_cuda_default_ptx_cc = (7, 5)
+
+if numba_cuda_default_ptx_cc > config_default_cc:
+    config.CUDA_DEFAULT_PTX_CC = numba_cuda_default_ptx_cc
+
+
 def test(*args, **kwargs):
     if not is_available():
         raise cuda_error()
