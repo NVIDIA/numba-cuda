@@ -1256,13 +1256,8 @@ class _PendingDeallocs(object):
             while self._cons:
                 [dtor, handle, size] = self._cons.popleft()
                 _logger.info("dealloc: %s %s bytes", dtor.__name__, size)
-                # The EMM plugin interface uses CUdeviceptr instances when the
-                # NVIDIA binding is enabled, but the other interfaces use ctypes
-                # objects, so we have to check what kind of object we have here.
-                # binding_types = (binding.CUdeviceptr, binding.CUmodule)
-                # if USE_NV_BINDING and not isinstance(handle, binding_types):
-                #    handle = handle.value
                 dtor(handle)
+
             self._size = 0
 
     @contextlib.contextmanager
@@ -1789,14 +1784,14 @@ def _pin_finalizer(memory_manager, ptr, alloc_key, mapped):
 
 def _event_finalizer(deallocs, handle):
     def core():
-        deallocs.add_item(driver.cuEventDestroy, handle)
+        deallocs.add_item(driver.cuEventDestroy, handle.value)
 
     return core
 
 
 def _stream_finalizer(deallocs, handle):
     def core():
-        deallocs.add_item(driver.cuStreamDestroy, handle)
+        deallocs.add_item(driver.cuStreamDestroy, handle.value)
 
     return core
 
@@ -2406,7 +2401,7 @@ class Stream(object):
             stream_callback = binding.CUstreamCallback(ptr)
             # The callback needs to receive a pointer to the data PyObject
             data = id(data)
-            handle = int(self.handle)
+            handle = self.handle.value
         else:
             stream_callback = self._stream_callback
             handle = self.handle
