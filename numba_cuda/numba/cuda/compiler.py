@@ -14,8 +14,6 @@ from numba.core.compiler import (
     sanitize_compile_result_entries,
     CompilerBase,
     DefaultPassBuilder,
-    Flags,
-    Option,
     CompileResult,
 )
 from numba.core.compiler_lock import global_compiler_lock
@@ -37,45 +35,11 @@ from warnings import warn
 from numba.cuda import nvvmutils
 from numba.cuda.api import get_current_device
 from numba.cuda.codegen import ExternalCodeLibrary
-from numba.cuda.cudadrv import nvvm
+from numba.cuda.cudadrv import nvvm, nvrtc
 from numba.cuda.descriptor import cuda_target
+from numba.cuda.flags import CUDAFlags
 from numba.cuda.target import CUDACABICallConv
 from numba.cuda import lowering
-
-
-def _nvvm_options_type(x):
-    if x is None:
-        return None
-
-    else:
-        assert isinstance(x, dict)
-        return x
-
-
-def _optional_int_type(x):
-    if x is None:
-        return None
-
-    else:
-        assert isinstance(x, int)
-        return x
-
-
-class CUDAFlags(Flags):
-    nvvm_options = Option(
-        type=_nvvm_options_type,
-        default=None,
-        doc="NVVM options",
-    )
-    compute_capability = Option(
-        type=tuple,
-        default=None,
-        doc="Compute Capability",
-    )
-    max_registers = Option(
-        type=_optional_int_type, default=None, doc="Max registers"
-    )
-    lto = Option(type=bool, default=False, doc="Enable Link-time Optimization")
 
 
 # The CUDACompileResult (CCR) has a specially-defined entry point equal to its
@@ -676,7 +640,7 @@ def compile(
     # If the user has used the config variable to specify a non-default that is
     # greater than the lowest non-deprecated one, then we should default to
     # their specified CC instead of the lowest non-deprecated one.
-    MIN_CC = max(config.CUDA_DEFAULT_PTX_CC, nvvm.LOWEST_CURRENT_CC)
+    MIN_CC = max(config.CUDA_DEFAULT_PTX_CC, nvrtc.get_lowest_supported_cc())
     cc = cc or MIN_CC
 
     cres = compile_cuda(

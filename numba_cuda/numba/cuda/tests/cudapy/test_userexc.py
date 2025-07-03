@@ -13,13 +13,6 @@ regex_pattern = (
 
 
 class TestUserExc(CUDATestCase):
-    def setUp(self):
-        super().setUp()
-        # LTO optimizes away the exception status due to an oversight
-        # in the way we generate it (it is not added to the used list).
-        # See https://github.com/numba/numba/issues/9526.
-        self.skip_if_lto("Exceptions not supported with LTO")
-
     def test_user_exception(self):
         @cuda.jit("void(int32)", debug=True, opt=False)
         def test_exc(x):

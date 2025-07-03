@@ -132,16 +132,9 @@ def _get_nvvm_wheel():
     return None
 
 
-def get_major_cuda_version():
-    # TODO: remove once cuda-python is
-    # a hard dependency
-    from numba.cuda.cudadrv.runtime import get_version
-
-    return get_version()[0]
-
-
 def get_nvrtc_dso_path():
     site_paths = [site.getusersitepackages()] + site.getsitepackages()
+
     for sp in site_paths:
         lib_dir = os.path.join(
             sp,
@@ -150,23 +143,28 @@ def get_nvrtc_dso_path():
             ("bin" if IS_WIN32 else "lib") if sp else None,
         )
         if lib_dir and os.path.exists(lib_dir):
-            try:
-                major = get_major_cuda_version()
-                if major == 11:
-                    cu_ver = "112" if IS_WIN32 else "11.2"
-                elif major == 12:
-                    cu_ver = "120" if IS_WIN32 else "12"
-                else:
-                    raise NotImplementedError(f"CUDA {major} is not supported")
+            chosen_path = None
 
-                return os.path.join(
+            # Check for each version of the NVRTC DLL, preferring the most
+            # recent.
+            versions = (
+                "112" if IS_WIN32 else "11.2",
+                "120" if IS_WIN32 else "12",
+                "130" if IS_WIN32 else "13",
+            )
+
+            for version in versions:
+                dso_path = os.path.join(
                     lib_dir,
-                    f"nvrtc64_{cu_ver}_0.dll"
+                    f"nvrtc64_{version}_0.dll"
                     if IS_WIN32
-                    else f"libnvrtc.so.{cu_ver}",
+                    else f"libnvrtc.so.{version}",
                 )
-            except RuntimeError:
-                continue
+
+                if os.path.exists(dso_path) and os.path.isfile(dso_path):
+                    chosen_path = dso_path
+
+            return chosen_path
 
 
 def _get_nvrtc_wheel():

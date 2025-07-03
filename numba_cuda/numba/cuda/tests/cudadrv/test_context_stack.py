@@ -107,7 +107,21 @@ class Test3rdPartyContext(CUDATestCase):
         if driver.USE_NV_BINDING:
             flags = 0
             dev = driver.binding.CUdevice(0)
-            hctx = the_driver.cuCtxCreate(flags, dev)
+
+            result, version = driver.binding.cuDriverGetVersion()
+            self.assertEqual(
+                result,
+                driver.binding.CUresult.CUDA_SUCCESS,
+                "Error getting CUDA driver version",
+            )
+
+            # CUDA 13's cuCtxCreate has an optional parameter prepended
+            if version >= 13000:
+                args = (None, flags, dev)
+            else:
+                args = (flags, dev)
+
+            hctx = the_driver.cuCtxCreate(*args)
         else:
             hctx = driver.drvapi.cu_context()
             the_driver.cuCtxCreate(byref(hctx), 0, 0)
