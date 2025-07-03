@@ -1,4 +1,3 @@
-import operator
 from numba.core import errors, types
 from numba.core.typing.npydecl import (
     parse_dtype,
@@ -19,9 +18,7 @@ from numba.core.typing.templates import (
     Registry,
 )
 from numba.cuda.types import dim3
-from numba.core.typeconv import Conversion
 from numba import cuda
-from numba.cuda.compiler import declare_device_function
 
 registry = Registry()
 register = registry.register
