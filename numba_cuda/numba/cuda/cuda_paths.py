@@ -100,7 +100,7 @@ def _get_nvrtc_system_ctk():
 def _get_nvrtc_path_decision():
     options = _build_options(
         [
-            ("CUDA_HOME", lambda: get_cuda_home("nvrtc")),
+            ("CUDA_HOME", lambda: get_cuda_home(_cudalib_path())),
             ("Conda environment", get_conda_ctk),
             ("Conda environment (NVIDIA package)", get_nvidia_cudalib_ctk),
             ("NVIDIA NVCC Wheel", _get_nvrtc_wheel),
