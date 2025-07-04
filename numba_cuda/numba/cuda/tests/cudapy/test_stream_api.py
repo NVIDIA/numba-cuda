@@ -4,7 +4,7 @@ from numba.cuda.testing import (
     unittest,
     CUDATestCase,
 )
-from numba import config, cuda
+from numba import cuda
 
 # Basic tests that stream APIs execute on the hardware and in the simulator.
 #
@@ -38,10 +38,7 @@ class TestStreamAPI(CUDATestCase):
         # We don't test synchronization on the stream because it's not a real
         # stream - we used a dummy pointer for testing the API, so we just
         # ensure that the stream handle matches the external stream pointer.
-        if config.CUDA_USE_NVIDIA_BINDING:
-            value = int(s.handle)
-        else:
-            value = s.handle.value
+        value = s.handle.value
         self.assertEqual(ptr, value)
 
     @skip_unless_cudasim("External streams are usable with hardware")

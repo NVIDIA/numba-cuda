@@ -82,7 +82,8 @@ class Test3rdPartyContext(CUDATestCase):
         the_driver = driver.driver
         if driver.USE_NV_BINDING:
             dev = driver.binding.CUdevice(0)
-            hctx = the_driver.cuDevicePrimaryCtxRetain(dev)
+            binding_hctx = the_driver.cuDevicePrimaryCtxRetain(dev)
+            hctx = driver.drvapi.cu_context(int(binding_hctx))
         else:
             dev = 0
             hctx = driver.drvapi.cu_context()
@@ -93,10 +94,7 @@ class Test3rdPartyContext(CUDATestCase):
             # Check that the context from numba matches the created primary
             # context.
             my_ctx = cuda.current_context()
-            if driver.USE_NV_BINDING:
-                self.assertEqual(int(my_ctx.handle), int(ctx.handle))
-            else:
-                self.assertEqual(my_ctx.handle.value, ctx.handle.value)
+            self.assertEqual(my_ctx.handle.value, ctx.handle.value)
 
             extra_work()
         finally:
