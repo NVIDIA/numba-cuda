@@ -129,6 +129,10 @@ class TestCudaDriver(CUDATestCase):
 
             ptr = memory.device_ctypes_pointer
 
+            stream_handle = stream.handle
+            if _driver.USE_NV_BINDING:
+                stream_handle = stream_handle.value
+
             launch_kernel(
                 function.handle,  # Kernel
                 1,
@@ -138,7 +142,7 @@ class TestCudaDriver(CUDATestCase):
                 1,
                 1,  # bx, by, bz
                 0,  # dynamic shared mem
-                stream.handle,  # stream
+                stream_handle,  # stream
                 [ptr],
             )  # arguments
 

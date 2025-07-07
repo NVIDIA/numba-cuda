@@ -159,12 +159,8 @@ class _Runtime(object):
                     # Get primary context for the active device
                     ctx = self.gpus[ac.devnum].get_primary_context()
                     # Is active context the primary context?
-                    if USE_NV_BINDING:
-                        ctx_handle = int(ctx.handle)
-                        ac_ctx_handle = int(ac.context_handle)
-                    else:
-                        ctx_handle = ctx.handle.value
-                        ac_ctx_handle = ac.context_handle.value
+                    ctx_handle = ctx.handle.value
+                    ac_ctx_handle = ac.context_handle.value
                     if ctx_handle != ac_ctx_handle:
                         msg = (
                             "Numba cannot operate on non-primary"
