@@ -25,6 +25,19 @@ class TestContextStack(CUDATestCase):
         gpulist = list(cuda.gpus)
         self.assertGreater(len(gpulist), 0)
 
+    def test_gpus_cudevice_indexing(self):
+        """Test that CUdevice objects can be used to index into cuda.gpus"""
+        # When using the CUDA Python bindings, the device ids are CUdevice
+        # objects, otherwise they are integers. We test that the device id is
+        # usable as an index into cuda.gpus.
+        device_ids = [device.id for device in cuda.list_devices()]
+        for device_id in device_ids:
+            with cuda.gpus[device_id]:
+                # Check that the device is an integer if not using the CUDA
+                # Python bindings, otherwise it's a CUdevice object
+                assert isinstance(device_id, int) != driver.USE_NV_BINDING
+                self.assertEqual(cuda.gpus.current.id, device_id)
+
 
 class TestContextAPI(CUDATestCase):
     def tearDown(self):

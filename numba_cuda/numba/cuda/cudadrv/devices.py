@@ -40,6 +40,8 @@ class _DeviceList(object):
         """
         Returns the context manager for device *devnum*.
         """
+        if not isinstance(devnum, (int, slice)) and USE_NV_BINDING:
+            devnum = int(devnum)
         return self.lst[devnum]
 
     def __str__(self):
