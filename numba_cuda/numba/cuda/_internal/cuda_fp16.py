@@ -807,7 +807,7 @@ def _from___half_to__type_unnamed1302257_lower(shim_stream, shim_obj):
     shim_raw_str = """
     extern "C" __device__ int
     ____half__ZNK6__halfcv10__half_rawEv_1(__half_raw &retval, __half *self) {
-        retval = self->operator __half_raw();
+        retval = static_cast<__half_raw>(*self);
         return 0;
     }
         """
@@ -851,7 +851,7 @@ def _from___half_to__type_unnamed1302257_lower(shim_stream, shim_obj):
     shim_raw_str = """
     extern "C" __device__ int
     ____half__ZNVK6__halfcv10__half_rawEv_1(__half_raw &retval, __half *self) {
-        retval = self->operator __half_raw();
+        retval = static_cast<__half_raw>(*self);
         return 0;
     }
         """
@@ -895,7 +895,7 @@ def _from___half_to_float32_lower(shim_stream, shim_obj):
     shim_raw_str = """
     extern "C" __device__ int
     ____half__ZNK6__halfcvfEv_1(float &retval, __half *self) {
-        retval = self->operator float();
+        retval = static_cast<float>(*self);
         return 0;
     }
         """
@@ -937,7 +937,7 @@ def _from___half_to_int8_lower(shim_stream, shim_obj):
     shim_raw_str = """
     extern "C" __device__ int
     ____half__ZNK6__halfcvaEv_1(signed char &retval, __half *self) {
-        retval = self->operator signed char();
+        retval = static_cast<signed char>(*self);
         return 0;
     }
         """
@@ -979,7 +979,7 @@ def _from___half_to_uint8_lower(shim_stream, shim_obj):
     shim_raw_str = """
     extern "C" __device__ int
     ____half__ZNK6__halfcvhEv_1(unsigned char &retval, __half *self) {
-        retval = self->operator unsigned char();
+        retval = static_cast<unsigned char>(*self);
         return 0;
     }
         """
@@ -1021,7 +1021,7 @@ def _from___half_to_int8_lower(shim_stream, shim_obj):
     shim_raw_str = """
     extern "C" __device__ int
     ____half__ZNK6__halfcvcEv_1(char &retval, __half *self) {
-        retval = self->operator char();
+        retval = static_cast<char>(*self);
         return 0;
     }
         """
@@ -1063,7 +1063,7 @@ def _from___half_to_int16_lower(shim_stream, shim_obj):
     shim_raw_str = """
     extern "C" __device__ int
     ____half__ZNK6__halfcvsEv_1(short &retval, __half *self) {
-        retval = self->operator short();
+        retval = static_cast<short>(*self);
         return 0;
     }
         """
@@ -1105,7 +1105,7 @@ def _from___half_to_uint16_lower(shim_stream, shim_obj):
     shim_raw_str = """
     extern "C" __device__ int
     ____half__ZNK6__halfcvtEv_1(unsigned short &retval, __half *self) {
-        retval = self->operator unsigned short();
+        retval = static_cast<unsigned short>(*self);
         return 0;
     }
         """
@@ -1147,7 +1147,7 @@ def _from___half_to_int32_lower(shim_stream, shim_obj):
     shim_raw_str = """
     extern "C" __device__ int
     ____half__ZNK6__halfcviEv_1(int &retval, __half *self) {
-        retval = self->operator int();
+        retval = static_cast<int>(*self);
         return 0;
     }
         """
@@ -1189,7 +1189,7 @@ def _from___half_to_uint32_lower(shim_stream, shim_obj):
     shim_raw_str = """
     extern "C" __device__ int
     ____half__ZNK6__halfcvjEv_1(unsigned int &retval, __half *self) {
-        retval = self->operator unsigned int();
+        retval = static_cast<unsigned int>(*self);
         return 0;
     }
         """
@@ -1231,7 +1231,7 @@ def _from___half_to_int64_lower(shim_stream, shim_obj):
     shim_raw_str = """
     extern "C" __device__ int
     ____half__ZNK6__halfcvlEv_1(long &retval, __half *self) {
-        retval = self->operator long();
+        retval = static_cast<long>(*self);
         return 0;
     }
         """
@@ -1273,7 +1273,7 @@ def _from___half_to_uint64_lower(shim_stream, shim_obj):
     shim_raw_str = """
     extern "C" __device__ int
     ____half__ZNK6__halfcvmEv_1(unsigned long &retval, __half *self) {
-        retval = self->operator unsigned long();
+        retval = static_cast<unsigned long>(*self);
         return 0;
     }
         """
@@ -1315,7 +1315,7 @@ def _from___half_to_int64_lower(shim_stream, shim_obj):
     shim_raw_str = """
     extern "C" __device__ int
     ____half__ZNK6__halfcvxEv_1(long long &retval, __half *self) {
-        retval = self->operator long long();
+        retval = static_cast<long long>(*self);
         return 0;
     }
         """
@@ -1357,7 +1357,7 @@ def _from___half_to_uint64_lower(shim_stream, shim_obj):
     shim_raw_str = """
     extern "C" __device__ int
     ____half__ZNK6__halfcvyEv_1(unsigned long long &retval, __half *self) {
-        retval = self->operator unsigned long long();
+        retval = static_cast<unsigned long long>(*self);
         return 0;
     }
         """
@@ -1399,7 +1399,7 @@ def _from___half_to_bool__lower(shim_stream, shim_obj):
     shim_raw_str = """
     extern "C" __device__ int
     ____half__ZNK6__halfcvbEv_1(bool &retval, __half *self) {
-        retval = self->operator bool();
+        retval = static_cast<bool>(*self);
         return 0;
     }
         """
@@ -1745,7 +1745,7 @@ def _from___half2_to__type_unnamed1302366_lower(shim_stream, shim_obj):
     shim_raw_str = """
     extern "C" __device__ int
     ____half2__ZNK7__half2cv11__half2_rawEv_1(__half2_raw &retval, __half2 *self) {
-        retval = self->operator __half2_raw();
+        retval = static_cast<__half2_raw>(*self);
         return 0;
     }
         """
