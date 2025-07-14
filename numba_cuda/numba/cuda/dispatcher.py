@@ -836,11 +836,14 @@ class CUDADispatcher(Dispatcher, serialize.ReduceMixin):
             blockdim=blockdim,
             stream=stream,
             sharedmem=sharedmem,
-        ):
+        ) as launch_config:
             if self.specialized:
                 kernel = next(iter(self.overloads.values()))
             else:
                 kernel = _dispatcher.Dispatcher._cuda_call(self, *args)
+
+            for callback in launch_config.pre_launch_callbacks:
+                callback(kernel, launch_config)
 
             kernel.launch(args, griddim, blockdim, stream, sharedmem)
 
