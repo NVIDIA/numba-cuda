@@ -47,6 +47,17 @@ def current_launch_config() -> Optional[LaunchConfig]:
     return _launch_config_var.get()
 
 
+def ensure_current_launch_config() -> LaunchConfig:
+    """
+    Ensure that a launch config is set for *this* thread/asyncio task.
+    Returns the launch config.  Raises RuntimeError if no launch config is set.
+    """
+    launch_config = current_launch_config()
+    if launch_config is None:
+        raise RuntimeError("No launch config set for this thread/asyncio task")
+    return launch_config
+
+
 @contextmanager
 def launch_config_ctx(
     *,
