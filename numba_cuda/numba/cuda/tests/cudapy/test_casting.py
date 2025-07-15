@@ -129,7 +129,6 @@ class TestCasting(CUDATestCase):
                     self.assertEqual(cfunc(-12.3), int(-12.3))
 
     @skip_on_cudasim("Compilation unsupported in the simulator")
-    @unittest.skip("Bindings generated using Numbast")
     def test_float16_to_int_ptx(self):
         pyfuncs = (to_int8, to_int16, to_int32, to_int64)
         sizes = (8, 16, 32, 64)
@@ -152,7 +151,6 @@ class TestCasting(CUDATestCase):
                     self.assertEqual(cfunc(12.3), int(12.3))
 
     @skip_on_cudasim("Compilation unsupported in the simulator")
-    @unittest.skip("Bindings generated using Numbast")
     def test_float16_to_uint_ptx(self):
         pyfuncs = (to_uint8, to_uint16, to_uint32, to_uint64)
         sizes = (8, 16, 32, 64)
@@ -185,7 +183,6 @@ class TestCasting(CUDATestCase):
                 self.assertEqual(cfunc(321), hostfunc(321))
 
     @skip_on_cudasim("Compilation unsupported in the simulator")
-    @unittest.skip("Bindings generated using Numbast")
     def test_int_to_float16_ptx(self):
         fromtys = (i1, i2, i4, i8)
         sizes = (8, 16, 32, 64)
@@ -195,7 +192,6 @@ class TestCasting(CUDATestCase):
             self.assertIn(f"cvt.rn.f16.s{size}", ptx)
 
     @skip_on_cudasim("Compilation unsupported in the simulator")
-    @unittest.skip("Bindings generated using Numbast")
     def test_uint_to_float16_ptx(self):
         fromtys = (u1, u2, u4, u8)
         sizes = (8, 16, 32, 64)
@@ -224,7 +220,6 @@ class TestCasting(CUDATestCase):
                 )
 
     @skip_on_cudasim("Compilation unsupported in the simulator")
-    @unittest.skip("Bindings generated using Numbast")
     def test_float16_to_float_ptx(self):
         pyfuncs = (to_float32, to_float64)
         postfixes = ("f32", "f64")
