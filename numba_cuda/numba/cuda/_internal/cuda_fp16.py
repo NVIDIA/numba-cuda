@@ -839,552 +839,6 @@ def _from___half_to__type_unnamed1302257_lower(shim_stream, shim_obj):
 _from___half_to__type_unnamed1302257_lower(shim_stream, shim_obj)
 
 
-def _from___half_to_float32_lower(shim_stream, shim_obj):
-    shim_raw_str = """
-    extern "C" __device__ int
-    ____half__ZNK6__halfcvfEv_1(float &retval, __half *self) {
-        retval = self->operator float();
-        return 0;
-    }
-        """
-
-    _op_decl___half = declare_device(
-        "____half__ZNK6__halfcvfEv_1",
-        float32(
-            CPointer(_type___half),
-        ),
-    )
-
-    def _conversion_op_caller___half(arg):
-        return _op_decl___half(arg)
-
-    @lower_cast(_type___half, float32)
-    def impl(context, builder, fromty, toty, value):
-        context.active_code_library.add_linking_file(shim_obj)
-        shim_stream.write_with_key("____half__ZNK6__halfcvfEv_1", shim_raw_str)
-        ptr = builder.alloca(
-            context.get_value_type(_type___half), name="selfptr"
-        )
-        builder.store(value, ptr, align=getattr(_type___half, "align", None))
-
-        return context.compile_internal(
-            builder,
-            _conversion_op_caller___half,
-            signature(
-                float32,
-                CPointer(_type___half),
-            ),
-            (ptr,),
-        )
-
-
-_from___half_to_float32_lower(shim_stream, shim_obj)
-
-
-def _from___half_to_int8_lower(shim_stream, shim_obj):
-    shim_raw_str = """
-    extern "C" __device__ int
-    ____half__ZNK6__halfcvaEv_1(signed char &retval, __half *self) {
-        retval = self->operator signed char();
-        return 0;
-    }
-        """
-
-    _op_decl___half = declare_device(
-        "____half__ZNK6__halfcvaEv_1",
-        int8(
-            CPointer(_type___half),
-        ),
-    )
-
-    def _conversion_op_caller___half(arg):
-        return _op_decl___half(arg)
-
-    @lower_cast(_type___half, int8)
-    def impl(context, builder, fromty, toty, value):
-        context.active_code_library.add_linking_file(shim_obj)
-        shim_stream.write_with_key("____half__ZNK6__halfcvaEv_1", shim_raw_str)
-        ptr = builder.alloca(
-            context.get_value_type(_type___half), name="selfptr"
-        )
-        builder.store(value, ptr, align=getattr(_type___half, "align", None))
-
-        return context.compile_internal(
-            builder,
-            _conversion_op_caller___half,
-            signature(
-                int8,
-                CPointer(_type___half),
-            ),
-            (ptr,),
-        )
-
-
-_from___half_to_int8_lower(shim_stream, shim_obj)
-
-
-def _from___half_to_uint8_lower(shim_stream, shim_obj):
-    shim_raw_str = """
-    extern "C" __device__ int
-    ____half__ZNK6__halfcvhEv_1(unsigned char &retval, __half *self) {
-        retval = self->operator unsigned char();
-        return 0;
-    }
-        """
-
-    _op_decl___half = declare_device(
-        "____half__ZNK6__halfcvhEv_1",
-        uint8(
-            CPointer(_type___half),
-        ),
-    )
-
-    def _conversion_op_caller___half(arg):
-        return _op_decl___half(arg)
-
-    @lower_cast(_type___half, uint8)
-    def impl(context, builder, fromty, toty, value):
-        context.active_code_library.add_linking_file(shim_obj)
-        shim_stream.write_with_key("____half__ZNK6__halfcvhEv_1", shim_raw_str)
-        ptr = builder.alloca(
-            context.get_value_type(_type___half), name="selfptr"
-        )
-        builder.store(value, ptr, align=getattr(_type___half, "align", None))
-
-        return context.compile_internal(
-            builder,
-            _conversion_op_caller___half,
-            signature(
-                uint8,
-                CPointer(_type___half),
-            ),
-            (ptr,),
-        )
-
-
-_from___half_to_uint8_lower(shim_stream, shim_obj)
-
-
-def _from___half_to_int8_lower(shim_stream, shim_obj):
-    shim_raw_str = """
-    extern "C" __device__ int
-    ____half__ZNK6__halfcvcEv_1(char &retval, __half *self) {
-        retval = self->operator char();
-        return 0;
-    }
-        """
-
-    _op_decl___half = declare_device(
-        "____half__ZNK6__halfcvcEv_1",
-        int8(
-            CPointer(_type___half),
-        ),
-    )
-
-    def _conversion_op_caller___half(arg):
-        return _op_decl___half(arg)
-
-    @lower_cast(_type___half, int8)
-    def impl(context, builder, fromty, toty, value):
-        context.active_code_library.add_linking_file(shim_obj)
-        shim_stream.write_with_key("____half__ZNK6__halfcvcEv_1", shim_raw_str)
-        ptr = builder.alloca(
-            context.get_value_type(_type___half), name="selfptr"
-        )
-        builder.store(value, ptr, align=getattr(_type___half, "align", None))
-
-        return context.compile_internal(
-            builder,
-            _conversion_op_caller___half,
-            signature(
-                int8,
-                CPointer(_type___half),
-            ),
-            (ptr,),
-        )
-
-
-_from___half_to_int8_lower(shim_stream, shim_obj)
-
-
-def _from___half_to_int16_lower(shim_stream, shim_obj):
-    shim_raw_str = """
-    extern "C" __device__ int
-    ____half__ZNK6__halfcvsEv_1(short &retval, __half *self) {
-        retval = self->operator short();
-        return 0;
-    }
-        """
-
-    _op_decl___half = declare_device(
-        "____half__ZNK6__halfcvsEv_1",
-        int16(
-            CPointer(_type___half),
-        ),
-    )
-
-    def _conversion_op_caller___half(arg):
-        return _op_decl___half(arg)
-
-    @lower_cast(_type___half, int16)
-    def impl(context, builder, fromty, toty, value):
-        context.active_code_library.add_linking_file(shim_obj)
-        shim_stream.write_with_key("____half__ZNK6__halfcvsEv_1", shim_raw_str)
-        ptr = builder.alloca(
-            context.get_value_type(_type___half), name="selfptr"
-        )
-        builder.store(value, ptr, align=getattr(_type___half, "align", None))
-
-        return context.compile_internal(
-            builder,
-            _conversion_op_caller___half,
-            signature(
-                int16,
-                CPointer(_type___half),
-            ),
-            (ptr,),
-        )
-
-
-_from___half_to_int16_lower(shim_stream, shim_obj)
-
-
-def _from___half_to_uint16_lower(shim_stream, shim_obj):
-    shim_raw_str = """
-    extern "C" __device__ int
-    ____half__ZNK6__halfcvtEv_1(unsigned short &retval, __half *self) {
-        retval = self->operator unsigned short();
-        return 0;
-    }
-        """
-
-    _op_decl___half = declare_device(
-        "____half__ZNK6__halfcvtEv_1",
-        uint16(
-            CPointer(_type___half),
-        ),
-    )
-
-    def _conversion_op_caller___half(arg):
-        return _op_decl___half(arg)
-
-    @lower_cast(_type___half, uint16)
-    def impl(context, builder, fromty, toty, value):
-        context.active_code_library.add_linking_file(shim_obj)
-        shim_stream.write_with_key("____half__ZNK6__halfcvtEv_1", shim_raw_str)
-        ptr = builder.alloca(
-            context.get_value_type(_type___half), name="selfptr"
-        )
-        builder.store(value, ptr, align=getattr(_type___half, "align", None))
-
-        return context.compile_internal(
-            builder,
-            _conversion_op_caller___half,
-            signature(
-                uint16,
-                CPointer(_type___half),
-            ),
-            (ptr,),
-        )
-
-
-_from___half_to_uint16_lower(shim_stream, shim_obj)
-
-
-def _from___half_to_int32_lower(shim_stream, shim_obj):
-    shim_raw_str = """
-    extern "C" __device__ int
-    ____half__ZNK6__halfcviEv_1(int &retval, __half *self) {
-        retval = self->operator int();
-        return 0;
-    }
-        """
-
-    _op_decl___half = declare_device(
-        "____half__ZNK6__halfcviEv_1",
-        int32(
-            CPointer(_type___half),
-        ),
-    )
-
-    def _conversion_op_caller___half(arg):
-        return _op_decl___half(arg)
-
-    @lower_cast(_type___half, int32)
-    def impl(context, builder, fromty, toty, value):
-        context.active_code_library.add_linking_file(shim_obj)
-        shim_stream.write_with_key("____half__ZNK6__halfcviEv_1", shim_raw_str)
-        ptr = builder.alloca(
-            context.get_value_type(_type___half), name="selfptr"
-        )
-        builder.store(value, ptr, align=getattr(_type___half, "align", None))
-
-        return context.compile_internal(
-            builder,
-            _conversion_op_caller___half,
-            signature(
-                int32,
-                CPointer(_type___half),
-            ),
-            (ptr,),
-        )
-
-
-_from___half_to_int32_lower(shim_stream, shim_obj)
-
-
-def _from___half_to_uint32_lower(shim_stream, shim_obj):
-    shim_raw_str = """
-    extern "C" __device__ int
-    ____half__ZNK6__halfcvjEv_1(unsigned int &retval, __half *self) {
-        retval = self->operator unsigned int();
-        return 0;
-    }
-        """
-
-    _op_decl___half = declare_device(
-        "____half__ZNK6__halfcvjEv_1",
-        uint32(
-            CPointer(_type___half),
-        ),
-    )
-
-    def _conversion_op_caller___half(arg):
-        return _op_decl___half(arg)
-
-    @lower_cast(_type___half, uint32)
-    def impl(context, builder, fromty, toty, value):
-        context.active_code_library.add_linking_file(shim_obj)
-        shim_stream.write_with_key("____half__ZNK6__halfcvjEv_1", shim_raw_str)
-        ptr = builder.alloca(
-            context.get_value_type(_type___half), name="selfptr"
-        )
-        builder.store(value, ptr, align=getattr(_type___half, "align", None))
-
-        return context.compile_internal(
-            builder,
-            _conversion_op_caller___half,
-            signature(
-                uint32,
-                CPointer(_type___half),
-            ),
-            (ptr,),
-        )
-
-
-_from___half_to_uint32_lower(shim_stream, shim_obj)
-
-
-def _from___half_to_int64_lower(shim_stream, shim_obj):
-    shim_raw_str = """
-    extern "C" __device__ int
-    ____half__ZNK6__halfcvlEv_1(long &retval, __half *self) {
-        retval = self->operator long();
-        return 0;
-    }
-        """
-
-    _op_decl___half = declare_device(
-        "____half__ZNK6__halfcvlEv_1",
-        int64(
-            CPointer(_type___half),
-        ),
-    )
-
-    def _conversion_op_caller___half(arg):
-        return _op_decl___half(arg)
-
-    @lower_cast(_type___half, int64)
-    def impl(context, builder, fromty, toty, value):
-        context.active_code_library.add_linking_file(shim_obj)
-        shim_stream.write_with_key("____half__ZNK6__halfcvlEv_1", shim_raw_str)
-        ptr = builder.alloca(
-            context.get_value_type(_type___half), name="selfptr"
-        )
-        builder.store(value, ptr, align=getattr(_type___half, "align", None))
-
-        return context.compile_internal(
-            builder,
-            _conversion_op_caller___half,
-            signature(
-                int64,
-                CPointer(_type___half),
-            ),
-            (ptr,),
-        )
-
-
-_from___half_to_int64_lower(shim_stream, shim_obj)
-
-
-def _from___half_to_uint64_lower(shim_stream, shim_obj):
-    shim_raw_str = """
-    extern "C" __device__ int
-    ____half__ZNK6__halfcvmEv_1(unsigned long &retval, __half *self) {
-        retval = self->operator unsigned long();
-        return 0;
-    }
-        """
-
-    _op_decl___half = declare_device(
-        "____half__ZNK6__halfcvmEv_1",
-        uint64(
-            CPointer(_type___half),
-        ),
-    )
-
-    def _conversion_op_caller___half(arg):
-        return _op_decl___half(arg)
-
-    @lower_cast(_type___half, uint64)
-    def impl(context, builder, fromty, toty, value):
-        context.active_code_library.add_linking_file(shim_obj)
-        shim_stream.write_with_key("____half__ZNK6__halfcvmEv_1", shim_raw_str)
-        ptr = builder.alloca(
-            context.get_value_type(_type___half), name="selfptr"
-        )
-        builder.store(value, ptr, align=getattr(_type___half, "align", None))
-
-        return context.compile_internal(
-            builder,
-            _conversion_op_caller___half,
-            signature(
-                uint64,
-                CPointer(_type___half),
-            ),
-            (ptr,),
-        )
-
-
-_from___half_to_uint64_lower(shim_stream, shim_obj)
-
-
-def _from___half_to_int64_lower(shim_stream, shim_obj):
-    shim_raw_str = """
-    extern "C" __device__ int
-    ____half__ZNK6__halfcvxEv_1(long long &retval, __half *self) {
-        retval = self->operator long long();
-        return 0;
-    }
-        """
-
-    _op_decl___half = declare_device(
-        "____half__ZNK6__halfcvxEv_1",
-        int64(
-            CPointer(_type___half),
-        ),
-    )
-
-    def _conversion_op_caller___half(arg):
-        return _op_decl___half(arg)
-
-    @lower_cast(_type___half, int64)
-    def impl(context, builder, fromty, toty, value):
-        context.active_code_library.add_linking_file(shim_obj)
-        shim_stream.write_with_key("____half__ZNK6__halfcvxEv_1", shim_raw_str)
-        ptr = builder.alloca(
-            context.get_value_type(_type___half), name="selfptr"
-        )
-        builder.store(value, ptr, align=getattr(_type___half, "align", None))
-
-        return context.compile_internal(
-            builder,
-            _conversion_op_caller___half,
-            signature(
-                int64,
-                CPointer(_type___half),
-            ),
-            (ptr,),
-        )
-
-
-_from___half_to_int64_lower(shim_stream, shim_obj)
-
-
-def _from___half_to_uint64_lower(shim_stream, shim_obj):
-    shim_raw_str = """
-    extern "C" __device__ int
-    ____half__ZNK6__halfcvyEv_1(unsigned long long &retval, __half *self) {
-        retval = self->operator unsigned long long();
-        return 0;
-    }
-        """
-
-    _op_decl___half = declare_device(
-        "____half__ZNK6__halfcvyEv_1",
-        uint64(
-            CPointer(_type___half),
-        ),
-    )
-
-    def _conversion_op_caller___half(arg):
-        return _op_decl___half(arg)
-
-    @lower_cast(_type___half, uint64)
-    def impl(context, builder, fromty, toty, value):
-        context.active_code_library.add_linking_file(shim_obj)
-        shim_stream.write_with_key("____half__ZNK6__halfcvyEv_1", shim_raw_str)
-        ptr = builder.alloca(
-            context.get_value_type(_type___half), name="selfptr"
-        )
-        builder.store(value, ptr, align=getattr(_type___half, "align", None))
-
-        return context.compile_internal(
-            builder,
-            _conversion_op_caller___half,
-            signature(
-                uint64,
-                CPointer(_type___half),
-            ),
-            (ptr,),
-        )
-
-
-_from___half_to_uint64_lower(shim_stream, shim_obj)
-
-
-def _from___half_to_bool__lower(shim_stream, shim_obj):
-    shim_raw_str = """
-    extern "C" __device__ int
-    ____half__ZNK6__halfcvbEv_1(bool &retval, __half *self) {
-        retval = self->operator bool();
-        return 0;
-    }
-        """
-
-    _op_decl___half = declare_device(
-        "____half__ZNK6__halfcvbEv_1",
-        bool_(
-            CPointer(_type___half),
-        ),
-    )
-
-    def _conversion_op_caller___half(arg):
-        return _op_decl___half(arg)
-
-    @lower_cast(_type___half, bool_)
-    def impl(context, builder, fromty, toty, value):
-        context.active_code_library.add_linking_file(shim_obj)
-        shim_stream.write_with_key("____half__ZNK6__halfcvbEv_1", shim_raw_str)
-        ptr = builder.alloca(
-            context.get_value_type(_type___half), name="selfptr"
-        )
-        builder.store(value, ptr, align=getattr(_type___half, "align", None))
-
-        return context.compile_internal(
-            builder,
-            _conversion_op_caller___half,
-            signature(
-                bool_,
-                CPointer(_type___half),
-            ),
-            (ptr,),
-        )
-
-
-_from___half_to_bool__lower(shim_stream, shim_obj)
-
-
 # Typing for __half2
 class _type_class___half2(Type):
     def __init__(self):
@@ -14305,6 +13759,77 @@ class _typing_atomicAdd(ConcreteTemplate):
 
 
 register_global(atomicAdd, types.Function(_typing_atomicAdd))
+
+
+def float16_float_ty_constraint(bitwidth):
+    typemap = {32: ("f32", "f"), 64: ("f64", "d")}
+
+    try:
+        return typemap[bitwidth]
+    except KeyError:
+        msg = f"Conversion between float16 and float{bitwidth} unsupported"
+        raise errors.CudaLoweringError(msg)
+
+
+@lower_cast(types.float16, types.Float)
+def float16_to_float_cast(context, builder, fromty, toty, val):
+    if fromty.bitwidth == toty.bitwidth:
+        return val
+
+    ty, constraint = float16_float_ty_constraint(toty.bitwidth)
+
+    fnty = ir.FunctionType(context.get_value_type(toty), [ir.IntType(16)])
+    asm = ir.InlineAsm(fnty, f"cvt.{ty}.f16 $0, $1;", f"={constraint},h")
+    return builder.call(asm, [val])
+
+
+@lower_cast(types.Float, types.float16)
+def float_to_float16_cast(context, builder, fromty, toty, val):
+    if fromty.bitwidth == toty.bitwidth:
+        return val
+
+    ty, constraint = float16_float_ty_constraint(fromty.bitwidth)
+
+    fnty = ir.FunctionType(ir.IntType(16), [context.get_value_type(fromty)])
+    asm = ir.InlineAsm(fnty, f"cvt.rn.f16.{ty} $0, $1;", f"=h,{constraint}")
+    return builder.call(asm, [val])
+
+
+def float16_int_constraint(bitwidth):
+    typemap = {8: "c", 16: "h", 32: "r", 64: "l"}
+
+    try:
+        return typemap[bitwidth]
+    except KeyError:
+        msg = f"Conversion between float16 and int{bitwidth} unsupported"
+        raise errors.CudaLoweringError(msg)
+
+
+@lower_cast(types.float16, types.Integer)
+def float16_to_integer_cast(context, builder, fromty, toty, val):
+    bitwidth = toty.bitwidth
+    constraint = float16_int_constraint(bitwidth)
+    signedness = "s" if toty.signed else "u"
+
+    fnty = ir.FunctionType(context.get_value_type(toty), [ir.IntType(16)])
+    asm = ir.InlineAsm(
+        fnty, f"cvt.rni.{signedness}{bitwidth}.f16 $0, $1;", f"={constraint},h"
+    )
+    return builder.call(asm, [val])
+
+
+@lower_cast(types.Integer, types.float16)
+@lower_cast(types.IntegerLiteral, types.float16)
+def integer_to_float16_cast(context, builder, fromty, toty, val):
+    bitwidth = fromty.bitwidth
+    constraint = float16_int_constraint(bitwidth)
+    signedness = "s" if fromty.signed else "u"
+
+    fnty = ir.FunctionType(ir.IntType(16), [context.get_value_type(fromty)])
+    asm = ir.InlineAsm(
+        fnty, f"cvt.rn.f16.{signedness}{bitwidth} $0, $1;", f"=h,{constraint}"
+    )
+    return builder.call(asm, [val])
 
 
 def _genfp16_unary_operator(l_key):
