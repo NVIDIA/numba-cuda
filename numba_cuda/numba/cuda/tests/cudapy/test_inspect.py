@@ -1,7 +1,11 @@
+import re
+
 import numpy as np
 
 from io import StringIO
 from numba import cuda, float32, float64, int32, intp
+from numba.types import float16
+from numba.cuda import declare_device
 from numba.cuda.testing import unittest, CUDATestCase
 from numba.cuda.testing import (
     skip_on_cudasim,
@@ -107,6 +111,42 @@ class TestInspect(CUDATestCase):
         self.assertIn("S2R", sass)  # Special register to register
         self.assertIn("BRA", sass)  # Branch
         self.assertIn("EXIT", sass)  # Exit program
+
+    def test_inspect_external_asm(self):
+        with open("/tmp/_temp_add.cu", "w") as f:
+            f.write("""
+            #include <cuda_fp16.h>
+            extern "C"
+            __device__ int add_f2_f2(half * res, half a, half b) {
+                *res = a + b;
+                return 0;
+            }
+            """)
+
+        add = declare_device(
+            "add_f2_f2", float16(float16, float16), link="/tmp/_temp_add.cu"
+        )
+
+        @cuda.jit
+        def k(arr):
+            arr[0] = add(float16(1), float16(2))
+
+        arr = np.array([0], dtype=np.float16)
+
+        k[1, 1](arr)
+
+        allasms = k.inspect_asm()
+        asm = next(iter(allasms.values()))
+
+        regex = re.compile(r"call(.|\n)*add_f2_f2")
+        self.assertRegex(asm, regex)
+
+        all_ext_asms = k.inspect_external_ptx()
+        ext_asm = next(iter(all_ext_asms.values()))
+        assert "_temp_add.cu" in ext_asm
+
+        asm = ext_asm["_temp_add.cu"]
+        assert "add.f16" in str(asm)
 
     @skip_without_nvdisasm("nvdisasm needed for inspect_sass()")
     def test_inspect_sass_eager(self):

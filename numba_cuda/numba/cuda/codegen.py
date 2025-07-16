@@ -4,7 +4,8 @@ from numba.core import config, serialize
 from numba.core.codegen import Codegen, CodeLibrary
 from .cudadrv import devices, driver, nvrtc, nvvm, runtime
 from numba.cuda.cudadrv.libs import get_cudalib
-from numba.cuda.cudadrv.linkable_code import LinkableCode
+from numba.cuda.cudadrv import nvrtc
+from numba.cuda.cudadrv.linkable_code import LinkableCode, PTXSource, CUSource
 from numba.cuda.memory_management.nrt import NRT_LIBRARY
 
 import os
@@ -232,6 +233,27 @@ class CUDACodeLibrary(serialize.ReduceMixin, CodeLibrary):
         self._ptx_cache[cc] = ptx
 
         return ptx
+
+    def get_linking_files_ptx(self, cc=None):
+        cc = self._ensure_cc(cc)
+
+        src = {}
+        for code in self._linking_files:
+            if isinstance(code, str):
+                with open(code, "r") as f:
+                    name = os.path.basename(code)
+                    code = CUSource(f.read(), name=name)
+
+            if isinstance(code, PTXSource):
+                # TODO: lacks testing this branch
+                src[code.name] = code.data
+            elif isinstance(code, CUSource):
+                # TODO: use_nvidia_binding v.s. ctypes binding
+                objcode, log = nvrtc.compile(code.data, code.name, cc)
+                src[code.name] = objcode.code
+            else:
+                raise NotImplementedError(f"Cannot get PTX from {type(code)}.")
+        return src
 
     def get_ltoir(self, cc=None):
         cc = self._ensure_cc(cc)
