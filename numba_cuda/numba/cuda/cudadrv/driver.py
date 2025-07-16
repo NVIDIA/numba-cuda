@@ -2389,13 +2389,13 @@ class Stream(object):
         callbacks from being executed.
 
         .. warning::
-            There is a potential for deadlock if you are using a library
-            that calls CUDA functions without releasing the GIL. This can
+            There is a potential for deadlock due to a lock ordering issue
+            between the GIL and the CUDA driver lock when using libraries
+            that call CUDA functions without releasing the GIL. This can
             occur when the callback function attempts to acquire the GIL
-            while another thread is holding it and attempting to make CUDA
-            calls. Consider using libraries that properly release the GIL
-            around CUDA operations or restructure your code to avoid this
-            situation.
+            while the CUDA driver lock is held. Consider using libraries
+            that properly release the GIL around CUDA operations or
+            restructure your code to avoid this situation.
 
         Note: The driver function underlying this method is marked for
         eventual deprecation and may be replaced in a future CUDA release.
@@ -2433,13 +2433,13 @@ class Stream(object):
         are complete. The result of the awaitable is the current stream.
 
         .. warning::
-            There is a potential for deadlock if you are using a library
-            that calls CUDA functions without releasing the GIL. This can
+            There is a potential for deadlock due to a lock ordering issue
+            between the GIL and the CUDA driver lock when using libraries
+            that call CUDA functions without releasing the GIL. This can
             occur when the callback function (internally used by this method)
-            attempts to acquire the GIL while another thread is holding it
-            and attempting to make CUDA calls. Consider using libraries that
-            properly release the GIL around CUDA operations or restructure
-            your code to avoid this situation.
+            attempts to acquire the GIL while the CUDA driver lock is held.
+            Consider using libraries that properly release the GIL around
+            CUDA operations or restructure your code to avoid this situation.
         """
         loop = asyncio.get_running_loop()
         future = loop.create_future()
