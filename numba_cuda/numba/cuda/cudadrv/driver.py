@@ -2392,10 +2392,11 @@ class Stream(object):
             There is a potential for deadlock due to a lock ordering issue
             between the GIL and the CUDA driver lock when using libraries
             that call CUDA functions without releasing the GIL. This can
-            occur when the callback function attempts to acquire the GIL
-            while the CUDA driver lock is held. Consider using libraries
-            that properly release the GIL around CUDA operations or
-            restructure your code to avoid this situation.
+            occur when the callback function, which holds the CUDA driver lock,
+            attempts to acquire the GIL while another thread that holds the GIL
+            is waiting for the CUDA driver lock. Consider using libraries that
+            properly release the GIL around CUDA operations or restructure
+            your code to avoid this situation.
 
         Note: The driver function underlying this method is marked for
         eventual deprecation and may be replaced in a future CUDA release.
@@ -2436,8 +2437,9 @@ class Stream(object):
             There is a potential for deadlock due to a lock ordering issue
             between the GIL and the CUDA driver lock when using libraries
             that call CUDA functions without releasing the GIL. This can
-            occur when the callback function (internally used by this method)
-            attempts to acquire the GIL while the CUDA driver lock is held.
+            occur when the callback function (internally used by this method),
+            which holds the CUDA driver lock, attempts to acquire the GIL
+            while another thread that holds the GIL is waiting for the CUDA driver lock.
             Consider using libraries that properly release the GIL around
             CUDA operations or restructure your code to avoid this situation.
         """
