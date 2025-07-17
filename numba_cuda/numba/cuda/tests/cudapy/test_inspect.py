@@ -1,4 +1,5 @@
 import re
+import tempfile
 
 import numpy as np
 
@@ -113,7 +114,9 @@ class TestInspect(CUDATestCase):
         self.assertIn("EXIT", sass)  # Exit program
 
     def test_inspect_lto_asm(self):
-        with open("/tmp/_temp_add.cu", "w") as f:
+        temp_add_cu = tempfile.NamedTemporaryFile(suffix=".cu")
+
+        with open(temp_add_cu.name, "w") as f:
             f.write("""
             #include <cuda_fp16.h>
             extern "C"
@@ -124,7 +127,7 @@ class TestInspect(CUDATestCase):
             """)
 
         add = declare_device(
-            "add_f2_f2", float16(float16, float16), link="/tmp/_temp_add.cu"
+            "add_f2_f2", float16(float16, float16), link=temp_add_cu.name
         )
 
         @cuda.jit
