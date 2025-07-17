@@ -2,7 +2,7 @@ from llvmlite import ir
 
 from numba.core import config, serialize
 from numba.core.codegen import Codegen, CodeLibrary
-from .cudadrv import devices, driver, nvvm, runtime
+from .cudadrv import devices, driver, nvvm, runtime, nvrtc
 from numba.cuda.cudadrv.libs import get_cudalib
 from numba.cuda.cudadrv.linkable_code import LinkableCode
 from numba.cuda.memory_management.nrt import NRT_LIBRARY
@@ -211,7 +211,7 @@ class CUDACodeLibrary(serialize.ReduceMixin, CodeLibrary):
         if ptxes:
             return ptxes
 
-        arch = nvvm.get_arch_option(*cc)
+        arch = nvrtc.get_arch_option(*cc)
         options = self._nvvm_options.copy()
         options["arch"] = arch
 
@@ -257,7 +257,7 @@ class CUDACodeLibrary(serialize.ReduceMixin, CodeLibrary):
         if ltoir is not None:
             return ltoir
 
-        arch = nvvm.get_arch_option(*cc)
+        arch = nvrtc.get_arch_option(*cc)
         options = self._nvvm_options.copy()
         options["arch"] = arch
         options["gen-lto"] = None
