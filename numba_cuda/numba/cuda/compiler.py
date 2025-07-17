@@ -16,7 +16,7 @@ from numba.core.compiler import (
     DefaultPassBuilder,
     CompileResult,
 )
-from numba.core.compiler_lock import global_compiler_lock
+from numba.cuda.core.compiler_lock import global_compiler_lock
 from numba.core.compiler_machinery import (
     FunctionPass,
     LoweringPass,
