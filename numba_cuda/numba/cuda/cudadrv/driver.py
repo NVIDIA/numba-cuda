@@ -2062,6 +2062,9 @@ class MemoryPointer(object):
     __cuda_memory__ = True
 
     def __init__(self, context, pointer, size, owner=None, finalizer=None):
+        if USE_NV_BINDING and isinstance(pointer, ctypes.c_void_p):
+            pointer = binding.CUdeviceptr(pointer.value)
+
         self.context = context
         self.device_pointer = pointer
         self.size = size
