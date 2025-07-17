@@ -17,7 +17,8 @@ from numba.core.compiler_lock import global_compiler_lock
 from numba.core.dispatcher import Dispatcher
 from numba.core.errors import NumbaWarning
 from numba.core.base import BaseContext
-from numba.core.callconv import BaseCallConv, MinimalCallConv
+from numba.core.callconv import MinimalCallConv
+from numba.cuda.core.callconv import BaseCallConv
 from numba.core.typing import cmathdecl
 from numba.core import datamodel
 
