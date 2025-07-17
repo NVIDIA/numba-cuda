@@ -384,11 +384,11 @@ class _Kernel(serialize.ReduceMixin):
         """
         return self._codelibrary.get_asm_str(cc=cc)
 
-    def inspect_external_ptx(self, cc):
+    def inspect_lto_ptx(self, cc):
         """
         Returns the PTX code for the external functions linked to this kernel.
         """
-        return self._codelibrary.get_linking_files_ptx(cc=cc)
+        return self._codelibrary.get_lto_ptx(cc=cc)
 
     def inspect_sass_cfg(self):
         """
@@ -1175,29 +1175,27 @@ class CUDADispatcher(Dispatcher, serialize.ReduceMixin):
                     for sig, overload in self.overloads.items()
                 }
 
-    def inspect_external_ptx(self, signature=None):
+    def inspect_lto_ptx(self, signature=None):
         """
-        Return the external PTX code linked to the kernel for the given signature.
+        Return link-time optimized PTX code for the given signature.
         """
         cc = get_current_device().compute_capability
         device = self.targetoptions.get("device")
 
         if signature is not None:
             if device:
-                return self.overloads[signature].library.get_linking_files_ptx(
-                    cc
-                )
+                return self.overloads[signature].library.get_lto_ptx(cc)
             else:
-                return self.overloads[signature].inspect_external_ptx(cc)
+                return self.overloads[signature].inspect_lto_ptx(cc)
         else:
             if device:
                 return {
-                    sig: overload.library.get_linking_files_ptx(cc)
+                    sig: overload.library.get_lto_ptx(cc)
                     for sig, overload in self.overloads.items()
                 }
             else:
                 return {
-                    sig: overload.inspect_external_ptx(cc)
+                    sig: overload.inspect_lto_ptx(cc)
                     for sig, overload in self.overloads.items()
                 }
 

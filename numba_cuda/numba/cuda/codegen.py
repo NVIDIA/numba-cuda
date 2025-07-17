@@ -2,10 +2,9 @@ from llvmlite import ir
 
 from numba.core import config, serialize
 from numba.core.codegen import Codegen, CodeLibrary
-from .cudadrv import devices, driver, nvrtc, nvvm, runtime
+from .cudadrv import devices, driver, nvvm, runtime
 from numba.cuda.cudadrv.libs import get_cudalib
-from numba.cuda.cudadrv import nvrtc
-from numba.cuda.cudadrv.linkable_code import LinkableCode, PTXSource, CUSource
+from numba.cuda.cudadrv.linkable_code import LinkableCode
 from numba.cuda.memory_management.nrt import NRT_LIBRARY
 
 import os
@@ -212,7 +211,7 @@ class CUDACodeLibrary(serialize.ReduceMixin, CodeLibrary):
         if ptxes:
             return ptxes
 
-        arch = nvrtc.get_arch_option(*cc)
+        arch = nvvm.get_arch_option(*cc)
         options = self._nvvm_options.copy()
         options["arch"] = arch
 
@@ -234,26 +233,22 @@ class CUDACodeLibrary(serialize.ReduceMixin, CodeLibrary):
 
         return ptx
 
-    def get_linking_files_ptx(self, cc=None):
+    def get_lto_ptx(self, cc=None):
         cc = self._ensure_cc(cc)
 
-        src = {}
-        for code in self._linking_files:
-            if isinstance(code, str):
-                with open(code, "r") as f:
-                    name = os.path.basename(code)
-                    code = CUSource(f.read(), name=name)
+        linker = driver._Linker.new(
+            max_registers=self._max_registers,
+            cc=cc,
+            additional_flags=["-ptx"],
+            lto=self._lto,
+        )
 
-            if isinstance(code, PTXSource):
-                # TODO: lacks testing this branch
-                src[code.name] = code.data
-            elif isinstance(code, CUSource):
-                # TODO: use_nvidia_binding v.s. ctypes binding
-                objcode, log = nvrtc.compile(code.data, code.name, cc)
-                src[code.name] = objcode.code
-            else:
-                raise NotImplementedError(f"Cannot get PTX from {type(code)}.")
-        return src
+        self._link_all(linker, cc, ignore_nonlto=True)
+
+        ptx = linker.get_linked_ptx()
+        ptx = ptx.decode("utf-8")
+
+        return ptx
 
     def get_ltoir(self, cc=None):
         cc = self._ensure_cc(cc)
@@ -262,7 +257,7 @@ class CUDACodeLibrary(serialize.ReduceMixin, CodeLibrary):
         if ltoir is not None:
             return ltoir
 
-        arch = nvrtc.get_arch_option(*cc)
+        arch = nvvm.get_arch_option(*cc)
         options = self._nvvm_options.copy()
         options["arch"] = arch
         options["gen-lto"] = None
@@ -296,17 +291,7 @@ class CUDACodeLibrary(serialize.ReduceMixin, CodeLibrary):
             return cubin
 
         if self._lto and config.DUMP_ASSEMBLY:
-            linker = driver._Linker.new(
-                max_registers=self._max_registers,
-                cc=cc,
-                additional_flags=["-ptx"],
-                lto=self._lto,
-            )
-            # `-ptx` flag is meant to view the optimized PTX for LTO objects.
-            # Non-LTO objects are not passed to linker.
-            self._link_all(linker, cc, ignore_nonlto=True)
-            ptx = linker.get_linked_ptx()
-            ptx = ptx.decode("utf-8")
+            ptx = self.get_lto_ptx(cc=cc)
 
             print(("ASSEMBLY (AFTER LTO) %s" % self._name).center(80, "-"))
             print(ptx)

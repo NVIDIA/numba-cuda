@@ -112,7 +112,7 @@ class TestInspect(CUDATestCase):
         self.assertIn("BRA", sass)  # Branch
         self.assertIn("EXIT", sass)  # Exit program
 
-    def test_inspect_external_asm(self):
+    def test_inspect_lto_asm(self):
         with open("/tmp/_temp_add.cu", "w") as f:
             f.write("""
             #include <cuda_fp16.h>
@@ -141,12 +141,10 @@ class TestInspect(CUDATestCase):
         regex = re.compile(r"call(.|\n)*add_f2_f2")
         self.assertRegex(asm, regex)
 
-        all_ext_asms = k.inspect_external_ptx()
-        ext_asm = next(iter(all_ext_asms.values()))
-        assert "_temp_add.cu" in ext_asm
+        all_ext_asms = k.inspect_lto_ptx()
+        lto_asm = next(iter(all_ext_asms.values()))
 
-        asm = ext_asm["_temp_add.cu"]
-        assert "add.f16" in str(asm)
+        assert "add.f16" in str(lto_asm)
 
     @skip_without_nvdisasm("nvdisasm needed for inspect_sass()")
     def test_inspect_sass_eager(self):
