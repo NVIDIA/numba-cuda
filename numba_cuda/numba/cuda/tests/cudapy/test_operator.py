@@ -6,8 +6,9 @@ from numba.cuda.testing import (
     skip_on_cudasim,
 )
 from numba import cuda
+from numba.core import types
 from numba.core.types import f2, b1
-from numba.cuda import compile_ptx
+from numba.core.typing import signature
 import operator
 import itertools
 from numba.np.numpy_support import from_dtype
@@ -178,7 +179,8 @@ class TestOperatorModule(CUDATestCase):
         args = (f2[:], f2, f2)
         for fn, instr in zip(functions, instrs):
             with self.subTest(instr=instr):
-                ptx, _ = compile_ptx(fn, args)
+                compiled = cuda.jit("void(f2[:], f2, f2)", lto=True)(fn)
+                ptx = compiled.inspect_lto_ptx(args)
                 self.assertIn(instr, ptx)
 
     @skip_unless_cc_53
@@ -212,7 +214,8 @@ class TestOperatorModule(CUDATestCase):
 
         for fn, instr in zip(functions, instrs):
             with self.subTest(instr=instr):
-                ptx, _ = compile_ptx(fn, args)
+                compiled = cuda.jit("void(f2[:], f2)", lto=True)(fn)
+                ptx = compiled.inspect_lto_ptx(args)
                 self.assertIn(instr, ptx)
 
     @skip_unless_cc_53
@@ -255,14 +258,15 @@ class TestOperatorModule(CUDATestCase):
     @skip_on_cudasim("Compilation unsupported in the simulator")
     def test_fp16_neg_ptx(self):
         args = (f2[:], f2)
-        ptx, _ = compile_ptx(simple_fp16neg, args)
+        compiled = cuda.jit("void(f2[:], f2)", lto=True)(simple_fp16neg)
+        ptx = compiled.inspect_lto_ptx(args)
         self.assertIn("neg.f16", ptx)
 
     @skip_on_cudasim("Compilation unsupported in the simulator")
     def test_fp16_abs_ptx(self):
         args = (f2[:], f2)
-        ptx, _ = compile_ptx(simple_fp16abs, args)
-
+        compiled = cuda.jit("void(f2[:], f2)", lto=True)(simple_fp16abs)
+        ptx = compiled.inspect_lto_ptx(args)
         self.assertIn("abs.f16", ptx)
 
     @skip_unless_cc_53
@@ -390,13 +394,14 @@ class TestOperatorModule(CUDATestCase):
             "setp.lt.f16",
             "setp.le.f16",
             "setp.eq.f16",
-            "setp.ne.f16",
+            "setp.neu.f16",
         )
         args = (b1[:], f2, f2)
 
         for fn, op, s in zip(functions, ops, opstring):
             with self.subTest(op=op):
-                ptx, _ = compile_ptx(fn, args)
+                compiled = cuda.jit("void(b1[:], f2, f2)", lto=True)(fn)
+                ptx = compiled.inspect_lto_ptx(args)
                 self.assertIn(s, ptx)
 
     @skip_on_cudasim("Compilation unsupported in the simulator")
@@ -426,12 +431,13 @@ class TestOperatorModule(CUDATestCase):
             operator.lt: "setp.lt.f16",
             operator.le: "setp.le.f16",
             operator.eq: "setp.eq.f16",
-            operator.ne: "setp.ne.f16",
+            operator.ne: "setp.neu.f16",
         }
         for fn, op in zip(functions, ops):
             with self.subTest(op=op):
                 args = (b1[:], f2, from_dtype(np.int8))
-                ptx, _ = compile_ptx(fn, args)
+                compiled = cuda.jit(signature(types.void, *args), lto=True)(fn)
+                ptx = compiled.inspect_lto_ptx(args)
                 self.assertIn(opstring[op], ptx)
 
     @skip_on_cudasim("Compilation unsupported in the simulator")
@@ -475,7 +481,8 @@ class TestOperatorModule(CUDATestCase):
             with self.subTest(op=op, ty=ty):
                 arg2_ty = np.result_type(np.float16, ty)
                 args = (b1[:], f2, from_dtype(arg2_ty))
-                ptx, _ = compile_ptx(fn, args)
+                compiled = cuda.jit(signature(types.void, *args), lto=True)(fn)
+                ptx = compiled.inspect_lto_ptx(args)
 
                 ops = opstring[op] + opsuffix[arg2_ty]
                 self.assertIn(ops, ptx)
