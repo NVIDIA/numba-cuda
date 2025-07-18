@@ -25,7 +25,6 @@ from numba.core.compiler_machinery import (
 )
 from numba.core.interpreter import Interpreter
 from numba.core.errors import NumbaInvalidConfigWarning
-from numba.core.environment import lookup_environment
 from numba.core.untyped_passes import TranslateByteCode
 from numba.core.typed_passes import (
     IRLegalization,
@@ -52,7 +51,7 @@ from numba.cuda import lowering
 # This does feel a little hackish, and there are two ways in which this could
 # be improved:
 #
-# 1. We could change the core of Numba so that each CUDACompileResult has its own
+# 1. We could change the CUDACompileResult so that each instance has its own
 #    unique ID that can be used as a key - e.g. a count, similar to the way in
 #    which types have unique counts.
 # 2. At some future time when kernel launch uses a compiled function, the entry
@@ -101,8 +100,8 @@ class CUDACompileResult(namedtuple("_CompileResult", CR_FIELDS)):
         fndesc = self.fndesc
         # Those don't need to be pickled and may fail
         fndesc.typemap = fndesc.calltypes = None
-        # Include all referenced environments
-        referenced_envs = self._find_referenced_environments()
+        # The CUDA target does not reference environments
+        referenced_envs = tuple()
         return (
             libdata,
             self.fndesc,
@@ -112,22 +111,8 @@ class CUDACompileResult(namedtuple("_CompileResult", CR_FIELDS)):
             self.lifted,
             typeann,
             self.reload_init,
-            tuple(referenced_envs),
+            referenced_envs,
         )
-
-    def _find_referenced_environments(self):
-        """Returns a list of referenced environments"""
-        mod = self.library._final_module
-        # Find environments
-        referenced_envs = []
-        for gv in mod.global_variables:
-            gvn = gv.name
-            if gvn.startswith("_ZN08NumbaEnv"):
-                env = lookup_environment(gvn)
-                if env is not None:
-                    if env.can_cache():
-                        referenced_envs.append(env)
-        return referenced_envs
 
     @classmethod
     def _rebuild(
