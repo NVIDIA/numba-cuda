@@ -1,8 +1,8 @@
 from llvmlite import ir
 from collections import namedtuple
 from numba.core import ir as numba_ir
+from numba.cuda import cgutils
 from numba.core import (
-    cgutils,
     types,
     typing,
     funcdesc,
