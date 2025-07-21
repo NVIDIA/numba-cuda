@@ -1,17 +1,19 @@
 import re
 import tempfile
+import cffi
 
 import numpy as np
 
 from io import StringIO
 from numba import cuda, float32, float64, int32, intp
-from numba.types import float16
+from numba.types import float16, CPointer
 from numba.cuda import declare_device
 from numba.cuda.testing import unittest, CUDATestCase
 from numba.cuda.testing import (
     skip_on_cudasim,
     skip_with_nvdisasm,
     skip_without_nvdisasm,
+    skip_if_nvjitlink_missing,
 )
 
 
@@ -113,26 +115,39 @@ class TestInspect(CUDATestCase):
         self.assertIn("BRA", sass)  # Branch
         self.assertIn("EXIT", sass)  # Exit program
 
+    @skip_on_cudasim("Simulator does not generate code to be inspected")
+    @skip_if_nvjitlink_missing("nvJitLink is required for LTO")
     def test_inspect_lto_asm(self):
+        ffi = cffi.FFI()
         temp_add_cu = tempfile.NamedTemporaryFile(suffix=".cu")
 
         with open(temp_add_cu.name, "w") as f:
             f.write("""
             #include <cuda_fp16.h>
             extern "C"
-            __device__ int add_f2_f2(half * res, half a, half b) {
-                *res = a + b;
+            __device__ int add_f2_f2(__half * res, __half * a, __half *b) {
+                *res = *a + *b;
                 return 0;
             }
             """)
 
         add = declare_device(
-            "add_f2_f2", float16(float16, float16), link=temp_add_cu.name
+            "add_f2_f2",
+            float16(CPointer(float16), CPointer(float16)),
+            link=temp_add_cu.name,
         )
 
         @cuda.jit
         def k(arr):
-            arr[0] = add(float16(1), float16(2))
+            local_arr = cuda.local.array(shape=1, dtype=np.float16)
+            local_arr2 = cuda.local.array(shape=1, dtype=np.float16)
+            local_arr[0] = 1
+            local_arr2[0] = 2
+
+            ptr = ffi.from_buffer(local_arr)
+            ptr2 = ffi.from_buffer(local_arr2)
+
+            arr[0] = add(ptr, ptr2)
 
         arr = np.array([0], dtype=np.float16)
 

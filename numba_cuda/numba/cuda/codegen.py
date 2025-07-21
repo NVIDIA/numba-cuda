@@ -234,6 +234,16 @@ class CUDACodeLibrary(serialize.ReduceMixin, CodeLibrary):
         return ptx
 
     def get_lto_ptx(self, cc=None):
+        """
+        Get the PTX code after LTO.
+        """
+
+        if not self._lto:
+            raise RuntimeError("LTO is not enabled")
+
+        if not driver._have_nvjitlink():
+            raise RuntimeError("Link time optimization requires nvJitLink.")
+
         cc = self._ensure_cc(cc)
 
         linker = driver._Linker.new(
