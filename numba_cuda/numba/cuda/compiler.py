@@ -10,6 +10,7 @@ from numba.core import (
     compiler,
     sigutils,
     utils,
+    errors,
 )
 from numba.core.compiler import (
     sanitize_compile_result_entries,
@@ -27,9 +28,12 @@ from numba.core.interpreter import Interpreter
 from numba.core.errors import NumbaInvalidConfigWarning
 from numba.core.untyped_passes import TranslateByteCode
 from numba.core.typed_passes import (
+    fallback_context,
+    type_inference_stage,
     IRLegalization,
     NativeLowering,
     AnnotateTypes,
+    NopythonTypeInference,
 )
 from warnings import warn
 from numba.cuda import nvvmutils
@@ -291,6 +295,91 @@ class CUDATranslateBytecode(FunctionPass):
         return True
 
 
+@register_pass(mutates_CFG=True, analysis_only=False)
+class CUDANopythonTypeInference(NopythonTypeInference):
+    def __init__(self):
+        NopythonTypeInference.__init__(self)
+
+    def run_pass(self, state):
+        """
+        Type inference and legalization. Vendored from numba.core.typed_passes.
+        """
+        with fallback_context(
+            state,
+            'Function "%s" failed type inference' % (state.func_id.func_name,),
+        ):
+            # Type inference
+            typemap, return_type, calltypes, errs = type_inference_stage(
+                state.typingctx,
+                state.targetctx,
+                state.func_ir,
+                state.args,
+                state.return_type,
+                state.locals,
+                raise_errors=self._raise_errors,
+            )
+            state.typemap = typemap
+            # save errors in case of partial typing
+            state.typing_errors = errs
+            if self._raise_errors:
+                state.return_type = return_type
+            state.calltypes = calltypes
+
+        def legalize_return_type(return_type, interp, targetctx):
+            """
+            Only accept array return type iff it is passed into the function.
+            Reject function object return types if in nopython mode.
+            """
+            if not targetctx.enable_nrt and isinstance(
+                return_type, types.Array
+            ):
+                # Walk IR to discover all arguments and all return statements
+                retstmts = []
+                caststmts = {}
+                argvars = set()
+                for bid, blk in interp.blocks.items():
+                    for inst in blk.body:
+                        if isinstance(inst, numba_ir.Return):
+                            retstmts.append(inst.value.name)
+                        elif isinstance(inst, numba_ir.Assign):
+                            if (
+                                isinstance(inst.value, numba_ir.Expr)
+                                and inst.value.op == "cast"
+                            ):
+                                caststmts[inst.target.name] = inst.value
+                            elif isinstance(inst.value, numba_ir.Arg):
+                                argvars.add(inst.target.name)
+
+                assert retstmts, "No return statements?"
+
+                for var in retstmts:
+                    cast = caststmts.get(var)
+                    if cast is None or cast.value.name not in argvars:
+                        if self._raise_errors:
+                            msg = (
+                                "Only accept returning of array passed into "
+                                "the function as argument"
+                            )
+                            raise errors.NumbaTypeError(msg)
+
+            elif isinstance(return_type, types.Function) or isinstance(
+                return_type, types.Phantom
+            ):
+                if self._raise_errors:
+                    msg = "Can't return function object ({}) in nopython mode"
+                    raise errors.NumbaTypeError(msg.format(return_type))
+
+        with fallback_context(
+            state,
+            'Function "%s" has invalid return type'
+            % (state.func_id.func_name,),
+        ):
+            legalize_return_type(
+                state.return_type, state.func_ir, state.targetctx
+            )
+        return True
+
+
 class CUDACompiler(CompilerBase):
     def define_pipelines(self):
         dpb = DefaultPassBuilder
@@ -316,7 +405,18 @@ class CUDACompiler(CompilerBase):
         pm.passes.extend(cuda_untyped_passes)
 
         typed_passes = dpb.define_typed_pipeline(self.state)
-        pm.passes.extend(typed_passes.passes)
+
+        def replace_nopython_type_inference(implementation, description):
+            if implementation is NopythonTypeInference:
+                return (CUDANopythonTypeInference, description)
+            else:
+                return (implementation, description)
+
+        cuda_typed_passes = [
+            replace_nopython_type_inference(implementation, description)
+            for implementation, description in typed_passes.passes
+        ]
+        pm.passes.extend(cuda_typed_passes)
 
         lowering_passes = self.define_cuda_lowering_pipeline(self.state)
         pm.passes.extend(lowering_passes.passes)
