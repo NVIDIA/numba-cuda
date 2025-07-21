@@ -11,6 +11,8 @@ from numba.core import (
     sigutils,
     utils,
 )
+from numba.core.utils import PYVERSION
+from numba.core.byteflow import Flow, AdaptDFA, AdaptCFA
 from numba.core.compiler import (
     sanitize_compile_result_entries,
     CompilerBase,
@@ -23,7 +25,14 @@ from numba.core.compiler_machinery import (
     PassManager,
     register_pass,
 )
-from numba.core.interpreter import Interpreter
+from numba.core.interpreter import (
+    Interpreter,
+    peep_hole_call_function_ex_to_call_function_kw,
+    peep_hole_list_to_tuple,
+    peep_hole_split_at_pop_block,
+    peep_hole_delete_with_exit,
+    peep_hole_fuse_dict_add_updates,
+)
 from numba.core.errors import NumbaInvalidConfigWarning
 from numba.core.untyped_passes import TranslateByteCode
 from numba.core.typed_passes import (
@@ -245,6 +254,83 @@ class CUDANativeLowering(NativeLowering):
 
 
 class CUDABytecodeInterpreter(Interpreter):
+
+    def interpret(self, bytecode):
+        """
+        Generate IR for this bytecode.
+        """
+        self.bytecode = bytecode
+
+        self.scopes = []
+        global_scope = numba_ir.Scope(parent=None, loc=self.loc)
+        self.scopes.append(global_scope)
+
+        flow = Flow(bytecode)
+        flow.run()
+        self.dfa = AdaptDFA(flow)
+        self.cfa = AdaptCFA(flow)
+        if config.DUMP_CFG:
+            self.cfa.dump()
+
+        # Temp states during interpretation
+        self.current_block = None
+        self.current_block_offset = None
+        last_active_offset = 0
+        for _, inst_blocks in self.cfa.blocks.items():
+            if inst_blocks.body:
+                last_active_offset = max(last_active_offset,
+                                         max(inst_blocks.body))
+        self.last_active_offset = last_active_offset
+
+        if PYVERSION in ((3, 12), (3, 13)):
+            self.active_exception_entries = tuple(
+                [entry for entry in self.bytecode.exception_entries
+                 if entry.start < self.last_active_offset])
+        elif PYVERSION in ((3, 10), (3, 11)):
+            pass
+        else:
+            raise NotImplementedError(PYVERSION)
+        self.syntax_blocks = []
+        self.dfainfo = None
+
+        self.scopes.append(numba_ir.Scope(parent=self.current_scope, loc=self.loc))
+
+        # Interpret loop
+        for inst, kws in self._iter_inst():
+            self._dispatch(inst, kws)
+        if PYVERSION in ((3, 11), (3, 12), (3, 13)):
+            # Insert end of try markers
+            self._end_try_blocks()
+        elif PYVERSION in ((3, 10),):
+            pass
+        else:
+            raise NotImplementedError(PYVERSION)
+        self._legalize_exception_vars()
+        # Prepare FunctionIR
+        func_ir = numba_ir.FunctionIR(self.blocks, self.is_generator, self.func_id,
+                                self.first_loc, self.definitions,
+                                self.arg_count, self.arg_names)
+
+        # post process the IR to rewrite opcodes/byte sequences that are too
+        # involved to risk handling as part of direct interpretation
+        peepholes = []
+        if PYVERSION in ((3, 11), (3, 12), (3, 13)):
+            peepholes.append(peep_hole_split_at_pop_block)
+        if PYVERSION in ((3, 10), (3, 11), (3, 12), (3, 13)):
+            peepholes.append(peep_hole_list_to_tuple)
+        peepholes.append(peep_hole_delete_with_exit)
+        if PYVERSION in ((3, 10), (3, 11), (3, 12), (3, 13)):
+            # peep_hole_call_function_ex_to_call_function_kw
+            # depends on peep_hole_list_to_tuple converting
+            # any large number of arguments from a list to a
+            # tuple.
+            peepholes.append(peep_hole_call_function_ex_to_call_function_kw)
+            peepholes.append(peep_hole_fuse_dict_add_updates)
+
+        post_processed_ir = self.post_process(peepholes, func_ir)
+
+        return post_processed_ir
+
     # Based on the superclass implementation, but names the resulting variable
     # "$bool<N>" instead of "bool<N>" - see Numba PR #9888:
     # https://github.com/numba/numba/pull/9888
