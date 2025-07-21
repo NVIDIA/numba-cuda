@@ -8,8 +8,8 @@ import functools
 
 from llvmlite import ir
 
-from numba.core import utils, types, debuginfo
-from numba.cuda import config
+from numba.core import types, debuginfo
+from numba.cuda import config, utils
 import numba.core.datamodel
 
 

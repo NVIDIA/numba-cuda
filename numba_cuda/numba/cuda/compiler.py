@@ -9,7 +9,6 @@ from numba.core import (
     config,
     compiler,
     sigutils,
-    utils,
 )
 from numba.core.compiler import (
     sanitize_compile_result_entries,
@@ -39,7 +38,7 @@ from numba.cuda.cudadrv import nvvm, nvrtc
 from numba.cuda.descriptor import cuda_target
 from numba.cuda.flags import CUDAFlags
 from numba.cuda.target import CUDACABICallConv
-from numba.cuda import lowering
+from numba.cuda import lowering, utils
 
 
 # The CUDACompileResult (CCR) has a specially-defined entry point equal to its
