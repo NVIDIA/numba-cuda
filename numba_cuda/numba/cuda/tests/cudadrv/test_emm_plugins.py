@@ -84,7 +84,7 @@ if not config.ENABLE_CUDASIM:
             # the tests don't try to do too much with it (e.g. open / close
             # it).
             self.get_ipc_handle_called = True
-            return "Dummy IPC handle for alloc %s" % memory.device_pointer.value
+            return "Dummy IPC handle for alloc %s" % memory.device_pointer_value
 
         @property
         def interface_version(self):

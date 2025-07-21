@@ -4,6 +4,7 @@ from numba.core.errors import DeprecationError, NumbaInvalidConfigWarning
 from numba.cuda.compiler import declare_device_function
 from numba.cuda.dispatcher import CUDADispatcher
 from numba.cuda.simulator.kernel import FakeCUDAKernel
+from numba.cuda.cudadrv.driver import _have_nvjitlink
 
 
 _msg_deprecated_signature_arg = (
@@ -24,6 +25,7 @@ def jit(
     lineinfo=False,
     cache=False,
     launch_bounds=None,
+    lto=None,
     **kws,
 ):
     """
@@ -83,6 +85,10 @@ def jit(
                           If a scalar is provided, it is used as the maximum
                           number of threads per block.
     :type launch_bounds: int | tuple[int]
+    :param lto: Whether to enable LTO. If unspecified, LTO is enabled by
+                default when pynvjitlink is available, except for kernels where
+                ``debug=True``.
+    :type lto: bool
     """
 
     if link and config.ENABLE_CUDASIM:
@@ -136,6 +142,16 @@ def jit(
     if device and kws.get("link"):
         raise ValueError("link keyword invalid for device function")
 
+    if lto is None:
+        # Default to using LTO if pynvjitlink is available and we're not debugging
+        lto = _have_nvjitlink() and not debug
+    else:
+        if lto and not _have_nvjitlink():
+            raise RuntimeError(
+                "LTO requires nvjitlink, which is not available"
+                "or not sufficiently recent (>=12.3)"
+            )
+
     if sigutils.is_signature(func_or_sig):
         signatures = [func_or_sig]
         specialized = True
@@ -165,6 +181,7 @@ def jit(
             targetoptions["forceinline"] = forceinline
             targetoptions["extensions"] = extensions
             targetoptions["launch_bounds"] = launch_bounds
+            targetoptions["lto"] = lto
 
             disp = CUDADispatcher(func, targetoptions=targetoptions)
 
@@ -235,6 +252,7 @@ def jit(
                 targetoptions["forceinline"] = forceinline
                 targetoptions["extensions"] = extensions
                 targetoptions["launch_bounds"] = launch_bounds
+                targetoptions["lto"] = lto
                 disp = CUDADispatcher(func_or_sig, targetoptions=targetoptions)
 
                 if cache:

@@ -33,7 +33,7 @@ If you want to manage all run-time dependencies yourself, also pass the `--no-de
 python -m numba.runtests numba.cuda.tests
 ```
 
-This should discover the`numba.cuda` module from the `numba_cuda` package. You
+This should discover the `numba.cuda` module from the `numba_cuda` package. You
 can check where `numba.cuda` files are being located by running
 
 ```

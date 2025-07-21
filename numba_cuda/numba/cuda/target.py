@@ -2,17 +2,30 @@ import re
 from functools import cached_property
 import llvmlite.binding as ll
 from llvmlite import ir
+import warnings
 
-from numba.core import cgutils, config, itanium_mangler, types, typing
+from numba.core import (
+    cgutils,
+    compiler,
+    config,
+    itanium_mangler,
+    targetconfig,
+    types,
+    typing,
+)
+from numba.core.compiler_lock import global_compiler_lock
 from numba.core.dispatcher import Dispatcher
+from numba.core.errors import NumbaWarning
 from numba.core.base import BaseContext
-from numba.core.callconv import BaseCallConv, MinimalCallConv
+from numba.core.callconv import MinimalCallConv
+from numba.cuda.core.callconv import BaseCallConv
 from numba.core.typing import cmathdecl
 from numba.core import datamodel
 
 from .cudadrv import nvvm
 from numba.cuda import codegen, ufuncs
 from numba.cuda.debuginfo import CUDADIBuilder
+from numba.cuda.flags import CUDAFlags
 from numba.cuda.models import cuda_data_manager
 
 # -----------------------------------------------------------------------------
@@ -287,6 +300,47 @@ class CUDATargetContext(BaseContext):
 
     def get_ufunc_info(self, ufunc_key):
         return ufuncs.get_ufunc_info(ufunc_key)
+
+    def _compile_subroutine_no_cache(
+        self, builder, impl, sig, locals=None, flags=None
+    ):
+        # Overrides numba.core.base.BaseContext._compile_subroutine_no_cache().
+        # Modified to use flags from the context stack if they are not provided
+        # (pending a fix in Numba upstream).
+
+        if locals is None:
+            locals = {}
+
+        with global_compiler_lock:
+            codegen = self.codegen()
+            library = codegen.create_library(impl.__name__)
+            if flags is None:
+                cstk = targetconfig.ConfigStack()
+                if cstk:
+                    flags = cstk.top().copy()
+                else:
+                    msg = "There should always be a context stack; none found."
+                    warnings.warn(msg, NumbaWarning)
+                    flags = CUDAFlags()
+
+            flags.no_compile = True
+            flags.no_cpython_wrapper = True
+            flags.no_cfunc_wrapper = True
+
+            cres = compiler.compile_internal(
+                self.typing_context,
+                self,
+                library,
+                impl,
+                sig.args,
+                sig.return_type,
+                flags,
+                locals=locals,
+            )
+
+            # Allow inlining the function inside callers
+            self.active_code_library.add_linking_library(cres.library)
+            return cres
 
 
 class CUDACallConv(MinimalCallConv):

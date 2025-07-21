@@ -35,14 +35,6 @@ class CUDATestCase(SerialMixin, TestCase):
         config.CUDA_LOW_OCCUPANCY_WARNINGS = self._low_occupancy_warnings
         config.CUDA_WARN_ON_IMPLICIT_COPY = self._warn_on_implicit_copy
 
-    def skip_if_lto(self, reason):
-        # Some linkers need the compute capability to be specified, so we
-        # always specify it here.
-        cc = devices.get_context().device.compute_capability
-        linker = driver.Linker.new(cc=cc)
-        if linker.lto:
-            self.skipTest(reason)
-
 
 class ContextResettingTestCase(CUDATestCase):
     """
@@ -57,20 +49,6 @@ class ContextResettingTestCase(CUDATestCase):
         from numba.cuda.cudadrv.devices import reset
 
         reset()
-
-
-def ensure_supported_ccs_initialized():
-    from numba.cuda import is_available as cuda_is_available
-    from numba.cuda.cudadrv import nvvm
-
-    if cuda_is_available():
-        # Ensure that cudart.so is loaded and the list of supported compute
-        # capabilities in the nvvm module is populated before a fork. This is
-        # needed because some compilation tests don't require a CUDA context,
-        # but do use NVVM, and it is required that libcudart.so should be
-        # loaded before a fork (note that the requirement is not explicitly
-        # documented).
-        nvvm.get_supported_ccs()
 
 
 def skip_on_cudasim(reason):
