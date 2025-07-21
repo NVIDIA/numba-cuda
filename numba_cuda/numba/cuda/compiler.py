@@ -300,6 +300,51 @@ class CUDANopythonTypeInference(NopythonTypeInference):
     def __init__(self):
         NopythonTypeInference.__init__(self)
 
+    def _legalize_array_return_type(self, return_type, interp, targetctx):
+        # Walk IR to discover all arguments and all return statements
+        retstmts = []
+        caststmts = {}
+        argvars = set()
+        for bid, blk in interp.blocks.items():
+            for inst in blk.body:
+                if isinstance(inst, numba_ir.Return):
+                    retstmts.append(inst.value.name)
+                elif isinstance(inst, numba_ir.Assign):
+                    if (
+                        isinstance(inst.value, numba_ir.Expr)
+                        and inst.value.op == "cast"
+                    ):
+                        caststmts[inst.target.name] = inst.value
+                    elif isinstance(inst.value, numba_ir.Arg):
+                        argvars.add(inst.target.name)
+
+        assert retstmts, "No return statements?"
+
+        for var in retstmts:
+            cast = caststmts.get(var)
+            if cast is None or cast.value.name not in argvars:
+                if self._raise_errors:
+                    msg = (
+                        "Only accept returning of array passed into "
+                        "the function as argument"
+                    )
+                    raise errors.NumbaTypeError(msg)
+
+    def _legalize_return_type(self, return_type, interp, targetctx):
+        """
+        Only accept array return type iff it is passed into the function.
+        Reject function object return types if in nopython mode.
+        """
+        if not targetctx.enable_nrt and isinstance(return_type, types.Array):
+            self._legalize_array_return_type(return_type, interp, targetctx)
+
+        elif isinstance(return_type, types.Function) or isinstance(
+            return_type, types.Phantom
+        ):
+            if self._raise_errors:
+                msg = "Can't return function object ({}) in nopython mode"
+                raise errors.NumbaTypeError(msg.format(return_type))
+
     def run_pass(self, state):
         """
         Type inference and legalization. Vendored from numba.core.typed_passes.
@@ -325,56 +370,12 @@ class CUDANopythonTypeInference(NopythonTypeInference):
                 state.return_type = return_type
             state.calltypes = calltypes
 
-        def legalize_return_type(return_type, interp, targetctx):
-            """
-            Only accept array return type iff it is passed into the function.
-            Reject function object return types if in nopython mode.
-            """
-            if not targetctx.enable_nrt and isinstance(
-                return_type, types.Array
-            ):
-                # Walk IR to discover all arguments and all return statements
-                retstmts = []
-                caststmts = {}
-                argvars = set()
-                for bid, blk in interp.blocks.items():
-                    for inst in blk.body:
-                        if isinstance(inst, numba_ir.Return):
-                            retstmts.append(inst.value.name)
-                        elif isinstance(inst, numba_ir.Assign):
-                            if (
-                                isinstance(inst.value, numba_ir.Expr)
-                                and inst.value.op == "cast"
-                            ):
-                                caststmts[inst.target.name] = inst.value
-                            elif isinstance(inst.value, numba_ir.Arg):
-                                argvars.add(inst.target.name)
-
-                assert retstmts, "No return statements?"
-
-                for var in retstmts:
-                    cast = caststmts.get(var)
-                    if cast is None or cast.value.name not in argvars:
-                        if self._raise_errors:
-                            msg = (
-                                "Only accept returning of array passed into "
-                                "the function as argument"
-                            )
-                            raise errors.NumbaTypeError(msg)
-
-            elif isinstance(return_type, types.Function) or isinstance(
-                return_type, types.Phantom
-            ):
-                if self._raise_errors:
-                    msg = "Can't return function object ({}) in nopython mode"
-                    raise errors.NumbaTypeError(msg.format(return_type))
-
         with fallback_context(
             state,
             'Function "%s" has invalid return type'
             % (state.func_id.func_name,),
         ):
-            legalize_return_type(
+            self._legalize_return_type(
                 state.return_type, state.func_ir, state.targetctx
             )
         return True
