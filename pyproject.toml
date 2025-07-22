@@ -20,6 +20,39 @@ license = { text = "BSD 2-clause" }
 requires-python = ">=3.9"
 dependencies = ["numba>=0.59.1"]
 
+[project.optional-dependencies]
+cu11 = [
+    "cuda-bindings==11.8.*",
+    "cuda-core==0.3.*",
+    "cuda-python==11.8.*",  # supports all CTK 11.x
+    "nvidia-cuda-nvcc-cu11",  # for libNVVM
+    "nvidia-cuda-runtime-cu11",
+    "nvidia-cuda-nvrtc-cu11",
+]
+cu12 = [
+    "cuda-bindings==12.9.*",
+    "cuda-core==0.3.*",
+    "cuda-python==12.9.*",  # supports all CTK 12.x
+    "nvidia-cuda-nvcc-cu12",  # for libNVVM
+    "nvidia-cuda-runtime-cu12",
+    "nvidia-cuda-nvrtc-cu12",
+    "nvidia-nvjitlink-cu12"
+]
+test = [
+    "psutil",
+    "cffi",
+    "pytest",
+]
+test-cu11 = [
+    "numba-cuda[test]",
+    "nvidia-curand-cu11",
+]
+test-cu12 = [
+    "numba-cuda[test]",
+    "nvidia-curand-cu12",
+    "pynvjitlink-cu12",
+]
+
 [project.urls]
 Homepage = "https://github.com/rapidsai/numba-cuda"
 Documentation = "https://github.com/rapidsai/numba-cuda/blob/main/README.md"
@@ -75,13 +108,14 @@ exclude = [
     "*.cpp",
     "*.c",
     "*.h",
+    "cuda_bf16.py",
 ]
 
 [tool.ruff.lint.per-file-ignores]
 # Slightly long line in the standard version file
 "numba_cuda/_version.py" = ["E501"]
 # "Unused" imports / potentially undefined names in init files
-"numba_cuda/numba/cuda/__init__.py" = ["F401", "F403", "F405"]
+"numba_cuda/numba/cuda/__init__.py" = ["F401", "F403", "F405", "E402"]
 "numba_cuda/numba/cuda/simulator/__init__.py" = ["F401", "F403"]
 "numba_cuda/numba/cuda/simulator/cudadrv/__init__.py" = ["F401"]
 # Ignore star imports", " unused imports", " and "may be defined by star imports"

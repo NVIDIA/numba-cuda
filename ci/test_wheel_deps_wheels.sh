@@ -3,19 +3,18 @@
 
 set -euo pipefail
 
-rapids-logger "Install testing dependencies"
-# TODO: Replace with rapids-dependency-file-generator
-python -m pip install \
-    psutil \
-    cffi \
-    cuda-python \
-    nvidia-cuda-runtime-cu12 \
-    nvidia-curand-cu12 \
-    nvidia-cuda-nvcc-cu12 \
-    nvidia-cuda-nvrtc-cu12 \
-    pynvjitlink-cu12 \
-    pytest
+# cuRAND versions don't follow the toolkit versions - map toolkit versions to
+# appropriate cuRAND versions
+declare -A CTK_CURAND_VMAP=( ["12.8"]="10.3.9" ["12.9"]="10.3.10")
+CUDA_VER_MAJOR_MINOR=${CUDA_VER%.*}
+CUDA_VER_MAJOR=${CUDA_VER%.*.*}
+CURAND_VER="${CTK_CURAND_VMAP[${CUDA_VER_MAJOR_MINOR}]}"
 
+rapids-logger "Install wheel with test dependencies"
+package=$(realpath wheel/numba_cuda*.whl)
+echo "Package path: ${package}"
+# TODO: control minor version pinning to honor TEST_MATRIX once the cuda-toolkit metapackage is up
+python -m pip install "${package}[cu${CUDA_VER_MAJOR},test-cu${CUDA_VER_MAJOR}]"
 
 rapids-logger "Build tests"
 PY_SCRIPT="
@@ -24,16 +23,11 @@ root = numba_cuda.__file__.rstrip('__init__.py')
 test_dir = root + \"numba/cuda/tests/test_binary_generation/\"
 print(test_dir)
 "
-
 NUMBA_CUDA_TEST_BIN_DIR=$(python -c "$PY_SCRIPT")
 pushd $NUMBA_CUDA_TEST_BIN_DIR
 make
 popd
 
-rapids-logger "Install wheel"
-package=$(realpath wheel/numba_cuda*.whl)
-echo "Package path: $package"
-python -m pip install $package
 
 rapids-logger "Check GPU usage"
 nvidia-smi

@@ -14,15 +14,6 @@ class TestCudaDebugInfo(CUDATestCase):
     These tests only checks the compiled PTX for debuginfo section
     """
 
-    def setUp(self):
-        super().setUp()
-        # If we're using LTO then we can't check the PTX in these tests,
-        # because we produce LTO-IR, which is opaque to the user.
-        # Additionally, LTO optimizes away the exception status due to an
-        # oversight in the way we generate it (it is not added to the used
-        # list).
-        self.skip_if_lto("Exceptions not supported with LTO")
-
     def _getasm(self, fn, sig):
         fn.compile(sig)
         return fn.inspect_asm(sig)
@@ -309,6 +300,108 @@ class TestCudaDebugInfo(CUDATestCase):
         with override_config("DUMP_LLVM", 1):
             with captured_stdout():
                 self._test_kernel_args_types()
+
+    def test_kernel_args_names(self):
+        sig = (types.int32,)
+
+        @cuda.jit("void(int32)", debug=True, opt=False)
+        def f(x):
+            z = x  # noqa: F841
+
+        llvm_ir = f.inspect_llvm(sig)
+
+        # Verify argument name is not prefixed with "arg."
+        pat = r"define void @.*\(i32 %\"x\"\)"
+        match = re.compile(pat).search(llvm_ir)
+        self.assertIsNotNone(match, msg=llvm_ir)
+        pat = r"define void @.*\(i32 %\"arg\.x\"\)"
+        match = re.compile(pat).search(llvm_ir)
+        self.assertIsNone(match, msg=llvm_ir)
+
+    def test_llvm_dbg_value(self):
+        sig = (types.int32, types.int32)
+
+        @cuda.jit("void(int32, int32)", debug=True, opt=False)
+        def f(x, y):
+            z1 = x  # noqa: F841
+            z2 = 100  # noqa: F841
+            z3 = y  # noqa: F841
+            z4 = True  # noqa: F841
+
+        llvm_ir = f.inspect_llvm(sig)
+        # Verify the call to llvm.dbg.declare is replaced by llvm.dbg.value
+        pat1 = r'call void @"llvm.dbg.declare"'
+        match = re.compile(pat1).search(llvm_ir)
+        self.assertIsNone(match, msg=llvm_ir)
+        pat2 = r'call void @"llvm.dbg.value"'
+        match = re.compile(pat2).search(llvm_ir)
+        self.assertIsNotNone(match, msg=llvm_ir)
+
+    def test_no_user_var_alias(self):
+        sig = (types.int32, types.int32)
+
+        @cuda.jit("void(int32, int32)", debug=True, opt=False)
+        def f(x, y):
+            z = x  # noqa: F841
+            z = y  # noqa: F841
+
+        llvm_ir = f.inspect_llvm(sig)
+        pat = r'!DILocalVariable.*name:\s+"z\$1".*'
+        match = re.compile(pat).search(llvm_ir)
+        self.assertIsNone(match, msg=llvm_ir)
+
+    def test_no_literal_type(self):
+        sig = (types.int32,)
+
+        @cuda.jit("void(int32)", debug=True, opt=False)
+        def f(x):
+            z = x  # noqa: F841
+            z = 100  # noqa: F841
+            z = True  # noqa: F841
+
+        llvm_ir = f.inspect_llvm(sig)
+        pat = r'!DIBasicType.*name:\s+"Literal.*'
+        match = re.compile(pat).search(llvm_ir)
+        self.assertIsNone(match, msg=llvm_ir)
+
+    def test_union_poly_types(self):
+        sig = (types.int32, types.int32)
+
+        @cuda.jit("void(int32, int32)", debug=True, opt=False)
+        def f(x, y):
+            foo = 100  # noqa: F841
+            foo = 2.34  # noqa: F841
+            foo = True  # noqa: F841
+            foo = 200  # noqa: F841
+
+        llvm_ir = f.inspect_llvm(sig)
+        # Extract the type node id
+        pat1 = r'!DILocalVariable\(.*name: "foo".*type: !(\d+)\)'
+        match = re.compile(pat1).search(llvm_ir)
+        self.assertIsNotNone(match, msg=llvm_ir)
+        mdnode_id = match.group(1)
+        # Verify the union type and extract the elements node id
+        pat2 = rf"!{mdnode_id} = distinct !DICompositeType\(elements: !(\d+),.*size: 64, tag: DW_TAG_union_type\)"  # noqa: E501
+        match = re.compile(pat2).search(llvm_ir)
+        self.assertIsNotNone(match, msg=llvm_ir)
+        mdnode_id = match.group(1)
+        # Extract the member node ids
+        pat3 = r"!{ !(\d+), !(\d+), !(\d+) }"
+        match = re.compile(pat3).search(llvm_ir)
+        self.assertIsNotNone(match, msg=llvm_ir)
+        mdnode_id1 = match.group(1)
+        mdnode_id2 = match.group(2)
+        mdnode_id3 = match.group(3)
+        # Verify the member nodes
+        pat4 = rf'!{mdnode_id1} = !DIDerivedType(.*name: "_bool", size: 8, tag: DW_TAG_member)'  # noqa: E501
+        match = re.compile(pat4).search(llvm_ir)
+        self.assertIsNotNone(match, msg=llvm_ir)
+        pat5 = rf'!{mdnode_id2} = !DIDerivedType(.*name: "_float64", size: 64, tag: DW_TAG_member)'  # noqa: E501
+        match = re.compile(pat5).search(llvm_ir)
+        self.assertIsNotNone(match, msg=llvm_ir)
+        pat6 = rf'!{mdnode_id3} = !DIDerivedType(.*name: "_int64", size: 64, tag: DW_TAG_member)'  # noqa: E501
+        match = re.compile(pat6).search(llvm_ir)
+        self.assertIsNotNone(match, msg=llvm_ir)
 
 
 if __name__ == "__main__":

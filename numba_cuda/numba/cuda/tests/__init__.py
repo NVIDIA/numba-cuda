@@ -1,5 +1,4 @@
 from fnmatch import fnmatch
-from numba.cuda.testing import ensure_supported_ccs_initialized
 from numba.testing import unittest
 from numba import cuda
 from os.path import dirname, isfile, join, normpath, relpath, splitext
@@ -42,7 +41,6 @@ def load_testsuite(loader, dir):
 def load_tests(loader, tests, pattern):
     suite = unittest.TestSuite()
     this_dir = dirname(__file__)
-    ensure_supported_ccs_initialized()
     suite.addTests(load_testsuite(loader, join(this_dir, "nocuda")))
     if cuda.is_available():
         suite.addTests(load_testsuite(loader, join(this_dir, "cudasim")))

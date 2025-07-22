@@ -18,12 +18,17 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       BUILD_MATRIX: ${{ steps.compute-matrix.outputs.BUILD_MATRIX }}
-      TEST_MATRIX: ${{ steps.compute-matrix.outputs.TEST_MATRIX }}
     steps:
       - uses: actions/checkout@v4
       - name: Compute Build Matrix
         id: compute-matrix
-        uses: ./.github/actions/compute-matrix
+        run: |
+          BUILD_MATRIX="$(yq '.build-matrix' ci/matrix.yml)"
+          {
+            echo 'BUILD_MATRIX<<EOF'
+            echo "${BUILD_MATRIX}"
+            echo 'EOF'
+          } >> "${GITHUB_OUTPUT}"
   build-conda:
     needs: compute-matrix
     uses: ./.github/workflows/conda-python-build.yaml
@@ -31,7 +36,7 @@ jobs:
     with:
       build_type: release
       script: "ci/build_conda.sh"
-      matrix_filter: ${{ needs.compute-matrix.outputs.BUILD_MATRIX }}
+      matrix: ${{ needs.compute-matrix.outputs.BUILD_MATRIX }}
       upload_to_anaconda: true
   build-wheels:
     needs: compute-matrix
@@ -40,7 +45,7 @@ jobs:
     with:
       build_type: release
       script: "ci/build_wheel.sh"
-      matrix_filter: ${{ needs.compute-matrix.outputs.BUILD_MATRIX }}
+      matrix: ${{ needs.compute-matrix.outputs.BUILD_MATRIX }}
   publish-wheels:
     needs: build-wheels
     runs-on: ubuntu-latest

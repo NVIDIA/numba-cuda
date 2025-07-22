@@ -1,5 +1,5 @@
 from math import sqrt
-from numba import cuda, float32, int16, int32, int64, uint32, void
+from numba import cuda, float32, int16, int32, int64, types, uint32, void
 from numba.cuda import (
     compile,
     compile_for_current_device,
@@ -265,7 +265,7 @@ class TestCompileForCurrentDevice(CUDATestCase):
         # Check we target the current device's compute capability, or the
         # closest compute capability supported by the current toolkit.
         device_cc = cuda.get_current_device().compute_capability
-        cc = cuda.cudadrv.nvvm.find_closest_arch(device_cc)
+        cc = cuda.cudadrv.nvrtc.find_closest_arch(device_cc)
         target = f".target sm_{cc[0]}{cc[1]}"
         self.assertIn(target, ptx)
 
@@ -288,7 +288,7 @@ class TestCompileOnlyTests(unittest.TestCase):
             # Sleep for a variable time
             cuda.nanosleep(x)
 
-        ptx, resty = compile_ptx(use_nanosleep, (uint32,), cc=(7, 0))
+        ptx, resty = compile_ptx(use_nanosleep, (uint32,))
 
         nanosleep_count = 0
         for line in ptx.split("\n"):
@@ -304,6 +304,66 @@ class TestCompileOnlyTests(unittest.TestCase):
                 f"expected {expected}"
             ),
         )
+
+
+@skip_on_cudasim("Compilation unsupported in the simulator")
+class TestCompileWithLaunchBounds(unittest.TestCase):
+    def _test_launch_bounds_common(self, launch_bounds):
+        def f():
+            pass
+
+        sig = "void()"
+        ptx, resty = cuda.compile_ptx(f, sig, launch_bounds=launch_bounds)
+        self.assertIsInstance(resty, types.NoneType)
+        self.assertRegex(ptx, r".maxntid\s+128,\s+1,\s+1")
+        return ptx
+
+    def test_launch_bounds_scalar(self):
+        launch_bounds = 128
+        ptx = self._test_launch_bounds_common(launch_bounds)
+
+        self.assertNotIn(".minnctapersm", ptx)
+        self.assertNotIn(".maxclusterrank", ptx)
+
+    def test_launch_bounds_tuple(self):
+        launch_bounds = (128,)
+        ptx = self._test_launch_bounds_common(launch_bounds)
+
+        self.assertNotIn(".minnctapersm", ptx)
+        self.assertNotIn(".maxclusterrank", ptx)
+
+    def test_launch_bounds_with_min_cta(self):
+        launch_bounds = (128, 2)
+        ptx = self._test_launch_bounds_common(launch_bounds)
+
+        self.assertRegex(ptx, r".minnctapersm\s+2")
+        self.assertNotIn(".maxclusterrank", ptx)
+
+    def test_launch_bounds_with_max_cluster_rank(self):
+        def f():
+            pass
+
+        launch_bounds = (128, 2, 4)
+        cc = (9, 0)
+        sig = "void()"
+        ptx, resty = cuda.compile_ptx(
+            f, sig, launch_bounds=launch_bounds, cc=cc
+        )
+        self.assertIsInstance(resty, types.NoneType)
+        self.assertRegex(ptx, r".maxntid\s+128,\s+1,\s+1")
+
+        self.assertRegex(ptx, r".minnctapersm\s+2")
+        self.assertRegex(ptx, r".maxclusterrank\s+4")
+
+    def test_too_many_launch_bounds(self):
+        def f():
+            pass
+
+        sig = "void()"
+        launch_bounds = (128, 2, 4, 8)
+
+        with self.assertRaisesRegex(ValueError, "Got 4 launch bounds:"):
+            cuda.compile_ptx(f, sig, launch_bounds=launch_bounds)
 
 
 if __name__ == "__main__":

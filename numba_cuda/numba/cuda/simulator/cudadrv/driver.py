@@ -3,6 +3,8 @@ Most of the driver API is unsupported in the simulator, but some stubs are
 provided to allow tests to import correctly.
 """
 
+from numba import config
+
 
 def device_memset(dst, val, size, stream=0):
     dst.view("u1")[:size].fill(bytes([val])[0])
@@ -32,10 +34,10 @@ class FakeDriver(object):
 driver = FakeDriver()
 
 
-class Linker:
+class _Linker:
     @classmethod
     def new(cls, max_registers=0, lineinfo=False, cc=None):
-        return Linker()
+        return _Linker()
 
     @property
     def lto(self):
@@ -60,3 +62,12 @@ def launch_kernel(*args, **kwargs):
 
 
 USE_NV_BINDING = False
+
+PyNvJitLinker = None
+
+if config.ENABLE_CUDASIM:
+    config.CUDA_ENABLE_PYNVJITLINK = False
+
+
+def _have_nvjitlink():
+    return False

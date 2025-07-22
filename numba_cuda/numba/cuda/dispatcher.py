@@ -1,27 +1,25 @@
 import numpy as np
 import os
-import re
 import sys
 import ctypes
 import functools
-from collections import defaultdict
 
-from numba.core import config, ir, serialize, sigutils, types, typing, utils
+from numba.core import config, serialize, sigutils, types, typing, utils
 from numba.core.caching import Cache, CacheImpl
 from numba.core.compiler_lock import global_compiler_lock
 from numba.core.dispatcher import Dispatcher
 from numba.core.errors import NumbaPerformanceWarning
 from numba.core.typing.typeof import Purpose, typeof
-from numba.core.types.functions import Function
 from numba.cuda.api import get_current_device
 from numba.cuda.args import wrap_arg
 from numba.cuda.compiler import (
     compile_cuda,
     CUDACompiler,
     kernel_fixup,
-    ExternFunction,
 )
-from numba.cuda.cudadrv import driver
+import re
+from numba.cuda.cudadrv import driver, nvvm
+from numba.cuda.cudadrv.linkable_code import LinkableCode
 from numba.cuda.cudadrv.devices import get_context
 from numba.cuda.descriptor import cuda_target
 from numba.cuda.errors import (
@@ -29,8 +27,8 @@ from numba.cuda.errors import (
     normalize_kernel_dimensions,
 )
 from numba.cuda import types as cuda_types
-from numba.cuda.runtime.nrt import rtsys
 from numba.cuda.locks import module_init_lock
+from numba.cuda.memory_management.nrt import rtsys, NRT_LIBRARY
 
 from numba import cuda
 from numba import _dispatcher
@@ -57,54 +55,6 @@ cuda_fp16_math_funcs = [
 ]
 
 reshape_funcs = ["nocopy_empty_reshape", "numba_attempt_nocopy_reshape"]
-
-
-def get_cres_link_objects(cres):
-    """Given a compile result, return a set of all linkable code objects that
-    are required for it to be fully linked."""
-
-    link_objects = set()
-
-    # List of calls into declared device functions
-    device_func_calls = [
-        (name, v)
-        for name, v in cres.fndesc.typemap.items()
-        if (isinstance(v, cuda_types.CUDADispatcher))
-    ]
-
-    # List of tuples with SSA name of calls and corresponding signature
-    call_signatures = [
-        (call.func.name, sig)
-        for call, sig in cres.fndesc.calltypes.items()
-        if (isinstance(call, ir.Expr) and call.op == "call")
-    ]
-
-    # Map SSA names to all invoked signatures
-    call_signature_d = defaultdict(list)
-    for name, sig in call_signatures:
-        call_signature_d[name].append(sig)
-
-    # Add the link objects from the current function's callees
-    for name, v in device_func_calls:
-        for sig in call_signature_d.get(name, []):
-            called_cres = v.dispatcher.overloads[sig.args]
-            called_link_objects = get_cres_link_objects(called_cres)
-            link_objects.update(called_link_objects)
-
-    # From this point onwards, we are only interested in ExternFunction
-    # declarations - these are the calls made directly in this function to
-    # them.
-    for name, v in cres.fndesc.typemap.items():
-        if not isinstance(v, Function):
-            continue
-
-        if not isinstance(v.typing_key, ExternFunction):
-            continue
-
-        for obj in v.typing_key.link:
-            link_objects.add(obj)
-
-    return link_objects
 
 
 class _Kernel(serialize.ReduceMixin):
@@ -137,12 +87,14 @@ class _Kernel(serialize.ReduceMixin):
         debug=False,
         lineinfo=False,
         inline=False,
+        forceinline=False,
         fastmath=False,
         extensions=None,
         max_registers=None,
         lto=False,
         opt=True,
         device=False,
+        launch_bounds=None,
     ):
         if device:
             raise RuntimeError("Cannot compile a device function as a kernel")
@@ -169,6 +121,7 @@ class _Kernel(serialize.ReduceMixin):
         self.debug = debug
         self.lineinfo = lineinfo
         self.extensions = extensions or []
+        self.launch_bounds = launch_bounds
 
         nvvm_options = {"fastmath": fastmath, "opt": 3 if opt else 0}
 
@@ -176,13 +129,14 @@ class _Kernel(serialize.ReduceMixin):
             nvvm_options["g"] = None
 
         cc = get_current_device().compute_capability
+
         cres = compile_cuda(
             self.py_func,
             types.void,
             self.argtypes,
             debug=self.debug,
             lineinfo=lineinfo,
-            inline=inline,
+            forceinline=forceinline,
             fastmath=fastmath,
             nvvm_options=nvvm_options,
             cc=cc,
@@ -194,14 +148,15 @@ class _Kernel(serialize.ReduceMixin):
         kernel = lib.get_function(cres.fndesc.llvm_func_name)
         lib._entry_name = cres.fndesc.llvm_func_name
         kernel_fixup(kernel, self.debug)
+        nvvm.set_launch_bounds(kernel, launch_bounds)
 
         if not link:
             link = []
 
         asm = lib.get_asm_str()
 
-        # A kernel needs cooperative launch if grid_sync is being used.
-        self.cooperative = "cudaCGGetIntrinsicHandle" in asm
+        # The code library contains functions that require cooperative launch.
+        self.cooperative = lib.use_cooperative
         # We need to link against cudadevrt if grid sync is being used.
         if self.cooperative:
             lib.needs_cudadevrt = True
@@ -237,9 +192,6 @@ class _Kernel(serialize.ReduceMixin):
 
         self.maybe_link_nrt(link, tgt_ctx, asm)
 
-        for obj in get_cres_link_objects(cres):
-            lib.add_linking_file(obj)
-
         for filepath in link:
             lib.add_linking_file(filepath)
 
@@ -262,6 +214,13 @@ class _Kernel(serialize.ReduceMixin):
         self.reload_init = []
 
     def maybe_link_nrt(self, link, tgt_ctx, asm):
+        """
+        Add the NRT source code to the link if the neccesary conditions are met.
+        NRT must be enabled for the CUDATargetContext, and either NRT functions
+        must be detected in the kernel asm or an NRT enabled LinkableCode object
+        must be passed.
+        """
+
         if not tgt_ctx.enable_nrt:
             return
 
@@ -271,13 +230,19 @@ class _Kernel(serialize.ReduceMixin):
             + all_nrt
             + r")\s*\([^)]*\)\s*;"
         )
-
+        link_nrt = False
         nrt_in_asm = re.findall(pattern, asm)
+        if len(nrt_in_asm) > 0:
+            link_nrt = True
+        if not link_nrt:
+            for file in link:
+                if isinstance(file, LinkableCode):
+                    if file.nrt:
+                        link_nrt = True
+                        break
 
-        basedir = os.path.dirname(os.path.abspath(__file__))
-        if nrt_in_asm:
-            nrt_path = os.path.join(basedir, "runtime", "nrt.cu")
-            link.append(nrt_path)
+        if link_nrt:
+            link.append(NRT_LIBRARY)
 
     @property
     def library(self):
@@ -419,6 +384,12 @@ class _Kernel(serialize.ReduceMixin):
         """
         return self._codelibrary.get_asm_str(cc=cc)
 
+    def inspect_lto_ptx(self, cc):
+        """
+        Returns the PTX code for the external functions linked to this kernel.
+        """
+        return self._codelibrary.get_lto_ptx(cc=cc)
+
     def inspect_sass_cfg(self):
         """
         Returns the CFG of the SASS for this kernel.
@@ -493,11 +464,10 @@ class _Kernel(serialize.ReduceMixin):
             self._prepare_args(t, v, stream, retr, kernelargs)
 
         if driver.USE_NV_BINDING:
-            zero_stream = driver.binding.CUstream(0)
+            stream_handle = stream and stream.handle.value or 0
         else:
             zero_stream = None
-
-        stream_handle = stream and stream.handle or zero_stream
+            stream_handle = stream and stream.handle or zero_stream
 
         # Invoke kernel
         driver.launch_kernel(
@@ -586,6 +556,10 @@ class _Kernel(serialize.ReduceMixin):
             for ax in range(devary.ndim):
                 kernelargs.append(c_intp(devary.strides[ax]))
 
+        elif isinstance(ty, types.CPointer):
+            # Pointer arguments should be a pointer-sized integer
+            kernelargs.append(ctypes.c_uint64(val))
+
         elif isinstance(ty, types.Integer):
             cval = getattr(ctypes, "c_%s" % ty)(val)
             kernelargs.append(cval)
@@ -620,8 +594,6 @@ class _Kernel(serialize.ReduceMixin):
         elif isinstance(ty, types.Record):
             devrec = wrap_arg(val).to_device(retr, stream)
             ptr = devrec.device_ctypes_pointer
-            if driver.USE_NV_BINDING:
-                ptr = ctypes.c_void_p(int(ptr))
             kernelargs.append(ptr)
 
         elif isinstance(ty, types.BaseTuple):
@@ -1041,7 +1013,7 @@ class CUDADispatcher(Dispatcher, serialize.ReduceMixin):
         A (template, pysig, args, kws) tuple is returned.
         """
         # Fold keyword arguments and resolve default values
-        pysig, args = self._compiler.fold_argument_types(args, kws)
+        pysig, args = self.fold_argument_types(args, kws)
         kws = {}
 
         # Ensure an exactly-matching overload is available if we can
@@ -1073,7 +1045,7 @@ class CUDADispatcher(Dispatcher, serialize.ReduceMixin):
             with self._compiling_counter:
                 debug = self.targetoptions.get("debug")
                 lineinfo = self.targetoptions.get("lineinfo")
-                inline = self.targetoptions.get("inline")
+                forceinline = self.targetoptions.get("forceinline")
                 fastmath = self.targetoptions.get("fastmath")
 
                 nvvm_options = {
@@ -1091,7 +1063,7 @@ class CUDADispatcher(Dispatcher, serialize.ReduceMixin):
                     args,
                     debug=debug,
                     lineinfo=lineinfo,
-                    inline=inline,
+                    forceinline=forceinline,
                     fastmath=fastmath,
                     nvvm_options=nvvm_options,
                     cc=cc,
@@ -1200,6 +1172,34 @@ class CUDADispatcher(Dispatcher, serialize.ReduceMixin):
             else:
                 return {
                     sig: overload.inspect_asm(cc)
+                    for sig, overload in self.overloads.items()
+                }
+
+    def inspect_lto_ptx(self, signature=None):
+        """
+        Return link-time optimized PTX code for the given signature.
+
+        :param signature: A tuple of argument types.
+        :return: The PTX code for the given signature, or a dict of PTX codes
+                 for all previously-encountered signatures.
+        """
+        cc = get_current_device().compute_capability
+        device = self.targetoptions.get("device")
+
+        if signature is not None:
+            if device:
+                return self.overloads[signature].library.get_lto_ptx(cc)
+            else:
+                return self.overloads[signature].inspect_lto_ptx(cc)
+        else:
+            if device:
+                return {
+                    sig: overload.library.get_lto_ptx(cc)
+                    for sig, overload in self.overloads.items()
+                }
+            else:
+                return {
+                    sig: overload.inspect_lto_ptx(cc)
                     for sig, overload in self.overloads.items()
                 }
 

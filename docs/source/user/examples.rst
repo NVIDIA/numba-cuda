@@ -1,3 +1,4 @@
+.. _numba-cuda-examples:
 
 ========
 Examples
@@ -542,5 +543,54 @@ kernel following this pattern:
    :caption: from ``test_ex_cuda_ufunc_call`` in ``numba/cuda/tests/doc_examples/test_ufunc.py``
    :start-after: ex_cuda_ufunc.begin
    :end-before: ex_cuda_ufunc.end
+   :dedent: 8
+   :linenos:
+
+.. _cuda-cpointer-example:
+
+Passing a pointer to a kernel
+=============================
+
+Instead of using arrays, it can be useful for a kernel to accept a pointer
+argument - for example, when data is provided by another (potentially
+non-Python) library.
+
+Using pointers requires them to be explicitly specified in the signature. We
+can create them with ``types.CPointer``:
+
+.. literalinclude:: ../../../numba_cuda/numba/cuda/tests/doc_examples/test_cpointer.py
+   :language: python
+   :caption: from ``test_ex_cpointer`` in ``numba/cuda/tests/doc_examples/test_cpointer.py``
+   :start-after: ex_cpointer.sig.begin
+   :end-before: ex_cpointer.sig.end
+   :dedent: 8
+   :linenos:
+
+Next, we provide the signature to the ``@jit`` decorator when defining the
+kernel. Note that unlike with arrays, Numba does not implicitly know anything
+about the shape of the array. We need to pass the length into the kernel,
+instead of being able to use ``len(x)`` or ``x.shape`` as we would with an
+array.
+
+.. literalinclude:: ../../../numba_cuda/numba/cuda/tests/doc_examples/test_cpointer.py
+   :language: python
+   :caption: from ``test_ex_cpointer`` in ``numba/cuda/tests/doc_examples/test_cpointer.py``
+   :start-after: ex_cpointer.kernel.begin
+   :end-before: ex_cpointer.kernel.end
+   :dedent: 8
+   :linenos:
+
+To set up an example using the kernel and passing a pointer as an integer, we
+create a Numba device array in the usual way, then use the
+:ref:`CUDA Array Interface <cuda-array-interface>` to obtain the pointer for the
+purpose of this example. However, the pointer could have been provided from
+anywhere - for example, from another library that doesn't support the CUDA Array Interface,
+or from ``cudaMalloc`` in a C / C++ program, etc..
+
+.. literalinclude:: ../../../numba_cuda/numba/cuda/tests/doc_examples/test_cpointer.py
+   :language: python
+   :caption: from ``test_ex_cpointer`` in ``numba/cuda/tests/doc_examples/test_cpointer.py``
+   :start-after: ex_cpointer.launch.begin
+   :end-before: ex_cpointer.launch.end
    :dedent: 8
    :linenos:

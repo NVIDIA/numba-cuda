@@ -129,12 +129,16 @@ class shared(Stub):
     _description_ = "<shared>"
 
     @stub_function
-    def array(shape, dtype):
+    def array(shape, dtype, alignment=None):
         """
-        Allocate a shared array of the given *shape* and *type*. *shape* is
-        either an integer or a tuple of integers representing the array's
-        dimensions.  *type* is a :ref:`Numba type <numba-types>` of the
-        elements needing to be stored in the array.
+        Allocate a shared array of the given *shape*, *type*, and, optionally,
+        *alignment*.  *shape* is either an integer or a tuple of integers
+        representing the array's dimensions.  *type* is a :ref:`Numba type
+        <numba-types>` of the elements needing to be stored in the array.
+        *alignment* is an optional integer specifying the byte alignment of
+        the array.  When specified, it must be a power of two, and a multiple
+        of the size of a pointer (8 bytes).  When not specified, the array is
+        allocated with an alignment appropriate for the supplied *dtype*.
 
         The returned array-like object can be read and written to like any
         normal device array (e.g. through indexing).
@@ -149,12 +153,20 @@ class local(Stub):
     _description_ = "<local>"
 
     @stub_function
-    def array(shape, dtype):
+    def array(shape, dtype, alignment=None):
         """
-        Allocate a local array of the given *shape* and *type*. The array is
-        private to the current thread, and resides in global memory. An
-        array-like object is returned which can be read and written to like any
-        standard array (e.g.  through indexing).
+        Allocate a local array of the given *shape*, *type*, and, optionally,
+        *alignment*.  *shape* is either an integer or a tuple of integers
+        representing the array's dimensions.  *type* is a :ref:`Numba type
+        <numba-types>` of the elements needing to be stored in the array.
+        *alignment* is an optional integer specifying the byte alignment of
+        the array.  When specified, it must be a power of two, and a multiple
+        of the size of a pointer (8 bytes).  When not specified, the array is
+        allocated with an alignment appropriate for the supplied *dtype*.
+
+        The array is private to the current thread, and resides in global
+        memory.  An array-like object is returned which can be read and
+        written to like any standard array (e.g. through indexing).
         """
 
 
@@ -183,17 +195,6 @@ class syncwarp(Stub):
     """
 
     _description_ = "<warp_sync()>"
-
-
-class shfl_sync_intrinsic(Stub):
-    """
-    shfl_sync_intrinsic(mask, mode, value, mode_offset, clamp)
-
-    Nvvm intrinsic for shuffling data across a warp
-    docs.nvidia.com/cuda/nvvm-ir-spec/index.html#nvvm-intrin-warp-level-datamove
-    """
-
-    _description_ = "<shfl_sync()>"
 
 
 class vote_sync_intrinsic(Stub):

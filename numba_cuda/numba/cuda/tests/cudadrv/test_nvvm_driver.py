@@ -1,7 +1,7 @@
 import warnings
 
 from llvmlite import ir
-from numba.cuda.cudadrv import nvvm, runtime
+from numba.cuda.cudadrv import nvrtc, nvvm, runtime
 from numba.cuda.testing import unittest
 from numba.cuda.cudadrv.nvvm import LibDevice, NvvmError, NVVM
 from numba.cuda.testing import skip_on_cudasim
@@ -30,7 +30,8 @@ class TestNvvmDriver(unittest.TestCase):
             self.skipTest("-gen-lto unavailable in this toolkit version")
 
         nvvmir = self.get_nvvmir()
-        ltoir = nvvm.compile_ir(nvvmir, opt=3, gen_lto=None, arch="compute_52")
+        arch = "compute_%d%d" % nvrtc.get_lowest_supported_cc()
+        ltoir = nvvm.compile_ir(nvvmir, opt=3, gen_lto=None, arch=arch)
 
         # Verify we correctly passed the option by checking if we got LTOIR
         # from NVVM (by looking for the expected magic number for LTOIR)
@@ -109,7 +110,7 @@ class TestNvvmDriver(unittest.TestCase):
 
     def test_nvvm_support(self):
         """Test supported CC by NVVM"""
-        for arch in nvvm.get_supported_ccs():
+        for arch in nvrtc.get_supported_ccs():
             self._test_nvvm_support(arch=arch)
 
     def test_nvvm_warning(self):
@@ -132,22 +133,6 @@ class TestNvvmDriver(unittest.TestCase):
 
         self.assertEqual(len(w), 1)
         self.assertIn("overriding noinline attribute", str(w[0]))
-
-
-@skip_on_cudasim("NVVM Driver unsupported in the simulator")
-class TestArchOption(unittest.TestCase):
-    def test_get_arch_option(self):
-        # Test returning the nearest lowest arch.
-        self.assertEqual(nvvm.get_arch_option(5, 3), "compute_53")
-        self.assertEqual(nvvm.get_arch_option(7, 5), "compute_75")
-        self.assertEqual(nvvm.get_arch_option(7, 7), "compute_75")
-        # Test known arch.
-        supported_cc = nvvm.get_supported_ccs()
-        for arch in supported_cc:
-            self.assertEqual(nvvm.get_arch_option(*arch), "compute_%d%d" % arch)
-        self.assertEqual(
-            nvvm.get_arch_option(1000, 0), "compute_%d%d" % supported_cc[-1]
-        )
 
 
 @skip_on_cudasim("NVVM Driver unsupported in the simulator")

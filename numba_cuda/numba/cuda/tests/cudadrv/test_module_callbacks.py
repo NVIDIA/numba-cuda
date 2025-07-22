@@ -5,14 +5,19 @@ import numpy as np
 
 from numba import cuda, config
 from numba.cuda.cudadrv.linkable_code import CUSource
-from numba.cuda.testing import CUDATestCase, ContextResettingTestCase
+from numba.cuda.testing import (
+    CUDATestCase,
+    ContextResettingTestCase,
+    skip_on_cudasim,
+)
 
-from cuda.bindings.driver import cuModuleGetGlobal, cuMemcpyHtoD
+if not config.ENABLE_CUDASIM:
+    from cuda.bindings.driver import cuModuleGetGlobal, cuMemcpyHtoD
 
-if config.CUDA_USE_NVIDIA_BINDING:
-    from cuda.cuda import CUmodule as cu_module_type
-else:
-    from numba.cuda.cudadrv.drvapi import cu_module as cu_module_type
+    if config.CUDA_USE_NVIDIA_BINDING:
+        from cuda.bindings.driver import CUmodule as cu_module_type
+    else:
+        from numba.cuda.cudadrv.drvapi import cu_module as cu_module_type
 
 
 def wipe_all_modules_in_context():
@@ -32,6 +37,7 @@ def get_hashable_handle_value(handle):
     return handle
 
 
+@skip_on_cudasim("Module loading not implemented in the simulator")
 class TestModuleCallbacksBasic(ContextResettingTestCase):
     def test_basic(self):
         counter = 0
@@ -136,6 +142,7 @@ class TestModuleCallbacksBasic(ContextResettingTestCase):
         self.assertEqual(len(teardown_seen), 2)
 
 
+@skip_on_cudasim("Module loading not implemented in the simulator")
 class TestModuleCallbacksAPICompleteness(CUDATestCase):
     def test_api(self):
         def setup(handle):
@@ -164,6 +171,7 @@ class TestModuleCallbacksAPICompleteness(CUDATestCase):
                 kernel[1, 1]()
 
 
+@skip_on_cudasim("Module loading not implemented in the simulator")
 class TestModuleCallbacks(CUDATestCase):
     def setUp(self):
         super().setUp()
@@ -213,6 +221,7 @@ __device__ int get_num(int &retval) {
         self.assertEqual(arr[0], 42)
 
 
+@skip_on_cudasim("Module loading not implemented in the simulator")
 class TestMultithreadedCallbacks(CUDATestCase):
     def test_concurrent_initialization(self):
         seen_mods = set()

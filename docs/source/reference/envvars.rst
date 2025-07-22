@@ -108,9 +108,8 @@ target.
 
    When set to 1, Numba will attempt to use the `NVIDIA CUDA Python binding
    <https://nvidia.github.io/cuda-python/>`_ to make calls to the driver API
-   instead of using its own ctypes binding. This defaults to 0 (off), as the
-   NVIDIA binding is currently missing support for Per-Thread Default
-   Streams and the profiler APIs.
+   instead of using its own ctypes binding. This defaults to 1 (on). Set to
+   0 to use the ctypes bindings.
 
 .. envvar:: NUMBA_CUDA_INCLUDE_PATH
 
@@ -131,3 +130,9 @@ target.
    Use ``pynvjitlink`` for minor version compatibility. Requires the ``pynvjitlink``
    package to be installed. Provides minor version compatibility for driver versions
    greater than 12.0.
+
+.. envvar:: NUMBA_CUDA_NVRTC_EXTRA_SEARCH_PATHS
+
+   A colon separated list of paths that Numba's NVRTC should search for when compiling
+   external functions. These folders are searched after the system cudatoolkit search
+   paths and Numba-CUDA's internal search paths.

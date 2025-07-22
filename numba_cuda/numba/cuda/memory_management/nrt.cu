@@ -4,30 +4,14 @@
 #include <cuda/atomic>
 
 #include "memsys.cuh"
+#include "nrt.cuh"
 
-typedef void (*NRT_dtor_function)(void* ptr, size_t size, void* info);
-typedef void (*NRT_dealloc_func)(void* ptr, void* dealloc_info);
-
-typedef struct MemInfo NRT_MemInfo;
-
-extern "C" {
-struct MemInfo {
-  cuda::atomic<size_t, cuda::thread_scope_device> refct;
-  NRT_dtor_function dtor;
-  void* dtor_info;
-  void* data;
-  size_t size;
-};
-}
 
 extern "C" __global__ void NRT_MemSys_set(NRT_MemSys *memsys_ptr)
 {
   TheMSys = memsys_ptr;
 }
 
-static __device__ void *nrt_allocate_meminfo_and_data_align(size_t size, unsigned align, NRT_MemInfo **mi);
-static __device__ void *nrt_allocate_meminfo_and_data(size_t size, NRT_MemInfo **mi_out);
-extern "C" __device__ void* NRT_Allocate_External(size_t size);
 
 extern "C" __device__ void* NRT_Allocate(size_t size)
 {
@@ -176,6 +160,7 @@ extern "C" __device__ void NRT_decref(NRT_MemInfo* mi)
     if (mi->refct == 0) { NRT_MemInfo_call_dtor(mi); }
   }
 }
+
 
 #endif
 

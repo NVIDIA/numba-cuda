@@ -26,22 +26,6 @@ MVC is not supported on Windows.
 Installation
 ------------
 
-CUDA 12
-~~~~~~~
-
-To use MVC support, the ``pynvjitlink`` package must be installed. To install
-using conda, use:
-
-.. code:: bash
-
-   conda install -c rapidsai pynvjitlink
-
-To install with pip, use the NVIDIA package index:
-
-.. code:: bash
-
-   pip install --extra-index-url https://pypi.nvidia.com pynvjitlink-cu12
-
 CUDA 11
 ~~~~~~~
 
@@ -58,16 +42,24 @@ To install with pip, use the NVIDIA package index:
 
    pip install --extra-index-url https://pypi.nvidia.com ptxcompiler-cu11 cubinlinker-cu11
 
+CUDA 12
+~~~~~~~
+
+For CUDA 12, MVC is provied by default through the ``pynvjitlink``  package,
+which ``numba-cuda`` depends on directly, so no additional installation
+steps are required.
+
 Enabling MVC Support
 --------------------
+
+CUDA 11
+~~~~~~~
 
 MVC support is enabled by setting the environment variable:
 
 .. code:: bash
 
-   export NUMBA_CUDA_ENABLE_MINOR_VERSION_COMPATIBILITY=1 # CUDA 11
-   export NUMBA_CUDA_ENABLE_PYNVJITLINK=1 # CUDA 12
-
+   export NUMBA_CUDA_ENABLE_MINOR_VERSION_COMPATIBILITY=1
 
 or by setting a configuration variable prior to using any CUDA functionality in
 Numba:
@@ -75,8 +67,25 @@ Numba:
 .. code:: python
 
    from numba import config
-   config.CUDA_ENABLE_MINOR_VERSION_COMPATIBILITY = True # CUDA 11
-   config.CUDA_ENABLE_PYNVJITLINK = True # CUDA 12
+   config.CUDA_ENABLE_MINOR_VERSION_COMPATIBILITY = True
+
+
+CUDA 12
+~~~~~~~
+
+For CUDA 12, MVC support is enabled by default but may be disabled by setting the
+following environment variable or config setting respectively:
+
+.. code:: bash
+
+   export NUMBA_CUDA_ENABLE_PYNVJITLINK=0
+
+or
+
+.. code:: python
+
+   from numba import config
+   config.CUDA_ENABLE_PYNVJITLINK = False
 
 
 References

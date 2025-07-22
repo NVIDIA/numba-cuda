@@ -22,6 +22,8 @@ set -u
 
 rapids-mamba-retry install -c `pwd`/conda-repo numba-cuda
 
+pip install nvidia-sphinx-theme
+
 rapids-print-env
 
 rapids-logger "Show Numba system info"

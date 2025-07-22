@@ -7,7 +7,7 @@ from numba.cuda.testing import unittest, CUDATestCase
 
 class TestCudaArrayArg(CUDATestCase):
     def test_array_ary(self):
-        @cuda.jit("double(double[:],int64)", device=True, inline=True)
+        @cuda.jit("double(double[:],int64)", device=True, inline="always")
         def device_function(a, c):
             return a[c]
 
