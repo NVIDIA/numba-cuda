@@ -160,6 +160,7 @@ class TestInspect(CUDATestCase):
         lto_asm = next(iter(all_ext_asms.values()))
 
         self.assertIn("add.f16", lto_asm)
+        self.assertNotIn("call", lto_asm)
 
         np.testing.assert_equal(arr[0], np.float16(1) + np.float16(2))
 
