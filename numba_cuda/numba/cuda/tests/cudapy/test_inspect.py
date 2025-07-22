@@ -1,5 +1,4 @@
 import re
-import tempfile
 import cffi
 
 import numpy as np
@@ -119,10 +118,8 @@ class TestInspect(CUDATestCase):
     @skip_if_nvjitlink_missing("nvJitLink is required for LTO")
     def test_inspect_lto_asm(self):
         ffi = cffi.FFI()
-        temp_add_cu = tempfile.NamedTemporaryFile(suffix=".cu")
 
-        with open(temp_add_cu.name, "w") as f:
-            f.write("""
+        ext = cuda.CUSource("""
             #include <cuda_fp16.h>
             extern "C"
             __device__ int add_f2_f2(__half * res, __half * a, __half *b) {
@@ -134,7 +131,7 @@ class TestInspect(CUDATestCase):
         add = declare_device(
             "add_f2_f2",
             float16(CPointer(float16), CPointer(float16)),
-            link=temp_add_cu.name,
+            link=ext,
         )
 
         @cuda.jit
