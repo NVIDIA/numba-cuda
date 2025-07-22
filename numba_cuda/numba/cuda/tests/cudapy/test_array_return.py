@@ -24,9 +24,9 @@ def array_local(shape, dtype):
     return cuda.local.array(shape, dtype=dtype)
 
 
-class TestCudaArray(CUDATestCase):
+class TestCudaArrayReturn(CUDATestCase):
     def test_array_return(self):
-        f = cuda.jit(device=True, forceinline=True)(array_return)
+        f = cuda.jit(device=True)(array_return)
 
         @cuda.jit
         def kernel(x):
@@ -37,7 +37,7 @@ class TestCudaArray(CUDATestCase):
         kernel[1, 1](a)
 
     def test_array_slice(self):
-        f = cuda.jit(device=True, forceinline=True)(array_slice)
+        f = cuda.jit(device=True)(array_slice)
 
         @cuda.jit
         def kernel(x):
@@ -52,7 +52,7 @@ class TestCudaArray(CUDATestCase):
         assert a[2] == 1
 
     def test_array_slice_2d(self):
-        f = cuda.jit(device=True, forceinline=True)(array_slice_2d)
+        f = cuda.jit(device=True)(array_slice_2d)
 
         @cuda.jit
         def kernel(x):
@@ -67,7 +67,7 @@ class TestCudaArray(CUDATestCase):
         assert a[2, 4] == 1
 
     def test_array_local(self):
-        f = cuda.jit(device=True, forceinline=True)(array_local)
+        f = cuda.jit(device=True)(array_local)
 
         @cuda.jit
         def kernel():
