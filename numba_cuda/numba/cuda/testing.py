@@ -8,6 +8,10 @@ from numba.cuda.cudadrv import driver, devices, libs
 from numba.core import config
 from numba.tests.support import TestCase
 from pathlib import Path
+from filecheck.matcher import Matcher, Options
+from filecheck.parser import Parser, pattern_for_opts
+from filecheck.finput import FInput
+from io import StringIO
 import unittest
 
 numba_cuda_dir = Path(__file__).parent
@@ -203,3 +207,75 @@ class ForeignArray(object):
     def __init__(self, arr):
         self._arr = arr
         self.__cuda_array_interface__ = arr.__cuda_array_interface__
+
+
+def filecheck_ir(
+    ir_content: str,
+    check_patterns: str,
+    check_prefixes: list[str] = ["CHECK"],
+    **extra_filecheck_options: dict[str, str | int],
+) -> None:
+    """Run filecheck on IR content with check patterns. Raises an AssertionError if the checks fail."""
+    opts = Options(
+        match_filename="-",
+        check_prefixes=check_prefixes,
+        **extra_filecheck_options,
+    )
+    fin = FInput(fname="-", content=ir_content)
+    parser = Parser(opts, StringIO(check_patterns), *pattern_for_opts(opts))
+    matcher = Matcher(opts, fin, parser)
+    result = matcher.run()
+    if result != 0:
+        raise AssertionError(
+            (
+                f"FileCheck failed with exit code {result}\n\n"
+                f"Check prefixes:\n{check_prefixes}\n\n"
+                f"Check patterns:\n{check_patterns}\n"
+                f"IR:\n{ir_content}\n\n"
+            )
+        )
+    return True
+
+
+class FileCheckKernel:
+    def __init__(self, kernel, check_patterns: str | None = None):
+        self.kernel = kernel
+        self.check_patterns = (
+            check_patterns if check_patterns else kernel.__doc__
+        )
+
+    def check_llvm(
+        self,
+        signature: tuple[type, ...] | None = None,
+        check_prefixes: list[str] = ["LLVM"],
+    ) -> bool:
+        llvm = self.kernel.inspect_llvm()
+        if signature:
+            llvm = llvm[signature]
+        return filecheck_ir(
+            llvm, self.check_patterns, check_prefixes=check_prefixes
+        )
+
+    def check_asm(
+        self,
+        signature: tuple[type, ...] | None = None,
+        check_prefixes: list[str] = ["ASM"],
+    ) -> bool:
+        asm = self.kernel.inspect_asm()
+        if signature:
+            asm = asm[signature]
+        return filecheck_ir(
+            asm, self.check_patterns, check_prefixes=check_prefixes
+        )
+
+    def check_sass(
+        self,
+        signature: tuple[type, ...] | None = None,
+        check_prefixes: list[str] = ["SASS"],
+    ) -> bool:
+        sass = self.kernel.inspect_sass()
+        if signature:
+            sass = sass[signature]
+        return filecheck_ir(
+            sass, self.check_patterns, check_prefixes=check_prefixes
+        )
