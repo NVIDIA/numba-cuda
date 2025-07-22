@@ -254,7 +254,6 @@ class CUDANativeLowering(NativeLowering):
 
 
 class CUDABytecodeInterpreter(Interpreter):
-
     def interpret(self, bytecode):
         """
         Generate IR for this bytecode.
@@ -278,14 +277,19 @@ class CUDABytecodeInterpreter(Interpreter):
         last_active_offset = 0
         for _, inst_blocks in self.cfa.blocks.items():
             if inst_blocks.body:
-                last_active_offset = max(last_active_offset,
-                                         max(inst_blocks.body))
+                last_active_offset = max(
+                    last_active_offset, max(inst_blocks.body)
+                )
         self.last_active_offset = last_active_offset
 
         if PYVERSION in ((3, 12), (3, 13)):
             self.active_exception_entries = tuple(
-                [entry for entry in self.bytecode.exception_entries
-                 if entry.start < self.last_active_offset])
+                [
+                    entry
+                    for entry in self.bytecode.exception_entries
+                    if entry.start < self.last_active_offset
+                ]
+            )
         elif PYVERSION in ((3, 10), (3, 11)):
             pass
         else:
@@ -293,7 +297,9 @@ class CUDABytecodeInterpreter(Interpreter):
         self.syntax_blocks = []
         self.dfainfo = None
 
-        self.scopes.append(numba_ir.Scope(parent=self.current_scope, loc=self.loc))
+        self.scopes.append(
+            numba_ir.Scope(parent=self.current_scope, loc=self.loc)
+        )
 
         # Interpret loop
         for inst, kws in self._iter_inst():
@@ -307,9 +313,15 @@ class CUDABytecodeInterpreter(Interpreter):
             raise NotImplementedError(PYVERSION)
         self._legalize_exception_vars()
         # Prepare FunctionIR
-        func_ir = numba_ir.FunctionIR(self.blocks, self.is_generator, self.func_id,
-                                self.first_loc, self.definitions,
-                                self.arg_count, self.arg_names)
+        func_ir = numba_ir.FunctionIR(
+            self.blocks,
+            self.is_generator,
+            self.func_id,
+            self.first_loc,
+            self.definitions,
+            self.arg_count,
+            self.arg_names,
+        )
 
         # post process the IR to rewrite opcodes/byte sequences that are too
         # involved to risk handling as part of direct interpretation
