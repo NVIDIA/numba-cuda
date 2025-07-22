@@ -1178,6 +1178,10 @@ class CUDADispatcher(Dispatcher, serialize.ReduceMixin):
     def inspect_lto_ptx(self, signature=None):
         """
         Return link-time optimized PTX code for the given signature.
+
+        :param signature: A tuple of argument types.
+        :return: The PTX code for the given signature, or a dict of PTX codes
+                 for all previously-encountered signatures.
         """
         cc = get_current_device().compute_capability
         device = self.targetoptions.get("device")
