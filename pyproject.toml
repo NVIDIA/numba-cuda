@@ -52,6 +52,21 @@ test-cu12 = [
     "nvidia-curand-cu12",
     "pynvjitlink-cu12",
 ]
+dev = [
+    "pre-commit",
+    "numba-cuda[test]",
+]
+dev-cu11 = [
+    "numba-cuda[test-cu11]",
+    "numba-cuda[test]",
+    "numba-cuda[dev]",
+]
+dev-cu12 = [
+    "numba-cuda[test-cu12]",
+    "numba-cuda[test]",
+    "numba-cuda[dev]",
+]
+
 
 [project.urls]
 Homepage = "https://github.com/rapidsai/numba-cuda"
