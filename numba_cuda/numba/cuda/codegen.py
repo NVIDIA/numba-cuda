@@ -2,7 +2,7 @@ from llvmlite import ir
 
 from numba.core import config, serialize
 from numba.core.codegen import Codegen, CodeLibrary
-from .cudadrv import devices, driver, nvrtc, nvvm, runtime
+from .cudadrv import devices, driver, nvvm, runtime, nvrtc
 from numba.cuda.cudadrv.libs import get_cudalib
 from numba.cuda.cudadrv.linkable_code import LinkableCode
 from numba.cuda.memory_management.nrt import NRT_LIBRARY
@@ -233,6 +233,33 @@ class CUDACodeLibrary(serialize.ReduceMixin, CodeLibrary):
 
         return ptx
 
+    def get_lto_ptx(self, cc=None):
+        """
+        Get the PTX code after LTO.
+        """
+
+        if not self._lto:
+            raise RuntimeError("LTO is not enabled")
+
+        if not driver._have_nvjitlink():
+            raise RuntimeError("Link time optimization requires nvJitLink.")
+
+        cc = self._ensure_cc(cc)
+
+        linker = driver._Linker.new(
+            max_registers=self._max_registers,
+            cc=cc,
+            additional_flags=["-ptx"],
+            lto=self._lto,
+        )
+
+        self._link_all(linker, cc, ignore_nonlto=True)
+
+        ptx = linker.get_linked_ptx()
+        ptx = ptx.decode("utf-8")
+
+        return ptx
+
     def get_ltoir(self, cc=None):
         cc = self._ensure_cc(cc)
 
@@ -274,17 +301,7 @@ class CUDACodeLibrary(serialize.ReduceMixin, CodeLibrary):
             return cubin
 
         if self._lto and config.DUMP_ASSEMBLY:
-            linker = driver._Linker.new(
-                max_registers=self._max_registers,
-                cc=cc,
-                additional_flags=["-ptx"],
-                lto=self._lto,
-            )
-            # `-ptx` flag is meant to view the optimized PTX for LTO objects.
-            # Non-LTO objects are not passed to linker.
-            self._link_all(linker, cc, ignore_nonlto=True)
-            ptx = linker.get_linked_ptx()
-            ptx = ptx.decode("utf-8")
+            ptx = self.get_lto_ptx(cc=cc)
 
             print(("ASSEMBLY (AFTER LTO) %s" % self._name).center(80, "-"))
             print(ptx)

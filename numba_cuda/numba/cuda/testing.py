@@ -189,6 +189,10 @@ def skip_if_cudadevrt_missing(fn):
     return unittest.skipIf(cudadevrt_missing(), "cudadevrt missing")(fn)
 
 
+def skip_if_nvjitlink_missing(reason):
+    return unittest.skipIf(not driver._have_nvjitlink(), reason)
+
+
 class ForeignArray(object):
     """
     Class for emulating an array coming from another library through the CUDA
