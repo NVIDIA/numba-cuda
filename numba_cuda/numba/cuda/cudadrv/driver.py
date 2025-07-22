@@ -2062,6 +2062,9 @@ class MemoryPointer(object):
     __cuda_memory__ = True
 
     def __init__(self, context, pointer, size, owner=None, finalizer=None):
+        if USE_NV_BINDING and isinstance(pointer, ctypes.c_void_p):
+            pointer = binding.CUdeviceptr(pointer.value)
+
         self.context = context
         self.device_pointer = pointer
         self.size = size
@@ -2388,6 +2391,16 @@ class Stream(object):
         callback will block later work in the stream and may block other
         callbacks from being executed.
 
+        .. warning::
+            There is a potential for deadlock due to a lock ordering issue
+            between the GIL and the CUDA driver lock when using libraries
+            that call CUDA functions without releasing the GIL. This can
+            occur when the callback function, which holds the CUDA driver lock,
+            attempts to acquire the GIL while another thread that holds the GIL
+            is waiting for the CUDA driver lock. Consider using libraries that
+            properly release the GIL around CUDA operations or restructure
+            your code to avoid this situation.
+
         Note: The driver function underlying this method is marked for
         eventual deprecation and may be replaced in a future CUDA release.
 
@@ -2422,6 +2435,16 @@ class Stream(object):
         """
         Return an awaitable that resolves once all preceding stream operations
         are complete. The result of the awaitable is the current stream.
+
+        .. warning::
+            There is a potential for deadlock due to a lock ordering issue
+            between the GIL and the CUDA driver lock when using libraries
+            that call CUDA functions without releasing the GIL. This can
+            occur when the callback function (internally used by this method),
+            which holds the CUDA driver lock, attempts to acquire the GIL
+            while another thread that holds the GIL is waiting for the CUDA driver lock.
+            Consider using libraries that properly release the GIL around
+            CUDA operations or restructure your code to avoid this situation.
         """
         loop = asyncio.get_running_loop()
         future = loop.create_future()
