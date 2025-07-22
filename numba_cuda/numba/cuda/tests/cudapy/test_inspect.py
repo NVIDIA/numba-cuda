@@ -162,7 +162,9 @@ class TestInspect(CUDATestCase):
         all_ext_asms = k.inspect_lto_ptx()
         lto_asm = next(iter(all_ext_asms.values()))
 
-        assert "add.f16" in str(lto_asm)
+        self.assertIn("add.f16", lto_asm)
+
+        np.testing.assert_equal(arr[0], np.float16(1) + np.float16(2))
 
     @skip_without_nvdisasm("nvdisasm needed for inspect_sass()")
     def test_inspect_sass_eager(self):
