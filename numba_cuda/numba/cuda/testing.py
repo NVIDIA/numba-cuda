@@ -214,7 +214,7 @@ def filecheck_ir(
     check_patterns: str,
     check_prefixes: list[str] = ["CHECK"],
     **extra_filecheck_options: dict[str, str | int],
-) -> None:
+) -> bool:
     """Run filecheck on IR content with check patterns. Raises an AssertionError if the checks fail."""
     opts = Options(
         match_filename="-",
