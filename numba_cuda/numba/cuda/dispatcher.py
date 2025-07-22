@@ -4,8 +4,8 @@ import sys
 import ctypes
 import functools
 
-from numba.core import serialize, sigutils, types, typing, config
-from numba.cuda import utils
+from numba.core import config, sigutils, types, typing
+from numba.cuda import serialize, utils
 from numba.core.caching import Cache, CacheImpl
 from numba.core.compiler_lock import global_compiler_lock
 from numba.core.dispatcher import Dispatcher
