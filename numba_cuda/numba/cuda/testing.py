@@ -23,8 +23,8 @@ class FileCheckTestCaseMixin:
     """
     Mixin for tests that use FileCheck.
 
-    Methods assertFileCheckAsm and assertFileCheckLLVM will inspect a numba
-    CUDADispatcher and assert that the compmilation artifacts match the
+    Methods assertFileCheckAsm and assertFileCheckLLVM will inspect a
+    CUDADispatcher and assert that the compilation artifacts match the
     FileCheck checks given in the kernel's docstring.
 
     Method assertFileCheckMatches can be used to assert that a given string
