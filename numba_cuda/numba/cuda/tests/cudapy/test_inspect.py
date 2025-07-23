@@ -7,11 +7,7 @@ from io import StringIO
 from numba import cuda, float32, float64, int32, intp
 from numba.types import float16, CPointer
 from numba.cuda import declare_device
-from numba.cuda.testing import (
-    unittest,
-    CUDATestCase,
-    FileCheckTestCaseMixin,
-)
+from numba.cuda.testing import unittest, CUDATestCase
 from numba.cuda.testing import (
     skip_on_cudasim,
     skip_with_nvdisasm,
@@ -21,7 +17,7 @@ from numba.cuda.testing import (
 
 
 @skip_on_cudasim("Simulator does not generate code to be inspected")
-class TestInspect(FileCheckTestCaseMixin, CUDATestCase):
+class TestInspect(CUDATestCase):
     @property
     def cc(self):
         return cuda.current_context().device.compute_capability
