@@ -7,7 +7,11 @@ from io import StringIO
 from numba import cuda, float32, float64, int32, intp
 from numba.types import float16, CPointer
 from numba.cuda import declare_device
-from numba.cuda.testing import unittest, CUDATestCase, FileCheckKernel
+from numba.cuda.testing import (
+    unittest,
+    CUDATestCase,
+    FileCheckTestCaseMixin,
+)
 from numba.cuda.testing import (
     skip_on_cudasim,
     skip_with_nvdisasm,
@@ -17,7 +21,7 @@ from numba.cuda.testing import (
 
 
 @skip_on_cudasim("Simulator does not generate code to be inspected")
-class TestInspect(CUDATestCase):
+class TestInspect(FileCheckTestCaseMixin, CUDATestCase):
     @property
     def cc(self):
         return cuda.current_context().device.compute_capability
@@ -48,9 +52,8 @@ class TestInspect(CUDATestCase):
         self.assertIn("(float32, int32)", typeanno)
         file.close()
 
-        filecheck = FileCheckKernel(foo)
-        filecheck.check_llvm(sig)
-        filecheck.check_asm(sig)
+        self.assert_filecheck_llvm(foo, sig)
+        self.assert_filecheck_asm(foo, sig)
 
     def test_polytyped(self):
         @cuda.jit
@@ -76,11 +79,14 @@ class TestInspect(CUDATestCase):
         int_sig = (intp, intp)
         float_sig = (float64, float64)
 
-        filecheck = FileCheckKernel(foo)
-        filecheck.check_llvm(int_sig, check_prefixes=["LLVM", "LLVM_INT"])
-        filecheck.check_asm(int_sig, check_prefixes=["ASM"])
-        filecheck.check_llvm(float_sig, check_prefixes=["LLVM", "LLVM_FLOAT"])
-        filecheck.check_asm(float_sig, check_prefixes=["ASM"])
+        self.assert_filecheck_llvm(
+            foo, int_sig, check_prefixes=["LLVM", "LLVM_INT"]
+        )
+        self.assert_filecheck_asm(foo, int_sig, check_prefixes=["ASM"])
+        self.assert_filecheck_llvm(
+            foo, float_sig, check_prefixes=["LLVM", "LLVM_FLOAT"]
+        )
+        self.assert_filecheck_asm(foo, float_sig, check_prefixes=["ASM"])
 
         file = StringIO()
         foo.inspect_types(file=file)
