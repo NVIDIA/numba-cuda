@@ -2,6 +2,7 @@ import os
 import platform
 import shutil
 
+from numba.core.utils import PYVERSION
 from numba.tests.support import SerialMixin
 from numba.cuda.cuda_paths import get_conda_ctk
 from numba.cuda.cudadrv import driver, devices, libs
@@ -9,11 +10,14 @@ from numba.cuda.dispatcher import CUDADispatcher
 from numba.core import config
 from numba.tests.support import TestCase
 from pathlib import Path
-from filecheck.matcher import Matcher, Options
-from filecheck.parser import Parser, pattern_for_opts
-from filecheck.finput import FInput
+from typing import Union
 from io import StringIO
 import unittest
+
+if PYVERSION >= (3, 10):
+    from filecheck.matcher import Matcher, Options
+    from filecheck.parser import Parser, pattern_for_opts
+    from filecheck.finput import FInput
 
 numba_cuda_dir = Path(__file__).parent
 test_data_dir = numba_cuda_dir / "tests" / "data"
@@ -34,9 +38,9 @@ class FileCheckTestCaseMixin:
     def assertFileCheckAsm(
         self,
         ir_producer: CUDADispatcher,
-        signature: tuple[type, ...] | None = None,
+        signature: Union[tuple[type, ...], None] = None,
         check_prefixes: list[str] = ("ASM",),
-        **extra_filecheck_options: dict[str, str | int],
+        **extra_filecheck_options: dict[str, Union[str, int]],
     ) -> None:
         """
         Assert that the assembly output of the given CUDADispatcher matches
@@ -56,9 +60,9 @@ class FileCheckTestCaseMixin:
     def assertFileCheckLLVM(
         self,
         ir_producer: CUDADispatcher,
-        signature: tuple[type, ...] | None = None,
+        signature: Union[tuple[type, ...], None] = None,
         check_prefixes: list[str] = ("LLVM",),
-        **extra_filecheck_options: dict[str, str | int],
+        **extra_filecheck_options: dict[str, Union[str, int]],
     ) -> None:
         """
         Assert that the LLVM IR output of the given CUDADispatcher matches
@@ -80,7 +84,7 @@ class FileCheckTestCaseMixin:
         ir_content: str,
         check_patterns: str,
         check_prefixes: list[str] = ("CHECK",),
-        **extra_filecheck_options: dict[str, str | int],
+        **extra_filecheck_options: dict[str, Union[str, int]],
     ) -> None:
         """
         Assert that the given string matches the passed FileCheck checks.
@@ -91,6 +95,8 @@ class FileCheckTestCaseMixin:
             check_prefixes: The prefixes to use for the FileCheck checks.
             extra_filecheck_options: Extra options to pass to FileCheck.
         """
+        if PYVERSION < (3, 10):
+            self.skipTest("FileCheck requires Python 3.10 or later")
         opts = Options(
             match_filename="-",
             check_prefixes=check_prefixes,
