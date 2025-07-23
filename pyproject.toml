@@ -42,6 +42,7 @@ test = [
     "psutil",
     "cffi",
     "pytest",
+    "filecheck",
 ]
 test-cu11 = [
     "numba-cuda[test]",
