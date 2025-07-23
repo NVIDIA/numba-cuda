@@ -2,10 +2,10 @@ from llvmlite import ir
 
 from numba.core import config, serialize
 from numba.core.codegen import Codegen, CodeLibrary
-from .cudadrv import devices, driver, nvvm, runtime
+from .cudadrv import devices, driver, nvvm, runtime, nvrtc
 from numba.cuda.cudadrv.libs import get_cudalib
 from numba.cuda.cudadrv.linkable_code import LinkableCode
-from numba.cuda.runtime.nrt import NRT_LIBRARY
+from numba.cuda.memory_management.nrt import NRT_LIBRARY
 
 import os
 import subprocess
@@ -22,7 +22,10 @@ def run_nvdisasm(cubin, flags):
     try:
         fd, fname = tempfile.mkstemp()
         with open(fname, "wb") as f:
-            f.write(cubin)
+            if config.CUDA_USE_NVIDIA_BINDING:
+                f.write(cubin.code)
+            else:
+                f.write(cubin)
 
         try:
             cp = subprocess.run(
@@ -69,6 +72,8 @@ class ExternalCodeLibrary(CodeLibrary):
         # The order is determined by the order they are added to the codelib.
         self._setup_functions = []
         self._teardown_functions = []
+
+        self.use_cooperative = False
 
     @property
     def modules(self):
@@ -181,6 +186,8 @@ class CUDACodeLibrary(serialize.ReduceMixin, CodeLibrary):
         self._nvvm_options = nvvm_options
         self._entry_name = entry_name
 
+        self.use_cooperative = False
+
     @property
     def llvm_strs(self):
         if self._llvm_strs is None:
@@ -204,7 +211,7 @@ class CUDACodeLibrary(serialize.ReduceMixin, CodeLibrary):
         if ptxes:
             return ptxes
 
-        arch = nvvm.get_arch_option(*cc)
+        arch = nvrtc.get_arch_option(*cc)
         options = self._nvvm_options.copy()
         options["arch"] = arch
 
@@ -226,6 +233,33 @@ class CUDACodeLibrary(serialize.ReduceMixin, CodeLibrary):
 
         return ptx
 
+    def get_lto_ptx(self, cc=None):
+        """
+        Get the PTX code after LTO.
+        """
+
+        if not self._lto:
+            raise RuntimeError("LTO is not enabled")
+
+        if not driver._have_nvjitlink():
+            raise RuntimeError("Link time optimization requires nvJitLink.")
+
+        cc = self._ensure_cc(cc)
+
+        linker = driver._Linker.new(
+            max_registers=self._max_registers,
+            cc=cc,
+            additional_flags=["-ptx"],
+            lto=self._lto,
+        )
+
+        self._link_all(linker, cc, ignore_nonlto=True)
+
+        ptx = linker.get_linked_ptx()
+        ptx = ptx.decode("utf-8")
+
+        return ptx
+
     def get_ltoir(self, cc=None):
         cc = self._ensure_cc(cc)
 
@@ -233,7 +267,7 @@ class CUDACodeLibrary(serialize.ReduceMixin, CodeLibrary):
         if ltoir is not None:
             return ltoir
 
-        arch = nvvm.get_arch_option(*cc)
+        arch = nvrtc.get_arch_option(*cc)
         options = self._nvvm_options.copy()
         options["arch"] = arch
         options["gen-lto"] = None
@@ -267,23 +301,13 @@ class CUDACodeLibrary(serialize.ReduceMixin, CodeLibrary):
             return cubin
 
         if self._lto and config.DUMP_ASSEMBLY:
-            linker = driver.Linker.new(
-                max_registers=self._max_registers,
-                cc=cc,
-                additional_flags=["-ptx"],
-                lto=self._lto,
-            )
-            # `-ptx` flag is meant to view the optimized PTX for LTO objects.
-            # Non-LTO objects are not passed to linker.
-            self._link_all(linker, cc, ignore_nonlto=True)
-
-            ptx = linker.get_linked_ptx().decode("utf-8")
+            ptx = self.get_lto_ptx(cc=cc)
 
             print(("ASSEMBLY (AFTER LTO) %s" % self._name).center(80, "-"))
             print(ptx)
             print("=" * 80)
 
-        linker = driver.Linker.new(
+        linker = driver._Linker.new(
             max_registers=self._max_registers, cc=cc, lto=self._lto
         )
         self._link_all(linker, cc, ignore_nonlto=False)
@@ -308,7 +332,6 @@ class CUDACodeLibrary(serialize.ReduceMixin, CodeLibrary):
         cufunc = self._cufunc_cache.get(device.id, None)
         if cufunc:
             return cufunc
-
         cubin = self.get_cubin(cc=device.compute_capability)
         module = ctx.create_module_image(
             cubin, self._setup_functions, self._teardown_functions
@@ -352,6 +375,7 @@ class CUDACodeLibrary(serialize.ReduceMixin, CodeLibrary):
         self._linking_files.update(library._linking_files)
         self._setup_functions.extend(library._setup_functions)
         self._teardown_functions.extend(library._teardown_functions)
+        self.use_cooperative |= library.use_cooperative
 
     def add_linking_file(self, path_or_obj):
         if isinstance(path_or_obj, LinkableCode):
@@ -442,6 +466,7 @@ class CUDACodeLibrary(serialize.ReduceMixin, CodeLibrary):
             nvvm_options=self._nvvm_options,
             needs_cudadevrt=self.needs_cudadevrt,
             nrt=nrt,
+            use_cooperative=self.use_cooperative,
         )
 
     @classmethod
@@ -458,6 +483,7 @@ class CUDACodeLibrary(serialize.ReduceMixin, CodeLibrary):
         nvvm_options,
         needs_cudadevrt,
         nrt,
+        use_cooperative,
     ):
         """
         Rebuild an instance.
@@ -472,6 +498,7 @@ class CUDACodeLibrary(serialize.ReduceMixin, CodeLibrary):
         instance._max_registers = max_registers
         instance._nvvm_options = nvvm_options
         instance.needs_cudadevrt = needs_cudadevrt
+        instance.use_cooperative = use_cooperative
 
         instance._finalized = True
         if nrt:

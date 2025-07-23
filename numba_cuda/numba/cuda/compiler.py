@@ -1,4 +1,5 @@
 from llvmlite import ir
+from collections import namedtuple
 from numba.core import ir as numba_ir
 from numba.core import (
     cgutils,
@@ -14,9 +15,6 @@ from numba.core.compiler import (
     sanitize_compile_result_entries,
     CompilerBase,
     DefaultPassBuilder,
-    Flags,
-    Option,
-    CompileResult,
 )
 from numba.core.compiler_lock import global_compiler_lock
 from numba.core.compiler_machinery import (
@@ -37,68 +35,138 @@ from warnings import warn
 from numba.cuda import nvvmutils
 from numba.cuda.api import get_current_device
 from numba.cuda.codegen import ExternalCodeLibrary
-from numba.cuda.cudadrv import nvvm
+from numba.cuda.cudadrv import nvvm, nvrtc
 from numba.cuda.descriptor import cuda_target
+from numba.cuda.flags import CUDAFlags
 from numba.cuda.target import CUDACABICallConv
 from numba.cuda import lowering
-
-
-def _nvvm_options_type(x):
-    if x is None:
-        return None
-
-    else:
-        assert isinstance(x, dict)
-        return x
-
-
-def _optional_int_type(x):
-    if x is None:
-        return None
-
-    else:
-        assert isinstance(x, int)
-        return x
-
-
-class CUDAFlags(Flags):
-    nvvm_options = Option(
-        type=_nvvm_options_type,
-        default=None,
-        doc="NVVM options",
-    )
-    compute_capability = Option(
-        type=tuple,
-        default=None,
-        doc="Compute Capability",
-    )
-    max_registers = Option(
-        type=_optional_int_type, default=None, doc="Max registers"
-    )
-    lto = Option(type=bool, default=False, doc="Enable Link-time Optimization")
 
 
 # The CUDACompileResult (CCR) has a specially-defined entry point equal to its
 # id.  This is because the entry point is used as a key into a dict of
 # overloads by the base dispatcher. The id of the CCR is the only small and
-# unique property of a CompileResult in the CUDA target (cf. the CPU target,
+# unique property of a CUDACompileResult in the CUDA target (cf. the CPU target,
 # which uses its entry_point, which is a pointer value).
 #
 # This does feel a little hackish, and there are two ways in which this could
 # be improved:
 #
-# 1. We could change the core of Numba so that each CompileResult has its own
+# 1. We could change the CUDACompileResult so that each instance has its own
 #    unique ID that can be used as a key - e.g. a count, similar to the way in
 #    which types have unique counts.
 # 2. At some future time when kernel launch uses a compiled function, the entry
 #    point will no longer need to be a synthetic value, but will instead be a
 #    pointer to the compiled function as in the CPU target.
 
+CR_FIELDS = [
+    "typing_context",
+    "target_context",
+    "entry_point",
+    "typing_error",
+    "type_annotation",
+    "signature",
+    "objectmode",
+    "lifted",
+    "fndesc",
+    "library",
+    "call_helper",
+    "environment",
+    "metadata",
+    # List of functions to call to initialize on unserialization
+    # (i.e cache load).
+    "reload_init",
+    "referenced_envs",
+]
 
-class CUDACompileResult(CompileResult):
+
+class CUDACompileResult(namedtuple("_CompileResult", CR_FIELDS)):
+    """
+    A structure holding results from the compilation of a function.
+    """
+
+    __slots__ = ()
+
     @property
     def entry_point(self):
         return id(self)
+
+    def _reduce(self):
+        """
+        Reduce a CompileResult to picklable components.
+        """
+        libdata = self.library.serialize_using_object_code()
+        # Make it (un)picklable efficiently
+        typeann = str(self.type_annotation)
+        fndesc = self.fndesc
+        # Those don't need to be pickled and may fail
+        fndesc.typemap = fndesc.calltypes = None
+        # The CUDA target does not reference environments
+        referenced_envs = tuple()
+        return (
+            libdata,
+            self.fndesc,
+            self.environment,
+            self.signature,
+            self.objectmode,
+            self.lifted,
+            typeann,
+            self.reload_init,
+            referenced_envs,
+        )
+
+    @classmethod
+    def _rebuild(
+        cls,
+        target_context,
+        libdata,
+        fndesc,
+        env,
+        signature,
+        objectmode,
+        lifted,
+        typeann,
+        reload_init,
+        referenced_envs,
+    ):
+        if reload_init:
+            # Re-run all
+            for fn in reload_init:
+                fn()
+
+        library = target_context.codegen().unserialize_library(libdata)
+        cfunc = target_context.get_executable(library, fndesc, env)
+        cr = cls(
+            target_context=target_context,
+            typing_context=target_context.typing_context,
+            library=library,
+            environment=env,
+            entry_point=cfunc,
+            fndesc=fndesc,
+            type_annotation=typeann,
+            signature=signature,
+            objectmode=objectmode,
+            lifted=lifted,
+            typing_error=None,
+            call_helper=None,
+            metadata=None,  # Do not store, arbitrary & potentially large!
+            reload_init=reload_init,
+            referenced_envs=referenced_envs,
+        )
+
+        # Load Environments
+        for env in referenced_envs:
+            library.codegen.set_env(env.env_name, env)
+
+        return cr
+
+    @property
+    def codegen(self):
+        return self.target_context.codegen()
+
+    def dump(self, tab=""):
+        print(f"{tab}DUMP {type(self).__name__} {self.entry_point}")
+        self.signature.dump(tab=tab + "  ")
+        print(f"{tab}END DUMP")
 
 
 def cuda_compile_result(**entries):
@@ -575,6 +643,7 @@ def compile(
     abi_info=None,
     output="ptx",
     forceinline=False,
+    launch_bounds=None,
 ):
     """Compile a Python function to PTX or LTO-IR for a given set of argument
     types.
@@ -620,6 +689,16 @@ def compile(
                         ``alwaysinline`` function attribute to the function
                         definition. This is only valid when the output is
                         ``"ltoir"``.
+    :param launch_bounds: Kernel launch bounds, specified as a scalar or a tuple
+                          of between one and three items. Tuple items provide:
+
+                          - The maximum number of threads per block,
+                          - The minimum number of blocks per SM,
+                          - The maximum number of blocks per cluster.
+
+                          If a scalar is provided, it is used as the maximum
+                          number of threads per block.
+    :type launch_bounds: int | tuple[int]
     :return: (code, resty): The compiled code and inferred return type
     :rtype: tuple
     """
@@ -662,7 +741,12 @@ def compile(
 
     args, return_type = sigutils.normalize_signature(sig)
 
-    cc = cc or config.CUDA_DEFAULT_PTX_CC
+    # If the user has used the config variable to specify a non-default that is
+    # greater than the lowest non-deprecated one, then we should default to
+    # their specified CC instead of the lowest non-deprecated one.
+    MIN_CC = max(config.CUDA_DEFAULT_PTX_CC, nvrtc.get_lowest_supported_cc())
+    cc = cc or MIN_CC
+
     cres = compile_cuda(
         pyfunc,
         return_type,
@@ -693,6 +777,7 @@ def compile(
         kernel = lib.get_function(cres.fndesc.llvm_func_name)
         lib._entry_name = cres.fndesc.llvm_func_name
         kernel_fixup(kernel, debug)
+        nvvm.set_launch_bounds(kernel, launch_bounds)
 
     if lto:
         code = lib.get_ltoir(cc=cc)
@@ -713,6 +798,7 @@ def compile_for_current_device(
     abi_info=None,
     output="ptx",
     forceinline=False,
+    launch_bounds=None,
 ):
     """Compile a Python function to PTX or LTO-IR for a given signature for the
     current device's compute capabilility. This calls :func:`compile` with an
@@ -731,6 +817,7 @@ def compile_for_current_device(
         abi_info=abi_info,
         output=output,
         forceinline=forceinline,
+        launch_bounds=launch_bounds,
     )
 
 
@@ -746,6 +833,7 @@ def compile_ptx(
     abi="numba",
     abi_info=None,
     forceinline=False,
+    launch_bounds=None,
 ):
     """Compile a Python function to PTX for a given signature. See
     :func:`compile`. The defaults for this function are to compile a kernel
@@ -764,6 +852,7 @@ def compile_ptx(
         abi_info=abi_info,
         output="ptx",
         forceinline=forceinline,
+        launch_bounds=launch_bounds,
     )
 
 
@@ -778,6 +867,7 @@ def compile_ptx_for_current_device(
     abi="numba",
     abi_info=None,
     forceinline=False,
+    launch_bounds=None,
 ):
     """Compile a Python function to PTX for a given signature for the current
     device's compute capabilility. See :func:`compile_ptx`."""
@@ -794,10 +884,11 @@ def compile_ptx_for_current_device(
         abi=abi,
         abi_info=abi_info,
         forceinline=forceinline,
+        launch_bounds=launch_bounds,
     )
 
 
-def declare_device_function(name, restype, argtypes, link):
+def declare_device_function(name, restype, argtypes, link, use_cooperative):
     from .descriptor import cuda_target
 
     typingctx = cuda_target.typing_context
@@ -816,6 +907,7 @@ def declare_device_function(name, restype, argtypes, link):
     lib = ExternalCodeLibrary(f"{name}_externals", targetctx.codegen())
     for file in link:
         lib.add_linking_file(file)
+    lib.use_cooperative = use_cooperative
 
     # ExternalFunctionDescriptor provides a lowering implementation for calling
     # external functions

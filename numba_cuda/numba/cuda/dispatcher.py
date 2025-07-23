@@ -18,7 +18,7 @@ from numba.cuda.compiler import (
     kernel_fixup,
 )
 import re
-from numba.cuda.cudadrv import driver
+from numba.cuda.cudadrv import driver, nvvm
 from numba.cuda.cudadrv.linkable_code import LinkableCode
 from numba.cuda.cudadrv.devices import get_context
 from numba.cuda.descriptor import cuda_target
@@ -27,8 +27,8 @@ from numba.cuda.errors import (
     normalize_kernel_dimensions,
 )
 from numba.cuda import types as cuda_types
-from numba.cuda.runtime.nrt import rtsys, NRT_LIBRARY
 from numba.cuda.locks import module_init_lock
+from numba.cuda.memory_management.nrt import rtsys, NRT_LIBRARY
 
 from numba import cuda
 from numba import _dispatcher
@@ -94,6 +94,7 @@ class _Kernel(serialize.ReduceMixin):
         lto=False,
         opt=True,
         device=False,
+        launch_bounds=None,
     ):
         if device:
             raise RuntimeError("Cannot compile a device function as a kernel")
@@ -120,6 +121,7 @@ class _Kernel(serialize.ReduceMixin):
         self.debug = debug
         self.lineinfo = lineinfo
         self.extensions = extensions or []
+        self.launch_bounds = launch_bounds
 
         nvvm_options = {"fastmath": fastmath, "opt": 3 if opt else 0}
 
@@ -127,6 +129,7 @@ class _Kernel(serialize.ReduceMixin):
             nvvm_options["g"] = None
 
         cc = get_current_device().compute_capability
+
         cres = compile_cuda(
             self.py_func,
             types.void,
@@ -145,14 +148,15 @@ class _Kernel(serialize.ReduceMixin):
         kernel = lib.get_function(cres.fndesc.llvm_func_name)
         lib._entry_name = cres.fndesc.llvm_func_name
         kernel_fixup(kernel, self.debug)
+        nvvm.set_launch_bounds(kernel, launch_bounds)
 
         if not link:
             link = []
 
         asm = lib.get_asm_str()
 
-        # A kernel needs cooperative launch if grid_sync is being used.
-        self.cooperative = "cudaCGGetIntrinsicHandle" in asm
+        # The code library contains functions that require cooperative launch.
+        self.cooperative = lib.use_cooperative
         # We need to link against cudadevrt if grid sync is being used.
         if self.cooperative:
             lib.needs_cudadevrt = True
@@ -380,6 +384,12 @@ class _Kernel(serialize.ReduceMixin):
         """
         return self._codelibrary.get_asm_str(cc=cc)
 
+    def inspect_lto_ptx(self, cc):
+        """
+        Returns the PTX code for the external functions linked to this kernel.
+        """
+        return self._codelibrary.get_lto_ptx(cc=cc)
+
     def inspect_sass_cfg(self):
         """
         Returns the CFG of the SASS for this kernel.
@@ -454,11 +464,10 @@ class _Kernel(serialize.ReduceMixin):
             self._prepare_args(t, v, stream, retr, kernelargs)
 
         if driver.USE_NV_BINDING:
-            zero_stream = driver.binding.CUstream(0)
+            stream_handle = stream and stream.handle.value or 0
         else:
             zero_stream = None
-
-        stream_handle = stream and stream.handle or zero_stream
+            stream_handle = stream and stream.handle or zero_stream
 
         # Invoke kernel
         driver.launch_kernel(
@@ -547,6 +556,10 @@ class _Kernel(serialize.ReduceMixin):
             for ax in range(devary.ndim):
                 kernelargs.append(c_intp(devary.strides[ax]))
 
+        elif isinstance(ty, types.CPointer):
+            # Pointer arguments should be a pointer-sized integer
+            kernelargs.append(ctypes.c_uint64(val))
+
         elif isinstance(ty, types.Integer):
             cval = getattr(ctypes, "c_%s" % ty)(val)
             kernelargs.append(cval)
@@ -581,8 +594,6 @@ class _Kernel(serialize.ReduceMixin):
         elif isinstance(ty, types.Record):
             devrec = wrap_arg(val).to_device(retr, stream)
             ptr = devrec.device_ctypes_pointer
-            if driver.USE_NV_BINDING:
-                ptr = ctypes.c_void_p(int(ptr))
             kernelargs.append(ptr)
 
         elif isinstance(ty, types.BaseTuple):
@@ -1002,7 +1013,7 @@ class CUDADispatcher(Dispatcher, serialize.ReduceMixin):
         A (template, pysig, args, kws) tuple is returned.
         """
         # Fold keyword arguments and resolve default values
-        pysig, args = self._compiler.fold_argument_types(args, kws)
+        pysig, args = self.fold_argument_types(args, kws)
         kws = {}
 
         # Ensure an exactly-matching overload is available if we can
@@ -1161,6 +1172,34 @@ class CUDADispatcher(Dispatcher, serialize.ReduceMixin):
             else:
                 return {
                     sig: overload.inspect_asm(cc)
+                    for sig, overload in self.overloads.items()
+                }
+
+    def inspect_lto_ptx(self, signature=None):
+        """
+        Return link-time optimized PTX code for the given signature.
+
+        :param signature: A tuple of argument types.
+        :return: The PTX code for the given signature, or a dict of PTX codes
+                 for all previously-encountered signatures.
+        """
+        cc = get_current_device().compute_capability
+        device = self.targetoptions.get("device")
+
+        if signature is not None:
+            if device:
+                return self.overloads[signature].library.get_lto_ptx(cc)
+            else:
+                return self.overloads[signature].inspect_lto_ptx(cc)
+        else:
+            if device:
+                return {
+                    sig: overload.library.get_lto_ptx(cc)
+                    for sig, overload in self.overloads.items()
+                }
+            else:
+                return {
+                    sig: overload.inspect_lto_ptx(cc)
                     for sig, overload in self.overloads.items()
                 }
 

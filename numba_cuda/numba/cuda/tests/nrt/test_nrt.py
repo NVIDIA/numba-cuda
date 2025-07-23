@@ -3,16 +3,13 @@ import os
 
 import numpy as np
 import unittest
-from numba.cuda.testing import CUDATestCase
+from numba.cuda.testing import CUDATestCase, skip_on_cudasim
 from numba.tests.support import run_in_subprocess, override_config
 from numba.cuda import get_current_device
 from numba.cuda.cudadrv.nvrtc import compile
-from numba import types
-from numba.cuda.cudadecl import registry as cuda_decl_registry
+from numba import config, types
 from numba.core.typing import signature
-from numba.cuda.cudaimpl import lower as cuda_lower
 from numba import cuda
-from numba.cuda.runtime.nrt import rtsys, get_include
 from numba.core.typing.templates import AbstractTemplate
 from numba.cuda.cudadrv.linkable_code import (
     CUSource,
@@ -23,67 +20,68 @@ from numba.cuda.cudadrv.linkable_code import (
     Object,
 )
 
-
 TEST_BIN_DIR = os.getenv("NUMBA_CUDA_TEST_BIN_DIR")
 
-if TEST_BIN_DIR:
+if not config.ENABLE_CUDASIM:
+    from numba.cuda.memory_management.nrt import rtsys, get_include
+    from numba.cuda.cudadecl import registry as cuda_decl_registry
+    from numba.cuda.cudaimpl import lower as cuda_lower
 
-    def make_linkable_code(name, kind, mode):
-        path = os.path.join(TEST_BIN_DIR, name)
-        with open(path, mode) as f:
-            contents = f.read()
-        return kind(contents, nrt=True)
+    def allocate_deallocate_handle():
+        """
+        Handle to call NRT_Allocate and NRT_Free
+        """
+        pass
 
-    nrt_extern_a = make_linkable_code("nrt_extern.a", Archive, "rb")
-    nrt_extern_cubin = make_linkable_code("nrt_extern.cubin", Cubin, "rb")
-    nrt_extern_cu = make_linkable_code(
-        "nrt_extern.cu",
-        CUSource,
-        "rb",
-    )
-    nrt_extern_fatbin = make_linkable_code("nrt_extern.fatbin", Fatbin, "rb")
-    nrt_extern_fatbin_multi = make_linkable_code(
-        "nrt_extern_multi.fatbin", Fatbin, "rb"
-    )
-    nrt_extern_o = make_linkable_code("nrt_extern.o", Object, "rb")
-    nrt_extern_ptx = make_linkable_code("nrt_extern.ptx", PTXSource, "rb")
+    @cuda_decl_registry.register_global(allocate_deallocate_handle)
+    class AllocateShimImpl(AbstractTemplate):
+        def generic(self, args, kws):
+            return signature(types.void)
 
-
-def allocate_deallocate_handle():
-    """
-    Handle to call NRT_Allocate and NRT_Free
-    """
-    pass
-
-
-@cuda_decl_registry.register_global(allocate_deallocate_handle)
-class AllocateShimImpl(AbstractTemplate):
-    def generic(self, args, kws):
-        return signature(types.void)
-
-
-device_fun_shim = cuda.declare_device(
-    "device_allocate_deallocate", types.int32()
-)
-
-
-# wrapper to turn the above into a python callable
-def call_device_fun_shim():
-    return device_fun_shim()
-
-
-@cuda_lower(allocate_deallocate_handle)
-def allocate_deallocate_impl(context, builder, sig, args):
-    sig_ = types.int32()
-    # call the external function, passing the pointer
-    result = context.compile_internal(
-        builder,
-        call_device_fun_shim,
-        sig_,
-        (),
+    device_fun_shim = cuda.declare_device(
+        "device_allocate_deallocate", types.int32()
     )
 
-    return result
+    # wrapper to turn the above into a python callable
+    def call_device_fun_shim():
+        return device_fun_shim()
+
+    @cuda_lower(allocate_deallocate_handle)
+    def allocate_deallocate_impl(context, builder, sig, args):
+        sig_ = types.int32()
+        # call the external function, passing the pointer
+        result = context.compile_internal(
+            builder,
+            call_device_fun_shim,
+            sig_,
+            (),
+        )
+
+        return result
+
+    if TEST_BIN_DIR:
+
+        def make_linkable_code(name, kind, mode):
+            path = os.path.join(TEST_BIN_DIR, name)
+            with open(path, mode) as f:
+                contents = f.read()
+            return kind(contents, nrt=True)
+
+        nrt_extern_a = make_linkable_code("nrt_extern.a", Archive, "rb")
+        nrt_extern_cubin = make_linkable_code("nrt_extern.cubin", Cubin, "rb")
+        nrt_extern_cu = make_linkable_code(
+            "nrt_extern.cu",
+            CUSource,
+            "rb",
+        )
+        nrt_extern_fatbin = make_linkable_code(
+            "nrt_extern.fatbin", Fatbin, "rb"
+        )
+        nrt_extern_fatbin_multi = make_linkable_code(
+            "nrt_extern_multi.fatbin", Fatbin, "rb"
+        )
+        nrt_extern_o = make_linkable_code("nrt_extern.o", Object, "rb")
+        nrt_extern_ptx = make_linkable_code("nrt_extern.ptx", PTXSource, "rb")
 
 
 class TestNrtBasic(CUDATestCase):
@@ -104,6 +102,7 @@ class TestNrtBasic(CUDATestCase):
         g[1, 1]()
         cuda.synchronize()
 
+    @skip_on_cudasim("CUDA Simulator does not produce PTX")
     def test_nrt_ptx_contains_refcount(self):
         @cuda.jit
         def f(x):
@@ -157,6 +156,7 @@ class TestNrtLinking(CUDATestCase):
         with override_config("CUDA_ENABLE_NRT", True):
             super(TestNrtLinking, self).run(result)
 
+    @skip_on_cudasim("CUDA Simulator does not link PTX")
     def test_nrt_detect_linked_ptx_file(self):
         src = f"#include <{get_include()}/nrt.cuh>"
         src += """
@@ -169,13 +169,23 @@ class TestNrtLinking(CUDATestCase):
         cc = get_current_device().compute_capability
         ptx, _ = compile(src, "external_nrt.cu", cc)
 
-        @cuda.jit(link=[PTXSource(ptx.encode(), nrt=True)])
+        @cuda.jit(
+            link=[
+                PTXSource(
+                    ptx.code
+                    if config.CUDA_USE_NVIDIA_BINDING
+                    else ptx.encode(),
+                    nrt=True,
+                )
+            ]
+        )
         def kernel():
             allocate_deallocate_handle()
 
         kernel[1, 1]()
 
     @unittest.skipIf(not TEST_BIN_DIR, "necessary binaries not generated.")
+    @skip_on_cudasim("CUDA Simulator does not link code")
     def test_nrt_detect_linkable_code(self):
         codes = (
             nrt_extern_a,
@@ -196,6 +206,7 @@ class TestNrtLinking(CUDATestCase):
                 kernel[1, 1]()
 
 
+@skip_on_cudasim("CUDASIM does not have NRT statistics")
 class TestNrtStatistics(CUDATestCase):
     def setUp(self):
         self._stream = cuda.default_stream()
@@ -213,7 +224,7 @@ class TestNrtStatistics(CUDATestCase):
         # Checks that explicitly turning the stats on via the env var works.
         src = """if 1:
         from numba import cuda
-        from numba.cuda.runtime import rtsys
+        from numba.cuda.memory_management import rtsys
         import numpy as np
 
         @cuda.jit
@@ -252,7 +263,7 @@ class TestNrtStatistics(CUDATestCase):
         src = """if 1:
         from numba import cuda
         import numpy as np
-        from numba.cuda.runtime import rtsys
+        from numba.cuda.memory_management import rtsys
 
         @cuda.jit
         def foo():

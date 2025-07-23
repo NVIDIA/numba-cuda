@@ -1,13 +1,14 @@
 import numpy as np
 import unittest
 from numba.tests.support import override_config
-from numba.cuda.runtime import rtsys
+from numba.cuda.memory_management import rtsys
 from numba.cuda.tests.support import EnableNRTStatsMixin
-from numba.cuda.testing import CUDATestCase
+from numba.cuda.testing import CUDATestCase, skip_on_cudasim
 
 from numba import cuda
 
 
+@skip_on_cudasim("No refcounting in the simulator")
 class TestNrtRefCt(EnableNRTStatsMixin, CUDATestCase):
     def setUp(self):
         super(TestNrtRefCt, self).setUp()

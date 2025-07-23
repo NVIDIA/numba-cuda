@@ -3,7 +3,11 @@ import itertools
 import numpy as np
 from numba import cuda
 from numba.core.errors import TypingError
-from numba.cuda.testing import CUDATestCase
+from numba.cuda.testing import (
+    CUDATestCase,
+    skip_on_cudasim,
+    skip_unless_cudasim,
+)
 import unittest
 
 
@@ -65,6 +69,7 @@ for align in (True, False):
 #      with the test_alignment.TestArrayAlignment class.
 
 
+@skip_on_cudasim("Array alignment not supported on cudasim")
 class TestArrayAddressAlignment(CUDATestCase):
     """
     Test cuda.local.array and cuda.shared.array support for an alignment
@@ -230,6 +235,25 @@ class TestArrayAddressAlignment(CUDATestCase):
 
                 if NOISY:
                     print(".", end="", flush=True)
+
+
+@skip_unless_cudasim("Only check for alignment unsupported in the simulator")
+class TestCudasimUnsupportedAlignment(CUDATestCase):
+    def test_local_unsupported(self):
+        @cuda.jit
+        def f():
+            cuda.local.array(1, dtype=np.uint8, alignment=16)
+
+        with self.assertRaisesRegex(RuntimeError, "not supported in cudasim"):
+            f[1, 1]()
+
+    def test_shared_unsupported(self):
+        @cuda.jit
+        def f():
+            cuda.shared.array(1, dtype=np.uint8, alignment=16)
+
+        with self.assertRaisesRegex(RuntimeError, "not supported in cudasim"):
+            f[1, 1]()
 
 
 if __name__ == "__main__":

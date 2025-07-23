@@ -38,3 +38,7 @@ class NvrtcBuiltinOperationFailure(NvrtcError):
 
 class NvrtcSupportError(ImportError):
     pass
+
+
+class CCSupportError(RuntimeError):
+    pass

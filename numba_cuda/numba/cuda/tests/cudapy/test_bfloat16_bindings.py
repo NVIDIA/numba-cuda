@@ -2,29 +2,40 @@ import numba.cuda as cuda
 from numba.cuda.testing import unittest, CUDATestCase
 import numpy as np
 
-from numba import int16, int32, int64, uint16, uint32, uint64, float32, float64
+from numba import (
+    config,
+    int16,
+    int32,
+    int64,
+    uint16,
+    uint32,
+    uint64,
+    float32,
+    float64,
+)
 from numba.types import float16
 
-from numba.cuda._internal.cuda_bf16 import (
-    nv_bfloat16,
-    htrunc,
-    hceil,
-    hfloor,
-    hrint,
-    hsqrt,
-    hrsqrt,
-    hrcp,
-    hlog,
-    hlog2,
-    hlog10,
-    hcos,
-    hsin,
-    hexp,
-    hexp2,
-    hexp10,
-    htanh,
-    htanh_approx,
-)
+if not config.ENABLE_CUDASIM:
+    from numba.cuda._internal.cuda_bf16 import (
+        nv_bfloat16,
+        htrunc,
+        hceil,
+        hfloor,
+        hrint,
+        hsqrt,
+        hrsqrt,
+        hrcp,
+        hlog,
+        hlog2,
+        hlog10,
+        hcos,
+        hsin,
+        hexp,
+        hexp2,
+        hexp10,
+        htanh,
+        htanh_approx,
+    )
 
 dtypes = [int16, int32, int64, uint16, uint32, uint64, float32]
 
@@ -279,6 +290,24 @@ class Bfloat16Test(CUDATestCase):
                 kernel[1, 1](arr)
 
                 np.testing.assert_allclose(arr, [8], atol=1e-2)
+
+    def test_use_binding_inside_dfunc(self):
+        self.skip_unsupported()
+
+        @cuda.jit(device=True)
+        def f(arr):
+            pi = nv_bfloat16(3.14)
+            three = htrunc(pi)
+            arr[0] = float32(three)
+
+        @cuda.jit
+        def kernel(arr):
+            f(arr)
+
+        arr = np.zeros(1, np.float32)
+        kernel[1, 1](arr)
+
+        np.testing.assert_allclose(arr, [3], atol=1e-2)
 
 
 if __name__ == "__main__":

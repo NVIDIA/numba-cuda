@@ -6,7 +6,7 @@ User guide
 
 .. toctree::
 
-   overview.rst
+   installation.rst
    kernels.rst
    memory.rst
    device-functions.rst
