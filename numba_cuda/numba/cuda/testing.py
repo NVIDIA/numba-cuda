@@ -35,7 +35,7 @@ class FileCheckTestCaseMixin:
         self,
         ir_producer: CUDADispatcher,
         signature: tuple[type, ...] | None = None,
-        check_prefixes: list[str] = ["ASM"],
+        check_prefixes: list[str] = ("ASM",),
         **extra_filecheck_options: dict[str, str | int],
     ) -> None:
         """
@@ -57,7 +57,7 @@ class FileCheckTestCaseMixin:
         self,
         ir_producer: CUDADispatcher,
         signature: tuple[type, ...] | None = None,
-        check_prefixes: list[str] = ["LLVM"],
+        check_prefixes: list[str] = ("LLVM",),
         **extra_filecheck_options: dict[str, str | int],
     ) -> None:
         """
@@ -79,7 +79,7 @@ class FileCheckTestCaseMixin:
         self,
         ir_content: str,
         check_patterns: str,
-        check_prefixes: list[str] = ["CHECK"],
+        check_prefixes: list[str] = ("CHECK",),
         **extra_filecheck_options: dict[str, str | int],
     ) -> None:
         """
@@ -102,13 +102,11 @@ class FileCheckTestCaseMixin:
         matcher.stderr = StringIO()
         result = matcher.run()
         if result != 0:
-            raise AssertionError(
-                (
-                    f"FileCheck failed:\n{matcher.stderr.getvalue()}\n\n"
-                    f"Check prefixes:\n{check_prefixes}\n\n"
-                    f"Check patterns:\n{check_patterns}\n"
-                    f"IR:\n{ir_content}\n\n"
-                )
+            self.fail(
+                f"FileCheck failed:\n{matcher.stderr.getvalue()}\n\n"
+                f"Check prefixes:\n{check_prefixes}\n\n"
+                f"Check patterns:\n{check_patterns}\n"
+                f"IR:\n{ir_content}\n\n"
             )
 
 

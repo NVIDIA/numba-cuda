@@ -28,7 +28,8 @@ class TestInspect(CUDATestCase):
         @cuda.jit(sig)
         def foo(x, y):
             """
-            // LLVM: foo
+            // LLVM: define void
+            // LLVM-SAME: foo
             // LLVM-LABEL: entry:
             // LLVM-NEXT:         br label %"[[VAL_0:.*]]"
             // LLVM-NEXT:       [[VAL_0]]:
