@@ -214,7 +214,7 @@ def filecheck_ir(
     check_patterns: str,
     check_prefixes: list[str] = ["CHECK"],
     **extra_filecheck_options: dict[str, str | int],
-) -> bool:
+) -> None:
     """Run filecheck on IR content with check patterns. Raises an AssertionError if the checks fail."""
     opts = Options(
         match_filename="-",
@@ -234,7 +234,6 @@ def filecheck_ir(
                 f"IR:\n{ir_content}\n\n"
             )
         )
-    return True
 
 
 class FileCheckKernel:
@@ -248,34 +247,28 @@ class FileCheckKernel:
         self,
         signature: tuple[type, ...] | None = None,
         check_prefixes: list[str] = ["LLVM"],
-    ) -> bool:
+    ) -> None:
         llvm = self.kernel.inspect_llvm()
         if signature:
             llvm = llvm[signature]
-        return filecheck_ir(
-            llvm, self.check_patterns, check_prefixes=check_prefixes
-        )
+        filecheck_ir(llvm, self.check_patterns, check_prefixes=check_prefixes)
 
     def check_asm(
         self,
         signature: tuple[type, ...] | None = None,
         check_prefixes: list[str] = ["ASM"],
-    ) -> bool:
+    ) -> None:
         asm = self.kernel.inspect_asm()
         if signature:
             asm = asm[signature]
-        return filecheck_ir(
-            asm, self.check_patterns, check_prefixes=check_prefixes
-        )
+        filecheck_ir(asm, self.check_patterns, check_prefixes=check_prefixes)
 
     def check_sass(
         self,
         signature: tuple[type, ...] | None = None,
         check_prefixes: list[str] = ["SASS"],
-    ) -> bool:
+    ) -> None:
         sass = self.kernel.inspect_sass()
         if signature:
             sass = sass[signature]
-        return filecheck_ir(
-            sass, self.check_patterns, check_prefixes=check_prefixes
-        )
+        filecheck_ir(sass, self.check_patterns, check_prefixes=check_prefixes)
