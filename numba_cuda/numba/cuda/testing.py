@@ -31,7 +31,7 @@ class FileCheckTestCaseMixin:
     matches FileCheck checks, and is not specific to CUDADispatcher.
     """
 
-    def assert_filecheck_asm(
+    def assertFileCheckAsm(
         self,
         ir_producer: CUDADispatcher,
         signature: tuple[type, ...] | None = None,
@@ -46,14 +46,14 @@ class FileCheckTestCaseMixin:
         if signature:
             ir_content = ir_content[signature]
         check_patterns = ir_producer.__doc__
-        self.assert_filecheck_matches(
+        self.assertFileCheckMatches(
             ir_content,
             check_patterns=check_patterns,
             check_prefixes=check_prefixes,
             **extra_filecheck_options,
         )
 
-    def assert_filecheck_llvm(
+    def assertFileCheckLLVM(
         self,
         ir_producer: CUDADispatcher,
         signature: tuple[type, ...] | None = None,
@@ -68,14 +68,14 @@ class FileCheckTestCaseMixin:
         if signature:
             ir_content = ir_content[signature]
         check_patterns = ir_producer.__doc__
-        self.assert_filecheck_matches(
+        self.assertFileCheckMatches(
             ir_content,
             check_patterns=check_patterns,
             check_prefixes=check_prefixes,
             **extra_filecheck_options,
         )
 
-    def assert_filecheck_matches(
+    def assertFileCheckMatches(
         self,
         ir_content: str,
         check_patterns: str,

@@ -48,8 +48,8 @@ class TestInspect(CUDATestCase):
         self.assertIn("(float32, int32)", typeanno)
         file.close()
 
-        self.assert_filecheck_llvm(foo, sig)
-        self.assert_filecheck_asm(foo, sig)
+        self.assertFileCheckLLVM(foo, sig)
+        self.assertFileCheckAsm(foo, sig)
 
     def test_polytyped(self):
         @cuda.jit
@@ -75,14 +75,14 @@ class TestInspect(CUDATestCase):
         int_sig = (intp, intp)
         float_sig = (float64, float64)
 
-        self.assert_filecheck_llvm(
+        self.assertFileCheckLLVM(
             foo, int_sig, check_prefixes=["LLVM", "LLVM_INT"]
         )
-        self.assert_filecheck_asm(foo, int_sig, check_prefixes=["ASM"])
-        self.assert_filecheck_llvm(
+        self.assertFileCheckAsm(foo, int_sig, check_prefixes=["ASM"])
+        self.assertFileCheckLLVM(
             foo, float_sig, check_prefixes=["LLVM", "LLVM_FLOAT"]
         )
-        self.assert_filecheck_asm(foo, float_sig, check_prefixes=["ASM"])
+        self.assertFileCheckAsm(foo, float_sig, check_prefixes=["ASM"])
 
         file = StringIO()
         foo.inspect_types(file=file)
