@@ -763,12 +763,14 @@ class _MemoMixin:
 
 
 _CompileStats = collections.namedtuple(
-    '_CompileStats', ('cache_path', 'cache_hits', 'cache_misses'))
+    "_CompileStats", ("cache_path", "cache_hits", "cache_misses")
+)
 
 
 class _FunctionCompiler(object):
-    def __init__(self, py_func, targetdescr, targetoptions, locals,
-                 pipeline_class):
+    def __init__(
+        self, py_func, targetdescr, targetoptions, locals, pipeline_class
+    ):
         self.py_func = py_func
         self.targetdescr = targetdescr
         self.targetoptions = targetoptions
@@ -787,6 +789,7 @@ class _FunctionCompiler(object):
 
         A (pysig, argument types) tuple is returned.
         """
+
         def normal_handler(index, param, value):
             return value
 
@@ -795,11 +798,16 @@ class _FunctionCompiler(object):
 
         def stararg_handler(index, param, values):
             return types.StarArgTuple(values)
+
         # For now, we take argument values from the @jit function
-        args = fold_arguments(self.pysig, args, kws,
-                              normal_handler,
-                              default_handler,
-                              stararg_handler)
+        args = fold_arguments(
+            self.pysig,
+            args,
+            kws,
+            normal_handler,
+            default_handler,
+            stararg_handler,
+        )
         return self.pysig, args
 
     def compile(self, args, return_type):
@@ -830,12 +838,16 @@ class _FunctionCompiler(object):
         flags = self._customize_flags(flags)
 
         impl = self._get_implementation(args, {})
-        cres = compiler.compile_extra(self.targetdescr.typing_context,
-                                      self.targetdescr.target_context,
-                                      impl,
-                                      args=args, return_type=return_type,
-                                      flags=flags, locals=self.locals,
-                                      pipeline_class=self.pipeline_class)
+        cres = compiler.compile_extra(
+            self.targetdescr.typing_context,
+            self.targetdescr.target_context,
+            impl,
+            args=args,
+            return_type=return_type,
+            flags=flags,
+            locals=self.locals,
+            pipeline_class=self.pipeline_class,
+        )
         # Check typing error if object mode is used
         if cres.typing_error is not None and not flags.enable_pyobject:
             raise cres.typing_error
@@ -887,10 +899,16 @@ class CUDADispatcher(serialize.ReduceMixin, _MemoMixin, _DispatcherBase):
 
         pysig = utils.pysignature(py_func)
         arg_count = len(pysig.parameters)
-        can_fallback = not targetoptions.get('nopython', False)
+        can_fallback = not targetoptions.get("nopython", False)
 
-        _DispatcherBase.__init__(self, arg_count, py_func, pysig, can_fallback,
-                                 exact_match_required=False)
+        _DispatcherBase.__init__(
+            self,
+            arg_count,
+            py_func,
+            pysig,
+            can_fallback,
+            exact_match_required=False,
+        )
 
         functools.update_wrapper(self, py_func)
 
@@ -898,8 +916,9 @@ class CUDADispatcher(serialize.ReduceMixin, _MemoMixin, _DispatcherBase):
         self.locals = locals
         self._cache = NullCache()
         compiler_class = _FunctionCompiler
-        self._compiler = compiler_class(py_func, self.targetdescr,
-                                        targetoptions, locals, pipeline_class)
+        self._compiler = compiler_class(
+            py_func, self.targetdescr, targetoptions, locals, pipeline_class
+        )
         self._cache_hits = collections.Counter()
         self._cache_misses = collections.Counter()
 
@@ -915,12 +934,14 @@ class CUDADispatcher(serialize.ReduceMixin, _MemoMixin, _DispatcherBase):
         # argument types
         self.specializations = {}
 
-    def dump(self, tab=''):
-        print(f'{tab}DUMP {type(self).__name__}[{self.py_func.__name__}'
-              f', type code={self._type._code}]')
+    def dump(self, tab=""):
+        print(
+            f"{tab}DUMP {type(self).__name__}[{self.py_func.__name__}"
+            f", type code={self._type._code}]"
+        )
         for cres in self.overloads.values():
-            cres.dump(tab=tab + '  ')
-        print(f'{tab}END DUMP {type(self).__name__}[{self.py_func.__name__}]')
+            cres.dump(tab=tab + "  ")
+        print(f"{tab}END DUMP {type(self).__name__}[{self.py_func.__name__}]")
 
     @property
     def _numba_type_(self):
@@ -930,7 +951,7 @@ class CUDADispatcher(serialize.ReduceMixin, _MemoMixin, _DispatcherBase):
         self._cache = CUDACache(self.py_func)
 
     def __get__(self, obj, objtype=None):
-        '''Allow a JIT function to be bound as a method to an object'''
+        """Allow a JIT function to be bound as a method to an object"""
         if obj is None:  # Unbound method
             return self
         else:  # Bound method
@@ -1333,13 +1354,15 @@ class CUDADispatcher(serialize.ReduceMixin, _MemoMixin, _DispatcherBase):
         used to adjust the verbosity, level=1 (default) is minimal verbosity,
         and 2, 3, and 4 provide increasing levels of verbosity.
         """
+
         def dump(sig):
             ol = self.overloads[sig]
-            pfdiag = ol.metadata.get('parfor_diagnostics', None)
+            pfdiag = ol.metadata.get("parfor_diagnostics", None)
             if pfdiag is None:
                 msg = "No parfors diagnostic available, is 'parallel=True' set?"
                 raise ValueError(msg)
             pfdiag.dump(level)
+
         if signature is not None:
             dump(signature)
         else:
@@ -1353,7 +1376,7 @@ class CUDADispatcher(serialize.ReduceMixin, _MemoMixin, _DispatcherBase):
             return self.overloads[signature].metadata
         else:
             return dict(
-                (sig,self.overloads[sig].metadata) for sig in self.signatures
+                (sig, self.overloads[sig].metadata) for sig in self.signatures
             )
 
     def get_function_type(self):
