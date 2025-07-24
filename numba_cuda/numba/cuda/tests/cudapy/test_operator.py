@@ -87,27 +87,27 @@ def hlt_func_2(x, y):
     return x < y
 
 
-def test_multiple_hcmp_1(r, a, b, c):
+def multiple_hcmp_1(r, a, b, c):
     # float16 predicates used in two separate functions
     r[0] = hlt_func_1(a, b) and hlt_func_2(b, c)
 
 
-def test_multiple_hcmp_2(r, a, b, c):
+def multiple_hcmp_2(r, a, b, c):
     # The same float16 predicate used in the caller and callee
     r[0] = hlt_func_1(a, b) and b < c
 
 
-def test_multiple_hcmp_3(r, a, b, c):
+def multiple_hcmp_3(r, a, b, c):
     # Different float16 predicates used in the caller and callee
     r[0] = hlt_func_1(a, b) and c >= b
 
 
-def test_multiple_hcmp_4(r, a, b, c):
+def multiple_hcmp_4(r, a, b, c):
     # The same float16 predicates used twice in a function
     r[0] = a < b and b < c
 
 
-def test_multiple_hcmp_5(r, a, b, c):
+def multiple_hcmp_5(r, a, b, c):
     # Different float16 predicates used in a function
     r[0] = a < b and c >= b
 
@@ -331,11 +331,11 @@ class TestOperatorModule(CUDATestCase):
     @skip_unless_cc_53
     def test_multiple_float16_comparisons(self):
         functions = (
-            test_multiple_hcmp_1,
-            test_multiple_hcmp_2,
-            test_multiple_hcmp_3,
-            test_multiple_hcmp_4,
-            test_multiple_hcmp_5,
+            multiple_hcmp_1,
+            multiple_hcmp_2,
+            multiple_hcmp_3,
+            multiple_hcmp_4,
+            multiple_hcmp_5,
         )
         for fn in functions:
             with self.subTest(fn=fn):
@@ -350,11 +350,11 @@ class TestOperatorModule(CUDATestCase):
     @skip_unless_cc_53
     def test_multiple_float16_comparisons_false(self):
         functions = (
-            test_multiple_hcmp_1,
-            test_multiple_hcmp_2,
-            test_multiple_hcmp_3,
-            test_multiple_hcmp_4,
-            test_multiple_hcmp_5,
+            multiple_hcmp_1,
+            multiple_hcmp_2,
+            multiple_hcmp_3,
+            multiple_hcmp_4,
+            multiple_hcmp_5,
         )
         for fn in functions:
             with self.subTest(fn=fn):
