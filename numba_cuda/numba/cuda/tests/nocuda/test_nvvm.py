@@ -1,6 +1,6 @@
 from numba.cuda.cudadrv import nvvm
 from numba.cuda.testing import skip_on_cudasim
-from numba.core import utils
+from numba.cuda import utils
 
 from llvmlite import ir
 from llvmlite import binding as llvm

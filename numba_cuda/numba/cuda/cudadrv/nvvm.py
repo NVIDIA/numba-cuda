@@ -14,7 +14,7 @@ from llvmlite import ir
 
 from .error import NvvmError, NvvmSupportError, NvvmWarning
 from .libs import get_libdevice, open_libdevice, open_cudalib
-from numba.core import cgutils
+from numba.cuda import cgutils
 
 
 logger = logging.getLogger(__name__)

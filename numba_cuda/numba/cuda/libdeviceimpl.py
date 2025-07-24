@@ -1,5 +1,6 @@
 from llvmlite import ir
-from numba.core import cgutils, types
+from numba.core import types
+from numba.cuda import cgutils
 from numba.core.imputils import Registry
 from numba.cuda import libdevice, libdevicefuncs
 
