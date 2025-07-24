@@ -22,6 +22,7 @@ rapids-mamba-retry create -n test \
     make \
     psutil \
     pytest \
+    pytest-xdist \
     cffi \
     python=${RAPIDS_PY_VERSION}
 

@@ -33,7 +33,15 @@ If you want to manage all run-time dependencies yourself, also pass the `--no-de
 pytest --pyargs numba.cuda.tests -v
 ```
 
-This should discover the `numba.cuda` module from the `numba_cuda` package. You
+Tests can be run in parallel with:
+
+```
+# -n auto: Automatically determine number of threads
+# --dist loadscope: Ensure tests are grouped as required by `CUDATestCase`
+pytest -n auto --dist loadscope --pyargs numba.cuda.tests -v
+```
+
+Testing should discover the `numba.cuda` module from the `numba_cuda` package. You
 can check where `numba.cuda` files are being located by running
 
 ```
