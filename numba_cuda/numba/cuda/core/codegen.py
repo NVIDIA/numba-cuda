@@ -1,6 +1,7 @@
 from abc import abstractmethod, ABCMeta
 from numba.misc.llvm_pass_timings import PassTimingsCollection
 
+
 class CodeLibrary(metaclass=ABCMeta):
     """
     An interface for bundling LLVM code together and compiling it.
@@ -45,8 +46,9 @@ class CodeLibrary(metaclass=ABCMeta):
 
     def _raise_if_finalized(self):
         if self._finalized:
-            raise RuntimeError("operation impossible on finalized object %r"
-                               % (self,))
+            raise RuntimeError(
+                "operation impossible on finalized object %r" % (self,)
+            )
 
     def _ensure_finalized(self):
         if not self._finalized:
@@ -122,6 +124,7 @@ class CodeLibrary(metaclass=ABCMeta):
             raise ValueError("library already compiled: %s" % (self,))
         self._compiled_object = value
         self._disable_inspection = True
+
 
 class Codegen(metaclass=ABCMeta):
     """
