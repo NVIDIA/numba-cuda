@@ -33,6 +33,7 @@ del vector_types, name, svty, alias
 if config.ENABLE_CUDASIM:
     import sys
     from numba.cuda.simulator import cudadrv
+    from . import dispatcher
 
     sys.modules["numba.cuda.cudadrv"] = cudadrv
     sys.modules["numba.cuda.cudadrv.devicearray"] = cudadrv.devicearray
@@ -43,6 +44,7 @@ if config.ENABLE_CUDASIM:
     sys.modules["numba.cuda.cudadrv.drvapi"] = cudadrv.drvapi
     sys.modules["numba.cuda.cudadrv.error"] = cudadrv.error
     sys.modules["numba.cuda.cudadrv.nvvm"] = cudadrv.nvvm
+    sys.modules["numba.cuda.dispatcher"] = dispatcher
 
     from . import bf16, compiler, _internal
 
