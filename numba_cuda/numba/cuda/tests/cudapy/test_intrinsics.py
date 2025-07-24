@@ -174,27 +174,27 @@ def hlt_func_2(x, y):
     return cuda.fp16.hlt(x, y)
 
 
-def test_multiple_hcmp_1(r, a, b, c):
+def multiple_hcmp_1(r, a, b, c):
     # float16 predicates used in two separate functions
     r[0] = hlt_func_1(a, b) and hlt_func_2(b, c)
 
 
-def test_multiple_hcmp_2(r, a, b, c):
+def multiple_hcmp_2(r, a, b, c):
     # The same float16 predicate used in the caller and callee
     r[0] = hlt_func_1(a, b) and cuda.fp16.hlt(b, c)
 
 
-def test_multiple_hcmp_3(r, a, b, c):
+def multiple_hcmp_3(r, a, b, c):
     # Different float16 predicates used in the caller and callee
     r[0] = hlt_func_1(a, b) and cuda.fp16.hge(c, b)
 
 
-def test_multiple_hcmp_4(r, a, b, c):
+def multiple_hcmp_4(r, a, b, c):
     # The same float16 predicates used twice in a function
     r[0] = cuda.fp16.hlt(a, b) and cuda.fp16.hlt(b, c)
 
 
-def test_multiple_hcmp_5(r, a, b, c):
+def multiple_hcmp_5(r, a, b, c):
     # Different float16 predicates used in a function
     r[0] = cuda.fp16.hlt(a, b) and cuda.fp16.hge(c, b)
 
@@ -908,11 +908,11 @@ class TestCudaIntrinsic(CUDATestCase):
     @skip_unless_cc_53
     def test_multiple_float16_comparisons(self):
         functions = (
-            test_multiple_hcmp_1,
-            test_multiple_hcmp_2,
-            test_multiple_hcmp_3,
-            test_multiple_hcmp_4,
-            test_multiple_hcmp_5,
+            multiple_hcmp_1,
+            multiple_hcmp_2,
+            multiple_hcmp_3,
+            multiple_hcmp_4,
+            multiple_hcmp_5,
         )
         for fn in functions:
             with self.subTest(fn=fn):

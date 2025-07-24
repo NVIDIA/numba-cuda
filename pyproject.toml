@@ -86,6 +86,11 @@ include = ["numba_cuda*"]
 [tool.setuptools.package-data]
 "*" = ["*.cu", "*.h", "*.hpp", "*.ptx", "*.cuh", "VERSION", "Makefile"]
 
+[tool.pytest.ini_options]
+minversion = "8.0"
+testpaths = ["numba_cuda/numba/cuda/tests"]
+consider_namespace_packages = true
+
 [tool.ruff]
 line-length = 80
 
