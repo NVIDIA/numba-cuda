@@ -1,6 +1,7 @@
 import itertools
 from llvmlite import ir
-from numba.core import cgutils, targetconfig
+from numba.core import targetconfig
+from numba.cuda import cgutils
 from .cudadrv import nvvm
 
 

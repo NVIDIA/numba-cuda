@@ -30,6 +30,8 @@ set +u
 conda activate test
 set -u
 
+pip install filecheck
+
 rapids-mamba-retry install -c `pwd`/conda-repo numba-cuda
 
 RAPIDS_TESTS_DIR=${RAPIDS_TESTS_DIR:-"${PWD}/test-results"}/
@@ -64,7 +66,7 @@ popd
 
 
 rapids-logger "Run Tests"
-NUMBA_CUDA_USE_NVIDIA_BINDING=0 NUMBA_CUDA_TEST_BIN_DIR=$NUMBA_CUDA_TEST_BIN_DIR python -m numba.runtests numba.cuda.tests -v
+NUMBA_CUDA_USE_NVIDIA_BINDING=0 NUMBA_CUDA_TEST_BIN_DIR=$NUMBA_CUDA_TEST_BIN_DIR pytest --pyargs numba.cuda.tests -v
 
 popd
 
