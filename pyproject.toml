@@ -91,9 +91,6 @@ include = ["numba_cuda*"]
 minversion = "8.0"
 testpaths = ["numba_cuda/numba/cuda/tests"]
 consider_namespace_packages = true
-# Run in parallel, use loadscope to enforce required grouping of test cases
-# (see CUDATestCase docstring)
-addopts = "-n auto --dist loadscope"
 
 [tool.ruff]
 line-length = 80
