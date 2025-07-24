@@ -800,31 +800,35 @@ def ptx_atomic_add_tuple(context, builder, dtype, ptr, val):
     if dtype == types.float32:
         lmod = builder.module
         return builder.call(
-            nvvmutils.declare_atomic_add_float32(lmod), (ptr, val)
+            nvvmutils.declare_atomic_add_float32(lmod, ptr.type.addrspace),
+            (ptr, val),
         )
     elif dtype == types.float64:
         lmod = builder.module
         return builder.call(
-            nvvmutils.declare_atomic_add_float64(lmod), (ptr, val)
+            nvvmutils.declare_atomic_add_float64(lmod, ptr.type.addrspace),
+            (ptr, val),
         )
     else:
         return builder.atomic_rmw("add", ptr, val, "monotonic")
 
 
-@lower(stubs.atomic.sub, types.Array, types.intp, types.Any)
-@lower(stubs.atomic.sub, types.Array, types.UniTuple, types.Any)
-@lower(stubs.atomic.sub, types.Array, types.Tuple, types.Any)
+@lower(stubs.atomic.sub, CUDAArray, types.intp, types.Any)
+@lower(stubs.atomic.sub, CUDAArray, types.UniTuple, types.Any)
+@lower(stubs.atomic.sub, CUDAArray, types.Tuple, types.Any)
 @_atomic_dispatcher
 def ptx_atomic_sub(context, builder, dtype, ptr, val):
     if dtype == types.float32:
         lmod = builder.module
         return builder.call(
-            nvvmutils.declare_atomic_sub_float32(lmod), (ptr, val)
+            nvvmutils.declare_atomic_sub_float32(lmod, ptr.type.addrspace),
+            (ptr, val),
         )
     elif dtype == types.float64:
         lmod = builder.module
         return builder.call(
-            nvvmutils.declare_atomic_sub_float64(lmod), (ptr, val)
+            nvvmutils.declare_atomic_sub_float64(lmod, ptr.type.addrspace),
+            (ptr, val),
         )
     else:
         return builder.atomic_rmw("sub", ptr, val, "monotonic")
@@ -839,7 +843,7 @@ def ptx_atomic_inc(context, builder, dtype, ptr, val):
         bw = dtype.bitwidth
         lmod = builder.module
         fn = getattr(nvvmutils, f"declare_atomic_inc_int{bw}")
-        return builder.call(fn(lmod), (ptr, val))
+        return builder.call(fn(lmod, ptr.type.addrspace), (ptr, val))
     else:
         raise TypeError(f"Unimplemented atomic inc with {dtype} array")
 
@@ -853,7 +857,7 @@ def ptx_atomic_dec(context, builder, dtype, ptr, val):
         bw = dtype.bitwidth
         lmod = builder.module
         fn = getattr(nvvmutils, f"declare_atomic_dec_int{bw}")
-        return builder.call(fn(lmod), (ptr, val))
+        return builder.call(fn(lmod, ptr.type.addrspace), (ptr, val))
     else:
         raise TypeError(f"Unimplemented atomic dec with {dtype} array")
 
@@ -894,11 +898,13 @@ def ptx_atomic_max(context, builder, dtype, ptr, val):
     lmod = builder.module
     if dtype == types.float64:
         return builder.call(
-            nvvmutils.declare_atomic_max_float64(lmod), (ptr, val)
+            nvvmutils.declare_atomic_max_float64(lmod, ptr.type.addrspace),
+            (ptr, val),
         )
     elif dtype == types.float32:
         return builder.call(
-            nvvmutils.declare_atomic_max_float32(lmod), (ptr, val)
+            nvvmutils.declare_atomic_max_float32(lmod, ptr.type.addrspace),
+            (ptr, val),
         )
     elif dtype in (types.int32, types.int64):
         return builder.atomic_rmw("max", ptr, val, ordering="monotonic")
@@ -916,11 +922,13 @@ def ptx_atomic_min(context, builder, dtype, ptr, val):
     lmod = builder.module
     if dtype == types.float64:
         return builder.call(
-            nvvmutils.declare_atomic_min_float64(lmod), (ptr, val)
+            nvvmutils.declare_atomic_min_float64(lmod, ptr.type.addrspace),
+            (ptr, val),
         )
     elif dtype == types.float32:
         return builder.call(
-            nvvmutils.declare_atomic_min_float32(lmod), (ptr, val)
+            nvvmutils.declare_atomic_min_float32(lmod, ptr.type.addrspace),
+            (ptr, val),
         )
     elif dtype in (types.int32, types.int64):
         return builder.atomic_rmw("min", ptr, val, ordering="monotonic")
@@ -938,11 +946,13 @@ def ptx_atomic_nanmax(context, builder, dtype, ptr, val):
     lmod = builder.module
     if dtype == types.float64:
         return builder.call(
-            nvvmutils.declare_atomic_nanmax_float64(lmod), (ptr, val)
+            nvvmutils.declare_atomic_nanmax_float64(lmod, ptr.type.addrspace),
+            (ptr, val),
         )
     elif dtype == types.float32:
         return builder.call(
-            nvvmutils.declare_atomic_nanmax_float32(lmod), (ptr, val)
+            nvvmutils.declare_atomic_nanmax_float32(lmod, ptr.type.addrspace),
+            (ptr, val),
         )
     elif dtype in (types.int32, types.int64):
         return builder.atomic_rmw("max", ptr, val, ordering="monotonic")
@@ -960,11 +970,13 @@ def ptx_atomic_nanmin(context, builder, dtype, ptr, val):
     lmod = builder.module
     if dtype == types.float64:
         return builder.call(
-            nvvmutils.declare_atomic_nanmin_float64(lmod), (ptr, val)
+            nvvmutils.declare_atomic_nanmin_float64(lmod, ptr.type.addrspace),
+            (ptr, val),
         )
     elif dtype == types.float32:
         return builder.call(
-            nvvmutils.declare_atomic_nanmin_float32(lmod), (ptr, val)
+            nvvmutils.declare_atomic_nanmin_float32(lmod, ptr.type.addrspace),
+            (ptr, val),
         )
     elif dtype in (types.int32, types.int64):
         return builder.atomic_rmw("min", ptr, val, ordering="monotonic")
