@@ -105,3 +105,17 @@ class CUDAArray(types.Array):
             aligned=self.aligned,
             addrspace=addrspace,
         )
+
+    @classmethod
+    def from_array_type(cls, ary, addrspace=nvvm.ADDRSPACE_GENERIC):
+        """
+        Create a CUDAArray type from a numpy array.
+        """
+        return cls(
+            dtype=ary.dtype,
+            ndim=ary.ndim,
+            layout=ary.layout,
+            readonly=not ary.mutable,
+            aligned=ary.aligned,
+            addrspace=addrspace,
+        )
