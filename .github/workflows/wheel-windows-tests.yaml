@@ -1,0 +1,37 @@
+name: "CI: Test wheel on Windows"
+
+on:
+  workflow_call:
+    inputs:
+      script:
+        type: string
+        default: "ci/test_wheel.ps1"
+
+jobs:
+  compute-matrix:
+    runs-on: ubuntu-latest
+    outputs:
+      MATRIX: ${{ steps.compute-matrix.outputs.MATRIX }}
+    steps:
+      - name: Compute Python Test Matrix
+        id: compute-matrix
+        run: |
+          set -eo pipefail
+          MATRIX="{ ARCH: 'amd64', PY_VER: '3.12', CUDA_VER: '12.9.0' }"
+          echo "MATRIX=${MATRIX}" | tee --append "${GITHUB_OUTPUT}"
+  tests:
+    name: ${{ matrix.CUDA_VER }}, ${{ matrix.PY_VER }}, ${{ matrix.ARCH }}, windows
+    needs: compute-matrix
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.compute-matrix.outputs.MATRIX) }}
+    runs-on: "cuda-python-windows-gpu-github"
+    steps:
+      - uses: actions/download-artifact@v4
+        name: wheel
+      - name: Display structure of downloaded files
+        run: Get-ChildItem -Recurse
+      - name: Python tests
+        run: ${{ inputs.script }}
+        env:
+          CUDA_VER: ${{ matrix.CUDA_VER }}
