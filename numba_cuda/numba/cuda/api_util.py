@@ -4,16 +4,11 @@ import numpy as np
 def prepare_shape_strides_dtype(shape, strides, dtype, order):
     dtype = np.dtype(dtype)
     if isinstance(shape, (float, np.floating)):
-        raise TypeError(
-            "shape must be an integer or tuple of integers"
-        )
-    if (
-        isinstance(shape, np.ndarray)
-        and np.issubdtype(shape.dtype, np.floating)
+        raise TypeError("shape must be an integer or tuple of integers")
+    if isinstance(shape, np.ndarray) and np.issubdtype(
+        shape.dtype, np.floating
     ):
-        raise TypeError(
-            "shape must be an integer or tuple of integers"
-        )
+        raise TypeError("shape must be an integer or tuple of integers")
     if isinstance(shape, int):
         shape = (shape,)
     if isinstance(strides, int):
