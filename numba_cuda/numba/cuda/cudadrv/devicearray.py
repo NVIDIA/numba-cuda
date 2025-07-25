@@ -16,6 +16,7 @@ import numba
 from numba import _devicearray
 from numba.cuda.cudadrv import devices, dummyarray
 from numba.cuda.cudadrv import driver as _driver
+from numba.cuda import types as cuda_types
 from numba.core import types, config
 from numba.np.unsafe.ndarray import to_fixed_tuple
 from numba.np.numpy_support import numpy_version
@@ -195,7 +196,7 @@ class DeviceNDArrayBase(_devicearray.DeviceArray):
             layout = "A"
 
         dtype = numpy_support.from_dtype(self.dtype)
-        return types.Array(dtype, self.ndim, layout)
+        return cuda_types.CUDAArray(dtype, self.ndim, layout)
 
     @property
     def device_ctypes_pointer(self):
@@ -434,7 +435,9 @@ class DeviceRecord(DeviceNDArrayBase):
         Magic attribute expected by Numba to get the numba type that
         represents this object.
         """
-        return numpy_support.from_dtype(self.dtype)
+        # TODO: test
+        dt = numpy_support.from_dtype(self.dtype)
+        return cuda_types.CUDAArray.from_array_type(dt)
 
     @devices.require_context
     def __getitem__(self, item):
