@@ -70,6 +70,14 @@ class TestCudaNDArray(CUDATestCase):
         with self.assertRaises(TypeError):
             cuda.device_array(shape=(1.1, 2.2))
 
+    def test_device_array_vectors(self):
+        # Ensure that np.array or list of inputs with
+        # ints still work
+        dary = cuda.device_array(shape=np.array([10, 10]), dtype=np.bool)
+        self.assertEqual(dary.shape, (10, 10))
+        dary = cuda.device_array(shape=[10, 10], dtype=np.bool)
+        self.assertEqual(dary.shape, (10, 10))
+
     def test_devicearray(self):
         array = np.arange(100, dtype=np.int32)
         original = array.copy()
