@@ -32,6 +32,12 @@ jobs:
       matrix: ${{ fromJSON('{"ARCH":["amd64"],"PY_VER":["3.12"],"CUDA_VER":["12.9.0"]}') }}
     runs-on: "cuda-python-windows-gpu-github"
     steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: ${{ inputs.repo }}
+          ref: ${{ inputs.sha }}
+          fetch-depth: 0
+
       - name: Update driver
         run: |
           .github/workflows/install_gpu_driver.ps1
@@ -39,19 +45,17 @@ jobs:
       - name: Ensure GPU is working
         run: nvidia-smi
 
-      - uses: actions/checkout@v4
-        with:
-          repository: ${{ inputs.repo }}
-          ref: ${{ inputs.sha }}
-          fetch-depth: 0
       - uses: actions/download-artifact@v4
         name: wheel
+
       - name: Display structure of downloaded files
         run: Get-ChildItem -Recurse
+
       - name: Set up Python ${{ matrix.PY_VER }}
         uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065  # v5.6.0
         with:
           python-version: ${{ matrix.PY_VER }}
+
       - name: Python tests
         run: |
           ${{ inputs.script }}
