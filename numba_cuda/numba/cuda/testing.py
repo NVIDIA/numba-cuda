@@ -2,7 +2,7 @@ import os
 import platform
 import shutil
 
-from numba.core.utils import PYVERSION
+from numba.cuda.utils import PYVERSION
 from numba.tests.support import SerialMixin
 from numba.cuda.cuda_paths import get_conda_ctk
 from numba.cuda.cudadrv import driver, devices, libs
