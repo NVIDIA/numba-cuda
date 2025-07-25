@@ -49,6 +49,7 @@ def load_tests(loader, tests, pattern):
             suite.addTests(load_testsuite(loader, join(this_dir, "cudadrv")))
             suite.addTests(load_testsuite(loader, join(this_dir, "cudapy")))
             suite.addTests(load_testsuite(loader, join(this_dir, "nrt")))
+            suite.addTests(load_testsuite(loader, join(this_dir, "thirdparty")))
             suite.addTests(
                 load_testsuite(loader, join(this_dir, "doc_examples"))
             )
