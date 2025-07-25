@@ -22,7 +22,7 @@ function rapids-logger {
 }
 
 
-$CUDA_VER_MAJOR_MINOR = ($CUDA_VER -split '\.')[0..1] -join '.'
+$CUDA_VER_MAJOR_MINOR = ($env:CUDA_VER -split '\.')[0..1] -join '.'
 $CUDA_VER_MAJOR = ($CUDA_VER -split '\.')[0] -join '.'
 
 rapids-logger "Install wheel with test dependencies"
