@@ -21,6 +21,7 @@ from numba.cuda.testing import (
     unittest,
     CUDATestCase,
 )
+from numba.cuda.types import CUDAArray
 import math
 
 
@@ -341,12 +342,12 @@ class TestDispatcher(CUDATestCase):
         self.assertRegex(
             str(cm.exception),
             r"Ambiguous overloading for <function add_kernel [^>]*> "
-            r"\(Array\(float64, 1, 'C', False, aligned=True\), float64,"
-            r" float64\):\n"
-            r"\(Array\(float64, 1, 'C', False, aligned=True\), float32,"
-            r" float64\) -> none\n"
-            r"\(Array\(float64, 1, 'C', False, aligned=True\), float64,"
-            r" float32\) -> none",
+            r"\(CUDAArray\(float64, 1, 'C', False, aligned=True, addrspace=0\),"
+            r" float64, float64\):\n"
+            r"\(CUDAArray\(float64, 1, 'C', False, aligned=True, addrspace=0\),"
+            r" float32, float64\) -> none\n"
+            r"\(CUDAArray\(float64, 1, 'C', False, aligned=True, addrspace=0\),"
+            r" float64, float32\) -> none",
         )
         # The integer signature is not part of the best matches
         self.assertNotIn("int64", str(cm.exception))
@@ -534,8 +535,8 @@ class TestDispatcherKernelProperties(CUDATestCase):
         pi_sin_array[1, N](arr_f64, N)
 
         # Check we get a positive integer for the two different variations
-        sig_f32 = void(float32[::1], int64)
-        sig_f64 = void(float64[::1], int64)
+        sig_f32 = void(CUDAArray(float32, 1, "C"), int64)
+        sig_f64 = void(CUDAArray(float64, 1, "C"), int64)
         regs_per_thread_f32 = pi_sin_array.get_regs_per_thread(sig_f32)
         regs_per_thread_f64 = pi_sin_array.get_regs_per_thread(sig_f64)
 
@@ -609,7 +610,7 @@ class TestDispatcherKernelProperties(CUDATestCase):
 
     def test_get_const_mem_specialized(self):
         arr = np.arange(32, dtype=np.int64)
-        sig = void(int64[::1])
+        sig = void(CUDAArray(int64, 1, "C"))
 
         @cuda.jit(sig)
         def const_array_use(x):
@@ -642,8 +643,8 @@ class TestDispatcherKernelProperties(CUDATestCase):
         simple_smem[1, 1](arr_f32)
         simple_smem[1, 1](arr_f64)
 
-        sig_f32 = void(float32[::1])
-        sig_f64 = void(float64[::1])
+        sig_f32 = void(CUDAArray(float32, 1, "C"))
+        sig_f64 = void(CUDAArray(float64, 1, "C"))
 
         sh_mem_f32 = simple_smem.get_shared_mem_per_block(sig_f32)
         sh_mem_f64 = simple_smem.get_shared_mem_per_block(sig_f64)
@@ -687,7 +688,7 @@ class TestDispatcherKernelProperties(CUDATestCase):
 
         arr_f32 = np.zeros(N, dtype=np.float32)
         simple_maxthreads[1, 1](arr_f32)
-        sig_f32 = void(float32[::1])
+        sig_f32 = void(CUDAArray(float32, 1, "C"))
         max_threads_f32 = simple_maxthreads.get_max_threads_per_block(sig_f32)
 
         self.assertIsInstance(max_threads_f32, int)
@@ -718,8 +719,8 @@ class TestDispatcherKernelProperties(CUDATestCase):
         simple_lmem[1, 1](arr_f32)
         simple_lmem[1, 1](arr_f64)
 
-        sig_f32 = void(float32[::1])
-        sig_f64 = void(float64[::1])
+        sig_f32 = void(CUDAArray(float32, 1, "C"))
+        sig_f64 = void(CUDAArray(float64, 1, "C"))
         local_mem_f32 = simple_lmem.get_local_mem_per_thread(sig_f32)
         local_mem_f64 = simple_lmem.get_local_mem_per_thread(sig_f64)
         self.assertIsInstance(local_mem_f32, int)

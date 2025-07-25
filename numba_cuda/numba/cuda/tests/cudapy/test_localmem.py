@@ -34,9 +34,10 @@ def culocal1tuple(A, B):
 @skip_on_cudasim("PTX inspection not available in cudasim")
 class TestCudaLocalMem(CUDATestCase):
     def test_local_array(self):
-        sig = (int32[:], int32[:])
-        jculocal = cuda.jit(sig)(culocal)
-        self.assertTrue(".local" in jculocal.inspect_asm(sig))
+        jculocal = cuda.jit((int32[:], int32[:]))(culocal)
+        self.assertTrue(
+            ".local" in jculocal.inspect_asm(jculocal.signatures[0])
+        )
         A = np.arange(1000, dtype="int32")
         B = np.zeros_like(A)
         jculocal[1, 1](A, B)
