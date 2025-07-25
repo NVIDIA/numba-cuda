@@ -302,7 +302,8 @@ class CUDANopythonTypeInference(NopythonTypeInference):
     def _legalize_array_return_type(self, return_type, interp, targetctx):
         # Walk IR to discover all arguments and all return statements
         retstmts = []
-        whitelist_vars = set()
+        forest = dict()
+        args = set()
         for bid, blk in interp.blocks.items():
             for inst in blk.body:
                 if isinstance(inst, numba_ir.Return):
@@ -311,15 +312,16 @@ class CUDANopythonTypeInference(NopythonTypeInference):
                     if isinstance(inst.value, numba_ir.Expr):
                         if inst.value.op not in {"cast", "getitem"}:
                             continue
-                        if inst.value.value.name in whitelist_vars:
-                            whitelist_vars.add(inst.target.name)
+                        forest[inst.target.name] = inst.value.value.name
                     elif isinstance(inst.value, numba_ir.Arg):
-                        whitelist_vars.add(inst.target.name)
+                        args.add(inst.target.name)
 
         assert retstmts, "No return statements?"
 
         for var in retstmts:
-            if var not in whitelist_vars and self._raise_errors:
+            while var in forest:
+                var = forest[var]
+            if var not in args and self._raise_errors:
                 msg = (
                     "Only accept returning of array passed into "
                     "the function as argument"
