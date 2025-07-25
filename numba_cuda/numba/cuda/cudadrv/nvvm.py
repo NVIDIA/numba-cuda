@@ -507,10 +507,6 @@ def ir_numba_atomic_dec(T, Tu):
 def llvm_replace(llvmir):
     replacements = [
         (
-            'declare double @"___numba_atomic_double_add"(double* %".1", double %".2")',  # noqa: E501
-            ir_numba_atomic_binary(T="double", Ti="i64", OP="fadd", FUNC="add"),
-        ),
-        (
             'declare float @"___numba_atomic_float_sub"(float* %".1", float %".2")',  # noqa: E501
             ir_numba_atomic_binary(T="float", Ti="i32", OP="fsub", FUNC="sub"),
         ),

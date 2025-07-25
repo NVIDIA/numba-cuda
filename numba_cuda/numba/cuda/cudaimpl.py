@@ -792,9 +792,9 @@ def _atomic_dispatcher(dispatch_fn):
     return imp
 
 
-@lower(stubs.atomic.add, types.Array, types.intp, types.Any)
-@lower(stubs.atomic.add, types.Array, types.UniTuple, types.Any)
-@lower(stubs.atomic.add, types.Array, types.Tuple, types.Any)
+@lower(stubs.atomic.add, CUDAArray, types.intp, types.Any)
+@lower(stubs.atomic.add, CUDAArray, types.UniTuple, types.Any)
+@lower(stubs.atomic.add, CUDAArray, types.Tuple, types.Any)
 @_atomic_dispatcher
 def ptx_atomic_add_tuple(context, builder, dtype, ptr, val):
     if dtype == types.float32:
@@ -818,6 +818,10 @@ def ptx_atomic_add_tuple(context, builder, dtype, ptr, val):
 @lower(stubs.atomic.sub, CUDAArray, types.Tuple, types.Any)
 @_atomic_dispatcher
 def ptx_atomic_sub(context, builder, dtype, ptr, val):
+    # TODO: use atomic.add with builder.neg(val) value instead
+    ptr = builder.addrspacecast(
+        ptr, ir.PointerType(ptr.type.pointee), "generic"
+    )
     if dtype == types.float32:
         lmod = builder.module
         return builder.call(
@@ -834,11 +838,15 @@ def ptx_atomic_sub(context, builder, dtype, ptr, val):
         return builder.atomic_rmw("sub", ptr, val, "monotonic")
 
 
-@lower(stubs.atomic.inc, types.Array, types.intp, types.Any)
-@lower(stubs.atomic.inc, types.Array, types.UniTuple, types.Any)
-@lower(stubs.atomic.inc, types.Array, types.Tuple, types.Any)
+@lower(stubs.atomic.inc, CUDAArray, types.intp, types.Any)
+@lower(stubs.atomic.inc, CUDAArray, types.UniTuple, types.Any)
+@lower(stubs.atomic.inc, CUDAArray, types.Tuple, types.Any)
 @_atomic_dispatcher
 def ptx_atomic_inc(context, builder, dtype, ptr, val):
+    # TODO: add variation for different address spaces
+    ptr = builder.addrspacecast(
+        ptr, ir.PointerType(ptr.type.pointee), "generic"
+    )
     if dtype in cuda.cudadecl.unsigned_int_numba_types:
         bw = dtype.bitwidth
         lmod = builder.module
@@ -848,11 +856,15 @@ def ptx_atomic_inc(context, builder, dtype, ptr, val):
         raise TypeError(f"Unimplemented atomic inc with {dtype} array")
 
 
-@lower(stubs.atomic.dec, types.Array, types.intp, types.Any)
-@lower(stubs.atomic.dec, types.Array, types.UniTuple, types.Any)
-@lower(stubs.atomic.dec, types.Array, types.Tuple, types.Any)
+@lower(stubs.atomic.dec, CUDAArray, types.intp, types.Any)
+@lower(stubs.atomic.dec, CUDAArray, types.UniTuple, types.Any)
+@lower(stubs.atomic.dec, CUDAArray, types.Tuple, types.Any)
 @_atomic_dispatcher
 def ptx_atomic_dec(context, builder, dtype, ptr, val):
+    # TODO: add variation for different address spaces
+    ptr = builder.addrspacecast(
+        ptr, ir.PointerType(ptr.type.pointee), "generic"
+    )
     if dtype in cuda.cudadecl.unsigned_int_numba_types:
         bw = dtype.bitwidth
         lmod = builder.module
@@ -879,9 +891,9 @@ ptx_atomic_bitwise(stubs.atomic.or_, "or")
 ptx_atomic_bitwise(stubs.atomic.xor, "xor")
 
 
-@lower(stubs.atomic.exch, types.Array, types.intp, types.Any)
-@lower(stubs.atomic.exch, types.Array, types.UniTuple, types.Any)
-@lower(stubs.atomic.exch, types.Array, types.Tuple, types.Any)
+@lower(stubs.atomic.exch, CUDAArray, types.intp, types.Any)
+@lower(stubs.atomic.exch, CUDAArray, types.UniTuple, types.Any)
+@lower(stubs.atomic.exch, CUDAArray, types.Tuple, types.Any)
 @_atomic_dispatcher
 def ptx_atomic_exch(context, builder, dtype, ptr, val):
     if dtype in (cuda.cudadecl.integer_numba_types):
@@ -890,11 +902,15 @@ def ptx_atomic_exch(context, builder, dtype, ptr, val):
         raise TypeError(f"Unimplemented atomic exch with {dtype} array")
 
 
-@lower(stubs.atomic.max, types.Array, types.intp, types.Any)
-@lower(stubs.atomic.max, types.Array, types.Tuple, types.Any)
-@lower(stubs.atomic.max, types.Array, types.UniTuple, types.Any)
+@lower(stubs.atomic.max, CUDAArray, types.intp, types.Any)
+@lower(stubs.atomic.max, CUDAArray, types.Tuple, types.Any)
+@lower(stubs.atomic.max, CUDAArray, types.UniTuple, types.Any)
 @_atomic_dispatcher
 def ptx_atomic_max(context, builder, dtype, ptr, val):
+    # TODO: add variation for different address spaces
+    ptr = builder.addrspacecast(
+        ptr, ir.PointerType(ptr.type.pointee), "generic"
+    )
     lmod = builder.module
     if dtype == types.float64:
         return builder.call(
@@ -914,11 +930,15 @@ def ptx_atomic_max(context, builder, dtype, ptr, val):
         raise TypeError("Unimplemented atomic max with %s array" % dtype)
 
 
-@lower(stubs.atomic.min, types.Array, types.intp, types.Any)
-@lower(stubs.atomic.min, types.Array, types.Tuple, types.Any)
-@lower(stubs.atomic.min, types.Array, types.UniTuple, types.Any)
+@lower(stubs.atomic.min, CUDAArray, types.intp, types.Any)
+@lower(stubs.atomic.min, CUDAArray, types.Tuple, types.Any)
+@lower(stubs.atomic.min, CUDAArray, types.UniTuple, types.Any)
 @_atomic_dispatcher
 def ptx_atomic_min(context, builder, dtype, ptr, val):
+    # TODO: add variation for different address spaces
+    ptr = builder.addrspacecast(
+        ptr, ir.PointerType(ptr.type.pointee), "generic"
+    )
     lmod = builder.module
     if dtype == types.float64:
         return builder.call(
@@ -938,11 +958,15 @@ def ptx_atomic_min(context, builder, dtype, ptr, val):
         raise TypeError("Unimplemented atomic min with %s array" % dtype)
 
 
-@lower(stubs.atomic.nanmax, types.Array, types.intp, types.Any)
-@lower(stubs.atomic.nanmax, types.Array, types.Tuple, types.Any)
-@lower(stubs.atomic.nanmax, types.Array, types.UniTuple, types.Any)
+@lower(stubs.atomic.nanmax, CUDAArray, types.intp, types.Any)
+@lower(stubs.atomic.nanmax, CUDAArray, types.Tuple, types.Any)
+@lower(stubs.atomic.nanmax, CUDAArray, types.UniTuple, types.Any)
 @_atomic_dispatcher
 def ptx_atomic_nanmax(context, builder, dtype, ptr, val):
+    # TODO: add variation for different address spaces
+    ptr = builder.addrspacecast(
+        ptr, ir.PointerType(ptr.type.pointee), "generic"
+    )
     lmod = builder.module
     if dtype == types.float64:
         return builder.call(
@@ -962,11 +986,15 @@ def ptx_atomic_nanmax(context, builder, dtype, ptr, val):
         raise TypeError("Unimplemented atomic max with %s array" % dtype)
 
 
-@lower(stubs.atomic.nanmin, types.Array, types.intp, types.Any)
-@lower(stubs.atomic.nanmin, types.Array, types.Tuple, types.Any)
-@lower(stubs.atomic.nanmin, types.Array, types.UniTuple, types.Any)
+@lower(stubs.atomic.nanmin, CUDAArray, types.intp, types.Any)
+@lower(stubs.atomic.nanmin, CUDAArray, types.Tuple, types.Any)
+@lower(stubs.atomic.nanmin, CUDAArray, types.UniTuple, types.Any)
 @_atomic_dispatcher
 def ptx_atomic_nanmin(context, builder, dtype, ptr, val):
+    # TODO: add variation for different address spaces
+    ptr = builder.addrspacecast(
+        ptr, ir.PointerType(ptr.type.pointee), "generic"
+    )
     lmod = builder.module
     if dtype == types.float64:
         return builder.call(
@@ -993,9 +1021,9 @@ def ptx_atomic_compare_and_swap(context, builder, sig, args):
     return ptx_atomic_cas(context, builder, sig, args)
 
 
-@lower(stubs.atomic.cas, types.Array, types.intp, types.Any, types.Any)
-@lower(stubs.atomic.cas, types.Array, types.Tuple, types.Any, types.Any)
-@lower(stubs.atomic.cas, types.Array, types.UniTuple, types.Any, types.Any)
+@lower(stubs.atomic.cas, CUDAArray, types.intp, types.Any, types.Any)
+@lower(stubs.atomic.cas, CUDAArray, types.Tuple, types.Any, types.Any)
+@lower(stubs.atomic.cas, CUDAArray, types.UniTuple, types.Any, types.Any)
 def ptx_atomic_cas(context, builder, sig, args):
     aryty, indty, oldty, valty = sig.args
     ary, inds, old, val = args

@@ -1,6 +1,5 @@
 import itertools
 from llvmlite import ir
-from numba.core import targetconfig
 from numba.cuda import cgutils
 from .cudadrv import nvvm
 
@@ -24,7 +23,8 @@ def atomic_cmpxchg(builder, lmod, isize, ptr, cmp, val):
 
 
 def declare_atomic_add_float32(lmod, addrspace=0):
-    fname = "llvm.nvvm.atomic.load.add.f32.p0f32"
+    func_addrspace = addrspace if addrspace in {0, 1, 3} else 0
+    fname = f"llvm.nvvm.atomic.load.add.f32.p{func_addrspace}f32"
     fnty = ir.FunctionType(
         ir.FloatType(),
         (ir.PointerType(ir.FloatType(), addrspace), ir.FloatType()),
@@ -33,11 +33,8 @@ def declare_atomic_add_float32(lmod, addrspace=0):
 
 
 def declare_atomic_add_float64(lmod, addrspace=0):
-    flags = targetconfig.ConfigStack().top()
-    if flags.compute_capability >= (6, 0):
-        fname = "llvm.nvvm.atomic.load.add.f64.p0f64"
-    else:
-        fname = "___numba_atomic_double_add"
+    func_addrspace = addrspace if addrspace in {0, 1, 3} else 0
+    fname = f"llvm.nvvm.atomic.load.add.f64.p{func_addrspace}f64"
     fnty = ir.FunctionType(
         ir.DoubleType(),
         (ir.PointerType(ir.DoubleType(), addrspace), ir.DoubleType()),
@@ -64,7 +61,8 @@ def declare_atomic_sub_float64(lmod, addrspace=0):
 
 
 def declare_atomic_inc_int32(lmod, addrspace=0):
-    fname = "llvm.nvvm.atomic.load.inc.32.p0i32"
+    func_addrspace = addrspace if addrspace in {0, 1, 3} else 0
+    fname = f"llvm.nvvm.atomic.load.inc.32.p{func_addrspace}i32"
     fnty = ir.FunctionType(
         ir.IntType(32),
         (ir.PointerType(ir.IntType(32), addrspace), ir.IntType(32)),
@@ -82,7 +80,8 @@ def declare_atomic_inc_int64(lmod, addrspace=0):
 
 
 def declare_atomic_dec_int32(lmod, addrspace=0):
-    fname = "llvm.nvvm.atomic.load.dec.32.p0i32"
+    func_addrspace = addrspace if addrspace in {0, 1, 3} else 0
+    fname = f"llvm.nvvm.atomic.load.dec.32.p{func_addrspace}i32"
     fnty = ir.FunctionType(
         ir.IntType(32),
         (ir.PointerType(ir.IntType(32), addrspace), ir.IntType(32)),
