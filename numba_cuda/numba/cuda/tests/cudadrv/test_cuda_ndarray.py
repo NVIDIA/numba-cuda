@@ -45,6 +45,31 @@ class TestCudaNDArray(CUDATestCase):
         self.assertEqual(ary.shape, dary.shape)
         self.assertEqual(ary.shape[1:], dary.shape[1:])
 
+    def test_device_array_float(self):
+        # Ensure that a float shape raises an TypeError
+        with self.assertRaises(TypeError):
+            cuda.device_array(shape=1.23)
+        with self.assertRaises(TypeError):
+            cuda.device_array(shape=np.float64(1.23))
+        with self.assertRaises(TypeError):
+            cuda.device_array(shape=np.array(1.23))
+
+    def test_device_array_float_vectors(self):
+        # Ensure that np.array, list or tuple inputs with
+        # non-ints raise an TypeError
+        with self.assertRaises(TypeError):
+            cuda.device_array(shape=np.array([1.1]))
+        with self.assertRaises(TypeError):
+            cuda.device_array(shape=[1.1])
+        with self.assertRaises(TypeError):
+            cuda.device_array(shape=(1.1,))
+        with self.assertRaises(TypeError):
+            cuda.device_array(shape=np.array([1.1, 2.2]))
+        with self.assertRaises(TypeError):
+            cuda.device_array(shape=[1.1, 2.2])
+        with self.assertRaises(TypeError):
+            cuda.device_array(shape=(1.1, 2.2))
+
     def test_devicearray(self):
         array = np.arange(100, dtype=np.int32)
         original = array.copy()
