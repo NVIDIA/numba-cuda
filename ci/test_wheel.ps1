@@ -23,7 +23,7 @@ function rapids-logger {
 
 
 $CUDA_VER_MAJOR_MINOR = ($env:CUDA_VER -split '\.')[0..1] -join '.'
-$CUDA_VER_MAJOR = ($CUDA_VER -split '\.')[0] -join '.'
+$CUDA_VER_MAJOR = ($env:CUDA_VER -split '\.')[0] -join '.'
 
 rapids-logger "Install wheel with test dependencies"
 $package = Resolve-Path wheel\numba_cuda*.whl | Select-Object -ExpandProperty Path
