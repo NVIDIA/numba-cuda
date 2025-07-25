@@ -3,6 +3,10 @@ name: "CI: Test wheel on Windows"
 on:
   workflow_call:
     inputs:
+      sha:
+        type: string
+      repo:
+        type: string
       script:
         type: string
         default: "./ci/test_wheel.ps1"
@@ -28,6 +32,11 @@ jobs:
       matrix: ${{ fromJSON('{"ARCH":["amd64"],"PY_VER":["3.12"],"CUDA_VER":["12.9.0"]}') }}
     runs-on: "cuda-python-windows-gpu-github"
     steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: ${{ inputs.repo }}
+          ref: ${{ inputs.sha }}
+          fetch-depth: 0
       - uses: actions/download-artifact@v4
         name: wheel
       - name: Display structure of downloaded files
