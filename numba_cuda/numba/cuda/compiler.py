@@ -12,9 +12,9 @@ from numba.core import (
 )
 from numba.core.compiler import (
     sanitize_compile_result_entries,
-    CompilerBase,
     DefaultPassBuilder,
 )
+from numba.cuda.core.compiler import CompilerBase
 from numba.core.compiler_lock import global_compiler_lock
 from numba.core.compiler_machinery import (
     FunctionPass,
