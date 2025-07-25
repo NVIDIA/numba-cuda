@@ -1,6 +1,6 @@
 import numpy as np
 
-from numba.cuda.testing import unittest, CUDATestCase
+from numba.cuda.testing import unittest, CUDATestCase, skip_on_cudasim
 from numba import cuda
 from numba.core.errors import TypingError
 
@@ -66,6 +66,7 @@ class TestCudaArrayReturn(CUDATestCase):
         assert a[0, 0] == 0
         assert a[2, 4] == 1
 
+    @skip_on_cudasim("type inference is unsupported in the simulator")
     def test_array_local(self):
         f = cuda.jit(device=True)(array_local)
 
