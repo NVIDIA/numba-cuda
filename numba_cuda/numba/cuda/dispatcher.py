@@ -186,10 +186,6 @@ class _Kernel(serialize.ReduceMixin):
 
         # Link to the helper library functions if needed
         link_to_library_functions(reshape_funcs, "reshape_funcs.cu")
-        # Link to the CUDA FP16 math library functions if needed
-        link_to_library_functions(
-            cuda_fp16_math_funcs, "cpp_function_wrappers.cu", "__numba_wrapper_"
-        )
 
         self.maybe_link_nrt(link, tgt_ctx, asm)
 

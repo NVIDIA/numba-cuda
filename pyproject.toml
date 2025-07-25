@@ -130,6 +130,7 @@ exclude = [
     "*.c",
     "*.h",
     "cuda_bf16.py",
+    "cuda_fp16.py",
 ]
 
 [tool.ruff.lint.per-file-ignores]

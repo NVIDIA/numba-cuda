@@ -3,7 +3,6 @@ import numpy as np
 import operator
 import re
 from numba import cuda, int64
-from numba.cuda import compile_ptx
 from numba.core.errors import TypingError
 from numba.core.types import f2
 from numba.cuda.testing import (
@@ -11,6 +10,7 @@ from numba.cuda.testing import (
     CUDATestCase,
     skip_on_cudasim,
     skip_unless_cc_53,
+    skip_if_nvjitlink_missing,
 )
 
 
@@ -565,13 +565,13 @@ class TestCudaIntrinsic(CUDATestCase):
 
     def test_popc_u1(self):
         compiled = cuda.jit("void(int32[:], uint8)")(simple_popc)
-        ary = np.zeros(1, dtype=np.int8)
+        ary = np.zeros(1, dtype=np.int32)
         compiled[1, 1](ary, np.uint8(0xFF))
         self.assertEqual(ary[0], 8)
 
     def test_popc_u2(self):
         compiled = cuda.jit("void(int32[:], uint16)")(simple_popc)
-        ary = np.zeros(1, dtype=np.int16)
+        ary = np.zeros(1, dtype=np.int32)
         compiled[1, 1](ary, np.uint16(0xFFFF))
         self.assertEqual(ary[0], 16)
 
@@ -589,13 +589,13 @@ class TestCudaIntrinsic(CUDATestCase):
 
     def test_bit_count_u1(self):
         compiled = cuda.jit("void(int32[:], uint8)")(simple_bit_count)
-        ary = np.zeros(1, dtype=np.int8)
+        ary = np.zeros(1, dtype=np.int32)
         compiled[1, 1](ary, np.uint8(0xFF))
         self.assertEqual(ary[0], 8)
 
     def test_bit_count_u2(self):
         compiled = cuda.jit("void(int32[:], uint16)")(simple_bit_count)
-        ary = np.zeros(1, dtype=np.int16)
+        ary = np.zeros(1, dtype=np.int32)
         compiled[1, 1](ary, np.uint16(0xFFFF))
         self.assertEqual(ary[0], 16)
 
@@ -643,9 +643,11 @@ class TestCudaIntrinsic(CUDATestCase):
         np.testing.assert_allclose(ary[0], ref)
 
     @skip_on_cudasim("Compilation unsupported in the simulator")
+    @skip_if_nvjitlink_missing("Numbast generated bindings")
     def test_hadd_ptx(self):
+        compiled = cuda.jit("void(f2[:], f2, f2)", lto=True)(simple_hadd_scalar)
         args = (f2[:], f2, f2)
-        ptx, _ = compile_ptx(simple_hadd_scalar, args)
+        ptx = compiled.inspect_lto_ptx(args)
         self.assertIn("add.f16", ptx)
 
     @skip_unless_cc_53
@@ -670,9 +672,13 @@ class TestCudaIntrinsic(CUDATestCase):
         np.testing.assert_allclose(ary[0], ref)
 
     @skip_on_cudasim("Compilation unsupported in the simulator")
+    @skip_if_nvjitlink_missing("Numbast generated bindings")
     def test_hfma_ptx(self):
+        compiled = cuda.jit("void(f2[:], f2, f2, f2)", lto=True)(
+            simple_hfma_scalar
+        )
         args = (f2[:], f2, f2, f2)
-        ptx, _ = compile_ptx(simple_hfma_scalar, args)
+        ptx = compiled.inspect_lto_ptx(args)
         self.assertIn("fma.rn.f16", ptx)
 
     @skip_unless_cc_53
@@ -695,14 +701,16 @@ class TestCudaIntrinsic(CUDATestCase):
         np.testing.assert_allclose(ary[0], ref)
 
     @skip_on_cudasim("Compilation unsupported in the simulator")
+    @skip_if_nvjitlink_missing("Numbast generated bindings")
     def test_hsub_ptx(self):
+        compiled = cuda.jit("void(f2[:], f2, f2)", lto=True)(simple_hsub_scalar)
         args = (f2[:], f2, f2)
-        ptx, _ = compile_ptx(simple_hsub_scalar, args)
+        ptx = compiled.inspect_lto_ptx(args)
         self.assertIn("sub.f16", ptx)
 
     @skip_unless_cc_53
     def test_hmul(self):
-        compiled = cuda.jit()(simple_hmul)
+        compiled = cuda.jit(simple_hmul)
         ary = np.zeros(1, dtype=np.float16)
         arg1 = np.array([3.0], dtype=np.float16)
         arg2 = np.array([4.0], dtype=np.float16)
@@ -720,9 +728,11 @@ class TestCudaIntrinsic(CUDATestCase):
         np.testing.assert_allclose(ary[0], ref)
 
     @skip_on_cudasim("Compilation unsupported in the simulator")
+    @skip_if_nvjitlink_missing("Numbast generated bindings")
     def test_hmul_ptx(self):
+        compiled = cuda.jit("void(f2[:], f2, f2)", lto=True)(simple_hmul_scalar)
         args = (f2[:], f2, f2)
-        ptx, _ = compile_ptx(simple_hmul_scalar, args)
+        ptx = compiled.inspect_lto_ptx(args)
         self.assertIn("mul.f16", ptx)
 
     @skip_unless_cc_53
@@ -765,14 +775,16 @@ class TestCudaIntrinsic(CUDATestCase):
         np.testing.assert_allclose(ary[0], ref)
 
     @skip_on_cudasim("Compilation unsupported in the simulator")
+    @skip_if_nvjitlink_missing("Numbast generated bindings")
     def test_hneg_ptx(self):
+        compiled = cuda.jit("void(f2[:], f2)", lto=True)(simple_hneg_scalar)
         args = (f2[:], f2)
-        ptx, _ = compile_ptx(simple_hneg_scalar, args)
+        ptx = compiled.inspect_lto_ptx(args)
         self.assertIn("neg.f16", ptx)
 
     @skip_unless_cc_53
     def test_habs(self):
-        compiled = cuda.jit()(simple_habs)
+        compiled = cuda.jit(simple_habs)
         ary = np.zeros(1, dtype=np.float16)
         arg1 = np.array([-3.0], dtype=np.float16)
         compiled[1, 1](ary, arg1)
@@ -788,9 +800,11 @@ class TestCudaIntrinsic(CUDATestCase):
         np.testing.assert_allclose(ary[0], ref)
 
     @skip_on_cudasim("Compilation unsupported in the simulator")
+    @skip_if_nvjitlink_missing("Numbast generated bindings")
     def test_habs_ptx(self):
+        compiled = cuda.jit("void(f2[:], f2)", lto=True)(simple_habs_scalar)
         args = (f2[:], f2)
-        ptx, _ = compile_ptx(simple_habs_scalar, args)
+        ptx = compiled.inspect_lto_ptx(args)
         self.assertIn("abs.f16", ptx)
 
     @skip_unless_cc_53

@@ -1,4 +1,3 @@
-import operator
 from numba.core import errors, types
 from numba.core.typing.npydecl import (
     parse_dtype,
@@ -19,9 +18,7 @@ from numba.core.typing.templates import (
     Registry,
 )
 from numba.cuda.types import dim3, CUDAArray
-from numba.core.typeconv import Conversion
 from numba import cuda
-from numba.cuda.compiler import declare_device_function
 from numba.cuda.cudadrv import nvvm
 
 registry = Registry()
@@ -198,14 +195,6 @@ class Cuda_fma(ConcreteTemplate):
 
 
 @register
-class Cuda_hfma(ConcreteTemplate):
-    key = cuda.fp16.hfma
-    cases = [
-        signature(types.float16, types.float16, types.float16, types.float16)
-    ]
-
-
-@register
 class Cuda_cbrt(ConcreteTemplate):
     key = cuda.cbrt
     cases = [
@@ -290,37 +279,6 @@ class Cuda_selp(AbstractTemplate):
         return signature(a, test, a, a)
 
 
-def _genfp16_unary(l_key):
-    @register
-    class Cuda_fp16_unary(ConcreteTemplate):
-        key = l_key
-        cases = [signature(types.float16, types.float16)]
-
-    return Cuda_fp16_unary
-
-
-def _genfp16_unary_operator(l_key):
-    @register_global(l_key)
-    class Cuda_fp16_unary(AbstractTemplate):
-        key = l_key
-
-        def generic(self, args, kws):
-            assert not kws
-            if len(args) == 1 and args[0] == types.float16:
-                return signature(types.float16, types.float16)
-
-    return Cuda_fp16_unary
-
-
-def _genfp16_binary(l_key):
-    @register
-    class Cuda_fp16_binary(ConcreteTemplate):
-        key = l_key
-        cases = [signature(types.float16, types.float16, types.float16)]
-
-    return Cuda_fp16_binary
-
-
 @register_global(float)
 class Float(AbstractTemplate):
     def generic(self, args, kws):
@@ -330,16 +288,6 @@ class Float(AbstractTemplate):
 
         if arg == types.float16:
             return signature(arg, arg)
-
-
-def _genfp16_binary_comparison(l_key):
-    @register
-    class Cuda_fp16_cmp(ConcreteTemplate):
-        key = l_key
-
-        cases = [signature(types.b1, types.float16, types.float16)]
-
-    return Cuda_fp16_cmp
 
 
 # If multiple ConcreteTemplates provide typing for a single function, then
@@ -354,124 +302,6 @@ def _genfp16_binary_comparison(l_key):
 # This is tracked as Issue #7863 (https://github.com/numba/numba/issues/7863) -
 # once this is resolved it should be possible to replace this AbstractTemplate
 # with a ConcreteTemplate to simplify the logic.
-
-
-def _fp16_binary_operator(l_key, retty):
-    @register_global(l_key)
-    class Cuda_fp16_operator(AbstractTemplate):
-        key = l_key
-
-        def generic(self, args, kws):
-            assert not kws
-
-            if len(args) == 2 and (
-                args[0] == types.float16 or args[1] == types.float16
-            ):
-                if args[0] == types.float16:
-                    convertible = self.context.can_convert(args[1], args[0])
-                else:
-                    convertible = self.context.can_convert(args[0], args[1])
-
-                # We allow three cases here:
-                #
-                # 1. fp16 to fp16 - Conversion.exact
-                # 2. fp16 to other types fp16 can be promoted to
-                #  - Conversion.promote
-                # 3. fp16 to int8 (safe conversion) -
-                #  - Conversion.safe
-
-                if (
-                    (convertible == Conversion.exact)
-                    or (convertible == Conversion.promote)
-                    or (convertible == Conversion.safe)
-                ):
-                    return signature(retty, types.float16, types.float16)
-
-    return Cuda_fp16_operator
-
-
-def _genfp16_comparison_operator(op):
-    return _fp16_binary_operator(op, types.b1)
-
-
-def _genfp16_binary_operator(op):
-    return _fp16_binary_operator(op, types.float16)
-
-
-Cuda_hadd = _genfp16_binary(cuda.fp16.hadd)
-Cuda_add = _genfp16_binary_operator(operator.add)
-Cuda_iadd = _genfp16_binary_operator(operator.iadd)
-Cuda_hsub = _genfp16_binary(cuda.fp16.hsub)
-Cuda_sub = _genfp16_binary_operator(operator.sub)
-Cuda_isub = _genfp16_binary_operator(operator.isub)
-Cuda_hmul = _genfp16_binary(cuda.fp16.hmul)
-Cuda_mul = _genfp16_binary_operator(operator.mul)
-Cuda_imul = _genfp16_binary_operator(operator.imul)
-Cuda_hmax = _genfp16_binary(cuda.fp16.hmax)
-Cuda_hmin = _genfp16_binary(cuda.fp16.hmin)
-Cuda_hneg = _genfp16_unary(cuda.fp16.hneg)
-Cuda_neg = _genfp16_unary_operator(operator.neg)
-Cuda_habs = _genfp16_unary(cuda.fp16.habs)
-Cuda_abs = _genfp16_unary_operator(abs)
-Cuda_heq = _genfp16_binary_comparison(cuda.fp16.heq)
-_genfp16_comparison_operator(operator.eq)
-Cuda_hne = _genfp16_binary_comparison(cuda.fp16.hne)
-_genfp16_comparison_operator(operator.ne)
-Cuda_hge = _genfp16_binary_comparison(cuda.fp16.hge)
-_genfp16_comparison_operator(operator.ge)
-Cuda_hgt = _genfp16_binary_comparison(cuda.fp16.hgt)
-_genfp16_comparison_operator(operator.gt)
-Cuda_hle = _genfp16_binary_comparison(cuda.fp16.hle)
-_genfp16_comparison_operator(operator.le)
-Cuda_hlt = _genfp16_binary_comparison(cuda.fp16.hlt)
-_genfp16_comparison_operator(operator.lt)
-_genfp16_binary_operator(operator.truediv)
-_genfp16_binary_operator(operator.itruediv)
-
-
-def _resolve_wrapped_unary(fname):
-    link = tuple()
-    decl = declare_device_function(
-        f"__numba_wrapper_{fname}",
-        types.float16,
-        (types.float16,),
-        link,
-        use_cooperative=False,
-    )
-    return types.Function(decl)
-
-
-def _resolve_wrapped_binary(fname):
-    link = tuple()
-    decl = declare_device_function(
-        f"__numba_wrapper_{fname}",
-        types.float16,
-        (
-            types.float16,
-            types.float16,
-        ),
-        link,
-        use_cooperative=False,
-    )
-    return types.Function(decl)
-
-
-hsin_device = _resolve_wrapped_unary("hsin")
-hcos_device = _resolve_wrapped_unary("hcos")
-hlog_device = _resolve_wrapped_unary("hlog")
-hlog10_device = _resolve_wrapped_unary("hlog10")
-hlog2_device = _resolve_wrapped_unary("hlog2")
-hexp_device = _resolve_wrapped_unary("hexp")
-hexp10_device = _resolve_wrapped_unary("hexp10")
-hexp2_device = _resolve_wrapped_unary("hexp2")
-hsqrt_device = _resolve_wrapped_unary("hsqrt")
-hrsqrt_device = _resolve_wrapped_unary("hrsqrt")
-hfloor_device = _resolve_wrapped_unary("hfloor")
-hceil_device = _resolve_wrapped_unary("hceil")
-hrcp_device = _resolve_wrapped_unary("hrcp")
-hrint_device = _resolve_wrapped_unary("hrint")
-htrunc_device = _resolve_wrapped_unary("htrunc")
-hdiv_device = _resolve_wrapped_binary("hdiv")
 
 
 # generate atomic operations
@@ -651,101 +481,6 @@ class CudaAtomicTemplate(AttributeTemplate):
 
 
 @register_attr
-class CudaFp16Template(AttributeTemplate):
-    key = types.Module(cuda.fp16)
-
-    def resolve_hadd(self, mod):
-        return types.Function(Cuda_hadd)
-
-    def resolve_hsub(self, mod):
-        return types.Function(Cuda_hsub)
-
-    def resolve_hmul(self, mod):
-        return types.Function(Cuda_hmul)
-
-    def resolve_hdiv(self, mod):
-        return hdiv_device
-
-    def resolve_hneg(self, mod):
-        return types.Function(Cuda_hneg)
-
-    def resolve_habs(self, mod):
-        return types.Function(Cuda_habs)
-
-    def resolve_hfma(self, mod):
-        return types.Function(Cuda_hfma)
-
-    def resolve_hsin(self, mod):
-        return hsin_device
-
-    def resolve_hcos(self, mod):
-        return hcos_device
-
-    def resolve_hlog(self, mod):
-        return hlog_device
-
-    def resolve_hlog10(self, mod):
-        return hlog10_device
-
-    def resolve_hlog2(self, mod):
-        return hlog2_device
-
-    def resolve_hexp(self, mod):
-        return hexp_device
-
-    def resolve_hexp10(self, mod):
-        return hexp10_device
-
-    def resolve_hexp2(self, mod):
-        return hexp2_device
-
-    def resolve_hfloor(self, mod):
-        return hfloor_device
-
-    def resolve_hceil(self, mod):
-        return hceil_device
-
-    def resolve_hsqrt(self, mod):
-        return hsqrt_device
-
-    def resolve_hrsqrt(self, mod):
-        return hrsqrt_device
-
-    def resolve_hrcp(self, mod):
-        return hrcp_device
-
-    def resolve_hrint(self, mod):
-        return hrint_device
-
-    def resolve_htrunc(self, mod):
-        return htrunc_device
-
-    def resolve_heq(self, mod):
-        return types.Function(Cuda_heq)
-
-    def resolve_hne(self, mod):
-        return types.Function(Cuda_hne)
-
-    def resolve_hge(self, mod):
-        return types.Function(Cuda_hge)
-
-    def resolve_hgt(self, mod):
-        return types.Function(Cuda_hgt)
-
-    def resolve_hle(self, mod):
-        return types.Function(Cuda_hle)
-
-    def resolve_hlt(self, mod):
-        return types.Function(Cuda_hlt)
-
-    def resolve_hmax(self, mod):
-        return types.Function(Cuda_hmax)
-
-    def resolve_hmin(self, mod):
-        return types.Function(Cuda_hmin)
-
-
-@register_attr
 class CudaModuleTemplate(AttributeTemplate):
     key = types.Module(cuda)
 
@@ -823,9 +558,6 @@ class CudaModuleTemplate(AttributeTemplate):
 
     def resolve_atomic(self, mod):
         return types.Module(cuda.atomic)
-
-    def resolve_fp16(self, mod):
-        return types.Module(cuda.fp16)
 
     def resolve_const(self, mod):
         return types.Module(cuda.const)
