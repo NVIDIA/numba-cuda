@@ -32,6 +32,13 @@ jobs:
       matrix: ${{ fromJSON('{"ARCH":["amd64"],"PY_VER":["3.12"],"CUDA_VER":["12.9.0"]}') }}
     runs-on: "cuda-python-windows-gpu-github"
     steps:
+      - name: Update driver
+        run: |
+          .github/workflows/install_gpu_driver.ps1
+
+      - name: Ensure GPU is working
+        run: nvidia-smi
+
       - uses: actions/checkout@v4
         with:
           repository: ${{ inputs.repo }}
