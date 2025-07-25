@@ -17,7 +17,7 @@ jobs:
         id: compute-matrix
         run: |
           set -eo pipefail
-          MATRIX='{ ARCH: "amd64", PY_VER: "3.12", CUDA_VER: "12.9.0" }'
+          MATRIX="{ ARCH: 'amd64', PY_VER: '3.12', CUDA_VER: '12.9.0' }"
           echo "MATRIX=${MATRIX}" | tee --append "${GITHUB_OUTPUT}"
   tests:
     name: ${{ matrix.CUDA_VER }}, ${{ matrix.PY_VER }}, ${{ matrix.ARCH }}, windows
