@@ -1,7 +1,7 @@
 from llvmlite import ir
 
 from numba import cuda, types
-from numba.core import cgutils
+from numba.cuda import cgutils
 from numba.core.errors import RequireLiteralValue, TypingError
 from numba.core.typing import signature
 from numba.core.extending import overload_attribute, overload_method

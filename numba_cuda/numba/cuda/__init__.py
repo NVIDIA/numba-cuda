@@ -1,5 +1,4 @@
 import importlib
-from numba import runtests
 from numba.core import config
 from .utils import _readenv
 import warnings
@@ -94,10 +93,3 @@ numba_cuda_default_ptx_cc = (7, 5)
 
 if numba_cuda_default_ptx_cc > config_default_cc:
     config.CUDA_DEFAULT_PTX_CC = numba_cuda_default_ptx_cc
-
-
-def test(*args, **kwargs):
-    if not is_available():
-        raise cuda_error()
-
-    return runtests.main("numba.cuda.tests", *args, **kwargs)

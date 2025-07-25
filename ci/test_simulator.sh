@@ -18,6 +18,8 @@ set +u
 conda activate test
 set -u
 
+pip install filecheck
+
 rapids-mamba-retry install -c `pwd`/conda-repo numba-cuda
 
 RAPIDS_TESTS_DIR=${RAPIDS_TESTS_DIR:-"${PWD}/test-results"}/
@@ -35,7 +37,7 @@ set +e
 
 rapids-logger "Run Tests"
 export NUMBA_ENABLE_CUDASIM=1
-python -m numba.runtests numba.cuda.tests -v
+pytest --pyargs numba.cuda.tests -v
 
 popd
 

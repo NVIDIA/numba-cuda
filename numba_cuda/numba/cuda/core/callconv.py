@@ -1,4 +1,5 @@
-from numba.core import cgutils, types
+from numba.core import types
+from numba.cuda import cgutils
 from collections import namedtuple
 
 from llvmlite import ir

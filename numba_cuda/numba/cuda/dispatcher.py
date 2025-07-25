@@ -4,7 +4,8 @@ import sys
 import ctypes
 import functools
 
-from numba.core import config, serialize, sigutils, types, typing, utils
+from numba.core import serialize, sigutils, types, typing, config
+from numba.cuda import utils
 from numba.core.caching import Cache, CacheImpl
 from numba.core.compiler_lock import global_compiler_lock
 from numba.core.dispatcher import Dispatcher
@@ -185,10 +186,6 @@ class _Kernel(serialize.ReduceMixin):
 
         # Link to the helper library functions if needed
         link_to_library_functions(reshape_funcs, "reshape_funcs.cu")
-        # Link to the CUDA FP16 math library functions if needed
-        link_to_library_functions(
-            cuda_fp16_math_funcs, "cpp_function_wrappers.cu", "__numba_wrapper_"
-        )
 
         self.maybe_link_nrt(link, tgt_ctx, asm)
 
@@ -383,6 +380,12 @@ class _Kernel(serialize.ReduceMixin):
         Returns the PTX code for this kernel.
         """
         return self._codelibrary.get_asm_str(cc=cc)
+
+    def inspect_lto_ptx(self, cc):
+        """
+        Returns the PTX code for the external functions linked to this kernel.
+        """
+        return self._codelibrary.get_lto_ptx(cc=cc)
 
     def inspect_sass_cfg(self):
         """
@@ -1166,6 +1169,34 @@ class CUDADispatcher(Dispatcher, serialize.ReduceMixin):
             else:
                 return {
                     sig: overload.inspect_asm(cc)
+                    for sig, overload in self.overloads.items()
+                }
+
+    def inspect_lto_ptx(self, signature=None):
+        """
+        Return link-time optimized PTX code for the given signature.
+
+        :param signature: A tuple of argument types.
+        :return: The PTX code for the given signature, or a dict of PTX codes
+                 for all previously-encountered signatures.
+        """
+        cc = get_current_device().compute_capability
+        device = self.targetoptions.get("device")
+
+        if signature is not None:
+            if device:
+                return self.overloads[signature].library.get_lto_ptx(cc)
+            else:
+                return self.overloads[signature].inspect_lto_ptx(cc)
+        else:
+            if device:
+                return {
+                    sig: overload.library.get_lto_ptx(cc)
+                    for sig, overload in self.overloads.items()
+                }
+            else:
+                return {
+                    sig: overload.inspect_lto_ptx(cc)
                     for sig, overload in self.overloads.items()
                 }
 

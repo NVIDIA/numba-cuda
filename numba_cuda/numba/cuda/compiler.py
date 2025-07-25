@@ -1,15 +1,14 @@
 from llvmlite import ir
 from collections import namedtuple
 from numba.core import ir as numba_ir
+from numba.cuda import cgutils
 from numba.core import (
-    cgutils,
     types,
     typing,
     funcdesc,
     config,
     compiler,
     sigutils,
-    utils,
     errors,
 )
 from numba.core.compiler import (
@@ -43,7 +42,7 @@ from numba.cuda.cudadrv import nvvm, nvrtc
 from numba.cuda.descriptor import cuda_target
 from numba.cuda.flags import CUDAFlags
 from numba.cuda.target import CUDACABICallConv
-from numba.cuda import lowering
+from numba.cuda import lowering, utils
 
 
 # The CUDACompileResult (CCR) has a specially-defined entry point equal to its

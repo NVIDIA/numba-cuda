@@ -35,6 +35,33 @@ into three categories:
 Remember, if you are unsure about anything, don't hesitate to comment on issues
 and ask for clarifications!
 
+## Pre-commit checks
+
+Numba-CUDA uses [`pre-commit`](https://pre-commit.com/) to run a number of style
+checks in CI. To ensure your contribution will pass the checks, you can also set
+up pre-commit locally to run the checks prior to committing.
+
+To set up pre-commit with Numba-CUDA, run
+
+```
+pip install pre-commit
+```
+
+or
+
+```
+conda install pre-commit
+```
+
+depending on your package manager, then run
+
+```
+pre-commit install
+```
+
+in the root of the Numba-CUDA repository to set up the pre-commit hooks to run
+checks prior to each commit.
+
 ## Releases
 
 The release process for Numba-CUDA involves the following steps:

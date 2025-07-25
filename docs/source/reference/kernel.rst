@@ -507,6 +507,8 @@ precision parts of the CUDA Toolkit documentation.
 16-bit Floating Point Intrinsics
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+.. warning:: Starting numba 0.18, LTO is required for performant float16 operations.
+
 The functions in the ``cuda.fp16`` module are used to operate on 16-bit
 floating point operands. These functions return a 16-bit floating point result.
 
