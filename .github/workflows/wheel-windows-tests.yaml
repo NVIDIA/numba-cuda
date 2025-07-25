@@ -21,7 +21,7 @@ jobs:
         id: compute-matrix
         run: |
           set -eo pipefail
-          export TEST_MATRIX="{ ARCH: 'amd64', PY_VER: '3.12', CUDA_VER: '12.9.0' }"
+          export TEST_MATRIX="{ ARCH: 'amd64', PY_VER: '3.12', CUDA_VER: '12.8.0' }"
           MATRIX=$(yq -n -o json 'env(TEST_MATRIX)' | jq -c)
           echo "MATRIX=${MATRIX}" | tee --append "${GITHUB_OUTPUT}"
   tests:
@@ -29,7 +29,7 @@ jobs:
     needs: compute-matrix
     strategy:
       fail-fast: false
-      matrix: ${{ fromJSON('{"ARCH":["amd64"],"PY_VER":["3.12"],"CUDA_VER":["12.9.0"]}') }}
+      matrix: ${{ fromJSON('{"ARCH":["amd64"],"PY_VER":["3.12"],"CUDA_VER":["12.8.0"]}') }}
     runs-on: "cuda-python-windows-gpu-github"
     steps:
       - uses: actions/checkout@v4
