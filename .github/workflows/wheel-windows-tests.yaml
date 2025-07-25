@@ -5,7 +5,7 @@ on:
     inputs:
       script:
         type: string
-        default: "ci/test_wheel.ps1"
+        default: "./ci/test_wheel.ps1"
 
 jobs:
   compute-matrix:
@@ -33,6 +33,7 @@ jobs:
       - name: Display structure of downloaded files
         run: Get-ChildItem -Recurse
       - name: Python tests
-        run: ${{ inputs.script }}
+        run: |
+          ${{ inputs.script }}
         env:
           CUDA_VER: ${{ matrix.CUDA_VER }}
