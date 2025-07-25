@@ -22,6 +22,7 @@ jobs:
 #      - test-conda-ctypes-binding
 #      - test-simulator
       - build-wheels
+      - test-wheels-windows
 #      - test-wheels
 #      - test-wheels-ctypes-binding
 #      - test-wheels-deps-wheels
