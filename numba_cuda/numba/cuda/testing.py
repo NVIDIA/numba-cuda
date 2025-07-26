@@ -1,7 +1,6 @@
 import os
 import platform
 import shutil
-
 from numba.core.utils import PYVERSION
 from numba.cuda.cuda_paths import get_conda_ctk
 from numba.cuda.cudadrv import driver, devices, libs
@@ -9,12 +8,14 @@ from numba.cuda.dispatcher import CUDADispatcher
 from numba.core import config
 from numba.tests.support import TestCase
 from pathlib import Path
-from typing import Union
+
+from typing import Iterable, Union
 from io import StringIO
 import unittest
 
 if PYVERSION >= (3, 10):
-    from filecheck.matcher import Matcher, Options
+    from filecheck.matcher import Matcher
+    from filecheck.options import Options
     from filecheck.parser import Parser, pattern_for_opts
     from filecheck.finput import FInput
 
@@ -22,7 +23,7 @@ numba_cuda_dir = Path(__file__).parent
 test_data_dir = numba_cuda_dir / "tests" / "data"
 
 
-class FileCheckTestCaseMixin:
+class FileCheckTestCaseMixin(unittest.TestCase):
     """
     Mixin for tests that use FileCheck.
 
@@ -34,56 +35,81 @@ class FileCheckTestCaseMixin:
     matches FileCheck checks, and is not specific to CUDADispatcher.
     """
 
+    Signature = Union[tuple[type, ...], None]
+
+    def _getIRContent(
+        self,
+        ir_result: Union[dict[Signature, str], str],
+        signature: Union[Signature, None] = None,
+    ) -> Iterable[str]:
+        if isinstance(ir_result, str):
+            assert signature is None, (
+                "Cannot use signature because the kernel was only compiled for one signature"
+            )
+            return [ir_result]
+
+        if signature is None:
+            return list(ir_result.values())
+
+        return [ir_result[signature]]
+
     def assertFileCheckAsm(
         self,
         ir_producer: CUDADispatcher,
         signature: Union[tuple[type, ...], None] = None,
-        check_prefixes: list[str] = ("ASM",),
-        **extra_filecheck_options: dict[str, Union[str, int]],
+        check_prefixes: tuple[str] = ("ASM",),
+        **extra_filecheck_options,
     ) -> None:
         """
         Assert that the assembly output of the given CUDADispatcher matches
         the FileCheck checks given in the kernel's docstring.
         """
-        ir_content = ir_producer.inspect_asm()
-        if signature:
-            ir_content = ir_content[signature]
-        check_patterns = ir_producer.__doc__
-        self.assertFileCheckMatches(
-            ir_content,
-            check_patterns=check_patterns,
-            check_prefixes=check_prefixes,
-            **extra_filecheck_options,
+        ir_contents = self._getIRContent(ir_producer.inspect_asm(), signature)
+        assert ir_contents
+        assert ir_producer.__doc__ is not None, (
+            "Kernel docstring is required. To pass checks explicitly, use assertFileCheckMatches."
         )
+        check_patterns = ir_producer.__doc__
+        for ir_content in ir_contents:
+            self.assertFileCheckMatches(
+                ir_content,
+                check_patterns=check_patterns,
+                check_prefixes=check_prefixes,
+                **extra_filecheck_options,
+            )
 
     def assertFileCheckLLVM(
         self,
         ir_producer: CUDADispatcher,
         signature: Union[tuple[type, ...], None] = None,
-        check_prefixes: list[str] = ("LLVM",),
-        **extra_filecheck_options: dict[str, Union[str, int]],
+        check_prefixes: tuple[str] = ("LLVM",),
+        **extra_filecheck_options,
     ) -> None:
         """
         Assert that the LLVM IR output of the given CUDADispatcher matches
         the FileCheck checks given in the kernel's docstring.
         """
-        ir_content = ir_producer.inspect_llvm()
-        if signature:
-            ir_content = ir_content[signature]
-        check_patterns = ir_producer.__doc__
-        self.assertFileCheckMatches(
-            ir_content,
-            check_patterns=check_patterns,
-            check_prefixes=check_prefixes,
-            **extra_filecheck_options,
+        ir_contents = self._getIRContent(ir_producer.inspect_llvm(), signature)
+        assert ir_contents
+        assert ir_producer.__doc__ is not None, (
+            "Kernel docstring is required. To pass checks explicitly, use assertFileCheckMatches."
         )
+        check_patterns = ir_producer.__doc__
+        for ir_content in ir_contents:
+            assert ir_content
+            self.assertFileCheckMatches(
+                ir_content,
+                check_patterns=check_patterns,
+                check_prefixes=check_prefixes,
+                **extra_filecheck_options,
+            )
 
     def assertFileCheckMatches(
         self,
         ir_content: str,
         check_patterns: str,
-        check_prefixes: list[str] = ("CHECK",),
-        **extra_filecheck_options: dict[str, Union[str, int]],
+        check_prefixes: tuple[str] = ("CHECK",),
+        **extra_filecheck_options,
     ) -> None:
         """
         Assert that the given string matches the passed FileCheck checks.
@@ -98,7 +124,7 @@ class FileCheckTestCaseMixin:
             self.skipTest("FileCheck requires Python 3.10 or later")
         opts = Options(
             match_filename="-",
-            check_prefixes=check_prefixes,
+            check_prefixes=list(check_prefixes),
             **extra_filecheck_options,
         )
         input_file = FInput(fname="-", content=ir_content)
@@ -107,11 +133,22 @@ class FileCheckTestCaseMixin:
         matcher.stderr = StringIO()
         result = matcher.run()
         if result != 0:
+            ir_dump = Path("numba-test-failure.ll")
+            should_dump = os.getenv("NUMBA_DUMP_FAILED_FILECHECK_TESTS") == "1"
+            dump_instructions = ""
+            if should_dump:
+                with open(ir_dump, "w") as f:
+                    _ = f.write(ir_content)
+                    _ = f.write("\n\n")
+                    _ = f.write(check_patterns)
+                    dump_instructions = f"Run yourself with:\n\nfilecheck --check-prefixes={','.join(check_prefixes)} {ir_dump} --input-file={ir_dump}"
+
             self.fail(
                 f"FileCheck failed:\n{matcher.stderr.getvalue()}\n\n"
-                f"Check prefixes:\n{check_prefixes}\n\n"
-                f"Check patterns:\n{check_patterns}\n"
-                f"IR:\n{ir_content}\n\n"
+                + f"Check prefixes:\n{check_prefixes}\n\n"
+                + f"Check patterns:\n{check_patterns}\n"
+                + f"IR:\n{ir_content}\n\n"
+                + dump_instructions
             )
 
 
@@ -231,8 +268,8 @@ def skip_if_mvc_enabled(reason):
 def skip_if_mvc_libraries_unavailable(fn):
     libs_available = False
     try:
-        import cubinlinker  # noqa: F401
-        import ptxcompiler  # noqa: F401
+        import cubinlinker  # noqa: F401 # type: ignore
+        import ptxcompiler  # noqa: F401 # type: ignore
 
         libs_available = True
     except ImportError:
