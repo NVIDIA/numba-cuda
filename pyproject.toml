@@ -92,6 +92,8 @@ include = ["numba_cuda*"]
 minversion = "8.0"
 testpaths = ["numba_cuda/numba/cuda/tests"]
 consider_namespace_packages = true
+# loadscope ensures the grouping required by CUDATestCase
+addopts = "--dist loadscope"
 
 [tool.ruff]
 line-length = 80
