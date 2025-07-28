@@ -768,13 +768,10 @@ _CompileStats = collections.namedtuple(
 
 
 class _FunctionCompiler(object):
-    def __init__(
-        self, py_func, targetdescr, targetoptions, locals, pipeline_class
-    ):
+    def __init__(self, py_func, targetdescr, targetoptions, pipeline_class):
         self.py_func = py_func
         self.targetdescr = targetdescr
         self.targetoptions = targetoptions
-        self.locals = locals
         self.pysig = utils.pysignature(self.py_func)
         self.pipeline_class = pipeline_class
         # Remember key=(args, return_type) combinations that will fail
@@ -845,7 +842,7 @@ class _FunctionCompiler(object):
             args=args,
             return_type=return_type,
             flags=flags,
-            locals=self.locals,
+            locals={},
             pipeline_class=self.pipeline_class,
         )
         # Check typing error if object mode is used
@@ -886,9 +883,6 @@ class CUDADispatcher(serialize.ReduceMixin, _MemoMixin, _DispatcherBase):
         Parameters
         ----------
         py_func: function object to be compiled
-        locals: dict, optional
-            Mapping of local variable names to Numba types.  Used to override
-            the types deduced by the type inference engine.
         targetoptions: dict, optional
             Target-specific config options.
         pipeline_class: type numba.compiler.CompilerBase
@@ -913,11 +907,10 @@ class CUDADispatcher(serialize.ReduceMixin, _MemoMixin, _DispatcherBase):
         functools.update_wrapper(self, py_func)
 
         self.targetoptions = targetoptions
-        self.locals = locals
         self._cache = NullCache()
         compiler_class = _FunctionCompiler
         self._compiler = compiler_class(
-            py_func, self.targetdescr, targetoptions, locals, pipeline_class
+            py_func, self.targetdescr, targetoptions, pipeline_class
         )
         self._cache_hits = collections.Counter()
         self._cache_misses = collections.Counter()
