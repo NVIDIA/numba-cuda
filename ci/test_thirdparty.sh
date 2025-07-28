@@ -12,8 +12,12 @@ python -m pip install \
     "${package}[test]" \
     "cuda-python==${CUDA_VER_MAJOR_MINOR%.*}.*" \
     "cuda-core==0.3.*" \
-    "cudf-cu12"
 
+
+rapids-logger "Install cuDF Wheel"
+pip install \
+    --extra-index-url=https://pypi.nvidia.com \
+    "cudf-cu12==25.6.*"
 
 rapids-logger "Shallow clone cuDF repository"
 git clone --depth 1 git@github.com:rapidsai/cudf.git
