@@ -2,18 +2,120 @@ import os
 import platform
 import shutil
 
+from numba.core.utils import PYVERSION
 from numba.cuda.cuda_paths import get_conda_ctk
 from numba.cuda.cudadrv import driver, devices, libs
+from numba.cuda.dispatcher import CUDADispatcher
 from numba.core import config
 from numba.tests.support import TestCase
 from pathlib import Path
+from typing import Union
+from io import StringIO
 import unittest
+
+if PYVERSION >= (3, 10):
+    from filecheck.matcher import Matcher, Options
+    from filecheck.parser import Parser, pattern_for_opts
+    from filecheck.finput import FInput
 
 numba_cuda_dir = Path(__file__).parent
 test_data_dir = numba_cuda_dir / "tests" / "data"
 
 
-class CUDATestCase(TestCase):
+class FileCheckTestCaseMixin:
+    """
+    Mixin for tests that use FileCheck.
+
+    Methods assertFileCheckAsm and assertFileCheckLLVM will inspect a
+    CUDADispatcher and assert that the compilation artifacts match the
+    FileCheck checks given in the kernel's docstring.
+
+    Method assertFileCheckMatches can be used to assert that a given string
+    matches FileCheck checks, and is not specific to CUDADispatcher.
+    """
+
+    def assertFileCheckAsm(
+        self,
+        ir_producer: CUDADispatcher,
+        signature: Union[tuple[type, ...], None] = None,
+        check_prefixes: list[str] = ("ASM",),
+        **extra_filecheck_options: dict[str, Union[str, int]],
+    ) -> None:
+        """
+        Assert that the assembly output of the given CUDADispatcher matches
+        the FileCheck checks given in the kernel's docstring.
+        """
+        ir_content = ir_producer.inspect_asm()
+        if signature:
+            ir_content = ir_content[signature]
+        check_patterns = ir_producer.__doc__
+        self.assertFileCheckMatches(
+            ir_content,
+            check_patterns=check_patterns,
+            check_prefixes=check_prefixes,
+            **extra_filecheck_options,
+        )
+
+    def assertFileCheckLLVM(
+        self,
+        ir_producer: CUDADispatcher,
+        signature: Union[tuple[type, ...], None] = None,
+        check_prefixes: list[str] = ("LLVM",),
+        **extra_filecheck_options: dict[str, Union[str, int]],
+    ) -> None:
+        """
+        Assert that the LLVM IR output of the given CUDADispatcher matches
+        the FileCheck checks given in the kernel's docstring.
+        """
+        ir_content = ir_producer.inspect_llvm()
+        if signature:
+            ir_content = ir_content[signature]
+        check_patterns = ir_producer.__doc__
+        self.assertFileCheckMatches(
+            ir_content,
+            check_patterns=check_patterns,
+            check_prefixes=check_prefixes,
+            **extra_filecheck_options,
+        )
+
+    def assertFileCheckMatches(
+        self,
+        ir_content: str,
+        check_patterns: str,
+        check_prefixes: list[str] = ("CHECK",),
+        **extra_filecheck_options: dict[str, Union[str, int]],
+    ) -> None:
+        """
+        Assert that the given string matches the passed FileCheck checks.
+
+        Args:
+            ir_content: The string to check against.
+            check_patterns: The FileCheck checks to use.
+            check_prefixes: The prefixes to use for the FileCheck checks.
+            extra_filecheck_options: Extra options to pass to FileCheck.
+        """
+        if PYVERSION < (3, 10):
+            self.skipTest("FileCheck requires Python 3.10 or later")
+        opts = Options(
+            match_filename="-",
+            check_prefixes=check_prefixes,
+            **extra_filecheck_options,
+        )
+        input_file = FInput(fname="-", content=ir_content)
+        parser = Parser(opts, StringIO(check_patterns), *pattern_for_opts(opts))
+        matcher = Matcher(opts, input_file, parser)
+        matcher.stderr = StringIO()
+        result = matcher.run()
+        if result != 0:
+            self.fail(
+                f"FileCheck failed:\n{matcher.stderr.getvalue()}\n\n"
+                f"Check prefixes:\n{check_prefixes}\n\n"
+                f"Check patterns:\n{check_patterns}\n"
+                f"IR:\n{ir_content}\n\n"
+            )
+
+
+class CUDATestCase(FileCheckTestCaseMixin, TestCase):
     """
     For tests that use a CUDA device. Test methods in a CUDATestCase must not
     be run out of class order, because a ContextResettingTestCase may reset

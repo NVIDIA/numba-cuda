@@ -36,7 +36,7 @@ def sum_intervals(i, j):
 
 
 if not config.ENABLE_CUDASIM:
-    from numba.core import cgutils
+    from numba.cuda import cgutils
     from numba.core.extending import (
         lower_builtin,
         models,
