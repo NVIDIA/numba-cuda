@@ -153,7 +153,6 @@ class CUDATestCase(SerialMixin, TestCase):
         matcher.stderr = StringIO()
         result = matcher.run()
         if result != 0:
-            # import pdb;pdb.set_trace()
             dump_instructions = ""
             if self._dump_failed_filechecks:
                 base_path = self.id().replace(".", "_")
