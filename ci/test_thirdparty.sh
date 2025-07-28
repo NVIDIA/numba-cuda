@@ -20,7 +20,8 @@ pip install \
     "cudf-cu12==25.6.*"
 
 rapids-logger "Shallow clone cuDF repository"
-git clone --depth 1 https://github.com/rapidsai/cudf.git
+git clone --single-branch --branch 'branch-25.06' https://github.com/rapidsai/cudf.git
+
 
 pushd cudf
 git checkout branch-25.06
