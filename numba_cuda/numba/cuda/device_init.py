@@ -29,7 +29,6 @@ from .stubs import (
     activemask,
     lanemask_lt,
     nanosleep,
-    fp16,
     _vector_type_stubs,
 )
 from .intrinsics import (
