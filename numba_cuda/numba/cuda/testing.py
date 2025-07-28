@@ -2,6 +2,7 @@ import os
 import platform
 import shutil
 import pytest
+from datetime import datetime
 from numba.core.utils import PYVERSION
 from numba.cuda.cuda_paths import get_conda_ctk
 from numba.cuda.cudadrv import driver, devices, libs
@@ -155,9 +156,16 @@ class CUDATestCase(SerialMixin, TestCase):
         if result != 0:
             dump_instructions = ""
             if self._dump_failed_filechecks:
+                dump_directory = Path(
+                    datetime.now().strftime("numba-ir-%Y_%m_%d_%H_%M_%S")
+                )
+                if not dump_directory.exists():
+                    dump_directory.mkdir(parents=True, exist_ok=True)
                 base_path = self.id().replace(".", "_")
-                ir_dump = Path(base_path).with_suffix(".ll")
-                checks_dump = Path(base_path).with_suffix(".checks")
+                ir_dump = dump_directory / Path(base_path).with_suffix(".ll")
+                checks_dump = dump_directory / Path(base_path).with_suffix(
+                    ".checks"
+                )
                 with (
                     open(ir_dump, "w") as ir_file,
                     open(checks_dump, "w") as checks_file,
