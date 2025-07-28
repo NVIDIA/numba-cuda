@@ -1,6 +1,7 @@
 import os
 import platform
 import shutil
+import pytest
 from numba.core.utils import PYVERSION
 from numba.cuda.cuda_paths import get_conda_ctk
 from numba.cuda.cudadrv import driver, devices, libs
@@ -23,9 +24,13 @@ numba_cuda_dir = Path(__file__).parent
 test_data_dir = numba_cuda_dir / "tests" / "data"
 
 
-class FileCheckTestCaseMixin(unittest.TestCase):
+@pytest.mark.usefixtures("initialize_from_pytest_config")
+class CUDATestCase(SerialMixin, TestCase):
     """
-    Mixin for tests that use FileCheck.
+    For tests that use a CUDA device. Test methods in a CUDATestCase must not
+    be run out of module order, because the ContextResettingTestCase may reset
+    the context and destroy resources used by a normal CUDATestCase if any of
+    its tests are run between tests from a CUDATestCase.
 
     Methods assertFileCheckAsm and assertFileCheckLLVM will inspect a
     CUDADispatcher and assert that the compilation artifacts match the
@@ -35,9 +40,22 @@ class FileCheckTestCaseMixin(unittest.TestCase):
     matches FileCheck checks, and is not specific to CUDADispatcher.
     """
 
+    def setUp(self):
+        self._low_occupancy_warnings = config.CUDA_LOW_OCCUPANCY_WARNINGS
+        self._warn_on_implicit_copy = config.CUDA_WARN_ON_IMPLICIT_COPY
+
+        # Disable warnings about low gpu utilization in the test suite
+        config.CUDA_LOW_OCCUPANCY_WARNINGS = 0
+        # Disable warnings about host arrays in the test suite
+        config.CUDA_WARN_ON_IMPLICIT_COPY = 0
+
+    def tearDown(self):
+        config.CUDA_LOW_OCCUPANCY_WARNINGS = self._low_occupancy_warnings
+        config.CUDA_WARN_ON_IMPLICIT_COPY = self._warn_on_implicit_copy
+
     Signature = Union[tuple[type, ...], None]
 
-    def _getIRContent(
+    def _getIRContents(
         self,
         ir_result: Union[dict[Signature, str], str],
         signature: Union[Signature, None] = None,
@@ -64,8 +82,8 @@ class FileCheckTestCaseMixin(unittest.TestCase):
         Assert that the assembly output of the given CUDADispatcher matches
         the FileCheck checks given in the kernel's docstring.
         """
-        ir_contents = self._getIRContent(ir_producer.inspect_asm(), signature)
-        assert ir_contents
+        ir_contents = self._getIRContents(ir_producer.inspect_asm(), signature)
+        assert ir_contents, "No assembly output found for the given signature."
         assert ir_producer.__doc__ is not None, (
             "Kernel docstring is required. To pass checks explicitly, use assertFileCheckMatches."
         )
@@ -89,14 +107,16 @@ class FileCheckTestCaseMixin(unittest.TestCase):
         Assert that the LLVM IR output of the given CUDADispatcher matches
         the FileCheck checks given in the kernel's docstring.
         """
-        ir_contents = self._getIRContent(ir_producer.inspect_llvm(), signature)
-        assert ir_contents
+        ir_contents = self._getIRContents(ir_producer.inspect_llvm(), signature)
+        assert ir_contents, "No LLVM IR output found for the given signature."
         assert ir_producer.__doc__ is not None, (
             "Kernel docstring is required. To pass checks explicitly, use assertFileCheckMatches."
         )
         check_patterns = ir_producer.__doc__
         for ir_content in ir_contents:
-            assert ir_content
+            assert ir_content, (
+                "LLVM IR content is empty for the given signature."
+            )
             self.assertFileCheckMatches(
                 ir_content,
                 check_patterns=check_patterns,
@@ -133,15 +153,19 @@ class FileCheckTestCaseMixin(unittest.TestCase):
         matcher.stderr = StringIO()
         result = matcher.run()
         if result != 0:
-            ir_dump = Path("numba-test-failure.ll")
-            should_dump = os.getenv("NUMBA_DUMP_FAILED_FILECHECK_TESTS") == "1"
+            # import pdb;pdb.set_trace()
             dump_instructions = ""
-            if should_dump:
-                with open(ir_dump, "w") as f:
-                    _ = f.write(ir_content)
-                    _ = f.write("\n\n")
-                    _ = f.write(check_patterns)
-                    dump_instructions = f"Run yourself with:\n\nfilecheck --check-prefixes={','.join(check_prefixes)} {ir_dump} --input-file={ir_dump}"
+            if self._dump_failed_filechecks:
+                base_path = self.id().replace(".", "_")
+                ir_dump = Path(base_path).with_suffix(".ll")
+                checks_dump = Path(base_path).with_suffix(".checks")
+                with (
+                    open(ir_dump, "w") as ir_file,
+                    open(checks_dump, "w") as checks_file,
+                ):
+                    _ = ir_file.write(ir_content + "\n")
+                    _ = checks_file.write(check_patterns)
+                    dump_instructions = f"Reproduce with:\n\nfilecheck --check-prefixes={','.join(check_prefixes)} {checks_dump} --input-file={ir_dump}"
 
             self.fail(
                 f"FileCheck failed:\n{matcher.stderr.getvalue()}\n\n"
