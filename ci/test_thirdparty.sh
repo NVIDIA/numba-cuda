@@ -15,17 +15,22 @@ python -m pip install \
     "cudf-cu12"
 
 
+rapids-logger "Shallow clone cuDF repository"
+git clone --depth 1 git@github.com:rapidsai/cudf.git
+
+pushd cudf
+
 rapids-logger "Check GPU usage"
 nvidia-smi
 
-RAPIDS_TESTS_DIR=${RAPIDS_TESTS_DIR:-"${PWD}/test-results"}/
-mkdir -p "${RAPIDS_TESTS_DIR}"
-pushd "${RAPIDS_TESTS_DIR}"
 
 rapids-logger "Show Numba system info"
 python -m numba --sysinfo
 
-rapids-logger "Run Tests"
-python -m numba.runtests numba.cuda.tests.test_thirdparty -v
+rapids-logger "Run Scalar UDF tests"
+py.test python/cudf/cudf/tests/test_udf_masked_ops.py
+
+rapids-logger "Run GroupBy UDF tests"
+py.test python/cudf/cudf/tests/test_groupby.py -k test_groupby_apply_jit
 
 popd
