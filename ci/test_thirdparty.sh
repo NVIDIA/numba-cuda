@@ -22,9 +22,7 @@ pip install \
 rapids-logger "Shallow clone cuDF repository"
 git clone --single-branch --branch 'branch-25.06' https://github.com/rapidsai/cudf.git
 
-
 pushd cudf
-git checkout branch-25.06
 
 rapids-logger "Check GPU usage"
 nvidia-smi
