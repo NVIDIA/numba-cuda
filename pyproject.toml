@@ -51,7 +51,6 @@ test-cu11 = [
 test-cu12 = [
     "numba-cuda[test]",
     "nvidia-curand-cu12",
-    "pynvjitlink-cu12",
 ]
 dev = [
     "pre-commit",

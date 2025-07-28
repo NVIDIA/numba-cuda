@@ -10,8 +10,7 @@ supported by the driver, provided that the Toolkit and driver both have the same
 major version. For example, use of CUDA Toolkit 11.5 with CUDA driver 450 (CUDA
 version 11.0) is supported through MVC.
 
-Numba supports MVC for CUDA 12 on Linux using the external ``pynvjitlink``
-package.
+Numba supports MVC for CUDA 12 on Linux using the `nvjitlink` library.
 
 Numba supports MVC for CUDA 11 on Linux using the external ``cubinlinker`` and
 ``ptxcompiler`` packages, subject to the following limitations:
@@ -45,8 +44,8 @@ To install with pip, use the NVIDIA package index:
 CUDA 12
 ~~~~~~~
 
-For CUDA 12, MVC is provied by default through the ``pynvjitlink``  package,
-which ``numba-cuda`` depends on directly, so no additional installation
+For CUDA 12, MVC is provied by default through the ``nvjitlink``  package,
+which ``numba-cuda[cu12]`` depends on directly, so no additional installation
 steps are required.
 
 Enabling MVC Support
@@ -70,22 +69,6 @@ Numba:
    config.CUDA_ENABLE_MINOR_VERSION_COMPATIBILITY = True
 
 
-CUDA 12
-~~~~~~~
-
-For CUDA 12, MVC support is enabled by default but may be disabled by setting the
-following environment variable or config setting respectively:
-
-.. code:: bash
-
-   export NUMBA_CUDA_ENABLE_PYNVJITLINK=0
-
-or
-
-.. code:: python
-
-   from numba import config
-   config.CUDA_ENABLE_PYNVJITLINK = False
 
 
 References
@@ -95,7 +78,5 @@ Further information about Minor Version Compatibility may be found in:
 
 - The `CUDA Compatibility Guide
   <https://docs.nvidia.com/deploy/cuda-compatibility/index.html>`_.
-- The `README for pynvjitlink
-  <https://github.com/rapidsai/pynvjitlink/blob/main/README.md>`_.
 - The `README for ptxcompiler
   <https://github.com/rapidsai/ptxcompiler/blob/main/README.md>`_.
