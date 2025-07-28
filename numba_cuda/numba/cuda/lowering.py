@@ -5,7 +5,6 @@ from functools import partial
 
 from llvmlite import ir as llvm_ir
 
-from numba._version import get_versions
 from numba.core import (
     typing,
     utils,
@@ -32,10 +31,11 @@ from numba.core.funcdesc import default_mangler
 from numba.core.environment import Environment
 from numba.core.analysis import compute_use_defs, must_use_alloca
 from numba.misc.firstlinefinder import get_func_body_first_lineno
+from numba import version_info
 
-numba_version = get_versions()["version"].split(".")
-numba_minor_version = int(numba_version[1])
-if numba_minor_version > 60:
+numba_version = version_info.short
+del version_info
+if numba_version > (0, 60):
     from numba.misc.coverage_support import get_registered_loc_notify
 
 
@@ -95,7 +95,7 @@ class BaseLower(object):
             directives_only=directives_only,
         )
 
-        if numba_minor_version > 60:
+        if numba_version > (0, 60):
             # Loc notify objects
             self._loc_notify_registry = get_registered_loc_notify()
 
@@ -173,7 +173,7 @@ class BaseLower(object):
         Called after all blocks are lowered
         """
         self.debuginfo.finalize()
-        if numba_minor_version > 60:
+        if numba_version > (0, 60):
             for notify in self._loc_notify_registry:
                 notify.close()
 
@@ -368,7 +368,7 @@ class BaseLower(object):
         """Called when a new instruction with the given `loc` is about to be
         lowered.
         """
-        if numba_minor_version > 60:
+        if numba_version > (0, 60):
             for notify_obj in self._loc_notify_registry:
                 notify_obj.notify(loc)
         else:
