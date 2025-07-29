@@ -388,7 +388,7 @@ class InlineInlinables(FunctionPass):
         return True
 
     def _do_work(self, state, work_list, block, i, expr, inline_worker):
-        from numba.core.compiler import run_frontend
+        from numba.cuda.compiler import run_frontend
         from numba.core.cpu import InlineOptions
 
         # try and get a definition for the call, this isn't always possible as
