@@ -6,7 +6,7 @@ from numba.cuda.testing import (
     skip_under_cuda_memcheck,
     skip_if_mvc_libraries_unavailable,
 )
-from numba.tests.support import linux_only
+from numba.cuda.tests.support import linux_only
 
 
 def child_test():

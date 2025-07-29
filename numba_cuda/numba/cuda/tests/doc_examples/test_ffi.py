@@ -3,7 +3,7 @@
 
 import unittest
 from numba.cuda.testing import CUDATestCase, skip_on_cudasim
-from numba.tests.support import skip_unless_cffi, override_config
+from numba.cuda.tests.support import skip_unless_cffi, override_config
 
 
 @skip_unless_cffi

@@ -4,7 +4,7 @@ from numba.cuda.cudadrv import devicearray
 from numba import cuda
 from numba.cuda.testing import unittest, CUDATestCase
 from numba.cuda.testing import skip_on_cudasim
-from numba.tests.support import IS_NUMPY_2
+from numba.cuda.tests.support import IS_NUMPY_2
 
 
 class TestCudaNDArray(CUDATestCase):
