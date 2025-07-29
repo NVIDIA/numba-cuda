@@ -65,6 +65,27 @@ class _Cache(metaclass=ABCMeta):
         """
 
 
+class NullCache(_Cache):
+    @property
+    def cache_path(self):
+        return None
+
+    def load_overload(self, sig, target_context):
+        pass
+
+    def save_overload(self, sig, data):
+        pass
+
+    def enable(self):
+        pass
+
+    def disable(self):
+        pass
+
+    def flush(self):
+        pass
+
+
 class IndexDataCacheFile(object):
     """
     Implements the logic for the index file and data file used by a cache.
