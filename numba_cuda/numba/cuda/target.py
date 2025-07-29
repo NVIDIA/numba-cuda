@@ -5,13 +5,13 @@ from llvmlite import ir
 import warnings
 from numba.cuda import cgutils
 from numba.core import (
-    compiler,
     config,
     itanium_mangler,
     targetconfig,
     types,
     typing,
 )
+from numba.cuda import compiler
 from numba.core.compiler_lock import global_compiler_lock
 from numba.core.dispatcher import Dispatcher
 from numba.core.errors import NumbaWarning

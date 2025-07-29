@@ -7,9 +7,9 @@ from numba.core import (
     typing,
     funcdesc,
     config,
-    compiler,
     sigutils,
 )
+from numba.cuda import compiler
 from numba.cuda.core.compiler import CompilerBase
 from numba.core.compiler_lock import global_compiler_lock
 from numba.cuda.core.compiler_machinery import (
