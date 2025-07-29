@@ -26,7 +26,7 @@ test_data_dir = numba_cuda_dir / "tests" / "data"
 
 
 @pytest.mark.usefixtures("initialize_from_pytest_config")
-class CUDATestCase(SerialMixin, TestCase):
+class CUDATestCase(TestCase):
     """
     For tests that use a CUDA device. Test methods in a CUDATestCase must not
     be run out of module order, because the ContextResettingTestCase may reset
@@ -181,31 +181,6 @@ class CUDATestCase(SerialMixin, TestCase):
                 + f"IR:\n{ir_content}\n\n"
                 + dump_instructions
             )
-
-
-class CUDATestCase(FileCheckTestCaseMixin, TestCase):
-    """
-    For tests that use a CUDA device. Test methods in a CUDATestCase must not
-    be run out of class order, because a ContextResettingTestCase may reset
-    the context and destroy resources used by a normal CUDATestCase if any of
-    its tests are run between tests from a CUDATestCase. Historically this was
-    ensured with a SerialMixin for the Numba runtests-based test runner, but
-    with pytest-xdist we must use `--dist loadscope` when running tests in
-    parallel to ensure that tests from each test class are grouped together.
-    """
-
-    def setUp(self):
-        self._low_occupancy_warnings = config.CUDA_LOW_OCCUPANCY_WARNINGS
-        self._warn_on_implicit_copy = config.CUDA_WARN_ON_IMPLICIT_COPY
-
-        # Disable warnings about low gpu utilization in the test suite
-        config.CUDA_LOW_OCCUPANCY_WARNINGS = 0
-        # Disable warnings about host arrays in the test suite
-        config.CUDA_WARN_ON_IMPLICIT_COPY = 0
-
-    def tearDown(self):
-        config.CUDA_LOW_OCCUPANCY_WARNINGS = self._low_occupancy_warnings
-        config.CUDA_WARN_ON_IMPLICIT_COPY = self._warn_on_implicit_copy
 
 
 class ContextResettingTestCase(CUDATestCase):
