@@ -23,8 +23,8 @@ from numba.core.extending import (
     make_attribute_wrapper,
     register_model,
 )
-from numba.core.typing import signature
-from numba.core.typing.templates import AttributeTemplate, ConcreteTemplate
+from numba.cuda.typing import signature
+from numba.cuda.typing.templates import AttributeTemplate, ConcreteTemplate
 from numba.cuda import CUSource, declare_device
 from numba.cuda.cudadecl import register, register_attr, register_global
 from numba.cuda.cudaimpl import lower

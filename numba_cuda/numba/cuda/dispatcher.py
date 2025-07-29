@@ -8,13 +8,13 @@ import types as pytypes
 import weakref
 import uuid
 
-from numba.core import compiler, serialize, sigutils, types, typing, config
-from numba.cuda import utils
+from numba.core import compiler, serialize, sigutils, types, config
+from numba.cuda import utils, typing
 from numba.cuda.core.caching import Cache, CacheImpl, NullCache
 from numba.core.compiler_lock import global_compiler_lock
 from numba.core.dispatcher import _DispatcherBase
 from numba.core.errors import NumbaPerformanceWarning, TypingError
-from numba.core.typing.templates import fold_arguments
+from numba.cuda.typing.templates import fold_arguments
 from numba.core.typing.typeof import Purpose, typeof
 from numba.cuda.api import get_current_device
 from numba.cuda.args import wrap_arg

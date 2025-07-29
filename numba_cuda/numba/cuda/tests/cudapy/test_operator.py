@@ -9,7 +9,7 @@ from numba.cuda.testing import (
 from numba import cuda
 from numba.core import types
 from numba.core.types import f2, b1
-from numba.core.typing import signature
+from numba.cuda.typing import signature
 import operator
 import itertools
 from numba.np.numpy_support import from_dtype
