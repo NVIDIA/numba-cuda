@@ -3,9 +3,15 @@ from numba.cuda.testing import skip_on_cudasim
 from numba import cuda
 from numba.core import types
 from numba.cuda.testing import CUDATestCase
+from textwrap import dedent
+import math
 import itertools
 import re
 import unittest
+import warnings
+from numba.core.errors import NumbaDebugInfoWarning
+from numba.tests.support import ignore_internal_warnings
+import numpy as np
 
 
 @skip_on_cudasim("Simulator does not produce debug dumps")
