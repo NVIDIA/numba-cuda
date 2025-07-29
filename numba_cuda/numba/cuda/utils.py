@@ -26,6 +26,7 @@ from inspect import Signature as pySignature  # noqa: F401
 from inspect import Parameter as pyParameter  # noqa: F401
 
 from numba.core.config import (
+    PYVERSION,  # noqa: F401
     MACHINE_BITS,  # noqa: F401
     DEVELOPER_MODE,
 )  # noqa: F401
