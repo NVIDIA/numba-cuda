@@ -9,7 +9,6 @@ from numba.cuda.cudadrv import nvvm
 from numba.cuda.testing import (
     unittest,
     skip_on_cudasim,
-    SerialMixin,
     skip_unless_conda_cudatoolkit,
 )
 from numba.cuda.cuda_paths import (
@@ -24,7 +23,7 @@ has_cuda = nvvm.is_available()
 has_mp_get_context = hasattr(mp, "get_context")
 
 
-class LibraryLookupBase(SerialMixin, unittest.TestCase):
+class LibraryLookupBase(unittest.TestCase):
     def setUp(self):
         ctx = mp.get_context("spawn")
 

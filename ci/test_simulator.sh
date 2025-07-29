@@ -10,6 +10,7 @@ rapids-logger "Install testing dependencies"
 rapids-mamba-retry create -n test \
     psutil \
     pytest \
+    pytest-xdist \
     cffi \
     python=${RAPIDS_PY_VERSION}
 
