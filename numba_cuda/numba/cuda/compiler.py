@@ -6,8 +6,9 @@ from numba.core import (
     types,
     funcdesc,
     config,
-    compiler,
 )
+from numba.cuda import compiler
+from numba.cuda.core.compiler import CompilerBase
 from numba.core.compiler_lock import global_compiler_lock
 from numba.cuda.core.compiler_machinery import (
     FunctionPass,
@@ -76,6 +77,7 @@ from numba.cuda.core.untyped_passes import (
 )
 
 from numba.cuda.core.typed_passes import (
+    NativeLowering,
     NopythonTypeInference,
     NopythonRewrites,
     PreParforPass,

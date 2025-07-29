@@ -8,7 +8,7 @@ import types as pytypes
 import weakref
 import uuid
 
-from numba.core import compiler, types, typing, config
+from numba.core import sigutils, types, typing, config
 from numba.cuda import serialize, utils
 from numba.cuda.core.caching import Cache, CacheImpl, NullCache
 from numba.core.compiler_lock import global_compiler_lock
@@ -22,8 +22,9 @@ from numba.cuda.compiler import (
     compile_cuda,
     CUDACompiler,
     kernel_fixup,
+    compile_extra,
 )
-from numba.cuda.core import sigutils
+from numba.cuda.flags import Flags
 import re
 from numba.cuda.cudadrv import driver, nvvm
 from numba.cuda.cudadrv.linkable_code import LinkableCode
@@ -832,12 +833,12 @@ class _FunctionCompiler(object):
             return True, retval
 
     def _compile_core(self, args, return_type):
-        flags = compiler.Flags()
+        flags = Flags()
         self.targetdescr.options.parse_as_flags(flags, self.targetoptions)
         flags = self._customize_flags(flags)
 
         impl = self._get_implementation(args, {})
-        cres = compiler.compile_extra(
+        cres = compile_extra(
             self.targetdescr.typing_context,
             self.targetdescr.target_context,
             impl,
