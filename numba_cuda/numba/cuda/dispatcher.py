@@ -8,7 +8,7 @@ import types as pytypes
 import weakref
 import uuid
 
-from numba.core import compiler, serialize, sigutils, types, typing, config
+from numba.core import compiler, serialize, types, typing, config
 from numba.cuda import utils
 from numba.cuda.core.caching import Cache, CacheImpl, NullCache
 from numba.core.compiler_lock import global_compiler_lock
@@ -23,6 +23,7 @@ from numba.cuda.compiler import (
     CUDACompiler,
     kernel_fixup,
 )
+from numba.cuda.core import sigutils
 import re
 from numba.cuda.cudadrv import driver, nvvm
 from numba.cuda.cudadrv.linkable_code import LinkableCode

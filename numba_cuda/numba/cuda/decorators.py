@@ -1,7 +1,8 @@
 from warnings import warn
-from numba.core import types, config, sigutils
+from numba.core import types, config
 from numba.core.errors import DeprecationError, NumbaInvalidConfigWarning
 from numba.cuda.compiler import declare_device_function
+from numba.cuda.core import sigutils
 from numba.cuda.dispatcher import CUDADispatcher
 from numba.cuda.simulator.kernel import FakeCUDAKernel
 from numba.cuda.cudadrv.driver import _have_nvjitlink
