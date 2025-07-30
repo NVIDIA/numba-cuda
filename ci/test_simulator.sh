@@ -10,6 +10,7 @@ rapids-logger "Install testing dependencies"
 rapids-mamba-retry create -n test \
     psutil \
     pytest \
+    pytest-xdist \
     cffi \
     python=${RAPIDS_PY_VERSION}
 
@@ -17,6 +18,8 @@ rapids-mamba-retry create -n test \
 set +u
 conda activate test
 set -u
+
+pip install filecheck
 
 rapids-mamba-retry install -c `pwd`/conda-repo numba-cuda
 
@@ -35,7 +38,7 @@ set +e
 
 rapids-logger "Run Tests"
 export NUMBA_ENABLE_CUDASIM=1
-python -m numba.runtests numba.cuda.tests -v
+pytest --pyargs numba.cuda.tests -v
 
 popd
 

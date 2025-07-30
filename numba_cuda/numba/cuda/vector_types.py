@@ -4,7 +4,7 @@
 from typing import List, Tuple, Dict
 
 from numba import types
-from numba.core import cgutils
+from numba.cuda import cgutils
 from numba.core.extending import models
 from numba.core.imputils import Registry as ImplRegistry
 from numba.core.typing.templates import ConcreteTemplate

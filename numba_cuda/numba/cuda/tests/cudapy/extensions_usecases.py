@@ -28,7 +28,7 @@ if not config.ENABLE_CUDASIM:
         make_attribute_wrapper,
     )
     from numba.cuda.cudaimpl import lower
-    from numba.core import cgutils
+    from numba.cuda import cgutils
 
     @typeof_impl.register(TestStruct)
     def typeof_teststruct(val, c):

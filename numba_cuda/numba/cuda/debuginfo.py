@@ -1,7 +1,8 @@
 import os
 
 from llvmlite import ir
-from numba.core import cgutils, config, types
+from numba.core import types, config
+from numba.cuda import cgutils
 from numba.core.datamodel.models import ComplexModel, UnionModel, UniTupleModel
 from numba.core.debuginfo import AbstractDIBuilder
 from numba.cuda.types import GridGroup

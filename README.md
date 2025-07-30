@@ -30,10 +30,11 @@ If you want to manage all run-time dependencies yourself, also pass the `--no-de
 ## Running tests
 
 ```
-python -m numba.runtests numba.cuda.tests
+pytest -n auto --pyargs numba.cuda.tests -v
 ```
 
-This should discover the `numba.cuda` module from the `numba_cuda` package. You
+
+Testing should discover the `numba.cuda` module from the `numba_cuda` package. You
 can check where `numba.cuda` files are being located by running
 
 ```

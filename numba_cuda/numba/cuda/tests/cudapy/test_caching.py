@@ -14,7 +14,6 @@ from numba.cuda.testing import (
     skip_if_mvc_enabled,
     test_data_dir,
 )
-from numba.tests.support import SerialMixin
 from numba.tests.test_caching import (
     DispatcherCacheUsecasesTest,
     skip_bad_access,
@@ -22,7 +21,7 @@ from numba.tests.test_caching import (
 
 
 @skip_on_cudasim("Simulator does not implement caching")
-class CUDACachingTest(SerialMixin, DispatcherCacheUsecasesTest):
+class CUDACachingTest(DispatcherCacheUsecasesTest):
     here = os.path.dirname(__file__)
     usecases_file = os.path.join(here, "cache_usecases.py")
     modname = "cuda_caching_test_fodder"
@@ -225,7 +224,7 @@ class CUDACachingTest(SerialMixin, DispatcherCacheUsecasesTest):
 
 
 @skip_on_cudasim("Simulator does not implement caching")
-class CUDACooperativeGroupTest(SerialMixin, DispatcherCacheUsecasesTest):
+class CUDACooperativeGroupTest(DispatcherCacheUsecasesTest):
     # See Issue #9432: https://github.com/numba/numba/issues/9432
     # If a cached function using CG sync was the first thing to compile,
     # the compile would fail.
@@ -259,7 +258,7 @@ class CUDACooperativeGroupTest(SerialMixin, DispatcherCacheUsecasesTest):
 
 
 @skip_on_cudasim("Simulator does not implement caching")
-class CUDAAndCPUCachingTest(SerialMixin, DispatcherCacheUsecasesTest):
+class CUDAAndCPUCachingTest(DispatcherCacheUsecasesTest):
     here = os.path.dirname(__file__)
     usecases_file = os.path.join(here, "cache_with_cpu_usecases.py")
     modname = "cuda_and_cpu_caching_test_fodder"
@@ -350,7 +349,7 @@ def get_different_cc_gpus():
 
 
 @skip_on_cudasim("Simulator does not implement caching")
-class TestMultiCCCaching(SerialMixin, DispatcherCacheUsecasesTest):
+class TestMultiCCCaching(DispatcherCacheUsecasesTest):
     here = os.path.dirname(__file__)
     usecases_file = os.path.join(here, "cache_usecases.py")
     modname = "cuda_multi_cc_caching_test_fodder"
@@ -484,11 +483,7 @@ def child_initializer():
 
 
 @skip_on_cudasim("Simulator does not implement caching")
-class TestMultiprocessCache(SerialMixin, DispatcherCacheUsecasesTest):
-    # Nested multiprocessing.Pool raises AssertionError:
-    # "daemonic processes are not allowed to have children"
-    _numba_parallel_test_ = False
-
+class TestMultiprocessCache(DispatcherCacheUsecasesTest):
     here = os.path.dirname(__file__)
     usecases_file = os.path.join(here, "cache_usecases.py")
     modname = "cuda_mp_caching_test_fodder"
