@@ -2,8 +2,8 @@ from llvmlite import ir
 
 from numba.core import config
 from numba.cuda import serialize
-from numba.core.codegen import Codegen, CodeLibrary
 from .cudadrv import devices, driver, nvvm, runtime, nvrtc
+from numba.cuda.core.codegen import Codegen, CodeLibrary
 from numba.cuda.cudadrv.libs import get_cudalib
 from numba.cuda.cudadrv.linkable_code import LinkableCode
 from numba.cuda.memory_management.nrt import NRT_LIBRARY
