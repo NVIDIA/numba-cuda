@@ -43,11 +43,11 @@ These dependencies are listed under the `test-cu11` and `test-cu12` optional dep
 To install Numba-CUDA for development, run this in the root of the repository:
 
 ```shell
-pip install -e ".[cu11,test-cu11]"
+pip install -e ".[test-cu11]"
 ```
 or
 ```sh
-pip install -e ".[cu12,test-cu12]"
+pip install -e ".[test-cu12]"
 ```
 
 Numba-CUDA uses [`pre-commit`](https://pre-commit.com/) to run a number of style
