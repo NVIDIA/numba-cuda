@@ -403,6 +403,387 @@ class TestCudaDebugInfo(CUDATestCase):
         match = re.compile(pat6).search(llvm_ir)
         self.assertIsNotNone(match, msg=llvm_ir)
 
+    def test_DW_LANG(self):
+        @cuda.jit(debug=True)
+        def foo():
+            """
+            CHECK: distinct !DICompileUnit
+            CHECK-SAME: emissionKind: FullDebug
+            CHECK-SAME: isOptimized: true
+            CHECK-SAME: language: DW_LANG_C_plus_plus
+            CHECK-SAME: producer: "clang (Numba)"
+            """
+            pass
+
+        foo[1, 1]()
+
+        llvm_ir = foo.inspect_llvm()[tuple()]
+        self.assertFileCheckMatches(llvm_ir, foo.__doc__)
+
+    def test_DILocation(self):
+        """Tests that DILocation information is reasonable.
+
+        The kernel `foo` produces LLVM like:
+        define function() {
+        entry:
+          alloca
+          store 0 to alloca
+          <arithmetic for doing the operations on b, c, d>
+          setup for print
+          branch
+        other_labels:
+        ... <elided>
+        }
+
+        The following checks that:
+        * the alloca and store have no !dbg
+        * the arithmetic occurs in the order defined and with !dbg
+        * that the !dbg entries are monotonically increasing in value with
+          source line number
+        """
+        sig = (types.float64,)
+
+        @cuda.jit(sig, debug=True)
+        def foo(a):
+            """
+            CHECK-LABEL: define void @{{.+}}foo
+            CHECK: entry:
+
+            CHECK: %[[VAL_0:.*]] = alloca double
+            CHECK-NOT: !dbg
+            CHECK: store double 0.0, double* %[[VAL_0]]
+            CHECK-NOT: !dbg
+            CHECK: %[[VAL_1:.*]] = alloca double
+            CHECK-NOT: !dbg
+            CHECK: store double 0.0, double* %[[VAL_1]]
+            CHECK-NOT: !dbg
+            CHECK: %[[VAL_2:.*]] = alloca double
+            CHECK-NOT: !dbg
+            CHECK: store double 0.0, double* %[[VAL_2]]
+            CHECK-NOT: !dbg
+            CHECK: %[[VAL_3:.*]] = alloca double
+            CHECK-NOT: !dbg
+            CHECK: store double 0.0, double* %[[VAL_3]]
+            CHECK-NOT: !dbg
+            CHECK: %[[VAL_4:.*]] = alloca double
+            CHECK-NOT: !dbg
+            CHECK: store double 0.0, double* %[[VAL_4]]
+            CHECK-NOT: !dbg
+            CHECK: %[[VAL_5:.*]] = alloca double
+            CHECK-NOT: !dbg
+            CHECK: store double 0.0, double* %[[VAL_5]]
+            CHECK-NOT: !dbg
+            CHECK: %[[VAL_6:.*]] = alloca i8*
+            CHECK-NOT: !dbg
+            CHECK: store i8* null, i8** %[[VAL_6]]
+            CHECK-NOT: !dbg
+            CHECK: %[[VAL_7:.*]] = alloca i8*
+            CHECK-NOT: !dbg
+            CHECK: store i8* null, i8** %[[VAL_7]]
+            CHECK-NOT: !dbg
+
+            CHECK: br label %"[[ENTRY:.+]]"
+            CHECK-NOT: !dbg
+            CHECK: [[ENTRY]]:
+
+            CHECK: fadd{{.+}} !dbg ![[DBGADD:[0-9]+]]
+            CHECK: fmul{{.+}} !dbg ![[DBGMUL:[0-9]+]]
+            CHECK: fdiv{{.+}} !dbg ![[DBGDIV:[0-9]+]]
+
+            CHECK: ![[DBGADD]] = !DILocation
+            CHECK: ![[DBGMUL]] = !DILocation
+            CHECK: ![[DBGDIV]] = !DILocation
+            """
+            b = a + 1.23
+            c = b * 2.34
+            a = b / c
+
+        ir = foo.inspect_llvm()[sig]
+        self.assertFileCheckMatches(ir, foo.__doc__)
+
+    def test_DITypes(self):
+        """Tests that DITypes are emitted for the types used in the kernel."""
+        sig = (
+            types.float32,
+            types.float64,
+            types.int8,
+            types.int16,
+            types.int32,
+            types.int64,
+            types.uint8,
+            types.uint16,
+            types.uint32,
+            types.uint64,
+            types.complex64,
+            types.complex128,
+        )
+
+        @cuda.jit(sig, debug=True)
+        def foo(a, b, c, d, e, f, g, h, i, j, k, l):
+            """
+            CHECK: [[DBG1:.+]] = !DIBasicType(encoding: DW_ATE_boolean, name: "i8", size: 8)
+            CHECK: [[DBG2:.+]] = !DIDerivedType(
+            CHECK-SAME: baseType: [[DBG1]]
+            CHECK-SAME: size: 64
+            CHECK-SAME: tag: DW_TAG_pointer_type
+            CHECK: [[DBG3:.+]] = !DIDerivedType(
+            CHECK-SAME: baseType: [[DBG2]]
+            CHECK-SAME: size: 64
+            CHECK-SAME: tag: DW_TAG_pointer_type
+            CHECK: [[DBG4:.+]] = !DIBasicType(encoding: DW_ATE_float, name: "float32", size: 32)
+            CHECK: [[DBG5:.+]] = !DIBasicType(encoding: DW_ATE_float, name: "float64", size: 64)
+            CHECK: [[DBG6:.+]] = !DIBasicType(encoding: DW_ATE_signed, name: "int8", size: 8)
+            CHECK: [[DBG7:.+]] = !DIBasicType(encoding: DW_ATE_signed, name: "int16", size: 16)
+            CHECK: [[DBG8:.+]] = !DIBasicType(encoding: DW_ATE_signed, name: "int32", size: 32)
+            CHECK: [[DBG9:.+]] = !DIBasicType(encoding: DW_ATE_signed, name: "int64", size: 64)
+            CHECK: [[DBG10:.+]] = !DIBasicType(encoding: DW_ATE_unsigned, name: "uint8", size: 8)
+            CHECK: [[DBG11:.+]] = !DIBasicType(encoding: DW_ATE_unsigned, name: "uint16", size: 16)
+            CHECK: [[DBG12:.+]] = !DIBasicType(encoding: DW_ATE_unsigned, name: "uint32", size: 32)
+            CHECK: [[DBG13:.+]] = !DIBasicType(encoding: DW_ATE_unsigned, name: "uint64", size: 64)
+            CHECK: [[DBG14:.+]] = !DIBasicType(encoding: DW_ATE_float, name: "float", size: 32)
+            CHECK: [[DBG15:.+]] = !DIDerivedType(
+            CHECK-SAME: baseType: [[DBG14]]
+            CHECK-SAME: name: "real"
+            CHECK-SAME: offset: 0
+            CHECK-SAME: size: 32
+            CHECK-SAME: tag: DW_TAG_member
+            CHECK: [[DBG16:.+]] = !DIBasicType(encoding: DW_ATE_float, name: "float", size: 32)
+            CHECK: [[DBG17:.+]] = !DIDerivedType(
+            CHECK-SAME: baseType: [[DBG16]]
+            CHECK-SAME: name: "imag"
+            CHECK-SAME: offset: 32
+            CHECK-SAME: size: 32
+            CHECK-SAME: tag: DW_TAG_member
+            CHECK: [[DBG18:.+]] = !{ [[DBG15]], [[DBG17]] }
+            CHECK: [[DBG19:.+]] = distinct !DICompositeType(
+            CHECK-SAME: elements: [[DBG18]]
+            CHECK-SAME: name: "complex64 ({float, float})"
+            CHECK-SAME: size: 64
+            CHECK-SAME: tag: DW_TAG_structure_type
+            CHECK: [[DBG20:.+]] = !DIBasicType(encoding: DW_ATE_float, name: "double", size: 64)
+            CHECK: [[DBG21:.+]] = !DIDerivedType(
+            CHECK-SAME: baseType: [[DBG20]]
+            CHECK-SAME: name: "real"
+            CHECK-SAME: offset: 0
+            CHECK-SAME: size: 64
+            CHECK-SAME: tag: DW_TAG_member
+            CHECK: [[DBG22:.+]] = !DIBasicType(encoding: DW_ATE_float, name: "double", size: 64)
+            CHECK: [[DBG23:.+]] = !DIDerivedType(
+            CHECK-SAME: baseType: [[DBG22]]
+            CHECK-SAME: name: "imag"
+            CHECK-SAME: offset: 64
+            CHECK-SAME: size: 64
+            CHECK-SAME: tag: DW_TAG_member
+            CHECK: [[DBG24:.+]] = !{ [[DBG21]], [[DBG23]] }
+            CHECK: [[DBG25:.+]] = distinct !DICompositeType(
+            CHECK-SAME: elements: [[DBG24]]
+            CHECK-SAME: name: "complex128 ({double, double})"
+            CHECK-SAME: size: 128
+            CHECK-SAME: tag: DW_TAG_structure_type
+            CHECK: [[DBG32:.+]] = !DIBasicType(encoding: DW_ATE_float, name: "float32", size: 32)
+            CHECK: [[DBG33:.+]] = !DILocalVariable(
+            CHECK-SAME: name: "a"
+            CHECK-SAME: type: [[DBG32]]
+            CHECK: [[DBG34:.+]] = !DIExpression()
+            CHECK: [[DBG35:.+]] = !DIBasicType(encoding: DW_ATE_float, name: "float64", size: 64)
+            CHECK: [[DBG36:.+]] = !DILocalVariable(
+            CHECK-SAME: name: "b"
+            CHECK-SAME: type: [[DBG35]]
+            CHECK: [[DBG37:.+]] = !DIBasicType(encoding: DW_ATE_signed, name: "int8", size: 8)
+            CHECK: [[DBG38:.+]] = !DILocalVariable(
+            CHECK-SAME: name: "c"
+            CHECK-SAME: type: [[DBG37]]
+            CHECK: [[DBG39:.+]] = !DIBasicType(encoding: DW_ATE_signed, name: "int16", size: 16)
+            CHECK: [[DBG40:.+]] = !DILocalVariable(
+            CHECK-SAME: name: "d"
+            CHECK-SAME: type: [[DBG39]]
+            CHECK: [[DBG41:.+]] = !DIBasicType(encoding: DW_ATE_signed, name: "int32", size: 32)
+            CHECK: [[DBG42:.+]] = !DILocalVariable(
+            CHECK-SAME: name: "e"
+            CHECK-SAME: type: [[DBG41]]
+            CHECK: [[DBG43:.+]] = !DIBasicType(encoding: DW_ATE_signed, name: "int64", size: 64)
+            CHECK: [[DBG44:.+]] = !DILocalVariable(
+            CHECK-SAME: name: "f"
+            CHECK-SAME: type: [[DBG43]]
+            CHECK: [[DBG45:.+]] = !DIBasicType(encoding: DW_ATE_unsigned, name: "uint8", size: 8)
+            CHECK: [[DBG46:.+]] = !DILocalVariable(
+            CHECK-SAME: name: "g"
+            CHECK-SAME: type: [[DBG45]]
+            CHECK: [[DBG47:.+]] = !DIBasicType(encoding: DW_ATE_unsigned, name: "uint16", size: 16)
+            CHECK: [[DBG48:.+]] = !DILocalVariable(
+            CHECK-SAME: name: "h"
+            CHECK-SAME: type: [[DBG47]]
+            CHECK: [[DBG49:.+]] = !DIBasicType(encoding: DW_ATE_unsigned, name: "uint32", size: 32)
+            CHECK: [[DBG50:.+]] = !DILocalVariable(
+            CHECK-SAME: name: "i"
+            CHECK-SAME: type: [[DBG49]]
+            CHECK: [[DBG51:.+]] = !DIBasicType(encoding: DW_ATE_unsigned, name: "uint64", size: 64)
+            CHECK: [[DBG52:.+]] = !DILocalVariable(
+            CHECK-SAME: name: "j"
+            CHECK-SAME: type: [[DBG51]]
+            CHECK: [[DBG53:.+]] = !DIBasicType(encoding: DW_ATE_float, name: "float", size: 32)
+            CHECK: [[DBG54:.+]] = !DIDerivedType(
+            CHECK-SAME: baseType: [[DBG53]]
+            CHECK-SAME: name: "real"
+            CHECK-SAME: offset: 0
+            CHECK-SAME: size: 32
+            CHECK-SAME: tag: DW_TAG_member
+            CHECK: [[DBG55:.+]] = !DIBasicType(encoding: DW_ATE_float, name: "float", size: 32)
+            CHECK: [[DBG56:.+]] = !DIDerivedType(
+            CHECK-SAME: baseType: [[DBG55]]
+            CHECK-SAME: name: "imag"
+            CHECK-SAME: offset: 32
+            CHECK-SAME: size: 32
+            CHECK-SAME: tag: DW_TAG_member
+            CHECK: [[DBG57:.+]] = !{ [[DBG54]], [[DBG56]] }
+            CHECK: [[DBG58:.+]] = distinct !DICompositeType(
+            CHECK-SAME: elements: [[DBG57]]
+            CHECK-SAME: name: "complex64 ({float, float})"
+            CHECK-SAME: size: 64
+            CHECK-SAME: tag: DW_TAG_structure_type
+            CHECK: [[DBG59:.+]] = !DILocalVariable(
+            CHECK-SAME: name: "k"
+            CHECK-SAME: type: [[DBG58]]
+            CHECK: [[DBG60:.+]] = !DIBasicType(encoding: DW_ATE_float, name: "double", size: 64)
+            CHECK: [[DBG61:.+]] = !DIDerivedType(
+            CHECK-SAME: baseType: [[DBG60]]
+            CHECK-SAME: name: "real"
+            CHECK-SAME: offset: 0
+            CHECK-SAME: size: 64
+            CHECK-SAME: tag: DW_TAG_member
+            CHECK: [[DBG62:.+]] = !DIBasicType(encoding: DW_ATE_float, name: "double", size: 64)
+            CHECK: [[DBG63:.+]] = !DIDerivedType(
+            CHECK-SAME: baseType: [[DBG62]]
+            CHECK-SAME: name: "imag"
+            CHECK-SAME: offset: 64
+            CHECK-SAME: size: 64
+            CHECK-SAME: tag: DW_TAG_member
+            CHECK: [[DBG64:.+]] = !{ [[DBG61]], [[DBG63]] }
+            CHECK: [[DBG65:.+]] = distinct !DICompositeType(
+            CHECK-SAME: elements: [[DBG64]]
+            CHECK-SAME: name: "complex128 ({double, double})"
+            CHECK-SAME: size: 128
+            CHECK-SAME: tag: DW_TAG_structure_type
+            CHECK: [[DBG66:.+]] = !DILocalVariable(
+            CHECK-SAME: name: "l"
+            CHECK-SAME: type: [[DBG65]]
+            """
+            pass
+
+        ir = foo.inspect_llvm()[sig]
+        self.assertFileCheckMatches(ir, foo.__doc__)
+
+    def test_arrays(self):
+        """Tests that arrays are emitted as DIBasicType."""
+        sig = (types.float32[::1],)
+
+        @cuda.jit(sig, debug=True)
+        def foo(a):
+            """
+            CHECK: distinct !DICompileUnit
+            CHECK: distinct !DISubprogram
+            CHECK: [[DBG127:.+]] = !DIBasicType(encoding: DW_ATE_boolean, name: "i8", size: 8)
+            CHECK: [[DBG128:.+]] = !DIDerivedType(
+            CHECK-SAME: baseType: [[DBG127]]
+            CHECK-SAME: size: 64
+            CHECK-SAME: tag: DW_TAG_pointer_type
+            CHECK-SAME: )
+            CHECK: [[DBG129:.+]] = !DIDerivedType(
+            CHECK-SAME: baseType: [[DBG128]]
+            CHECK-SAME: name: "meminfo"
+            CHECK-SAME: offset: 0
+            CHECK-SAME: size: 64
+            CHECK-SAME: tag: DW_TAG_member
+            CHECK-SAME: )
+            CHECK: [[DBG130:.+]] = !DIBasicType(encoding: DW_ATE_boolean, name: "i8", size: 8)
+            CHECK: [[DBG131:.+]] = !DIDerivedType(
+            CHECK-SAME: baseType: [[DBG130]]
+            CHECK-SAME: size: 64
+            CHECK-SAME: tag: DW_TAG_pointer_type
+            CHECK-SAME: )
+            CHECK: [[DBG132:.+]] = !DIDerivedType(
+            CHECK-SAME: baseType: [[DBG131]]
+            CHECK-SAME: name: "parent"
+            CHECK-SAME: offset: 64
+            CHECK-SAME: size: 64
+            CHECK-SAME: tag: DW_TAG_member
+            CHECK-SAME: )
+            CHECK: [[DBG133:.+]] = !DIBasicType(encoding: DW_ATE_signed, name: "int64", size: 64)
+            CHECK: [[DBG134:.+]] = !DIDerivedType(
+            CHECK-SAME: baseType: [[DBG133]]
+            CHECK-SAME: name: "nitems"
+            CHECK-SAME: offset: 128
+            CHECK-SAME: size: 64
+            CHECK-SAME: tag: DW_TAG_member
+            CHECK-SAME: )
+            CHECK: [[DBG135:.+]] = !DIBasicType(encoding: DW_ATE_signed, name: "int64", size: 64)
+            CHECK: [[DBG136:.+]] = !DIDerivedType(
+            CHECK-SAME: baseType: [[DBG135]]
+            CHECK-SAME: name: "itemsize"
+            CHECK-SAME: offset: 192
+            CHECK-SAME: size: 64
+            CHECK-SAME: tag: DW_TAG_member
+            CHECK-SAME: )
+            CHECK: [[DBG137:.+]] = !DIBasicType(encoding: DW_ATE_float, name: "float32", size: 32)
+            CHECK: [[DBG138:.+]] = !DIDerivedType(
+            CHECK-SAME: baseType: [[DBG137]]
+            CHECK-SAME: size: 64
+            CHECK-SAME: tag: DW_TAG_pointer_type
+            CHECK-SAME: )
+            CHECK: [[DBG139:.+]] = !DIDerivedType(
+            CHECK-SAME: baseType: [[DBG138]]
+            CHECK-SAME: name: "data"
+            CHECK-SAME: offset: 256
+            CHECK-SAME: size: 64
+            CHECK-SAME: tag: DW_TAG_member
+            CHECK-SAME: )
+            CHECK: [[DBG140:.+]] = !DIBasicType(encoding: DW_ATE_unsigned, name: "i64", size: 64)
+            CHECK: [[DBG141:.+]] = !DICompositeType(
+            CHECK-SAME: baseType: [[DBG140]]
+            CHECK-SAME: identifier: "[1 x i64]"
+            CHECK-SAME: name: "UniTuple(int64 x 1) ([1 x i64])"
+            CHECK-SAME: tag: DW_TAG_array_type
+            CHECK-SAME: )
+            CHECK: [[DBG142:.+]] = !DIDerivedType(
+            CHECK-SAME: baseType: [[DBG141]]
+            CHECK-SAME: name: "shape"
+            CHECK-SAME: offset: 320
+            CHECK-SAME: size: 64
+            CHECK-SAME: tag: DW_TAG_member
+            CHECK-SAME: )
+            CHECK: [[DBG143:.+]] = !DIBasicType(encoding: DW_ATE_unsigned, name: "i64", size: 64)
+            CHECK: [[DBG144:.+]] = !DICompositeType(
+            CHECK-SAME: baseType: [[DBG143]]
+            CHECK-SAME: identifier: "[1 x i64]"
+            CHECK-SAME: name: "UniTuple(int64 x 1) ([1 x i64])"
+            CHECK-SAME: size: 64
+            CHECK-SAME: tag: DW_TAG_array_type
+            CHECK-SAME: )
+            CHECK: [[DBG145:.+]] = !DIDerivedType(
+            CHECK-SAME: baseType: [[DBG144]]
+            CHECK-SAME: name: "strides"
+            CHECK-SAME: offset: 384
+            CHECK-SAME: size: 64
+            CHECK-SAME: tag: DW_TAG_member
+            CHECK-SAME: )
+            CHECK: [[DBG146:.+]] = !{ [[DBG129]], [[DBG132]], [[DBG134]], [[DBG136]], [[DBG139]], [[DBG142]], [[DBG145]] }
+            CHECK: [[DBG147:.+]] = distinct !DICompositeType(
+            CHECK-SAME: elements: [[DBG146]]
+            CHECK-SAME: identifier: "{i8*, i8*, i64, i64, float*, [1 x i64], [1 x i64]}"
+            CHECK-SAME: name: "array(float32, 1d, C) ({i8*, i8*, i64, i64, float*, [1 x i64], [1 x i64]})"
+            CHECK-SAME: size: 448
+            CHECK-SAME: tag: DW_TAG_structure_type
+            CHECK-SAME: )
+            CHECK: !DILocalVariable(
+            CHECK-SAME: name: "a"
+            CHECK-SAME: type: [[DBG147]]
+            CHECK-SAME: )
+            """
+            pass
+
+        ir = foo.inspect_llvm()[sig]
+        self.assertFileCheckMatches(ir, foo.__doc__)
+
 
 if __name__ == "__main__":
     unittest.main()

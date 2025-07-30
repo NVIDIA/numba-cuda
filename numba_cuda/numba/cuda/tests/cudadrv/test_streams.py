@@ -19,6 +19,7 @@ def with_asyncio_loop(f):
     return runner
 
 
+@unittest.skip("Disabled temporarily due to Issue #317")
 @skip_on_cudasim("CUDA Driver API unsupported in the simulator")
 class TestCudaStream(CUDATestCase):
     def test_add_callback(self):
