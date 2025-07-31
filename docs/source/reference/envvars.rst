@@ -84,8 +84,8 @@ target.
 
    .. seealso::
 
-      The `Default Stream section
-      <https://nvidia.github.io/cuda-python/release/11.6.0-notes.html#default-stream>`_
+      The `Runtime Environment Variables section
+      <https://nvidia.github.io/cuda-python/cuda-bindings/latest/environment_variables.html#runtime-environment-variables>`_
       in the NVIDIA Bindings documentation.
 
 .. envvar:: NUMBA_CUDA_LOW_OCCUPANCY_WARNINGS

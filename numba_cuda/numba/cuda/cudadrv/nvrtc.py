@@ -154,16 +154,9 @@ class NVRTC:
 
                 # Find & populate functions
                 for name, proto in inst._PROTOTYPES.items():
-                    try:
-                        func = getattr(lib, name)
-                        func.restype = proto[0]
-                        func.argtypes = proto[1:]
-                    except AttributeError:
-                        if "LTOIR" in name:
-                            # CUDA 11 does not have LTOIR functions; ignore
-                            continue
-                        else:
-                            raise
+                    func = getattr(lib, name)
+                    func.restype = proto[0]
+                    func.argtypes = proto[1:]
 
                     @functools.wraps(func)
                     def checked_call(*args, func=func, name=name):
@@ -308,27 +301,22 @@ def compile(src, name, cc, ltoir=False):
 
     version = nvrtc.get_version()
     ver_str = lambda v: ".".join(v)
-    if version < (11, 2):
+    supported_arch = nvrtc.get_supported_archs()
+    try:
+        found = max(filter(lambda v: v <= cc, [v for v in supported_arch]))
+    except ValueError:
         raise RuntimeError(
-            "Unsupported CUDA version. CUDA 11.2 or higher is required."
+            f"Device compute capability {ver_str(cc)} is less than the "
+            f"minimum supported by NVRTC {ver_str(version)}. Supported "
+            "compute capabilities are "
+            f"{', '.join([ver_str(v) for v in supported_arch])}."
         )
-    else:
-        supported_arch = nvrtc.get_supported_archs()
-        try:
-            found = max(filter(lambda v: v <= cc, [v for v in supported_arch]))
-        except ValueError:
-            raise RuntimeError(
-                f"Device compute capability {ver_str(cc)} is less than the "
-                f"minimum supported by NVRTC {ver_str(version)}. Supported "
-                "compute capabilities are "
-                f"{', '.join([ver_str(v) for v in supported_arch])}."
-            )
 
-        if found != cc:
-            warnings.warn(
-                f"Device compute capability {ver_str(cc)} is not supported by "
-                f"NVRTC {ver_str(version)}. Using {ver_str(found)} instead."
-            )
+    if found != cc:
+        warnings.warn(
+            f"Device compute capability {ver_str(cc)} is not supported by "
+            f"NVRTC {ver_str(version)}. Using {ver_str(found)} instead."
+        )
 
     # Compilation options:
     # - Compile for the current device's compute capability.
@@ -348,16 +336,10 @@ def compile(src, name, cc, ltoir=False):
         f"{os.path.join(cuda_include_dir, 'cccl')}",
     ]
 
-    nvrtc_version = nvrtc.get_version()
-    nvrtc_ver_major = nvrtc_version[0]
-
     cudadrv_path = os.path.dirname(os.path.abspath(__file__))
     numba_cuda_path = os.path.dirname(cudadrv_path)
 
-    if nvrtc_ver_major == 11:
-        numba_include = f"{os.path.join(numba_cuda_path, 'include', '11')}"
-    else:
-        numba_include = f"{os.path.join(numba_cuda_path, 'include', '12')}"
+    numba_include = f"{os.path.join(numba_cuda_path, 'include', '12')}"
 
     if config.CUDA_NVRTC_EXTRA_SEARCH_PATHS:
         extra_includes = config.CUDA_NVRTC_EXTRA_SEARCH_PATHS.split(":")
@@ -373,7 +355,6 @@ def compile(src, name, cc, ltoir=False):
             arch=arch,
             include_path=includes,
             relocatable_device_code=True,
-            std="c++17" if nvrtc_version < (12, 0) else None,
             link_time_optimization=ltoir,
             name=name,
         )
@@ -409,9 +390,6 @@ def compile(src, name, cc, ltoir=False):
 
         if ltoir:
             options.append("-dlto")
-
-        if nvrtc_version < (12, 0):
-            options.append("-std=c++17")
 
         # Compile the program
         compile_error = nvrtc.compile_program(program, options)
