@@ -1,4 +1,5 @@
 import numpy as np
+import pytest
 
 from numba.cuda.testing import unittest, CUDATestCase, skip_on_cudasim
 from numba import cuda
@@ -22,6 +23,13 @@ def array_slice_2d(a, x_id, x_size, y_id, y_size):
 
 def array_local(shape, dtype):
     return cuda.local.array(shape, dtype=dtype)
+
+
+const_data = np.asarray([1, 2, 3])
+
+
+def array_const():
+    return cuda.const.array_like(const_data)
 
 
 class TestCudaArrayReturn(CUDATestCase):
@@ -67,7 +75,7 @@ class TestCudaArrayReturn(CUDATestCase):
         assert a[2, 4] == 1
 
     @skip_on_cudasim("type inference is unsupported in the simulator")
-    def test_array_local(self):
+    def test_array_local_illegal(self):
         f = cuda.jit(device=True)(array_local)
 
         @cuda.jit
@@ -77,6 +85,25 @@ class TestCudaArrayReturn(CUDATestCase):
 
         with self.assertRaises(TypingError):
             kernel[1, 1]()
+
+    @pytest.mark.xfail(reason="Returning const arrays is not yet supported")
+    @skip_on_cudasim("type inference is unsupported in the simulator")
+    def test_array_const(self):
+        f = cuda.jit(device=True)(array_const)
+
+        r = np.zeros_like(const_data)
+
+        @cuda.jit
+        def kernel(r):
+            x = f()
+            i = cuda.grid(1)
+
+            if i < len(r):
+                r[i] = x[i]
+
+        kernel[1, 1](r)
+
+        self.assertEqual(r, const_data)
 
 
 if __name__ == "__main__":
