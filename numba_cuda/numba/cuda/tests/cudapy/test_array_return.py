@@ -98,6 +98,25 @@ class TestCudaArrayReturn(CUDATestCase):
         assert a[0, 0] == 0
         assert a[2, 4] == 1
 
+    def test_view_return(self):
+        @cuda.jit
+        def array_return(a):
+            return a.view(np.uint16)
+
+        @cuda.jit
+        def kernel(x):
+            y = array_return(x)
+            y[0] = 1
+            y[1] = 2
+
+        a = np.zeros(2, np.uint32)
+        a[1] = 3
+
+        kernel[1, 1](a)
+
+        assert a[0] == (2**16) * 2 + 1
+        assert a[1] == 1
+
     @skip_on_cudasim("type inference is unsupported in the simulator")
     def test_array_local_illegal(self):
         @cuda.jit

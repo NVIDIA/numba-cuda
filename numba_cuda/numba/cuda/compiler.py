@@ -304,6 +304,8 @@ class CUDANopythonTypeInference(NopythonTypeInference):
         retstmts = []
         forest = dict()
         args = set()
+        view_vars = dict()
+        call_vars = dict()
         for bid, blk in interp.blocks.items():
             for inst in blk.body:
                 if isinstance(inst, numba_ir.Return):
@@ -314,15 +316,27 @@ class CUDANopythonTypeInference(NopythonTypeInference):
                             forest[inst.target.name] = tuple(
                                 v.name for v in inst.value.incoming_values
                             )
-                        if inst.value.op not in {"cast", "getitem"}:
-                            continue
-                        forest[inst.target.name] = (inst.value.value.name,)
+                        elif (
+                            inst.value.op == "getattr"
+                            and inst.value.attr == "view"
+                        ):
+                            view_vars[inst.target.name] = inst.value.value.name
+                        elif inst.value.op == "call":
+                            func_var = inst.value._kws.get("func")
+                            if isinstance(func_var, numba_ir.Var):
+                                call_vars[inst.target.name] = func_var.name
+                        elif inst.value.op in {"cast", "getitem"}:
+                            forest[inst.target.name] = (inst.value.value.name,)
                     elif isinstance(inst.value, numba_ir.Arg):
                         args.add(inst.target.name)
                     elif isinstance(inst.value, numba_ir.Var):
                         forest[inst.target.name] = (inst.value.name,)
 
         assert retstmts, "No return statements?"
+
+        for var, method in call_vars.items():
+            if method in view_vars:
+                forest[var] = (view_vars[method],)
 
         change = True
         while change:
