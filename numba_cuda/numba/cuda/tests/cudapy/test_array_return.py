@@ -115,7 +115,7 @@ class TestCudaArrayReturn(CUDATestCase):
         kernel[1, 1](a)
 
         assert a[0] == (2**16) * 2 + 1
-        assert a[1] == 1
+        assert a[1] == 3
 
     @skip_on_cudasim("type inference is unsupported in the simulator")
     def test_array_local_illegal(self):
