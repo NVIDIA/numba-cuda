@@ -12,7 +12,6 @@ python -m pip install \
     "${package}[test]" \
     "cuda-python==${CUDA_VER_MAJOR_MINOR%.*}.*" \
     "cuda-core==0.3.*" \
-    pytest \
     pytest-cov \
     coverage
 
@@ -46,9 +45,9 @@ rapids-logger "Show Numba system info"
 python -m numba --sysinfo
 
 rapids-logger "Run Tests with Coverage"
-pytest --pyargs numba.cuda.tests -v --cov
+python -m pytest --pyargs numba.cuda.tests -v --cov
 
 rapids-logger "Generate Markdown Coverage Report"
-coverage report --format markdown
+python -m coverage report --format markdown
 
 popd
