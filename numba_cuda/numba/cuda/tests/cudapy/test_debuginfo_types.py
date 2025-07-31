@@ -1,5 +1,5 @@
 import numba.cuda as cuda
-from numba.cuda.testing import CUDATestCase
+from numba.cuda.testing import CUDATestCase, skip_on_cudasim
 import llvmlite
 from numba import types
 
@@ -446,6 +446,7 @@ array_types: tuple[tuple[types.Type, str]] = (
 )
 
 
+@skip_on_cudasim("Simulator does not produce debug dumps")
 class TestCudaDebugInfoTypes(CUDATestCase):
     def test_ditypes(self):
         llvmlite_minor_version = int(llvmlite.__version__.split(".")[1])
