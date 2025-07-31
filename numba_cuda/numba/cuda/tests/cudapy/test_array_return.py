@@ -24,10 +24,31 @@ class TestCudaArrayReturn(CUDATestCase):
         assert a[0] == 0
         assert a[2] == 1
 
-    def test_array_slice(self):
+    def test_array_return_conditional(self):
         @cuda.jit
-        def array_slice(a, start, end):
-            return a[start:end]
+        def array_return_conditional(a, b, condition):
+            if condition:
+                r = a
+            else:
+                r = b
+            return r
+
+        @cuda.jit
+        def kernel(x, y, condition):
+            y = array_return_conditional(x, y, condition)
+            y[2] = 1
+
+        x = np.zeros(5)
+        y = np.ones(5)
+
+        kernel[1, 1](x, y, True)
+
+        assert x[0] == 0
+        assert x[2] == 1
+        assert all(y == 0)
+
+    def _test_array_slice(self, test_function):
+        array_slice = cuda.jit(test_function)
 
         @cuda.jit
         def kernel(x):
@@ -40,6 +61,22 @@ class TestCudaArrayReturn(CUDATestCase):
 
         assert a[0] == 0
         assert a[2] == 1
+
+    def test_array_slice(self):
+        def array_slice(a, start, end):
+            return a[start:end]
+
+        self._test_array_slice(array_slice)
+
+    def test_array_slice_conditional(self):
+        def array_slice_conditional(a, start, end):
+            if start > 0:
+                y = a[start:end]
+            else:
+                y = a[end:start]
+            return y
+
+        self._test_array_slice(array_slice_conditional)
 
     def test_array_slice_2d(self):
         @cuda.jit
