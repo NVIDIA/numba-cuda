@@ -45,7 +45,7 @@ class TestCudaArrayReturn(CUDATestCase):
 
         assert x[0] == 0
         assert x[2] == 1
-        assert all(y == 0)
+        assert all(y == 1)
 
     def _test_array_slice(self, test_function):
         array_slice = cuda.jit(test_function)

@@ -310,23 +310,38 @@ class CUDANopythonTypeInference(NopythonTypeInference):
                     retstmts.append(inst.value.name)
                 elif isinstance(inst, numba_ir.Assign):
                     if isinstance(inst.value, numba_ir.Expr):
+                        if inst.value.op == "phi":
+                            forest[inst.target.name] = tuple(
+                                v.name for v in inst.value.incoming_values
+                            )
                         if inst.value.op not in {"cast", "getitem"}:
                             continue
-                        forest[inst.target.name] = inst.value.value.name
+                        forest[inst.target.name] = (inst.value.value.name,)
                     elif isinstance(inst.value, numba_ir.Arg):
                         args.add(inst.target.name)
+                    elif isinstance(inst.value, numba_ir.Var):
+                        forest[inst.target.name] = (inst.value.name,)
 
         assert retstmts, "No return statements?"
 
-        for var in retstmts:
-            while var in forest:
-                var = forest[var]
-            if var not in args and self._raise_errors:
-                msg = (
-                    "Only accept returning of array passed into "
-                    "the function as argument"
-                )
-                raise errors.NumbaTypeError(msg)
+        change = True
+        while change:
+            change = False
+            new_retstmts = []
+            for var in retstmts:
+                if var in forest:
+                    change = True
+                    new_retstmts += list(forest[var])
+                else:
+                    new_retstmts += [var]
+            retstmts = new_retstmts
+
+        if not all(var in args for var in retstmts) and self._raise_errors:
+            msg = (
+                "Only accept returning of array passed into "
+                "the function as argument"
+            )
+            raise errors.NumbaTypeError(msg)
 
     def _legalize_return_type(self, return_type, interp, targetctx):
         """
