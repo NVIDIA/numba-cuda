@@ -90,7 +90,7 @@ class TestJitErrors(CUDATestCase):
         self.assertIn("resolving callee type: type(CUDADispatcher", excstr)
         self.assertIn("NameError: name 'floor' is not defined", excstr)
 
-    @skip_on_cudasim("Simulator does not use pynvjitlink")
+    @skip_on_cudasim("Simulator does not use nvjitlink")
     @unittest.skipIf(
         config.CUDA_USE_NVIDIA_BINDING, "NVIDIA cuda bindings enabled"
     )

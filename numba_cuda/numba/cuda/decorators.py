@@ -86,7 +86,7 @@ def jit(
                           number of threads per block.
     :type launch_bounds: int | tuple[int]
     :param lto: Whether to enable LTO. If unspecified, LTO is enabled by
-                default when pynvjitlink is available, except for kernels where
+                default when nvjitlink is available, except for kernels where
                 ``debug=True``.
     :type lto: bool
     """
@@ -143,7 +143,7 @@ def jit(
         raise ValueError("link keyword invalid for device function")
 
     if lto is None:
-        # Default to using LTO if pynvjitlink is available and we're not debugging
+        # Default to using LTO if nvjitlink is available and we're not debugging
         lto = _have_nvjitlink() and not debug
     else:
         if lto and not _have_nvjitlink():
