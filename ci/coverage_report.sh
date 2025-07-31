@@ -48,6 +48,6 @@ rapids-logger "Run Tests with Coverage"
 python -m pytest --pyargs numba.cuda.tests -v --cov
 
 rapids-logger "Generate Markdown Coverage Report"
-python -m coverage report --format markdown
+python -m coverage report --format markdown >> $GITHUB_STEP_SUMMARY
 
 popd
