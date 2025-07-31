@@ -154,6 +154,26 @@ class TestCudaArrayReturn(CUDATestCase):
 
         np.testing.assert_equal(r, const_data)
 
+    @pytest.mark.xfail(reason="Returning local arrays is not yet supported")
+    @skip_on_cudasim("type inference is unsupported in the simulator")
+    def test_array_local(self):
+        @cuda.jit
+        def array_local_fp32(size):
+            return cuda.local.array(size, dtype=np.float32)
+
+        @cuda.jit
+        def kernel(r):
+            x = array_local_fp32(2)
+            x[0], x[1] = 1.0, 2.0
+
+            r[0] = x[0] + x[1]
+
+        r = np.zeros(1, dtype=np.float32)
+
+        kernel[1, 1](r)
+
+        np.testing.assert_equal(r, [3.0])
+
 
 if __name__ == "__main__":
     unittest.main()
