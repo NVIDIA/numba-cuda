@@ -8,14 +8,13 @@ from numba.core import (
     funcdesc,
     config,
     compiler,
-    sigutils,
     errors,
 )
 from numba.core.compiler import (
     sanitize_compile_result_entries,
-    CompilerBase,
     DefaultPassBuilder,
 )
+from numba.cuda.core.compiler import CompilerBase
 from numba.core.compiler_lock import global_compiler_lock
 from numba.core.compiler_machinery import (
     FunctionPass,
@@ -30,7 +29,6 @@ from numba.core.typed_passes import (
     fallback_context,
     type_inference_stage,
     IRLegalization,
-    NativeLowering,
     AnnotateTypes,
     NopythonTypeInference,
 )
@@ -38,6 +36,8 @@ from warnings import warn
 from numba.cuda import nvvmutils
 from numba.cuda.api import get_current_device
 from numba.cuda.codegen import ExternalCodeLibrary
+from numba.cuda.core.typed_passes import BaseNativeLowering
+from numba.cuda.core import sigutils
 from numba.cuda.cudadrv import nvvm, nvrtc
 from numba.cuda.descriptor import cuda_target
 from numba.cuda.flags import CUDAFlags
@@ -236,7 +236,7 @@ class CreateLibrary(LoweringPass):
 
 
 @register_pass(mutates_CFG=True, analysis_only=False)
-class CUDANativeLowering(NativeLowering):
+class CUDANativeLowering(BaseNativeLowering):
     """Lowering pass for a CUDA native function IR described solely in terms of
     Numba's standard `numba.core.ir` nodes."""
 

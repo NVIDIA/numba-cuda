@@ -18,7 +18,7 @@ authors = [
 ]
 license = { text = "BSD 2-clause" }
 requires-python = ">=3.9"
-dependencies = ["numba>=0.59.1"]
+dependencies = ["numba>=0.60.0"]
 
 [project.optional-dependencies]
 cu11 = [
@@ -42,6 +42,7 @@ test = [
     "psutil",
     "cffi",
     "pytest",
+    "pytest-xdist",
     "filecheck",
 ]
 test-cu11 = [
@@ -51,7 +52,6 @@ test-cu11 = [
 test-cu12 = [
     "numba-cuda[test]",
     "nvidia-curand-cu12",
-    "pynvjitlink-cu12",
 ]
 dev = [
     "pre-commit",
@@ -91,6 +91,8 @@ include = ["numba_cuda*"]
 minversion = "8.0"
 testpaths = ["numba_cuda/numba/cuda/tests"]
 consider_namespace_packages = true
+# loadscope ensures the grouping required by CUDATestCase
+addopts = "--dist loadscope"
 
 [tool.ruff]
 line-length = 80

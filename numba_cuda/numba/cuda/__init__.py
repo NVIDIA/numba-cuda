@@ -50,7 +50,7 @@ if config.CUDA_USE_NVIDIA_BINDING:
         )
 
 if config.CUDA_ENABLE_PYNVJITLINK:
-    if USE_NV_BINDING:
+    if USE_NV_BINDING and not pynvjitlink_auto_enabled:
         warnings.warn(
             "Explicitly enabling pynvjitlink is no longer necessary. "
             "NVIDIA bindings are enabled. cuda.core will be used "
