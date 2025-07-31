@@ -76,7 +76,7 @@ jobs:
     with:
       build_type: pull-request
       script: "ci/test_conda.sh"
-      run_codecov: true
+      run_codecov: false
       matrix: ${{ needs.compute-matrix.outputs.TEST_MATRIX }}
   test-conda-ctypes-binding:
     needs:

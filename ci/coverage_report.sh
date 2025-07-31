@@ -12,6 +12,7 @@ python -m pip install \
     "${package}[test]" \
     "cuda-python==${CUDA_VER_MAJOR_MINOR%.*}.*" \
     "cuda-core==0.3.*" \
+    pytest \
     pytest-cov \
     coverage
 
