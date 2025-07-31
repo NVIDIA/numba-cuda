@@ -301,7 +301,7 @@ class CUDANopythonTypeInference(NopythonTypeInference):
 
     def _legalize_array_return_type(self, return_type, interp, targetctx):
         # Walk IR to discover all arguments and all return statements
-        retstmts = []
+        retstmts = set()
         forest = dict()
         args = set()
         view_vars = dict()
@@ -309,7 +309,7 @@ class CUDANopythonTypeInference(NopythonTypeInference):
         for bid, blk in interp.blocks.items():
             for inst in blk.body:
                 if isinstance(inst, numba_ir.Return):
-                    retstmts.append(inst.value.name)
+                    retstmts.add(inst.value.name)
                 elif isinstance(inst, numba_ir.Assign):
                     if isinstance(inst.value, numba_ir.Expr):
                         if inst.value.op == "phi":
@@ -341,14 +341,13 @@ class CUDANopythonTypeInference(NopythonTypeInference):
         change = True
         while change:
             change = False
-            new_retstmts = []
             for var in retstmts:
-                if var in forest:
-                    change = True
-                    new_retstmts += list(forest[var])
-                else:
-                    new_retstmts += [var]
-            retstmts = new_retstmts
+                if var not in forest:
+                    continue
+                change = True
+                retstmts.update(forest[var])
+                retstmts.remove(var)
+                break
 
         if not all(var in args for var in retstmts) and self._raise_errors:
             msg = (
