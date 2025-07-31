@@ -101,6 +101,7 @@ class TestSharedMemory(CUDATestCase):
         nthreads = 16
         nblocks = int(nelem / nthreads)
         dt = nps.from_dtype(arr.dtype)
+        print("DEBUG dt:", dt)
 
         @cuda.jit
         def use_sm_chunk_copy(x, y):

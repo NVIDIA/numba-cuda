@@ -6,6 +6,7 @@ from numba.cuda.core import sigutils
 from numba.cuda.dispatcher import CUDADispatcher
 from numba.cuda.simulator.kernel import FakeCUDAKernel
 from numba.cuda.cudadrv.driver import _have_nvjitlink
+from numba.cuda import types as cuda_types
 
 
 _msg_deprecated_signature_arg = (
@@ -191,6 +192,13 @@ def jit(
 
             for sig in signatures:
                 argtypes, restype = sigutils.normalize_signature(sig)
+                argtypes = tuple(
+                    cuda_types.CUDAArray.from_array_type(arg)
+                    if isinstance(arg, types.Array)
+                    and not isinstance(arg, cuda_types.CUDAArray)
+                    else arg
+                    for arg in argtypes
+                )
 
                 if restype and not device and restype != types.void:
                     raise TypeError("CUDA kernel must have void return type.")

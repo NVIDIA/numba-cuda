@@ -13,10 +13,12 @@ from numba.core import types
 from numba.cuda import cgutils
 from numba.np import ufunc_db
 from numba.np.npyimpl import register_ufuncs
+
+from numba.cuda.target import CUDATargetContext
 from .cudadrv import nvvm
 from numba import cuda
 from numba.cuda import nvvmutils, stubs
-from numba.cuda.types import dim3, CUDADispatcher
+from numba.cuda.types import dim3, CUDADispatcher, CUDAArray
 
 registry = Registry()
 lower = registry.lower
@@ -615,68 +617,84 @@ def _atomic_dispatcher(dispatch_fn):
     return imp
 
 
-@lower(stubs.atomic.add, types.Array, types.intp, types.Any)
-@lower(stubs.atomic.add, types.Array, types.UniTuple, types.Any)
-@lower(stubs.atomic.add, types.Array, types.Tuple, types.Any)
+@lower(stubs.atomic.add, CUDAArray, types.intp, types.Any)
+@lower(stubs.atomic.add, CUDAArray, types.UniTuple, types.Any)
+@lower(stubs.atomic.add, CUDAArray, types.Tuple, types.Any)
 @_atomic_dispatcher
 def ptx_atomic_add_tuple(context, builder, dtype, ptr, val):
     if dtype == types.float32:
         lmod = builder.module
         return builder.call(
-            nvvmutils.declare_atomic_add_float32(lmod), (ptr, val)
+            nvvmutils.declare_atomic_add_float32(lmod, ptr.type.addrspace),
+            (ptr, val),
         )
     elif dtype == types.float64:
         lmod = builder.module
         return builder.call(
-            nvvmutils.declare_atomic_add_float64(lmod), (ptr, val)
+            nvvmutils.declare_atomic_add_float64(lmod, ptr.type.addrspace),
+            (ptr, val),
         )
     else:
         return builder.atomic_rmw("add", ptr, val, "monotonic")
 
 
-@lower(stubs.atomic.sub, types.Array, types.intp, types.Any)
-@lower(stubs.atomic.sub, types.Array, types.UniTuple, types.Any)
-@lower(stubs.atomic.sub, types.Array, types.Tuple, types.Any)
+@lower(stubs.atomic.sub, CUDAArray, types.intp, types.Any)
+@lower(stubs.atomic.sub, CUDAArray, types.UniTuple, types.Any)
+@lower(stubs.atomic.sub, CUDAArray, types.Tuple, types.Any)
 @_atomic_dispatcher
 def ptx_atomic_sub(context, builder, dtype, ptr, val):
+    # TODO: use atomic.add with builder.neg(val) value instead
+    ptr = builder.addrspacecast(
+        ptr, ir.PointerType(ptr.type.pointee), "generic"
+    )
     if dtype == types.float32:
         lmod = builder.module
         return builder.call(
-            nvvmutils.declare_atomic_sub_float32(lmod), (ptr, val)
+            nvvmutils.declare_atomic_sub_float32(lmod, ptr.type.addrspace),
+            (ptr, val),
         )
     elif dtype == types.float64:
         lmod = builder.module
         return builder.call(
-            nvvmutils.declare_atomic_sub_float64(lmod), (ptr, val)
+            nvvmutils.declare_atomic_sub_float64(lmod, ptr.type.addrspace),
+            (ptr, val),
         )
     else:
         return builder.atomic_rmw("sub", ptr, val, "monotonic")
 
 
-@lower(stubs.atomic.inc, types.Array, types.intp, types.Any)
-@lower(stubs.atomic.inc, types.Array, types.UniTuple, types.Any)
-@lower(stubs.atomic.inc, types.Array, types.Tuple, types.Any)
+@lower(stubs.atomic.inc, CUDAArray, types.intp, types.Any)
+@lower(stubs.atomic.inc, CUDAArray, types.UniTuple, types.Any)
+@lower(stubs.atomic.inc, CUDAArray, types.Tuple, types.Any)
 @_atomic_dispatcher
 def ptx_atomic_inc(context, builder, dtype, ptr, val):
+    # TODO: add variation for different address spaces
+    ptr = builder.addrspacecast(
+        ptr, ir.PointerType(ptr.type.pointee), "generic"
+    )
     if dtype in cuda.cudadecl.unsigned_int_numba_types:
         bw = dtype.bitwidth
         lmod = builder.module
         fn = getattr(nvvmutils, f"declare_atomic_inc_int{bw}")
-        return builder.call(fn(lmod), (ptr, val))
+        return builder.call(fn(lmod, ptr.type.addrspace), (ptr, val))
     else:
         raise TypeError(f"Unimplemented atomic inc with {dtype} array")
 
 
-@lower(stubs.atomic.dec, types.Array, types.intp, types.Any)
-@lower(stubs.atomic.dec, types.Array, types.UniTuple, types.Any)
-@lower(stubs.atomic.dec, types.Array, types.Tuple, types.Any)
+@lower(stubs.atomic.dec, CUDAArray, types.intp, types.Any)
+@lower(stubs.atomic.dec, CUDAArray, types.UniTuple, types.Any)
+@lower(stubs.atomic.dec, CUDAArray, types.Tuple, types.Any)
 @_atomic_dispatcher
 def ptx_atomic_dec(context, builder, dtype, ptr, val):
+    # TODO: add variation for different address spaces
+    ptr = builder.addrspacecast(
+        ptr, ir.PointerType(ptr.type.pointee), "generic"
+    )
     if dtype in cuda.cudadecl.unsigned_int_numba_types:
         bw = dtype.bitwidth
         lmod = builder.module
         fn = getattr(nvvmutils, f"declare_atomic_dec_int{bw}")
-        return builder.call(fn(lmod), (ptr, val))
+        return builder.call(fn(lmod, ptr.type.addrspace), (ptr, val))
     else:
         raise TypeError(f"Unimplemented atomic dec with {dtype} array")
 
@@ -698,9 +716,9 @@ ptx_atomic_bitwise(stubs.atomic.or_, "or")
 ptx_atomic_bitwise(stubs.atomic.xor, "xor")
 
 
-@lower(stubs.atomic.exch, types.Array, types.intp, types.Any)
-@lower(stubs.atomic.exch, types.Array, types.UniTuple, types.Any)
-@lower(stubs.atomic.exch, types.Array, types.Tuple, types.Any)
+@lower(stubs.atomic.exch, CUDAArray, types.intp, types.Any)
+@lower(stubs.atomic.exch, CUDAArray, types.UniTuple, types.Any)
+@lower(stubs.atomic.exch, CUDAArray, types.Tuple, types.Any)
 @_atomic_dispatcher
 def ptx_atomic_exch(context, builder, dtype, ptr, val):
     if dtype in (cuda.cudadecl.integer_numba_types):
@@ -709,19 +727,25 @@ def ptx_atomic_exch(context, builder, dtype, ptr, val):
         raise TypeError(f"Unimplemented atomic exch with {dtype} array")
 
 
-@lower(stubs.atomic.max, types.Array, types.intp, types.Any)
-@lower(stubs.atomic.max, types.Array, types.Tuple, types.Any)
-@lower(stubs.atomic.max, types.Array, types.UniTuple, types.Any)
+@lower(stubs.atomic.max, CUDAArray, types.intp, types.Any)
+@lower(stubs.atomic.max, CUDAArray, types.Tuple, types.Any)
+@lower(stubs.atomic.max, CUDAArray, types.UniTuple, types.Any)
 @_atomic_dispatcher
 def ptx_atomic_max(context, builder, dtype, ptr, val):
+    # TODO: add variation for different address spaces
+    ptr = builder.addrspacecast(
+        ptr, ir.PointerType(ptr.type.pointee), "generic"
+    )
     lmod = builder.module
     if dtype == types.float64:
         return builder.call(
-            nvvmutils.declare_atomic_max_float64(lmod), (ptr, val)
+            nvvmutils.declare_atomic_max_float64(lmod, ptr.type.addrspace),
+            (ptr, val),
         )
     elif dtype == types.float32:
         return builder.call(
-            nvvmutils.declare_atomic_max_float32(lmod), (ptr, val)
+            nvvmutils.declare_atomic_max_float32(lmod, ptr.type.addrspace),
+            (ptr, val),
         )
     elif dtype in (types.int32, types.int64):
         return builder.atomic_rmw("max", ptr, val, ordering="monotonic")
@@ -731,19 +755,25 @@ def ptx_atomic_max(context, builder, dtype, ptr, val):
         raise TypeError("Unimplemented atomic max with %s array" % dtype)
 
 
-@lower(stubs.atomic.min, types.Array, types.intp, types.Any)
-@lower(stubs.atomic.min, types.Array, types.Tuple, types.Any)
-@lower(stubs.atomic.min, types.Array, types.UniTuple, types.Any)
+@lower(stubs.atomic.min, CUDAArray, types.intp, types.Any)
+@lower(stubs.atomic.min, CUDAArray, types.Tuple, types.Any)
+@lower(stubs.atomic.min, CUDAArray, types.UniTuple, types.Any)
 @_atomic_dispatcher
 def ptx_atomic_min(context, builder, dtype, ptr, val):
+    # TODO: add variation for different address spaces
+    ptr = builder.addrspacecast(
+        ptr, ir.PointerType(ptr.type.pointee), "generic"
+    )
     lmod = builder.module
     if dtype == types.float64:
         return builder.call(
-            nvvmutils.declare_atomic_min_float64(lmod), (ptr, val)
+            nvvmutils.declare_atomic_min_float64(lmod, ptr.type.addrspace),
+            (ptr, val),
         )
     elif dtype == types.float32:
         return builder.call(
-            nvvmutils.declare_atomic_min_float32(lmod), (ptr, val)
+            nvvmutils.declare_atomic_min_float32(lmod, ptr.type.addrspace),
+            (ptr, val),
         )
     elif dtype in (types.int32, types.int64):
         return builder.atomic_rmw("min", ptr, val, ordering="monotonic")
@@ -753,19 +783,25 @@ def ptx_atomic_min(context, builder, dtype, ptr, val):
         raise TypeError("Unimplemented atomic min with %s array" % dtype)
 
 
-@lower(stubs.atomic.nanmax, types.Array, types.intp, types.Any)
-@lower(stubs.atomic.nanmax, types.Array, types.Tuple, types.Any)
-@lower(stubs.atomic.nanmax, types.Array, types.UniTuple, types.Any)
+@lower(stubs.atomic.nanmax, CUDAArray, types.intp, types.Any)
+@lower(stubs.atomic.nanmax, CUDAArray, types.Tuple, types.Any)
+@lower(stubs.atomic.nanmax, CUDAArray, types.UniTuple, types.Any)
 @_atomic_dispatcher
 def ptx_atomic_nanmax(context, builder, dtype, ptr, val):
+    # TODO: add variation for different address spaces
+    ptr = builder.addrspacecast(
+        ptr, ir.PointerType(ptr.type.pointee), "generic"
+    )
     lmod = builder.module
     if dtype == types.float64:
         return builder.call(
-            nvvmutils.declare_atomic_nanmax_float64(lmod), (ptr, val)
+            nvvmutils.declare_atomic_nanmax_float64(lmod, ptr.type.addrspace),
+            (ptr, val),
         )
     elif dtype == types.float32:
         return builder.call(
-            nvvmutils.declare_atomic_nanmax_float32(lmod), (ptr, val)
+            nvvmutils.declare_atomic_nanmax_float32(lmod, ptr.type.addrspace),
+            (ptr, val),
         )
     elif dtype in (types.int32, types.int64):
         return builder.atomic_rmw("max", ptr, val, ordering="monotonic")
@@ -775,19 +811,25 @@ def ptx_atomic_nanmax(context, builder, dtype, ptr, val):
         raise TypeError("Unimplemented atomic max with %s array" % dtype)
 
 
-@lower(stubs.atomic.nanmin, types.Array, types.intp, types.Any)
-@lower(stubs.atomic.nanmin, types.Array, types.Tuple, types.Any)
-@lower(stubs.atomic.nanmin, types.Array, types.UniTuple, types.Any)
+@lower(stubs.atomic.nanmin, CUDAArray, types.intp, types.Any)
+@lower(stubs.atomic.nanmin, CUDAArray, types.Tuple, types.Any)
+@lower(stubs.atomic.nanmin, CUDAArray, types.UniTuple, types.Any)
 @_atomic_dispatcher
 def ptx_atomic_nanmin(context, builder, dtype, ptr, val):
+    # TODO: add variation for different address spaces
+    ptr = builder.addrspacecast(
+        ptr, ir.PointerType(ptr.type.pointee), "generic"
+    )
     lmod = builder.module
     if dtype == types.float64:
         return builder.call(
-            nvvmutils.declare_atomic_nanmin_float64(lmod), (ptr, val)
+            nvvmutils.declare_atomic_nanmin_float64(lmod, ptr.type.addrspace),
+            (ptr, val),
         )
     elif dtype == types.float32:
         return builder.call(
-            nvvmutils.declare_atomic_nanmin_float32(lmod), (ptr, val)
+            nvvmutils.declare_atomic_nanmin_float32(lmod, ptr.type.addrspace),
+            (ptr, val),
         )
     elif dtype in (types.int32, types.int64):
         return builder.atomic_rmw("min", ptr, val, ordering="monotonic")
@@ -804,9 +846,9 @@ def ptx_atomic_compare_and_swap(context, builder, sig, args):
     return ptx_atomic_cas(context, builder, sig, args)
 
 
-@lower(stubs.atomic.cas, types.Array, types.intp, types.Any, types.Any)
-@lower(stubs.atomic.cas, types.Array, types.Tuple, types.Any, types.Any)
-@lower(stubs.atomic.cas, types.Array, types.UniTuple, types.Any, types.Any)
+@lower(stubs.atomic.cas, CUDAArray, types.intp, types.Any, types.Any)
+@lower(stubs.atomic.cas, CUDAArray, types.Tuple, types.Any, types.Any)
+@lower(stubs.atomic.cas, CUDAArray, types.UniTuple, types.Any, types.Any)
 def ptx_atomic_cas(context, builder, sig, args):
     aryty, indty, oldty, valty = sig.args
     ary, inds, old, val = args
@@ -855,8 +897,8 @@ def ptx_nanosleep(context, builder, sig, args):
 
 
 def _generic_array(
-    context,
-    builder,
+    context: CUDATargetContext,
+    builder: ir.IRBuilder,
     shape,
     dtype,
     symbol_name,
@@ -882,7 +924,7 @@ def _generic_array(
     if dtype not in types.number_domain and not other_supported_type:
         raise TypeError("unsupported type: %s" % dtype)
 
-    lldtype = context.get_data_type(dtype)
+    lldtype: ir.Type = context.get_data_type(dtype)
     laryty = ir.ArrayType(lldtype, elemcount)
 
     if addrspace == nvvm.ADDRSPACE_LOCAL:
@@ -890,6 +932,7 @@ def _generic_array(
         # NVVM is smart enough to only use local memory if no register is
         # available
         dataptr = cgutils.alloca_once(builder, laryty, name=symbol_name)
+        addrspace = nvvm.ADDRSPACE_GENERIC
 
         # If the caller has specified a custom alignment, just set the align
         # attribute on the alloca IR directly.  We don't do any additional
@@ -936,9 +979,8 @@ def _generic_array(
 
             gvmem.initializer = ir.Constant(laryty, ir.Undefined)
 
-        # Convert to generic address-space
-        dataptr = builder.addrspacecast(
-            gvmem, ir.PointerType(ir.IntType(8)), "generic"
+        dataptr = builder.bitcast(
+            gvmem, ir.PointerType(lldtype, addrspace=gvmem.addrspace)
         )
 
     targetdata = ll.create_target_data(nvvm.NVVM().data_layout)
@@ -978,7 +1020,7 @@ def _generic_array(
 
     # Create array object
     ndim = len(shape)
-    aryty = types.Array(dtype=dtype, ndim=ndim, layout="C")
+    aryty = CUDAArray(dtype=dtype, ndim=ndim, layout="C", addrspace=addrspace)
     ary = context.make_array(aryty)(context, builder)
 
     context.populate_array(
