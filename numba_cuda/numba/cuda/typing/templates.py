@@ -981,6 +981,22 @@ class _TemplateTargetHelperMixin(object):
         # Get registry for the current hardware
         disp = dispatcher_registry[target_hw]
         tgtctx = disp.targetdescr.target_context
+
+        # ---------------------------------------------------------------------
+        # XXX: In upstream Numba, this function would prefer the builtin
+        # registry if it was installed in the target (as it is for the CUDA
+        # target). The builtin registry has been removed from this file (it was
+        # initialized as `builtin_registry = Registry()`) as it would duplicate
+        # the builtin registry in upstream Numba, which would be likely to lead
+        # to confusion / mixing things up between two builtin registries. The
+        # comment that accompanied this behaviour is left here, even though the
+        # code that would pick the builtin registry has been removed, for the
+        # benefit of future understanding.
+        #
+        # ---------------------------------------------------------------------
+        #
+        # Comment left in from upstream:
+        #
         # This is all workarounds...
         # The issue is that whilst targets shouldn't care about which registry
         # in which to register lowering implementations, the CUDA target
@@ -1000,16 +1016,25 @@ class _TemplateTargetHelperMixin(object):
         # implementations and low level target invariant things and should not
         # be modified further. It should be acceptable to remove the `then`
         # branch and just keep the `else`.
+        # =====================================================================
 
+        # =====================================================================
+        # XXX: This ought not to be necessary in the long term, but is left in
+        # for now. When there are fewer registries (or just one) for a target,
+        # it may be safe to remove this. Or, it may always require a refresh in
+        # case there are pending registrations - this remains to be seen
+        # ---------------------------------------------------------------------
+        #
+        # Comment / code left in from upstream:
+        #
         # In case the target has swapped, e.g. cuda borrowing cpu, refresh to
         # populate.
         tgtctx.refresh()
-        if builtin_registry in tgtctx._registries:
-            reg = builtin_registry
-        else:
-            # Pick a registry in which to install intrinsics
-            registries = iter(tgtctx._registries)
-            reg = next(registries)
+        # =====================================================================
+
+        # Pick a registry in which to install intrinsics
+        registries = iter(tgtctx._registries)
+        reg = next(registries)
         return reg
 
 
@@ -1419,9 +1444,3 @@ class RegistryLoader(BaseRegistryLoader):
     """
 
     registry_items = ("functions", "attributes", "globals")
-
-
-builtin_registry = Registry()
-infer = builtin_registry.register
-infer_getattr = builtin_registry.register_attr
-infer_global = builtin_registry.register_global
