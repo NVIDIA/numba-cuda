@@ -9,7 +9,7 @@ from numba.cuda.testing import (
     skip_if_external_memmgr,
     CUDATestCase,
 )
-from numba.tests.support import captured_stderr
+from numba.cuda.tests.support import captured_stderr
 from numba.core import config
 
 

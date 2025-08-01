@@ -4,7 +4,7 @@ import os
 import numpy as np
 import unittest
 from numba.cuda.testing import CUDATestCase, skip_on_cudasim
-from numba.tests.support import run_in_subprocess, override_config
+from numba.cuda.tests.support import run_in_subprocess, override_config
 from numba.cuda import get_current_device
 from numba.cuda.cudadrv.nvrtc import compile
 from numba import config, types
