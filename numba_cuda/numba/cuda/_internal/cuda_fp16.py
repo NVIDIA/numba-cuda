@@ -26,7 +26,7 @@ from numba.core.extending import (
 from numba.core.imputils import Registry as TargetRegistry, lower_cast
 import numba.core.typeconv
 from numba.core.typing import signature
-from numba.core.typing.templates import (
+from numba.cuda.typing.templates import (
     Registry as TypingRegistry,
     AbstractTemplate,
     AttributeTemplate,

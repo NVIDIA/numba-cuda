@@ -10,7 +10,7 @@ from numba.cuda.cudadrv.nvrtc import compile
 from numba import config, types
 from numba.core.typing import signature
 from numba import cuda
-from numba.core.typing.templates import AbstractTemplate
+from numba.cuda.typing.templates import AbstractTemplate
 from numba.cuda.cudadrv.linkable_code import (
     CUSource,
     PTXSource,

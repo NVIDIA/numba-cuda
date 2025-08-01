@@ -18,7 +18,7 @@ def make_attribute_wrapper(typeclass, struct_attr, python_attr):
     Vendored from numba.core.extending with a change to consider the CUDA data
     model manager.
     """
-    from numba.core.typing.templates import AttributeTemplate
+    from numba.cuda.typing.templates import AttributeTemplate
 
     from numba.core.datamodel import default_manager
     from numba.core.datamodel.models import StructModel

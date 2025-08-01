@@ -43,7 +43,7 @@ if not config.ENABLE_CUDASIM:
         type_callable,
         typeof_impl,
     )
-    from numba.core.typing.templates import AttributeTemplate
+    from numba.cuda.typing.templates import AttributeTemplate
     from numba.cuda.cudadecl import registry as cuda_registry
     from numba.cuda.cudaimpl import lower_attr as cuda_lower_attr
     from numba.cuda.extending import (
