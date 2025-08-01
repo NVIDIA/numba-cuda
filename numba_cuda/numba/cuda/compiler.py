@@ -7,7 +7,6 @@ from numba.core import (
     funcdesc,
     config,
     compiler,
-    sigutils,
 )
 from numba.core.compiler import (
     sanitize_compile_result_entries,
@@ -33,6 +32,7 @@ from numba.cuda import nvvmutils
 from numba.cuda.api import get_current_device
 from numba.cuda.codegen import ExternalCodeLibrary
 from numba.cuda.core.typed_passes import BaseNativeLowering
+from numba.cuda.core import sigutils
 from numba.cuda.cudadrv import nvvm, nvrtc
 from numba.cuda.descriptor import cuda_target
 from numba.cuda.flags import CUDAFlags
