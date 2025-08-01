@@ -7,45 +7,107 @@ from numba.core.errors import TypingError
 
 
 class TestCudaArrayReturn(CUDATestCase):
-    def test_array_return(self):
-        @cuda.jit
-        def array_return(a):
-            return a
+    def _test_array_return(self, test_function):
+        array_return = cuda.jit(test_function)
 
         @cuda.jit
-        def kernel(x):
-            y = array_return(x)
+        def kernel(x, y):
+            y = array_return(x, y)
             y[2] = 1
 
         a = np.zeros(5)
+        b = np.ones(5)
 
-        kernel[1, 1](a)
+        kernel[1, 1](a, b)
 
         assert a[0] == 0
         assert a[2] == 1
+        assert all(b == 1)
+
+    def test_array_return(self):
+        def array_return(a, b):
+            return a
+
+        self._test_array_return(array_return)
 
     def test_array_return_conditional(self):
-        @cuda.jit
-        def array_return_conditional(a, b, condition):
-            if condition:
+        def array_return_conditional(a, b):
+            if b[0] > a[0]:
                 r = a
             else:
                 r = b
             return r
 
-        @cuda.jit
-        def kernel(x, y, condition):
-            y = array_return_conditional(x, y, condition)
-            y[2] = 1
+        self._test_array_return(array_return_conditional)
 
-        x = np.zeros(5)
-        y = np.ones(5)
+    def test_array_return_deeper_alias(self):
+        def array_return_deeper_alias(a, b):
+            if len(a) >= len(b):
+                tmp = a
+            else:
+                tmp = b
+            result = tmp
+            return result
 
-        kernel[1, 1](x, y, True)
+        self._test_array_return(array_return_deeper_alias)
 
-        assert x[0] == 0
-        assert x[2] == 1
-        assert all(y == 1)
+    def test_array_return_for_break(self):
+        def array_return_for_break(x, y):
+            found = None
+            for arr in (x, y):
+                if sum(arr) == 0:
+                    found = arr
+                    break
+            return found
+
+        self._test_array_return(array_return_for_break)
+
+    def test_array_return_while_continue(self):
+        def array_return_while_continue(x, y):
+            arrays = (x, y)
+            i = 0
+            while i < len(arrays):
+                if len(arrays[i]) == 0:
+                    i += 1
+                    continue
+                if arrays[i][0] == 0:
+                    selected = arrays[i]
+                    return selected
+                i += 1
+            return x
+
+        self._test_array_return(array_return_while_continue)
+
+    def test_array_return_nested_if(self):
+        def array_return_nested_if(x, y):
+            if len(x) > 2:
+                if x[0] < 0:
+                    temp = y
+                else:
+                    temp = x
+                ans = temp
+            else:
+                ans = x
+            return ans
+
+        self._test_array_return(array_return_nested_if)
+
+    def test_array_return_alias_loop(self):
+        def array_return_alias_loop(a, b):
+            for arr in (a, b):
+                alias = arr
+                if len(alias) > 1:
+                    return alias
+            return b
+
+        self._test_array_return(array_return_alias_loop)
+
+    def test_array_return_from_tuple(self):
+        def array_return_from_tuple(a, b):
+            t = (a, b)
+            return t[0]
+
+        self._test_array_return(array_return_from_tuple)
 
     def _test_array_slice(self, test_function):
         array_slice = cuda.jit(test_function)
