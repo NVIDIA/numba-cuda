@@ -35,32 +35,34 @@ into three categories:
 Remember, if you are unsure about anything, don't hesitate to comment on issues
 and ask for clarifications!
 
-## Pre-commit checks
+## Installation of Development Dependencies
+
+There are some dependencies that are required for developing Numba-CUDA, but are not required for installation or distribution.
+These dependencies are listed under the `test-cu11` and `test-cu12` optional dependency groups in our project configuration.
+
+To install Numba-CUDA for development, run this in the root of the repository:
+
+```shell
+pip install -e ".[test-cu11]"
+```
+or
+```sh
+pip install -e ".[test-cu12]"
+```
 
 Numba-CUDA uses [`pre-commit`](https://pre-commit.com/) to run a number of style
 checks in CI. To ensure your contribution will pass the checks, you can also set
 up pre-commit locally to run the checks prior to committing.
 
-To set up pre-commit with Numba-CUDA, run
-
-```
-pip install pre-commit
-```
-
-or
-
-```
-conda install pre-commit
-```
-
-depending on your package manager, then run
-
-```
+```shell
+# This will run a small set of checks every time you commit.
 pre-commit install
 ```
 
-in the root of the Numba-CUDA repository to set up the pre-commit hooks to run
-checks prior to each commit.
+To run them manually without committing, run this in the root of the repository:
+```shell
+pre-commit run --all-files
+```
 
 ## Releases
 
