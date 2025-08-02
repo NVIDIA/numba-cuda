@@ -3,15 +3,9 @@ from numba.cuda.testing import skip_on_cudasim
 from numba import cuda
 from numba.core import types
 from numba.cuda.testing import CUDATestCase
-from textwrap import dedent
-import math
 import itertools
 import re
 import unittest
-import warnings
-from numba.core.errors import NumbaDebugInfoWarning
-from numba.tests.support import ignore_internal_warnings
-import numpy as np
 
 
 @skip_on_cudasim("Simulator does not produce debug dumps")
@@ -32,7 +26,7 @@ class TestCudaDebugInfo(CUDATestCase):
         assertfn(match, msg=asm)
 
     def test_no_debuginfo_in_asm(self):
-        @cuda.jit(debug=False)
+        @cuda.jit(debug=False, opt=False)
         def foo(x):
             x[0] = 1
 
@@ -410,7 +404,7 @@ class TestCudaDebugInfo(CUDATestCase):
         self.assertIsNotNone(match, msg=llvm_ir)
 
     def test_DW_LANG(self):
-        @cuda.jit(debug=True)
+        @cuda.jit(debug=True, opt=False)
         def foo():
             """
             CHECK: distinct !DICompileUnit
@@ -449,7 +443,7 @@ class TestCudaDebugInfo(CUDATestCase):
         """
         sig = (types.float64,)
 
-        @cuda.jit(sig, debug=True)
+        @cuda.jit(sig, debug=True, opt=False)
         def foo(a):
             """
             CHECK-LABEL: define void @{{.+}}foo
