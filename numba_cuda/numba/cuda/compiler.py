@@ -20,7 +20,6 @@ from numba.core.compiler_machinery import (
     PassManager,
     register_pass,
 )
-from numba.core.interpreter import Interpreter
 from numba.core.errors import NumbaInvalidConfigWarning
 from numba.core.untyped_passes import TranslateByteCode
 from numba.core.typed_passes import (
@@ -38,7 +37,12 @@ from numba.cuda.descriptor import cuda_target
 from numba.cuda.flags import CUDAFlags
 from numba.cuda.target import CUDACABICallConv
 from numba.cuda import lowering, utils
+from numba.core.utils import PYVERSION
 
+if PYVERSION < (3, 10):
+    from numba.core.interpreter import Interpreter
+else:
+    from numba.cuda.core.interpreter import Interpreter
 
 # The CUDACompileResult (CCR) has a specially-defined entry point equal to its
 # id.  This is because the entry point is used as a key into a dict of
