@@ -1,55 +1,43 @@
 from llvmlite import ir
 from collections import namedtuple
+from warnings import warn, catch_warnings, simplefilter
+import copy
+
 from numba.core import ir as numba_ir
-from numba.cuda import cgutils, typing
 from numba.core import (
     types,
     funcdesc,
     config,
+    bytecode,
+    postproc,
+    cpu,
 )
-from numba.cuda.core.compiler import CompilerBase
 from numba.core.compiler_lock import global_compiler_lock
+from numba.core.utils import PYVERSION
+from numba.core.errors import NumbaWarning, NumbaInvalidConfigWarning
+
+if PYVERSION < (3, 10):
+    from numba.core.interpreter import Interpreter as interpreter
+else:
+    from numba.cuda.core.interpreter import Interpreter as interpreter
+
+from numba.cuda import cgutils, typing, lowering, nvvmutils, utils
+from numba.cuda.api import get_current_device
+from numba.cuda.codegen import ExternalCodeLibrary
+from numba.cuda.core import sigutils
+from numba.cuda.cudadrv import nvvm, nvrtc
+from numba.cuda.descriptor import cuda_target
+from numba.cuda.flags import CUDAFlags
+from numba.cuda.target import CUDACABICallConv
+from numba.cuda.core.compiler import CompilerBase
 from numba.cuda.core.compiler_machinery import (
     FunctionPass,
     LoweringPass,
     PassManager,
     register_pass,
 )
-from numba.core.errors import NumbaInvalidConfigWarning
-from numba.cuda.core.untyped_passes import TranslateByteCode
-from numba.cuda.core.typed_passes import (
-    IRLegalization,
-    AnnotateTypes,
-)
-from warnings import warn
-from numba.cuda import nvvmutils
-from numba.cuda.api import get_current_device
-from numba.cuda.codegen import ExternalCodeLibrary
-from numba.cuda.core.typed_passes import BaseNativeLowering
-from numba.cuda.core import sigutils
-from numba.cuda.cudadrv import nvvm, nvrtc
-from numba.cuda.descriptor import cuda_target
-from numba.cuda.flags import CUDAFlags
-from numba.cuda.target import CUDACABICallConv
-from numba.cuda import lowering, utils
-from numba.core.utils import PYVERSION
-
-if PYVERSION < (3, 10):
-    from numba.core.interpreter import Interpreter
-else:
-    from numba.cuda.core.interpreter import Interpreter
-import copy
-import warnings
-
-from numba.core import (
-    errors,
-    interpreter,
-    bytecode,
-    postproc,
-    cpu,
-)
-
 from numba.cuda.core.untyped_passes import (
+    TranslateByteCode,
     FixupArgs,
     IRProcessing,
     DeadBranchPrune,
@@ -60,16 +48,16 @@ from numba.cuda.core.untyped_passes import (
     InlineInlinables,
     FindLiterallyCalls,
     MakeFunctionToJitFunction,
-    CanonicalizeLoopExit,
-    CanonicalizeLoopEntry,
     LiteralUnroll,
     ReconstructSSA,
     RewriteDynamicRaises,
     LiteralPropagationSubPipelinePass,
 )
-
 from numba.cuda.core.typed_passes import (
+    BaseNativeLowering,
     NativeLowering,
+    AnnotateTypes,
+    IRLegalization,
     NopythonTypeInference,
     NopythonRewrites,
     PreParforPass,
@@ -82,8 +70,6 @@ from numba.cuda.core.typed_passes import (
     ParforFusionPass,
     ParforPreLoweringPass,
 )
-
-from numba.core.object_mode_passes import ObjectModeFrontEnd, ObjectModeBackEnd
 
 
 CR_FIELDS = [
@@ -334,38 +320,6 @@ class DefaultPassBuilder(object):
         pm.finalize()
         return pm
 
-    @staticmethod
-    def define_objectmode_pipeline(state, name="object"):
-        """Returns an object-mode pipeline based PassManager"""
-        pm = PassManager(name)
-        if state.func_ir is None:
-            pm.add_pass(TranslateByteCode, "analyzing bytecode")
-            pm.add_pass(FixupArgs, "fix up args")
-        else:
-            # Reaches here if it's a fallback from nopython mode.
-            # Strip the phi nodes.
-            pm.add_pass(PreLowerStripPhis, "remove phis nodes")
-        pm.add_pass(IRProcessing, "processing IR")
-
-        # The following passes are needed to adjust for looplifting
-        pm.add_pass(CanonicalizeLoopEntry, "canonicalize loop entry")
-        pm.add_pass(CanonicalizeLoopExit, "canonicalize loop exit")
-
-        pm.add_pass(ObjectModeFrontEnd, "object mode frontend")
-        pm.add_pass(
-            InlineClosureLikes, "inline calls to locally defined closures"
-        )
-        # convert any remaining closures into functions
-        pm.add_pass(
-            MakeFunctionToJitFunction,
-            "convert make_function into JIT functions",
-        )
-        pm.add_pass(IRLegalization, "ensure IR is legal prior to lowering")
-        pm.add_pass(AnnotateTypes, "annotate types")
-        pm.add_pass(ObjectModeBackEnd, "object mode backend")
-        pm.finalize()
-        return pm
-
 
 def compile_extra(
     typingctx,
@@ -468,8 +422,8 @@ def compile_ir(
         rw_cres = None
         if not flags.no_rewrites:
             # Suppress warnings in compilation retry
-            with warnings.catch_warnings():
-                warnings.simplefilter("ignore", errors.NumbaWarning)
+            with catch_warnings():
+                simplefilter("ignore", NumbaWarning)
                 try:
                     rw_cres = compile_local(func_ir.copy(), flags)
                 except Exception:
@@ -705,7 +659,7 @@ class CUDANativeLowering(BaseNativeLowering):
         return lowering.CUDALower
 
 
-class CUDABytecodeInterpreter(Interpreter):
+class CUDABytecodeInterpreter(interpreter):
     # Based on the superclass implementation, but names the resulting variable
     # "$bool<N>" instead of "bool<N>" - see Numba PR #9888:
     # https://github.com/numba/numba/pull/9888
