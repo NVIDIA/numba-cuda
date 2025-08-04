@@ -7,7 +7,6 @@ from numba.core import (
     funcdesc,
     config,
 )
-from numba.cuda import compiler
 from numba.cuda.core.compiler import CompilerBase
 from numba.core.compiler_lock import global_compiler_lock
 from numba.cuda.core.compiler_machinery import (
@@ -41,23 +40,16 @@ else:
     from numba.cuda.core.interpreter import Interpreter
 import copy
 import warnings
-from numba.core.tracing import event
 
 from numba.core import (
     errors,
     interpreter,
     bytecode,
     postproc,
-    callconv,
     cpu,
 )
-from numba.parfors.parfor import ParforDiagnostics
-from numba.core.errors import CompilerError
-from numba.core.environment import lookup_environment
-
 
 from numba.cuda.core.untyped_passes import (
-    ExtractByteCode,
     FixupArgs,
     IRProcessing,
     DeadBranchPrune,
@@ -83,7 +75,6 @@ from numba.cuda.core.typed_passes import (
     PreParforPass,
     ParforPass,
     DumpParforDiagnostics,
-    NoPythonBackend,
     InlineOverloads,
     PreLowerStripPhis,
     NativeParforLowering,
@@ -93,8 +84,6 @@ from numba.cuda.core.typed_passes import (
 )
 
 from numba.core.object_mode_passes import ObjectModeFrontEnd, ObjectModeBackEnd
-
-from numba.core.targetconfig import ConfigStack
 
 
 CR_FIELDS = [
@@ -116,107 +105,6 @@ CR_FIELDS = [
     "reload_init",
     "referenced_envs",
 ]
-
-
-class CompileResult(namedtuple("_CompileResult", CR_FIELDS)):
-    """
-    A structure holding results from the compilation of a function.
-    """
-
-    __slots__ = ()
-
-    def _reduce(self):
-        """
-        Reduce a CompileResult to picklable components.
-        """
-        libdata = self.library.serialize_using_object_code()
-        # Make it (un)picklable efficiently
-        typeann = str(self.type_annotation)
-        fndesc = self.fndesc
-        # Those don't need to be pickled and may fail
-        fndesc.typemap = fndesc.calltypes = None
-        # Include all referenced environments
-        referenced_envs = self._find_referenced_environments()
-        return (
-            libdata,
-            self.fndesc,
-            self.environment,
-            self.signature,
-            self.objectmode,
-            self.lifted,
-            typeann,
-            self.reload_init,
-            tuple(referenced_envs),
-        )
-
-    def _find_referenced_environments(self):
-        """Returns a list of referenced environments"""
-        mod = self.library._final_module
-        # Find environments
-        referenced_envs = []
-        for gv in mod.global_variables:
-            gvn = gv.name
-            if gvn.startswith("_ZN08NumbaEnv"):
-                env = lookup_environment(gvn)
-                if env is not None:
-                    if env.can_cache():
-                        referenced_envs.append(env)
-        return referenced_envs
-
-    @classmethod
-    def _rebuild(
-        cls,
-        target_context,
-        libdata,
-        fndesc,
-        env,
-        signature,
-        objectmode,
-        lifted,
-        typeann,
-        reload_init,
-        referenced_envs,
-    ):
-        if reload_init:
-            # Re-run all
-            for fn in reload_init:
-                fn()
-
-        library = target_context.codegen().unserialize_library(libdata)
-        cfunc = target_context.get_executable(library, fndesc, env)
-        cr = cls(
-            target_context=target_context,
-            typing_context=target_context.typing_context,
-            library=library,
-            environment=env,
-            entry_point=cfunc,
-            fndesc=fndesc,
-            type_annotation=typeann,
-            signature=signature,
-            objectmode=objectmode,
-            lifted=lifted,
-            typing_error=None,
-            call_helper=None,
-            metadata=None,  # Do not store, arbitrary & potentially large!
-            reload_init=reload_init,
-            referenced_envs=referenced_envs,
-        )
-
-        # Load Environments
-        for env in referenced_envs:
-            library.codegen.set_env(env.env_name, env)
-
-        return cr
-
-    @property
-    def codegen(self):
-        return self.target_context.codegen()
-
-    def dump(self, tab=""):
-        print(f"{tab}DUMP {type(self).__name__} {self.entry_point}")
-        self.signature.dump(tab=tab + "  ")
-        print(f"{tab}END DUMP")
-
 
 _LowerResult = namedtuple(
     "_LowerResult",
@@ -245,11 +133,6 @@ def sanitize_compile_result_entries(entries):
     return entries
 
 
-def compile_result(**entries):
-    entries = sanitize_compile_result_entries(entries)
-    return CompileResult(**entries)
-
-
 def run_frontend(func, inline_closures=False, emit_dels=False):
     """
     Run the compiler frontend over the given Python function, and return
@@ -273,203 +156,6 @@ def run_frontend(func, inline_closures=False, emit_dels=False):
     post_proc = postproc.PostProcessor(func_ir)
     post_proc.run(emit_dels)
     return func_ir
-
-
-class _CompileStatus(object):
-    """
-    Describes the state of compilation. Used like a C record.
-    """
-
-    __slots__ = ["fail_reason", "can_fallback"]
-
-    def __init__(self, can_fallback):
-        self.fail_reason = None
-        self.can_fallback = can_fallback
-
-    def __repr__(self):
-        vals = []
-        for k in self.__slots__:
-            vals.append("{k}={v}".format(k=k, v=getattr(self, k)))
-        return ", ".join(vals)
-
-
-class _EarlyPipelineCompletion(Exception):
-    """
-    Raised to indicate that a pipeline has completed early
-    """
-
-    def __init__(self, result):
-        self.result = result
-
-
-class StateDict(dict):
-    """
-    A dictionary that has an overloaded getattr and setattr to permit getting
-    and setting key/values through the use of attributes.
-    """
-
-    def __getattr__(self, attr):
-        try:
-            return self[attr]
-        except KeyError:
-            raise AttributeError(attr)
-
-    def __setattr__(self, attr, value):
-        self[attr] = value
-
-
-def _make_subtarget(targetctx, flags):
-    """
-    Make a new target context from the given target context and flags.
-    """
-    subtargetoptions = {}
-    if flags.debuginfo:
-        subtargetoptions["enable_debuginfo"] = True
-    if flags.boundscheck:
-        subtargetoptions["enable_boundscheck"] = True
-    if flags.nrt:
-        subtargetoptions["enable_nrt"] = True
-    if flags.auto_parallel:
-        subtargetoptions["auto_parallel"] = flags.auto_parallel
-    if flags.fastmath:
-        subtargetoptions["fastmath"] = flags.fastmath
-    error_model = callconv.create_error_model(flags.error_model, targetctx)
-    subtargetoptions["error_model"] = error_model
-
-    return targetctx.subtarget(**subtargetoptions)
-
-
-class CompilerBase(object):
-    """
-    Stores and manages states for the compiler
-    """
-
-    def __init__(
-        self, typingctx, targetctx, library, args, return_type, flags, locals
-    ):
-        # Make sure the environment is reloaded
-        config.reload_config()
-        typingctx.refresh()
-        targetctx.refresh()
-
-        self.state = StateDict()
-
-        self.state.typingctx = typingctx
-        self.state.targetctx = _make_subtarget(targetctx, flags)
-        self.state.library = library
-        self.state.args = args
-        self.state.return_type = return_type
-        self.state.flags = flags
-        self.state.locals = locals
-
-        # Results of various steps of the compilation pipeline
-        self.state.bc = None
-        self.state.func_id = None
-        self.state.func_ir = None
-        self.state.lifted = None
-        self.state.lifted_from = None
-        self.state.typemap = None
-        self.state.calltypes = None
-        self.state.type_annotation = None
-        # holds arbitrary inter-pipeline stage meta data
-        self.state.metadata = {}
-        self.state.reload_init = []
-        # hold this for e.g. with_lifting, null out on exit
-        self.state.pipeline = self
-
-        # parfor diagnostics info, add to metadata
-        self.state.parfor_diagnostics = ParforDiagnostics()
-        self.state.metadata["parfor_diagnostics"] = (
-            self.state.parfor_diagnostics
-        )
-        self.state.metadata["parfors"] = {}
-
-        self.state.status = _CompileStatus(
-            can_fallback=self.state.flags.enable_pyobject
-        )
-
-    def compile_extra(self, func):
-        self.state.func_id = bytecode.FunctionIdentity.from_function(func)
-        ExtractByteCode().run_pass(self.state)
-
-        self.state.lifted = ()
-        self.state.lifted_from = None
-        return self._compile_bytecode()
-
-    def compile_ir(self, func_ir, lifted=(), lifted_from=None):
-        self.state.func_id = func_ir.func_id
-        self.state.lifted = lifted
-        self.state.lifted_from = lifted_from
-        self.state.func_ir = func_ir
-        self.state.nargs = self.state.func_ir.arg_count
-
-        FixupArgs().run_pass(self.state)
-        return self._compile_ir()
-
-    def define_pipelines(self):
-        """Child classes override this to customize the pipelines in use."""
-        raise NotImplementedError()
-
-    def _compile_core(self):
-        """
-        Populate and run compiler pipeline
-        """
-        with ConfigStack().enter(self.state.flags.copy()):
-            pms = self.define_pipelines()
-            for pm in pms:
-                pipeline_name = pm.pipeline_name
-                func_name = "%s.%s" % (
-                    self.state.func_id.modname,
-                    self.state.func_id.func_qualname,
-                )
-
-                event("Pipeline: %s for %s" % (pipeline_name, func_name))
-                self.state.metadata["pipeline_times"] = {
-                    pipeline_name: pm.exec_times
-                }
-                is_final_pipeline = pm == pms[-1]
-                res = None
-                try:
-                    pm.run(self.state)
-                    if self.state.cr is not None:
-                        break
-                except _EarlyPipelineCompletion as e:
-                    res = e.result
-                    break
-                except Exception as e:
-                    if not isinstance(e, errors.NumbaError):
-                        raise e
-                    self.state.status.fail_reason = e
-                    if is_final_pipeline:
-                        raise e
-            else:
-                raise CompilerError("All available pipelines exhausted")
-
-            # Pipeline is done, remove self reference to release refs to user
-            # code
-            self.state.pipeline = None
-
-            # organise a return
-            if res is not None:
-                # Early pipeline completion
-                return res
-            else:
-                assert self.state.cr is not None
-                return self.state.cr
-
-    def _compile_bytecode(self):
-        """
-        Populate and run pipeline for bytecode input
-        """
-        assert self.state.func_ir is None
-        return self._compile_core()
-
-    def _compile_ir(self):
-        """
-        Populate and run pipeline for IR input
-        """
-        assert self.state.func_ir is not None
-        return self._compile_core()
 
 
 class Compiler(CompilerBase):
@@ -534,7 +220,7 @@ class DefaultPassBuilder(object):
             pm.add_pass(NativeParforLowering, "native parfor lowering")
         else:
             pm.add_pass(NativeLowering, "native lowering")
-        pm.add_pass(NoPythonBackend, "nopython mode backend")
+        pm.add_pass(CUDABackend, "nopython mode backend")
         pm.add_pass(DumpParforDiagnostics, "dump parfor diagnostics")
         pm.finalize()
         return pm
@@ -557,7 +243,7 @@ class DefaultPassBuilder(object):
             pm.add_pass(NativeParforLowering, "native parfor lowering")
         else:
             pm.add_pass(NativeLowering, "native lowering")
-        pm.add_pass(NoPythonBackend, "nopython mode backend")
+        pm.add_pass(CUDABackend, "nopython mode backend")
         pm.finalize()
         return pm
 
@@ -1173,7 +859,7 @@ def compile_cuda(
     from numba.core.target_extension import target_override
 
     with target_override("cuda"):
-        cres = compiler.compile_extra(
+        cres = compile_extra(
             typingctx=typingctx,
             targetctx=targetctx,
             func=pyfunc,
