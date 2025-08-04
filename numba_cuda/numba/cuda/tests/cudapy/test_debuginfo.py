@@ -3,9 +3,15 @@ from numba.cuda.testing import skip_on_cudasim
 from numba import cuda
 from numba.core import types
 from numba.cuda.testing import CUDATestCase
+from textwrap import dedent
+import math
 import itertools
 import re
 import unittest
+import warnings
+from numba.core.errors import NumbaDebugInfoWarning
+from numba.tests.support import ignore_internal_warnings
+import numpy as np
 
 
 @skip_on_cudasim("Simulator does not produce debug dumps")
@@ -500,6 +506,176 @@ class TestCudaDebugInfo(CUDATestCase):
 
         ir = foo.inspect_llvm()[sig]
         self.assertFileCheckMatches(ir, foo.__doc__)
+
+    def test_missing_source(self):
+        strsrc = """
+        def foo():
+            pass
+        """
+        l = dict()
+        exec(dedent(strsrc), {}, l)
+        foo = cuda.jit(debug=True, opt=False)(l["foo"])
+
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always", NumbaDebugInfoWarning)
+            ignore_internal_warnings()
+            foo[1, 1]()
+
+        self.assertEqual(len(w), 1)
+        found = w[0]
+        self.assertEqual(found.category, NumbaDebugInfoWarning)
+        msg = str(found.message)
+        # make sure the warning contains the right message
+        self.assertIn("Could not find source for function", msg)
+        # and refers to the offending function
+        self.assertIn(str(foo.py_func), msg)
+
+    def test_irregularly_indented_source(self):
+        @cuda.jit(tuple(), debug=True, opt=False)
+        def foo():
+            # NOTE: THIS COMMENT MUST START AT COLUMN 0 FOR THIS SAMPLE CODE TO BE VALID # noqa: E115, E501
+            pass
+
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always", NumbaDebugInfoWarning)
+            ignore_internal_warnings()
+            foo[1, 1]()
+
+        # No warnings
+        self.assertEqual(len(w), 0)
+
+        self.assertFileCheckMatches(
+            foo.inspect_llvm()[tuple()],
+            """
+            CHECK: define void @{{.+}}foo
+            CHECK: !DILocation(
+            CHECK-SAME: column: 1
+            CHECK-NOT: DILocation
+            """,
+        )
+
+    def test_no_if_op_bools_declared(self):
+        @cuda.jit(
+            "int64(boolean, boolean)",
+            debug=True,
+            opt=False,
+            _dbg_optnone=True,
+            device=True,
+        )
+        def choice(cond1, cond2):
+            """
+            CHECK: define void @{{.+}}choices
+            """
+            if cond1 and cond2:
+                return 1
+            else:
+                return 2
+
+        ir_content = choice.inspect_llvm()[choice.signatures[0]]
+        # We should not declare variables used as the condition in if ops.
+        # See Numba PR #9888: https://github.com/numba/numba/pull/9888
+
+        for line in ir_content.splitlines():
+            if "llvm.dbg.declare" in line:
+                self.assertNotIn("bool", line)
+
+    def test_llvm_inliner_flag_conflict(self):
+        # bar will be marked as 'alwaysinline', but when DEBUGINFO_DEFAULT is
+        # set functions are marked as 'noinline' this results in a conflict.
+        # baz will be marked as 'noinline' as a result of DEBUGINFO_DEFAULT
+
+        @cuda.jit(forceinline=True)
+        def bar(x):
+            return math.sin(x)
+
+        @cuda.jit(forceinline=False)
+        def baz(x):
+            return math.cos(x)
+
+        @cuda.jit(opt=True)
+        def foo(x, y):
+            """
+            CHECK-LABEL: define void @{{.+}}foo
+            CHECK: call i32 @"[[BAR:.+]]"(
+            CHECK: call i32 @"[[BAZ:.+]]"(
+
+            CHECK-DAG: declare i32 @"[[BAR]]"({{.+}}alwaysinline
+            CHECK-DAG: declare i32 @"[[BAZ]]"(
+
+            CHECK-DAG: define linkonce_odr i32 @"[[BAR]]"({{.+}}alwaysinline
+            CHECK-DAG: define linkonce_odr i32 @"[[BAZ]]"(
+            """
+            a = bar(y)
+            b = baz(y)
+            x[0] = a + b
+
+        # check it compiles
+        with override_config("DEBUGINFO_DEFAULT", 1):
+            result = cuda.device_array(1, dtype=np.float32)
+            foo[1, 1](result, np.pi)
+            result.copy_to_host()
+
+        result_host = math.sin(np.pi) + math.cos(np.pi)
+        self.assertPreciseEqual(result[0], result_host)
+
+        ir_content = foo.inspect_llvm()[foo.signatures[0]]
+        self.assertFileCheckMatches(ir_content, foo.__doc__)
+
+    def test_DILocation_versioned_variables(self):
+        """Tests that DILocation information for versions of variables matches
+        up to their definition site."""
+
+        @cuda.jit(debug=True, opt=False)
+        def foo(dest, n):
+            """
+            CHECK: define void @{{.+}}foo
+            CHECK: store i64 5, i64* %"c{{.+}} !dbg ![[STORE5:.+]]
+            CHECK: store i64 1, i64* %"c{{.+}} !dbg ![[STORE1:.+]]
+            CHECK: [[STORE5]] = !DILocation(
+            CHECK: [[STORE1]] = !DILocation(
+            """
+            if n:
+                c = 5
+            else:
+                c = 1
+            # prevents inline of return on py310
+            py310_defeat1 = 1  # noqa
+            py310_defeat2 = 2  # noqa
+            py310_defeat3 = 3  # noqa
+            py310_defeat4 = 4  # noqa
+            dest[0] = c
+
+        result = cuda.device_array(1, dtype=np.int32)
+        foo[1, 1](result, 1)
+        result.copy_to_host()
+        self.assertEqual(result[0], 5)
+
+        ir_content = foo.inspect_llvm()[foo.signatures[0]]
+        self.assertFileCheckMatches(ir_content, foo.__doc__)
+
+    def test_debuginfo_asm(self):
+        def foo():
+            pass
+
+        foo_debug = cuda.jit(debug=True, opt=False)(foo)
+        foo_debug[1, 1]()
+        asm = foo_debug.inspect_asm()[foo_debug.signatures[0]]
+        self.assertFileCheckMatches(
+            asm,
+            """
+            CHECK: .section{{.+}}.debug
+        """,
+        )
+
+        foo_nodebug = cuda.jit(debug=False)(foo)
+        foo_nodebug[1, 1]()
+        asm = foo_nodebug.inspect_asm()[foo_nodebug.signatures[0]]
+        self.assertFileCheckMatches(
+            asm,
+            """
+            CHECK-NOT: .section{{.+}}.debug
+        """,
+        )
 
 
 if __name__ == "__main__":
