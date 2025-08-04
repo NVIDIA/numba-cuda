@@ -27,7 +27,7 @@ def get_ufunc_info(ufunc_key):
 def ufunc_db():
     # Imports here are at function scope to avoid circular imports
     from numba.cpython import cmathimpl, mathimpl, numbers
-    from numba.np import npyfuncs
+    from numba.cuda.np import npyfuncs
     from numba.cuda.np.numpy_support import numpy_version
 
     def np_unary_impl(fn, context, builder, sig, args):
