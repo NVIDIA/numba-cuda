@@ -578,7 +578,6 @@ class TestCudaDebugInfo(CUDATestCase):
 
             CHECK-DAG: declare i32 @"[[BAR]]"({{.+}}alwaysinline
             CHECK-DAG: declare i32 @"[[BAZ]]"(
-
             CHECK-DAG: define linkonce_odr i32 @"[[BAR]]"({{.+}}alwaysinline
             CHECK-DAG: define linkonce_odr i32 @"[[BAZ]]"(
             """
@@ -597,6 +596,40 @@ class TestCudaDebugInfo(CUDATestCase):
 
         ir_content = foo.inspect_llvm()[foo.signatures[0]]
         self.assertFileCheckMatches(ir_content, foo.__doc__)
+
+        # Check that the device functions call the appropriate device
+        # math functions and have the correct attributes.
+        self.assertFileCheckMatches(
+            ir_content,
+            """
+            CHECK: define linkonce_odr i32 @{{.+}}bar
+            CHECK-SAME: alwaysinline
+            CHECK-NEXT: {
+            CHECK-NEXT: {{.*}}:
+            CHECK-NEXT: br label {{.*}}
+            CHECK-NEXT: {{.*}}:
+            CHECK-NEXT: call double @"__nv_sin"
+            CHECK-NEXT: store double {{.*}}, double* {{.*}}
+            CHECK-NEXT: ret i32 0
+            CHECK-NEXT: }
+        """,
+        )
+
+        self.assertFileCheckMatches(
+            ir_content,
+            """
+            CHECK: define linkonce_odr i32 @{{.+}}baz
+            CHECK-NOT: alwaysinline
+            CHECK-NEXT: {
+            CHECK-NEXT: {{.*}}:
+            CHECK-NEXT: br label {{.*}}
+            CHECK-NEXT: {{.*}}:
+            CHECK-NEXT: call double @"__nv_cos"
+            CHECK-NEXT: store double {{.*}}, double* {{.*}}
+            CHECK-NEXT: ret i32 0
+            CHECK-NEXT: }
+        """,
+        )
 
     def test_DILocation_versioned_variables(self):
         """Tests that DILocation information for versions of variables matches
