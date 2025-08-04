@@ -19,6 +19,7 @@ from numba.core import (
     config,
     transforms,
     consts,
+    interpreter,
 )
 from numba.misc.special import literal_unroll
 from numba.core.analysis import (
@@ -45,7 +46,6 @@ from numba.core.ir_utils import (
     fixup_var_define_in_scope,
 )
 from numba.core.ssa import reconstruct_ssa
-from numba.core import interpreter
 
 
 @contextmanager
