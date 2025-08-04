@@ -292,7 +292,8 @@ class WithLifting(FunctionPass):
             locals=state.locals,
         )
         if withs:
-            from numba.cuda.compiler import compile_ir, _EarlyPipelineCompletion
+            from numba.cuda.compiler import compile_ir
+            from numba.cuda.core.compiler import _EarlyPipelineCompletion
 
             cres = compile_ir(
                 state.typingctx,
