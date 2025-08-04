@@ -177,8 +177,6 @@ class CUDATestCase(TestCase):
 
             self.fail(
                 f"FileCheck failed:\n{matcher.stderr.getvalue()}\n\n"
-                + f"Check prefixes:\n{check_prefixes}\n\n"
-                + f"Check patterns:\n{check_patterns}\n"
                 + dump_instructions
             )
 
