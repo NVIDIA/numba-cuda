@@ -29,7 +29,6 @@ from numba.core.typing import signature
 from numba.core.typing.templates import AttributeTemplate, ConcreteTemplate
 from numba.core.typing.templates import Registry as TypingRegistry
 from numba.cuda import CUSource, declare_device
-from numba.cuda._internal.cuda_bf16 import _type___nv_bfloat16
 from numba.cuda.vector_types import vector_types
 from numba.extending import as_numba_type
 from numba.types import (
