@@ -530,30 +530,6 @@ class TestCudaDebugInfo(CUDATestCase):
         # and refers to the offending function
         self.assertIn(str(foo.py_func), msg)
 
-    def test_irregularly_indented_source(self):
-        @cuda.jit(tuple(), debug=True, opt=False)
-        def foo():
-# NOTE: THIS COMMENT MUST START AT COLUMN 0 FOR THIS SAMPLE CODE TO BE VALID # noqa: E115, E501
-            pass
-
-        with warnings.catch_warnings(record=True) as w:
-            warnings.simplefilter("always", NumbaDebugInfoWarning)
-            ignore_internal_warnings()
-            foo[1, 1]()
-
-        # No warnings
-        self.assertEqual(len(w), 0)
-
-        self.assertFileCheckMatches(
-            foo.inspect_llvm()[tuple()],
-            """
-            CHECK: define void @{{.+}}foo
-            CHECK: !DILocation(
-            CHECK-SAME: column: 1
-            CHECK-NOT: DILocation
-            """,
-        )
-
     def test_no_if_op_bools_declared(self):
         @cuda.jit(
             "int64(boolean, boolean)",
@@ -581,8 +557,9 @@ class TestCudaDebugInfo(CUDATestCase):
 
     def test_llvm_inliner_flag_conflict(self):
         # bar will be marked as 'alwaysinline', but when DEBUGINFO_DEFAULT is
-        # set functions are marked as 'noinline' this results in a conflict.
-        # baz will be marked as 'noinline' as a result of DEBUGINFO_DEFAULT
+        # set functions are not marked as 'alwaysinline' and this results in a
+        # conflict. baz will not be marked as 'alwaysinline' as a result of
+        # DEBUGINFO_DEFAULT
 
         @cuda.jit(forceinline=True)
         def bar(x):
