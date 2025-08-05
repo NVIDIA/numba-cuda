@@ -6,7 +6,7 @@ from numba.cuda.testing import skip_on_cudasim, skip_if_cuda_includes_missing
 from numba.cuda.testing import CUDATestCase, test_data_dir
 from numba.cuda.cudadrv.driver import CudaAPIError, _Linker, LinkerError
 from numba.cuda import require_context
-from numba.tests.support import ignore_internal_warnings
+from numba.cuda.tests.support import ignore_internal_warnings
 from numba import cuda, void, float64, int64, int32, typeof, float32
 from numba.cuda.cudadrv.error import NvrtcError
 

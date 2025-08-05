@@ -9,7 +9,7 @@ from numba.core.typing.npydecl import (
     math_operations,
     bit_twiddling_functions,
 )
-from numba.core.typing.templates import (
+from numba.cuda.typing.templates import (
     AttributeTemplate,
     ConcreteTemplate,
     AbstractTemplate,

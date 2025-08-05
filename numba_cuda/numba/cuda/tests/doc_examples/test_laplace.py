@@ -7,7 +7,7 @@ from numba.cuda.testing import (
     skip_unless_cc_60,
     skip_if_mvc_enabled,
 )
-from numba.tests.support import captured_stdout
+from numba.cuda.tests.support import captured_stdout
 
 
 @skip_if_cudadevrt_missing

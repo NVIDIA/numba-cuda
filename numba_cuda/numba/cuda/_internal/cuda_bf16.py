@@ -25,9 +25,9 @@ from numba.core.extending import (
 )
 from numba.core.imputils import Registry as TargetRegistry
 from numba.core.imputils import lower_cast
-from numba.core.typing import signature
-from numba.core.typing.templates import AttributeTemplate, ConcreteTemplate
 from numba.core.typing.templates import Registry as TypingRegistry
+from numba.cuda.typing import signature
+from numba.cuda.typing.templates import AttributeTemplate, ConcreteTemplate
 from numba.cuda import CUSource, declare_device
 from numba.cuda.vector_types import vector_types
 from numba.extending import as_numba_type

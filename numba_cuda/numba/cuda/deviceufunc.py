@@ -11,8 +11,9 @@ from functools import reduce
 import numpy as np
 
 from numba.np.ufunc.ufuncbuilder import _BaseUFuncBuilder, parse_identity
-from numba.core import types, sigutils
+from numba.core import types
 from numba.core.typing import signature
+from numba.cuda.core import sigutils
 from numba.np.ufunc.sigparse import parse_signature
 
 

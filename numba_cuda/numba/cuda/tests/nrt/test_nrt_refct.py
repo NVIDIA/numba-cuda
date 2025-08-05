@@ -1,6 +1,6 @@
 import numpy as np
 import unittest
-from numba.tests.support import override_config
+from numba.cuda.tests.support import override_config
 from numba.cuda.memory_management import rtsys
 from numba.cuda.tests.support import EnableNRTStatsMixin
 from numba.cuda.testing import CUDATestCase, skip_on_cudasim

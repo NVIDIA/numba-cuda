@@ -1,4 +1,4 @@
-# Generates the input files used by the pynvjitlink binding test suite
+# Generates the input files used by the nvjitlink tests
 
 # Test binaries are built taking into account the CC of the GPU in the test machine
 GPU_CC := $(shell nvidia-smi --query-gpu=compute_cap --format=csv | grep -v compute_cap | head -n 1 | sed 's/\.//')

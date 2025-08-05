@@ -9,7 +9,7 @@ from numba.cuda.testing import (
     skip_on_cudasim,
     skip_under_cuda_memcheck,
 )
-from numba.tests.support import captured_stdout
+from numba.cuda.tests.support import captured_stdout
 
 
 class TestCudaDetect(CUDATestCase):

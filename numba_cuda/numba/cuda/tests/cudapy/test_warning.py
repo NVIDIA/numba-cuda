@@ -6,7 +6,11 @@ from numba.cuda.testing import (
     CUDATestCase,
     skip_on_cudasim,
 )
-from numba.tests.support import linux_only, override_config, run_in_subprocess
+from numba.cuda.tests.support import (
+    linux_only,
+    override_config,
+    run_in_subprocess,
+)
 from numba.core.errors import NumbaPerformanceWarning
 from numba.core import config
 import warnings
