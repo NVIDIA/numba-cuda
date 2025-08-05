@@ -31,7 +31,14 @@ from numba.cuda.models import cuda_data_manager
 
 class CUDATypingContext(typing.BaseContext):
     def load_additional_registries(self):
-        from . import cudadecl, cudamath, fp16, libdevicedecl, vector_types
+        from . import (
+            cudadecl,
+            cudamath,
+            fp16,
+            bf16,
+            libdevicedecl,
+            vector_types,
+        )
         from numba.core.typing import enumdecl, cffi_utils
 
         self.install_registry(cudadecl.registry)
@@ -42,6 +49,7 @@ class CUDATypingContext(typing.BaseContext):
         self.install_registry(enumdecl.registry)
         self.install_registry(vector_types.typing_registry)
         self.install_registry(fp16.typing_registry)
+        self.install_registry(bf16.typing_registry)
 
     def resolve_value_type(self, val):
         # treat other dispatcher object as another device function
@@ -154,6 +162,7 @@ class CUDATargetContext(BaseContext):
             libdeviceimpl,
             mathimpl,
             vector_types,
+            bf16,
         )
 
         # fix for #8940
@@ -167,6 +176,7 @@ class CUDATargetContext(BaseContext):
         self.install_registry(mathimpl.registry)
         self.install_registry(vector_types.impl_registry)
         self.install_registry(fp16.target_registry)
+        self.install_registry(bf16.target_registry)
 
     def codegen(self):
         return self._internal_codegen
