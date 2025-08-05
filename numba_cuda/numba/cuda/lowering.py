@@ -1970,6 +1970,7 @@ class CUDALower(Lower):
         else:
             return super().getvar(name)
 
+
 def _lit_or_omitted(value):
     """Returns a Literal instance if the type of value is supported;
     otherwise, return `Omitted(value)`.
