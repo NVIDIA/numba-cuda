@@ -307,7 +307,6 @@ class CUDANopythonTypeInference(NopythonTypeInference):
         view_vars = dict()
         call_vars = dict()
         getitem_vars = dict()
-        tuple_vars = dict()
         for bid, blk in interp.blocks.items():
             for inst in blk.body:
                 if isinstance(inst, numba_ir.Return):
@@ -341,7 +340,7 @@ class CUDANopythonTypeInference(NopythonTypeInference):
                                 inst.value.index,
                             )
                         elif inst.value.op == "build_tuple":
-                            tuple_vars[inst.target.name] = tuple(
+                            forest[inst.target.name] = tuple(
                                 v.name for v in inst.value.items
                             )
                     elif isinstance(inst.value, numba_ir.Arg):
@@ -358,16 +357,11 @@ class CUDANopythonTypeInference(NopythonTypeInference):
 
         # tuples extraction
         for var, items in getitem_vars.items():
-            _tuple = tuple_vars.get(items[0], None)
+            _tuple = forest.get(items[0], None)
             if _tuple is None:
                 break
             assert items[1] < len(_tuple)
             forest[var] = (_tuple[items[1]],)
-
-        for tuple_var, items in tuple_vars.items():
-            if tuple_var in forest:
-                continue
-            forest[tuple_var] = items
 
         change = True
         while change:
