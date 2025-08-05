@@ -27,8 +27,7 @@ class CUDALower(Lower):
             int_type = (ir.IntType,)
             real_type = ir.FloatType, ir.DoubleType
             if isinstance(lltype, int_type + real_type):
-                index = name.find(".")
-                src_name = name[:index] if index > 0 else name
+                src_name = name.split(".")[0]
                 if src_name in self.poly_var_typ_map:
                     # Do not emit debug value on polymorphic type var
                     return
@@ -69,8 +68,7 @@ class CUDALower(Lower):
                     if x.target.name.startswith("$"):
                         continue
                     ssa_name = x.target.name
-                    index = ssa_name.find(".")
-                    src_name = ssa_name[:index] if index > 0 else ssa_name
+                    src_name = ssa_name.split(".")[0]
                     # Check all the multi-versioned targets
                     if len(x.target.versioned_names) > 0:
                         fetype = self.typeof(ssa_name)
@@ -91,8 +89,7 @@ class CUDALower(Lower):
         """
         # If the name is not handled yet and a store is needed
         if name not in self.varmap and self.store_var_needed(name):
-            index = name.find(".")
-            src_name = name[:index] if index > 0 else name
+            src_name = name.split(".")[0]
             if src_name in self.poly_var_typ_map:
                 self.poly_var_set.add(name)
                 if src_name not in self.poly_var_loc_map:
@@ -125,14 +122,17 @@ class CUDALower(Lower):
         Delete the given variable.
         """
         if name in self.poly_var_set:
+            fetype = self.typeof(name)
+            src_name = name.split(".")[0]
+            ptr = self.poly_var_loc_map[src_name]
+            self.decref(fetype, self.builder.load(ptr))
             if (
                 self._cur_ir_block == self.blocks[self.lastblk]
                 and not self.poly_cleaned
             ):
-                # Decref, zero-fill the debug union for polymorphic only
+                # Zero-fill the debug union for polymorphic only
                 # at the last block
-                for k, v in self.poly_var_loc_map.items():
-                    self.decref(self.typeof(k), self.builder.load(v))
+                for v in self.poly_var_loc_map.values():
                     self.builder.store(Constant(v.type.pointee, None), v)
                     self.poly_cleaned = True
             return
@@ -144,8 +144,7 @@ class CUDALower(Lower):
         Get a pointer to the given variable's slot.
         """
         if name in self.poly_var_set:
-            index = name.find(".")
-            src_name = name[:index] if index > 0 else name
+            src_name = name.split(".")[0]
             fetype = self.typeof(name)
             lltype = self.context.get_value_type(fetype)
             castptr = self.builder.bitcast(
