@@ -388,8 +388,8 @@ else                                                            \
 typedef std::vector<Type> TypeTable;
 typedef std::vector<PyObject*> Functions;
 
-/* The Dispatcher class is the base class of all dispatchers in the CPU and
-   CUDA targets. Its main responsibilities are:
+/* The Dispatcher class is the base class of all dispatchers in the CUDA target.
+    Its main responsibilities are:
 
    - Resolving the best overload to call for a given set of arguments, and
    - Calling the resolved overload.
@@ -662,131 +662,9 @@ int search_new_conversions(PyObject *dispatcher, PyObject *args, PyObject *kws)
 }
 
 
-#if (PY_MAJOR_VERSION >= 3) && ((PY_MINOR_VERSION == 10) || (PY_MINOR_VERSION == 11))
 
-/* A custom, fast, inlinable version of PyCFunction_Call() */
-static PyObject *
-call_cfunc(Dispatcher *self, PyObject *cfunc, PyObject *args, PyObject *kws, PyObject *locals)
-{
-    PyCFunctionWithKeywords fn;
-    PyThreadState *tstate;
 
-    assert(PyCFunction_Check(cfunc));
-    assert(PyCFunction_GET_FLAGS(cfunc) == (METH_VARARGS | METH_KEYWORDS));
-    fn = (PyCFunctionWithKeywords) PyCFunction_GET_FUNCTION(cfunc);
-    tstate = PyThreadState_GET();
-
-#if (PY_MAJOR_VERSION >= 3) && (PY_MINOR_VERSION == 11)
-    /*
-     * On Python 3.11, _PyEval_EvalFrameDefault stops using PyTraceInfo since
-     * it's now baked into ThreadState.
-     * https://github.com/python/cpython/pull/26623
-     */
-    if (tstate->cframe->use_tracing && tstate->c_profilefunc)
-#elif (PY_MAJOR_VERSION >= 3) && (PY_MINOR_VERSION == 10)
-    /*
-     * On Python 3.10+ trace_info comes from somewhere up in PyFrameEval et al,
-     * Numba doesn't have access to that so creates an equivalent struct and
-     * wires it up against the cframes. This is passed into the tracing
-     * functions.
-     *
-     * Code originally from:
-     * https://github.com/python/cpython/blob/c5bfb88eb6f82111bb1603ae9d78d0476b552d66/Python/ceval.c#L1611-L1622
-     */
-    PyTraceInfo trace_info;
-    trace_info.code = NULL; // not initialized
-    CFrame *prev_cframe = tstate->cframe;
-    trace_info.cframe.use_tracing = prev_cframe->use_tracing;
-    trace_info.cframe.previous = prev_cframe;
-
-    if (trace_info.cframe.use_tracing && tstate->c_profilefunc)
-#else
-    /*
-     * On Python prior to 3.10, tracing state is a member of the threadstate
-     */
-    if (tstate->use_tracing && tstate->c_profilefunc)
-#endif
-    {
-        /*
-         * The following code requires some explaining:
-         *
-         * We want the jit-compiled function to be visible to the profiler, so we
-         * need to synthesize a frame for it.
-         * The PyFrame_New() constructor doesn't do anything with the 'locals' value if the 'code's
-         * 'CO_NEWLOCALS' flag is set (which is always the case nowadays).
-         * So, to get local variables into the frame, we have to manually set the 'f_locals'
-         * member, then call `PyFrame_LocalsToFast`, where a subsequent call to the `frame.f_locals`
-         * property (by virtue of the `frame_getlocals` function in frameobject.c) will find them.
-         */
-        PyCodeObject *code = (PyCodeObject*)PyObject_GetAttrString((PyObject*)self, "__code__");
-        PyObject *globals = PyDict_New();
-        PyObject *builtins = PyEval_GetBuiltins();
-        PyFrameObject *frame = NULL;
-        PyObject *result = NULL;
-#if (PY_MAJOR_VERSION >= 3) && ((PY_MINOR_VERSION == 10))
-        // Only used in 3.10, to help with saving/restoring exception state
-        PyObject *pyexc = NULL;
-        PyObject *err_type = NULL;
-        PyObject *err_value = NULL;
-        PyObject *err_traceback = NULL;
-#endif
-
-        if (!code) {
-            PyErr_Format(PyExc_RuntimeError, "No __code__ attribute found.");
-            goto error;
-        }
-        /* Populate builtins, which is required by some JITted functions */
-        if (PyDict_SetItemString(globals, "__builtins__", builtins)) {
-            goto error;
-        }
-
-        /* unset the CO_OPTIMIZED flag, make the frame get a new locals dict */
-        code->co_flags &= 0xFFFE;
-
-        frame = PyFrame_New(tstate, code, globals, locals);
-        if (frame == NULL) {
-            goto error;
-        }
-#if (PY_MAJOR_VERSION >= 3) && (PY_MINOR_VERSION == 11)
-        // Python 3.11 improved the frame infrastructure such that frames are
-        // updated by the virtual machine, no need to do PyFrame_LocalsToFast
-        // and PyFrame_FastToLocals to ensure `frame->f_locals` is consistent.
-        C_TRACE(result, fn(PyCFunction_GET_SELF(cfunc), args, kws), frame);
-#else
-        // Populate the 'fast locals' in `frame`
-        PyFrame_LocalsToFast(frame, 0);
-        tstate->frame = frame;
-
-        // make the call
-        C_TRACE(result, fn(PyCFunction_GET_SELF(cfunc), args, kws));
-
-        // write changes back to locals?
-        // PyFrame_FastToLocals can clear the exception indicator, therefore
-        // this state needs saving and restoring across the call if the
-        // exception indicator is set.
-        pyexc = PyErr_Occurred();
-        if (pyexc != NULL) {
-            PyErr_Fetch(&err_type, &err_value, &err_traceback);
-        }
-        PyFrame_FastToLocals(frame);
-        if (pyexc != NULL) {
-            PyErr_Restore(err_type, err_value, err_traceback);
-        }
-        tstate->frame = frame->f_back;
-#endif
-    error:
-        Py_XDECREF(frame);
-        Py_XDECREF(globals);
-        Py_XDECREF(code);
-        return result;
-    }
-    else
-    {
-        return fn(PyCFunction_GET_SELF(cfunc), args, kws);
-    }
-}
-
-#elif (PY_MAJOR_VERSION >= 3) && ((PY_MINOR_VERSION == 12) || (PY_MINOR_VERSION == 13))
+#if (PY_MAJOR_VERSION >= 3) && ((PY_MINOR_VERSION == 12) || (PY_MINOR_VERSION == 13))
 
 // Python 3.12 has a completely new approach to tracing and profiling due to
 // the new `sys.monitoring` system.
@@ -1124,35 +1002,7 @@ call_cfunc(Dispatcher *self, PyObject *cfunc, PyObject *args, PyObject *kws, PyO
 #endif
 
 
-static
-PyObject*
-compile_and_invoke(Dispatcher *self, PyObject *args, PyObject *kws, PyObject *locals)
-{
-    /* Compile a new one */
-    PyObject *cfa, *cfunc, *retval;
-    cfa = PyObject_GetAttrString((PyObject*)self, "_compile_for_args");
-    if (cfa == NULL)
-        return NULL;
 
-    /* NOTE: we call the compiled function ourselves instead of
-       letting the Python derived class do it.  This is for proper
-       behaviour of globals() in jitted functions (issue #476). */
-    cfunc = PyObject_Call(cfa, args, kws);
-    Py_DECREF(cfa);
-
-    if (cfunc == NULL)
-        return NULL;
-
-    if (PyObject_TypeCheck(cfunc, &PyCFunction_Type)) {
-        retval = call_cfunc(self, cfunc, args, kws, locals);
-    } else {
-        /* Re-enter interpreter */
-        retval = PyObject_Call(cfunc, args, kws);
-    }
-    Py_DECREF(cfunc);
-
-    return retval;
-}
 
 /* A copy of compile_and_invoke, that only compiles. This is needed for CUDA
  * kernels, because its overloads are Python instances of the _Kernel class,
@@ -1288,117 +1138,7 @@ find_named_args(Dispatcher *self, PyObject **pargs, PyObject **pkws)
     return 0;
 }
 
-static PyObject*
-Dispatcher_call(Dispatcher *self, PyObject *args, PyObject *kws)
-{
-    PyObject *tmptype, *retval = NULL;
-    int *tys = NULL;
-    int argct;
-    int i;
-    int prealloc[24];
-    int matches;
-    PyObject *cfunc;
-    PyThreadState *ts = PyThreadState_Get();
-    PyObject *locals = NULL;
 
-    /* If compilation is enabled, ensure that an exact match is found and if
-     * not compile one */
-    int exact_match_required = self->can_compile ? 1 : self->exact_match_required;
-
-#if (PY_MAJOR_VERSION >= 3) && (PY_MINOR_VERSION >= 10)
-    if (ts->tracing && ts->c_profilefunc) {
-#else
-    if (ts->use_tracing && ts->c_profilefunc) {
-#endif
-        locals = PyEval_GetLocals();
-        if (locals == NULL) {
-            goto CLEANUP;
-        }
-    }
-    if (self->fold_args) {
-        if (find_named_args(self, &args, &kws))
-            return NULL;
-    }
-    else
-        Py_INCREF(args);
-    /* Now we own a reference to args */
-
-    argct = PySequence_Fast_GET_SIZE(args);
-
-    if (argct < (Py_ssize_t) (sizeof(prealloc) / sizeof(int)))
-        tys = prealloc;
-    else
-        tys = new int[argct];
-
-    for (i = 0; i < argct; ++i) {
-        tmptype = PySequence_Fast_GET_ITEM(args, i);
-        tys[i] = typeof_typecode((PyObject *) self, tmptype);
-        if (tys[i] == -1) {
-            if (self->can_fallback){
-                /* We will clear the exception if fallback is allowed. */
-                PyErr_Clear();
-            } else {
-                goto CLEANUP;
-            }
-        }
-    }
-
-    /* We only allow unsafe conversions if compilation of new specializations
-       has been disabled.
-
-       Note that the number of matches is returned in matches by resolve, which
-       accepts it as a reference. */
-    cfunc = self->resolve(tys, matches, !self->can_compile,
-                          exact_match_required);
-
-    if (matches == 0 && !self->can_compile) {
-        /*
-         * If we can't compile a new specialization, look for
-         * matching signatures for which conversions haven't been
-         * registered on the C++ TypeManager.
-         */
-        int res = search_new_conversions((PyObject *) self, args, kws);
-        if (res < 0) {
-            retval = NULL;
-            goto CLEANUP;
-        }
-        if (res > 0) {
-            /* Retry with the newly registered conversions */
-            cfunc = self->resolve(tys, matches, !self->can_compile,
-                                  exact_match_required);
-        }
-    }
-    if (matches == 1) {
-        /* Definition is found */
-        retval = call_cfunc(self, cfunc, args, kws, locals);
-    } else if (matches == 0) {
-        /* No matching definition */
-        if (self->can_compile) {
-            retval = compile_and_invoke(self, args, kws, locals);
-        } else if (self->fallbackdef) {
-            /* Have object fallback */
-            retval = call_cfunc(self, self->fallbackdef, args, kws, locals);
-        } else {
-            /* Raise TypeError */
-            explain_matching_error((PyObject *) self, args, kws);
-            retval = NULL;
-        }
-    } else if (self->can_compile) {
-        /* Ambiguous, but are allowed to compile */
-        retval = compile_and_invoke(self, args, kws, locals);
-    } else {
-        /* Ambiguous */
-        explain_ambiguous((PyObject *) self, args, kws);
-        retval = NULL;
-    }
-
-CLEANUP:
-    if (tys != prealloc)
-        delete[] tys;
-    Py_DECREF(args);
-
-    return retval;
-}
 
 /* Based on Dispatcher_call above, with the following differences:
    1. It does not invoke the definition of the function.
@@ -1565,7 +1305,7 @@ static PyTypeObject DispatcherType = {
     0,                                           /* tp_as_sequence */
     0,                                           /* tp_as_mapping */
     0,                                           /* tp_hash */
-    (PyCFunctionWithKeywords)Dispatcher_call,    /* tp_call*/
+    0,                                           /* tp_call*/
     0,                                           /* tp_str*/
     0,                                           /* tp_getattro*/
     0,                                           /* tp_setattro*/
