@@ -1,6 +1,5 @@
 import importlib
 from numba.core import config
-from numba.core.config import ENABLE_SYS_MONITORING
 from .utils import _readenv
 import warnings
 
