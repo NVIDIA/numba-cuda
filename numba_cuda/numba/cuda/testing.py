@@ -8,7 +8,7 @@ from numba.cuda.cuda_paths import get_conda_ctk
 from numba.cuda.cudadrv import driver, devices, libs
 from numba.cuda.dispatcher import CUDADispatcher
 from numba.core import config
-from numba.tests.support import TestCase
+from numba.cuda.tests.support import TestCase
 from pathlib import Path
 
 from typing import Iterable, Union
@@ -154,7 +154,6 @@ class CUDATestCase(TestCase):
         matcher.stderr = StringIO()
         result = matcher.run()
         if result != 0:
-            dump_instructions = ""
             if self._dump_failed_filechecks:
                 dump_directory = Path(
                     datetime.now().strftime("numba-ir-%Y_%m_%d_%H_%M_%S")
@@ -172,13 +171,12 @@ class CUDATestCase(TestCase):
                 ):
                     _ = ir_file.write(ir_content + "\n")
                     _ = checks_file.write(check_patterns)
-                    dump_instructions = f"Reproduce with:\n\nfilecheck --check-prefixes={','.join(check_prefixes)} {checks_dump} --input-file={ir_dump}"
+                    dump_instructions = f"Reproduce with:\n\nfilecheck --check-prefixes={','.join(check_prefixes)} {checks_dump} --input-file {ir_dump}"
+            else:
+                dump_instructions = "Rerun with --dump-failed-filechecks to generate a reproducer."
 
             self.fail(
                 f"FileCheck failed:\n{matcher.stderr.getvalue()}\n\n"
-                + f"Check prefixes:\n{check_prefixes}\n\n"
-                + f"Check patterns:\n{check_patterns}\n"
-                + f"IR:\n{ir_content}\n\n"
                 + dump_instructions
             )
 

@@ -1,4 +1,4 @@
-from numba.tests.support import run_in_subprocess
+from numba.cuda.tests.support import run_in_subprocess
 import unittest
 
 

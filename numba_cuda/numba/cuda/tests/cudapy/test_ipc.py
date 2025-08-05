@@ -14,7 +14,7 @@ from numba.cuda.testing import (
     ContextResettingTestCase,
     ForeignArray,
 )
-from numba.tests.support import linux_only, windows_only
+from numba.cuda.tests.support import linux_only, windows_only
 import unittest
 
 

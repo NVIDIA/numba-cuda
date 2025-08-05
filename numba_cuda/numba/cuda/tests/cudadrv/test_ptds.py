@@ -7,7 +7,7 @@ from numba.cuda.testing import (
     skip_with_cuda_python,
     skip_under_cuda_memcheck,
 )
-from numba.tests.support import linux_only
+from numba.cuda.tests.support import linux_only
 
 
 def child_test():
