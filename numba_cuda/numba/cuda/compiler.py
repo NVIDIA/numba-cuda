@@ -306,6 +306,8 @@ class CUDANopythonTypeInference(NopythonTypeInference):
         args = set()
         view_vars = dict()
         call_vars = dict()
+        getitem_vars = dict()
+        tuple_vars = dict()
         for bid, blk in interp.blocks.items():
             for inst in blk.body:
                 if isinstance(inst, numba_ir.Return):
@@ -327,6 +329,15 @@ class CUDANopythonTypeInference(NopythonTypeInference):
                                 call_vars[inst.target.name] = func_var.name
                         elif inst.value.op in {"cast", "getitem"}:
                             forest[inst.target.name] = (inst.value.value.name,)
+                        elif inst.value.op == "static_getitem":
+                            getitem_vars[inst.target.name] = (
+                                inst.value.value.name,
+                                inst.value.index,
+                            )
+                        elif inst.value.op == "build_tuple":
+                            tuple_vars[inst.target.name] = tuple(
+                                v.name for v in inst.value.items
+                            )
                     elif isinstance(inst.value, numba_ir.Arg):
                         args.add(inst.target.name)
                     elif isinstance(inst.value, numba_ir.Var):
@@ -334,9 +345,18 @@ class CUDANopythonTypeInference(NopythonTypeInference):
 
         assert retstmts, "No return statements?"
 
+        # view vars extraction
         for var, method in call_vars.items():
             if method in view_vars:
                 forest[var] = (view_vars[method],)
+
+        # tuples extraction
+        for var, items in getitem_vars.items():
+            _tuple = tuple_vars.get(items[0], None)
+            if _tuple is None:
+                break
+            assert items[1] < len(_tuple)
+            forest[var] = (_tuple[items[1]],)
 
         change = True
         while change:
