@@ -102,6 +102,7 @@ class TestCudaArrayReturn(CUDATestCase):
 
         self._test_array_return(array_return_alias_loop)
 
+    @skip_on_cudasim("type inference is unsupported in the simulator")
     def test_array_return_alias_loop_negative(self):
         def array_return_alias_loop(a, b):
             c = cuda.shared.array(shape=(0,), dtype=np.int32)
