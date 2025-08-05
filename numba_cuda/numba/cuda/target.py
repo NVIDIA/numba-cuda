@@ -148,12 +148,12 @@ class CUDATargetContext(BaseContext):
         self._target_data = None
 
     def load_additional_registries(self):
-        # side effect of import needed for numba.cpython.*, the builtins
+        # side effect of import needed for numba.cpython.*, numba.cuda.cpython.*, the builtins
         # registry is updated at import time.
         from numba.cpython import numbers, tupleobj, slicing  # noqa: F401
         from numba.cpython import rangeobj, iterators, enumimpl  # noqa: F401
         from numba.cpython import unicode, charseq  # noqa: F401
-        from numba.cpython import cmathimpl
+        from numba.cuda.cpython import cmathimpl
         from numba.misc import cffiimpl
         from numba.np import arrayobj  # noqa: F401
         from numba.np import npdatetime  # noqa: F401
