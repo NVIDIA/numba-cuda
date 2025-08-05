@@ -327,7 +327,13 @@ class CUDANopythonTypeInference(NopythonTypeInference):
                             func_var = inst.value._kws.get("func")
                             if isinstance(func_var, numba_ir.Var):
                                 call_vars[inst.target.name] = func_var.name
-                        elif inst.value.op in {"cast", "getitem"}:
+                        elif inst.value.op in {
+                            "cast",
+                            "getitem",
+                            "getiter",
+                            "iternext",
+                            "pair_first",
+                        }:
                             forest[inst.target.name] = (inst.value.value.name,)
                         elif inst.value.op == "static_getitem":
                             getitem_vars[inst.target.name] = (
@@ -357,6 +363,11 @@ class CUDANopythonTypeInference(NopythonTypeInference):
                 break
             assert items[1] < len(_tuple)
             forest[var] = (_tuple[items[1]],)
+
+        for tuple_var, items in tuple_vars.items():
+            if tuple_var in forest:
+                continue
+            forest[tuple_var] = items
 
         change = True
         while change:

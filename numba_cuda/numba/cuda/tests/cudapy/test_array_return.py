@@ -102,6 +102,20 @@ class TestCudaArrayReturn(CUDATestCase):
 
         self._test_array_return(array_return_alias_loop)
 
+    def test_array_return_alias_loop_negative(self):
+        def array_return_alias_loop(a, b):
+            c = cuda.shared.array(shape=(0,), dtype=np.int32)
+            for arr in (a, b, c):
+                alias = arr
+                if len(alias) > 1:
+                    return alias
+            return b
+
+        # c in the loop is a local array
+        # TODO: do we want to support local and shared arrays?
+        with self.assertRaises(TypingError):
+            self._test_array_return(array_return_alias_loop)
+
     def test_array_return_from_tuple(self):
         def array_return_from_tuple(a, b):
             t = (a, b)
