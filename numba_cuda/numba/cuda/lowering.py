@@ -1947,7 +1947,9 @@ class CUDALower(Lower):
                 # Zero-fill the debug union for polymorphic only
                 # at the last block
                 for v in self.poly_var_loc_map.values():
-                    self.builder.store(llvm_ir.Constant(v.type.pointee, None), v)
+                    self.builder.store(
+                        llvm_ir.Constant(v.type.pointee, None), v
+                    )
                     self.poly_cleaned = True
             return
 
