@@ -3,7 +3,6 @@ import numpy as np
 import operator
 import re
 from numba import cuda, int64
-from numba.cuda import compile_ptx
 from numba.core.errors import TypingError
 from numba.core.types import f2
 from numba.cuda.testing import (
@@ -11,6 +10,7 @@ from numba.cuda.testing import (
     CUDATestCase,
     skip_on_cudasim,
     skip_unless_cc_53,
+    skip_if_nvjitlink_missing,
 )
 
 
@@ -174,27 +174,27 @@ def hlt_func_2(x, y):
     return cuda.fp16.hlt(x, y)
 
 
-def test_multiple_hcmp_1(r, a, b, c):
+def multiple_hcmp_1(r, a, b, c):
     # float16 predicates used in two separate functions
     r[0] = hlt_func_1(a, b) and hlt_func_2(b, c)
 
 
-def test_multiple_hcmp_2(r, a, b, c):
+def multiple_hcmp_2(r, a, b, c):
     # The same float16 predicate used in the caller and callee
     r[0] = hlt_func_1(a, b) and cuda.fp16.hlt(b, c)
 
 
-def test_multiple_hcmp_3(r, a, b, c):
+def multiple_hcmp_3(r, a, b, c):
     # Different float16 predicates used in the caller and callee
     r[0] = hlt_func_1(a, b) and cuda.fp16.hge(c, b)
 
 
-def test_multiple_hcmp_4(r, a, b, c):
+def multiple_hcmp_4(r, a, b, c):
     # The same float16 predicates used twice in a function
     r[0] = cuda.fp16.hlt(a, b) and cuda.fp16.hlt(b, c)
 
 
-def test_multiple_hcmp_5(r, a, b, c):
+def multiple_hcmp_5(r, a, b, c):
     # Different float16 predicates used in a function
     r[0] = cuda.fp16.hlt(a, b) and cuda.fp16.hge(c, b)
 
@@ -561,13 +561,13 @@ class TestCudaIntrinsic(CUDATestCase):
 
     def test_popc_u1(self):
         compiled = cuda.jit("void(int32[:], uint8)")(simple_popc)
-        ary = np.zeros(1, dtype=np.int8)
+        ary = np.zeros(1, dtype=np.int32)
         compiled[1, 1](ary, np.uint8(0xFF))
         self.assertEqual(ary[0], 8)
 
     def test_popc_u2(self):
         compiled = cuda.jit("void(int32[:], uint16)")(simple_popc)
-        ary = np.zeros(1, dtype=np.int16)
+        ary = np.zeros(1, dtype=np.int32)
         compiled[1, 1](ary, np.uint16(0xFFFF))
         self.assertEqual(ary[0], 16)
 
@@ -585,13 +585,13 @@ class TestCudaIntrinsic(CUDATestCase):
 
     def test_bit_count_u1(self):
         compiled = cuda.jit("void(int32[:], uint8)")(simple_bit_count)
-        ary = np.zeros(1, dtype=np.int8)
+        ary = np.zeros(1, dtype=np.int32)
         compiled[1, 1](ary, np.uint8(0xFF))
         self.assertEqual(ary[0], 8)
 
     def test_bit_count_u2(self):
         compiled = cuda.jit("void(int32[:], uint16)")(simple_bit_count)
-        ary = np.zeros(1, dtype=np.int16)
+        ary = np.zeros(1, dtype=np.int32)
         compiled[1, 1](ary, np.uint16(0xFFFF))
         self.assertEqual(ary[0], 16)
 
@@ -639,9 +639,11 @@ class TestCudaIntrinsic(CUDATestCase):
         np.testing.assert_allclose(ary[0], ref)
 
     @skip_on_cudasim("Compilation unsupported in the simulator")
+    @skip_if_nvjitlink_missing("Numbast generated bindings")
     def test_hadd_ptx(self):
+        compiled = cuda.jit("void(f2[:], f2, f2)", lto=True)(simple_hadd_scalar)
         args = (f2[:], f2, f2)
-        ptx, _ = compile_ptx(simple_hadd_scalar, args)
+        ptx = compiled.inspect_lto_ptx(args)
         self.assertIn("add.f16", ptx)
 
     @skip_unless_cc_53
@@ -666,9 +668,13 @@ class TestCudaIntrinsic(CUDATestCase):
         np.testing.assert_allclose(ary[0], ref)
 
     @skip_on_cudasim("Compilation unsupported in the simulator")
+    @skip_if_nvjitlink_missing("Numbast generated bindings")
     def test_hfma_ptx(self):
+        compiled = cuda.jit("void(f2[:], f2, f2, f2)", lto=True)(
+            simple_hfma_scalar
+        )
         args = (f2[:], f2, f2, f2)
-        ptx, _ = compile_ptx(simple_hfma_scalar, args)
+        ptx = compiled.inspect_lto_ptx(args)
         self.assertIn("fma.rn.f16", ptx)
 
     @skip_unless_cc_53
@@ -691,14 +697,16 @@ class TestCudaIntrinsic(CUDATestCase):
         np.testing.assert_allclose(ary[0], ref)
 
     @skip_on_cudasim("Compilation unsupported in the simulator")
+    @skip_if_nvjitlink_missing("Numbast generated bindings")
     def test_hsub_ptx(self):
+        compiled = cuda.jit("void(f2[:], f2, f2)", lto=True)(simple_hsub_scalar)
         args = (f2[:], f2, f2)
-        ptx, _ = compile_ptx(simple_hsub_scalar, args)
+        ptx = compiled.inspect_lto_ptx(args)
         self.assertIn("sub.f16", ptx)
 
     @skip_unless_cc_53
     def test_hmul(self):
-        compiled = cuda.jit()(simple_hmul)
+        compiled = cuda.jit(simple_hmul)
         ary = np.zeros(1, dtype=np.float16)
         arg1 = np.array([3.0], dtype=np.float16)
         arg2 = np.array([4.0], dtype=np.float16)
@@ -716,9 +724,11 @@ class TestCudaIntrinsic(CUDATestCase):
         np.testing.assert_allclose(ary[0], ref)
 
     @skip_on_cudasim("Compilation unsupported in the simulator")
+    @skip_if_nvjitlink_missing("Numbast generated bindings")
     def test_hmul_ptx(self):
+        compiled = cuda.jit("void(f2[:], f2, f2)", lto=True)(simple_hmul_scalar)
         args = (f2[:], f2, f2)
-        ptx, _ = compile_ptx(simple_hmul_scalar, args)
+        ptx = compiled.inspect_lto_ptx(args)
         self.assertIn("mul.f16", ptx)
 
     @skip_unless_cc_53
@@ -761,14 +771,16 @@ class TestCudaIntrinsic(CUDATestCase):
         np.testing.assert_allclose(ary[0], ref)
 
     @skip_on_cudasim("Compilation unsupported in the simulator")
+    @skip_if_nvjitlink_missing("Numbast generated bindings")
     def test_hneg_ptx(self):
+        compiled = cuda.jit("void(f2[:], f2)", lto=True)(simple_hneg_scalar)
         args = (f2[:], f2)
-        ptx, _ = compile_ptx(simple_hneg_scalar, args)
+        ptx = compiled.inspect_lto_ptx(args)
         self.assertIn("neg.f16", ptx)
 
     @skip_unless_cc_53
     def test_habs(self):
-        compiled = cuda.jit()(simple_habs)
+        compiled = cuda.jit(simple_habs)
         ary = np.zeros(1, dtype=np.float16)
         arg1 = np.array([-3.0], dtype=np.float16)
         compiled[1, 1](ary, arg1)
@@ -784,9 +796,11 @@ class TestCudaIntrinsic(CUDATestCase):
         np.testing.assert_allclose(ary[0], ref)
 
     @skip_on_cudasim("Compilation unsupported in the simulator")
+    @skip_if_nvjitlink_missing("Numbast generated bindings")
     def test_habs_ptx(self):
+        compiled = cuda.jit("void(f2[:], f2)", lto=True)(simple_habs_scalar)
         args = (f2[:], f2)
-        ptx, _ = compile_ptx(simple_habs_scalar, args)
+        ptx = compiled.inspect_lto_ptx(args)
         self.assertIn("abs.f16", ptx)
 
     @skip_unless_cc_53
@@ -908,11 +922,11 @@ class TestCudaIntrinsic(CUDATestCase):
     @skip_unless_cc_53
     def test_multiple_float16_comparisons(self):
         functions = (
-            test_multiple_hcmp_1,
-            test_multiple_hcmp_2,
-            test_multiple_hcmp_3,
-            test_multiple_hcmp_4,
-            test_multiple_hcmp_5,
+            multiple_hcmp_1,
+            multiple_hcmp_2,
+            multiple_hcmp_3,
+            multiple_hcmp_4,
+            multiple_hcmp_5,
         )
         for fn in functions:
             with self.subTest(fn=fn):

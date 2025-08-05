@@ -44,7 +44,8 @@ from collections import namedtuple, deque
 
 
 from numba import mviewbuf
-from numba.core import utils, serialize, config
+from numba.core import config
+from numba.cuda import utils, serialize
 from .error import CudaSupportError, CudaDriverError
 from .drvapi import API_PROTOTYPES
 from .drvapi import cu_occupancy_b2d_size, cu_stream_callback_pyobj, cu_uuid
@@ -52,12 +53,6 @@ from .mappings import FILE_EXTENSION_MAP
 from .linkable_code import LinkableCode, LTOIR, Fatbin, Object
 from numba.cuda.utils import cached_file_read
 from numba.cuda.cudadrv import enums, drvapi, nvrtc
-
-try:
-    from pynvjitlink.api import NvJitLinker, NvJitLinkError
-except ImportError:
-    NvJitLinker, NvJitLinkError = None, None
-
 
 USE_NV_BINDING = config.CUDA_USE_NVIDIA_BINDING
 

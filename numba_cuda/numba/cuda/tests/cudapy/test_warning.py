@@ -1,7 +1,16 @@
 import numpy as np
 from numba import cuda
-from numba.cuda.testing import unittest, CUDATestCase, skip_on_cudasim
-from numba.tests.support import linux_only, override_config
+from numba.cuda.cudadrv import driver
+from numba.cuda.testing import (
+    unittest,
+    CUDATestCase,
+    skip_on_cudasim,
+)
+from numba.cuda.tests.support import (
+    linux_only,
+    override_config,
+    run_in_subprocess,
+)
 from numba.core.errors import NumbaPerformanceWarning
 from numba.core import config
 import warnings
@@ -9,6 +18,26 @@ import warnings
 
 @skip_on_cudasim("cudasim does not raise performance warnings")
 class TestWarnings(CUDATestCase):
+    def test_float16_warn_if_lto_missing(self):
+        fp16_kernel_invocation = """
+import math
+from numba import cuda, core
+
+@cuda.jit
+def kernel():
+    x = core.types.float16(1.0)
+    y = math.sin(x)
+
+kernel[1,1]()
+kernel[1,1]()
+"""
+        performance_warning = "float16 relies on LTO for performance"
+        expected_warning_count = 0 if driver._have_nvjitlink() else 1
+        _, err = run_in_subprocess(fp16_kernel_invocation)
+        self.assertEqual(
+            err.decode().count(performance_warning), expected_warning_count
+        )
+
     def test_inefficient_launch_configuration(self):
         @cuda.jit
         def kernel():

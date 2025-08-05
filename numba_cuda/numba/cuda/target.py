@@ -3,12 +3,10 @@ from functools import cached_property
 import llvmlite.binding as ll
 from llvmlite import ir
 import warnings
-
+from numba.cuda import cgutils, itanium_mangler
 from numba.core import (
-    cgutils,
     compiler,
     config,
-    itanium_mangler,
     targetconfig,
     types,
     typing,
@@ -17,8 +15,7 @@ from numba.core.compiler_lock import global_compiler_lock
 from numba.core.dispatcher import Dispatcher
 from numba.core.errors import NumbaWarning
 from numba.core.base import BaseContext
-from numba.core.callconv import MinimalCallConv
-from numba.cuda.core.callconv import BaseCallConv
+from numba.cuda.core.callconv import BaseCallConv, MinimalCallConv
 from numba.core.typing import cmathdecl
 from numba.core import datamodel
 
@@ -34,7 +31,7 @@ from numba.cuda.models import cuda_data_manager
 
 class CUDATypingContext(typing.BaseContext):
     def load_additional_registries(self):
-        from . import cudadecl, cudamath, libdevicedecl, vector_types
+        from . import cudadecl, cudamath, fp16, libdevicedecl, vector_types
         from numba.core.typing import enumdecl, cffi_utils
 
         self.install_registry(cudadecl.registry)
@@ -44,6 +41,7 @@ class CUDATypingContext(typing.BaseContext):
         self.install_registry(libdevicedecl.registry)
         self.install_registry(enumdecl.registry)
         self.install_registry(vector_types.typing_registry)
+        self.install_registry(fp16.typing_registry)
 
     def resolve_value_type(self, val):
         # treat other dispatcher object as another device function
@@ -149,7 +147,14 @@ class CUDATargetContext(BaseContext):
         from numba.misc import cffiimpl
         from numba.np import arrayobj  # noqa: F401
         from numba.np import npdatetime  # noqa: F401
-        from . import cudaimpl, printimpl, libdeviceimpl, mathimpl, vector_types
+        from . import (
+            cudaimpl,
+            fp16,
+            printimpl,
+            libdeviceimpl,
+            mathimpl,
+            vector_types,
+        )
 
         # fix for #8940
         from numba.np.unsafe import ndarray  # noqa F401
@@ -161,6 +166,7 @@ class CUDATargetContext(BaseContext):
         self.install_registry(cmathimpl.registry)
         self.install_registry(mathimpl.registry)
         self.install_registry(vector_types.impl_registry)
+        self.install_registry(fp16.target_registry)
 
     def codegen(self):
         return self._internal_codegen

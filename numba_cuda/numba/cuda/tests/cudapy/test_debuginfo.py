@@ -1,4 +1,4 @@
-from numba.tests.support import override_config, captured_stdout
+from numba.cuda.tests.support import override_config, captured_stdout
 from numba.cuda.testing import skip_on_cudasim
 from numba import cuda
 from numba.core import types
@@ -421,6 +421,104 @@ class TestCudaDebugInfo(CUDATestCase):
             print(results.copy_to_host())
         expected = "[1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0]"
         self.assertIn(expected, out.getvalue())
+
+    def test_DW_LANG(self):
+        @cuda.jit(debug=True)
+        def foo():
+            """
+            CHECK: distinct !DICompileUnit
+            CHECK-SAME: emissionKind: FullDebug
+            CHECK-SAME: isOptimized: true
+            CHECK-SAME: language: DW_LANG_C_plus_plus
+            CHECK-SAME: producer: "clang (Numba)"
+            """
+            pass
+
+        foo[1, 1]()
+
+        llvm_ir = foo.inspect_llvm()[tuple()]
+        self.assertFileCheckMatches(llvm_ir, foo.__doc__)
+
+    def test_DILocation(self):
+        """Tests that DILocation information is reasonable.
+
+        The kernel `foo` produces LLVM like:
+        define function() {
+        entry:
+          alloca
+          store 0 to alloca
+          <arithmetic for doing the operations on b, c, d>
+          setup for print
+          branch
+        other_labels:
+        ... <elided>
+        }
+
+        The following checks that:
+        * the alloca and store have no !dbg
+        * the arithmetic occurs in the order defined and with !dbg
+        * that the !dbg entries are monotonically increasing in value with
+          source line number
+        """
+        sig = (types.float64,)
+
+        @cuda.jit(sig, debug=True)
+        def foo(a):
+            """
+            CHECK-LABEL: define void @{{.+}}foo
+            CHECK: entry:
+
+            CHECK: %[[VAL_0:.*]] = alloca double
+            CHECK-NOT: !dbg
+            CHECK: store double 0.0, double* %[[VAL_0]]
+            CHECK-NOT: !dbg
+            CHECK: %[[VAL_1:.*]] = alloca double
+            CHECK-NOT: !dbg
+            CHECK: store double 0.0, double* %[[VAL_1]]
+            CHECK-NOT: !dbg
+            CHECK: %[[VAL_2:.*]] = alloca double
+            CHECK-NOT: !dbg
+            CHECK: store double 0.0, double* %[[VAL_2]]
+            CHECK-NOT: !dbg
+            CHECK: %[[VAL_3:.*]] = alloca double
+            CHECK-NOT: !dbg
+            CHECK: store double 0.0, double* %[[VAL_3]]
+            CHECK-NOT: !dbg
+            CHECK: %[[VAL_4:.*]] = alloca double
+            CHECK-NOT: !dbg
+            CHECK: store double 0.0, double* %[[VAL_4]]
+            CHECK-NOT: !dbg
+            CHECK: %[[VAL_5:.*]] = alloca double
+            CHECK-NOT: !dbg
+            CHECK: store double 0.0, double* %[[VAL_5]]
+            CHECK-NOT: !dbg
+            CHECK: %[[VAL_6:.*]] = alloca i8*
+            CHECK-NOT: !dbg
+            CHECK: store i8* null, i8** %[[VAL_6]]
+            CHECK-NOT: !dbg
+            CHECK: %[[VAL_7:.*]] = alloca i8*
+            CHECK-NOT: !dbg
+            CHECK: store i8* null, i8** %[[VAL_7]]
+            CHECK-NOT: !dbg
+
+            CHECK: br label %"[[ENTRY:.+]]"
+            CHECK-NOT: !dbg
+            CHECK: [[ENTRY]]:
+
+            CHECK: fadd{{.+}} !dbg ![[DBGADD:[0-9]+]]
+            CHECK: fmul{{.+}} !dbg ![[DBGMUL:[0-9]+]]
+            CHECK: fdiv{{.+}} !dbg ![[DBGDIV:[0-9]+]]
+
+            CHECK: ![[DBGADD]] = !DILocation
+            CHECK: ![[DBGMUL]] = !DILocation
+            CHECK: ![[DBGDIV]] = !DILocation
+            """
+            b = a + 1.23
+            c = b * 2.34
+            a = b / c
+
+        ir = foo.inspect_llvm()[sig]
+        self.assertFileCheckMatches(ir, foo.__doc__)
 
 
 if __name__ == "__main__":

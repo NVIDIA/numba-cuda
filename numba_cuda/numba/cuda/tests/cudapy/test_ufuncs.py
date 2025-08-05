@@ -3,7 +3,7 @@ import numpy as np
 import unittest
 
 from numba import config, cuda, types
-from numba.tests.support import TestCase
+from numba.cuda.tests.support import TestCase
 from numba.tests.test_ufuncs import BasicUFuncTest
 
 
@@ -17,16 +17,16 @@ def _make_ufunc_usecase(ufunc):
     return fn
 
 
-# This test would also be a CUDATestCase, but to avoid a confusing and
-# potentially dangerous inheritance diamond with setUp methods that modify
-# global state, we implement the necessary parts of CUDATestCase within this
-# class instead. These are:
+# This class provides common functionality for UFunc tests. The UFunc tests
+# are quite long-running in comparison to other tests, so we break the tests up
+# into multiple test classes for distribution across workers.
 #
-# - Disable parallel testing with _numba_parallel_test_.
-# - Disabling CUDA performance warnings for the duration of tests.
-class TestUFuncs(BasicUFuncTest, TestCase):
-    _numba_parallel_test_ = False
-
+# This class would also be a CUDATestCase, but to avoid a confusing and
+# potentially dangerous inheritance diamond with setUp methods that modify
+# global state, we implement the necessary part of CUDATestCase within this
+# class instead. This disables CUDA performance warnings for the duration of
+# tests.
+class CUDAUFuncTestBase(BasicUFuncTest, TestCase):
     def setUp(self):
         BasicUFuncTest.setUp(self)
 
@@ -146,6 +146,8 @@ class TestUFuncs(BasicUFuncTest, TestCase):
     ############################################################################
     # Trigonometric Functions
 
+
+class TestBasicTrigUFuncs(CUDAUFuncTestBase):
     def test_sin_ufunc(self):
         self.basic_ufunc_test(np.sin, kinds="cf")
 
@@ -167,6 +169,8 @@ class TestUFuncs(BasicUFuncTest, TestCase):
     def test_arctan2_ufunc(self):
         self.basic_ufunc_test(np.arctan2, kinds="f")
 
+
+class TestHypTrigUFuncs(CUDAUFuncTestBase):
     def test_hypot_ufunc(self):
         self.basic_ufunc_test(np.hypot, kinds="f")
 
@@ -207,6 +211,8 @@ class TestUFuncs(BasicUFuncTest, TestCase):
 
         self.basic_ufunc_test(np.arctanh, skip_inputs=to_skip, kinds="cf")
 
+
+class TestConversionUFuncs(CUDAUFuncTestBase):
     def test_deg2rad_ufunc(self):
         self.basic_ufunc_test(np.deg2rad, kinds="f")
 
@@ -221,6 +227,9 @@ class TestUFuncs(BasicUFuncTest, TestCase):
 
     ############################################################################
     # Comparison functions
+
+
+class TestComparisonUFuncs1(CUDAUFuncTestBase):
     def test_greater_ufunc(self):
         self.signed_unsigned_cmp_test(np.greater)
 
@@ -239,6 +248,8 @@ class TestUFuncs(BasicUFuncTest, TestCase):
     def test_equal_ufunc(self):
         self.signed_unsigned_cmp_test(np.equal)
 
+
+class TestLogicalUFuncs(CUDAUFuncTestBase):
     def test_logical_and_ufunc(self):
         self.basic_ufunc_test(np.logical_and)
 
@@ -251,6 +262,8 @@ class TestUFuncs(BasicUFuncTest, TestCase):
     def test_logical_not_ufunc(self):
         self.basic_ufunc_test(np.logical_not)
 
+
+class TestMinmaxUFuncs(CUDAUFuncTestBase):
     def test_maximum_ufunc(self):
         self.basic_ufunc_test(np.maximum)
 
@@ -263,6 +276,8 @@ class TestUFuncs(BasicUFuncTest, TestCase):
     def test_fmin_ufunc(self):
         self.basic_ufunc_test(np.fmin)
 
+
+class TestBitwiseUFuncs(CUDAUFuncTestBase):
     def test_bitwise_and_ufunc(self):
         self.basic_int_ufunc_test(np.bitwise_and)
 
@@ -286,6 +301,8 @@ class TestUFuncs(BasicUFuncTest, TestCase):
     ############################################################################
     # Mathematical Functions
 
+
+class TestLogUFuncs(CUDAUFuncTestBase):
     def test_log_ufunc(self):
         self.basic_ufunc_test(np.log, kinds="cf")
 

@@ -8,7 +8,7 @@ from numba.cuda.testing import skip_on_cudasim, CUDATestCase
 import unittest
 import warnings
 from numba.core.errors import NumbaPerformanceWarning, TypingError
-from numba.tests.support import override_config
+from numba.cuda.tests.support import override_config
 
 
 def _get_matmulcore_gufunc(dtype=float32):

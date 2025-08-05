@@ -1,21 +1,18 @@
 from llvmlite import ir
 from collections import namedtuple
 from numba.core import ir as numba_ir
+from numba.cuda import cgutils, typing
 from numba.core import (
-    cgutils,
     types,
-    typing,
     funcdesc,
     config,
     compiler,
-    sigutils,
-    utils,
 )
 from numba.core.compiler import (
     sanitize_compile_result_entries,
-    CompilerBase,
     DefaultPassBuilder,
 )
+from numba.cuda.core.compiler import CompilerBase
 from numba.core.compiler_lock import global_compiler_lock
 from numba.core.compiler_machinery import (
     FunctionPass,
@@ -28,18 +25,19 @@ from numba.core.errors import NumbaInvalidConfigWarning
 from numba.core.untyped_passes import TranslateByteCode
 from numba.core.typed_passes import (
     IRLegalization,
-    NativeLowering,
     AnnotateTypes,
 )
 from warnings import warn
 from numba.cuda import nvvmutils
 from numba.cuda.api import get_current_device
 from numba.cuda.codegen import ExternalCodeLibrary
+from numba.cuda.core.typed_passes import BaseNativeLowering
+from numba.cuda.core import sigutils
 from numba.cuda.cudadrv import nvvm, nvrtc
 from numba.cuda.descriptor import cuda_target
 from numba.cuda.flags import CUDAFlags
 from numba.cuda.target import CUDACABICallConv
-from numba.cuda import lowering
+from numba.cuda import lowering, utils
 
 
 # The CUDACompileResult (CCR) has a specially-defined entry point equal to its
@@ -233,7 +231,7 @@ class CreateLibrary(LoweringPass):
 
 
 @register_pass(mutates_CFG=True, analysis_only=False)
-class CUDANativeLowering(NativeLowering):
+class CUDANativeLowering(BaseNativeLowering):
     """Lowering pass for a CUDA native function IR described solely in terms of
     Numba's standard `numba.core.ir` nodes."""
 

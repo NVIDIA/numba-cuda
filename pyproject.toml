@@ -18,7 +18,7 @@ authors = [
 ]
 license = { text = "BSD 2-clause" }
 requires-python = ">=3.9"
-dependencies = ["numba>=0.59.1"]
+dependencies = ["numba>=0.60.0"]
 
 [project.optional-dependencies]
 cu11 = [
@@ -42,6 +42,8 @@ test = [
     "psutil",
     "cffi",
     "pytest",
+    "pytest-xdist",
+    "filecheck",
 ]
 test-cu11 = [
     "numba-cuda[test]",
@@ -50,8 +52,22 @@ test-cu11 = [
 test-cu12 = [
     "numba-cuda[test]",
     "nvidia-curand-cu12",
-    "pynvjitlink-cu12",
 ]
+dev = [
+    "pre-commit",
+    "numba-cuda[test]",
+]
+dev-cu11 = [
+    "numba-cuda[test-cu11]",
+    "numba-cuda[test]",
+    "numba-cuda[dev]",
+]
+dev-cu12 = [
+    "numba-cuda[test-cu12]",
+    "numba-cuda[test]",
+    "numba-cuda[dev]",
+]
+
 
 [project.urls]
 Homepage = "https://github.com/rapidsai/numba-cuda"
@@ -70,6 +86,13 @@ include = ["numba_cuda*"]
 
 [tool.setuptools.package-data]
 "*" = ["*.cu", "*.h", "*.hpp", "*.ptx", "*.cuh", "VERSION", "Makefile"]
+
+[tool.pytest.ini_options]
+minversion = "8.0"
+testpaths = ["numba_cuda/numba/cuda/tests"]
+consider_namespace_packages = true
+# loadscope ensures the grouping required by CUDATestCase
+addopts = "--dist loadscope"
 
 [tool.ruff]
 line-length = 80
@@ -109,6 +132,7 @@ exclude = [
     "*.c",
     "*.h",
     "cuda_bf16.py",
+    "cuda_fp16.py",
 ]
 
 [tool.ruff.lint.per-file-ignores]

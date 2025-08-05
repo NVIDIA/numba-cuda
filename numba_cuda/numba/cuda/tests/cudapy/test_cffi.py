@@ -7,7 +7,7 @@ from numba.cuda.testing import (
     unittest,
     CUDATestCase,
 )
-from numba.tests.support import skip_unless_cffi
+from numba.cuda.tests.support import skip_unless_cffi
 
 
 @skip_unless_cffi

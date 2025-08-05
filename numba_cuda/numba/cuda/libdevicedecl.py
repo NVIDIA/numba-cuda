@@ -1,5 +1,5 @@
 from numba.cuda import libdevice, libdevicefuncs
-from numba.core.typing.templates import ConcreteTemplate, Registry
+from numba.cuda.typing.templates import ConcreteTemplate, Registry
 
 registry = Registry()
 register_global = registry.register_global
