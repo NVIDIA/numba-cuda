@@ -38,3 +38,18 @@ class CUDADispatcher(types.Dispatcher):
     # is still probably a good idea to have a separate type for CUDA
     # dispatchers, and this type might get other differentiation from the CPU
     # dispatcher type in future.
+
+
+class Bfloat16(types.Number):
+    """
+    A bfloat16 type.
+    """
+
+    def __init__(self):
+        super().__init__(name="__nv_bfloat16")
+
+        self.alignof_ = 2
+        self.bitwidth = 2 * 8
+
+
+bfloat16 = Bfloat16()

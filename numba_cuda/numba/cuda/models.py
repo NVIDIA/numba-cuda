@@ -3,9 +3,10 @@ import functools
 from llvmlite import ir
 
 from numba.core.datamodel.registry import DataModelManager, register
+from numba.core.datamodel import PrimitiveModel
 from numba.core.extending import models
 from numba.core import types
-from numba.cuda.types import Dim3, GridGroup, CUDADispatcher
+from numba.cuda.types import Dim3, GridGroup, CUDADispatcher, Bfloat16
 
 
 cuda_data_manager = DataModelManager()
@@ -42,3 +43,35 @@ class FloatModel(models.PrimitiveModel):
 
 
 register_model(CUDADispatcher)(models.OpaqueModel)
+
+
+def _as_bfloat(value):
+    # Step 1: Convert to float
+    f = ir.types._as_float(value)
+    # Step 2: Truncate (or round, we choose truncate) last 16 bits
+    bf = f >> 16
+    return bf
+
+
+class BfloatType(ir.types._BaseFloatType):
+    """Brain-float type"""
+
+    null = "0.0"
+    intrinsic_name = "bfloat"
+
+    def __str__(self):
+        return "bfloat"
+
+    def format_constant(self, value):
+        return ir.types._format_double(_as_bfloat(value))
+
+
+BfloatType._create_instance()
+
+
+@register_model(Bfloat16)
+class _model___nv_bfloat16(PrimitiveModel):
+    def __init__(self, dmm, fe_type):
+        # be_type = BfloatType()
+        be_type = ir.IntType(16)
+        super(_model___nv_bfloat16, self).__init__(dmm, fe_type, be_type)

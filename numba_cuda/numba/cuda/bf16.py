@@ -1,6 +1,5 @@
 from numba.cuda._internal.cuda_bf16 import (
-    _type_class___nv_bfloat16,
-    nv_bfloat16 as bfloat16,
+    __nv_bfloat16 as bfloat16,
     htrunc,
     hceil,
     hfloor,
@@ -25,7 +24,7 @@ import math
 
 
 def _make_unary(a, func):
-    if isinstance(a, _type_class___nv_bfloat16):
+    if isinstance(a, bfloat16):
         return lambda a: func(a)
 
 

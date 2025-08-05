@@ -25,10 +25,11 @@ from numba.core.extending import (
 )
 from numba.core.imputils import Registry as TargetRegistry
 from numba.core.imputils import lower_cast
-from numba.core.typing.templates import Registry as TypingRegistry
+from numba.cuda.typing.templates import Registry as TypingRegistry
 from numba.cuda.typing import signature
 from numba.cuda.typing.templates import AttributeTemplate, ConcreteTemplate
 from numba.cuda import CUSource, declare_device
+from numba.cuda.types import bfloat16
 from numba.cuda.vector_types import vector_types
 from numba.extending import as_numba_type
 from numba.types import (
@@ -52,6 +53,7 @@ from numba.types import (
 )
 
 float32x2 = vector_types["float32x2"]
+__half = float16
 
 # Setups:
 
@@ -192,28 +194,7 @@ class _ctor_template_unnamed1405416(ConcreteTemplate):
 register_global(unnamed1405416, Function(_ctor_template_unnamed1405416))
 
 
-# Typing for __nv_bfloat16
-class _type_class___nv_bfloat16(Number):
-    def __init__(self):
-        super().__init__(name="__nv_bfloat16")
-        self.alignof_ = 2
-        self.bitwidth = 2 * 8
-
-
-_type___nv_bfloat16 = _type_class___nv_bfloat16()
-
-
-# Make Python API for struct
-__nv_bfloat16 = type("__nv_bfloat16", (), {"_nbtype": _type___nv_bfloat16})
-
-as_numba_type.register(__nv_bfloat16, _type___nv_bfloat16)
-
-
-@register_model(_type_class___nv_bfloat16)
-class _model___nv_bfloat16(PrimitiveModel):
-    def __init__(self, dmm, fe_type):
-        be_type = ir.IntType(fe_type.bitwidth)
-        super(_model___nv_bfloat16, self).__init__(dmm, fe_type, be_type)
+__nv_bfloat16 = _type___nv_bfloat16 = bfloat16
 
 
 def _lower__ZN13__nv_bfloat16C1Ev(shim_stream, shim_obj):
@@ -417,8 +398,8 @@ def _lower__ZN13__nv_bfloat16C1Ef(shim_stream, shim_obj):
         return ctor_impl(
             context,
             builder,
-            signature(_type___nv_bfloat16, CPointer(float32)),
-            value,
+            signature(_type___nv_bfloat16, float32),
+            [value],
         )
 
 
@@ -470,8 +451,8 @@ def _lower__ZN13__nv_bfloat16C1Ed(shim_stream, shim_obj):
         return ctor_impl(
             context,
             builder,
-            signature(_type___nv_bfloat16, CPointer(float64)),
-            value,
+            signature(_type___nv_bfloat16, float64),
+            [value],
         )
 
 
@@ -523,8 +504,8 @@ def _lower__ZN13__nv_bfloat16C1Es(shim_stream, shim_obj):
         return ctor_impl(
             context,
             builder,
-            signature(_type___nv_bfloat16, CPointer(int16)),
-            value,
+            signature(_type___nv_bfloat16, int16),
+            [value],
         )
 
 
@@ -576,8 +557,8 @@ def _lower__ZN13__nv_bfloat16C1Et(shim_stream, shim_obj):
         return ctor_impl(
             context,
             builder,
-            signature(_type___nv_bfloat16, CPointer(uint16)),
-            value,
+            signature(_type___nv_bfloat16, uint16),
+            [value],
         )
 
 
@@ -629,8 +610,8 @@ def _lower__ZN13__nv_bfloat16C1Ei(shim_stream, shim_obj):
         return ctor_impl(
             context,
             builder,
-            signature(_type___nv_bfloat16, CPointer(int32)),
-            value,
+            signature(_type___nv_bfloat16, int32),
+            [value],
         )
 
 
@@ -682,8 +663,8 @@ def _lower__ZN13__nv_bfloat16C1Ej(shim_stream, shim_obj):
         return ctor_impl(
             context,
             builder,
-            signature(_type___nv_bfloat16, CPointer(uint32)),
-            value,
+            signature(_type___nv_bfloat16, uint32),
+            [value],
         )
 
 
@@ -735,8 +716,8 @@ def _lower__ZN13__nv_bfloat16C1El(shim_stream, shim_obj):
         return ctor_impl(
             context,
             builder,
-            signature(_type___nv_bfloat16, CPointer(int64)),
-            value,
+            signature(_type___nv_bfloat16, int64),
+            [value],
         )
 
 
@@ -788,8 +769,8 @@ def _lower__ZN13__nv_bfloat16C1Em(shim_stream, shim_obj):
         return ctor_impl(
             context,
             builder,
-            signature(_type___nv_bfloat16, CPointer(uint64)),
-            value,
+            signature(_type___nv_bfloat16, uint64),
+            [value],
         )
 
 
@@ -841,8 +822,8 @@ def _lower__ZN13__nv_bfloat16C1Ex(shim_stream, shim_obj):
         return ctor_impl(
             context,
             builder,
-            signature(_type___nv_bfloat16, CPointer(int64)),
-            value,
+            signature(_type___nv_bfloat16, int64),
+            [value],
         )
 
 
@@ -894,8 +875,8 @@ def _lower__ZN13__nv_bfloat16C1Ey(shim_stream, shim_obj):
         return ctor_impl(
             context,
             builder,
-            signature(_type___nv_bfloat16, CPointer(uint64)),
-            value,
+            signature(_type___nv_bfloat16, uint64),
+            [value],
         )
 
 
@@ -13635,10 +13616,6 @@ def _lower__ZleRK14__nv_bfloat162S1__nbst(shim_stream, shim_obj):
 _lower__ZleRK14__nv_bfloat162S1__nbst(shim_stream, shim_obj)
 
 
-def __half():
-    pass
-
-
 def _lower__ZN6__halfC1E13__nv_bfloat16_nbst(shim_stream, shim_obj):
     shim_raw_str = """
     extern "C" __device__ int
@@ -15944,15 +15921,6 @@ class _typing_atomicAdd(ConcreteTemplate):
 register_global(atomicAdd, types.Function(_typing_atomicAdd))
 
 
-@register
-class _typing___half(ConcreteTemplate):
-    key = globals()["__half"]
-    cases = [signature(void, _type___nv_bfloat16)]
-
-
-register_global(__half, types.Function(_typing___half))
-
-
 @register_global(operator.add)
 class _typing_operator_add(ConcreteTemplate):
     cases = [
@@ -16403,7 +16371,6 @@ _FUNCTION_SYMBOLS = [
     "operator<",
     "operator>=",
     "operator<=",
-    "__half",
 ]
 
 
