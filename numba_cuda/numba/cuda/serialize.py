@@ -3,13 +3,11 @@ Serialization support for compiled functions.
 """
 
 import sys
-import abc
 import io
-import copyreg
 
 
 import pickle
-from numba import cloudpickle
+from numba.cuda.cloudpickle import Pickler, loads
 from llvmlite import ir
 
 
@@ -47,13 +45,13 @@ def _numba_unpickle(address, bytedata, hashed):
     try:
         obj = _unpickled_memo[key]
     except KeyError:
-        _unpickled_memo[key] = obj = cloudpickle.loads(bytedata)
+        _unpickled_memo[key] = obj = loads(bytedata)
     return obj
 
 
 def dumps(obj):
     """Similar to `pickle.dumps()`. Returns the serialized object in bytes."""
-    pickler = NumbaPickler
+    pickler = Pickler
     with io.BytesIO() as buf:
         p = pickler(buf, protocol=4)
         p.dump(obj)
@@ -63,7 +61,7 @@ def dumps(obj):
 
 
 def runtime_build_excinfo_struct(static_exc, exc_args):
-    exc, static_args, locinfo = cloudpickle.loads(static_exc)
+    exc, static_args, locinfo = loads(static_exc)
     real_args = []
     exc_args_iter = iter(exc_args)
     for arg in static_args:
@@ -72,85 +70,6 @@ def runtime_build_excinfo_struct(static_exc, exc_args):
         else:
             real_args.append(arg)
     return (exc, tuple(real_args), locinfo)
-
-
-# Alias to pickle.loads to allow `serialize.loads()`
-loads = cloudpickle.loads
-
-
-class _CustomPickled:
-    """A wrapper for objects that must be pickled with `NumbaPickler`.
-
-    Standard `pickle` will pick up the implementation registered via `copyreg`.
-    This will spawn a `NumbaPickler` instance to serialize the data.
-
-    `NumbaPickler` overrides the handling of this type so as not to spawn a
-    new pickler for the object when it is already being pickled by a
-    `NumbaPickler`.
-    """
-
-    __slots__ = "ctor", "states"
-
-    def __init__(self, ctor, states):
-        self.ctor = ctor
-        self.states = states
-
-    def _reduce(self):
-        return _CustomPickled._rebuild, (self.ctor, self.states)
-
-    @classmethod
-    def _rebuild(cls, ctor, states):
-        return cls(ctor, states)
-
-
-def _unpickle__CustomPickled(serialized):
-    """standard unpickling for `_CustomPickled`.
-
-    Uses `NumbaPickler` to load.
-    """
-    ctor, states = loads(serialized)
-    return _CustomPickled(ctor, states)
-
-
-def _pickle__CustomPickled(cp):
-    """standard pickling for `_CustomPickled`.
-
-    Uses `NumbaPickler` to dump.
-    """
-    serialized = dumps((cp.ctor, cp.states))
-    return _unpickle__CustomPickled, (serialized,)
-
-
-# Register custom pickling for the standard pickler.
-copyreg.pickle(_CustomPickled, _pickle__CustomPickled)
-
-
-def custom_reduce(cls, states):
-    """For customizing object serialization in `__reduce__`.
-
-    Object states provided here are used as keyword arguments to the
-    `._rebuild()` class method.
-
-    Parameters
-    ----------
-    states : dict
-        Dictionary of object states to be serialized.
-
-    Returns
-    -------
-    result : tuple
-        This tuple conforms to the return type requirement for `__reduce__`.
-    """
-    return custom_rebuild, (_CustomPickled(cls, states),)
-
-
-def custom_rebuild(custom_pickled):
-    """Customized object deserialization.
-
-    This function is referenced internally by `custom_reduce()`.
-    """
-    cls, states = custom_pickled.ctor, custom_pickled.states
-    return cls._rebuild(**states)
 
 
 def is_serialiable(obj):
@@ -165,7 +84,7 @@ def is_serialiable(obj):
     can_serialize : bool
     """
     with io.BytesIO() as fout:
-        pickler = NumbaPickler(fout)
+        pickler = Pickler(fout)
         try:
             pickler.dump(obj)
         except pickle.PicklingError:
@@ -174,60 +93,11 @@ def is_serialiable(obj):
             return True
 
 
-def _no_pickle(obj):
-    raise pickle.PicklingError(f"Pickling of {type(obj)} is unsupported")
-
-
 def disable_pickling(typ):
     """This is called on a type to disable pickling"""
-    NumbaPickler.disabled_types.add(typ)
+    Pickler.disabled_types.add(typ)
     # Return `typ` to allow use as a decorator
     return typ
-
-
-class NumbaPickler(cloudpickle.CloudPickler):
-    disabled_types = set()
-    """A set of types that pickling cannot is disabled.
-    """
-
-    def reducer_override(self, obj):
-        # Overridden to disable pickling of certain types
-        if type(obj) in self.disabled_types:
-            _no_pickle(obj)  # noreturn
-        return super().reducer_override(obj)
-
-
-def _custom_reduce__custompickled(cp):
-    return cp._reduce()
-
-
-NumbaPickler.dispatch_table[_CustomPickled] = _custom_reduce__custompickled
-
-
-class ReduceMixin(abc.ABC):
-    """A mixin class for objects that should be reduced by the NumbaPickler
-    instead of the standard pickler.
-    """
-
-    # Subclass MUST override the below methods
-
-    @abc.abstractmethod
-    def _reduce_states(self):
-        raise NotImplementedError
-
-    @abc.abstractclassmethod
-    def _rebuild(cls, **kwargs):
-        raise NotImplementedError
-
-    # Subclass can override the below methods
-
-    def _reduce_class(self):
-        return self.__class__
-
-    # Private methods
-
-    def __reduce__(self):
-        return custom_reduce(self._reduce_class(), self._reduce_states())
 
 
 class PickleCallableByPath:

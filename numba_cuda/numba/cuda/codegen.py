@@ -1,7 +1,7 @@
 from llvmlite import ir
 
 from numba.core import config
-from numba.cuda import serialize
+from numba.cuda import cloudpickle
 from .cudadrv import devices, driver, nvvm, runtime, nvrtc
 from numba.cuda.core.codegen import Codegen, CodeLibrary
 from numba.cuda.cudadrv.libs import get_cudalib
@@ -115,7 +115,7 @@ class ExternalCodeLibrary(CodeLibrary):
         raise NotImplementedError("Cannot get function from external code")
 
 
-class CUDACodeLibrary(serialize.ReduceMixin, CodeLibrary):
+class CUDACodeLibrary(cloudpickle.ReduceMixin, CodeLibrary):
     """
     The CUDACodeLibrary generates PTX, SASS, cubins for multiple different
     compute capabilities. It also loads cubins to multiple devices (via
