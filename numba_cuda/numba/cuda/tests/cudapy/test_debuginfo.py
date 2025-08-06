@@ -700,12 +700,8 @@ class TestCudaDebugInfo(CUDATestCase):
         cond_branch_dbginfo = cond_branch_dbginfos[0]
 
         # Check debuginfo for the store instructions
-        store_1_lines, store_5_lines = [], []
-        for line in foo_ir_lines:
-            if "store i64 1" in line:
-                store_1_lines.append(line)
-            elif "store i64 5" in line:
-                store_5_lines.append(line)
+        store_1_lines = list(filter(lambda x: "store i64 1" in x, foo_ir_lines))
+        store_5_lines = list(filter(lambda x: "store i64 5" in x, foo_ir_lines))
 
         self.assertEqual(len(store_1_lines), 2)
         self.assertEqual(len(store_5_lines), 2)
