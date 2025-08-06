@@ -634,13 +634,13 @@ class Device(object):
 
         if USE_NV_BINDING:
             buf = driver.cuDeviceGetName(bufsz, self.id)
-            name = buf.decode("utf-8").rstrip("\0")
+            name = buf
         else:
             buf = (c_char * bufsz)()
             driver.cuDeviceGetName(buf, bufsz, self.id)
             name = buf.value
 
-        self.name = name
+        self.name = name.decode("utf-8").rstrip("\0")
 
         # Read UUID
         if USE_NV_BINDING:
