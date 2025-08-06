@@ -11,7 +11,7 @@ from numba.core.errors import (
     UnsupportedBytecodeError,
     error_extras,
 )
-from numba.core.ir_utils import get_definition, guard
+from numba.cuda.core.ir_utils import get_definition, guard
 from numba.core.utils import (
     PYVERSION,
     BINOPS_TO_OPERATORS,
