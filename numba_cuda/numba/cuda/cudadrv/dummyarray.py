@@ -2,25 +2,118 @@ from collections import namedtuple
 import itertools
 import functools
 import operator
-import ctypes
 
-import numpy as np
-
-from numba import _helperlib
 
 Extent = namedtuple("Extent", ["begin", "end"])
 
-attempt_nocopy_reshape = ctypes.CFUNCTYPE(
-    ctypes.c_int,
-    ctypes.c_long,  # nd
-    np.ctypeslib.ndpointer(np.ctypeslib.c_intp, ndim=1),  # dims
-    np.ctypeslib.ndpointer(np.ctypeslib.c_intp, ndim=1),  # strides
-    ctypes.c_long,  # newnd
-    np.ctypeslib.ndpointer(np.ctypeslib.c_intp, ndim=1),  # newdims
-    np.ctypeslib.ndpointer(np.ctypeslib.c_intp, ndim=1),  # newstrides
-    ctypes.c_long,  # itemsize
-    ctypes.c_int,  # is_f_order
-)(_helperlib.c_helpers["attempt_nocopy_reshape"])
+
+def attempt_nocopy_reshape(
+    nd, dims, strides, newnd, newdims, newstrides, itemsize, is_f_order
+):
+    """
+    Attempt to reshape an array without copying data.
+
+    This function should correctly handle all reshapes, including
+    axes of length 1. Zero strides should work but are untested.
+
+    If a copy is needed, returns 0
+    If no copy is needed, returns 1 and fills `newstrides`
+    with appropriate strides
+    """
+
+    olddims = []
+    oldstrides = []
+    oldnd = 0
+
+    # Remove axes with dimension 1 from the old array. They have no effect
+    # but would need special cases since their strides do not matter.
+    for oi in range(nd):
+        if dims[oi] != 1:
+            olddims.append(dims[oi])
+            oldstrides.append(strides[oi])
+            oldnd += 1
+
+    # Calculate total sizes
+    np_total = 1
+    for ni in range(newnd):
+        np_total *= newdims[ni]
+
+    op_total = 1
+    for oi in range(oldnd):
+        op_total *= olddims[oi]
+
+    if np_total != op_total:
+        # Different total sizes; no hope
+        return 0
+
+    if np_total == 0:
+        # Handle zero-sized arrays
+        # Just make the strides vaguely reasonable
+        # (they can have any value in theory).
+        for i in range(newnd):
+            newstrides[i] = itemsize
+        return 1
+
+    # oi to oj and ni to nj give the axis ranges currently worked with
+    oi = 0
+    oj = 1
+    ni = 0
+    nj = 1
+
+    while ni < newnd and oi < oldnd:
+        np = newdims[ni]
+        op = olddims[oi]
+
+        while np != op:
+            if np < op:
+                # Misses trailing 1s, these are handled later
+                np *= newdims[nj]
+                nj += 1
+            else:
+                op *= olddims[oj]
+                oj += 1
+
+        # Check whether the original axes can be combined
+        for ok in range(oi, oj - 1):
+            if is_f_order:
+                if oldstrides[ok + 1] != olddims[ok] * oldstrides[ok]:
+                    # not contiguous enough
+                    return 0
+            else:
+                # C order
+                if oldstrides[ok] != olddims[ok + 1] * oldstrides[ok + 1]:
+                    # not contiguous enough
+                    return 0
+
+        # Calculate new strides for all axes currently worked with
+        if is_f_order:
+            newstrides[ni] = oldstrides[oi]
+            for nk in range(ni + 1, nj):
+                newstrides[nk] = newstrides[nk - 1] * newdims[nk - 1]
+        else:
+            # C order
+            newstrides[nj - 1] = oldstrides[oj - 1]
+            for nk in range(nj - 1, ni, -1):
+                newstrides[nk - 1] = newstrides[nk] * newdims[nk]
+
+        ni = nj
+        nj += 1
+        oi = oj
+        oj += 1
+
+    # Set strides corresponding to trailing 1s of the new shape
+    if ni >= 1:
+        last_stride = newstrides[ni - 1]
+    else:
+        last_stride = itemsize
+
+    if is_f_order:
+        last_stride *= newdims[ni - 1]
+
+    for nk in range(ni, newnd):
+        newstrides[nk] = last_stride
+
+    return 1
 
 
 class Dim(object):
@@ -330,18 +423,12 @@ class Array(object):
             else:
                 raise AssertionError("unreachable")
         else:
-            newstrides = np.empty(newnd, np.ctypeslib.c_intp)
-
-            # need to keep these around in variables, not temporaries, so they
-            # don't get GC'ed before we call into the C code
-            olddims = np.array(self.shape, dtype=np.ctypeslib.c_intp)
-            oldstrides = np.array(self.strides, dtype=np.ctypeslib.c_intp)
-            newdims = np.array(newdims, dtype=np.ctypeslib.c_intp)
+            newstrides = [0] * newnd
 
             if not attempt_nocopy_reshape(
                 oldnd,
-                olddims,
-                oldstrides,
+                self.shape,
+                self.strides,
                 newnd,
                 newdims,
                 newstrides,
