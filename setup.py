@@ -94,6 +94,7 @@ def is_building():
         "develop",
         "easy_install",
         "test",
+        "editable_wheel",
     ]
     return any(bc in sys.argv[1:] for bc in build_commands)
 

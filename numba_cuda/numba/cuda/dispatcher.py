@@ -2137,14 +2137,7 @@ class CUDADispatcher(serialize.ReduceMixin, _MemoMixin, _DispatcherBase):
         return dict(py_func=self.py_func, targetoptions=self.targetoptions)
 
 
-if config.USE_LEGACY_TYPE_SYSTEM:  # Old type system
-    # Initialize typeof machinery
-    _dispatcher.typeof_init(
-        OmittedArg, dict((str(t), t._code) for t in types.number_domain)
-    )
-else:  # New type system
-    # Initialize typeof machinery
-    _dispatcher.typeof_init(
-        OmittedArg,
-        dict((str(t).split("_")[-1], t._code) for t in types.np_number_domain),
-    )
+# Initialize typeof machinery
+_dispatcher.typeof_init(
+    OmittedArg, dict((str(t), t._code) for t in types.number_domain)
+)
