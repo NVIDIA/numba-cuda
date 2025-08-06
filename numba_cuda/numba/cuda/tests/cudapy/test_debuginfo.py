@@ -1,3 +1,4 @@
+from collections import namedtuple
 from numba.cuda.tests.support import override_config, captured_stdout
 from numba.cuda.testing import skip_on_cudasim
 from numba import cuda
@@ -12,6 +13,7 @@ import warnings
 from numba.core.errors import NumbaDebugInfoWarning
 from numba.tests.support import ignore_internal_warnings
 import numpy as np
+import inspect
 
 
 @skip_on_cudasim("Simulator does not produce debug dumps")
@@ -648,12 +650,11 @@ class TestCudaDebugInfo(CUDATestCase):
                 c = 5
             else:
                 c = 1
-            # prevents inline of return on py310
-            py310_defeat1 = 1  # noqa
-            py310_defeat2 = 2  # noqa
-            py310_defeat3 = 3  # noqa
-            py310_defeat4 = 4  # noqa
             dest[0] = c
+
+        foo_source_lines, foo_source_lineno = inspect.getsourcelines(
+            foo.py_func
+        )
 
         result = cuda.device_array(1, dtype=np.int32)
         foo[1, 1](result, 1)
@@ -662,6 +663,113 @@ class TestCudaDebugInfo(CUDATestCase):
 
         ir_content = foo.inspect_llvm()[foo.signatures[0]]
         self.assertFileCheckMatches(ir_content, foo.__doc__)
+
+        # Collect lines pertaining to the function `foo` and debuginfo
+        # metadata
+        lines = ir_content.splitlines()
+        debuginfo_equals = re.compile(r"!(\d+) = ")
+        debug_info_lines = list(
+            filter(lambda x: debuginfo_equals.search(x), lines)
+        )
+
+        function_start_regex = re.compile(r"define void @.+foo")
+        function_start_lines = list(
+            filter(
+                lambda x: function_start_regex.search(x[1]), enumerate(lines)
+            )
+        )
+        function_end_lines = list(
+            filter(lambda x: x[1] == "}", enumerate(lines))
+        )
+        foo_ir_lines = lines[
+            function_start_lines[0][0] : function_end_lines[0][0]
+        ]
+
+        # Check the if condition's debuginfo
+        cond_branch = list(filter(lambda x: "br i1" in x, foo_ir_lines))
+        self.assertEqual(len(cond_branch), 1)
+        self.assertIn("!dbg", cond_branch[0])
+        cond_branch_dbginfo_node = cond_branch[0].split("!dbg")[1].strip()
+        cond_branch_dbginfos = list(
+            filter(
+                lambda x: cond_branch_dbginfo_node + " = " in x,
+                debug_info_lines,
+            )
+        )
+        self.assertEqual(len(cond_branch_dbginfos), 1)
+        cond_branch_dbginfo = cond_branch_dbginfos[0]
+
+        # Check debuginfo for the store instructions
+        store_1_lines, store_5_lines = [], []
+        for line in foo_ir_lines:
+            if "store i64 1" in line:
+                store_1_lines.append(line)
+            elif "store i64 5" in line:
+                store_5_lines.append(line)
+
+        self.assertEqual(len(store_1_lines), 2)
+        self.assertEqual(len(store_5_lines), 2)
+
+        store_1_dbginfo_set = set(
+            map(lambda x: x.split("!dbg")[1].strip(), store_1_lines)
+        )
+        store_5_dbginfo_set = set(
+            map(lambda x: x.split("!dbg")[1].strip(), store_5_lines)
+        )
+        self.assertEqual(len(store_1_dbginfo_set), 1)
+        self.assertEqual(len(store_5_dbginfo_set), 1)
+        store_1_dbginfo_node = store_1_dbginfo_set.pop()
+        store_5_dbginfo_node = store_5_dbginfo_set.pop()
+        store_1_dbginfos = list(
+            filter(
+                lambda x: store_1_dbginfo_node + " = " in x, debug_info_lines
+            )
+        )
+        store_5_dbginfos = list(
+            filter(
+                lambda x: store_5_dbginfo_node + " = " in x, debug_info_lines
+            )
+        )
+        self.assertEqual(len(store_1_dbginfos), 1)
+        self.assertEqual(len(store_5_dbginfos), 1)
+        store_1_dbginfo = store_1_dbginfos[0]
+        store_5_dbginfo = store_5_dbginfos[0]
+
+        # Ensure the line numbers match what we expect based on the Python source
+        line_number_regex = re.compile(r"line: (\d+)")
+        LineNumbers = namedtuple(
+            "LineNumbers", ["cond_branch", "store_5", "store_1"]
+        )
+        line_number_matches = LineNumbers(
+            *map(
+                lambda x: line_number_regex.search(x),
+                [cond_branch_dbginfo, store_5_dbginfo, store_1_dbginfo],
+            )
+        )
+        self.assertTrue(
+            all(
+                map(
+                    lambda x: x is not None,
+                    line_number_matches,
+                )
+            )
+        )
+        line_numbers = LineNumbers(
+            *map(
+                lambda x: int(x.group(1)),
+                line_number_matches,
+            )
+        )
+        source_line_numbers = LineNumbers(
+            *map(
+                lambda x: x[0] + foo_source_lineno,
+                filter(
+                    lambda x: "c = " in x[1] or "if n:" in x[1],
+                    enumerate(foo_source_lines),
+                ),
+            )
+        )
+        self.assertEqual(line_numbers, source_line_numbers)
 
     def test_debuginfo_asm(self):
         def foo():
