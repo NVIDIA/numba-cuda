@@ -5,14 +5,24 @@ Implement the cmath module functions.
 import cmath
 import math
 
-from numba.core.imputils import Registry, impl_ret_untracked
+from numba.core.imputils import impl_ret_untracked
 from numba.core import types
 from numba.core.typing import signature
 from numba.cuda.cpython import mathimpl
 from numba.core.extending import overload
+from numba.cuda.cudaimpl import lower
 
-registry = Registry("cmathimpl")
-lower = registry.lower
+# ---------------------------------------------------------------------
+# XXX: In upstream Numba, this file would create a cmathimpl registry
+# if it was installed in the target (as it is for the CUDA target).
+# The cmathimpl registry has been removed from this file (it was
+# initialized as `registry = Registry('cmathimpl')`) as it would duplicate
+# the cmathimpl registry in upstream Numba, which would be likely to lead
+# to confusion / mixing things up between two cmathimpl registries. The
+# comment that accompanied this behaviour is left here, even though the
+# code that would pick the cmathimpl registry has been removed, for the
+# benefit of future understanding.
+#
 
 
 def is_nan(builder, z):
