@@ -227,7 +227,7 @@ class TestDispatcherPickling(TestCase):
 class TestSerializationMisc(TestCase):
     def test_numba_unpickle(self):
         # Test that _numba_unpickle is memorizing its output
-        from numba.core.serialize import _numba_unpickle
+        from numba.cuda.serialize import _numba_unpickle
 
         random_obj = object()
         bytebuf = pickle.dumps(random_obj)
