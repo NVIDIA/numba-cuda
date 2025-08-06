@@ -153,7 +153,7 @@ class CUDATargetContext(BaseContext):
         from numba.cpython import numbers, tupleobj, slicing  # noqa: F401
         from numba.cpython import rangeobj, iterators, enumimpl  # noqa: F401
         from numba.cpython import unicode, charseq  # noqa: F401
-        from numba.cuda.cpython import cmathimpl
+        from numba.cpython import cmathimpl
         from numba.misc import cffiimpl
         from numba.np import arrayobj  # noqa: F401
         from numba.np import npdatetime  # noqa: F401
