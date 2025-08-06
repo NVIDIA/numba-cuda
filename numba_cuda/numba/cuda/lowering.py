@@ -18,7 +18,7 @@ from numba.core import (
     removerefctpass,
     targetconfig,
 )
-from numba.cuda.core.ir_utils import guard, get_definition
+from numba.cuda.core import ir_utils
 from numba.core.errors import (
     LoweringError,
     new_error_context,
@@ -487,8 +487,8 @@ class Lower(BaseLower):
         # Detect if we are in a TRY block by looking for a call to
         # `eh.exception_check`.
         for call in block.find_exprs(op="call"):
-            defn = guard(
-                get_definition,
+            defn = ir_utils.guard(
+                ir_utils.get_definition,
                 self.func_ir,
                 call.func,
             )

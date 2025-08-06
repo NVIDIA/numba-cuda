@@ -11,7 +11,7 @@ from numba.core.errors import (
     UnsupportedBytecodeError,
     error_extras,
 )
-from numba.cuda.core.ir_utils import get_definition, guard
+from numba.cuda.core import ir_utils
 from numba.core.utils import (
     PYVERSION,
     BINOPS_TO_OPERATORS,
@@ -1296,10 +1296,10 @@ def _build_new_build_map(func_ir, name, old_body, old_lineno, new_items):
     values = []
     for pair in new_items:
         k, v = pair
-        key_def = guard(get_definition, func_ir, k)
+        key_def = ir_utils.guard(ir_utils.get_definition, func_ir, k)
         if isinstance(key_def, (ir.Const, ir.Global, ir.FreeVar)):
             literal_keys.append(key_def.value)
-        value_def = guard(get_definition, func_ir, v)
+        value_def = ir_utils.guard(ir_utils.get_definition, func_ir, v)
         if isinstance(value_def, (ir.Const, ir.Global, ir.FreeVar)):
             values.append(value_def.value)
         else:
