@@ -307,6 +307,62 @@ def _lower__ZN13__nv_bfloat16C1ERK17__nv_bfloat16_raw(shim_stream, shim_obj):
 _lower__ZN13__nv_bfloat16C1ERK17__nv_bfloat16_raw(shim_stream, shim_obj)
 
 
+def _lower__float16_to_bfloat16(shim_stream, shim_obj):
+    shim_raw_str = """
+    extern "C" __device__ int
+    _ZN13__float162bfloat16_nbst(int &ignore, __nv_bfloat16 *self , __half* hr) {
+        new (self) __nv_bfloat16(*hr);
+        return 0;
+    }
+        """
+
+    _ctor_decl___float162bfloat16 = declare_device(
+        "_ZN13__float162bfloat16_nbst",
+        int32(CPointer(_type___nv_bfloat16), CPointer(float16)),
+    )
+
+    def __float162bfloat16_device_caller(arg_0, arg_1):
+        return _ctor_decl___float162bfloat16(arg_0, arg_1)
+
+    def ctor_impl(context, builder, sig, args):
+        context.active_code_library.add_linking_file(shim_obj)
+        shim_stream.write_with_key("_ZN13__float162bfloat16_nbst", shim_raw_str)
+        selfptr = builder.alloca(
+            context.get_value_type(_type___nv_bfloat16), name="selfptr"
+        )
+        argptrs = [
+            builder.alloca(context.get_value_type(arg)) for arg in sig.args
+        ]
+        for ptr, ty, arg in zip(argptrs, sig.args, args):
+            builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
+
+        context.compile_internal(
+            builder,
+            __float162bfloat16_device_caller,
+            signature(
+                int32,
+                CPointer(_type___nv_bfloat16),
+                CPointer(float16),
+            ),
+            (selfptr, *argptrs),
+        )
+        return builder.load(
+            selfptr, align=getattr(_type___nv_bfloat16, "alignof_", None)
+        )
+
+    @lower_cast(float16, _type___nv_bfloat16)
+    def conversion_impl(context, builder, fromty, toty, value):
+        return ctor_impl(
+            context,
+            builder,
+            signature(_type___nv_bfloat16, float16),
+            [value],
+        )
+
+
+_lower__float16_to_bfloat16(shim_stream, shim_obj)
+
+
 def _lower__ZN13__nv_bfloat16C1E6__half(shim_stream, shim_obj):
     shim_raw_str = """
     extern "C" __device__ int
