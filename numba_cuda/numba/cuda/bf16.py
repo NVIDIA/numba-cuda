@@ -1,5 +1,7 @@
 from numba.cuda._internal.cuda_bf16 import (
-    __nv_bfloat16 as bfloat16,
+    typing_registry,
+    target_registry,
+    nv_bfloat16 as bfloat16,
     htrunc,
     hceil,
     hfloor,
@@ -18,13 +20,14 @@ from numba.cuda._internal.cuda_bf16 import (
     htanh,
     htanh_approx,
 )
+from numba.cuda.types import Bfloat16
 from numba.extending import overload
 
 import math
 
 
 def _make_unary(a, func):
-    if isinstance(a, bfloat16):
+    if isinstance(a, Bfloat16):
         return lambda a: func(a)
 
 
@@ -90,6 +93,8 @@ except ImportError:
 
 
 __all__ = [
+    "typing_registry",
+    "target_registry",
     "bfloat16",
     "htrunc",
     "hceil",
