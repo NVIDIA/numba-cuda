@@ -28,7 +28,7 @@ requirements:
   run:
     - python
     - numba >=0.59.1
-    - cuda-bindings
+    - cuda-bindings >= 12.9.1
     - cuda-core ==0.3.*
 
 about:
