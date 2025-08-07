@@ -1,7 +1,7 @@
 Name: Numba Bfloat16
 Version: 0.0.2
 GPU Arch:
-    - sm_80 # The first architecture to support bfloat16
+    - sm_80 # sm_80 is the first CUDA architecture that supports bfloat16
 Entry Point: ./numba_cuda/numba/cuda/include/12/cuda_bf16.h
 File List:
     - ./numba_cuda/numba/cuda/include/12/cuda_bf16.h
@@ -21,7 +21,4 @@ Data Models:
     __nv_bfloat162: StructModel
     nv_bfloat162: StructModel
 Shim Include Override: "\"cuda_bf16.h\""
-Additional Import:
-    - os
-Require Pynvjitlink: False
-Use Separate Registry: true
+Use Separate Registry: True
