@@ -252,6 +252,21 @@ class TestCompile(unittest.TestCase):
                 output=illegal_output,
             )
 
+    def test_functioncompiler_locals(self):
+        # Tests against regression fixed in:
+        # https://github.com/NVIDIA/numba-cuda/pull/381
+        #
+        # "AttributeError: '_FunctionCompiler' object has no attribute
+        # 'locals'"
+        cond = None
+
+        @cuda.jit("void(float32[::1])")
+        def f(b_arg):
+            b_smem = cuda.shared.array(shape=(1,), dtype=float32)
+
+            if cond:
+                b_smem[0] = b_arg[0]
+
 
 @skip_on_cudasim("Compilation unsupported in the simulator")
 class TestCompileForCurrentDevice(CUDATestCase):
