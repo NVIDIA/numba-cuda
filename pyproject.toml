@@ -53,7 +53,7 @@ test-cu12 = [
 ]
 test-cu13 = [
     "numba-cuda[test]",
-    "nvidia-curand-10.4.*",
+    "nvidia-curand=10.4.*",
 ]
 dev = [
     "pre-commit",
