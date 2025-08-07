@@ -1,4 +1,5 @@
 from numba.core import types
+from numba.core.typeconv import Conversion
 
 
 class Dim3(types.Type):
@@ -49,7 +50,32 @@ class Bfloat16(types.Number):
         super().__init__(name="__nv_bfloat16")
 
         self.alignof_ = 2
-        self.bitwidth = 2 * 8
+        self.bitwidth = 16
+
+    def can_convert_from(self, other):
+        if isinstance(other, types.Float):
+            return Conversion.unsafe
+
+        elif isinstance(other, types.Integer):
+            if other.bitwidth == 8:
+                return Conversion.safe
+
+        return Conversion.unsafe
+
+    def can_convert_to(self, typingctx, other):
+        if isinstance(other, types.Float):
+            if other.bitwidth >= 32:
+                return Conversion.safe
+            else:
+                return Conversion.unsafe
+        elif isinstance(other, types.Integer):
+            return Conversion.unsafe
+
+        return Conversion.unsafe
+
+    def unify(self, typingctx, other):
+        if isinstance(other, (types.Float, types.Integer)):
+            return typingctx.unify_pairs(self, other)
 
 
 bfloat16 = Bfloat16()
