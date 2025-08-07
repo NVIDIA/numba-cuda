@@ -7,6 +7,7 @@ from io import StringIO
 from numba import cuda, float32, float64, int32, intp
 from numba.types import float16, CPointer
 from numba.cuda import declare_device
+from numba.cuda.cudadrv import runtime
 from numba.cuda.testing import unittest, CUDATestCase
 from numba.cuda.testing import (
     skip_on_cudasim,
@@ -178,8 +179,16 @@ class TestInspect(CUDATestCase):
 
         np.testing.assert_equal(arr[0], np.float16(1) + np.float16(2))
 
+    def skip_on_cuda_11(self):
+        if runtime.get_version()[0] < 12:
+            self.skipTest(
+                "Relocation information required for analysis not preserved"
+            )
+
     @skip_without_nvdisasm("nvdisasm needed for inspect_sass()")
     def test_inspect_sass_eager(self):
+        self.skip_on_cuda_11()
+
         sig = (float32[::1], int32[::1])
 
         @cuda.jit(sig, lineinfo=True)
@@ -192,6 +201,8 @@ class TestInspect(CUDATestCase):
 
     @skip_without_nvdisasm("nvdisasm needed for inspect_sass()")
     def test_inspect_sass_lazy(self):
+        self.skip_on_cuda_11()
+
         @cuda.jit(lineinfo=True)
         def add(x, y):
             i = cuda.grid(1)
@@ -220,6 +231,8 @@ class TestInspect(CUDATestCase):
 
     @skip_without_nvdisasm("nvdisasm needed for inspect_sass_cfg()")
     def test_inspect_sass_cfg(self):
+        self.skip_on_cuda_11()
+
         sig = (float32[::1], int32[::1])
 
         @cuda.jit(sig)
