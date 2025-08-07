@@ -178,8 +178,18 @@ class TestInspect(CUDATestCase):
 
         np.testing.assert_equal(arr[0], np.float16(1) + np.float16(2))
 
+    def skip_on_cuda_version_issues(self):
+        # FIXME: This should be unskipped once the cause of certain nvdisasm
+        # versions failing to dump SASS with certain driver / nvJitLink
+        # versions is understood
+        self.skipTest(
+            "Relocation information required for analysis not preserved"
+        )
+
     @skip_without_nvdisasm("nvdisasm needed for inspect_sass()")
     def test_inspect_sass_eager(self):
+        self.skip_on_cuda_version_issues()
+
         sig = (float32[::1], int32[::1])
 
         @cuda.jit(sig, lineinfo=True)
@@ -192,6 +202,8 @@ class TestInspect(CUDATestCase):
 
     @skip_without_nvdisasm("nvdisasm needed for inspect_sass()")
     def test_inspect_sass_lazy(self):
+        self.skip_on_cuda_version_issues()
+
         @cuda.jit(lineinfo=True)
         def add(x, y):
             i = cuda.grid(1)
@@ -220,6 +232,8 @@ class TestInspect(CUDATestCase):
 
     @skip_without_nvdisasm("nvdisasm needed for inspect_sass_cfg()")
     def test_inspect_sass_cfg(self):
+        self.skip_on_cuda_version_issues()
+
         sig = (float32[::1], int32[::1])
 
         @cuda.jit(sig)
