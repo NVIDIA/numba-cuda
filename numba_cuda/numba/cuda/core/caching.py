@@ -15,7 +15,7 @@ from numba.misc.appdirs import AppDirs
 from pathlib import Path
 
 from numba.core import config
-from numba.core.serialize import dumps
+from numba.cuda.serialize import dumps
 
 
 def _cache_log(msg, *args):
