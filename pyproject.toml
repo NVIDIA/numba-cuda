@@ -70,10 +70,10 @@ dev-cu12 = [
 
 
 [project.urls]
-Homepage = "https://github.com/rapidsai/numba-cuda"
-Documentation = "https://github.com/rapidsai/numba-cuda/blob/main/README.md"
-Repository = "https://github.com/rapidsai/numba-cuda"
-License = "https://github.com/rapidsai/numba-cuda/blob/main/LICENSE"
+Homepage = "https://github.com/NVIDIA/numba-cuda"
+Documentation = "https://github.com/NVIDIA/numba-cuda/blob/main/README.md"
+Repository = "https://github.com/NVIDIA/numba-cuda"
+License = "https://github.com/NVIDIA/numba-cuda/blob/main/LICENSE"
 
 [tool.setuptools.dynamic]
 version = {attr = "numba_cuda.__version__"}
