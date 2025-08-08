@@ -47,14 +47,7 @@ NVVM_ERROR_COMPILATION
 for i, k in enumerate(RESULT_CODE_NAMES):
     setattr(sys.modules[__name__], k, i)
 
-# Data layouts. NVVM IR 1.8 (CUDA 11.6) introduced 128-bit integer support.
-
-_datalayout_original = (
-    "e-p:64:64:64-i1:8:8-i8:8:8-i16:16:16-i32:32:32-"
-    "i64:64:64-f32:32:32-f64:64:64-v16:16:16-v32:32:32-"
-    "v64:64:64-v128:128:128-n16:32:64"
-)
-_datalayout_i128 = (
+_datalayout = (
     "e-p:64:64:64-i1:8:8-i8:8:8-i16:16:16-i32:32:32-i64:64:64-"
     "i128:128:128-f32:32:32-f64:64:64-v16:16:16-v32:32:32-"
     "v64:64:64-v128:128:128-n16:32:64"
@@ -182,10 +175,7 @@ class NVVM(object):
 
     @property
     def data_layout(self):
-        if (self._majorIR, self._minorIR) < (1, 8):
-            return _datalayout_original
-        else:
-            return _datalayout_i128
+        return _datalayout
 
     def get_version(self):
         major = c_int()
@@ -346,14 +336,9 @@ class CompilationUnit(object):
 
 
 MISSING_LIBDEVICE_FILE_MSG = """Missing libdevice file.
-Please ensure you have a CUDA Toolkit 11.2 or higher.
-For CUDA 12, ``cuda-nvcc`` and ``cuda-nvrtc`` are required:
+``cuda-nvcc`` and ``cuda-nvrtc`` are required:
 
     $ conda install -c conda-forge cuda-nvcc cuda-nvrtc "cuda-version>=12.0"
-
-For CUDA 11, ``cudatoolkit`` is required:
-
-    $ conda install -c conda-forge cudatoolkit "cuda-version>=11.2,<12.0"
 """
 
 

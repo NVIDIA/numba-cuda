@@ -43,9 +43,7 @@ dtypes = [int16, int32, int64, uint16, uint32, uint64, float32]
 class Bfloat16Test(CUDATestCase):
     def skip_unsupported(self):
         if not cuda.is_bfloat16_supported():
-            self.skipTest(
-                "bfloat16 requires compute capability 8.0+ and CUDA version>= 12.0"
-            )
+            self.skipTest("bfloat16 requires compute capability 8.0+")
 
     def test_ctor(self):
         self.skip_unsupported()
