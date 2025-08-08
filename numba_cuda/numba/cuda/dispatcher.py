@@ -9,7 +9,7 @@ import weakref
 import uuid
 
 from numba.core import compiler, types, typing, config
-from numba.cuda import serialize, utils
+from numba.cuda import serialize, cloudpickle, utils
 from numba.cuda.core.caching import Cache, CacheImpl, NullCache
 from numba.core.compiler_lock import global_compiler_lock
 from numba.core.dispatcher import _DispatcherBase
@@ -64,7 +64,7 @@ cuda_fp16_math_funcs = [
 reshape_funcs = ["nocopy_empty_reshape", "numba_attempt_nocopy_reshape"]
 
 
-class _Kernel(serialize.ReduceMixin):
+class _Kernel(cloudpickle.ReduceMixin):
     """
     CUDA Kernel specialized for a given set of argument types. When called, this
     object launches the kernel on the device.
@@ -862,7 +862,7 @@ class _FunctionCompiler(object):
         return flags
 
 
-class CUDADispatcher(serialize.ReduceMixin, _MemoMixin, _DispatcherBase):
+class CUDADispatcher(cloudpickle.ReduceMixin, _MemoMixin, _DispatcherBase):
     """
     CUDA Dispatcher object. When configured and called, the dispatcher will
     specialize itself for the given arguments (if no suitable specialized
