@@ -1,7 +1,7 @@
 import numpy as np
 
 from numba import vectorize, cuda
-from numba.tests.npyufunc.test_vectorize_decor import (
+from numba.cuda.tests.npyufunc.test_vectorize_decor import (
     BaseVectorizeDecor,
     BaseVectorizeNopythonArg,
     BaseVectorizeUnrecognizedArg,
