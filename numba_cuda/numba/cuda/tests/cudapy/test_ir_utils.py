@@ -3,8 +3,8 @@ import numba
 from numba.core.registry import cpu_target
 from numba.core.compiler import CompilerBase, Flags
 from numba.core.compiler_machinery import PassManager
-from numba.cuda.core import ir_utils
-from numba.core import types, ir, bytecode, compiler, registry
+from numba.cuda.core import ir_utils, bytecode
+from numba.core import types, ir, compiler, registry
 from numba.core.untyped_passes import (
     ExtractByteCode,
     TranslateByteCode,
