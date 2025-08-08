@@ -27,21 +27,21 @@ class TestOptimization(CUDATestCase):
         # Optimization should occur by default
         sig = (float64[::1],)
         kernel = cuda.jit(sig)(kernel_func)
-        ptx = kernel.inspect_asm()
+        ptx = kernel.inspect_asm(kernel.signatures[0])
 
         for fragment in removed_by_opt:
             with self.subTest(fragment=fragment):
-                self.assertNotIn(fragment, ptx[sig])
+                self.assertNotIn(fragment, ptx)
 
     def test_eager_noopt(self):
         # Optimization disabled
         sig = (float64[::1],)
         kernel = cuda.jit(sig, opt=False)(kernel_func)
-        ptx = kernel.inspect_asm()
+        ptx = kernel.inspect_asm(kernel.signatures[0])
 
         for fragment in removed_by_opt:
             with self.subTest(fragment=fragment):
-                self.assertIn(fragment, ptx[sig])
+                self.assertIn(fragment, ptx)
 
     def test_lazy_opt(self):
         # Optimization should occur by default

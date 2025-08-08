@@ -487,13 +487,17 @@ class TestCudaIntrinsic(CUDATestCase):
 
         a = np.arange(n, dtype=np.int64)
         cu_branching_with_ifs[n, 1](a, b, c)
-        ptx = cu_branching_with_ifs.inspect_asm(sig)
+        ptx = cu_branching_with_ifs.inspect_asm(
+            cu_branching_with_ifs.signatures[0]
+        )
         self.assertEqual(2, len(re.findall(r"\s+bra\s+", ptx)))
         np.testing.assert_array_equal(a, expected, err_msg="branching")
 
         a = np.arange(n, dtype=np.int64)
         cu_branching_with_selps[n, 1](a, b, c)
-        ptx = cu_branching_with_selps.inspect_asm(sig)
+        ptx = cu_branching_with_selps.inspect_asm(
+            cu_branching_with_selps.signatures[0]
+        )
         self.assertEqual(0, len(re.findall(r"\s+bra\s+", ptx)))
         np.testing.assert_array_equal(a, expected, err_msg="selp")
 
