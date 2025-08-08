@@ -25,6 +25,7 @@ requirements:
     - python
     - pip
     - setuptools
+    - numpy
   run:
     - python
     - numba >=0.59.1
