@@ -38,6 +38,14 @@ cu12 = [
     "nvidia-cuda-nvrtc-cu12",
     "nvidia-nvjitlink-cu12"
 ]
+test = [
+    "pre-commit",
+    "psutil",
+    "cffi",
+    "pytest",
+    "pytest-xdist",
+    "filecheck",
+]
 test-cu11 = [
     "pre-commit",
     "psutil",
