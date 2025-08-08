@@ -1,0 +1,63 @@
+name: "CI: Test wheel on Windows"
+
+on:
+  workflow_call:
+    inputs:
+      sha:
+        type: string
+      repo:
+        type: string
+      script:
+        type: string
+        default: "./ci/test_wheel.ps1"
+
+jobs:
+  compute-matrix:
+    runs-on: ubuntu-latest
+    outputs:
+      MATRIX: ${{ steps.compute-matrix.outputs.MATRIX }}
+    steps:
+      - name: Compute Python Test Matrix
+        id: compute-matrix
+        run: |
+          set -eo pipefail
+          export TEST_MATRIX="{ ARCH: 'amd64', PY_VER: '3.12', CUDA_VER: '12.8.0' }"
+          MATRIX=$(yq -n -o json 'env(TEST_MATRIX)' | jq -c)
+          echo "MATRIX=${MATRIX}" | tee --append "${GITHUB_OUTPUT}"
+  tests:
+    name: ${{ matrix.CUDA_VER }}, ${{ matrix.PY_VER }}, ${{ matrix.ARCH }}, windows
+    needs: compute-matrix
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON('{"ARCH":["amd64"],"PY_VER":["3.12"],"CUDA_VER":["12.8.0"]}') }}
+    runs-on: "cuda-python-windows-gpu-github"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: ${{ inputs.repo }}
+          ref: ${{ inputs.sha }}
+          fetch-depth: 0
+
+      - name: Update driver
+        run: |
+          .github/workflows/install_gpu_driver.ps1
+
+      - name: Ensure GPU is working
+        run: nvidia-smi
+
+      - uses: actions/download-artifact@v4
+        name: wheel
+
+      - name: Display structure of downloaded files
+        run: Get-ChildItem -Recurse
+
+      - name: Set up Python ${{ matrix.PY_VER }}
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065  # v5.6.0
+        with:
+          python-version: ${{ matrix.PY_VER }}
+
+      - name: Python tests
+        run: |
+          ${{ inputs.script }}
+        env:
+          CUDA_VER: ${{ matrix.CUDA_VER }}
