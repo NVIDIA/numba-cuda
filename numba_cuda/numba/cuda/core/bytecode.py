@@ -14,7 +14,7 @@ if PYVERSION in ((3, 12), (3, 13)):
 
     # Instruction/opcode length in bytes
     INSTR_LEN = 2
-elif PYVERSION in ((3, 10), (3, 11)):
+elif PYVERSION in ((3, 9), (3, 10), (3, 11)):
     pass
 else:
     raise NotImplementedError(PYVERSION)
@@ -128,7 +128,10 @@ class ByteCodeInst(object):
                 )
             ):
                 return self.offset - (self.arg - 1) * 2
-        elif PYVERSION in ((3, 10),):
+        elif PYVERSION in (
+            (3, 9),
+            (3, 10),
+        ):
             pass
         else:
             raise NotImplementedError(PYVERSION)
@@ -139,6 +142,12 @@ class ByteCodeInst(object):
             else:
                 assert self.opcode in JABS_OPS
                 return self.arg * 2 - 2
+        elif PYVERSION in ((3, 9),):
+            if self.opcode in JREL_OPS:
+                return self.next + self.arg
+            else:
+                assert self.opcode in JABS_OPS
+                return self.arg
         else:
             raise NotImplementedError(PYVERSION)
 
@@ -178,7 +187,7 @@ if PYVERSION in ((3, 13),):
                 next_offset = len(code)
             yield (start_offset, op, arg, next_offset)
 
-elif PYVERSION in ((3, 10), (3, 11), (3, 12)):
+elif PYVERSION in ((3, 9), (3, 10), (3, 11), (3, 12)):
     # Adapted from Lib/dis.py
     def _unpack_opargs(code):
         """
@@ -203,7 +212,7 @@ elif PYVERSION in ((3, 10), (3, 11), (3, 12)):
                     # opcode and can be looked up in the _inline_cache_entries
                     # dictionary.
                     i += _inline_cache_entries[op] * INSTR_LEN
-                elif PYVERSION in ((3, 10), (3, 11)):
+                elif PYVERSION in ((3, 9), (3, 10), (3, 11)):
                     pass
                 else:
                     raise NotImplementedError(PYVERSION)
@@ -229,7 +238,7 @@ elif PYVERSION in ((3, 10), (3, 11), (3, 12)):
                     # opcode and can be looked up in the _inline_cache_entries
                     # dictionary.
                     i += _inline_cache_entries[op] * INSTR_LEN
-                elif PYVERSION in ((3, 10), (3, 11)):
+                elif PYVERSION in ((3, 9), (3, 10), (3, 11)):
                     pass
                 else:
                     raise NotImplementedError(PYVERSION)
@@ -406,7 +415,10 @@ class _ByteCode(object):
 def _fix_LOAD_GLOBAL_arg(arg):
     if PYVERSION in ((3, 11), (3, 12), (3, 13)):
         return arg >> 1
-    elif PYVERSION in ((3, 10),):
+    elif PYVERSION in (
+        (3, 9),
+        (3, 10),
+    ):
         return arg
     else:
         raise NotImplementedError(PYVERSION)
@@ -590,7 +602,7 @@ class ByteCodePy312(ByteCodePy311):
                     next_inst = self.table[self.ordered_offsets[index]]
                     if not next_inst.opname == "SWAP" and next_inst.arg == 2:
                         continue
-                elif PYVERSION in ((3, 10), (3, 11), (3, 12)):
+                elif PYVERSION in ((3, 9), (3, 10), (3, 11), (3, 12)):
                     # Check end of pattern, two instructions.
                     # Check for the corresponding END_FOR, exception table end
                     # is non-inclusive, so subtract one.
