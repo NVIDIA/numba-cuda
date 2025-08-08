@@ -17,9 +17,9 @@ from numba.core.utils import PYVERSION
 from numba.core.errors import NumbaWarning, NumbaInvalidConfigWarning
 
 if PYVERSION < (3, 10):
-    from numba.core.interpreter import Interpreter as interpreter
+    from numba.core.interpreter import Interpreter
 else:
-    from numba.cuda.core.interpreter import Interpreter as interpreter
+    from numba.cuda.core.interpreter import Interpreter
 
 from numba.cuda import cgutils, typing, lowering, nvvmutils, utils
 from numba.cuda.api import get_current_device
@@ -72,26 +72,6 @@ from numba.cuda.core.typed_passes import (
 )
 
 
-CR_FIELDS = [
-    "typing_context",
-    "target_context",
-    "entry_point",
-    "typing_error",
-    "type_annotation",
-    "signature",
-    "objectmode",
-    "lifted",
-    "fndesc",
-    "library",
-    "call_helper",
-    "environment",
-    "metadata",
-    # List of functions to call to initialize on unserialization
-    # (i.e cache load).
-    "reload_init",
-    "referenced_envs",
-]
-
 _LowerResult = namedtuple(
     "_LowerResult",
     [
@@ -129,7 +109,7 @@ def run_frontend(func, inline_closures=False, emit_dels=False):
     """
     # XXX make this a dedicated Pipeline?
     func_id = bytecode.FunctionIdentity.from_function(func)
-    interp = interpreter.Interpreter(func_id)
+    interp = Interpreter(func_id)
     bc = bytecode.ByteCode(func_id=func_id)
     func_ir = interp.interpret(bc)
     if inline_closures:
@@ -507,7 +487,7 @@ class CUDANativeLowering(BaseNativeLowering):
         return lowering.CUDALower
 
 
-class CUDABytecodeInterpreter(interpreter):
+class CUDABytecodeInterpreter(Interpreter):
     # Based on the superclass implementation, but names the resulting variable
     # "$bool<N>" instead of "bool<N>" - see Numba PR #9888:
     # https://github.com/numba/numba/pull/9888
