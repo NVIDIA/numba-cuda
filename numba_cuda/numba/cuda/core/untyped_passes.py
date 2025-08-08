@@ -19,8 +19,17 @@ from numba.core import (
     config,
     transforms,
     consts,
-    interpreter,
 )
+
+
+from numba.core.utils import PYVERSION
+
+if PYVERSION < (3, 10):
+    from numba.core.interpreter import Interpreter
+else:
+    from numba.cuda.core.interpreter import Interpreter
+
+
 from numba.misc.special import literal_unroll
 from numba.core.analysis import (
     dead_branch_prune,
@@ -110,7 +119,7 @@ class TranslateByteCode(FunctionPass):
         """
         func_id = state["func_id"]
         bc = state["bc"]
-        interp = interpreter.Interpreter(func_id)
+        interp = Interpreter(func_id)
         func_ir = interp.interpret(bc)
         state["func_ir"] = func_ir
         return True
