@@ -70,10 +70,11 @@ dev-cu12 = [
 
 
 [project.urls]
-Homepage = "https://github.com/NVIDIA/numba-cuda"
-Documentation = "https://github.com/NVIDIA/numba-cuda/blob/main/README.md"
+Homepage = "https://nvidia.github.io/numba-cuda/"
+Documentation = "https://nvidia.github.io/numba-cuda/"
 Repository = "https://github.com/NVIDIA/numba-cuda"
 License = "https://github.com/NVIDIA/numba-cuda/blob/main/LICENSE"
+Issues = "https://github.com/NVIDIA/numba-cuda/issues"
 
 [tool.setuptools.dynamic]
 version = {attr = "numba_cuda.__version__"}
