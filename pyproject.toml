@@ -47,21 +47,13 @@ test = [
     "filecheck",
 ]
 test-cu11 = [
-    "pre-commit",
-    "psutil",
-    "cffi",
-    "pytest",
-    "pytest-xdist",
-    "filecheck",
+    "numba-cuda[cu11]",
+    "numba-cuda[test]",
     "nvidia-curand-cu11",
 ]
 test-cu12 = [
-    "pre-commit",
-    "psutil",
-    "cffi",
-    "pytest",
-    "pytest-xdist",
-    "filecheck",
+    "numba-cuda[cu12]",
+    "numba-cuda[test]",
     "nvidia-curand-cu12",
 ]
 
