@@ -324,6 +324,20 @@ def get_wheel_include():
         return cuda_include_path
 
 
+def get_cccl_wheel_include():
+    try:
+        import nvidia
+
+        nvidia_path = nvidia.__path__[0]
+    except ImportError:
+        return
+
+    cccl_include_path = os.path.join(nvidia_path, "cuda_cccl", "include")
+
+    if os.path.exists(os.path.join(cccl_include_path, "cuda/atomic")):
+        return cccl_include_path
+
+
 def get_nvidia_nvvm_ctk():
     """Return path to directory containing the NVVM shared library."""
     is_conda_env = os.path.exists(os.path.join(sys.prefix, "conda-meta"))
@@ -543,6 +557,7 @@ def _get_include_dir():
     options = [
         ("Conda environment (NVIDIA package)", get_conda_include_dir()),
         ("NVIDIA NVCC Wheel", get_wheel_include()),
+        ("NVIDIA CCCL Wheel", get_cccl_wheel_include()),
         ("CUDA_INCLUDE_PATH Config Entry", config.CUDA_INCLUDE_PATH),
         # TODO: add others
     ]
