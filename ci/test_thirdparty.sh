@@ -5,6 +5,15 @@ set -euo pipefail
 
 CUDA_VER_MAJOR_MINOR=${CUDA_VER%.*}
 
+rapids-logger "Install cuDF Wheel"
+pip install \
+    --extra-index-url=https://pypi.nvidia.com \
+    "cudf-cu12==25.6.*"
+
+
+rapids-logger "Remove Extraneous numba-cuda"
+pip uninstall -y numba-cuda
+
 rapids-logger "Install wheel with test dependencies"
 package=$(realpath wheel/numba_cuda*.whl)
 echo "Package path: ${package}"
@@ -13,11 +22,6 @@ python -m pip install \
     "cuda-python==${CUDA_VER_MAJOR_MINOR%.*}.*" \
     "cuda-core==0.3.*" \
 
-
-rapids-logger "Install cuDF Wheel"
-pip install \
-    --extra-index-url=https://pypi.nvidia.com \
-    "cudf-cu12==25.6.*"
 
 rapids-logger "Shallow clone cuDF repository"
 git clone --single-branch --branch 'branch-25.06' https://github.com/rapidsai/cudf.git
