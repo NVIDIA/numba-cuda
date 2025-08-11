@@ -39,6 +39,7 @@ cu12 = [
     "nvidia-nvjitlink-cu12"
 ]
 test = [
+    "pre-commit",
     "psutil",
     "cffi",
     "pytest",
@@ -46,28 +47,15 @@ test = [
     "filecheck",
 ]
 test-cu11 = [
+    "numba-cuda[cu11]",
     "numba-cuda[test]",
     "nvidia-curand-cu11",
 ]
 test-cu12 = [
+    "numba-cuda[cu12]",
     "numba-cuda[test]",
     "nvidia-curand-cu12",
 ]
-dev = [
-    "pre-commit",
-    "numba-cuda[test]",
-]
-dev-cu11 = [
-    "numba-cuda[test-cu11]",
-    "numba-cuda[test]",
-    "numba-cuda[dev]",
-]
-dev-cu12 = [
-    "numba-cuda[test-cu12]",
-    "numba-cuda[test]",
-    "numba-cuda[dev]",
-]
-
 
 [project.urls]
 Homepage = "https://nvidia.github.io/numba-cuda/"
