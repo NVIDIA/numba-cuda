@@ -6,7 +6,7 @@ from numba.core import types, errors, config
 numpy_version = tuple(map(int, np.__version__.split(".")[:2]))
 
 
-if config.USE_LEGACY_TYPE_SYSTEM:
+if getattr(config, "USE_LEGACY_TYPE_SYSTEM", True):
     FROM_DTYPE = {
         np.dtype("bool"): types.boolean,
         np.dtype("int8"): types.int8,
