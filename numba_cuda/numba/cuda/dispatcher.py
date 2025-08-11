@@ -773,6 +773,7 @@ class _FunctionCompiler(object):
         self.py_func = py_func
         self.targetdescr = targetdescr
         self.targetoptions = targetoptions
+        self.locals = {}
         self.pysig = utils.pysignature(self.py_func)
         self.pipeline_class = pipeline_class
         # Remember key=(args, return_type) combinations that will fail
@@ -843,7 +844,7 @@ class _FunctionCompiler(object):
             args=args,
             return_type=return_type,
             flags=flags,
-            locals={},
+            locals=self.locals,
             pipeline_class=self.pipeline_class,
         )
         # Check typing error if object mode is used
