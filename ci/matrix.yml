@@ -1,7 +1,15 @@
 build-matrix:
+  - { ARCH: 'amd64', PY_VER: '3.9',  CUDA_VER: '12.8.0', LINUX_VER: 'rockylinux8' }
+  - { ARCH: 'amd64', PY_VER: '3.10', CUDA_VER: '12.8.0', LINUX_VER: 'rockylinux8' }
+  - { ARCH: 'amd64', PY_VER: '3.11', CUDA_VER: '12.8.0', LINUX_VER: 'rockylinux8' }
+  - { ARCH: 'amd64', PY_VER: '3.12', CUDA_VER: '12.8.0', LINUX_VER: 'rockylinux8' }
   - { ARCH: 'amd64', PY_VER: '3.13', CUDA_VER: '12.8.0', LINUX_VER: 'rockylinux8' }
 simulator-matrix:
+  - { ARCH: 'amd64', PY_VER: '3.9',  CUDA_VER: '12.8.0', LINUX_VER: 'rockylinux8' }
+  - { ARCH: 'amd64', PY_VER: '3.10', CUDA_VER: '12.8.0', LINUX_VER: 'rockylinux8' }
+  - { ARCH: 'amd64', PY_VER: '3.11', CUDA_VER: '12.8.0', LINUX_VER: 'rockylinux8' }
   - { ARCH: 'amd64', PY_VER: '3.12', CUDA_VER: '12.8.0', LINUX_VER: 'rockylinux8' }
+  - { ARCH: 'amd64', PY_VER: '3.13', CUDA_VER: '12.8.0', LINUX_VER: 'rockylinux8' }
 test-matrix:
   - { CUDA_VER: '11.8.0', ARCH: 'amd64', PY_VER: '3.9',  LINUX_VER: 'rockylinux8', GPU: 'l4',   DRIVER: 'earliest' }
   - { CUDA_VER: '11.8.0', ARCH: 'amd64', PY_VER: '3.10', LINUX_VER: 'ubuntu20.04', GPU: 'l4',   DRIVER: 'latest' }
