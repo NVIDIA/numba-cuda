@@ -30,11 +30,11 @@ Installation with a Python package manager
 
 Conda users can install the CUDA Toolkit into a conda environment::
 
-    $ conda install -c conda-forge numba-cuda "cuda-version>=12.0"
+    $ conda install -c conda-forge numba-cuda "cuda-version=12"
 
 Or for CUDA 13::
 
-    $ conda install -c conda-forge numba-cuda "cuda-version>=13.0"
+    $ conda install -c conda-forge numba-cuda "cuda-version=13"
 
 Alternatively, you can install all CUDA 12 dependencies from PyPI via ``pip``::
 
