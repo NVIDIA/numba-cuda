@@ -21,6 +21,7 @@ python -m pip install \
     "${package}[test]" \
     "cuda-python==${CUDA_VER_MAJOR_MINOR%.*}.*" \
     "cuda-core==0.3.*" \
+    "nvidia-nvjitlink-cu12" \ # branch-25.06 in cuDF too early to require
 
 
 rapids-logger "Shallow clone cuDF repository"
