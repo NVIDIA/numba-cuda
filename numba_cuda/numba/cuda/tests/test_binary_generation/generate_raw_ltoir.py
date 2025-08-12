@@ -6,7 +6,7 @@ import platform
 import subprocess
 import sys
 
-from cuda import nvrtc
+from cuda.bindings import nvrtc
 from numba.cuda.memory_management.nrt import get_include
 
 # Magic number found at the start of an LTO-IR file
