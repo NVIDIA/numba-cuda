@@ -39,6 +39,7 @@ cu12 = [
     "nvidia-nvjitlink-cu12"
 ]
 test = [
+    "pre-commit",
     "psutil",
     "cffi",
     "pytest",
@@ -46,34 +47,22 @@ test = [
     "filecheck",
 ]
 test-cu11 = [
+    "numba-cuda[cu11]",
     "numba-cuda[test]",
     "nvidia-curand-cu11",
 ]
 test-cu12 = [
+    "numba-cuda[cu12]",
     "numba-cuda[test]",
     "nvidia-curand-cu12",
 ]
-dev = [
-    "pre-commit",
-    "numba-cuda[test]",
-]
-dev-cu11 = [
-    "numba-cuda[test-cu11]",
-    "numba-cuda[test]",
-    "numba-cuda[dev]",
-]
-dev-cu12 = [
-    "numba-cuda[test-cu12]",
-    "numba-cuda[test]",
-    "numba-cuda[dev]",
-]
-
 
 [project.urls]
-Homepage = "https://github.com/rapidsai/numba-cuda"
-Documentation = "https://github.com/rapidsai/numba-cuda/blob/main/README.md"
-Repository = "https://github.com/rapidsai/numba-cuda"
-License = "https://github.com/rapidsai/numba-cuda/blob/main/LICENSE"
+Homepage = "https://nvidia.github.io/numba-cuda/"
+Documentation = "https://nvidia.github.io/numba-cuda/"
+Repository = "https://github.com/NVIDIA/numba-cuda"
+License = "https://github.com/NVIDIA/numba-cuda/blob/main/LICENSE"
+Issues = "https://github.com/NVIDIA/numba-cuda/issues"
 
 [tool.setuptools.dynamic]
 version = {attr = "numba_cuda.__version__"}
