@@ -81,7 +81,7 @@ jobs:
       RAPIDS_COVERAGE_DIR: ${{ github.workspace }}/coverage-results
       RAPIDS_TESTS_DIR: ${{ github.workspace }}/test-results
     container:
-      image: rapidsai/ci-conda:cuda${{ matrix.CUDA_VER }}-${{ matrix.LINUX_VER }}-py${{ matrix.PY_VER }}
+      image: rapidsai/ci-conda:cuda${{ matrix.CONTAINER_CUDA_VER }}-${{ matrix.LINUX_VER }}-py${{ matrix.PY_VER }}
       options: ${{ inputs.container-options }}
       env:
         RAPIDS_BUILD_TYPE: ${{ inputs.build_type }}
