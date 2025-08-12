@@ -7,9 +7,9 @@ set -euo pipefail
 
 CTK_PACKAGES="cuda-cccl cuda-nvcc-impl cuda-nvrtc libcurand-dev cuda-cuobjdump"
 
-DISTRO=`cat /etc/lsb-release | grep DISTRIB_ID | awk 'BEGIN {FS="="} { print $2 }'`
+DISTRO=`cat /etc/os-release | grep "^ID=" | awk 'BEGIN {FS="="} { print $2 }'`
 
-if [ "$DISTRO" = "Ubuntu" ]; then
+if [ "$DISTRO" = "ubuntu" ]; then
   apt-get update
   apt remove --purge `dpkg --get-selections | grep cuda-nvvm | awk '{print $1}'` -y
   apt remove --purge `dpkg --get-selections | grep cuda-nvrtc | awk '{print $1}'` -y
