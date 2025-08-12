@@ -36,9 +36,9 @@ rapids-logger "Show Numba system info"
 python -m numba --sysinfo
 
 rapids-logger "Run Scalar UDF tests"
-python -m pytest python/cudf/cudf/tests/test_udf_masked_ops.py
+python -m pytest python/cudf/cudf/tests/test_udf_masked_ops.py -W ignore::UserWarning
 
 rapids-logger "Run GroupBy UDF tests"
-python -m pytest python/cudf/cudf/tests/test_groupby.py -k test_groupby_apply_jit
+python -m pytest python/cudf/cudf/tests/test_groupby.py -k test_groupby_apply_jit -W ignore::UserWarning
 
 popd
