@@ -162,4 +162,4 @@ jobs:
       build_type: pull-request
       script: "ci/coverage_report.sh"
       matrix: ${{ needs.compute-matrix.outputs.TEST_MATRIX }}
-      matrix_filter: 'map(select(.ARCH == "amd64" and .CUDA_VER == "12.8.0" and .PY_VER == "3.13")) | .[0:1]'
+      matrix_filter: 'map(select(.ARCH == "amd64" and .CUDA_VER == "12.9.1" and .PY_VER == "3.11")) | .[0:1]'
