@@ -11,8 +11,9 @@ Supported GPUs
 --------------
 
 Numba supports all NVIDIA GPUs that are supported by the CUDA Toolkit it uses.
-Presently for CUDA 12 this ranges from Compute Capabilities 5.0 to 12.1, and for
-CUDA 13 this ranges from 5.0 to XXX, depending on the exact installed version.
+Presently for CUDA 12 this ranges from Compute Capabilities 5.0 to 12.1
+depending on the exact installed version, and for CUDA 13 this ranges from 7.5
+to 12.1 (the latest as of CUDA 13.0).
 
 
 Supported CUDA Toolkits
