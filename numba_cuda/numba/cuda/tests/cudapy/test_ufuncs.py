@@ -4,7 +4,7 @@ import unittest
 
 from numba import config, cuda, types
 from numba.cuda.tests.support import TestCase
-from numba.tests.test_ufuncs import BasicUFuncTest
+from numba.cuda.tests.test_ufuncs import BasicUFuncTest
 
 
 def _make_ufunc_usecase(ufunc):
