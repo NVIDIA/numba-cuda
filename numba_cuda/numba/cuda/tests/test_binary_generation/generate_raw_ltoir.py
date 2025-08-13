@@ -1,6 +1,7 @@
 # Copyright (c) 2024, NVIDIA CORPORATION.
 
 import argparse
+import os
 import pathlib
 import platform
 import subprocess
@@ -77,6 +78,8 @@ def determine_include_flags():
 
     quoted_flags = includes_lines[0].split("INCLUDES=")[1].strip().split()
     include_flags = [flag.strip('"') for flag in quoted_flags]
+    cccl_include_flags = [flag + os.path.sep + "cccl" for flag in include_flags]
+    include_flags += cccl_include_flags
     print(f"Using CUDA include flags: {include_flags}")
 
     return include_flags
