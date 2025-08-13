@@ -41,7 +41,7 @@ class CUDATypingContext(typing.BaseContext):
             libdevicedecl,
             vector_types,
         )
-        from numba.core.typing import enumdecl, cffi_utils
+        from numba.cuda.typing import enumdecl, cffi_utils
 
         self.install_registry(cudadecl.registry)
         self.install_registry(cffi_utils.registry)

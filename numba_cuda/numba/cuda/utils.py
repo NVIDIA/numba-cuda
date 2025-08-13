@@ -37,6 +37,9 @@ from numba.core import types, config
 
 from collections.abc import Mapping, Sequence, MutableSet, MutableMapping
 
+# Python version in (major, minor) tuple
+PYVERSION = sys.version_info[:2]
+
 
 def erase_traceback(exc_value):
     """
