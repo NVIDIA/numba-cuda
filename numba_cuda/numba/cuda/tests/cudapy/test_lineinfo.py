@@ -86,13 +86,11 @@ class TestCudaLineInfo(CUDATestCase):
         self._check(foo, sig=(int32[:],), expect=True)
 
     def test_lineinfo_maintains_error_model(self):
-        sig = (float32[::1], float32[::1])
-
-        @cuda.jit(sig, lineinfo=True)
+        @cuda.jit((float32[::1], float32[::1]), lineinfo=True)
         def divide_kernel(x, y):
             x[0] /= y[0]
 
-        llvm = divide_kernel.inspect_llvm(sig)
+        llvm = divide_kernel.inspect_llvm(divide_kernel.signatures[0])
 
         # When the error model is Python, the device function returns 1 to
         # signal an exception (e.g. divide by zero) has occurred. When the

@@ -31,7 +31,9 @@ class TestFastMathOption(CUDATestCase):
         precver = cuda.jit(sig, device=device)(pyfunc)
 
         criterion.check(
-            self, fastver.inspect_asm(sig), precver.inspect_asm(sig)
+            self,
+            fastver.inspect_asm(fastver.signatures[0]),
+            precver.inspect_asm(precver.signatures[0]),
         )
 
         # Test compile_ptx code path

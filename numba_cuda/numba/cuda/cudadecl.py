@@ -17,8 +17,9 @@ from numba.cuda.typing.templates import (
     signature,
     Registry,
 )
-from numba.cuda.types import dim3
+from numba.cuda.types import dim3, CUDAArray
 from numba import cuda
+from numba.cuda.cudadrv import nvvm
 
 registry = Registry()
 register = registry.register
@@ -29,6 +30,8 @@ register_number_classes(register_global)
 
 
 class Cuda_array_decl(CallableTemplate):
+    _addrspace = nvvm.ADDRSPACE_GENERIC
+
     def generic(self):
         def typer(shape, dtype, alignment=None):
             # Only integer literals and tuples of integer literals are valid
@@ -57,13 +60,19 @@ class Cuda_array_decl(CallableTemplate):
             ndim = parse_shape(shape)
             nb_dtype = parse_dtype(dtype)
             if nb_dtype is not None and ndim is not None:
-                return types.Array(dtype=nb_dtype, ndim=ndim, layout="C")
+                return CUDAArray(
+                    dtype=nb_dtype,
+                    ndim=ndim,
+                    layout="C",
+                    addrspace=self._addrspace,
+                )
 
         return typer
 
 
 @register
 class Cuda_shared_array(Cuda_array_decl):
+    _addrspace = nvvm.ADDRSPACE_SHARED
     key = cuda.shared.array
 
 
