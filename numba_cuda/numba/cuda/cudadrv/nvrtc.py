@@ -356,8 +356,12 @@ def compile(src, name, cc, ltoir=False):
 
     if nvrtc_ver_major == 11:
         numba_include = f"{os.path.join(numba_cuda_path, 'include', '11')}"
-    else:
+    elif nvrtc_ver_major == 12:
         numba_include = f"{os.path.join(numba_cuda_path, 'include', '12')}"
+    elif nvrtc_ver_major == 13:
+        numba_include = f"{os.path.join(numba_cuda_path, 'include', '13')}"
+    else:
+        raise RuntimeError(f"Unsupported CUDA version: {nvrtc_version}")
 
     if config.CUDA_NVRTC_EXTRA_SEARCH_PATHS:
         extra_includes = config.CUDA_NVRTC_EXTRA_SEARCH_PATHS.split(":")
