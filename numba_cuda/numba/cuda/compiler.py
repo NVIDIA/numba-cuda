@@ -37,7 +37,7 @@ from numba.cuda.descriptor import cuda_target
 from numba.cuda.flags import CUDAFlags
 from numba.cuda.target import CUDACABICallConv
 from numba.cuda import lowering, utils
-from numba.core.utils import PYVERSION
+from numba.cuda.utils import PYVERSION
 
 if PYVERSION < (3, 10):
     from numba.core.interpreter import Interpreter

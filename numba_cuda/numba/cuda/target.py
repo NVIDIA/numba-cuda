@@ -32,7 +32,7 @@ from numba.cuda.models import cuda_data_manager
 class CUDATypingContext(typing.BaseContext):
     def load_additional_registries(self):
         from . import cudadecl, cudamath, fp16, libdevicedecl, vector_types
-        from numba.core.typing import enumdecl, cffi_utils
+        from numba.cuda.typing import enumdecl, cffi_utils
 
         self.install_registry(cudadecl.registry)
         self.install_registry(cffi_utils.registry)
