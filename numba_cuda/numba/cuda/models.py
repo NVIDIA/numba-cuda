@@ -72,6 +72,14 @@ BfloatType._create_instance()
 @register_model(Bfloat16)
 class _model___nv_bfloat16(PrimitiveModel):
     def __init__(self, dmm, fe_type):
-        # be_type = BfloatType()
-        be_type = ir.IntType(16)
+        from numba.cuda.api import get_current_device
+
+        major, minor = get_current_device().compute_capability
+
+        # Blackwell device leverage latest nvvm (llvm 20+ dialect) which has
+        # bfloat type
+        if major >= 10:
+            be_type = BfloatType()
+        else:
+            be_type = ir.IntType(16)
         super(_model___nv_bfloat16, self).__init__(dmm, fe_type, be_type)
