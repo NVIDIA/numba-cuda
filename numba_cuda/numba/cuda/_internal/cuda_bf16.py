@@ -345,6 +345,17 @@ def _lower__ZN13__nv_bfloat16C1E6__half(shim_stream, shim_obj):
             selfptr, align=getattr(_type___nv_bfloat16, "alignof_", None)
         )
 
+    # In C++, this cast is an explicit constructor call, by default Numbast will not generate
+    # this lower cast. We implement this by hand to enable the cast from fp16 to bf16.
+    @lower_cast(float16, _type___nv_bfloat16)
+    def conversion_impl(context, builder, fromty, toty, value):
+        return ctor_impl(
+            context,
+            builder,
+            signature(_type___nv_bfloat16, fromty),
+            [value],
+        )
+
 
 _lower__ZN13__nv_bfloat16C1E6__half(shim_stream, shim_obj)
 
