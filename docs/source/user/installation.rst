@@ -11,17 +11,16 @@ Supported GPUs
 --------------
 
 Numba supports all NVIDIA GPUs that are supported by the CUDA Toolkit it uses.
-Presently for CUDA 11 this ranges from Compute Capabilities 3.5 to 9.0, and for
-CUDA 12 this ranges from 5.0 to 12.1, depending on the exact installed version.
+Presently for CUDA 12 this ranges from Compute Capabilities 5.0 to 12.1
+depending on the exact installed version, and for CUDA 13 this ranges from 7.5
+to 12.1 (the latest as of CUDA 13.0).
 
 
 Supported CUDA Toolkits
 -----------------------
 
 Numba-CUDA aims to support all minor versions of the two most recent CUDA
-Toolkit releases. Presently 11 and 12 are supported; CUDA 11.2 is the minimum
-required, because older releases (11.0 and 11.1) have a version of NVVM based on
-a previous and incompatible LLVM version.
+Toolkit releases. Presently 12 and 13 are supported.
 
 For further information about version compatibility between toolkit and driver
 versions, refer to :ref:`minor-version-compatibility`.
@@ -30,23 +29,21 @@ versions, refer to :ref:`minor-version-compatibility`.
 Installation with a Python package manager
 ==========================================
 
-Conda users can install the CUDA Toolkit into a conda environment.
+Conda users can install the CUDA Toolkit into a conda environment::
 
-For CUDA 12::
+    $ conda install -c conda-forge numba-cuda "cuda-version=12"
 
-    $ conda install -c conda-forge numba-cuda "cuda-version>=12.0"
+Or for CUDA 13::
+
+    $ conda install -c conda-forge numba-cuda "cuda-version=13"
 
 Alternatively, you can install all CUDA 12 dependencies from PyPI via ``pip``::
 
     $ pip install numba-cuda[cu12]
 
-For CUDA 11, ``cudatoolkit`` is required::
+CUDA 13 dependencies can be installed via ``pip`` with::
 
-    $ conda install -c conda-forge numba-cuda "cuda-version>=11.2,<12.0"
-
-or::
-
-    $ pip install numba-cuda[cu11]
+    $ pip install numba-cuda[cu13]
 
 If you are not using Conda/pip or if you want to use a different version of CUDA
 toolkit, :ref:`cudatoolkit-lookup` describes how Numba searches for a CUDA toolkit.
