@@ -1,5 +1,5 @@
 from numba.core import errors, types
-from numba.core.typing.npydecl import (
+from numba.cuda.typing.npydecl import (
     parse_dtype,
     parse_shape,
     register_number_classes,
