@@ -1,3 +1,4 @@
+import struct
 import functools
 
 from llvmlite import ir
@@ -46,11 +47,16 @@ register_model(CUDADispatcher)(models.OpaqueModel)
 
 
 def _as_bfloat(value):
-    # Step 1: Convert to float
-    f = ir.types._as_float(value)
+    # Step 1: Reinterpret the input as u32 bits
+    u = struct.unpack("I", struct.pack("f", value))[0]
+
     # Step 2: Truncate (or round, we choose truncate) last 16 bits
-    bf = f >> 16
-    return bf
+    trunc = u >> 16
+
+    # Step 3: Unpack them back to Python floats
+    f = struct.unpack("f", struct.pack("I", trunc))[0]
+
+    return f
 
 
 class BfloatType(ir.types._BaseFloatType):
