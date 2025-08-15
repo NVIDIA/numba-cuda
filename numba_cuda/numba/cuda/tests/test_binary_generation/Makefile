@@ -4,11 +4,11 @@
 GPU_CC := $(shell nvidia-smi --query-gpu=compute_cap --format=csv | grep -v compute_cap | head -n 1 | sed 's/\.//')
 GPU_CC ?= 75
 
-# Use CC 7.0 as an alternative in fatbin testing, unless CC is 7.x
+# Use CC 7.5 as an alternative in fatbin testing, unless CC is 7.x
 ifeq ($(shell echo "$(GPU_CC)" | cut -c1),7)
     ALT_CC := 80
 else
-    ALT_CC := 70
+    ALT_CC := 75
 endif
 
 # Gencode flags suitable for most tests
