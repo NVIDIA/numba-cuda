@@ -2,7 +2,7 @@
 # Generator Information:
 # Ast_canopy version: 0.4.0
 # Numbast version: 0.5.0
-# Generation command: /home/wangm/miniforge3/envs/numbast/lib/python3.13/site-packages/numbast/__main__.py --cfg-path configs/cuda_bf16.yml --output-dir numba_cuda/numba/cuda/_internal/
+# Generation command: /home/wangm/numbast/numbast/src/numbast/__main__.py --cfg-path configs/cuda_bf16.yml --output-dir numba_cuda/numba/cuda/_internal/
 # Static binding generator parameters: {'cfg_path': 'configs/cuda_bf16.yml', 'output_dir': 'numba_cuda/numba/cuda/_internal/', 'run_ruff_format': True}
 # Config file path (relative to the path of the generated binding): ../../../../../configs/cuda_bf16.yml
 # Cudatoolkit version: (12, 8)
@@ -27,6 +27,7 @@ from numba.core.typing import signature
 from numba.core.typing.templates import AttributeTemplate, ConcreteTemplate
 from numba.core.typing.templates import Registry as TypingRegistry
 from numba.cuda import CUSource, declare_device
+from numba.cuda._internal.cuda_bf16 import _type___nv_bfloat16
 from numba.cuda.vector_types import vector_types
 from numba.extending import as_numba_type
 from numba.types import (
@@ -48,10 +49,8 @@ from numba.types import (
     uint64,
     void,
 )
-from numba.cuda.types import bfloat16
 
 float32x2 = vector_types["float32x2"]
-__half = float16
 
 
 typing_registry = TypingRegistry()
@@ -181,7 +180,37 @@ make_attribute_wrapper(_type_class_unnamed1405416, "x", "x")
 make_attribute_wrapper(_type_class_unnamed1405416, "y", "y")
 
 
-__nv_bfloat16 = _type___nv_bfloat16 = bfloat16
+@register
+class _ctor_template_unnamed1405416(ConcreteTemplate):
+    key = globals()["unnamed1405416"]
+    cases = []
+
+
+register_global(unnamed1405416, Function(_ctor_template_unnamed1405416))
+
+
+# Typing for __nv_bfloat16
+class _type_class___nv_bfloat16(Number):
+    def __init__(self):
+        super().__init__(name="__nv_bfloat16")
+        self.alignof_ = 2
+        self.bitwidth = 2 * 8
+
+
+_type___nv_bfloat16 = _type_class___nv_bfloat16()
+
+
+# Make Python API for struct
+__nv_bfloat16 = type("__nv_bfloat16", (), {"_nbtype": _type___nv_bfloat16})
+
+as_numba_type.register(__nv_bfloat16, _type___nv_bfloat16)
+
+
+@register_model(_type_class___nv_bfloat16)
+class _model___nv_bfloat16(PrimitiveModel):
+    def __init__(self, dmm, fe_type):
+        be_type = ir.IntType(fe_type.bitwidth)
+        super(_model___nv_bfloat16, self).__init__(dmm, fe_type, be_type)
 
 
 def _lower__ZN13__nv_bfloat16C1Ev(shim_stream, shim_obj):
@@ -325,17 +354,6 @@ def _lower__ZN13__nv_bfloat16C1E6__half(shim_stream, shim_obj):
         )
         return builder.load(
             selfptr, align=getattr(_type___nv_bfloat16, "alignof_", None)
-        )
-
-    # By default, Numbast does not generate this cast because the c++ conversion
-    # constructor is marked explict. We enable it by hand here.
-    @lower_cast(float16, __nv_bfloat16)
-    def conversion_impl(context, builder, fromty, toty, value):
-        return ctor_impl(
-            context,
-            builder,
-            signature(__nv_bfloat16, fromty),
-            [value],
         )
 
 
@@ -1885,7 +1903,9 @@ def _lower__ZL17__double2bfloat16d_nbst(shim_stream, shim_obj):
     def _ZL17__double2bfloat16d_nbst_caller(arg_0):
         return _ZL17__double2bfloat16d_nbst(arg_0)
 
-    handle = globals()["__double2bfloat16"]
+    handle = globals().get("__double2bfloat16")
+    if handle is None:
+        handle = __double2bfloat16
 
     @lower(handle, float64)
     def impl(context, builder, sig, args):
@@ -1926,7 +1946,9 @@ def _lower__ZL16__float2bfloat16f_nbst(shim_stream, shim_obj):
     def _ZL16__float2bfloat16f_nbst_caller(arg_0):
         return _ZL16__float2bfloat16f_nbst(arg_0)
 
-    handle = globals()["__float2bfloat16"]
+    handle = globals().get("__float2bfloat16")
+    if handle is None:
+        handle = __float2bfloat16
 
     @lower(handle, float32)
     def impl(context, builder, sig, args):
@@ -1967,7 +1989,9 @@ def _lower__ZL19__float2bfloat16_rnf_nbst(shim_stream, shim_obj):
     def _ZL19__float2bfloat16_rnf_nbst_caller(arg_0):
         return _ZL19__float2bfloat16_rnf_nbst(arg_0)
 
-    handle = globals()["__float2bfloat16_rn"]
+    handle = globals().get("__float2bfloat16_rn")
+    if handle is None:
+        handle = __float2bfloat16_rn
 
     @lower(handle, float32)
     def impl(context, builder, sig, args):
@@ -2010,7 +2034,9 @@ def _lower__ZL19__float2bfloat16_rzf_nbst(shim_stream, shim_obj):
     def _ZL19__float2bfloat16_rzf_nbst_caller(arg_0):
         return _ZL19__float2bfloat16_rzf_nbst(arg_0)
 
-    handle = globals()["__float2bfloat16_rz"]
+    handle = globals().get("__float2bfloat16_rz")
+    if handle is None:
+        handle = __float2bfloat16_rz
 
     @lower(handle, float32)
     def impl(context, builder, sig, args):
@@ -2053,7 +2079,9 @@ def _lower__ZL19__float2bfloat16_rdf_nbst(shim_stream, shim_obj):
     def _ZL19__float2bfloat16_rdf_nbst_caller(arg_0):
         return _ZL19__float2bfloat16_rdf_nbst(arg_0)
 
-    handle = globals()["__float2bfloat16_rd"]
+    handle = globals().get("__float2bfloat16_rd")
+    if handle is None:
+        handle = __float2bfloat16_rd
 
     @lower(handle, float32)
     def impl(context, builder, sig, args):
@@ -2096,7 +2124,9 @@ def _lower__ZL19__float2bfloat16_ruf_nbst(shim_stream, shim_obj):
     def _ZL19__float2bfloat16_ruf_nbst_caller(arg_0):
         return _ZL19__float2bfloat16_ruf_nbst(arg_0)
 
-    handle = globals()["__float2bfloat16_ru"]
+    handle = globals().get("__float2bfloat16_ru")
+    if handle is None:
+        handle = __float2bfloat16_ru
 
     @lower(handle, float32)
     def impl(context, builder, sig, args):
@@ -2140,7 +2170,9 @@ def _lower__ZL16__bfloat162float13__nv_bfloat16_nbst(shim_stream, shim_obj):
     def _ZL16__bfloat162float13__nv_bfloat16_nbst_caller(arg_0):
         return _ZL16__bfloat162float13__nv_bfloat16_nbst(arg_0)
 
-    handle = globals()["__bfloat162float"]
+    handle = globals().get("__bfloat162float")
+    if handle is None:
+        handle = __bfloat162float
 
     @lower(handle, _type___nv_bfloat16)
     def impl(context, builder, sig, args):
@@ -2184,7 +2216,9 @@ def _lower__ZL20__float2bfloat162_rnf_nbst(shim_stream, shim_obj):
     def _ZL20__float2bfloat162_rnf_nbst_caller(arg_0):
         return _ZL20__float2bfloat162_rnf_nbst(arg_0)
 
-    handle = globals()["__float2bfloat162_rn"]
+    handle = globals().get("__float2bfloat162_rn")
+    if handle is None:
+        handle = __float2bfloat162_rn
 
     @lower(handle, float32)
     def impl(context, builder, sig, args):
@@ -2228,7 +2262,9 @@ def _lower__ZL21__floats2bfloat162_rnff_nbst(shim_stream, shim_obj):
     def _ZL21__floats2bfloat162_rnff_nbst_caller(arg_0, arg_1):
         return _ZL21__floats2bfloat162_rnff_nbst(arg_0, arg_1)
 
-    handle = globals()["__floats2bfloat162_rn"]
+    handle = globals().get("__floats2bfloat162_rn")
+    if handle is None:
+        handle = __floats2bfloat162_rn
 
     @lower(handle, float32, float32)
     def impl(context, builder, sig, args):
@@ -2274,7 +2310,9 @@ def _lower__ZL11__low2float14__nv_bfloat162_nbst(shim_stream, shim_obj):
     def _ZL11__low2float14__nv_bfloat162_nbst_caller(arg_0):
         return _ZL11__low2float14__nv_bfloat162_nbst(arg_0)
 
-    handle = globals()["__low2float"]
+    handle = globals().get("__low2float")
+    if handle is None:
+        handle = __low2float
 
     @lower(handle, _type___nv_bfloat162)
     def impl(context, builder, sig, args):
@@ -2318,7 +2356,9 @@ def _lower__ZL12__high2float14__nv_bfloat162_nbst(shim_stream, shim_obj):
     def _ZL12__high2float14__nv_bfloat162_nbst_caller(arg_0):
         return _ZL12__high2float14__nv_bfloat162_nbst(arg_0)
 
-    handle = globals()["__high2float"]
+    handle = globals().get("__high2float")
+    if handle is None:
+        handle = __high2float
 
     @lower(handle, _type___nv_bfloat162)
     def impl(context, builder, sig, args):
@@ -2362,7 +2402,9 @@ def _lower__ZL21__float22bfloat162_rn6float2_nbst(shim_stream, shim_obj):
     def _ZL21__float22bfloat162_rn6float2_nbst_caller(arg_0):
         return _ZL21__float22bfloat162_rn6float2_nbst(arg_0)
 
-    handle = globals()["__float22bfloat162_rn"]
+    handle = globals().get("__float22bfloat162_rn")
+    if handle is None:
+        handle = __float22bfloat162_rn
 
     @lower(handle, float32x2)
     def impl(context, builder, sig, args):
@@ -2406,7 +2448,9 @@ def _lower__ZL18__bfloat1622float214__nv_bfloat162_nbst(shim_stream, shim_obj):
     def _ZL18__bfloat1622float214__nv_bfloat162_nbst_caller(arg_0):
         return _ZL18__bfloat1622float214__nv_bfloat162_nbst(arg_0)
 
-    handle = globals()["__bfloat1622float2"]
+    handle = globals().get("__bfloat1622float2")
+    if handle is None:
+        handle = __bfloat1622float2
 
     @lower(handle, _type___nv_bfloat162)
     def impl(context, builder, sig, args):
@@ -2450,7 +2494,9 @@ def _lower__ZL18__bfloat162char_rz13__nv_bfloat16_nbst(shim_stream, shim_obj):
     def _ZL18__bfloat162char_rz13__nv_bfloat16_nbst_caller(arg_0):
         return _ZL18__bfloat162char_rz13__nv_bfloat16_nbst(arg_0)
 
-    handle = globals()["__bfloat162char_rz"]
+    handle = globals().get("__bfloat162char_rz")
+    if handle is None:
+        handle = __bfloat162char_rz
 
     @lower(handle, _type___nv_bfloat16)
     def impl(context, builder, sig, args):
@@ -2494,7 +2540,9 @@ def _lower__ZL19__bfloat162uchar_rz13__nv_bfloat16_nbst(shim_stream, shim_obj):
     def _ZL19__bfloat162uchar_rz13__nv_bfloat16_nbst_caller(arg_0):
         return _ZL19__bfloat162uchar_rz13__nv_bfloat16_nbst(arg_0)
 
-    handle = globals()["__bfloat162uchar_rz"]
+    handle = globals().get("__bfloat162uchar_rz")
+    if handle is None:
+        handle = __bfloat162uchar_rz
 
     @lower(handle, _type___nv_bfloat16)
     def impl(context, builder, sig, args):
@@ -2538,7 +2586,9 @@ def _lower__ZL17__bfloat162int_rn13__nv_bfloat16_nbst(shim_stream, shim_obj):
     def _ZL17__bfloat162int_rn13__nv_bfloat16_nbst_caller(arg_0):
         return _ZL17__bfloat162int_rn13__nv_bfloat16_nbst(arg_0)
 
-    handle = globals()["__bfloat162int_rn"]
+    handle = globals().get("__bfloat162int_rn")
+    if handle is None:
+        handle = __bfloat162int_rn
 
     @lower(handle, _type___nv_bfloat16)
     def impl(context, builder, sig, args):
@@ -2582,7 +2632,9 @@ def _lower__ZL17__bfloat162int_rz13__nv_bfloat16_nbst(shim_stream, shim_obj):
     def _ZL17__bfloat162int_rz13__nv_bfloat16_nbst_caller(arg_0):
         return _ZL17__bfloat162int_rz13__nv_bfloat16_nbst(arg_0)
 
-    handle = globals()["__bfloat162int_rz"]
+    handle = globals().get("__bfloat162int_rz")
+    if handle is None:
+        handle = __bfloat162int_rz
 
     @lower(handle, _type___nv_bfloat16)
     def impl(context, builder, sig, args):
@@ -2626,7 +2678,9 @@ def _lower__ZL17__bfloat162int_rd13__nv_bfloat16_nbst(shim_stream, shim_obj):
     def _ZL17__bfloat162int_rd13__nv_bfloat16_nbst_caller(arg_0):
         return _ZL17__bfloat162int_rd13__nv_bfloat16_nbst(arg_0)
 
-    handle = globals()["__bfloat162int_rd"]
+    handle = globals().get("__bfloat162int_rd")
+    if handle is None:
+        handle = __bfloat162int_rd
 
     @lower(handle, _type___nv_bfloat16)
     def impl(context, builder, sig, args):
@@ -2670,7 +2724,9 @@ def _lower__ZL17__bfloat162int_ru13__nv_bfloat16_nbst(shim_stream, shim_obj):
     def _ZL17__bfloat162int_ru13__nv_bfloat16_nbst_caller(arg_0):
         return _ZL17__bfloat162int_ru13__nv_bfloat16_nbst(arg_0)
 
-    handle = globals()["__bfloat162int_ru"]
+    handle = globals().get("__bfloat162int_ru")
+    if handle is None:
+        handle = __bfloat162int_ru
 
     @lower(handle, _type___nv_bfloat16)
     def impl(context, builder, sig, args):
@@ -2713,7 +2769,9 @@ def _lower__ZL17__int2bfloat16_rni_nbst(shim_stream, shim_obj):
     def _ZL17__int2bfloat16_rni_nbst_caller(arg_0):
         return _ZL17__int2bfloat16_rni_nbst(arg_0)
 
-    handle = globals()["__int2bfloat16_rn"]
+    handle = globals().get("__int2bfloat16_rn")
+    if handle is None:
+        handle = __int2bfloat16_rn
 
     @lower(handle, int32)
     def impl(context, builder, sig, args):
@@ -2754,7 +2812,9 @@ def _lower__ZL17__int2bfloat16_rzi_nbst(shim_stream, shim_obj):
     def _ZL17__int2bfloat16_rzi_nbst_caller(arg_0):
         return _ZL17__int2bfloat16_rzi_nbst(arg_0)
 
-    handle = globals()["__int2bfloat16_rz"]
+    handle = globals().get("__int2bfloat16_rz")
+    if handle is None:
+        handle = __int2bfloat16_rz
 
     @lower(handle, int32)
     def impl(context, builder, sig, args):
@@ -2795,7 +2855,9 @@ def _lower__ZL17__int2bfloat16_rdi_nbst(shim_stream, shim_obj):
     def _ZL17__int2bfloat16_rdi_nbst_caller(arg_0):
         return _ZL17__int2bfloat16_rdi_nbst(arg_0)
 
-    handle = globals()["__int2bfloat16_rd"]
+    handle = globals().get("__int2bfloat16_rd")
+    if handle is None:
+        handle = __int2bfloat16_rd
 
     @lower(handle, int32)
     def impl(context, builder, sig, args):
@@ -2836,7 +2898,9 @@ def _lower__ZL17__int2bfloat16_rui_nbst(shim_stream, shim_obj):
     def _ZL17__int2bfloat16_rui_nbst_caller(arg_0):
         return _ZL17__int2bfloat16_rui_nbst(arg_0)
 
-    handle = globals()["__int2bfloat16_ru"]
+    handle = globals().get("__int2bfloat16_ru")
+    if handle is None:
+        handle = __int2bfloat16_ru
 
     @lower(handle, int32)
     def impl(context, builder, sig, args):
@@ -2878,7 +2942,9 @@ def _lower__ZL19__bfloat162short_rn13__nv_bfloat16_nbst(shim_stream, shim_obj):
     def _ZL19__bfloat162short_rn13__nv_bfloat16_nbst_caller(arg_0):
         return _ZL19__bfloat162short_rn13__nv_bfloat16_nbst(arg_0)
 
-    handle = globals()["__bfloat162short_rn"]
+    handle = globals().get("__bfloat162short_rn")
+    if handle is None:
+        handle = __bfloat162short_rn
 
     @lower(handle, _type___nv_bfloat16)
     def impl(context, builder, sig, args):
@@ -2922,7 +2988,9 @@ def _lower__ZL19__bfloat162short_rz13__nv_bfloat16_nbst(shim_stream, shim_obj):
     def _ZL19__bfloat162short_rz13__nv_bfloat16_nbst_caller(arg_0):
         return _ZL19__bfloat162short_rz13__nv_bfloat16_nbst(arg_0)
 
-    handle = globals()["__bfloat162short_rz"]
+    handle = globals().get("__bfloat162short_rz")
+    if handle is None:
+        handle = __bfloat162short_rz
 
     @lower(handle, _type___nv_bfloat16)
     def impl(context, builder, sig, args):
@@ -2966,7 +3034,9 @@ def _lower__ZL19__bfloat162short_rd13__nv_bfloat16_nbst(shim_stream, shim_obj):
     def _ZL19__bfloat162short_rd13__nv_bfloat16_nbst_caller(arg_0):
         return _ZL19__bfloat162short_rd13__nv_bfloat16_nbst(arg_0)
 
-    handle = globals()["__bfloat162short_rd"]
+    handle = globals().get("__bfloat162short_rd")
+    if handle is None:
+        handle = __bfloat162short_rd
 
     @lower(handle, _type___nv_bfloat16)
     def impl(context, builder, sig, args):
@@ -3010,7 +3080,9 @@ def _lower__ZL19__bfloat162short_ru13__nv_bfloat16_nbst(shim_stream, shim_obj):
     def _ZL19__bfloat162short_ru13__nv_bfloat16_nbst_caller(arg_0):
         return _ZL19__bfloat162short_ru13__nv_bfloat16_nbst(arg_0)
 
-    handle = globals()["__bfloat162short_ru"]
+    handle = globals().get("__bfloat162short_ru")
+    if handle is None:
+        handle = __bfloat162short_ru
 
     @lower(handle, _type___nv_bfloat16)
     def impl(context, builder, sig, args):
@@ -3053,7 +3125,9 @@ def _lower__ZL19__short2bfloat16_rns_nbst(shim_stream, shim_obj):
     def _ZL19__short2bfloat16_rns_nbst_caller(arg_0):
         return _ZL19__short2bfloat16_rns_nbst(arg_0)
 
-    handle = globals()["__short2bfloat16_rn"]
+    handle = globals().get("__short2bfloat16_rn")
+    if handle is None:
+        handle = __short2bfloat16_rn
 
     @lower(handle, int16)
     def impl(context, builder, sig, args):
@@ -3096,7 +3170,9 @@ def _lower__ZL19__short2bfloat16_rzs_nbst(shim_stream, shim_obj):
     def _ZL19__short2bfloat16_rzs_nbst_caller(arg_0):
         return _ZL19__short2bfloat16_rzs_nbst(arg_0)
 
-    handle = globals()["__short2bfloat16_rz"]
+    handle = globals().get("__short2bfloat16_rz")
+    if handle is None:
+        handle = __short2bfloat16_rz
 
     @lower(handle, int16)
     def impl(context, builder, sig, args):
@@ -3139,7 +3215,9 @@ def _lower__ZL19__short2bfloat16_rds_nbst(shim_stream, shim_obj):
     def _ZL19__short2bfloat16_rds_nbst_caller(arg_0):
         return _ZL19__short2bfloat16_rds_nbst(arg_0)
 
-    handle = globals()["__short2bfloat16_rd"]
+    handle = globals().get("__short2bfloat16_rd")
+    if handle is None:
+        handle = __short2bfloat16_rd
 
     @lower(handle, int16)
     def impl(context, builder, sig, args):
@@ -3182,7 +3260,9 @@ def _lower__ZL19__short2bfloat16_rus_nbst(shim_stream, shim_obj):
     def _ZL19__short2bfloat16_rus_nbst_caller(arg_0):
         return _ZL19__short2bfloat16_rus_nbst(arg_0)
 
-    handle = globals()["__short2bfloat16_ru"]
+    handle = globals().get("__short2bfloat16_ru")
+    if handle is None:
+        handle = __short2bfloat16_ru
 
     @lower(handle, int16)
     def impl(context, builder, sig, args):
@@ -3226,7 +3306,9 @@ def _lower__ZL18__bfloat162uint_rn13__nv_bfloat16_nbst(shim_stream, shim_obj):
     def _ZL18__bfloat162uint_rn13__nv_bfloat16_nbst_caller(arg_0):
         return _ZL18__bfloat162uint_rn13__nv_bfloat16_nbst(arg_0)
 
-    handle = globals()["__bfloat162uint_rn"]
+    handle = globals().get("__bfloat162uint_rn")
+    if handle is None:
+        handle = __bfloat162uint_rn
 
     @lower(handle, _type___nv_bfloat16)
     def impl(context, builder, sig, args):
@@ -3270,7 +3352,9 @@ def _lower__ZL18__bfloat162uint_rz13__nv_bfloat16_nbst(shim_stream, shim_obj):
     def _ZL18__bfloat162uint_rz13__nv_bfloat16_nbst_caller(arg_0):
         return _ZL18__bfloat162uint_rz13__nv_bfloat16_nbst(arg_0)
 
-    handle = globals()["__bfloat162uint_rz"]
+    handle = globals().get("__bfloat162uint_rz")
+    if handle is None:
+        handle = __bfloat162uint_rz
 
     @lower(handle, _type___nv_bfloat16)
     def impl(context, builder, sig, args):
@@ -3314,7 +3398,9 @@ def _lower__ZL18__bfloat162uint_rd13__nv_bfloat16_nbst(shim_stream, shim_obj):
     def _ZL18__bfloat162uint_rd13__nv_bfloat16_nbst_caller(arg_0):
         return _ZL18__bfloat162uint_rd13__nv_bfloat16_nbst(arg_0)
 
-    handle = globals()["__bfloat162uint_rd"]
+    handle = globals().get("__bfloat162uint_rd")
+    if handle is None:
+        handle = __bfloat162uint_rd
 
     @lower(handle, _type___nv_bfloat16)
     def impl(context, builder, sig, args):
@@ -3358,7 +3444,9 @@ def _lower__ZL18__bfloat162uint_ru13__nv_bfloat16_nbst(shim_stream, shim_obj):
     def _ZL18__bfloat162uint_ru13__nv_bfloat16_nbst_caller(arg_0):
         return _ZL18__bfloat162uint_ru13__nv_bfloat16_nbst(arg_0)
 
-    handle = globals()["__bfloat162uint_ru"]
+    handle = globals().get("__bfloat162uint_ru")
+    if handle is None:
+        handle = __bfloat162uint_ru
 
     @lower(handle, _type___nv_bfloat16)
     def impl(context, builder, sig, args):
@@ -3401,7 +3489,9 @@ def _lower__ZL18__uint2bfloat16_rnj_nbst(shim_stream, shim_obj):
     def _ZL18__uint2bfloat16_rnj_nbst_caller(arg_0):
         return _ZL18__uint2bfloat16_rnj_nbst(arg_0)
 
-    handle = globals()["__uint2bfloat16_rn"]
+    handle = globals().get("__uint2bfloat16_rn")
+    if handle is None:
+        handle = __uint2bfloat16_rn
 
     @lower(handle, uint32)
     def impl(context, builder, sig, args):
@@ -3444,7 +3534,9 @@ def _lower__ZL18__uint2bfloat16_rzj_nbst(shim_stream, shim_obj):
     def _ZL18__uint2bfloat16_rzj_nbst_caller(arg_0):
         return _ZL18__uint2bfloat16_rzj_nbst(arg_0)
 
-    handle = globals()["__uint2bfloat16_rz"]
+    handle = globals().get("__uint2bfloat16_rz")
+    if handle is None:
+        handle = __uint2bfloat16_rz
 
     @lower(handle, uint32)
     def impl(context, builder, sig, args):
@@ -3487,7 +3579,9 @@ def _lower__ZL18__uint2bfloat16_rdj_nbst(shim_stream, shim_obj):
     def _ZL18__uint2bfloat16_rdj_nbst_caller(arg_0):
         return _ZL18__uint2bfloat16_rdj_nbst(arg_0)
 
-    handle = globals()["__uint2bfloat16_rd"]
+    handle = globals().get("__uint2bfloat16_rd")
+    if handle is None:
+        handle = __uint2bfloat16_rd
 
     @lower(handle, uint32)
     def impl(context, builder, sig, args):
@@ -3530,7 +3624,9 @@ def _lower__ZL18__uint2bfloat16_ruj_nbst(shim_stream, shim_obj):
     def _ZL18__uint2bfloat16_ruj_nbst_caller(arg_0):
         return _ZL18__uint2bfloat16_ruj_nbst(arg_0)
 
-    handle = globals()["__uint2bfloat16_ru"]
+    handle = globals().get("__uint2bfloat16_ru")
+    if handle is None:
+        handle = __uint2bfloat16_ru
 
     @lower(handle, uint32)
     def impl(context, builder, sig, args):
@@ -3574,7 +3670,9 @@ def _lower__ZL20__bfloat162ushort_rn13__nv_bfloat16_nbst(shim_stream, shim_obj):
     def _ZL20__bfloat162ushort_rn13__nv_bfloat16_nbst_caller(arg_0):
         return _ZL20__bfloat162ushort_rn13__nv_bfloat16_nbst(arg_0)
 
-    handle = globals()["__bfloat162ushort_rn"]
+    handle = globals().get("__bfloat162ushort_rn")
+    if handle is None:
+        handle = __bfloat162ushort_rn
 
     @lower(handle, _type___nv_bfloat16)
     def impl(context, builder, sig, args):
@@ -3618,7 +3716,9 @@ def _lower__ZL20__bfloat162ushort_rz13__nv_bfloat16_nbst(shim_stream, shim_obj):
     def _ZL20__bfloat162ushort_rz13__nv_bfloat16_nbst_caller(arg_0):
         return _ZL20__bfloat162ushort_rz13__nv_bfloat16_nbst(arg_0)
 
-    handle = globals()["__bfloat162ushort_rz"]
+    handle = globals().get("__bfloat162ushort_rz")
+    if handle is None:
+        handle = __bfloat162ushort_rz
 
     @lower(handle, _type___nv_bfloat16)
     def impl(context, builder, sig, args):
@@ -3662,7 +3762,9 @@ def _lower__ZL20__bfloat162ushort_rd13__nv_bfloat16_nbst(shim_stream, shim_obj):
     def _ZL20__bfloat162ushort_rd13__nv_bfloat16_nbst_caller(arg_0):
         return _ZL20__bfloat162ushort_rd13__nv_bfloat16_nbst(arg_0)
 
-    handle = globals()["__bfloat162ushort_rd"]
+    handle = globals().get("__bfloat162ushort_rd")
+    if handle is None:
+        handle = __bfloat162ushort_rd
 
     @lower(handle, _type___nv_bfloat16)
     def impl(context, builder, sig, args):
@@ -3706,7 +3808,9 @@ def _lower__ZL20__bfloat162ushort_ru13__nv_bfloat16_nbst(shim_stream, shim_obj):
     def _ZL20__bfloat162ushort_ru13__nv_bfloat16_nbst_caller(arg_0):
         return _ZL20__bfloat162ushort_ru13__nv_bfloat16_nbst(arg_0)
 
-    handle = globals()["__bfloat162ushort_ru"]
+    handle = globals().get("__bfloat162ushort_ru")
+    if handle is None:
+        handle = __bfloat162ushort_ru
 
     @lower(handle, _type___nv_bfloat16)
     def impl(context, builder, sig, args):
@@ -3749,7 +3853,9 @@ def _lower__ZL20__ushort2bfloat16_rnt_nbst(shim_stream, shim_obj):
     def _ZL20__ushort2bfloat16_rnt_nbst_caller(arg_0):
         return _ZL20__ushort2bfloat16_rnt_nbst(arg_0)
 
-    handle = globals()["__ushort2bfloat16_rn"]
+    handle = globals().get("__ushort2bfloat16_rn")
+    if handle is None:
+        handle = __ushort2bfloat16_rn
 
     @lower(handle, uint16)
     def impl(context, builder, sig, args):
@@ -3792,7 +3898,9 @@ def _lower__ZL20__ushort2bfloat16_rzt_nbst(shim_stream, shim_obj):
     def _ZL20__ushort2bfloat16_rzt_nbst_caller(arg_0):
         return _ZL20__ushort2bfloat16_rzt_nbst(arg_0)
 
-    handle = globals()["__ushort2bfloat16_rz"]
+    handle = globals().get("__ushort2bfloat16_rz")
+    if handle is None:
+        handle = __ushort2bfloat16_rz
 
     @lower(handle, uint16)
     def impl(context, builder, sig, args):
@@ -3835,7 +3943,9 @@ def _lower__ZL20__ushort2bfloat16_rdt_nbst(shim_stream, shim_obj):
     def _ZL20__ushort2bfloat16_rdt_nbst_caller(arg_0):
         return _ZL20__ushort2bfloat16_rdt_nbst(arg_0)
 
-    handle = globals()["__ushort2bfloat16_rd"]
+    handle = globals().get("__ushort2bfloat16_rd")
+    if handle is None:
+        handle = __ushort2bfloat16_rd
 
     @lower(handle, uint16)
     def impl(context, builder, sig, args):
@@ -3878,7 +3988,9 @@ def _lower__ZL20__ushort2bfloat16_rut_nbst(shim_stream, shim_obj):
     def _ZL20__ushort2bfloat16_rut_nbst_caller(arg_0):
         return _ZL20__ushort2bfloat16_rut_nbst(arg_0)
 
-    handle = globals()["__ushort2bfloat16_ru"]
+    handle = globals().get("__ushort2bfloat16_ru")
+    if handle is None:
+        handle = __ushort2bfloat16_ru
 
     @lower(handle, uint16)
     def impl(context, builder, sig, args):
@@ -3922,7 +4034,9 @@ def _lower__ZL17__bfloat162ull_rn13__nv_bfloat16_nbst(shim_stream, shim_obj):
     def _ZL17__bfloat162ull_rn13__nv_bfloat16_nbst_caller(arg_0):
         return _ZL17__bfloat162ull_rn13__nv_bfloat16_nbst(arg_0)
 
-    handle = globals()["__bfloat162ull_rn"]
+    handle = globals().get("__bfloat162ull_rn")
+    if handle is None:
+        handle = __bfloat162ull_rn
 
     @lower(handle, _type___nv_bfloat16)
     def impl(context, builder, sig, args):
@@ -3966,7 +4080,9 @@ def _lower__ZL17__bfloat162ull_rz13__nv_bfloat16_nbst(shim_stream, shim_obj):
     def _ZL17__bfloat162ull_rz13__nv_bfloat16_nbst_caller(arg_0):
         return _ZL17__bfloat162ull_rz13__nv_bfloat16_nbst(arg_0)
 
-    handle = globals()["__bfloat162ull_rz"]
+    handle = globals().get("__bfloat162ull_rz")
+    if handle is None:
+        handle = __bfloat162ull_rz
 
     @lower(handle, _type___nv_bfloat16)
     def impl(context, builder, sig, args):
@@ -4012,7 +4128,9 @@ def _lower__ZL14make_bfloat16213__nv_bfloat16S__nbst(shim_stream, shim_obj):
     def _ZL14make_bfloat16213__nv_bfloat16S__nbst_caller(arg_0, arg_1):
         return _ZL14make_bfloat16213__nv_bfloat16S__nbst(arg_0, arg_1)
 
-    handle = globals()["make_bfloat162"]
+    handle = globals().get("make_bfloat162")
+    if handle is None:
+        handle = make_bfloat162
 
     @lower(handle, _type___nv_bfloat16, _type___nv_bfloat16)
     def impl(context, builder, sig, args):
@@ -4060,7 +4178,9 @@ def _lower__ZL17__bfloat162ull_rd13__nv_bfloat16_nbst(shim_stream, shim_obj):
     def _ZL17__bfloat162ull_rd13__nv_bfloat16_nbst_caller(arg_0):
         return _ZL17__bfloat162ull_rd13__nv_bfloat16_nbst(arg_0)
 
-    handle = globals()["__bfloat162ull_rd"]
+    handle = globals().get("__bfloat162ull_rd")
+    if handle is None:
+        handle = __bfloat162ull_rd
 
     @lower(handle, _type___nv_bfloat16)
     def impl(context, builder, sig, args):
@@ -4104,7 +4224,9 @@ def _lower__ZL17__bfloat162ull_ru13__nv_bfloat16_nbst(shim_stream, shim_obj):
     def _ZL17__bfloat162ull_ru13__nv_bfloat16_nbst_caller(arg_0):
         return _ZL17__bfloat162ull_ru13__nv_bfloat16_nbst(arg_0)
 
-    handle = globals()["__bfloat162ull_ru"]
+    handle = globals().get("__bfloat162ull_ru")
+    if handle is None:
+        handle = __bfloat162ull_ru
 
     @lower(handle, _type___nv_bfloat16)
     def impl(context, builder, sig, args):
@@ -4147,7 +4269,9 @@ def _lower__ZL17__ull2bfloat16_rny_nbst(shim_stream, shim_obj):
     def _ZL17__ull2bfloat16_rny_nbst_caller(arg_0):
         return _ZL17__ull2bfloat16_rny_nbst(arg_0)
 
-    handle = globals()["__ull2bfloat16_rn"]
+    handle = globals().get("__ull2bfloat16_rn")
+    if handle is None:
+        handle = __ull2bfloat16_rn
 
     @lower(handle, uint64)
     def impl(context, builder, sig, args):
@@ -4188,7 +4312,9 @@ def _lower__ZL17__ull2bfloat16_rzy_nbst(shim_stream, shim_obj):
     def _ZL17__ull2bfloat16_rzy_nbst_caller(arg_0):
         return _ZL17__ull2bfloat16_rzy_nbst(arg_0)
 
-    handle = globals()["__ull2bfloat16_rz"]
+    handle = globals().get("__ull2bfloat16_rz")
+    if handle is None:
+        handle = __ull2bfloat16_rz
 
     @lower(handle, uint64)
     def impl(context, builder, sig, args):
@@ -4229,7 +4355,9 @@ def _lower__ZL17__ull2bfloat16_rdy_nbst(shim_stream, shim_obj):
     def _ZL17__ull2bfloat16_rdy_nbst_caller(arg_0):
         return _ZL17__ull2bfloat16_rdy_nbst(arg_0)
 
-    handle = globals()["__ull2bfloat16_rd"]
+    handle = globals().get("__ull2bfloat16_rd")
+    if handle is None:
+        handle = __ull2bfloat16_rd
 
     @lower(handle, uint64)
     def impl(context, builder, sig, args):
@@ -4270,7 +4398,9 @@ def _lower__ZL17__ull2bfloat16_ruy_nbst(shim_stream, shim_obj):
     def _ZL17__ull2bfloat16_ruy_nbst_caller(arg_0):
         return _ZL17__ull2bfloat16_ruy_nbst(arg_0)
 
-    handle = globals()["__ull2bfloat16_ru"]
+    handle = globals().get("__ull2bfloat16_ru")
+    if handle is None:
+        handle = __ull2bfloat16_ru
 
     @lower(handle, uint64)
     def impl(context, builder, sig, args):
@@ -4312,7 +4442,9 @@ def _lower__ZL16__bfloat162ll_rn13__nv_bfloat16_nbst(shim_stream, shim_obj):
     def _ZL16__bfloat162ll_rn13__nv_bfloat16_nbst_caller(arg_0):
         return _ZL16__bfloat162ll_rn13__nv_bfloat16_nbst(arg_0)
 
-    handle = globals()["__bfloat162ll_rn"]
+    handle = globals().get("__bfloat162ll_rn")
+    if handle is None:
+        handle = __bfloat162ll_rn
 
     @lower(handle, _type___nv_bfloat16)
     def impl(context, builder, sig, args):
@@ -4356,7 +4488,9 @@ def _lower__ZL16__bfloat162ll_rz13__nv_bfloat16_nbst(shim_stream, shim_obj):
     def _ZL16__bfloat162ll_rz13__nv_bfloat16_nbst_caller(arg_0):
         return _ZL16__bfloat162ll_rz13__nv_bfloat16_nbst(arg_0)
 
-    handle = globals()["__bfloat162ll_rz"]
+    handle = globals().get("__bfloat162ll_rz")
+    if handle is None:
+        handle = __bfloat162ll_rz
 
     @lower(handle, _type___nv_bfloat16)
     def impl(context, builder, sig, args):
@@ -4400,7 +4534,9 @@ def _lower__ZL16__bfloat162ll_rd13__nv_bfloat16_nbst(shim_stream, shim_obj):
     def _ZL16__bfloat162ll_rd13__nv_bfloat16_nbst_caller(arg_0):
         return _ZL16__bfloat162ll_rd13__nv_bfloat16_nbst(arg_0)
 
-    handle = globals()["__bfloat162ll_rd"]
+    handle = globals().get("__bfloat162ll_rd")
+    if handle is None:
+        handle = __bfloat162ll_rd
 
     @lower(handle, _type___nv_bfloat16)
     def impl(context, builder, sig, args):
@@ -4444,7 +4580,9 @@ def _lower__ZL16__bfloat162ll_ru13__nv_bfloat16_nbst(shim_stream, shim_obj):
     def _ZL16__bfloat162ll_ru13__nv_bfloat16_nbst_caller(arg_0):
         return _ZL16__bfloat162ll_ru13__nv_bfloat16_nbst(arg_0)
 
-    handle = globals()["__bfloat162ll_ru"]
+    handle = globals().get("__bfloat162ll_ru")
+    if handle is None:
+        handle = __bfloat162ll_ru
 
     @lower(handle, _type___nv_bfloat16)
     def impl(context, builder, sig, args):
@@ -4487,7 +4625,9 @@ def _lower__ZL16__ll2bfloat16_rnx_nbst(shim_stream, shim_obj):
     def _ZL16__ll2bfloat16_rnx_nbst_caller(arg_0):
         return _ZL16__ll2bfloat16_rnx_nbst(arg_0)
 
-    handle = globals()["__ll2bfloat16_rn"]
+    handle = globals().get("__ll2bfloat16_rn")
+    if handle is None:
+        handle = __ll2bfloat16_rn
 
     @lower(handle, int64)
     def impl(context, builder, sig, args):
@@ -4528,7 +4668,9 @@ def _lower__ZL16__ll2bfloat16_rzx_nbst(shim_stream, shim_obj):
     def _ZL16__ll2bfloat16_rzx_nbst_caller(arg_0):
         return _ZL16__ll2bfloat16_rzx_nbst(arg_0)
 
-    handle = globals()["__ll2bfloat16_rz"]
+    handle = globals().get("__ll2bfloat16_rz")
+    if handle is None:
+        handle = __ll2bfloat16_rz
 
     @lower(handle, int64)
     def impl(context, builder, sig, args):
@@ -4569,7 +4711,9 @@ def _lower__ZL16__ll2bfloat16_rdx_nbst(shim_stream, shim_obj):
     def _ZL16__ll2bfloat16_rdx_nbst_caller(arg_0):
         return _ZL16__ll2bfloat16_rdx_nbst(arg_0)
 
-    handle = globals()["__ll2bfloat16_rd"]
+    handle = globals().get("__ll2bfloat16_rd")
+    if handle is None:
+        handle = __ll2bfloat16_rd
 
     @lower(handle, int64)
     def impl(context, builder, sig, args):
@@ -4610,7 +4754,9 @@ def _lower__ZL16__ll2bfloat16_rux_nbst(shim_stream, shim_obj):
     def _ZL16__ll2bfloat16_rux_nbst_caller(arg_0):
         return _ZL16__ll2bfloat16_rux_nbst(arg_0)
 
-    handle = globals()["__ll2bfloat16_ru"]
+    handle = globals().get("__ll2bfloat16_ru")
+    if handle is None:
+        handle = __ll2bfloat16_ru
 
     @lower(handle, int64)
     def impl(context, builder, sig, args):
@@ -4652,7 +4798,9 @@ def _lower__ZL6htrunc13__nv_bfloat16_nbst(shim_stream, shim_obj):
     def _ZL6htrunc13__nv_bfloat16_nbst_caller(arg_0):
         return _ZL6htrunc13__nv_bfloat16_nbst(arg_0)
 
-    handle = globals()["htrunc"]
+    handle = globals().get("htrunc")
+    if handle is None:
+        handle = htrunc
 
     @lower(handle, _type___nv_bfloat16)
     def impl(context, builder, sig, args):
@@ -4696,7 +4844,9 @@ def _lower__ZL5hceil13__nv_bfloat16_nbst(shim_stream, shim_obj):
     def _ZL5hceil13__nv_bfloat16_nbst_caller(arg_0):
         return _ZL5hceil13__nv_bfloat16_nbst(arg_0)
 
-    handle = globals()["hceil"]
+    handle = globals().get("hceil")
+    if handle is None:
+        handle = hceil
 
     @lower(handle, _type___nv_bfloat16)
     def impl(context, builder, sig, args):
@@ -4740,7 +4890,9 @@ def _lower__ZL6hfloor13__nv_bfloat16_nbst(shim_stream, shim_obj):
     def _ZL6hfloor13__nv_bfloat16_nbst_caller(arg_0):
         return _ZL6hfloor13__nv_bfloat16_nbst(arg_0)
 
-    handle = globals()["hfloor"]
+    handle = globals().get("hfloor")
+    if handle is None:
+        handle = hfloor
 
     @lower(handle, _type___nv_bfloat16)
     def impl(context, builder, sig, args):
@@ -4784,7 +4936,9 @@ def _lower__ZL5hrint13__nv_bfloat16_nbst(shim_stream, shim_obj):
     def _ZL5hrint13__nv_bfloat16_nbst_caller(arg_0):
         return _ZL5hrint13__nv_bfloat16_nbst(arg_0)
 
-    handle = globals()["hrint"]
+    handle = globals().get("hrint")
+    if handle is None:
+        handle = hrint
 
     @lower(handle, _type___nv_bfloat16)
     def impl(context, builder, sig, args):
@@ -4828,7 +4982,9 @@ def _lower__ZL7h2trunc14__nv_bfloat162_nbst(shim_stream, shim_obj):
     def _ZL7h2trunc14__nv_bfloat162_nbst_caller(arg_0):
         return _ZL7h2trunc14__nv_bfloat162_nbst(arg_0)
 
-    handle = globals()["h2trunc"]
+    handle = globals().get("h2trunc")
+    if handle is None:
+        handle = h2trunc
 
     @lower(handle, _type___nv_bfloat162)
     def impl(context, builder, sig, args):
@@ -4872,7 +5028,9 @@ def _lower__ZL6h2ceil14__nv_bfloat162_nbst(shim_stream, shim_obj):
     def _ZL6h2ceil14__nv_bfloat162_nbst_caller(arg_0):
         return _ZL6h2ceil14__nv_bfloat162_nbst(arg_0)
 
-    handle = globals()["h2ceil"]
+    handle = globals().get("h2ceil")
+    if handle is None:
+        handle = h2ceil
 
     @lower(handle, _type___nv_bfloat162)
     def impl(context, builder, sig, args):
@@ -4916,7 +5074,9 @@ def _lower__ZL7h2floor14__nv_bfloat162_nbst(shim_stream, shim_obj):
     def _ZL7h2floor14__nv_bfloat162_nbst_caller(arg_0):
         return _ZL7h2floor14__nv_bfloat162_nbst(arg_0)
 
-    handle = globals()["h2floor"]
+    handle = globals().get("h2floor")
+    if handle is None:
+        handle = h2floor
 
     @lower(handle, _type___nv_bfloat162)
     def impl(context, builder, sig, args):
@@ -4960,7 +5120,9 @@ def _lower__ZL6h2rint14__nv_bfloat162_nbst(shim_stream, shim_obj):
     def _ZL6h2rint14__nv_bfloat162_nbst_caller(arg_0):
         return _ZL6h2rint14__nv_bfloat162_nbst(arg_0)
 
-    handle = globals()["h2rint"]
+    handle = globals().get("h2rint")
+    if handle is None:
+        handle = h2rint
 
     @lower(handle, _type___nv_bfloat162)
     def impl(context, builder, sig, args):
@@ -5004,7 +5166,9 @@ def _lower__ZL20__bfloat162bfloat16213__nv_bfloat16_nbst(shim_stream, shim_obj):
     def _ZL20__bfloat162bfloat16213__nv_bfloat16_nbst_caller(arg_0):
         return _ZL20__bfloat162bfloat16213__nv_bfloat16_nbst(arg_0)
 
-    handle = globals()["__bfloat162bfloat162"]
+    handle = globals().get("__bfloat162bfloat162")
+    if handle is None:
+        handle = __bfloat162bfloat162
 
     @lower(handle, _type___nv_bfloat16)
     def impl(context, builder, sig, args):
@@ -5048,7 +5212,9 @@ def _lower__ZL17__lowhigh2highlow14__nv_bfloat162_nbst(shim_stream, shim_obj):
     def _ZL17__lowhigh2highlow14__nv_bfloat162_nbst_caller(arg_0):
         return _ZL17__lowhigh2highlow14__nv_bfloat162_nbst(arg_0)
 
-    handle = globals()["__lowhigh2highlow"]
+    handle = globals().get("__lowhigh2highlow")
+    if handle is None:
+        handle = __lowhigh2highlow
 
     @lower(handle, _type___nv_bfloat162)
     def impl(context, builder, sig, args):
@@ -5094,7 +5260,9 @@ def _lower__ZL16__lows2bfloat16214__nv_bfloat162S__nbst(shim_stream, shim_obj):
     def _ZL16__lows2bfloat16214__nv_bfloat162S__nbst_caller(arg_0, arg_1):
         return _ZL16__lows2bfloat16214__nv_bfloat162S__nbst(arg_0, arg_1)
 
-    handle = globals()["__lows2bfloat162"]
+    handle = globals().get("__lows2bfloat162")
+    if handle is None:
+        handle = __lows2bfloat162
 
     @lower(handle, _type___nv_bfloat162, _type___nv_bfloat162)
     def impl(context, builder, sig, args):
@@ -5144,7 +5312,9 @@ def _lower__ZL17__highs2bfloat16214__nv_bfloat162S__nbst(shim_stream, shim_obj):
     def _ZL17__highs2bfloat16214__nv_bfloat162S__nbst_caller(arg_0, arg_1):
         return _ZL17__highs2bfloat16214__nv_bfloat162S__nbst(arg_0, arg_1)
 
-    handle = globals()["__highs2bfloat162"]
+    handle = globals().get("__highs2bfloat162")
+    if handle is None:
+        handle = __highs2bfloat162
 
     @lower(handle, _type___nv_bfloat162, _type___nv_bfloat162)
     def impl(context, builder, sig, args):
@@ -5192,7 +5362,9 @@ def _lower__ZL15__high2bfloat1614__nv_bfloat162_nbst(shim_stream, shim_obj):
     def _ZL15__high2bfloat1614__nv_bfloat162_nbst_caller(arg_0):
         return _ZL15__high2bfloat1614__nv_bfloat162_nbst(arg_0)
 
-    handle = globals()["__high2bfloat16"]
+    handle = globals().get("__high2bfloat16")
+    if handle is None:
+        handle = __high2bfloat16
 
     @lower(handle, _type___nv_bfloat162)
     def impl(context, builder, sig, args):
@@ -5236,7 +5408,9 @@ def _lower__ZL14__low2bfloat1614__nv_bfloat162_nbst(shim_stream, shim_obj):
     def _ZL14__low2bfloat1614__nv_bfloat162_nbst_caller(arg_0):
         return _ZL14__low2bfloat1614__nv_bfloat162_nbst(arg_0)
 
-    handle = globals()["__low2bfloat16"]
+    handle = globals().get("__low2bfloat16")
+    if handle is None:
+        handle = __low2bfloat16
 
     @lower(handle, _type___nv_bfloat162)
     def impl(context, builder, sig, args):
@@ -5279,7 +5453,9 @@ def _lower__ZL8__hisinf13__nv_bfloat16_nbst(shim_stream, shim_obj):
     def _ZL8__hisinf13__nv_bfloat16_nbst_caller(arg_0):
         return _ZL8__hisinf13__nv_bfloat16_nbst(arg_0)
 
-    handle = globals()["__hisinf"]
+    handle = globals().get("__hisinf")
+    if handle is None:
+        handle = __hisinf
 
     @lower(handle, _type___nv_bfloat16)
     def impl(context, builder, sig, args):
@@ -5325,7 +5501,9 @@ def _lower__ZL18__halves2bfloat16213__nv_bfloat16S__nbst(shim_stream, shim_obj):
     def _ZL18__halves2bfloat16213__nv_bfloat16S__nbst_caller(arg_0, arg_1):
         return _ZL18__halves2bfloat16213__nv_bfloat16S__nbst(arg_0, arg_1)
 
-    handle = globals()["__halves2bfloat162"]
+    handle = globals().get("__halves2bfloat162")
+    if handle is None:
+        handle = __halves2bfloat162
 
     @lower(handle, _type___nv_bfloat16, _type___nv_bfloat16)
     def impl(context, builder, sig, args):
@@ -5373,7 +5551,9 @@ def _lower__ZL15__low2bfloat16214__nv_bfloat162_nbst(shim_stream, shim_obj):
     def _ZL15__low2bfloat16214__nv_bfloat162_nbst_caller(arg_0):
         return _ZL15__low2bfloat16214__nv_bfloat162_nbst(arg_0)
 
-    handle = globals()["__low2bfloat162"]
+    handle = globals().get("__low2bfloat162")
+    if handle is None:
+        handle = __low2bfloat162
 
     @lower(handle, _type___nv_bfloat162)
     def impl(context, builder, sig, args):
@@ -5417,7 +5597,9 @@ def _lower__ZL16__high2bfloat16214__nv_bfloat162_nbst(shim_stream, shim_obj):
     def _ZL16__high2bfloat16214__nv_bfloat162_nbst_caller(arg_0):
         return _ZL16__high2bfloat16214__nv_bfloat162_nbst(arg_0)
 
-    handle = globals()["__high2bfloat162"]
+    handle = globals().get("__high2bfloat162")
+    if handle is None:
+        handle = __high2bfloat162
 
     @lower(handle, _type___nv_bfloat162)
     def impl(context, builder, sig, args):
@@ -5461,7 +5643,9 @@ def _lower__ZL19__bfloat16_as_short13__nv_bfloat16_nbst(shim_stream, shim_obj):
     def _ZL19__bfloat16_as_short13__nv_bfloat16_nbst_caller(arg_0):
         return _ZL19__bfloat16_as_short13__nv_bfloat16_nbst(arg_0)
 
-    handle = globals()["__bfloat16_as_short"]
+    handle = globals().get("__bfloat16_as_short")
+    if handle is None:
+        handle = __bfloat16_as_short
 
     @lower(handle, _type___nv_bfloat16)
     def impl(context, builder, sig, args):
@@ -5505,7 +5689,9 @@ def _lower__ZL20__bfloat16_as_ushort13__nv_bfloat16_nbst(shim_stream, shim_obj):
     def _ZL20__bfloat16_as_ushort13__nv_bfloat16_nbst_caller(arg_0):
         return _ZL20__bfloat16_as_ushort13__nv_bfloat16_nbst(arg_0)
 
-    handle = globals()["__bfloat16_as_ushort"]
+    handle = globals().get("__bfloat16_as_ushort")
+    if handle is None:
+        handle = __bfloat16_as_ushort
 
     @lower(handle, _type___nv_bfloat16)
     def impl(context, builder, sig, args):
@@ -5548,7 +5734,9 @@ def _lower__ZL19__short_as_bfloat16s_nbst(shim_stream, shim_obj):
     def _ZL19__short_as_bfloat16s_nbst_caller(arg_0):
         return _ZL19__short_as_bfloat16s_nbst(arg_0)
 
-    handle = globals()["__short_as_bfloat16"]
+    handle = globals().get("__short_as_bfloat16")
+    if handle is None:
+        handle = __short_as_bfloat16
 
     @lower(handle, int16)
     def impl(context, builder, sig, args):
@@ -5591,7 +5779,9 @@ def _lower__ZL20__ushort_as_bfloat16t_nbst(shim_stream, shim_obj):
     def _ZL20__ushort_as_bfloat16t_nbst_caller(arg_0):
         return _ZL20__ushort_as_bfloat16t_nbst(arg_0)
 
-    handle = globals()["__ushort_as_bfloat16"]
+    handle = globals().get("__ushort_as_bfloat16")
+    if handle is None:
+        handle = __ushort_as_bfloat16
 
     @lower(handle, uint16)
     def impl(context, builder, sig, args):
@@ -5644,7 +5834,9 @@ def _lower__ZL11__shfl_syncj14__nv_bfloat162ii_nbst(shim_stream, shim_obj):
             arg_0, arg_1, arg_2, arg_3
         )
 
-    handle = globals()["__shfl_sync"]
+    handle = globals().get("__shfl_sync")
+    if handle is None:
+        handle = __shfl_sync
 
     @lower(handle, uint32, _type___nv_bfloat162, int32, int32)
     def impl(context, builder, sig, args):
@@ -5703,7 +5895,9 @@ def _lower__ZL14__shfl_up_syncj14__nv_bfloat162ji_nbst(shim_stream, shim_obj):
             arg_0, arg_1, arg_2, arg_3
         )
 
-    handle = globals()["__shfl_up_sync"]
+    handle = globals().get("__shfl_up_sync")
+    if handle is None:
+        handle = __shfl_up_sync
 
     @lower(handle, uint32, _type___nv_bfloat162, uint32, int32)
     def impl(context, builder, sig, args):
@@ -5762,7 +5956,9 @@ def _lower__ZL16__shfl_down_syncj14__nv_bfloat162ji_nbst(shim_stream, shim_obj):
             arg_0, arg_1, arg_2, arg_3
         )
 
-    handle = globals()["__shfl_down_sync"]
+    handle = globals().get("__shfl_down_sync")
+    if handle is None:
+        handle = __shfl_down_sync
 
     @lower(handle, uint32, _type___nv_bfloat162, uint32, int32)
     def impl(context, builder, sig, args):
@@ -5821,7 +6017,9 @@ def _lower__ZL15__shfl_xor_syncj14__nv_bfloat162ii_nbst(shim_stream, shim_obj):
             arg_0, arg_1, arg_2, arg_3
         )
 
-    handle = globals()["__shfl_xor_sync"]
+    handle = globals().get("__shfl_xor_sync")
+    if handle is None:
+        handle = __shfl_xor_sync
 
     @lower(handle, uint32, _type___nv_bfloat162, int32, int32)
     def impl(context, builder, sig, args):
@@ -5876,7 +6074,9 @@ def _lower__ZL11__shfl_syncj13__nv_bfloat16ii_nbst(shim_stream, shim_obj):
             arg_0, arg_1, arg_2, arg_3
         )
 
-    handle = globals()["__shfl_sync"]
+    handle = globals().get("__shfl_sync")
+    if handle is None:
+        handle = __shfl_sync
 
     @lower(handle, uint32, _type___nv_bfloat16, int32, int32)
     def impl(context, builder, sig, args):
@@ -5931,7 +6131,9 @@ def _lower__ZL14__shfl_up_syncj13__nv_bfloat16ji_nbst(shim_stream, shim_obj):
             arg_0, arg_1, arg_2, arg_3
         )
 
-    handle = globals()["__shfl_up_sync"]
+    handle = globals().get("__shfl_up_sync")
+    if handle is None:
+        handle = __shfl_up_sync
 
     @lower(handle, uint32, _type___nv_bfloat16, uint32, int32)
     def impl(context, builder, sig, args):
@@ -5986,7 +6188,9 @@ def _lower__ZL16__shfl_down_syncj13__nv_bfloat16ji_nbst(shim_stream, shim_obj):
             arg_0, arg_1, arg_2, arg_3
         )
 
-    handle = globals()["__shfl_down_sync"]
+    handle = globals().get("__shfl_down_sync")
+    if handle is None:
+        handle = __shfl_down_sync
 
     @lower(handle, uint32, _type___nv_bfloat16, uint32, int32)
     def impl(context, builder, sig, args):
@@ -6041,7 +6245,9 @@ def _lower__ZL15__shfl_xor_syncj13__nv_bfloat16ii_nbst(shim_stream, shim_obj):
             arg_0, arg_1, arg_2, arg_3
         )
 
-    handle = globals()["__shfl_xor_sync"]
+    handle = globals().get("__shfl_xor_sync")
+    if handle is None:
+        handle = __shfl_xor_sync
 
     @lower(handle, uint32, _type___nv_bfloat16, int32, int32)
     def impl(context, builder, sig, args):
@@ -6091,7 +6297,9 @@ def _lower__ZL5__ldgPK14__nv_bfloat162_nbst(shim_stream, shim_obj):
     def _ZL5__ldgPK14__nv_bfloat162_nbst_caller(arg_0):
         return _ZL5__ldgPK14__nv_bfloat162_nbst(arg_0)
 
-    handle = globals()["__ldg"]
+    handle = globals().get("__ldg")
+    if handle is None:
+        handle = __ldg
 
     @lower(handle, CPointer(_type___nv_bfloat162))
     def impl(context, builder, sig, args):
@@ -6133,7 +6341,9 @@ def _lower__ZL5__ldgPK13__nv_bfloat16_nbst(shim_stream, shim_obj):
     def _ZL5__ldgPK13__nv_bfloat16_nbst_caller(arg_0):
         return _ZL5__ldgPK13__nv_bfloat16_nbst(arg_0)
 
-    handle = globals()["__ldg"]
+    handle = globals().get("__ldg")
+    if handle is None:
+        handle = __ldg
 
     @lower(handle, CPointer(_type___nv_bfloat16))
     def impl(context, builder, sig, args):
@@ -6179,7 +6389,9 @@ def _lower__ZL6__ldcgPK14__nv_bfloat162_nbst(shim_stream, shim_obj):
     def _ZL6__ldcgPK14__nv_bfloat162_nbst_caller(arg_0):
         return _ZL6__ldcgPK14__nv_bfloat162_nbst(arg_0)
 
-    handle = globals()["__ldcg"]
+    handle = globals().get("__ldcg")
+    if handle is None:
+        handle = __ldcg
 
     @lower(handle, CPointer(_type___nv_bfloat162))
     def impl(context, builder, sig, args):
@@ -6221,7 +6433,9 @@ def _lower__ZL6__ldcgPK13__nv_bfloat16_nbst(shim_stream, shim_obj):
     def _ZL6__ldcgPK13__nv_bfloat16_nbst_caller(arg_0):
         return _ZL6__ldcgPK13__nv_bfloat16_nbst(arg_0)
 
-    handle = globals()["__ldcg"]
+    handle = globals().get("__ldcg")
+    if handle is None:
+        handle = __ldcg
 
     @lower(handle, CPointer(_type___nv_bfloat16))
     def impl(context, builder, sig, args):
@@ -6267,7 +6481,9 @@ def _lower__ZL6__ldcaPK14__nv_bfloat162_nbst(shim_stream, shim_obj):
     def _ZL6__ldcaPK14__nv_bfloat162_nbst_caller(arg_0):
         return _ZL6__ldcaPK14__nv_bfloat162_nbst(arg_0)
 
-    handle = globals()["__ldca"]
+    handle = globals().get("__ldca")
+    if handle is None:
+        handle = __ldca
 
     @lower(handle, CPointer(_type___nv_bfloat162))
     def impl(context, builder, sig, args):
@@ -6309,7 +6525,9 @@ def _lower__ZL6__ldcaPK13__nv_bfloat16_nbst(shim_stream, shim_obj):
     def _ZL6__ldcaPK13__nv_bfloat16_nbst_caller(arg_0):
         return _ZL6__ldcaPK13__nv_bfloat16_nbst(arg_0)
 
-    handle = globals()["__ldca"]
+    handle = globals().get("__ldca")
+    if handle is None:
+        handle = __ldca
 
     @lower(handle, CPointer(_type___nv_bfloat16))
     def impl(context, builder, sig, args):
@@ -6355,7 +6573,9 @@ def _lower__ZL6__ldcsPK14__nv_bfloat162_nbst(shim_stream, shim_obj):
     def _ZL6__ldcsPK14__nv_bfloat162_nbst_caller(arg_0):
         return _ZL6__ldcsPK14__nv_bfloat162_nbst(arg_0)
 
-    handle = globals()["__ldcs"]
+    handle = globals().get("__ldcs")
+    if handle is None:
+        handle = __ldcs
 
     @lower(handle, CPointer(_type___nv_bfloat162))
     def impl(context, builder, sig, args):
@@ -6397,7 +6617,9 @@ def _lower__ZL6__ldcsPK13__nv_bfloat16_nbst(shim_stream, shim_obj):
     def _ZL6__ldcsPK13__nv_bfloat16_nbst_caller(arg_0):
         return _ZL6__ldcsPK13__nv_bfloat16_nbst(arg_0)
 
-    handle = globals()["__ldcs"]
+    handle = globals().get("__ldcs")
+    if handle is None:
+        handle = __ldcs
 
     @lower(handle, CPointer(_type___nv_bfloat16))
     def impl(context, builder, sig, args):
@@ -6443,7 +6665,9 @@ def _lower__ZL6__ldluPK14__nv_bfloat162_nbst(shim_stream, shim_obj):
     def _ZL6__ldluPK14__nv_bfloat162_nbst_caller(arg_0):
         return _ZL6__ldluPK14__nv_bfloat162_nbst(arg_0)
 
-    handle = globals()["__ldlu"]
+    handle = globals().get("__ldlu")
+    if handle is None:
+        handle = __ldlu
 
     @lower(handle, CPointer(_type___nv_bfloat162))
     def impl(context, builder, sig, args):
@@ -6485,7 +6709,9 @@ def _lower__ZL6__ldluPK13__nv_bfloat16_nbst(shim_stream, shim_obj):
     def _ZL6__ldluPK13__nv_bfloat16_nbst_caller(arg_0):
         return _ZL6__ldluPK13__nv_bfloat16_nbst(arg_0)
 
-    handle = globals()["__ldlu"]
+    handle = globals().get("__ldlu")
+    if handle is None:
+        handle = __ldlu
 
     @lower(handle, CPointer(_type___nv_bfloat16))
     def impl(context, builder, sig, args):
@@ -6531,7 +6757,9 @@ def _lower__ZL6__ldcvPK14__nv_bfloat162_nbst(shim_stream, shim_obj):
     def _ZL6__ldcvPK14__nv_bfloat162_nbst_caller(arg_0):
         return _ZL6__ldcvPK14__nv_bfloat162_nbst(arg_0)
 
-    handle = globals()["__ldcv"]
+    handle = globals().get("__ldcv")
+    if handle is None:
+        handle = __ldcv
 
     @lower(handle, CPointer(_type___nv_bfloat162))
     def impl(context, builder, sig, args):
@@ -6573,7 +6801,9 @@ def _lower__ZL6__ldcvPK13__nv_bfloat16_nbst(shim_stream, shim_obj):
     def _ZL6__ldcvPK13__nv_bfloat16_nbst_caller(arg_0):
         return _ZL6__ldcvPK13__nv_bfloat16_nbst(arg_0)
 
-    handle = globals()["__ldcv"]
+    handle = globals().get("__ldcv")
+    if handle is None:
+        handle = __ldcv
 
     @lower(handle, CPointer(_type___nv_bfloat16))
     def impl(context, builder, sig, args):
@@ -6622,7 +6852,9 @@ def _lower__ZL6__stwbP14__nv_bfloat162S__nbst(shim_stream, shim_obj):
     def _ZL6__stwbP14__nv_bfloat162S__nbst_caller(arg_0, arg_1):
         return _ZL6__stwbP14__nv_bfloat162S__nbst(arg_0, arg_1)
 
-    handle = globals()["__stwb"]
+    handle = globals().get("__stwb")
+    if handle is None:
+        handle = __stwb
 
     @lower(handle, CPointer(_type___nv_bfloat162), _type___nv_bfloat162)
     def impl(context, builder, sig, args):
@@ -6669,7 +6901,9 @@ def _lower__ZL6__stwbP13__nv_bfloat16S__nbst(shim_stream, shim_obj):
     def _ZL6__stwbP13__nv_bfloat16S__nbst_caller(arg_0, arg_1):
         return _ZL6__stwbP13__nv_bfloat16S__nbst(arg_0, arg_1)
 
-    handle = globals()["__stwb"]
+    handle = globals().get("__stwb")
+    if handle is None:
+        handle = __stwb
 
     @lower(handle, CPointer(_type___nv_bfloat16), _type___nv_bfloat16)
     def impl(context, builder, sig, args):
@@ -6720,7 +6954,9 @@ def _lower__ZL6__stcgP14__nv_bfloat162S__nbst(shim_stream, shim_obj):
     def _ZL6__stcgP14__nv_bfloat162S__nbst_caller(arg_0, arg_1):
         return _ZL6__stcgP14__nv_bfloat162S__nbst(arg_0, arg_1)
 
-    handle = globals()["__stcg"]
+    handle = globals().get("__stcg")
+    if handle is None:
+        handle = __stcg
 
     @lower(handle, CPointer(_type___nv_bfloat162), _type___nv_bfloat162)
     def impl(context, builder, sig, args):
@@ -6767,7 +7003,9 @@ def _lower__ZL6__stcgP13__nv_bfloat16S__nbst(shim_stream, shim_obj):
     def _ZL6__stcgP13__nv_bfloat16S__nbst_caller(arg_0, arg_1):
         return _ZL6__stcgP13__nv_bfloat16S__nbst(arg_0, arg_1)
 
-    handle = globals()["__stcg"]
+    handle = globals().get("__stcg")
+    if handle is None:
+        handle = __stcg
 
     @lower(handle, CPointer(_type___nv_bfloat16), _type___nv_bfloat16)
     def impl(context, builder, sig, args):
@@ -6818,7 +7056,9 @@ def _lower__ZL6__stcsP14__nv_bfloat162S__nbst(shim_stream, shim_obj):
     def _ZL6__stcsP14__nv_bfloat162S__nbst_caller(arg_0, arg_1):
         return _ZL6__stcsP14__nv_bfloat162S__nbst(arg_0, arg_1)
 
-    handle = globals()["__stcs"]
+    handle = globals().get("__stcs")
+    if handle is None:
+        handle = __stcs
 
     @lower(handle, CPointer(_type___nv_bfloat162), _type___nv_bfloat162)
     def impl(context, builder, sig, args):
@@ -6865,7 +7105,9 @@ def _lower__ZL6__stcsP13__nv_bfloat16S__nbst(shim_stream, shim_obj):
     def _ZL6__stcsP13__nv_bfloat16S__nbst_caller(arg_0, arg_1):
         return _ZL6__stcsP13__nv_bfloat16S__nbst(arg_0, arg_1)
 
-    handle = globals()["__stcs"]
+    handle = globals().get("__stcs")
+    if handle is None:
+        handle = __stcs
 
     @lower(handle, CPointer(_type___nv_bfloat16), _type___nv_bfloat16)
     def impl(context, builder, sig, args):
@@ -6916,7 +7158,9 @@ def _lower__ZL6__stwtP14__nv_bfloat162S__nbst(shim_stream, shim_obj):
     def _ZL6__stwtP14__nv_bfloat162S__nbst_caller(arg_0, arg_1):
         return _ZL6__stwtP14__nv_bfloat162S__nbst(arg_0, arg_1)
 
-    handle = globals()["__stwt"]
+    handle = globals().get("__stwt")
+    if handle is None:
+        handle = __stwt
 
     @lower(handle, CPointer(_type___nv_bfloat162), _type___nv_bfloat162)
     def impl(context, builder, sig, args):
@@ -6963,7 +7207,9 @@ def _lower__ZL6__stwtP13__nv_bfloat16S__nbst(shim_stream, shim_obj):
     def _ZL6__stwtP13__nv_bfloat16S__nbst_caller(arg_0, arg_1):
         return _ZL6__stwtP13__nv_bfloat16S__nbst(arg_0, arg_1)
 
-    handle = globals()["__stwt"]
+    handle = globals().get("__stwt")
+    if handle is None:
+        handle = __stwt
 
     @lower(handle, CPointer(_type___nv_bfloat16), _type___nv_bfloat16)
     def impl(context, builder, sig, args):
@@ -7013,7 +7259,9 @@ def _lower__ZL6__heq214__nv_bfloat162S__nbst(shim_stream, shim_obj):
     def _ZL6__heq214__nv_bfloat162S__nbst_caller(arg_0, arg_1):
         return _ZL6__heq214__nv_bfloat162S__nbst(arg_0, arg_1)
 
-    handle = globals()["__heq2"]
+    handle = globals().get("__heq2")
+    if handle is None:
+        handle = __heq2
 
     @lower(handle, _type___nv_bfloat162, _type___nv_bfloat162)
     def impl(context, builder, sig, args):
@@ -7063,7 +7311,9 @@ def _lower__ZL6__hne214__nv_bfloat162S__nbst(shim_stream, shim_obj):
     def _ZL6__hne214__nv_bfloat162S__nbst_caller(arg_0, arg_1):
         return _ZL6__hne214__nv_bfloat162S__nbst(arg_0, arg_1)
 
-    handle = globals()["__hne2"]
+    handle = globals().get("__hne2")
+    if handle is None:
+        handle = __hne2
 
     @lower(handle, _type___nv_bfloat162, _type___nv_bfloat162)
     def impl(context, builder, sig, args):
@@ -7113,7 +7363,9 @@ def _lower__ZL6__hle214__nv_bfloat162S__nbst(shim_stream, shim_obj):
     def _ZL6__hle214__nv_bfloat162S__nbst_caller(arg_0, arg_1):
         return _ZL6__hle214__nv_bfloat162S__nbst(arg_0, arg_1)
 
-    handle = globals()["__hle2"]
+    handle = globals().get("__hle2")
+    if handle is None:
+        handle = __hle2
 
     @lower(handle, _type___nv_bfloat162, _type___nv_bfloat162)
     def impl(context, builder, sig, args):
@@ -7163,7 +7415,9 @@ def _lower__ZL6__hge214__nv_bfloat162S__nbst(shim_stream, shim_obj):
     def _ZL6__hge214__nv_bfloat162S__nbst_caller(arg_0, arg_1):
         return _ZL6__hge214__nv_bfloat162S__nbst(arg_0, arg_1)
 
-    handle = globals()["__hge2"]
+    handle = globals().get("__hge2")
+    if handle is None:
+        handle = __hge2
 
     @lower(handle, _type___nv_bfloat162, _type___nv_bfloat162)
     def impl(context, builder, sig, args):
@@ -7213,7 +7467,9 @@ def _lower__ZL6__hlt214__nv_bfloat162S__nbst(shim_stream, shim_obj):
     def _ZL6__hlt214__nv_bfloat162S__nbst_caller(arg_0, arg_1):
         return _ZL6__hlt214__nv_bfloat162S__nbst(arg_0, arg_1)
 
-    handle = globals()["__hlt2"]
+    handle = globals().get("__hlt2")
+    if handle is None:
+        handle = __hlt2
 
     @lower(handle, _type___nv_bfloat162, _type___nv_bfloat162)
     def impl(context, builder, sig, args):
@@ -7263,7 +7519,9 @@ def _lower__ZL6__hgt214__nv_bfloat162S__nbst(shim_stream, shim_obj):
     def _ZL6__hgt214__nv_bfloat162S__nbst_caller(arg_0, arg_1):
         return _ZL6__hgt214__nv_bfloat162S__nbst(arg_0, arg_1)
 
-    handle = globals()["__hgt2"]
+    handle = globals().get("__hgt2")
+    if handle is None:
+        handle = __hgt2
 
     @lower(handle, _type___nv_bfloat162, _type___nv_bfloat162)
     def impl(context, builder, sig, args):
@@ -7313,7 +7571,9 @@ def _lower__ZL7__hequ214__nv_bfloat162S__nbst(shim_stream, shim_obj):
     def _ZL7__hequ214__nv_bfloat162S__nbst_caller(arg_0, arg_1):
         return _ZL7__hequ214__nv_bfloat162S__nbst(arg_0, arg_1)
 
-    handle = globals()["__hequ2"]
+    handle = globals().get("__hequ2")
+    if handle is None:
+        handle = __hequ2
 
     @lower(handle, _type___nv_bfloat162, _type___nv_bfloat162)
     def impl(context, builder, sig, args):
@@ -7363,7 +7623,9 @@ def _lower__ZL7__hneu214__nv_bfloat162S__nbst(shim_stream, shim_obj):
     def _ZL7__hneu214__nv_bfloat162S__nbst_caller(arg_0, arg_1):
         return _ZL7__hneu214__nv_bfloat162S__nbst(arg_0, arg_1)
 
-    handle = globals()["__hneu2"]
+    handle = globals().get("__hneu2")
+    if handle is None:
+        handle = __hneu2
 
     @lower(handle, _type___nv_bfloat162, _type___nv_bfloat162)
     def impl(context, builder, sig, args):
@@ -7413,7 +7675,9 @@ def _lower__ZL7__hleu214__nv_bfloat162S__nbst(shim_stream, shim_obj):
     def _ZL7__hleu214__nv_bfloat162S__nbst_caller(arg_0, arg_1):
         return _ZL7__hleu214__nv_bfloat162S__nbst(arg_0, arg_1)
 
-    handle = globals()["__hleu2"]
+    handle = globals().get("__hleu2")
+    if handle is None:
+        handle = __hleu2
 
     @lower(handle, _type___nv_bfloat162, _type___nv_bfloat162)
     def impl(context, builder, sig, args):
@@ -7463,7 +7727,9 @@ def _lower__ZL7__hgeu214__nv_bfloat162S__nbst(shim_stream, shim_obj):
     def _ZL7__hgeu214__nv_bfloat162S__nbst_caller(arg_0, arg_1):
         return _ZL7__hgeu214__nv_bfloat162S__nbst(arg_0, arg_1)
 
-    handle = globals()["__hgeu2"]
+    handle = globals().get("__hgeu2")
+    if handle is None:
+        handle = __hgeu2
 
     @lower(handle, _type___nv_bfloat162, _type___nv_bfloat162)
     def impl(context, builder, sig, args):
@@ -7513,7 +7779,9 @@ def _lower__ZL7__hltu214__nv_bfloat162S__nbst(shim_stream, shim_obj):
     def _ZL7__hltu214__nv_bfloat162S__nbst_caller(arg_0, arg_1):
         return _ZL7__hltu214__nv_bfloat162S__nbst(arg_0, arg_1)
 
-    handle = globals()["__hltu2"]
+    handle = globals().get("__hltu2")
+    if handle is None:
+        handle = __hltu2
 
     @lower(handle, _type___nv_bfloat162, _type___nv_bfloat162)
     def impl(context, builder, sig, args):
@@ -7563,7 +7831,9 @@ def _lower__ZL7__hgtu214__nv_bfloat162S__nbst(shim_stream, shim_obj):
     def _ZL7__hgtu214__nv_bfloat162S__nbst_caller(arg_0, arg_1):
         return _ZL7__hgtu214__nv_bfloat162S__nbst(arg_0, arg_1)
 
-    handle = globals()["__hgtu2"]
+    handle = globals().get("__hgtu2")
+    if handle is None:
+        handle = __hgtu2
 
     @lower(handle, _type___nv_bfloat162, _type___nv_bfloat162)
     def impl(context, builder, sig, args):
@@ -7611,7 +7881,9 @@ def _lower__ZL11__heq2_mask14__nv_bfloat162S__nbst(shim_stream, shim_obj):
     def _ZL11__heq2_mask14__nv_bfloat162S__nbst_caller(arg_0, arg_1):
         return _ZL11__heq2_mask14__nv_bfloat162S__nbst(arg_0, arg_1)
 
-    handle = globals()["__heq2_mask"]
+    handle = globals().get("__heq2_mask")
+    if handle is None:
+        handle = __heq2_mask
 
     @lower(handle, _type___nv_bfloat162, _type___nv_bfloat162)
     def impl(context, builder, sig, args):
@@ -7659,7 +7931,9 @@ def _lower__ZL11__hne2_mask14__nv_bfloat162S__nbst(shim_stream, shim_obj):
     def _ZL11__hne2_mask14__nv_bfloat162S__nbst_caller(arg_0, arg_1):
         return _ZL11__hne2_mask14__nv_bfloat162S__nbst(arg_0, arg_1)
 
-    handle = globals()["__hne2_mask"]
+    handle = globals().get("__hne2_mask")
+    if handle is None:
+        handle = __hne2_mask
 
     @lower(handle, _type___nv_bfloat162, _type___nv_bfloat162)
     def impl(context, builder, sig, args):
@@ -7707,7 +7981,9 @@ def _lower__ZL11__hle2_mask14__nv_bfloat162S__nbst(shim_stream, shim_obj):
     def _ZL11__hle2_mask14__nv_bfloat162S__nbst_caller(arg_0, arg_1):
         return _ZL11__hle2_mask14__nv_bfloat162S__nbst(arg_0, arg_1)
 
-    handle = globals()["__hle2_mask"]
+    handle = globals().get("__hle2_mask")
+    if handle is None:
+        handle = __hle2_mask
 
     @lower(handle, _type___nv_bfloat162, _type___nv_bfloat162)
     def impl(context, builder, sig, args):
@@ -7755,7 +8031,9 @@ def _lower__ZL11__hge2_mask14__nv_bfloat162S__nbst(shim_stream, shim_obj):
     def _ZL11__hge2_mask14__nv_bfloat162S__nbst_caller(arg_0, arg_1):
         return _ZL11__hge2_mask14__nv_bfloat162S__nbst(arg_0, arg_1)
 
-    handle = globals()["__hge2_mask"]
+    handle = globals().get("__hge2_mask")
+    if handle is None:
+        handle = __hge2_mask
 
     @lower(handle, _type___nv_bfloat162, _type___nv_bfloat162)
     def impl(context, builder, sig, args):
@@ -7803,7 +8081,9 @@ def _lower__ZL11__hlt2_mask14__nv_bfloat162S__nbst(shim_stream, shim_obj):
     def _ZL11__hlt2_mask14__nv_bfloat162S__nbst_caller(arg_0, arg_1):
         return _ZL11__hlt2_mask14__nv_bfloat162S__nbst(arg_0, arg_1)
 
-    handle = globals()["__hlt2_mask"]
+    handle = globals().get("__hlt2_mask")
+    if handle is None:
+        handle = __hlt2_mask
 
     @lower(handle, _type___nv_bfloat162, _type___nv_bfloat162)
     def impl(context, builder, sig, args):
@@ -7851,7 +8131,9 @@ def _lower__ZL11__hgt2_mask14__nv_bfloat162S__nbst(shim_stream, shim_obj):
     def _ZL11__hgt2_mask14__nv_bfloat162S__nbst_caller(arg_0, arg_1):
         return _ZL11__hgt2_mask14__nv_bfloat162S__nbst(arg_0, arg_1)
 
-    handle = globals()["__hgt2_mask"]
+    handle = globals().get("__hgt2_mask")
+    if handle is None:
+        handle = __hgt2_mask
 
     @lower(handle, _type___nv_bfloat162, _type___nv_bfloat162)
     def impl(context, builder, sig, args):
@@ -7899,7 +8181,9 @@ def _lower__ZL12__hequ2_mask14__nv_bfloat162S__nbst(shim_stream, shim_obj):
     def _ZL12__hequ2_mask14__nv_bfloat162S__nbst_caller(arg_0, arg_1):
         return _ZL12__hequ2_mask14__nv_bfloat162S__nbst(arg_0, arg_1)
 
-    handle = globals()["__hequ2_mask"]
+    handle = globals().get("__hequ2_mask")
+    if handle is None:
+        handle = __hequ2_mask
 
     @lower(handle, _type___nv_bfloat162, _type___nv_bfloat162)
     def impl(context, builder, sig, args):
@@ -7947,7 +8231,9 @@ def _lower__ZL12__hneu2_mask14__nv_bfloat162S__nbst(shim_stream, shim_obj):
     def _ZL12__hneu2_mask14__nv_bfloat162S__nbst_caller(arg_0, arg_1):
         return _ZL12__hneu2_mask14__nv_bfloat162S__nbst(arg_0, arg_1)
 
-    handle = globals()["__hneu2_mask"]
+    handle = globals().get("__hneu2_mask")
+    if handle is None:
+        handle = __hneu2_mask
 
     @lower(handle, _type___nv_bfloat162, _type___nv_bfloat162)
     def impl(context, builder, sig, args):
@@ -7995,7 +8281,9 @@ def _lower__ZL12__hleu2_mask14__nv_bfloat162S__nbst(shim_stream, shim_obj):
     def _ZL12__hleu2_mask14__nv_bfloat162S__nbst_caller(arg_0, arg_1):
         return _ZL12__hleu2_mask14__nv_bfloat162S__nbst(arg_0, arg_1)
 
-    handle = globals()["__hleu2_mask"]
+    handle = globals().get("__hleu2_mask")
+    if handle is None:
+        handle = __hleu2_mask
 
     @lower(handle, _type___nv_bfloat162, _type___nv_bfloat162)
     def impl(context, builder, sig, args):
@@ -8043,7 +8331,9 @@ def _lower__ZL12__hgeu2_mask14__nv_bfloat162S__nbst(shim_stream, shim_obj):
     def _ZL12__hgeu2_mask14__nv_bfloat162S__nbst_caller(arg_0, arg_1):
         return _ZL12__hgeu2_mask14__nv_bfloat162S__nbst(arg_0, arg_1)
 
-    handle = globals()["__hgeu2_mask"]
+    handle = globals().get("__hgeu2_mask")
+    if handle is None:
+        handle = __hgeu2_mask
 
     @lower(handle, _type___nv_bfloat162, _type___nv_bfloat162)
     def impl(context, builder, sig, args):
@@ -8091,7 +8381,9 @@ def _lower__ZL12__hltu2_mask14__nv_bfloat162S__nbst(shim_stream, shim_obj):
     def _ZL12__hltu2_mask14__nv_bfloat162S__nbst_caller(arg_0, arg_1):
         return _ZL12__hltu2_mask14__nv_bfloat162S__nbst(arg_0, arg_1)
 
-    handle = globals()["__hltu2_mask"]
+    handle = globals().get("__hltu2_mask")
+    if handle is None:
+        handle = __hltu2_mask
 
     @lower(handle, _type___nv_bfloat162, _type___nv_bfloat162)
     def impl(context, builder, sig, args):
@@ -8139,7 +8431,9 @@ def _lower__ZL12__hgtu2_mask14__nv_bfloat162S__nbst(shim_stream, shim_obj):
     def _ZL12__hgtu2_mask14__nv_bfloat162S__nbst_caller(arg_0, arg_1):
         return _ZL12__hgtu2_mask14__nv_bfloat162S__nbst(arg_0, arg_1)
 
-    handle = globals()["__hgtu2_mask"]
+    handle = globals().get("__hgtu2_mask")
+    if handle is None:
+        handle = __hgtu2_mask
 
     @lower(handle, _type___nv_bfloat162, _type___nv_bfloat162)
     def impl(context, builder, sig, args):
@@ -8187,7 +8481,9 @@ def _lower__ZL9__hisnan214__nv_bfloat162_nbst(shim_stream, shim_obj):
     def _ZL9__hisnan214__nv_bfloat162_nbst_caller(arg_0):
         return _ZL9__hisnan214__nv_bfloat162_nbst(arg_0)
 
-    handle = globals()["__hisnan2"]
+    handle = globals().get("__hisnan2")
+    if handle is None:
+        handle = __hisnan2
 
     @lower(handle, _type___nv_bfloat162)
     def impl(context, builder, sig, args):
@@ -8233,7 +8529,9 @@ def _lower__ZL7__hadd214__nv_bfloat162S__nbst(shim_stream, shim_obj):
     def _ZL7__hadd214__nv_bfloat162S__nbst_caller(arg_0, arg_1):
         return _ZL7__hadd214__nv_bfloat162S__nbst(arg_0, arg_1)
 
-    handle = globals()["__hadd2"]
+    handle = globals().get("__hadd2")
+    if handle is None:
+        handle = __hadd2
 
     @lower(handle, _type___nv_bfloat162, _type___nv_bfloat162)
     def impl(context, builder, sig, args):
@@ -8283,7 +8581,9 @@ def _lower__ZL7__hsub214__nv_bfloat162S__nbst(shim_stream, shim_obj):
     def _ZL7__hsub214__nv_bfloat162S__nbst_caller(arg_0, arg_1):
         return _ZL7__hsub214__nv_bfloat162S__nbst(arg_0, arg_1)
 
-    handle = globals()["__hsub2"]
+    handle = globals().get("__hsub2")
+    if handle is None:
+        handle = __hsub2
 
     @lower(handle, _type___nv_bfloat162, _type___nv_bfloat162)
     def impl(context, builder, sig, args):
@@ -8333,7 +8633,9 @@ def _lower__ZL7__hmul214__nv_bfloat162S__nbst(shim_stream, shim_obj):
     def _ZL7__hmul214__nv_bfloat162S__nbst_caller(arg_0, arg_1):
         return _ZL7__hmul214__nv_bfloat162S__nbst(arg_0, arg_1)
 
-    handle = globals()["__hmul2"]
+    handle = globals().get("__hmul2")
+    if handle is None:
+        handle = __hmul2
 
     @lower(handle, _type___nv_bfloat162, _type___nv_bfloat162)
     def impl(context, builder, sig, args):
@@ -8383,7 +8685,9 @@ def _lower__ZL10__hadd2_rn14__nv_bfloat162S__nbst(shim_stream, shim_obj):
     def _ZL10__hadd2_rn14__nv_bfloat162S__nbst_caller(arg_0, arg_1):
         return _ZL10__hadd2_rn14__nv_bfloat162S__nbst(arg_0, arg_1)
 
-    handle = globals()["__hadd2_rn"]
+    handle = globals().get("__hadd2_rn")
+    if handle is None:
+        handle = __hadd2_rn
 
     @lower(handle, _type___nv_bfloat162, _type___nv_bfloat162)
     def impl(context, builder, sig, args):
@@ -8433,7 +8737,9 @@ def _lower__ZL10__hsub2_rn14__nv_bfloat162S__nbst(shim_stream, shim_obj):
     def _ZL10__hsub2_rn14__nv_bfloat162S__nbst_caller(arg_0, arg_1):
         return _ZL10__hsub2_rn14__nv_bfloat162S__nbst(arg_0, arg_1)
 
-    handle = globals()["__hsub2_rn"]
+    handle = globals().get("__hsub2_rn")
+    if handle is None:
+        handle = __hsub2_rn
 
     @lower(handle, _type___nv_bfloat162, _type___nv_bfloat162)
     def impl(context, builder, sig, args):
@@ -8483,7 +8789,9 @@ def _lower__ZL10__hmul2_rn14__nv_bfloat162S__nbst(shim_stream, shim_obj):
     def _ZL10__hmul2_rn14__nv_bfloat162S__nbst_caller(arg_0, arg_1):
         return _ZL10__hmul2_rn14__nv_bfloat162S__nbst(arg_0, arg_1)
 
-    handle = globals()["__hmul2_rn"]
+    handle = globals().get("__hmul2_rn")
+    if handle is None:
+        handle = __hmul2_rn
 
     @lower(handle, _type___nv_bfloat162, _type___nv_bfloat162)
     def impl(context, builder, sig, args):
@@ -8533,7 +8841,9 @@ def _lower__ZL7__h2div14__nv_bfloat162S__nbst(shim_stream, shim_obj):
     def _ZL7__h2div14__nv_bfloat162S__nbst_caller(arg_0, arg_1):
         return _ZL7__h2div14__nv_bfloat162S__nbst(arg_0, arg_1)
 
-    handle = globals()["__h2div"]
+    handle = globals().get("__h2div")
+    if handle is None:
+        handle = __h2div
 
     @lower(handle, _type___nv_bfloat162, _type___nv_bfloat162)
     def impl(context, builder, sig, args):
@@ -8581,7 +8891,9 @@ def _lower__ZL7__habs214__nv_bfloat162_nbst(shim_stream, shim_obj):
     def _ZL7__habs214__nv_bfloat162_nbst_caller(arg_0):
         return _ZL7__habs214__nv_bfloat162_nbst(arg_0)
 
-    handle = globals()["__habs2"]
+    handle = globals().get("__habs2")
+    if handle is None:
+        handle = __habs2
 
     @lower(handle, _type___nv_bfloat162)
     def impl(context, builder, sig, args):
@@ -8627,7 +8939,9 @@ def _lower__ZL11__hadd2_sat14__nv_bfloat162S__nbst(shim_stream, shim_obj):
     def _ZL11__hadd2_sat14__nv_bfloat162S__nbst_caller(arg_0, arg_1):
         return _ZL11__hadd2_sat14__nv_bfloat162S__nbst(arg_0, arg_1)
 
-    handle = globals()["__hadd2_sat"]
+    handle = globals().get("__hadd2_sat")
+    if handle is None:
+        handle = __hadd2_sat
 
     @lower(handle, _type___nv_bfloat162, _type___nv_bfloat162)
     def impl(context, builder, sig, args):
@@ -8677,7 +8991,9 @@ def _lower__ZL11__hsub2_sat14__nv_bfloat162S__nbst(shim_stream, shim_obj):
     def _ZL11__hsub2_sat14__nv_bfloat162S__nbst_caller(arg_0, arg_1):
         return _ZL11__hsub2_sat14__nv_bfloat162S__nbst(arg_0, arg_1)
 
-    handle = globals()["__hsub2_sat"]
+    handle = globals().get("__hsub2_sat")
+    if handle is None:
+        handle = __hsub2_sat
 
     @lower(handle, _type___nv_bfloat162, _type___nv_bfloat162)
     def impl(context, builder, sig, args):
@@ -8727,7 +9043,9 @@ def _lower__ZL11__hmul2_sat14__nv_bfloat162S__nbst(shim_stream, shim_obj):
     def _ZL11__hmul2_sat14__nv_bfloat162S__nbst_caller(arg_0, arg_1):
         return _ZL11__hmul2_sat14__nv_bfloat162S__nbst(arg_0, arg_1)
 
-    handle = globals()["__hmul2_sat"]
+    handle = globals().get("__hmul2_sat")
+    if handle is None:
+        handle = __hmul2_sat
 
     @lower(handle, _type___nv_bfloat162, _type___nv_bfloat162)
     def impl(context, builder, sig, args):
@@ -8779,7 +9097,9 @@ def _lower__ZL7__hfma214__nv_bfloat162S_S__nbst(shim_stream, shim_obj):
     def _ZL7__hfma214__nv_bfloat162S_S__nbst_caller(arg_0, arg_1, arg_2):
         return _ZL7__hfma214__nv_bfloat162S_S__nbst(arg_0, arg_1, arg_2)
 
-    handle = globals()["__hfma2"]
+    handle = globals().get("__hfma2")
+    if handle is None:
+        handle = __hfma2
 
     @lower(
         handle, _type___nv_bfloat162, _type___nv_bfloat162, _type___nv_bfloat162
@@ -8834,7 +9154,9 @@ def _lower__ZL11__hfma2_sat14__nv_bfloat162S_S__nbst(shim_stream, shim_obj):
     def _ZL11__hfma2_sat14__nv_bfloat162S_S__nbst_caller(arg_0, arg_1, arg_2):
         return _ZL11__hfma2_sat14__nv_bfloat162S_S__nbst(arg_0, arg_1, arg_2)
 
-    handle = globals()["__hfma2_sat"]
+    handle = globals().get("__hfma2_sat")
+    if handle is None:
+        handle = __hfma2_sat
 
     @lower(
         handle, _type___nv_bfloat162, _type___nv_bfloat162, _type___nv_bfloat162
@@ -8885,7 +9207,9 @@ def _lower__ZL7__hneg214__nv_bfloat162_nbst(shim_stream, shim_obj):
     def _ZL7__hneg214__nv_bfloat162_nbst_caller(arg_0):
         return _ZL7__hneg214__nv_bfloat162_nbst(arg_0)
 
-    handle = globals()["__hneg2"]
+    handle = globals().get("__hneg2")
+    if handle is None:
+        handle = __hneg2
 
     @lower(handle, _type___nv_bfloat162)
     def impl(context, builder, sig, args):
@@ -8929,7 +9253,9 @@ def _lower__ZL6__habs13__nv_bfloat16_nbst(shim_stream, shim_obj):
     def _ZL6__habs13__nv_bfloat16_nbst_caller(arg_0):
         return _ZL6__habs13__nv_bfloat16_nbst(arg_0)
 
-    handle = globals()["__habs"]
+    handle = globals().get("__habs")
+    if handle is None:
+        handle = __habs
 
     @lower(handle, _type___nv_bfloat16)
     def impl(context, builder, sig, args):
@@ -8975,7 +9301,9 @@ def _lower__ZL6__hadd13__nv_bfloat16S__nbst(shim_stream, shim_obj):
     def _ZL6__hadd13__nv_bfloat16S__nbst_caller(arg_0, arg_1):
         return _ZL6__hadd13__nv_bfloat16S__nbst(arg_0, arg_1)
 
-    handle = globals()["__hadd"]
+    handle = globals().get("__hadd")
+    if handle is None:
+        handle = __hadd
 
     @lower(handle, _type___nv_bfloat16, _type___nv_bfloat16)
     def impl(context, builder, sig, args):
@@ -9025,7 +9353,9 @@ def _lower__ZL6__hsub13__nv_bfloat16S__nbst(shim_stream, shim_obj):
     def _ZL6__hsub13__nv_bfloat16S__nbst_caller(arg_0, arg_1):
         return _ZL6__hsub13__nv_bfloat16S__nbst(arg_0, arg_1)
 
-    handle = globals()["__hsub"]
+    handle = globals().get("__hsub")
+    if handle is None:
+        handle = __hsub
 
     @lower(handle, _type___nv_bfloat16, _type___nv_bfloat16)
     def impl(context, builder, sig, args):
@@ -9075,7 +9405,9 @@ def _lower__ZL6__hmul13__nv_bfloat16S__nbst(shim_stream, shim_obj):
     def _ZL6__hmul13__nv_bfloat16S__nbst_caller(arg_0, arg_1):
         return _ZL6__hmul13__nv_bfloat16S__nbst(arg_0, arg_1)
 
-    handle = globals()["__hmul"]
+    handle = globals().get("__hmul")
+    if handle is None:
+        handle = __hmul
 
     @lower(handle, _type___nv_bfloat16, _type___nv_bfloat16)
     def impl(context, builder, sig, args):
@@ -9125,7 +9457,9 @@ def _lower__ZL9__hadd_rn13__nv_bfloat16S__nbst(shim_stream, shim_obj):
     def _ZL9__hadd_rn13__nv_bfloat16S__nbst_caller(arg_0, arg_1):
         return _ZL9__hadd_rn13__nv_bfloat16S__nbst(arg_0, arg_1)
 
-    handle = globals()["__hadd_rn"]
+    handle = globals().get("__hadd_rn")
+    if handle is None:
+        handle = __hadd_rn
 
     @lower(handle, _type___nv_bfloat16, _type___nv_bfloat16)
     def impl(context, builder, sig, args):
@@ -9175,7 +9509,9 @@ def _lower__ZL9__hsub_rn13__nv_bfloat16S__nbst(shim_stream, shim_obj):
     def _ZL9__hsub_rn13__nv_bfloat16S__nbst_caller(arg_0, arg_1):
         return _ZL9__hsub_rn13__nv_bfloat16S__nbst(arg_0, arg_1)
 
-    handle = globals()["__hsub_rn"]
+    handle = globals().get("__hsub_rn")
+    if handle is None:
+        handle = __hsub_rn
 
     @lower(handle, _type___nv_bfloat16, _type___nv_bfloat16)
     def impl(context, builder, sig, args):
@@ -9225,7 +9561,9 @@ def _lower__ZL9__hmul_rn13__nv_bfloat16S__nbst(shim_stream, shim_obj):
     def _ZL9__hmul_rn13__nv_bfloat16S__nbst_caller(arg_0, arg_1):
         return _ZL9__hmul_rn13__nv_bfloat16S__nbst(arg_0, arg_1)
 
-    handle = globals()["__hmul_rn"]
+    handle = globals().get("__hmul_rn")
+    if handle is None:
+        handle = __hmul_rn
 
     @lower(handle, _type___nv_bfloat16, _type___nv_bfloat16)
     def impl(context, builder, sig, args):
@@ -9275,7 +9613,9 @@ def _lower__ZL6__hdiv13__nv_bfloat16S__nbst(shim_stream, shim_obj):
     def _ZL6__hdiv13__nv_bfloat16S__nbst_caller(arg_0, arg_1):
         return _ZL6__hdiv13__nv_bfloat16S__nbst(arg_0, arg_1)
 
-    handle = globals()["__hdiv"]
+    handle = globals().get("__hdiv")
+    if handle is None:
+        handle = __hdiv
 
     @lower(handle, _type___nv_bfloat16, _type___nv_bfloat16)
     def impl(context, builder, sig, args):
@@ -9325,7 +9665,9 @@ def _lower__ZL10__hadd_sat13__nv_bfloat16S__nbst(shim_stream, shim_obj):
     def _ZL10__hadd_sat13__nv_bfloat16S__nbst_caller(arg_0, arg_1):
         return _ZL10__hadd_sat13__nv_bfloat16S__nbst(arg_0, arg_1)
 
-    handle = globals()["__hadd_sat"]
+    handle = globals().get("__hadd_sat")
+    if handle is None:
+        handle = __hadd_sat
 
     @lower(handle, _type___nv_bfloat16, _type___nv_bfloat16)
     def impl(context, builder, sig, args):
@@ -9375,7 +9717,9 @@ def _lower__ZL10__hsub_sat13__nv_bfloat16S__nbst(shim_stream, shim_obj):
     def _ZL10__hsub_sat13__nv_bfloat16S__nbst_caller(arg_0, arg_1):
         return _ZL10__hsub_sat13__nv_bfloat16S__nbst(arg_0, arg_1)
 
-    handle = globals()["__hsub_sat"]
+    handle = globals().get("__hsub_sat")
+    if handle is None:
+        handle = __hsub_sat
 
     @lower(handle, _type___nv_bfloat16, _type___nv_bfloat16)
     def impl(context, builder, sig, args):
@@ -9425,7 +9769,9 @@ def _lower__ZL10__hmul_sat13__nv_bfloat16S__nbst(shim_stream, shim_obj):
     def _ZL10__hmul_sat13__nv_bfloat16S__nbst_caller(arg_0, arg_1):
         return _ZL10__hmul_sat13__nv_bfloat16S__nbst(arg_0, arg_1)
 
-    handle = globals()["__hmul_sat"]
+    handle = globals().get("__hmul_sat")
+    if handle is None:
+        handle = __hmul_sat
 
     @lower(handle, _type___nv_bfloat16, _type___nv_bfloat16)
     def impl(context, builder, sig, args):
@@ -9477,7 +9823,9 @@ def _lower__ZL6__hfma13__nv_bfloat16S_S__nbst(shim_stream, shim_obj):
     def _ZL6__hfma13__nv_bfloat16S_S__nbst_caller(arg_0, arg_1, arg_2):
         return _ZL6__hfma13__nv_bfloat16S_S__nbst(arg_0, arg_1, arg_2)
 
-    handle = globals()["__hfma"]
+    handle = globals().get("__hfma")
+    if handle is None:
+        handle = __hfma
 
     @lower(
         handle, _type___nv_bfloat16, _type___nv_bfloat16, _type___nv_bfloat16
@@ -9532,7 +9880,9 @@ def _lower__ZL10__hfma_sat13__nv_bfloat16S_S__nbst(shim_stream, shim_obj):
     def _ZL10__hfma_sat13__nv_bfloat16S_S__nbst_caller(arg_0, arg_1, arg_2):
         return _ZL10__hfma_sat13__nv_bfloat16S_S__nbst(arg_0, arg_1, arg_2)
 
-    handle = globals()["__hfma_sat"]
+    handle = globals().get("__hfma_sat")
+    if handle is None:
+        handle = __hfma_sat
 
     @lower(
         handle, _type___nv_bfloat16, _type___nv_bfloat16, _type___nv_bfloat16
@@ -9583,7 +9933,9 @@ def _lower__ZL6__hneg13__nv_bfloat16_nbst(shim_stream, shim_obj):
     def _ZL6__hneg13__nv_bfloat16_nbst_caller(arg_0):
         return _ZL6__hneg13__nv_bfloat16_nbst(arg_0)
 
-    handle = globals()["__hneg"]
+    handle = globals().get("__hneg")
+    if handle is None:
+        handle = __hneg
 
     @lower(handle, _type___nv_bfloat16)
     def impl(context, builder, sig, args):
@@ -9627,7 +9979,9 @@ def _lower__ZL7__hbeq214__nv_bfloat162S__nbst(shim_stream, shim_obj):
     def _ZL7__hbeq214__nv_bfloat162S__nbst_caller(arg_0, arg_1):
         return _ZL7__hbeq214__nv_bfloat162S__nbst(arg_0, arg_1)
 
-    handle = globals()["__hbeq2"]
+    handle = globals().get("__hbeq2")
+    if handle is None:
+        handle = __hbeq2
 
     @lower(handle, _type___nv_bfloat162, _type___nv_bfloat162)
     def impl(context, builder, sig, args):
@@ -9675,7 +10029,9 @@ def _lower__ZL7__hbne214__nv_bfloat162S__nbst(shim_stream, shim_obj):
     def _ZL7__hbne214__nv_bfloat162S__nbst_caller(arg_0, arg_1):
         return _ZL7__hbne214__nv_bfloat162S__nbst(arg_0, arg_1)
 
-    handle = globals()["__hbne2"]
+    handle = globals().get("__hbne2")
+    if handle is None:
+        handle = __hbne2
 
     @lower(handle, _type___nv_bfloat162, _type___nv_bfloat162)
     def impl(context, builder, sig, args):
@@ -9723,7 +10079,9 @@ def _lower__ZL7__hble214__nv_bfloat162S__nbst(shim_stream, shim_obj):
     def _ZL7__hble214__nv_bfloat162S__nbst_caller(arg_0, arg_1):
         return _ZL7__hble214__nv_bfloat162S__nbst(arg_0, arg_1)
 
-    handle = globals()["__hble2"]
+    handle = globals().get("__hble2")
+    if handle is None:
+        handle = __hble2
 
     @lower(handle, _type___nv_bfloat162, _type___nv_bfloat162)
     def impl(context, builder, sig, args):
@@ -9771,7 +10129,9 @@ def _lower__ZL7__hbge214__nv_bfloat162S__nbst(shim_stream, shim_obj):
     def _ZL7__hbge214__nv_bfloat162S__nbst_caller(arg_0, arg_1):
         return _ZL7__hbge214__nv_bfloat162S__nbst(arg_0, arg_1)
 
-    handle = globals()["__hbge2"]
+    handle = globals().get("__hbge2")
+    if handle is None:
+        handle = __hbge2
 
     @lower(handle, _type___nv_bfloat162, _type___nv_bfloat162)
     def impl(context, builder, sig, args):
@@ -9819,7 +10179,9 @@ def _lower__ZL7__hblt214__nv_bfloat162S__nbst(shim_stream, shim_obj):
     def _ZL7__hblt214__nv_bfloat162S__nbst_caller(arg_0, arg_1):
         return _ZL7__hblt214__nv_bfloat162S__nbst(arg_0, arg_1)
 
-    handle = globals()["__hblt2"]
+    handle = globals().get("__hblt2")
+    if handle is None:
+        handle = __hblt2
 
     @lower(handle, _type___nv_bfloat162, _type___nv_bfloat162)
     def impl(context, builder, sig, args):
@@ -9867,7 +10229,9 @@ def _lower__ZL7__hbgt214__nv_bfloat162S__nbst(shim_stream, shim_obj):
     def _ZL7__hbgt214__nv_bfloat162S__nbst_caller(arg_0, arg_1):
         return _ZL7__hbgt214__nv_bfloat162S__nbst(arg_0, arg_1)
 
-    handle = globals()["__hbgt2"]
+    handle = globals().get("__hbgt2")
+    if handle is None:
+        handle = __hbgt2
 
     @lower(handle, _type___nv_bfloat162, _type___nv_bfloat162)
     def impl(context, builder, sig, args):
@@ -9915,7 +10279,9 @@ def _lower__ZL8__hbequ214__nv_bfloat162S__nbst(shim_stream, shim_obj):
     def _ZL8__hbequ214__nv_bfloat162S__nbst_caller(arg_0, arg_1):
         return _ZL8__hbequ214__nv_bfloat162S__nbst(arg_0, arg_1)
 
-    handle = globals()["__hbequ2"]
+    handle = globals().get("__hbequ2")
+    if handle is None:
+        handle = __hbequ2
 
     @lower(handle, _type___nv_bfloat162, _type___nv_bfloat162)
     def impl(context, builder, sig, args):
@@ -9963,7 +10329,9 @@ def _lower__ZL8__hbneu214__nv_bfloat162S__nbst(shim_stream, shim_obj):
     def _ZL8__hbneu214__nv_bfloat162S__nbst_caller(arg_0, arg_1):
         return _ZL8__hbneu214__nv_bfloat162S__nbst(arg_0, arg_1)
 
-    handle = globals()["__hbneu2"]
+    handle = globals().get("__hbneu2")
+    if handle is None:
+        handle = __hbneu2
 
     @lower(handle, _type___nv_bfloat162, _type___nv_bfloat162)
     def impl(context, builder, sig, args):
@@ -10011,7 +10379,9 @@ def _lower__ZL8__hbleu214__nv_bfloat162S__nbst(shim_stream, shim_obj):
     def _ZL8__hbleu214__nv_bfloat162S__nbst_caller(arg_0, arg_1):
         return _ZL8__hbleu214__nv_bfloat162S__nbst(arg_0, arg_1)
 
-    handle = globals()["__hbleu2"]
+    handle = globals().get("__hbleu2")
+    if handle is None:
+        handle = __hbleu2
 
     @lower(handle, _type___nv_bfloat162, _type___nv_bfloat162)
     def impl(context, builder, sig, args):
@@ -10059,7 +10429,9 @@ def _lower__ZL8__hbgeu214__nv_bfloat162S__nbst(shim_stream, shim_obj):
     def _ZL8__hbgeu214__nv_bfloat162S__nbst_caller(arg_0, arg_1):
         return _ZL8__hbgeu214__nv_bfloat162S__nbst(arg_0, arg_1)
 
-    handle = globals()["__hbgeu2"]
+    handle = globals().get("__hbgeu2")
+    if handle is None:
+        handle = __hbgeu2
 
     @lower(handle, _type___nv_bfloat162, _type___nv_bfloat162)
     def impl(context, builder, sig, args):
@@ -10107,7 +10479,9 @@ def _lower__ZL8__hbltu214__nv_bfloat162S__nbst(shim_stream, shim_obj):
     def _ZL8__hbltu214__nv_bfloat162S__nbst_caller(arg_0, arg_1):
         return _ZL8__hbltu214__nv_bfloat162S__nbst(arg_0, arg_1)
 
-    handle = globals()["__hbltu2"]
+    handle = globals().get("__hbltu2")
+    if handle is None:
+        handle = __hbltu2
 
     @lower(handle, _type___nv_bfloat162, _type___nv_bfloat162)
     def impl(context, builder, sig, args):
@@ -10155,7 +10529,9 @@ def _lower__ZL8__hbgtu214__nv_bfloat162S__nbst(shim_stream, shim_obj):
     def _ZL8__hbgtu214__nv_bfloat162S__nbst_caller(arg_0, arg_1):
         return _ZL8__hbgtu214__nv_bfloat162S__nbst(arg_0, arg_1)
 
-    handle = globals()["__hbgtu2"]
+    handle = globals().get("__hbgtu2")
+    if handle is None:
+        handle = __hbgtu2
 
     @lower(handle, _type___nv_bfloat162, _type___nv_bfloat162)
     def impl(context, builder, sig, args):
@@ -10203,7 +10579,9 @@ def _lower__ZL5__heq13__nv_bfloat16S__nbst(shim_stream, shim_obj):
     def _ZL5__heq13__nv_bfloat16S__nbst_caller(arg_0, arg_1):
         return _ZL5__heq13__nv_bfloat16S__nbst(arg_0, arg_1)
 
-    handle = globals()["__heq"]
+    handle = globals().get("__heq")
+    if handle is None:
+        handle = __heq
 
     @lower(handle, _type___nv_bfloat16, _type___nv_bfloat16)
     def impl(context, builder, sig, args):
@@ -10251,7 +10629,9 @@ def _lower__ZL5__hne13__nv_bfloat16S__nbst(shim_stream, shim_obj):
     def _ZL5__hne13__nv_bfloat16S__nbst_caller(arg_0, arg_1):
         return _ZL5__hne13__nv_bfloat16S__nbst(arg_0, arg_1)
 
-    handle = globals()["__hne"]
+    handle = globals().get("__hne")
+    if handle is None:
+        handle = __hne
 
     @lower(handle, _type___nv_bfloat16, _type___nv_bfloat16)
     def impl(context, builder, sig, args):
@@ -10299,7 +10679,9 @@ def _lower__ZL5__hle13__nv_bfloat16S__nbst(shim_stream, shim_obj):
     def _ZL5__hle13__nv_bfloat16S__nbst_caller(arg_0, arg_1):
         return _ZL5__hle13__nv_bfloat16S__nbst(arg_0, arg_1)
 
-    handle = globals()["__hle"]
+    handle = globals().get("__hle")
+    if handle is None:
+        handle = __hle
 
     @lower(handle, _type___nv_bfloat16, _type___nv_bfloat16)
     def impl(context, builder, sig, args):
@@ -10347,7 +10729,9 @@ def _lower__ZL5__hge13__nv_bfloat16S__nbst(shim_stream, shim_obj):
     def _ZL5__hge13__nv_bfloat16S__nbst_caller(arg_0, arg_1):
         return _ZL5__hge13__nv_bfloat16S__nbst(arg_0, arg_1)
 
-    handle = globals()["__hge"]
+    handle = globals().get("__hge")
+    if handle is None:
+        handle = __hge
 
     @lower(handle, _type___nv_bfloat16, _type___nv_bfloat16)
     def impl(context, builder, sig, args):
@@ -10395,7 +10779,9 @@ def _lower__ZL5__hlt13__nv_bfloat16S__nbst(shim_stream, shim_obj):
     def _ZL5__hlt13__nv_bfloat16S__nbst_caller(arg_0, arg_1):
         return _ZL5__hlt13__nv_bfloat16S__nbst(arg_0, arg_1)
 
-    handle = globals()["__hlt"]
+    handle = globals().get("__hlt")
+    if handle is None:
+        handle = __hlt
 
     @lower(handle, _type___nv_bfloat16, _type___nv_bfloat16)
     def impl(context, builder, sig, args):
@@ -10443,7 +10829,9 @@ def _lower__ZL5__hgt13__nv_bfloat16S__nbst(shim_stream, shim_obj):
     def _ZL5__hgt13__nv_bfloat16S__nbst_caller(arg_0, arg_1):
         return _ZL5__hgt13__nv_bfloat16S__nbst(arg_0, arg_1)
 
-    handle = globals()["__hgt"]
+    handle = globals().get("__hgt")
+    if handle is None:
+        handle = __hgt
 
     @lower(handle, _type___nv_bfloat16, _type___nv_bfloat16)
     def impl(context, builder, sig, args):
@@ -10491,7 +10879,9 @@ def _lower__ZL6__hequ13__nv_bfloat16S__nbst(shim_stream, shim_obj):
     def _ZL6__hequ13__nv_bfloat16S__nbst_caller(arg_0, arg_1):
         return _ZL6__hequ13__nv_bfloat16S__nbst(arg_0, arg_1)
 
-    handle = globals()["__hequ"]
+    handle = globals().get("__hequ")
+    if handle is None:
+        handle = __hequ
 
     @lower(handle, _type___nv_bfloat16, _type___nv_bfloat16)
     def impl(context, builder, sig, args):
@@ -10539,7 +10929,9 @@ def _lower__ZL6__hneu13__nv_bfloat16S__nbst(shim_stream, shim_obj):
     def _ZL6__hneu13__nv_bfloat16S__nbst_caller(arg_0, arg_1):
         return _ZL6__hneu13__nv_bfloat16S__nbst(arg_0, arg_1)
 
-    handle = globals()["__hneu"]
+    handle = globals().get("__hneu")
+    if handle is None:
+        handle = __hneu
 
     @lower(handle, _type___nv_bfloat16, _type___nv_bfloat16)
     def impl(context, builder, sig, args):
@@ -10587,7 +10979,9 @@ def _lower__ZL6__hleu13__nv_bfloat16S__nbst(shim_stream, shim_obj):
     def _ZL6__hleu13__nv_bfloat16S__nbst_caller(arg_0, arg_1):
         return _ZL6__hleu13__nv_bfloat16S__nbst(arg_0, arg_1)
 
-    handle = globals()["__hleu"]
+    handle = globals().get("__hleu")
+    if handle is None:
+        handle = __hleu
 
     @lower(handle, _type___nv_bfloat16, _type___nv_bfloat16)
     def impl(context, builder, sig, args):
@@ -10635,7 +11029,9 @@ def _lower__ZL6__hgeu13__nv_bfloat16S__nbst(shim_stream, shim_obj):
     def _ZL6__hgeu13__nv_bfloat16S__nbst_caller(arg_0, arg_1):
         return _ZL6__hgeu13__nv_bfloat16S__nbst(arg_0, arg_1)
 
-    handle = globals()["__hgeu"]
+    handle = globals().get("__hgeu")
+    if handle is None:
+        handle = __hgeu
 
     @lower(handle, _type___nv_bfloat16, _type___nv_bfloat16)
     def impl(context, builder, sig, args):
@@ -10683,7 +11079,9 @@ def _lower__ZL6__hltu13__nv_bfloat16S__nbst(shim_stream, shim_obj):
     def _ZL6__hltu13__nv_bfloat16S__nbst_caller(arg_0, arg_1):
         return _ZL6__hltu13__nv_bfloat16S__nbst(arg_0, arg_1)
 
-    handle = globals()["__hltu"]
+    handle = globals().get("__hltu")
+    if handle is None:
+        handle = __hltu
 
     @lower(handle, _type___nv_bfloat16, _type___nv_bfloat16)
     def impl(context, builder, sig, args):
@@ -10731,7 +11129,9 @@ def _lower__ZL6__hgtu13__nv_bfloat16S__nbst(shim_stream, shim_obj):
     def _ZL6__hgtu13__nv_bfloat16S__nbst_caller(arg_0, arg_1):
         return _ZL6__hgtu13__nv_bfloat16S__nbst(arg_0, arg_1)
 
-    handle = globals()["__hgtu"]
+    handle = globals().get("__hgtu")
+    if handle is None:
+        handle = __hgtu
 
     @lower(handle, _type___nv_bfloat16, _type___nv_bfloat16)
     def impl(context, builder, sig, args):
@@ -10778,7 +11178,9 @@ def _lower__ZL8__hisnan13__nv_bfloat16_nbst(shim_stream, shim_obj):
     def _ZL8__hisnan13__nv_bfloat16_nbst_caller(arg_0):
         return _ZL8__hisnan13__nv_bfloat16_nbst(arg_0)
 
-    handle = globals()["__hisnan"]
+    handle = globals().get("__hisnan")
+    if handle is None:
+        handle = __hisnan
 
     @lower(handle, _type___nv_bfloat16)
     def impl(context, builder, sig, args):
@@ -10824,7 +11226,9 @@ def _lower__ZL6__hmax13__nv_bfloat16S__nbst(shim_stream, shim_obj):
     def _ZL6__hmax13__nv_bfloat16S__nbst_caller(arg_0, arg_1):
         return _ZL6__hmax13__nv_bfloat16S__nbst(arg_0, arg_1)
 
-    handle = globals()["__hmax"]
+    handle = globals().get("__hmax")
+    if handle is None:
+        handle = __hmax
 
     @lower(handle, _type___nv_bfloat16, _type___nv_bfloat16)
     def impl(context, builder, sig, args):
@@ -10874,7 +11278,9 @@ def _lower__ZL6__hmin13__nv_bfloat16S__nbst(shim_stream, shim_obj):
     def _ZL6__hmin13__nv_bfloat16S__nbst_caller(arg_0, arg_1):
         return _ZL6__hmin13__nv_bfloat16S__nbst(arg_0, arg_1)
 
-    handle = globals()["__hmin"]
+    handle = globals().get("__hmin")
+    if handle is None:
+        handle = __hmin
 
     @lower(handle, _type___nv_bfloat16, _type___nv_bfloat16)
     def impl(context, builder, sig, args):
@@ -10924,7 +11330,9 @@ def _lower__ZL10__hmax_nan13__nv_bfloat16S__nbst(shim_stream, shim_obj):
     def _ZL10__hmax_nan13__nv_bfloat16S__nbst_caller(arg_0, arg_1):
         return _ZL10__hmax_nan13__nv_bfloat16S__nbst(arg_0, arg_1)
 
-    handle = globals()["__hmax_nan"]
+    handle = globals().get("__hmax_nan")
+    if handle is None:
+        handle = __hmax_nan
 
     @lower(handle, _type___nv_bfloat16, _type___nv_bfloat16)
     def impl(context, builder, sig, args):
@@ -10974,7 +11382,9 @@ def _lower__ZL10__hmin_nan13__nv_bfloat16S__nbst(shim_stream, shim_obj):
     def _ZL10__hmin_nan13__nv_bfloat16S__nbst_caller(arg_0, arg_1):
         return _ZL10__hmin_nan13__nv_bfloat16S__nbst(arg_0, arg_1)
 
-    handle = globals()["__hmin_nan"]
+    handle = globals().get("__hmin_nan")
+    if handle is None:
+        handle = __hmin_nan
 
     @lower(handle, _type___nv_bfloat16, _type___nv_bfloat16)
     def impl(context, builder, sig, args):
@@ -11026,7 +11436,9 @@ def _lower__ZL11__hfma_relu13__nv_bfloat16S_S__nbst(shim_stream, shim_obj):
     def _ZL11__hfma_relu13__nv_bfloat16S_S__nbst_caller(arg_0, arg_1, arg_2):
         return _ZL11__hfma_relu13__nv_bfloat16S_S__nbst(arg_0, arg_1, arg_2)
 
-    handle = globals()["__hfma_relu"]
+    handle = globals().get("__hfma_relu")
+    if handle is None:
+        handle = __hfma_relu
 
     @lower(
         handle, _type___nv_bfloat16, _type___nv_bfloat16, _type___nv_bfloat16
@@ -11079,7 +11491,9 @@ def _lower__ZL7__hmax214__nv_bfloat162S__nbst(shim_stream, shim_obj):
     def _ZL7__hmax214__nv_bfloat162S__nbst_caller(arg_0, arg_1):
         return _ZL7__hmax214__nv_bfloat162S__nbst(arg_0, arg_1)
 
-    handle = globals()["__hmax2"]
+    handle = globals().get("__hmax2")
+    if handle is None:
+        handle = __hmax2
 
     @lower(handle, _type___nv_bfloat162, _type___nv_bfloat162)
     def impl(context, builder, sig, args):
@@ -11129,7 +11543,9 @@ def _lower__ZL7__hmin214__nv_bfloat162S__nbst(shim_stream, shim_obj):
     def _ZL7__hmin214__nv_bfloat162S__nbst_caller(arg_0, arg_1):
         return _ZL7__hmin214__nv_bfloat162S__nbst(arg_0, arg_1)
 
-    handle = globals()["__hmin2"]
+    handle = globals().get("__hmin2")
+    if handle is None:
+        handle = __hmin2
 
     @lower(handle, _type___nv_bfloat162, _type___nv_bfloat162)
     def impl(context, builder, sig, args):
@@ -11179,7 +11595,9 @@ def _lower__ZL11__hmax2_nan14__nv_bfloat162S__nbst(shim_stream, shim_obj):
     def _ZL11__hmax2_nan14__nv_bfloat162S__nbst_caller(arg_0, arg_1):
         return _ZL11__hmax2_nan14__nv_bfloat162S__nbst(arg_0, arg_1)
 
-    handle = globals()["__hmax2_nan"]
+    handle = globals().get("__hmax2_nan")
+    if handle is None:
+        handle = __hmax2_nan
 
     @lower(handle, _type___nv_bfloat162, _type___nv_bfloat162)
     def impl(context, builder, sig, args):
@@ -11229,7 +11647,9 @@ def _lower__ZL11__hmin2_nan14__nv_bfloat162S__nbst(shim_stream, shim_obj):
     def _ZL11__hmin2_nan14__nv_bfloat162S__nbst_caller(arg_0, arg_1):
         return _ZL11__hmin2_nan14__nv_bfloat162S__nbst(arg_0, arg_1)
 
-    handle = globals()["__hmin2_nan"]
+    handle = globals().get("__hmin2_nan")
+    if handle is None:
+        handle = __hmin2_nan
 
     @lower(handle, _type___nv_bfloat162, _type___nv_bfloat162)
     def impl(context, builder, sig, args):
@@ -11281,7 +11701,9 @@ def _lower__ZL12__hfma2_relu14__nv_bfloat162S_S__nbst(shim_stream, shim_obj):
     def _ZL12__hfma2_relu14__nv_bfloat162S_S__nbst_caller(arg_0, arg_1, arg_2):
         return _ZL12__hfma2_relu14__nv_bfloat162S_S__nbst(arg_0, arg_1, arg_2)
 
-    handle = globals()["__hfma2_relu"]
+    handle = globals().get("__hfma2_relu")
+    if handle is None:
+        handle = __hfma2_relu
 
     @lower(
         handle, _type___nv_bfloat162, _type___nv_bfloat162, _type___nv_bfloat162
@@ -11336,7 +11758,9 @@ def _lower__ZL8__hcmadd14__nv_bfloat162S_S__nbst(shim_stream, shim_obj):
     def _ZL8__hcmadd14__nv_bfloat162S_S__nbst_caller(arg_0, arg_1, arg_2):
         return _ZL8__hcmadd14__nv_bfloat162S_S__nbst(arg_0, arg_1, arg_2)
 
-    handle = globals()["__hcmadd"]
+    handle = globals().get("__hcmadd")
+    if handle is None:
+        handle = __hcmadd
 
     @lower(
         handle, _type___nv_bfloat162, _type___nv_bfloat162, _type___nv_bfloat162
@@ -11387,7 +11811,9 @@ def _lower__ZL5hsqrt13__nv_bfloat16_nbst(shim_stream, shim_obj):
     def _ZL5hsqrt13__nv_bfloat16_nbst_caller(arg_0):
         return _ZL5hsqrt13__nv_bfloat16_nbst(arg_0)
 
-    handle = globals()["hsqrt"]
+    handle = globals().get("hsqrt")
+    if handle is None:
+        handle = hsqrt
 
     @lower(handle, _type___nv_bfloat16)
     def impl(context, builder, sig, args):
@@ -11431,7 +11857,9 @@ def _lower__ZL6hrsqrt13__nv_bfloat16_nbst(shim_stream, shim_obj):
     def _ZL6hrsqrt13__nv_bfloat16_nbst_caller(arg_0):
         return _ZL6hrsqrt13__nv_bfloat16_nbst(arg_0)
 
-    handle = globals()["hrsqrt"]
+    handle = globals().get("hrsqrt")
+    if handle is None:
+        handle = hrsqrt
 
     @lower(handle, _type___nv_bfloat16)
     def impl(context, builder, sig, args):
@@ -11475,7 +11903,9 @@ def _lower__ZL4hrcp13__nv_bfloat16_nbst(shim_stream, shim_obj):
     def _ZL4hrcp13__nv_bfloat16_nbst_caller(arg_0):
         return _ZL4hrcp13__nv_bfloat16_nbst(arg_0)
 
-    handle = globals()["hrcp"]
+    handle = globals().get("hrcp")
+    if handle is None:
+        handle = hrcp
 
     @lower(handle, _type___nv_bfloat16)
     def impl(context, builder, sig, args):
@@ -11517,7 +11947,9 @@ def _lower__ZL4hlog13__nv_bfloat16_nbst(shim_stream, shim_obj):
     def _ZL4hlog13__nv_bfloat16_nbst_caller(arg_0):
         return _ZL4hlog13__nv_bfloat16_nbst(arg_0)
 
-    handle = globals()["hlog"]
+    handle = globals().get("hlog")
+    if handle is None:
+        handle = hlog
 
     @lower(handle, _type___nv_bfloat16)
     def impl(context, builder, sig, args):
@@ -11559,7 +11991,9 @@ def _lower__ZL5hlog213__nv_bfloat16_nbst(shim_stream, shim_obj):
     def _ZL5hlog213__nv_bfloat16_nbst_caller(arg_0):
         return _ZL5hlog213__nv_bfloat16_nbst(arg_0)
 
-    handle = globals()["hlog2"]
+    handle = globals().get("hlog2")
+    if handle is None:
+        handle = hlog2
 
     @lower(handle, _type___nv_bfloat16)
     def impl(context, builder, sig, args):
@@ -11603,7 +12037,9 @@ def _lower__ZL6hlog1013__nv_bfloat16_nbst(shim_stream, shim_obj):
     def _ZL6hlog1013__nv_bfloat16_nbst_caller(arg_0):
         return _ZL6hlog1013__nv_bfloat16_nbst(arg_0)
 
-    handle = globals()["hlog10"]
+    handle = globals().get("hlog10")
+    if handle is None:
+        handle = hlog10
 
     @lower(handle, _type___nv_bfloat16)
     def impl(context, builder, sig, args):
@@ -11647,7 +12083,9 @@ def _lower__ZL4hexp13__nv_bfloat16_nbst(shim_stream, shim_obj):
     def _ZL4hexp13__nv_bfloat16_nbst_caller(arg_0):
         return _ZL4hexp13__nv_bfloat16_nbst(arg_0)
 
-    handle = globals()["hexp"]
+    handle = globals().get("hexp")
+    if handle is None:
+        handle = hexp
 
     @lower(handle, _type___nv_bfloat16)
     def impl(context, builder, sig, args):
@@ -11689,7 +12127,9 @@ def _lower__ZL12htanh_approx13__nv_bfloat16_nbst(shim_stream, shim_obj):
     def _ZL12htanh_approx13__nv_bfloat16_nbst_caller(arg_0):
         return _ZL12htanh_approx13__nv_bfloat16_nbst(arg_0)
 
-    handle = globals()["htanh_approx"]
+    handle = globals().get("htanh_approx")
+    if handle is None:
+        handle = htanh_approx
 
     @lower(handle, _type___nv_bfloat16)
     def impl(context, builder, sig, args):
@@ -11733,7 +12173,9 @@ def _lower__ZL13h2tanh_approx14__nv_bfloat162_nbst(shim_stream, shim_obj):
     def _ZL13h2tanh_approx14__nv_bfloat162_nbst_caller(arg_0):
         return _ZL13h2tanh_approx14__nv_bfloat162_nbst(arg_0)
 
-    handle = globals()["h2tanh_approx"]
+    handle = globals().get("h2tanh_approx")
+    if handle is None:
+        handle = h2tanh_approx
 
     @lower(handle, _type___nv_bfloat162)
     def impl(context, builder, sig, args):
@@ -11777,7 +12219,9 @@ def _lower__ZL5htanh13__nv_bfloat16_nbst(shim_stream, shim_obj):
     def _ZL5htanh13__nv_bfloat16_nbst_caller(arg_0):
         return _ZL5htanh13__nv_bfloat16_nbst(arg_0)
 
-    handle = globals()["htanh"]
+    handle = globals().get("htanh")
+    if handle is None:
+        handle = htanh
 
     @lower(handle, _type___nv_bfloat16)
     def impl(context, builder, sig, args):
@@ -11821,7 +12265,9 @@ def _lower__ZL6h2tanh14__nv_bfloat162_nbst(shim_stream, shim_obj):
     def _ZL6h2tanh14__nv_bfloat162_nbst_caller(arg_0):
         return _ZL6h2tanh14__nv_bfloat162_nbst(arg_0)
 
-    handle = globals()["h2tanh"]
+    handle = globals().get("h2tanh")
+    if handle is None:
+        handle = h2tanh
 
     @lower(handle, _type___nv_bfloat162)
     def impl(context, builder, sig, args):
@@ -11865,7 +12311,9 @@ def _lower__ZL5hexp213__nv_bfloat16_nbst(shim_stream, shim_obj):
     def _ZL5hexp213__nv_bfloat16_nbst_caller(arg_0):
         return _ZL5hexp213__nv_bfloat16_nbst(arg_0)
 
-    handle = globals()["hexp2"]
+    handle = globals().get("hexp2")
+    if handle is None:
+        handle = hexp2
 
     @lower(handle, _type___nv_bfloat16)
     def impl(context, builder, sig, args):
@@ -11909,7 +12357,9 @@ def _lower__ZL6hexp1013__nv_bfloat16_nbst(shim_stream, shim_obj):
     def _ZL6hexp1013__nv_bfloat16_nbst_caller(arg_0):
         return _ZL6hexp1013__nv_bfloat16_nbst(arg_0)
 
-    handle = globals()["hexp10"]
+    handle = globals().get("hexp10")
+    if handle is None:
+        handle = hexp10
 
     @lower(handle, _type___nv_bfloat16)
     def impl(context, builder, sig, args):
@@ -11953,7 +12403,9 @@ def _lower__ZL4hcos13__nv_bfloat16_nbst(shim_stream, shim_obj):
     def _ZL4hcos13__nv_bfloat16_nbst_caller(arg_0):
         return _ZL4hcos13__nv_bfloat16_nbst(arg_0)
 
-    handle = globals()["hcos"]
+    handle = globals().get("hcos")
+    if handle is None:
+        handle = hcos
 
     @lower(handle, _type___nv_bfloat16)
     def impl(context, builder, sig, args):
@@ -11995,7 +12447,9 @@ def _lower__ZL4hsin13__nv_bfloat16_nbst(shim_stream, shim_obj):
     def _ZL4hsin13__nv_bfloat16_nbst_caller(arg_0):
         return _ZL4hsin13__nv_bfloat16_nbst(arg_0)
 
-    handle = globals()["hsin"]
+    handle = globals().get("hsin")
+    if handle is None:
+        handle = hsin
 
     @lower(handle, _type___nv_bfloat16)
     def impl(context, builder, sig, args):
@@ -12037,7 +12491,9 @@ def _lower__ZL6h2sqrt14__nv_bfloat162_nbst(shim_stream, shim_obj):
     def _ZL6h2sqrt14__nv_bfloat162_nbst_caller(arg_0):
         return _ZL6h2sqrt14__nv_bfloat162_nbst(arg_0)
 
-    handle = globals()["h2sqrt"]
+    handle = globals().get("h2sqrt")
+    if handle is None:
+        handle = h2sqrt
 
     @lower(handle, _type___nv_bfloat162)
     def impl(context, builder, sig, args):
@@ -12081,7 +12537,9 @@ def _lower__ZL7h2rsqrt14__nv_bfloat162_nbst(shim_stream, shim_obj):
     def _ZL7h2rsqrt14__nv_bfloat162_nbst_caller(arg_0):
         return _ZL7h2rsqrt14__nv_bfloat162_nbst(arg_0)
 
-    handle = globals()["h2rsqrt"]
+    handle = globals().get("h2rsqrt")
+    if handle is None:
+        handle = h2rsqrt
 
     @lower(handle, _type___nv_bfloat162)
     def impl(context, builder, sig, args):
@@ -12125,7 +12583,9 @@ def _lower__ZL5h2rcp14__nv_bfloat162_nbst(shim_stream, shim_obj):
     def _ZL5h2rcp14__nv_bfloat162_nbst_caller(arg_0):
         return _ZL5h2rcp14__nv_bfloat162_nbst(arg_0)
 
-    handle = globals()["h2rcp"]
+    handle = globals().get("h2rcp")
+    if handle is None:
+        handle = h2rcp
 
     @lower(handle, _type___nv_bfloat162)
     def impl(context, builder, sig, args):
@@ -12169,7 +12629,9 @@ def _lower__ZL5h2log14__nv_bfloat162_nbst(shim_stream, shim_obj):
     def _ZL5h2log14__nv_bfloat162_nbst_caller(arg_0):
         return _ZL5h2log14__nv_bfloat162_nbst(arg_0)
 
-    handle = globals()["h2log"]
+    handle = globals().get("h2log")
+    if handle is None:
+        handle = h2log
 
     @lower(handle, _type___nv_bfloat162)
     def impl(context, builder, sig, args):
@@ -12213,7 +12675,9 @@ def _lower__ZL6h2log214__nv_bfloat162_nbst(shim_stream, shim_obj):
     def _ZL6h2log214__nv_bfloat162_nbst_caller(arg_0):
         return _ZL6h2log214__nv_bfloat162_nbst(arg_0)
 
-    handle = globals()["h2log2"]
+    handle = globals().get("h2log2")
+    if handle is None:
+        handle = h2log2
 
     @lower(handle, _type___nv_bfloat162)
     def impl(context, builder, sig, args):
@@ -12257,7 +12721,9 @@ def _lower__ZL7h2log1014__nv_bfloat162_nbst(shim_stream, shim_obj):
     def _ZL7h2log1014__nv_bfloat162_nbst_caller(arg_0):
         return _ZL7h2log1014__nv_bfloat162_nbst(arg_0)
 
-    handle = globals()["h2log10"]
+    handle = globals().get("h2log10")
+    if handle is None:
+        handle = h2log10
 
     @lower(handle, _type___nv_bfloat162)
     def impl(context, builder, sig, args):
@@ -12301,7 +12767,9 @@ def _lower__ZL5h2exp14__nv_bfloat162_nbst(shim_stream, shim_obj):
     def _ZL5h2exp14__nv_bfloat162_nbst_caller(arg_0):
         return _ZL5h2exp14__nv_bfloat162_nbst(arg_0)
 
-    handle = globals()["h2exp"]
+    handle = globals().get("h2exp")
+    if handle is None:
+        handle = h2exp
 
     @lower(handle, _type___nv_bfloat162)
     def impl(context, builder, sig, args):
@@ -12345,7 +12813,9 @@ def _lower__ZL6h2exp214__nv_bfloat162_nbst(shim_stream, shim_obj):
     def _ZL6h2exp214__nv_bfloat162_nbst_caller(arg_0):
         return _ZL6h2exp214__nv_bfloat162_nbst(arg_0)
 
-    handle = globals()["h2exp2"]
+    handle = globals().get("h2exp2")
+    if handle is None:
+        handle = h2exp2
 
     @lower(handle, _type___nv_bfloat162)
     def impl(context, builder, sig, args):
@@ -12389,7 +12859,9 @@ def _lower__ZL7h2exp1014__nv_bfloat162_nbst(shim_stream, shim_obj):
     def _ZL7h2exp1014__nv_bfloat162_nbst_caller(arg_0):
         return _ZL7h2exp1014__nv_bfloat162_nbst(arg_0)
 
-    handle = globals()["h2exp10"]
+    handle = globals().get("h2exp10")
+    if handle is None:
+        handle = h2exp10
 
     @lower(handle, _type___nv_bfloat162)
     def impl(context, builder, sig, args):
@@ -12433,7 +12905,9 @@ def _lower__ZL5h2cos14__nv_bfloat162_nbst(shim_stream, shim_obj):
     def _ZL5h2cos14__nv_bfloat162_nbst_caller(arg_0):
         return _ZL5h2cos14__nv_bfloat162_nbst(arg_0)
 
-    handle = globals()["h2cos"]
+    handle = globals().get("h2cos")
+    if handle is None:
+        handle = h2cos
 
     @lower(handle, _type___nv_bfloat162)
     def impl(context, builder, sig, args):
@@ -12477,7 +12951,9 @@ def _lower__ZL5h2sin14__nv_bfloat162_nbst(shim_stream, shim_obj):
     def _ZL5h2sin14__nv_bfloat162_nbst_caller(arg_0):
         return _ZL5h2sin14__nv_bfloat162_nbst(arg_0)
 
-    handle = globals()["h2sin"]
+    handle = globals().get("h2sin")
+    if handle is None:
+        handle = h2sin
 
     @lower(handle, _type___nv_bfloat162)
     def impl(context, builder, sig, args):
@@ -12524,7 +13000,9 @@ def _lower__ZL9atomicAddP14__nv_bfloat162S__nbst(shim_stream, shim_obj):
     def _ZL9atomicAddP14__nv_bfloat162S__nbst_caller(arg_0, arg_1):
         return _ZL9atomicAddP14__nv_bfloat162S__nbst(arg_0, arg_1)
 
-    handle = globals()["atomicAdd"]
+    handle = globals().get("atomicAdd")
+    if handle is None:
+        handle = atomicAdd
 
     @lower(handle, CPointer(_type___nv_bfloat162), _type___nv_bfloat162)
     def impl(context, builder, sig, args):
@@ -12571,7 +13049,9 @@ def _lower__ZL9atomicAddP13__nv_bfloat16S__nbst(shim_stream, shim_obj):
     def _ZL9atomicAddP13__nv_bfloat16S__nbst_caller(arg_0, arg_1):
         return _ZL9atomicAddP13__nv_bfloat16S__nbst(arg_0, arg_1)
 
-    handle = globals()["atomicAdd"]
+    handle = globals().get("atomicAdd")
+    if handle is None:
+        handle = atomicAdd
 
     @lower(handle, CPointer(_type___nv_bfloat16), _type___nv_bfloat16)
     def impl(context, builder, sig, args):
@@ -12617,7 +13097,9 @@ def _lower__ZplRK13__nv_bfloat16S1__nbst(shim_stream, shim_obj):
     def _ZplRK13__nv_bfloat16S1__nbst_caller(arg_0, arg_1):
         return _ZplRK13__nv_bfloat16S1__nbst(arg_0, arg_1)
 
-    handle = globals()["operator.add"]
+    handle = globals().get("operator.add")
+    if handle is None:
+        handle = operator.add
 
     @lower(handle, _type___nv_bfloat16, _type___nv_bfloat16)
     def impl(context, builder, sig, args):
@@ -12663,7 +13145,9 @@ def _lower__ZmiRK13__nv_bfloat16S1__nbst(shim_stream, shim_obj):
     def _ZmiRK13__nv_bfloat16S1__nbst_caller(arg_0, arg_1):
         return _ZmiRK13__nv_bfloat16S1__nbst(arg_0, arg_1)
 
-    handle = globals()["operator.sub"]
+    handle = globals().get("operator.sub")
+    if handle is None:
+        handle = operator.sub
 
     @lower(handle, _type___nv_bfloat16, _type___nv_bfloat16)
     def impl(context, builder, sig, args):
@@ -12709,7 +13193,9 @@ def _lower__ZmlRK13__nv_bfloat16S1__nbst(shim_stream, shim_obj):
     def _ZmlRK13__nv_bfloat16S1__nbst_caller(arg_0, arg_1):
         return _ZmlRK13__nv_bfloat16S1__nbst(arg_0, arg_1)
 
-    handle = globals()["operator.mul"]
+    handle = globals().get("operator.mul")
+    if handle is None:
+        handle = operator.mul
 
     @lower(handle, _type___nv_bfloat16, _type___nv_bfloat16)
     def impl(context, builder, sig, args):
@@ -12755,7 +13241,9 @@ def _lower__ZdvRK13__nv_bfloat16S1__nbst(shim_stream, shim_obj):
     def _ZdvRK13__nv_bfloat16S1__nbst_caller(arg_0, arg_1):
         return _ZdvRK13__nv_bfloat16S1__nbst(arg_0, arg_1)
 
-    handle = globals()["operator.truediv"]
+    handle = globals().get("operator.truediv")
+    if handle is None:
+        handle = operator.truediv
 
     @lower(handle, _type___nv_bfloat16, _type___nv_bfloat16)
     def impl(context, builder, sig, args):
@@ -12801,7 +13289,9 @@ def _lower__ZpLR13__nv_bfloat16RKS__nbst(shim_stream, shim_obj):
     def _ZpLR13__nv_bfloat16RKS__nbst_caller(arg_0, arg_1):
         return _ZpLR13__nv_bfloat16RKS__nbst(arg_0, arg_1)
 
-    handle = globals()["operator.iadd"]
+    handle = globals().get("operator.iadd")
+    if handle is None:
+        handle = operator.iadd
 
     @lower(handle, _type___nv_bfloat16, _type___nv_bfloat16)
     def impl(context, builder, sig, args):
@@ -12847,7 +13337,9 @@ def _lower__ZmIR13__nv_bfloat16RKS__nbst(shim_stream, shim_obj):
     def _ZmIR13__nv_bfloat16RKS__nbst_caller(arg_0, arg_1):
         return _ZmIR13__nv_bfloat16RKS__nbst(arg_0, arg_1)
 
-    handle = globals()["operator.isub"]
+    handle = globals().get("operator.isub")
+    if handle is None:
+        handle = operator.isub
 
     @lower(handle, _type___nv_bfloat16, _type___nv_bfloat16)
     def impl(context, builder, sig, args):
@@ -12893,7 +13385,9 @@ def _lower__ZmLR13__nv_bfloat16RKS__nbst(shim_stream, shim_obj):
     def _ZmLR13__nv_bfloat16RKS__nbst_caller(arg_0, arg_1):
         return _ZmLR13__nv_bfloat16RKS__nbst(arg_0, arg_1)
 
-    handle = globals()["operator.imul"]
+    handle = globals().get("operator.imul")
+    if handle is None:
+        handle = operator.imul
 
     @lower(handle, _type___nv_bfloat16, _type___nv_bfloat16)
     def impl(context, builder, sig, args):
@@ -12939,7 +13433,9 @@ def _lower__ZdVR13__nv_bfloat16RKS__nbst(shim_stream, shim_obj):
     def _ZdVR13__nv_bfloat16RKS__nbst_caller(arg_0, arg_1):
         return _ZdVR13__nv_bfloat16RKS__nbst(arg_0, arg_1)
 
-    handle = globals()["operator.itruediv"]
+    handle = globals().get("operator.itruediv")
+    if handle is None:
+        handle = operator.itruediv
 
     @lower(handle, _type___nv_bfloat16, _type___nv_bfloat16)
     def impl(context, builder, sig, args):
@@ -12983,7 +13479,9 @@ def _lower__ZpsRK13__nv_bfloat16_nbst(shim_stream, shim_obj):
     def _ZpsRK13__nv_bfloat16_nbst_caller(arg_0):
         return _ZpsRK13__nv_bfloat16_nbst(arg_0)
 
-    handle = globals()["operator.pos"]
+    handle = globals().get("operator.pos")
+    if handle is None:
+        handle = operator.pos
 
     @lower(handle, _type___nv_bfloat16)
     def impl(context, builder, sig, args):
@@ -13021,7 +13519,9 @@ def _lower__ZngRK13__nv_bfloat16_nbst(shim_stream, shim_obj):
     def _ZngRK13__nv_bfloat16_nbst_caller(arg_0):
         return _ZngRK13__nv_bfloat16_nbst(arg_0)
 
-    handle = globals()["operator.neg"]
+    handle = globals().get("operator.neg")
+    if handle is None:
+        handle = operator.neg
 
     @lower(handle, _type___nv_bfloat16)
     def impl(context, builder, sig, args):
@@ -13059,7 +13559,9 @@ def _lower__ZeqRK13__nv_bfloat16S1__nbst(shim_stream, shim_obj):
     def _ZeqRK13__nv_bfloat16S1__nbst_caller(arg_0, arg_1):
         return _ZeqRK13__nv_bfloat16S1__nbst(arg_0, arg_1)
 
-    handle = globals()["operator.eq"]
+    handle = globals().get("operator.eq")
+    if handle is None:
+        handle = operator.eq
 
     @lower(handle, _type___nv_bfloat16, _type___nv_bfloat16)
     def impl(context, builder, sig, args):
@@ -13103,7 +13605,9 @@ def _lower__ZneRK13__nv_bfloat16S1__nbst(shim_stream, shim_obj):
     def _ZneRK13__nv_bfloat16S1__nbst_caller(arg_0, arg_1):
         return _ZneRK13__nv_bfloat16S1__nbst(arg_0, arg_1)
 
-    handle = globals()["operator.ne"]
+    handle = globals().get("operator.ne")
+    if handle is None:
+        handle = operator.ne
 
     @lower(handle, _type___nv_bfloat16, _type___nv_bfloat16)
     def impl(context, builder, sig, args):
@@ -13147,7 +13651,9 @@ def _lower__ZgtRK13__nv_bfloat16S1__nbst(shim_stream, shim_obj):
     def _ZgtRK13__nv_bfloat16S1__nbst_caller(arg_0, arg_1):
         return _ZgtRK13__nv_bfloat16S1__nbst(arg_0, arg_1)
 
-    handle = globals()["operator.gt"]
+    handle = globals().get("operator.gt")
+    if handle is None:
+        handle = operator.gt
 
     @lower(handle, _type___nv_bfloat16, _type___nv_bfloat16)
     def impl(context, builder, sig, args):
@@ -13191,7 +13697,9 @@ def _lower__ZltRK13__nv_bfloat16S1__nbst(shim_stream, shim_obj):
     def _ZltRK13__nv_bfloat16S1__nbst_caller(arg_0, arg_1):
         return _ZltRK13__nv_bfloat16S1__nbst(arg_0, arg_1)
 
-    handle = globals()["operator.lt"]
+    handle = globals().get("operator.lt")
+    if handle is None:
+        handle = operator.lt
 
     @lower(handle, _type___nv_bfloat16, _type___nv_bfloat16)
     def impl(context, builder, sig, args):
@@ -13235,7 +13743,9 @@ def _lower__ZgeRK13__nv_bfloat16S1__nbst(shim_stream, shim_obj):
     def _ZgeRK13__nv_bfloat16S1__nbst_caller(arg_0, arg_1):
         return _ZgeRK13__nv_bfloat16S1__nbst(arg_0, arg_1)
 
-    handle = globals()["operator.ge"]
+    handle = globals().get("operator.ge")
+    if handle is None:
+        handle = operator.ge
 
     @lower(handle, _type___nv_bfloat16, _type___nv_bfloat16)
     def impl(context, builder, sig, args):
@@ -13279,7 +13789,9 @@ def _lower__ZleRK13__nv_bfloat16S1__nbst(shim_stream, shim_obj):
     def _ZleRK13__nv_bfloat16S1__nbst_caller(arg_0, arg_1):
         return _ZleRK13__nv_bfloat16S1__nbst(arg_0, arg_1)
 
-    handle = globals()["operator.le"]
+    handle = globals().get("operator.le")
+    if handle is None:
+        handle = operator.le
 
     @lower(handle, _type___nv_bfloat16, _type___nv_bfloat16)
     def impl(context, builder, sig, args):
@@ -13325,7 +13837,9 @@ def _lower__ZplRK14__nv_bfloat162S1__nbst(shim_stream, shim_obj):
     def _ZplRK14__nv_bfloat162S1__nbst_caller(arg_0, arg_1):
         return _ZplRK14__nv_bfloat162S1__nbst(arg_0, arg_1)
 
-    handle = globals()["operator.add"]
+    handle = globals().get("operator.add")
+    if handle is None:
+        handle = operator.add
 
     @lower(handle, _type___nv_bfloat162, _type___nv_bfloat162)
     def impl(context, builder, sig, args):
@@ -13371,7 +13885,9 @@ def _lower__ZmiRK14__nv_bfloat162S1__nbst(shim_stream, shim_obj):
     def _ZmiRK14__nv_bfloat162S1__nbst_caller(arg_0, arg_1):
         return _ZmiRK14__nv_bfloat162S1__nbst(arg_0, arg_1)
 
-    handle = globals()["operator.sub"]
+    handle = globals().get("operator.sub")
+    if handle is None:
+        handle = operator.sub
 
     @lower(handle, _type___nv_bfloat162, _type___nv_bfloat162)
     def impl(context, builder, sig, args):
@@ -13417,7 +13933,9 @@ def _lower__ZmlRK14__nv_bfloat162S1__nbst(shim_stream, shim_obj):
     def _ZmlRK14__nv_bfloat162S1__nbst_caller(arg_0, arg_1):
         return _ZmlRK14__nv_bfloat162S1__nbst(arg_0, arg_1)
 
-    handle = globals()["operator.mul"]
+    handle = globals().get("operator.mul")
+    if handle is None:
+        handle = operator.mul
 
     @lower(handle, _type___nv_bfloat162, _type___nv_bfloat162)
     def impl(context, builder, sig, args):
@@ -13463,7 +13981,9 @@ def _lower__ZdvRK14__nv_bfloat162S1__nbst(shim_stream, shim_obj):
     def _ZdvRK14__nv_bfloat162S1__nbst_caller(arg_0, arg_1):
         return _ZdvRK14__nv_bfloat162S1__nbst(arg_0, arg_1)
 
-    handle = globals()["operator.truediv"]
+    handle = globals().get("operator.truediv")
+    if handle is None:
+        handle = operator.truediv
 
     @lower(handle, _type___nv_bfloat162, _type___nv_bfloat162)
     def impl(context, builder, sig, args):
@@ -13509,7 +14029,9 @@ def _lower__ZpLR14__nv_bfloat162RKS__nbst(shim_stream, shim_obj):
     def _ZpLR14__nv_bfloat162RKS__nbst_caller(arg_0, arg_1):
         return _ZpLR14__nv_bfloat162RKS__nbst(arg_0, arg_1)
 
-    handle = globals()["operator.iadd"]
+    handle = globals().get("operator.iadd")
+    if handle is None:
+        handle = operator.iadd
 
     @lower(handle, _type___nv_bfloat162, _type___nv_bfloat162)
     def impl(context, builder, sig, args):
@@ -13555,7 +14077,9 @@ def _lower__ZmIR14__nv_bfloat162RKS__nbst(shim_stream, shim_obj):
     def _ZmIR14__nv_bfloat162RKS__nbst_caller(arg_0, arg_1):
         return _ZmIR14__nv_bfloat162RKS__nbst(arg_0, arg_1)
 
-    handle = globals()["operator.isub"]
+    handle = globals().get("operator.isub")
+    if handle is None:
+        handle = operator.isub
 
     @lower(handle, _type___nv_bfloat162, _type___nv_bfloat162)
     def impl(context, builder, sig, args):
@@ -13601,7 +14125,9 @@ def _lower__ZmLR14__nv_bfloat162RKS__nbst(shim_stream, shim_obj):
     def _ZmLR14__nv_bfloat162RKS__nbst_caller(arg_0, arg_1):
         return _ZmLR14__nv_bfloat162RKS__nbst(arg_0, arg_1)
 
-    handle = globals()["operator.imul"]
+    handle = globals().get("operator.imul")
+    if handle is None:
+        handle = operator.imul
 
     @lower(handle, _type___nv_bfloat162, _type___nv_bfloat162)
     def impl(context, builder, sig, args):
@@ -13647,7 +14173,9 @@ def _lower__ZdVR14__nv_bfloat162RKS__nbst(shim_stream, shim_obj):
     def _ZdVR14__nv_bfloat162RKS__nbst_caller(arg_0, arg_1):
         return _ZdVR14__nv_bfloat162RKS__nbst(arg_0, arg_1)
 
-    handle = globals()["operator.itruediv"]
+    handle = globals().get("operator.itruediv")
+    if handle is None:
+        handle = operator.itruediv
 
     @lower(handle, _type___nv_bfloat162, _type___nv_bfloat162)
     def impl(context, builder, sig, args):
@@ -13691,7 +14219,9 @@ def _lower__ZpsRK14__nv_bfloat162_nbst(shim_stream, shim_obj):
     def _ZpsRK14__nv_bfloat162_nbst_caller(arg_0):
         return _ZpsRK14__nv_bfloat162_nbst(arg_0)
 
-    handle = globals()["operator.pos"]
+    handle = globals().get("operator.pos")
+    if handle is None:
+        handle = operator.pos
 
     @lower(handle, _type___nv_bfloat162)
     def impl(context, builder, sig, args):
@@ -13729,7 +14259,9 @@ def _lower__ZngRK14__nv_bfloat162_nbst(shim_stream, shim_obj):
     def _ZngRK14__nv_bfloat162_nbst_caller(arg_0):
         return _ZngRK14__nv_bfloat162_nbst(arg_0)
 
-    handle = globals()["operator.neg"]
+    handle = globals().get("operator.neg")
+    if handle is None:
+        handle = operator.neg
 
     @lower(handle, _type___nv_bfloat162)
     def impl(context, builder, sig, args):
@@ -13767,7 +14299,9 @@ def _lower__ZeqRK14__nv_bfloat162S1__nbst(shim_stream, shim_obj):
     def _ZeqRK14__nv_bfloat162S1__nbst_caller(arg_0, arg_1):
         return _ZeqRK14__nv_bfloat162S1__nbst(arg_0, arg_1)
 
-    handle = globals()["operator.eq"]
+    handle = globals().get("operator.eq")
+    if handle is None:
+        handle = operator.eq
 
     @lower(handle, _type___nv_bfloat162, _type___nv_bfloat162)
     def impl(context, builder, sig, args):
@@ -13811,7 +14345,9 @@ def _lower__ZneRK14__nv_bfloat162S1__nbst(shim_stream, shim_obj):
     def _ZneRK14__nv_bfloat162S1__nbst_caller(arg_0, arg_1):
         return _ZneRK14__nv_bfloat162S1__nbst(arg_0, arg_1)
 
-    handle = globals()["operator.ne"]
+    handle = globals().get("operator.ne")
+    if handle is None:
+        handle = operator.ne
 
     @lower(handle, _type___nv_bfloat162, _type___nv_bfloat162)
     def impl(context, builder, sig, args):
@@ -13855,7 +14391,9 @@ def _lower__ZgtRK14__nv_bfloat162S1__nbst(shim_stream, shim_obj):
     def _ZgtRK14__nv_bfloat162S1__nbst_caller(arg_0, arg_1):
         return _ZgtRK14__nv_bfloat162S1__nbst(arg_0, arg_1)
 
-    handle = globals()["operator.gt"]
+    handle = globals().get("operator.gt")
+    if handle is None:
+        handle = operator.gt
 
     @lower(handle, _type___nv_bfloat162, _type___nv_bfloat162)
     def impl(context, builder, sig, args):
@@ -13899,7 +14437,9 @@ def _lower__ZltRK14__nv_bfloat162S1__nbst(shim_stream, shim_obj):
     def _ZltRK14__nv_bfloat162S1__nbst_caller(arg_0, arg_1):
         return _ZltRK14__nv_bfloat162S1__nbst(arg_0, arg_1)
 
-    handle = globals()["operator.lt"]
+    handle = globals().get("operator.lt")
+    if handle is None:
+        handle = operator.lt
 
     @lower(handle, _type___nv_bfloat162, _type___nv_bfloat162)
     def impl(context, builder, sig, args):
@@ -13943,7 +14483,9 @@ def _lower__ZgeRK14__nv_bfloat162S1__nbst(shim_stream, shim_obj):
     def _ZgeRK14__nv_bfloat162S1__nbst_caller(arg_0, arg_1):
         return _ZgeRK14__nv_bfloat162S1__nbst(arg_0, arg_1)
 
-    handle = globals()["operator.ge"]
+    handle = globals().get("operator.ge")
+    if handle is None:
+        handle = operator.ge
 
     @lower(handle, _type___nv_bfloat162, _type___nv_bfloat162)
     def impl(context, builder, sig, args):
@@ -13987,7 +14529,9 @@ def _lower__ZleRK14__nv_bfloat162S1__nbst(shim_stream, shim_obj):
     def _ZleRK14__nv_bfloat162S1__nbst_caller(arg_0, arg_1):
         return _ZleRK14__nv_bfloat162S1__nbst(arg_0, arg_1)
 
-    handle = globals()["operator.le"]
+    handle = globals().get("operator.le")
+    if handle is None:
+        handle = operator.le
 
     @lower(handle, _type___nv_bfloat162, _type___nv_bfloat162)
     def impl(context, builder, sig, args):
@@ -14034,7 +14578,9 @@ def _lower__ZN6__halfC1E13__nv_bfloat16_nbst(shim_stream, shim_obj):
     def _ZN6__halfC1E13__nv_bfloat16_nbst_caller(arg_0):
         return _ZN6__halfC1E13__nv_bfloat16_nbst(arg_0)
 
-    handle = globals()["__half"]
+    handle = globals().get("__half")
+    if handle is None:
+        handle = __half
 
     @lower(handle, _type___nv_bfloat16)
     def impl(context, builder, sig, args):
