@@ -29,6 +29,7 @@ nvrtc_program = c_void_p
 nvrtc_result = c_int
 
 if config.CUDA_USE_NVIDIA_BINDING:
+    from cuda.bindings import nvrtc as bindings_nvrtc
     from cuda.core.experimental import Program, ProgramOptions
 
 
@@ -142,6 +143,10 @@ class NVRTC:
 
     def __new__(cls):
         with _nvrtc_lock:
+            if config.CUDA_USE_NVIDIA_BINDING:
+                raise RuntimeError(
+                    "NVRTC objects should not be used with cuda-python bindings"
+                )
             if cls.__INSTANCE is None:
                 from numba.cuda.cudadrv.libs import open_cudalib
 
@@ -296,20 +301,28 @@ def compile(src, name, cc, ltoir=False):
     :return: The compiled PTX and compilation log
     :rtype: tuple
     """
-    nvrtc = NVRTC()
-    program = nvrtc.create_program(src, name)
 
-    version = nvrtc.get_version()
-    ver_str = lambda v: ".".join(v)
-    supported_arch = nvrtc.get_supported_archs()
+    if config.CUDA_USE_NVIDIA_BINDING:
+        retcode, *version = bindings_nvrtc.nvrtcVersion()
+        if retcode != bindings_nvrtc.nvrtcResult.NVRTC_SUCCESS:
+            raise RuntimeError(
+                f"{retcode.name} when calling nvrtcGetSupportedArchs()"
+            )
+        version = tuple(version)
+    else:
+        nvrtc = NVRTC()
+        version = nvrtc.get_version()
+
+    ver_str = lambda version: ".".join(str(v) for v in version)
+    supported_ccs = get_supported_ccs()
     try:
-        found = max(filter(lambda v: v <= cc, [v for v in supported_arch]))
+        found = max(filter(lambda v: v <= cc, [v for v in supported_ccs]))
     except ValueError:
         raise RuntimeError(
             f"Device compute capability {ver_str(cc)} is less than the "
             f"minimum supported by NVRTC {ver_str(version)}. Supported "
             "compute capabilities are "
-            f"{', '.join([ver_str(v) for v in supported_arch])}."
+            f"{', '.join([ver_str(v) for v in supported_ccs])}."
         )
 
     if found != cc:
@@ -380,6 +393,7 @@ def compile(src, name, cc, ltoir=False):
         return result, log
 
     else:
+        program = nvrtc.create_program(src, name)
         includes = [f"-I{path}" for path in includes]
         options = [
             arch,
@@ -460,4 +474,12 @@ def get_lowest_supported_cc():
 
 
 def get_supported_ccs():
-    return NVRTC().get_supported_archs()
+    if config.CUDA_USE_NVIDIA_BINDING:
+        retcode, archs = bindings_nvrtc.nvrtcGetSupportedArchs()
+        if retcode != bindings_nvrtc.nvrtcResult.NVRTC_SUCCESS:
+            raise RuntimeError(
+                f"{retcode.name} when calling nvrtcGetSupportedArchs()"
+            )
+        return [(arch // 10, arch % 10) for arch in archs]
+    else:
+        return NVRTC().get_supported_archs()
