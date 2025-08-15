@@ -196,11 +196,6 @@ if TEST_BIN_DIR:
 class TestExtendingLinkage(CUDATestCase):
     @unittest.skipUnless(TEST_BIN_DIR, "Necessary binaries are not available")
     def test_extension_adds_linkable_code(self):
-        cuda_major_version = cuda.runtime.get_version()[0]
-
-        if cuda_major_version < 12:
-            self.skipTest("CUDA 12 required for linking in-memory data")
-
         files = (
             (test_device_functions_a, cuda.Archive),
             (test_device_functions_cubin, cuda.Cubin),
