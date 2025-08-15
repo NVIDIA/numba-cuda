@@ -3508,10 +3508,15 @@ def host_to_device(dst, src, size, stream=0):
     varargs = []
 
     if stream:
-        assert isinstance(stream, Stream)
+        from cuda.core import experimental
+
+        assert isinstance(stream, (Stream, experimental.Stream))
         fn = driver.cuMemcpyHtoDAsync
         if USE_NV_BINDING:
-            handle = stream.handle.value
+            if isinstance(stream, experimental.Stream):
+                handle = int(stream.handle)
+            else:
+                handle = stream.handle.value
         else:
             handle = stream.handle
         varargs.append(handle)
@@ -3530,10 +3535,15 @@ def device_to_host(dst, src, size, stream=0):
     varargs = []
 
     if stream:
-        assert isinstance(stream, Stream)
+        from cuda.core import experimental
+
+        assert isinstance(stream, (Stream, experimental.Stream))
         fn = driver.cuMemcpyDtoHAsync
         if USE_NV_BINDING:
-            handle = stream.handle.value
+            if isinstance(stream, experimental.Stream):
+                handle = int(stream.handle)
+            else:
+                handle = stream.handle.value
         else:
             handle = stream.handle
         varargs.append(handle)
@@ -3552,10 +3562,15 @@ def device_to_device(dst, src, size, stream=0):
     varargs = []
 
     if stream:
-        assert isinstance(stream, Stream)
+        from cuda.core import experimental  # Ensure experimental is imported
+
+        assert isinstance(stream, (Stream, experimental.Stream))
         fn = driver.cuMemcpyDtoDAsync
         if USE_NV_BINDING:
-            handle = stream.handle.value
+            if isinstance(stream, experimental.Stream):
+                handle = int(stream.handle)
+            else:
+                handle = stream.handle.value
         else:
             handle = stream.handle
         varargs.append(handle)
@@ -3577,10 +3592,15 @@ def device_memset(dst, val, size, stream=0):
     varargs = []
 
     if stream:
-        assert isinstance(stream, Stream)
+        from cuda.core import experimental  # Ensure experimental is imported
+
+        assert isinstance(stream, (Stream, experimental.Stream))
         fn = driver.cuMemsetD8Async
         if USE_NV_BINDING:
-            handle = stream.handle.value
+            if isinstance(stream, experimental.Stream):
+                handle = int(stream.handle)
+            else:
+                handle = stream.handle.value
         else:
             handle = stream.handle
         varargs.append(handle)

@@ -467,7 +467,12 @@ class _Kernel(serialize.ReduceMixin):
             self._prepare_args(t, v, stream, retr, kernelargs)
 
         if driver.USE_NV_BINDING:
-            stream_handle = stream and stream.handle.value or 0
+            from cuda.core import experimental
+
+            if isinstance(stream, experimental.Stream):
+                stream_handle = int(stream.handle)
+            else:
+                stream_handle = stream and stream.handle.value or 0
         else:
             zero_stream = None
             stream_handle = stream and stream.handle or zero_stream
