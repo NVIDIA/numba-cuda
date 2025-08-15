@@ -27,7 +27,6 @@ from numba.core.typing import signature
 from numba.core.typing.templates import AttributeTemplate, ConcreteTemplate
 from numba.core.typing.templates import Registry as TypingRegistry
 from numba.cuda import CUSource, declare_device
-from numba.cuda._internal.cuda_bf16 import _type___nv_bfloat16
 from numba.cuda.vector_types import vector_types
 from numba.extending import as_numba_type
 from numba.types import (
@@ -49,8 +48,10 @@ from numba.types import (
     uint64,
     void,
 )
+from numba.cuda.types import bfloat16
 
 float32x2 = vector_types["float32x2"]
+__half = float16
 
 
 typing_registry = TypingRegistry()
@@ -180,37 +181,7 @@ make_attribute_wrapper(_type_class_unnamed1405416, "x", "x")
 make_attribute_wrapper(_type_class_unnamed1405416, "y", "y")
 
 
-@register
-class _ctor_template_unnamed1405416(ConcreteTemplate):
-    key = globals()["unnamed1405416"]
-    cases = []
-
-
-register_global(unnamed1405416, Function(_ctor_template_unnamed1405416))
-
-
-# Typing for __nv_bfloat16
-class _type_class___nv_bfloat16(Number):
-    def __init__(self):
-        super().__init__(name="__nv_bfloat16")
-        self.alignof_ = 2
-        self.bitwidth = 2 * 8
-
-
-_type___nv_bfloat16 = _type_class___nv_bfloat16()
-
-
-# Make Python API for struct
-__nv_bfloat16 = type("__nv_bfloat16", (), {"_nbtype": _type___nv_bfloat16})
-
-as_numba_type.register(__nv_bfloat16, _type___nv_bfloat16)
-
-
-@register_model(_type_class___nv_bfloat16)
-class _model___nv_bfloat16(PrimitiveModel):
-    def __init__(self, dmm, fe_type):
-        be_type = ir.IntType(fe_type.bitwidth)
-        super(_model___nv_bfloat16, self).__init__(dmm, fe_type, be_type)
+__nv_bfloat16 = _type___nv_bfloat16 = bfloat16
 
 
 def _lower__ZN13__nv_bfloat16C1Ev(shim_stream, shim_obj):
@@ -354,6 +325,17 @@ def _lower__ZN13__nv_bfloat16C1E6__half(shim_stream, shim_obj):
         )
         return builder.load(
             selfptr, align=getattr(_type___nv_bfloat16, "alignof_", None)
+        )
+
+    # By default, Numbast does not generate this cast because the c++ conversion
+    # constructor is marked explict. We enable it by hand here.
+    @lower_cast(float16, __nv_bfloat16)
+    def conversion_impl(context, builder, fromty, toty, value):
+        return ctor_impl(
+            context,
+            builder,
+            signature(__nv_bfloat16, fromty),
+            [value],
         )
 
 
