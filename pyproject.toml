@@ -30,6 +30,7 @@ cu12 = [
     "nvidia-cuda-nvrtc-cu12",
     "nvidia-nvjitlink-cu12"
 ]
+# TODO: Use cuda-toolkit package dependencies - e.g. cuda-toolkit[curand,nvvm,nvrtc]=13.*
 cu13 = [
     "cuda-bindings==13.*",
     "cuda-core==0.3.2,<0.4.0dev0",
