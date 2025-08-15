@@ -1,6 +1,6 @@
 import numpy as np
 
-from numba.core.utils import PYVERSION
+from numba.cuda.utils import PYVERSION
 from numba.cuda.testing import skip_on_cudasim, CUDATestCase
 from numba.cuda.tests.support import (
     override_config,
