@@ -92,6 +92,7 @@ Construction of a single instance of a ``bfloat16`` object:
     - ``int32``
     - ``uint64``
     - ``uint32``
+    - ``float16``
 
 Conversely, ``bfloat16`` data can be cast back to existing native data type via
 ``dtype(b)``, where ``dtype`` is one of the data types above (except float16),
@@ -100,7 +101,7 @@ and ``b`` is a bfloat16 object.
 Arithmetic
 **********
 
-Supported arithmetic operations on ``bfloat`16`` operands are:
+Supported arithmetic operations on ``bfloat16`` operands are:
 
 - Arithmetic (``+``, ``-``, ``*``, ``/``)
 - Arithmetic assignment operators (``+=``, ``-=``, ``*=``, ``/=``)
@@ -140,11 +141,11 @@ on ``bfloat16`` are provided:
     mode.
 
 .. function:: numba.cuda.bf16.hlog2(b)
-    Calculates bfloat16 decimal logarithm of input ``b`` in round-to-nearest-even
-    mode.
+    Calculates bfloat16 binary logarithm (base-2) of input ``b`` in
+    round-to-nearest-even mode.
 
 .. function:: numba.cuda.bf16.hlog10(b)
-    Calculates bfloat16 natural exponential function of input ``b`` in
+    Calculates bfloat16 common logarithm (base-10) of input ``b`` in
     round-to-nearest-even mode.
 
 .. function:: numba.cuda.bf16.hcos(b)
@@ -187,3 +188,80 @@ on ``bfloat16`` are provided:
 .. function:: numba.cuda.bf16.hexp10(b)
     Calculates bfloat16 decimal exponential function of input ``b`` in
     round-to-nearest-even mode.
+
+
+Arithmetic Intrinsics
+*********************
+
+The following low-level arithmetic intrinsics are available under
+``numba.cuda.bf16`` and map to CUDA bfloat16 arithmetic functions. Unless
+otherwise noted, operations are performed in round-to-nearest-even mode.
+
+.. function:: numba.cuda.bf16.habs(a)
+
+    Calculates the absolute value of input ``a`` (bfloat16) and returns the result.
+
+.. function:: numba.cuda.bf16.hneg(a)
+
+    Negates input ``a`` (bfloat16) and returns the result.
+
+.. function:: numba.cuda.bf16.hadd(a, b)
+
+    Adds ``a`` and ``b`` (bfloat16) in round-to-nearest-even mode.
+
+.. function:: numba.cuda.bf16.hadd_rn(a, b)
+
+    Adds ``a`` and ``b`` (bfloat16) in round-to-nearest-even mode. Prevents
+    contraction of separate operations into a fused-multiply-add.
+
+.. function:: numba.cuda.bf16.hadd_sat(a, b)
+
+    Adds ``a`` and ``b`` (bfloat16) in round-to-nearest-even mode, with
+    saturation to the range ``[0.0, 1.0]``. NaN results are flushed to ``+0.0``.
+
+.. function:: numba.cuda.bf16.hsub(a, b)
+
+    Subtracts ``b`` from ``a`` (bfloat16) in round-to-nearest-even mode.
+
+.. function:: numba.cuda.bf16.hsub_rn(a, b)
+
+    Subtracts ``b`` from ``a`` (bfloat16) in round-to-nearest-even mode.
+    Prevents contraction of separate operations into a fused-multiply-add.
+
+.. function:: numba.cuda.bf16.hsub_sat(a, b)
+
+    Subtracts ``b`` from ``a`` (bfloat16) in round-to-nearest-even mode, with
+    saturation to the range ``[0.0, 1.0]``. NaN results are flushed to ``+0.0``.
+
+.. function:: numba.cuda.bf16.hmul(a, b)
+
+    Multiplies ``a`` and ``b`` (bfloat16) in round-to-nearest-even mode.
+
+.. function:: numba.cuda.bf16.hmul_rn(a, b)
+
+    Multiplies ``a`` and ``b`` (bfloat16) in round-to-nearest-even mode.
+    Prevents contraction of separate operations into a fused-multiply-add.
+
+.. function:: numba.cuda.bf16.hmul_sat(a, b)
+
+    Multiplies ``a`` and ``b`` (bfloat16) in round-to-nearest-even mode, with
+    saturation to the range ``[0.0, 1.0]``. NaN results are flushed to ``+0.0``.
+
+.. function:: numba.cuda.bf16.hdiv(a, b)
+
+    Divides ``a`` by ``b`` (bfloat16) in round-to-nearest-even mode.
+
+.. function:: numba.cuda.bf16.hfma(a, b, c)
+
+    Computes a fused multiply-add of ``a`` and ``b`` plus ``c`` (bfloat16) in
+    round-to-nearest-even mode; i.e. returns ``a * b + c``.
+
+.. function:: numba.cuda.bf16.hfma_sat(a, b, c)
+
+    Fused multiply-add in round-to-nearest-even mode with saturation to the
+    range ``[0.0, 1.0]``. NaN results are flushed to ``+0.0``.
+
+.. function:: numba.cuda.bf16.hfma_relu(a, b, c)
+
+    Fused multiply-add in round-to-nearest-even mode with ReLU saturation;
+    i.e. returns ``max(0, a * b + c)``.
