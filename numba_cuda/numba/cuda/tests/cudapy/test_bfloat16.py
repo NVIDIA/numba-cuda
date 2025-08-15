@@ -32,6 +32,20 @@ from numba.cuda.bf16 import (
     hmin_nan,
     hisnan,
     hisinf,
+    # Conversion intrinsics
+    bfloat162float,
+    float2bfloat16_rn,
+    float2bfloat16_rz,
+    float2bfloat16_rd,
+    float2bfloat16_ru,
+    int2bfloat16_rn,
+    int2bfloat16_rz,
+    int2bfloat16_rd,
+    int2bfloat16_ru,
+    bfloat162int_rn,
+    bfloat162int_rz,
+    bfloat162int_rd,
+    bfloat162int_ru,
 )
 from numba.cuda.testing import CUDATestCase
 
@@ -269,6 +283,67 @@ class TestBfloat16HighLevelBindings(CUDATestCase):
         # Non-NaN variants should return the non-NaN operand
         self.assertAlmostEqual(out[2], 2.0, delta=1e-3)
         self.assertAlmostEqual(out[3], 2.0, delta=1e-3)
+
+    def test_precision_conversion_intrinsics(self):
+        self.skip_unsupported()
+
+        @cuda.jit
+        def kernel_float_to_bf16(out):
+            f = float32(3.14)
+            out[0] = float32(float2bfloat16_rn(f))
+            out[1] = float32(float2bfloat16_rz(f))
+            out[2] = float32(float2bfloat16_rd(f))
+            out[3] = float32(float2bfloat16_ru(f))
+
+        @cuda.jit
+        def kernel_bf16_to_float(out):
+            a = bfloat16(3.14)
+            out[0] = bfloat162float(a)
+
+        @cuda.jit
+        def kernel_int_to_bf16(out):
+            i = 3
+            out[0] = float32(int2bfloat16_rn(i))
+            out[1] = float32(int2bfloat16_rz(i))
+            out[2] = float32(int2bfloat16_rd(i))
+            out[3] = float32(int2bfloat16_ru(i))
+
+        @cuda.jit
+        def kernel_bf16_to_int(out):
+            a = bfloat16(3.14)
+            out[0] = bfloat162int_rn(a)
+            out[1] = bfloat162int_rz(a)
+            out[2] = bfloat162int_rd(a)
+            out[3] = bfloat162int_ru(a)
+
+        out = cuda.device_array((4,), dtype="float32")
+        kernel_float_to_bf16[1, 1](out)
+        # Check they are near the original value in float32 after round-trip
+        # Note: Different rounding modes produce slightly different values
+        self.assertAlmostEqual(out[0], 3.140625, delta=1e-3)  # rn
+        self.assertTrue(abs(out[1] - 3.140625) < 2e-2, out[1] - 3.140625)  # rz
+        self.assertTrue(abs(out[2] - 3.140625) < 2e-2, out[2] - 3.140625)  # rd
+        self.assertTrue(abs(out[3] - 3.140625) < 2e-2, out[3] - 3.140625)  # ru
+
+        out = cuda.device_array((1,), dtype="float32")
+        kernel_bf16_to_float[1, 1](out)
+        self.assertAlmostEqual(out[0], 3.140625, delta=1e-3)
+
+        outi = cuda.device_array((4,), dtype="int32")
+        kernel_int_to_bf16[1, 1](outi)
+        # int to bf16 should be exactly representable for small integers
+        self.assertEqual(int(outi[0]), 3)
+        self.assertEqual(int(outi[1]), 3)
+        self.assertEqual(int(outi[2]), 3)
+        self.assertEqual(int(outi[3]), 3)
+
+        outi = cuda.device_array((4,), dtype="int32")
+        kernel_bf16_to_int[1, 1](outi)
+        # 3.14 -> 3 for rz/rd, 3 or 4 for rn/ru depending on rounding
+        self.assertIn(int(outi[0]), (3, 4))
+        self.assertEqual(int(outi[1]), 3)
+        self.assertEqual(int(outi[2]), 3)
+        self.assertIn(int(outi[3]), (3, 4))
 
     @unittest.skipIf(
         find_spec("ml_dtypes") is None,
