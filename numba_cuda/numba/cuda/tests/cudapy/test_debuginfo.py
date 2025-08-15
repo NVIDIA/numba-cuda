@@ -1,11 +1,19 @@
+from collections import namedtuple
 from numba.cuda.tests.support import override_config, captured_stdout
 from numba.cuda.testing import skip_on_cudasim
 from numba import cuda
 from numba.core import types
 from numba.cuda.testing import CUDATestCase
+from textwrap import dedent
+import math
 import itertools
 import re
 import unittest
+import warnings
+from numba.core.errors import NumbaDebugInfoWarning
+from numba.tests.support import ignore_internal_warnings
+import numpy as np
+import inspect
 
 
 @skip_on_cudasim("Simulator does not produce debug dumps")
@@ -26,7 +34,7 @@ class TestCudaDebugInfo(CUDATestCase):
         assertfn(match, msg=asm)
 
     def test_no_debuginfo_in_asm(self):
-        @cuda.jit(debug=False)
+        @cuda.jit(debug=False, opt=False)
         def foo(x):
             x[0] = 1
 
@@ -404,7 +412,7 @@ class TestCudaDebugInfo(CUDATestCase):
         self.assertIsNotNone(match, msg=llvm_ir)
 
     def test_DW_LANG(self):
-        @cuda.jit(debug=True)
+        @cuda.jit(debug=True, opt=False)
         def foo():
             """
             CHECK: distinct !DICompileUnit
@@ -443,7 +451,7 @@ class TestCudaDebugInfo(CUDATestCase):
         """
         sig = (types.float64,)
 
-        @cuda.jit(sig, debug=True)
+        @cuda.jit(sig, debug=True, opt=False)
         def foo(a):
             """
             CHECK-LABEL: define void @{{.+}}foo
@@ -500,6 +508,288 @@ class TestCudaDebugInfo(CUDATestCase):
 
         ir = foo.inspect_llvm()[sig]
         self.assertFileCheckMatches(ir, foo.__doc__)
+
+    def test_missing_source(self):
+        strsrc = """
+        def foo():
+            pass
+        """
+        l = dict()
+        exec(dedent(strsrc), {}, l)
+        foo = cuda.jit(debug=True, opt=False)(l["foo"])
+
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always", NumbaDebugInfoWarning)
+            ignore_internal_warnings()
+            foo[1, 1]()
+
+        self.assertEqual(len(w), 1)
+        found = w[0]
+        self.assertEqual(found.category, NumbaDebugInfoWarning)
+        msg = str(found.message)
+        # make sure the warning contains the right message
+        self.assertIn("Could not find source for function", msg)
+        # and refers to the offending function
+        self.assertIn(str(foo.py_func), msg)
+
+    def test_no_if_op_bools_declared(self):
+        @cuda.jit(
+            "int64(boolean, boolean)",
+            debug=True,
+            opt=False,
+            _dbg_optnone=True,
+            device=True,
+        )
+        def choice(cond1, cond2):
+            """
+            CHECK: define void @{{.+}}choices
+            """
+            if cond1 and cond2:
+                return 1
+            else:
+                return 2
+
+        ir_content = choice.inspect_llvm()[choice.signatures[0]]
+        # We should not declare variables used as the condition in if ops.
+        # See Numba PR #9888: https://github.com/numba/numba/pull/9888
+
+        for line in ir_content.splitlines():
+            if "llvm.dbg.declare" in line:
+                self.assertNotIn("bool", line)
+
+    def test_llvm_inliner_flag_conflict(self):
+        # bar will be marked as 'alwaysinline', but when DEBUGINFO_DEFAULT is
+        # set functions are not marked as 'alwaysinline' and this results in a
+        # conflict. baz will not be marked as 'alwaysinline' as a result of
+        # DEBUGINFO_DEFAULT
+
+        @cuda.jit(forceinline=True)
+        def bar(x):
+            return math.sin(x)
+
+        @cuda.jit(forceinline=False)
+        def baz(x):
+            return math.cos(x)
+
+        @cuda.jit(opt=True)
+        def foo(x, y):
+            """
+            CHECK-LABEL: define void @{{.+}}foo
+            CHECK: call i32 @"[[BAR:.+]]"(
+            CHECK: call i32 @"[[BAZ:.+]]"(
+
+            CHECK-DAG: declare i32 @"[[BAR]]"({{.+}}alwaysinline
+            CHECK-DAG: declare i32 @"[[BAZ]]"(
+            CHECK-DAG: define linkonce_odr i32 @"[[BAR]]"({{.+}}alwaysinline
+            CHECK-DAG: define linkonce_odr i32 @"[[BAZ]]"(
+            """
+            a = bar(y)
+            b = baz(y)
+            x[0] = a + b
+
+        # check it compiles
+        with override_config("DEBUGINFO_DEFAULT", 1):
+            result = cuda.device_array(1, dtype=np.float32)
+            foo[1, 1](result, np.pi)
+            result.copy_to_host()
+
+        result_host = math.sin(np.pi) + math.cos(np.pi)
+        self.assertPreciseEqual(result[0], result_host)
+
+        ir_content = foo.inspect_llvm()[foo.signatures[0]]
+        self.assertFileCheckMatches(ir_content, foo.__doc__)
+
+        # Check that the device functions call the appropriate device
+        # math functions and have the correct attributes.
+        self.assertFileCheckMatches(
+            ir_content,
+            """
+            CHECK: define linkonce_odr i32 @{{.+}}bar
+            CHECK-SAME: alwaysinline
+            CHECK-NEXT: {
+            CHECK-NEXT: {{.*}}:
+            CHECK-NEXT: br label {{.*}}
+            CHECK-NEXT: {{.*}}:
+            CHECK-NEXT: call double @"__nv_sin"
+            CHECK-NEXT: store double {{.*}}, double* {{.*}}
+            CHECK-NEXT: ret i32 0
+            CHECK-NEXT: }
+        """,
+        )
+
+        self.assertFileCheckMatches(
+            ir_content,
+            """
+            CHECK: define linkonce_odr i32 @{{.+}}baz
+            CHECK-NOT: alwaysinline
+            CHECK-NEXT: {
+            CHECK-NEXT: {{.*}}:
+            CHECK-NEXT: br label {{.*}}
+            CHECK-NEXT: {{.*}}:
+            CHECK-NEXT: call double @"__nv_cos"
+            CHECK-NEXT: store double {{.*}}, double* {{.*}}
+            CHECK-NEXT: ret i32 0
+            CHECK-NEXT: }
+        """,
+        )
+
+    def test_DILocation_versioned_variables(self):
+        """Tests that DILocation information for versions of variables matches
+        up to their definition site."""
+
+        @cuda.jit(debug=True, opt=False)
+        def foo(dest, n):
+            """
+            CHECK: define void @{{.+}}foo
+            CHECK: store i64 5, i64* %"c{{.+}} !dbg ![[STORE5:.+]]
+            CHECK: store i64 1, i64* %"c{{.+}} !dbg ![[STORE1:.+]]
+            CHECK: [[STORE5]] = !DILocation(
+            CHECK: [[STORE1]] = !DILocation(
+            """
+            if n:
+                c = 5
+            else:
+                c = 1
+            dest[0] = c
+
+        foo_source_lines, foo_source_lineno = inspect.getsourcelines(
+            foo.py_func
+        )
+
+        result = cuda.device_array(1, dtype=np.int32)
+        foo[1, 1](result, 1)
+        result.copy_to_host()
+        self.assertEqual(result[0], 5)
+
+        ir_content = foo.inspect_llvm()[foo.signatures[0]]
+        self.assertFileCheckMatches(ir_content, foo.__doc__)
+
+        # Collect lines pertaining to the function `foo` and debuginfo
+        # metadata
+        lines = ir_content.splitlines()
+        debuginfo_equals = re.compile(r"!(\d+) = ")
+        debug_info_lines = list(
+            filter(lambda x: debuginfo_equals.search(x), lines)
+        )
+
+        function_start_regex = re.compile(r"define void @.+foo")
+        function_start_lines = list(
+            filter(
+                lambda x: function_start_regex.search(x[1]), enumerate(lines)
+            )
+        )
+        function_end_lines = list(
+            filter(lambda x: x[1] == "}", enumerate(lines))
+        )
+        foo_ir_lines = lines[
+            function_start_lines[0][0] : function_end_lines[0][0]
+        ]
+
+        # Check the if condition's debuginfo
+        cond_branch = list(filter(lambda x: "br i1" in x, foo_ir_lines))
+        self.assertEqual(len(cond_branch), 1)
+        self.assertIn("!dbg", cond_branch[0])
+        cond_branch_dbginfo_node = cond_branch[0].split("!dbg")[1].strip()
+        cond_branch_dbginfos = list(
+            filter(
+                lambda x: cond_branch_dbginfo_node + " = " in x,
+                debug_info_lines,
+            )
+        )
+        self.assertEqual(len(cond_branch_dbginfos), 1)
+        cond_branch_dbginfo = cond_branch_dbginfos[0]
+
+        # Check debuginfo for the store instructions
+        store_1_lines = list(filter(lambda x: "store i64 1" in x, foo_ir_lines))
+        store_5_lines = list(filter(lambda x: "store i64 5" in x, foo_ir_lines))
+
+        self.assertEqual(len(store_1_lines), 2)
+        self.assertEqual(len(store_5_lines), 2)
+
+        store_1_dbginfo_set = set(
+            map(lambda x: x.split("!dbg")[1].strip(), store_1_lines)
+        )
+        store_5_dbginfo_set = set(
+            map(lambda x: x.split("!dbg")[1].strip(), store_5_lines)
+        )
+        self.assertEqual(len(store_1_dbginfo_set), 1)
+        self.assertEqual(len(store_5_dbginfo_set), 1)
+        store_1_dbginfo_node = store_1_dbginfo_set.pop()
+        store_5_dbginfo_node = store_5_dbginfo_set.pop()
+        store_1_dbginfos = list(
+            filter(
+                lambda x: store_1_dbginfo_node + " = " in x, debug_info_lines
+            )
+        )
+        store_5_dbginfos = list(
+            filter(
+                lambda x: store_5_dbginfo_node + " = " in x, debug_info_lines
+            )
+        )
+        self.assertEqual(len(store_1_dbginfos), 1)
+        self.assertEqual(len(store_5_dbginfos), 1)
+        store_1_dbginfo = store_1_dbginfos[0]
+        store_5_dbginfo = store_5_dbginfos[0]
+
+        # Ensure the line numbers match what we expect based on the Python source
+        line_number_regex = re.compile(r"line: (\d+)")
+        LineNumbers = namedtuple(
+            "LineNumbers", ["cond_branch", "store_5", "store_1"]
+        )
+        line_number_matches = LineNumbers(
+            *map(
+                lambda x: line_number_regex.search(x),
+                [cond_branch_dbginfo, store_5_dbginfo, store_1_dbginfo],
+            )
+        )
+        self.assertTrue(
+            all(
+                map(
+                    lambda x: x is not None,
+                    line_number_matches,
+                )
+            )
+        )
+        line_numbers = LineNumbers(
+            *map(
+                lambda x: int(x.group(1)),
+                line_number_matches,
+            )
+        )
+        source_line_numbers = LineNumbers(
+            *map(
+                lambda x: x[0] + foo_source_lineno,
+                filter(
+                    lambda x: "c = " in x[1] or "if n:" in x[1],
+                    enumerate(foo_source_lines),
+                ),
+            )
+        )
+        self.assertEqual(line_numbers, source_line_numbers)
+
+    def test_debuginfo_asm(self):
+        def foo():
+            pass
+
+        foo_debug = cuda.jit(debug=True, opt=False)(foo)
+        foo_debug[1, 1]()
+        asm = foo_debug.inspect_asm()[foo_debug.signatures[0]]
+        self.assertFileCheckMatches(
+            asm,
+            """
+            CHECK: .section{{.+}}.debug
+        """,
+        )
+
+        foo_nodebug = cuda.jit(debug=False)(foo)
+        foo_nodebug[1, 1]()
+        asm = foo_nodebug.inspect_asm()[foo_nodebug.signatures[0]]
+        self.assertFileCheckMatches(
+            asm,
+            """
+            CHECK-NOT: .section{{.+}}.debug
+        """,
+        )
 
 
 if __name__ == "__main__":
