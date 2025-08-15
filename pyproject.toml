@@ -21,14 +21,6 @@ requires-python = ">=3.9"
 dependencies = ["numba>=0.60.0"]
 
 [project.optional-dependencies]
-cu11 = [
-    "cuda-bindings==11.8.*",
-    "cuda-core==0.3.*",
-    "cuda-python==11.8.*",  # supports all CTK 11.x
-    "nvidia-cuda-nvcc-cu11",  # for libNVVM
-    "nvidia-cuda-runtime-cu11",
-    "nvidia-cuda-nvrtc-cu11",
-]
 cu12 = [
     "cuda-bindings==12.9.*",
     "cuda-core==0.3.*",
@@ -38,6 +30,17 @@ cu12 = [
     "nvidia-cuda-nvrtc-cu12",
     "nvidia-nvjitlink-cu12"
 ]
+# TODO: Use cuda-toolkit package dependencies - e.g. cuda-toolkit[curand,nvvm,nvrtc]=13.*
+cu13 = [
+    "cuda-bindings==13.*",
+    "cuda-core==0.3.2,<0.4.0dev0",
+    "cuda-python==13.*",
+    "nvidia-nvvm==13.*",
+    "nvidia-cuda-runtime==13.*",
+    "nvidia-cuda-nvrtc==13.*",
+    "nvidia-nvjitlink==13.*"
+]
+
 test = [
     "pre-commit",
     "psutil",
@@ -46,15 +49,15 @@ test = [
     "pytest-xdist",
     "filecheck",
 ]
-test-cu11 = [
-    "numba-cuda[cu11]",
-    "numba-cuda[test]",
-    "nvidia-curand-cu11",
-]
 test-cu12 = [
     "numba-cuda[cu12]",
     "numba-cuda[test]",
     "nvidia-curand-cu12",
+]
+test-cu13 = [
+    "numba-cuda[cu13]",
+    "numba-cuda[test]",
+    "nvidia-curand==10.4.*",
 ]
 
 [project.urls]
