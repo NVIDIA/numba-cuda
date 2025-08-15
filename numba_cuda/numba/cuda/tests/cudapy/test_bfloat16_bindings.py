@@ -1,6 +1,7 @@
 import numba.cuda as cuda
 from numba.cuda.testing import unittest, CUDATestCase
 import numpy as np
+import operator
 
 from numba import (
     config,
@@ -290,6 +291,36 @@ class Bfloat16Test(CUDATestCase):
         kernel[1, 1](arr)
 
         np.testing.assert_allclose(arr, [3], atol=1e-2)
+
+    def test_bf16_intrinsics_used_in_lto(self):
+        self.skip_unsupported()
+
+        operations = [
+            (operator.add, "fma.rn.bf16"),
+            (operator.sub, "fma.rn.bf16"),
+            (operator.mul, "fma.rn.bf16"),
+            (
+                operator.truediv,
+                "div.approx.f32",
+            ),  # no native bf16 div, see cuda_bf16.hpp:L3067
+        ]
+
+        for op, ptx_op in operations:
+            with self.subTest(op=op):
+
+                @cuda.jit(lto=True)
+                def kernel(arr):
+                    a = nv_bfloat16(3.14)
+                    b = nv_bfloat16(5)
+                    arr[0] = float32(op(a, b))
+
+                arr = np.zeros(1, np.float32)
+                kernel[1, 1](arr)
+                np.testing.assert_allclose(arr, [op(3.14, 5)], atol=1e-1)
+
+                ptx = next(iter(kernel.inspect_lto_ptx().values()))
+
+                assert ptx_op in ptx, ptx
 
 
 if __name__ == "__main__":
