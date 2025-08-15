@@ -1,3 +1,6 @@
+import unittest
+from importlib.util import find_spec
+
 from numba import cuda, float32
 from numba.cuda.bf16 import (
     bfloat16,
@@ -266,3 +269,11 @@ class TestBfloat16HighLevelBindings(CUDATestCase):
         # Non-NaN variants should return the non-NaN operand
         self.assertAlmostEqual(out[2], 2.0, delta=1e-3)
         self.assertAlmostEqual(out[3], 2.0, delta=1e-3)
+
+    @unittest.skipIf(
+        find_spec("ml_dtypes") is None,
+        "ml_dtypes is required to use bfloat16 on host",
+    )
+    def test_use_bfloat16_on_host(self):
+        x = bfloat16(3.0)
+        self.assertEqual(x, 3.0)
