@@ -265,3 +265,102 @@ otherwise noted, operations are performed in round-to-nearest-even mode.
 
     Fused multiply-add in round-to-nearest-even mode with ReLU saturation;
     i.e. returns ``max(0, a * b + c)``.
+
+Comparison Intrinsics
+*********************
+
+Device-level comparison intrinsics operating on ``bfloat16`` values are
+available under ``numba.cuda.bf16``. Unless stated otherwise, the ordered
+comparisons return ``False`` if either input is NaN, following IEEE semantics.
+
+.. function:: numba.cuda.bf16.heq(a, b)
+
+    Ordered equality. Returns ``True`` iff ``a == b``. NaN inputs yield ``False``.
+
+.. function:: numba.cuda.bf16.hne(a, b)
+
+    Ordered inequality. Returns ``True`` iff ``a != b`` and neither input is NaN.
+    NaN inputs yield ``False``.
+
+.. function:: numba.cuda.bf16.hge(a, b)
+
+    Ordered greater-or-equal. NaN inputs yield ``False``.
+
+.. function:: numba.cuda.bf16.hgt(a, b)
+
+    Ordered greater-than. NaN inputs yield ``False``.
+
+.. function:: numba.cuda.bf16.hle(a, b)
+
+    Ordered less-or-equal. NaN inputs yield ``False``.
+
+.. function:: numba.cuda.bf16.hlt(a, b)
+
+    Ordered less-than. NaN inputs yield ``False``.
+
+The unordered comparison variants return ``True`` when either input is NaN:
+
+.. function:: numba.cuda.bf16.hequ(a, b)
+
+    Unordered equality. Returns ``True`` if ``a`` or ``b`` is NaN, or if ``a == b``.
+
+.. function:: numba.cuda.bf16.hneu(a, b)
+
+    Unordered inequality. Returns ``True`` if ``a`` or ``b`` is NaN, or if ``a != b``.
+
+.. function:: numba.cuda.bf16.hgeu(a, b)
+
+    Unordered greater-or-equal. Returns ``True`` if ``a`` or ``b`` is NaN, or if ``a >= b``.
+
+.. function:: numba.cuda.bf16.hgtu(a, b)
+
+    Unordered greater-than. Returns ``True`` if ``a`` or ``b`` is NaN, or if ``a > b``.
+
+.. function:: numba.cuda.bf16.hleu(a, b)
+
+    Unordered less-or-equal. Returns ``True`` if ``a`` or ``b`` is NaN, or if ``a <= b``.
+
+.. function:: numba.cuda.bf16.hltu(a, b)
+
+    Unordered less-than. Returns ``True`` if ``a`` or ``b`` is NaN, or if ``a < b``.
+
+Min/Max operations follow CUDA semantics for zeros and NaNs:
+
+.. function:: numba.cuda.bf16.hmax(a, b)
+
+    Returns ``max(a, b)`` with the following behavior:
+    if either input is NaN, the other input is returned; if both are NaN,
+    the canonical NaN is returned. If both inputs are zero, ``+0.0 > -0.0``.
+
+.. function:: numba.cuda.bf16.hmin(a, b)
+
+    Returns ``min(a, b)`` with the following behavior:
+    if either input is NaN, the other input is returned; if both are NaN,
+    the canonical NaN is returned. If both inputs are zero, ``+0.0 > -0.0``.
+
+.. function:: numba.cuda.bf16.hmax_nan(a, b)
+
+    Returns ``max(a, b)`` where NaNs pass through: if either input is NaN,
+    the canonical NaN is returned.
+
+.. function:: numba.cuda.bf16.hmin_nan(a, b)
+
+    Returns ``min(a, b)`` where NaNs pass through: if either input is NaN,
+    the canonical NaN is returned.
+
+Special value predicates:
+
+.. function:: numba.cuda.bf16.hisnan(a)
+
+    Returns ``True`` if ``a`` is a NaN, ``False`` otherwise.
+
+.. function:: numba.cuda.bf16.hisinf(a)
+
+    Returns a nonzero integer if ``a`` is infinite, otherwise ``0``.
+
+.. note::
+
+    Python comparison operators on ``bfloat16`` values in device code map to
+    the ordered comparisons above. For more details on the CUDA bfloat16
+    comparison semantics, see `NVIDIA CUDA Math API: Bfloat16 Comparison Functions
+    <https://docs.nvidia.com/cuda/cuda-math-api/cuda_math_api/group__CUDA__MATH____BFLOAT16__COMPARISON.html#group__cuda__math____bfloat16__comparison>`_.
