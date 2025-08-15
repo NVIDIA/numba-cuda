@@ -1,21 +1,21 @@
 from numba import cuda, float32
 from numba.cuda.bf16 import (
     bfloat16,
-    __habs,
-    __hadd,
-    __hsub,
-    __hmul,
-    __hdiv,
-    __hadd_rn,
-    __hsub_rn,
-    __hmul_rn,
-    __hadd_sat,
-    __hsub_sat,
-    __hmul_sat,
-    __hfma,
-    __hfma_sat,
-    __hfma_relu,
-    __hneg,
+    habs,
+    hadd,
+    hsub,
+    hmul,
+    hadd_rn,
+    hsub_rn,
+    hmul_rn,
+    hdiv,
+    hadd_sat,
+    hsub_sat,
+    hmul_sat,
+    hfma,
+    hfma_sat,
+    hneg,
+    hfma_relu,
 )
 from numba.cuda.testing import CUDATestCase
 
@@ -86,17 +86,17 @@ class TestBfloat16HighLevelBindings(CUDATestCase):
             a = bfloat16(1.25)
             b = bfloat16(-2.5)
 
-            out[0] = float32(__habs(b))
-            out[1] = float32(__hadd(a, b))
-            out[2] = float32(__hsub(a, b))
-            out[3] = float32(__hmul(a, b))
-            out[4] = float32(__hdiv(b, a))
-            out[5] = float32(__hneg(a))
-            out[6] = float32(__hfma(a, b, b))
+            out[0] = float32(habs(b))
+            out[1] = float32(hadd(a, b))
+            out[2] = float32(hsub(a, b))
+            out[3] = float32(hmul(a, b))
+            out[4] = float32(hdiv(b, a))
+            out[5] = float32(hneg(a))
+            out[6] = float32(hfma(a, b, b))
 
-            out[7] = float32(__hadd_rn(a, b))
-            out[8] = float32(__hsub_rn(a, b))
-            out[9] = float32(__hmul_rn(a, b))
+            out[7] = float32(hadd_rn(a, b))
+            out[8] = float32(hsub_rn(a, b))
+            out[9] = float32(hmul_rn(a, b))
 
         out = cuda.device_array((10,), dtype="float32")
         kernel[1, 1](out)
@@ -126,10 +126,10 @@ class TestBfloat16HighLevelBindings(CUDATestCase):
             a = bfloat16(1.5)
             b = bfloat16(0.75)
 
-            out[0] = float32(__hadd_sat(a, b))  # 2.25 -> 1.0
-            out[1] = float32(__hsub_sat(b, a))  # -0.75 -> 0.0
-            out[2] = float32(__hmul_sat(a, b))  # 1.125 -> 1.0
-            out[3] = float32(__hfma_sat(a, b, a))  # 1.125 + 1.5 -> 1.0
+            out[0] = float32(hadd_sat(a, b))  # 2.25 -> 1.0
+            out[1] = float32(hsub_sat(b, a))  # -0.75 -> 0.0
+            out[2] = float32(hmul_sat(a, b))  # 1.125 -> 1.0
+            out[3] = float32(hfma_sat(a, b, a))  # 1.125 + 1.5 -> 1.0
 
         out = cuda.device_array((4,), dtype="float32")
         kernel[1, 1](out)
@@ -153,7 +153,7 @@ class TestBfloat16HighLevelBindings(CUDATestCase):
             b = bfloat16(2.0)
             c = bfloat16(0.0)
 
-            out[0] = float32(__hfma_relu(a, b, c))  # -3.0 -> relu -> 0.0
+            out[0] = float32(hfma_relu(a, b, c))  # -3.0 -> relu -> 0.0
 
         out = cuda.device_array((1,), dtype="float32")
         kernel[1, 1](out)
