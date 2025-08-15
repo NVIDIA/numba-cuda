@@ -16,6 +16,19 @@ from numba.cuda.bf16 import (
     hfma_sat,
     hneg,
     hfma_relu,
+    # Comparison intrinsics
+    heq,
+    hne,
+    hge,
+    hgt,
+    hle,
+    hlt,
+    hmax,
+    hmin,
+    hmax_nan,
+    hmin_nan,
+    hisnan,
+    hisinf,
 )
 from numba.cuda.testing import CUDATestCase
 
@@ -159,3 +172,97 @@ class TestBfloat16HighLevelBindings(CUDATestCase):
         kernel[1, 1](out)
 
         self.assertAlmostEqual(out[0], 0.0, delta=1e-3)
+
+    def test_comparison_intrinsics(self):
+        self.skip_unsupported()
+
+        def make_kernel(cmpfn):
+            @cuda.jit
+            def kernel(out, a, b):
+                a_bf16 = bfloat16(a)
+                b_bf16 = bfloat16(b)
+                out[0] = cmpfn(a_bf16, b_bf16)
+
+            return kernel
+
+        comparisons = [heq, hne, hge, hgt, hle, hlt]
+        ops = [
+            lambda x, y: x == y,
+            lambda x, y: x != y,
+            lambda x, y: x >= y,
+            lambda x, y: x > y,
+            lambda x, y: x <= y,
+            lambda x, y: x < y,
+        ]
+
+        for cmpfn, op in zip(comparisons, ops):
+            with self.subTest(cmpfn=cmpfn):
+                kernel = make_kernel(cmpfn)
+                out = cuda.device_array((1,), dtype="bool")
+
+                a = 3.0
+                b = 3.0
+                kernel[1, 1](out, a, b)
+                self.assertEqual(bool(out[0]), op(3.0, 3.0))
+
+                a = 3.0
+                b = 4.0
+                kernel[1, 1](out, a, b)
+                self.assertEqual(bool(out[0]), op(3.0, 4.0))
+
+                a = 4.0
+                b = 3.0
+                kernel[1, 1](out, a, b)
+                self.assertEqual(bool(out[0]), op(4.0, 3.0))
+
+    def test_hmax_hmin_intrinsics(self):
+        self.skip_unsupported()
+
+        @cuda.jit
+        def kernel(out):
+            a = bfloat16(3.0)
+            b = bfloat16(4.0)
+            out[0] = float32(hmax(a, b))
+            out[1] = float32(hmin(a, b))
+
+        out = cuda.device_array((2,), dtype="float32")
+        kernel[1, 1](out)
+        self.assertAlmostEqual(out[0], 4.0, delta=1e-3)
+        self.assertAlmostEqual(out[1], 3.0, delta=1e-3)
+
+    def test_nan_and_inf_intrinsics(self):
+        self.skip_unsupported()
+
+        @cuda.jit
+        def kernel(out_bool, out_int):
+            nanv = bfloat16(float("nan"))
+            infv = bfloat16(float("inf"))
+            out_bool[0] = hisnan(nanv)
+            out_int[0] = hisinf(infv)
+
+        out_bool = cuda.device_array((1,), dtype="bool")
+        out_int = cuda.device_array((1,), dtype="int32")
+        kernel[1, 1](out_bool, out_int)
+        self.assertTrue(bool(out_bool[0]))
+        self.assertNotEqual(int(out_int[0]), 0)
+
+    def test_hmax_nan_hmin_nan_intrinsics(self):
+        self.skip_unsupported()
+
+        @cuda.jit
+        def kernel(out):
+            a = bfloat16(float("nan"))
+            b = bfloat16(2.0)
+            out[0] = float32(hmax_nan(a, b))
+            out[1] = float32(hmin_nan(a, b))
+            out[2] = float32(hmax(a, b))
+            out[3] = float32(hmin(a, b))
+
+        out = cuda.device_array((4,), dtype="float32")
+        kernel[1, 1](out)
+        # NaN-propagating variants should produce NaN
+        self.assertTrue(math.isnan(out[0]))
+        self.assertTrue(math.isnan(out[1]))
+        # Non-NaN variants should return the non-NaN operand
+        self.assertAlmostEqual(out[2], 2.0, delta=1e-3)
+        self.assertAlmostEqual(out[3], 2.0, delta=1e-3)
