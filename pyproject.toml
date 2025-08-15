@@ -22,7 +22,7 @@ dependencies = ["numba>=0.60.0"]
 
 [project.optional-dependencies]
 cu12 = [
-    "cuda-bindings==12.9.*",
+    "cuda-bindings>=12.9.1,<13.0.0",
     "cuda-core==0.3.*",
     "cuda-python==12.9.*",  # supports all CTK 12.x
     "nvidia-cuda-nvcc-cu12",  # for libNVVM
