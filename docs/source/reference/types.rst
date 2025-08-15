@@ -364,3 +364,176 @@ Special value predicates:
     the ordered comparisons above. For more details on the CUDA bfloat16
     comparison semantics, see `NVIDIA CUDA Math API: Bfloat16 Comparison Functions
     <https://docs.nvidia.com/cuda/cuda-math-api/cuda_math_api/group__CUDA__MATH____BFLOAT16__COMPARISON.html#group__cuda__math____bfloat16__comparison>`_.
+
+Precision Conversion and Data Movement
+*************************************
+
+The following conversion intrinsics convert between ``bfloat16`` and other
+scalar types. Rounding-mode suffixes:
+
+- ``_rn``: round-to-nearest-even
+- ``_rz``: round-towards-zero
+- ``_rd``: round-down (towards −∞)
+- ``_ru``: round-up (towards +∞)
+
+Floating-point conversions
+==========================
+
+.. function:: numba.cuda.bf16.float32_to_bfloat16(x)
+
+    Convert a ``float32`` to ``bfloat16`` (default rounding is round-to-nearest-even).
+
+.. function:: numba.cuda.bf16.float64_to_bfloat16(x)
+
+    Convert a ``float64`` to ``bfloat16`` (default rounding is round-to-nearest-even).
+
+.. function:: numba.cuda.bf16.bfloat16_to_float32(x)
+
+    Convert a ``bfloat16`` to ``float32``.
+
+.. function:: numba.cuda.bf16.float32_to_bfloat16_rn(x)
+.. function:: numba.cuda.bf16.float32_to_bfloat16_rz(x)
+.. function:: numba.cuda.bf16.float32_to_bfloat16_rd(x)
+.. function:: numba.cuda.bf16.float32_to_bfloat16_ru(x)
+
+    Convert a ``float32`` to ``bfloat16`` using the specified rounding mode.
+
+Integer conversions
+===================
+
+Representative APIs for each integer width are listed below. All have
+rounding-mode variants ``_rn``, ``_rz``, ``_rd``, ``_ru``.
+
+int16 (signed 16-bit)
+---------------------
+
+.. function:: numba.cuda.bf16.int16_to_bfloat16_rn(x)
+.. function:: numba.cuda.bf16.int16_to_bfloat16_rz(x)
+.. function:: numba.cuda.bf16.int16_to_bfloat16_rd(x)
+.. function:: numba.cuda.bf16.int16_to_bfloat16_ru(x)
+
+    Convert an ``int16`` to ``bfloat16`` with the selected rounding mode.
+
+.. function:: numba.cuda.bf16.bfloat16_to_int16_rn(x)
+.. function:: numba.cuda.bf16.bfloat16_to_int16_rz(x)
+.. function:: numba.cuda.bf16.bfloat16_to_int16_rd(x)
+.. function:: numba.cuda.bf16.bfloat16_to_int16_ru(x)
+
+    Convert a ``bfloat16`` to ``int16`` with the selected rounding mode.
+
+uint16 (unsigned 16-bit)
+------------------------
+
+.. function:: numba.cuda.bf16.uint16_to_bfloat16_rn(x)
+.. function:: numba.cuda.bf16.uint16_to_bfloat16_rz(x)
+.. function:: numba.cuda.bf16.uint16_to_bfloat16_rd(x)
+.. function:: numba.cuda.bf16.uint16_to_bfloat16_ru(x)
+
+    Convert a ``uint16`` to ``bfloat16`` with the selected rounding mode.
+
+.. function:: numba.cuda.bf16.bfloat16_to_uint16_rn(x)
+.. function:: numba.cuda.bf16.bfloat16_to_uint16_rz(x)
+.. function:: numba.cuda.bf16.bfloat16_to_uint16_rd(x)
+.. function:: numba.cuda.bf16.bfloat16_to_uint16_ru(x)
+
+    Convert a ``bfloat16`` to ``uint16`` with the selected rounding mode.
+
+int32 (signed 32-bit)
+---------------------
+
+.. function:: numba.cuda.bf16.int32_to_bfloat16_rn(x)
+.. function:: numba.cuda.bf16.int32_to_bfloat16_rz(x)
+.. function:: numba.cuda.bf16.int32_to_bfloat16_rd(x)
+.. function:: numba.cuda.bf16.int32_to_bfloat16_ru(x)
+
+    Convert an ``int32`` to ``bfloat16`` with the selected rounding mode.
+
+.. function:: numba.cuda.bf16.bfloat16_to_int32_rn(x)
+.. function:: numba.cuda.bf16.bfloat16_to_int32_rz(x)
+.. function:: numba.cuda.bf16.bfloat16_to_int32_rd(x)
+.. function:: numba.cuda.bf16.bfloat16_to_int32_ru(x)
+
+    Convert a ``bfloat16`` to ``int32`` with the selected rounding mode.
+
+uint32 (unsigned 32-bit)
+------------------------
+
+.. function:: numba.cuda.bf16.uint32_to_bfloat16_rn(x)
+.. function:: numba.cuda.bf16.uint32_to_bfloat16_rz(x)
+.. function:: numba.cuda.bf16.uint32_to_bfloat16_rd(x)
+.. function:: numba.cuda.bf16.uint32_to_bfloat16_ru(x)
+
+    Convert a ``uint32`` to ``bfloat16`` with the selected rounding mode.
+
+.. function:: numba.cuda.bf16.bfloat16_to_uint32_rn(x)
+.. function:: numba.cuda.bf16.bfloat16_to_uint32_rz(x)
+.. function:: numba.cuda.bf16.bfloat16_to_uint32_rd(x)
+.. function:: numba.cuda.bf16.bfloat16_to_uint32_ru(x)
+
+    Convert a ``bfloat16`` to ``uint32`` with the selected rounding mode.
+
+int64 (signed 64-bit)
+---------------------
+
+.. function:: numba.cuda.bf16.int64_to_bfloat16_rn(x)
+.. function:: numba.cuda.bf16.int64_to_bfloat16_rz(x)
+.. function:: numba.cuda.bf16.int64_to_bfloat16_rd(x)
+.. function:: numba.cuda.bf16.int64_to_bfloat16_ru(x)
+
+    Convert an ``int64`` to ``bfloat16`` with the selected rounding mode.
+
+.. function:: numba.cuda.bf16.bfloat16_to_int64_rn(x)
+.. function:: numba.cuda.bf16.bfloat16_to_int64_rz(x)
+.. function:: numba.cuda.bf16.bfloat16_to_int64_rd(x)
+.. function:: numba.cuda.bf16.bfloat16_to_int64_ru(x)
+
+    Convert a ``bfloat16`` to ``int64`` with the selected rounding mode.
+
+uint64 (unsigned 64-bit)
+------------------------
+
+.. function:: numba.cuda.bf16.uint64_to_bfloat16_rn(x)
+.. function:: numba.cuda.bf16.uint64_to_bfloat16_rz(x)
+.. function:: numba.cuda.bf16.uint64_to_bfloat16_rd(x)
+.. function:: numba.cuda.bf16.uint64_to_bfloat16_ru(x)
+
+    Convert a ``uint64`` to ``bfloat16`` with the selected rounding mode.
+
+.. function:: numba.cuda.bf16.bfloat16_to_uint64_rn(x)
+.. function:: numba.cuda.bf16.bfloat16_to_uint64_rz(x)
+.. function:: numba.cuda.bf16.bfloat16_to_uint64_rd(x)
+.. function:: numba.cuda.bf16.bfloat16_to_uint64_ru(x)
+
+    Convert a ``bfloat16`` to ``uint64`` with the selected rounding mode.
+
+8-bit conversions
+=================
+
+.. function:: numba.cuda.bf16.bfloat16_to_int8_rz(x)
+
+    Convert a ``bfloat16`` to ``int8`` with round-towards-zero.
+
+.. function:: numba.cuda.bf16.bfloat16_to_uint8_rz(x)
+
+    Convert a ``bfloat16`` to ``uint8`` with round-towards-zero.
+
+Bit Reinterpret Casts
+*********************
+
+These APIs reinterpret bits without numeric conversion:
+
+.. function:: numba.cuda.bf16.bfloat16_as_int16(x)
+
+    Reinterpret the bits of ``bfloat16`` as an ``int16``.
+
+.. function:: numba.cuda.bf16.bfloat16_as_uint16(x)
+
+    Reinterpret the bits of ``bfloat16`` as a ``uint16``.
+
+.. function:: numba.cuda.bf16.int16_as_bfloat16(x)
+
+    Reinterpret the bits of an ``int16`` as a ``bfloat16``.
+
+.. function:: numba.cuda.bf16.uint16_as_bfloat16(x)
+
+    Reinterpret the bits of a ``uint16`` as a ``bfloat16``.
