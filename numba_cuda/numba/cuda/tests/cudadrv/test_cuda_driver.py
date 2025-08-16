@@ -9,6 +9,8 @@ from numba.cuda.cudadrv.driver import (
 from numba.cuda.cudadrv import devices, drvapi, driver as _driver
 from numba.cuda.testing import unittest, CUDATestCase
 from numba.cuda.testing import skip_on_cudasim
+from cuda.core import experimental
+import contextlib
 
 
 ptx1 = """
@@ -148,6 +150,44 @@ class TestCudaDriver(CUDATestCase):
 
         device_to_host(array, memory, sizeof(array), stream=stream)
 
+        for i, v in enumerate(array):
+            self.assertEqual(i, v)
+
+    def test_cuda_core_stream_operations(self):
+        module = self.context.create_module_ptx(self.ptx)
+        function = module.get_function("_Z10helloworldPi")
+        array = (c_int * 100)()
+        dev = experimental.Device()
+        dev.set_current()
+        stream = dev.create_stream()
+
+        @contextlib.contextmanager
+        def auto_synchronize(stream):
+            try:
+                yield stream
+            finally:
+                stream.sync()
+
+        with auto_synchronize(stream):
+            memory = self.context.memalloc(sizeof(array))
+            host_to_device(memory, array, sizeof(array), stream=stream)
+
+            ptr = memory.device_ctypes_pointer
+
+            launch_kernel(
+                function.handle,  # Kernel
+                1,
+                1,
+                1,  # gx, gy, gz
+                100,
+                1,
+                1,  # bx, by, bz
+                0,  # dynamic shared mem
+                stream.handle,  # stream
+                [ptr],
+            )
+
+            device_to_host(array, memory, sizeof(array), stream=stream)
         for i, v in enumerate(array):
             self.assertEqual(i, v)
 
