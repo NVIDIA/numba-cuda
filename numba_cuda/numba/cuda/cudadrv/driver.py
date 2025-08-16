@@ -11,6 +11,7 @@ system to freeze in some cases.
 
 """
 
+from cuda.core import experimental
 import sys
 import os
 import ctypes
@@ -3499,31 +3500,33 @@ def device_memory_depends(devmem, *objs):
     depset.extend(objs)
 
 
+def _stream_handle(stream):
+    from cuda.core import experimental
+
+    if USE_NV_BINDING:
+        if isinstance(stream, experimental.Stream):
+            return int(stream.handle)
+        return stream.handle.value
+    return stream.handle
+
+
 def host_to_device(dst, src, size, stream=0):
     """
     NOTE: The underlying data pointer from the host data buffer is used and
     it should not be changed until the operation which can be asynchronous
     completes.
     """
-    varargs = []
+    fn = driver.cuMemcpyHtoD
+    args = (device_pointer(dst), host_pointer(src, readonly=True), size)
 
     if stream:
         from cuda.core import experimental
 
         assert isinstance(stream, (Stream, experimental.Stream))
         fn = driver.cuMemcpyHtoDAsync
-        if USE_NV_BINDING:
-            if isinstance(stream, experimental.Stream):
-                handle = int(stream.handle)
-            else:
-                handle = stream.handle.value
-        else:
-            handle = stream.handle
-        varargs.append(handle)
-    else:
-        fn = driver.cuMemcpyHtoD
+        args += (_stream_handle(stream),)
 
-    fn(device_pointer(dst), host_pointer(src, readonly=True), size, *varargs)
+    fn(*args)
 
 
 def device_to_host(dst, src, size, stream=0):
@@ -3532,82 +3535,60 @@ def device_to_host(dst, src, size, stream=0):
     it should not be changed until the operation which can be asynchronous
     completes.
     """
-    varargs = []
+    fn = driver.cuMemcpyDtoH
+    args = (host_pointer(dst), device_pointer(src), size)
 
     if stream:
         from cuda.core import experimental
 
         assert isinstance(stream, (Stream, experimental.Stream))
         fn = driver.cuMemcpyDtoHAsync
-        if USE_NV_BINDING:
-            if isinstance(stream, experimental.Stream):
-                handle = int(stream.handle)
-            else:
-                handle = stream.handle.value
-        else:
-            handle = stream.handle
-        varargs.append(handle)
-    else:
-        fn = driver.cuMemcpyDtoH
+        args += (_stream_handle(stream),)
 
-    fn(host_pointer(dst), device_pointer(src), size, *varargs)
+    fn(*args)
 
 
 def device_to_device(dst, src, size, stream=0):
     """
-    NOTE: The underlying data pointer from the host data buffer is used and
+    NOTE: The underlying data pointer from the device buffer is used and
     it should not be changed until the operation which can be asynchronous
     completes.
     """
-    varargs = []
+    fn = driver.cuMemcpyDtoD
+    args = (device_pointer(dst), device_pointer(src), size)
 
     if stream:
-        from cuda.core import experimental  # Ensure experimental is imported
+        from cuda.core import experimental
 
         assert isinstance(stream, (Stream, experimental.Stream))
         fn = driver.cuMemcpyDtoDAsync
-        if USE_NV_BINDING:
-            if isinstance(stream, experimental.Stream):
-                handle = int(stream.handle)
-            else:
-                handle = stream.handle.value
-        else:
-            handle = stream.handle
-        varargs.append(handle)
-    else:
-        fn = driver.cuMemcpyDtoD
+        args += (_stream_handle(stream),)
 
-    fn(device_pointer(dst), device_pointer(src), size, *varargs)
+    fn(*args)
 
 
 def device_memset(dst, val, size, stream=0):
-    """Memset on the device.
-    If stream is not zero, asynchronous mode is used.
+    """
+    Memset on the device.
+    If stream is 0, the call is synchronous.
+    If stream is a Stream object, asynchronous mode is used.
 
     dst: device memory
     val: byte value to be written
-    size: number of byte to be written
-    stream: a CUDA stream
+    size: number of bytes to be written
+    stream: 0 (synchronous) or a CUDA stream
     """
-    varargs = []
+    fn = driver.cuMemsetD8
+    args = (device_pointer(dst), val, size)
 
     if stream:
-        from cuda.core import experimental  # Ensure experimental is imported
+        from cuda.core import experimental
 
         assert isinstance(stream, (Stream, experimental.Stream))
         fn = driver.cuMemsetD8Async
-        if USE_NV_BINDING:
-            if isinstance(stream, experimental.Stream):
-                handle = int(stream.handle)
-            else:
-                handle = stream.handle.value
-        else:
-            handle = stream.handle
-        varargs.append(handle)
-    else:
-        fn = driver.cuMemsetD8
+        args += (_stream_handle(stream),)
 
-    fn(device_pointer(dst), val, size, *varargs)
+    fn(*args)
 
 
 def profile_start():
@@ -3668,3 +3649,13 @@ def inspect_obj_content(objpath: str):
             code_types.add(match.group(1))
 
     return code_types
+
+
+def _stream_handle(stream):
+    if isinstance(stream, experimental.Stream):
+        return int(stream.handle)
+    else:
+        if USE_NV_BINDING:
+            return stream.handle.value
+        else:
+            return stream.handle
