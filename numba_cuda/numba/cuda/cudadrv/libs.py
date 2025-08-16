@@ -18,6 +18,7 @@ from numba.cuda.cuda_paths import get_cuda_paths
 from numba.cuda.cudadrv.driver import locate_driver_and_loader, load_driver
 from numba.cuda.cudadrv.error import CudaSupportError
 from numba.core import config
+from cuda.bindings import path_finder
 
 
 if sys.platform == "win32":
@@ -32,6 +33,7 @@ else:
 
 
 def get_libdevice():
+    # libdevice
     d = get_cuda_paths()
     paths = d["libdevice"].info
     return paths
@@ -50,8 +52,9 @@ def get_cudalib(lib, static=False):
     loader's search mechanism.
     """
     if lib in {"nvrtc", "nvvm"}:
-        return get_cuda_paths()[lib].info or _dllnamepattern % lib
+        return path_finder._load_nvidia_dynamic_library(lib).abs_path
     else:
+        # cudart, cudadevrt
         dir_type = "static_cudalib_dir" if static else "cudalib_dir"
         libdir = get_cuda_paths()[dir_type].info
 
@@ -66,7 +69,7 @@ def get_cuda_include_dir():
     Note that this does not list the `CUDA_INCLUDE_PATH` entry in user
     configuration.
     """
-
+    # CUDA headers
     return get_cuda_paths()["include_dir"].info
 
 
@@ -89,6 +92,7 @@ def check_static_lib(path):
 
 
 def _get_source_variable(lib, static=False):
+    # remove? only used in test()
     if lib == "nvvm":
         return get_cuda_paths()["nvvm"].by
     elif lib == "nvrtc":
