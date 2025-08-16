@@ -28,6 +28,7 @@ cu12 = [
     "nvidia-cuda-nvcc-cu12",  # for libNVVM
     "nvidia-cuda-runtime-cu12",
     "nvidia-cuda-nvrtc-cu12",
+    "nvidia-cuda-cccl-cu12",
     "nvidia-nvjitlink-cu12"
 ]
 # TODO: Use cuda-toolkit package dependencies - e.g. cuda-toolkit[curand,nvvm,nvrtc]=13.*

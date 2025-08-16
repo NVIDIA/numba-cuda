@@ -134,7 +134,7 @@ def _have_nvjitlink():
             nvjitlink_internal._inspect_function_pointer("__nvJitLinkVersion")
             != 0
         )
-    except NotSupportedError:
+    except (RuntimeError, NotSupportedError):
         # no driver
         return False
 
