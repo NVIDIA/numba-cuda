@@ -411,6 +411,24 @@ class TestCudaDebugInfo(CUDATestCase):
         match = re.compile(pat6).search(llvm_ir)
         self.assertIsNotNone(match, msg=llvm_ir)
 
+    def test_union_debug(self):
+        @cuda.jit("void(u8, int64[::1])", debug=True, opt=False)
+        def a_union_use_case(arg, results):
+            foo = 1
+            foo = arg
+            if foo < 1:
+                foo = 2
+                return
+            bar = foo == 0
+            results[0] = 1 if not bar else 0
+
+        with captured_stdout() as out:
+            results = cuda.to_device(np.zeros(16, dtype=np.int64))
+            a_union_use_case[1, 1](100, results)
+            print(results.copy_to_host())
+        expected = "[1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0]"
+        self.assertIn(expected, out.getvalue())
+
     def test_DW_LANG(self):
         @cuda.jit(debug=True, opt=False)
         def foo():
