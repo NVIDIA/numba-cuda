@@ -13,13 +13,11 @@ class TestArchOption(unittest.TestCase):
         self.assertEqual(nvrtc.get_arch_option(8, 5), "compute_80")
         self.assertEqual(nvrtc.get_arch_option(9, 1), "compute_90")
         # Test known arch.
-        supported_cc = nvrtc.NVRTC().get_supported_archs()
-        for arch in supported_cc:
-            self.assertEqual(
-                nvrtc.get_arch_option(*arch), "compute_%d%d" % arch
-            )
+        supported_ccs = nvrtc.get_supported_ccs()
+        for cc in supported_ccs:
+            self.assertEqual(nvrtc.get_arch_option(*cc), "compute_%d%d" % cc)
         self.assertEqual(
-            nvrtc.get_arch_option(1000, 0), "compute_%d%d" % supported_cc[-1]
+            nvrtc.get_arch_option(1000, 0), "compute_%d%d" % supported_ccs[-1]
         )
 
 
