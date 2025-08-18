@@ -6,9 +6,10 @@ set -euo pipefail
 CUDA_VER_MAJOR_MINOR=${CUDA_VER%.*}
 
 rapids-logger "Install cuDF Wheel"
+
 pip install \
-    --extra-index-url=https://pypi.nvidia.com \
-    "cudf-cu12==25.6.*"
+    --extra-index-url=https://pypi.anaconda.org/rapidsai-wheels-nightly/simple \
+    "cudf-cu12>=25.10.0a0,<=25.10" "dask-cuda>=25.10.0a0,<=25.10"
 
 
 rapids-logger "Remove Extraneous numba-cuda"
@@ -25,7 +26,7 @@ python -m pip install \
 
 
 rapids-logger "Shallow clone cuDF repository"
-git clone --single-branch --branch 'branch-25.06' https://github.com/rapidsai/cudf.git
+git clone --single-branch --branch 'branch-25.10' https://github.com/rapidsai/cudf.git
 
 pushd cudf
 
@@ -40,7 +41,7 @@ rapids-logger "Run Scalar UDF tests"
 python -m pytest python/cudf/cudf/tests/dataframe/methods/test_apply.py -W ignore::UserWarning
 
 rapids-logger "Run GroupBy UDF tests"
-python -m pytest python/cudf/cudf/tests/test_groupby.py -k test_groupby_apply_jit -W ignore::UserWarning
+python -m pytest python/cudf/cudf/tests/groupby/test_apply.py -k test_groupby_apply_jit -W ignore::UserWarning
 
 rapids-logger "Run NRT Stats Counting tests"
 python -m pytest python/cudf/cudf/tests/test_nrt_stats.py -W ignore::UserWarning
