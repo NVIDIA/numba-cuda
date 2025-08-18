@@ -12,13 +12,6 @@ class KernelRuntimeError(RuntimeError):
         super(KernelRuntimeError, self).__init__(msg)
 
 
-class UnsupportedBytecodeError(Exception):
-    """Unsupported bytecode is non-recoverable"""
-
-    def __init__(self, msg, loc=None):
-        super().__init__(f"{msg}. Raised from {loc}")
-
-
 class CudaLoweringError(LoweringError):
     pass
 
