@@ -3501,8 +3501,6 @@ def device_memory_depends(devmem, *objs):
 
 
 def _stream_handle(stream):
-    from cuda.core import experimental
-
     if USE_NV_BINDING:
         if isinstance(stream, experimental.Stream):
             return int(stream.handle)
@@ -3520,8 +3518,6 @@ def host_to_device(dst, src, size, stream=0):
     args = (device_pointer(dst), host_pointer(src, readonly=True), size)
 
     if stream:
-        from cuda.core import experimental
-
         assert isinstance(stream, (Stream, experimental.Stream))
         fn = driver.cuMemcpyHtoDAsync
         args += (_stream_handle(stream),)
@@ -3539,8 +3535,6 @@ def device_to_host(dst, src, size, stream=0):
     args = (host_pointer(dst), device_pointer(src), size)
 
     if stream:
-        from cuda.core import experimental
-
         assert isinstance(stream, (Stream, experimental.Stream))
         fn = driver.cuMemcpyDtoHAsync
         args += (_stream_handle(stream),)
@@ -3558,8 +3552,6 @@ def device_to_device(dst, src, size, stream=0):
     args = (device_pointer(dst), device_pointer(src), size)
 
     if stream:
-        from cuda.core import experimental
-
         assert isinstance(stream, (Stream, experimental.Stream))
         fn = driver.cuMemcpyDtoDAsync
         args += (_stream_handle(stream),)
@@ -3582,8 +3574,6 @@ def device_memset(dst, val, size, stream=0):
     args = (device_pointer(dst), val, size)
 
     if stream:
-        from cuda.core import experimental
-
         assert isinstance(stream, (Stream, experimental.Stream))
         fn = driver.cuMemsetD8Async
         args += (_stream_handle(stream),)
@@ -3652,6 +3642,8 @@ def inspect_obj_content(objpath: str):
 
 
 def _stream_handle(stream):
+    if stream == 0:
+        return stream
     if isinstance(stream, experimental.Stream):
         return int(stream.handle)
     else:
