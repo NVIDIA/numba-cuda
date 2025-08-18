@@ -2338,6 +2338,11 @@ class Stream(object):
         # The default stream's handle.value is 0, which gives `None`
         return self.handle.value or drvapi.CU_STREAM_DEFAULT
 
+    def __cuda_stream__(self):
+        if not self.handle.value:
+            return (0, drvapi.CU_STREAM_DEFAULT)
+        return 0, self.handle.value if USE_NV_BINDING else self.handle
+
     def __repr__(self):
         default_streams = {
             drvapi.CU_STREAM_DEFAULT: "<Default CUDA stream on %s>",
@@ -3500,14 +3505,6 @@ def device_memory_depends(devmem, *objs):
     depset.extend(objs)
 
 
-def _stream_handle(stream):
-    if USE_NV_BINDING:
-        if isinstance(stream, experimental.Stream):
-            return int(stream.handle)
-        return stream.handle.value
-    return stream.handle
-
-
 def host_to_device(dst, src, size, stream=0):
     """
     NOTE: The underlying data pointer from the host data buffer is used and
@@ -3644,10 +3641,13 @@ def inspect_obj_content(objpath: str):
 def _stream_handle(stream):
     if stream == 0:
         return stream
-    if isinstance(stream, experimental.Stream):
-        return int(stream.handle)
-    else:
-        if USE_NV_BINDING:
-            return stream.handle.value
+    elif hasattr(stream, "__cuda_stream__"):
+        _, ptr = stream.__cuda_stream__()
+        if isinstance(stream, experimental.Stream):
+            return int(ptr)
         else:
-            return stream.handle
+            return ptr
+    else:
+        raise TypeError(
+            "Expected a Stream object or 0, got %s" % type(stream).__name__
+        )
