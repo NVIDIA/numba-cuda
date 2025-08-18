@@ -38,7 +38,7 @@ from numba.core.analysis import (
     compute_cfg_from_blocks,
     compute_use_defs,
 )
-from numba.core.ir_utils import (
+from numba.cuda.core.ir_utils import (
     guard,
     resolve_func_from_module,
     simplify_CFG,
