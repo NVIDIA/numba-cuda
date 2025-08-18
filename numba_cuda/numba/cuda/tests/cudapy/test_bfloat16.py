@@ -3,7 +3,17 @@ from importlib.util import find_spec
 import numpy as np
 from ml_dtypes import bfloat16 as mldtypes_bf16
 
-from numba import cuda, float32, int16, int32, int64, uint16, uint32, uint64
+from numba import (
+    cuda,
+    float32,
+    float64,
+    int16,
+    int32,
+    int64,
+    uint16,
+    uint32,
+    uint64,
+)
 from numba.cuda.bf16 import (
     bfloat16,
     habs,
@@ -87,6 +97,15 @@ from numba.cuda.bf16 import (
     uint64_to_bfloat16_ru,
     bfloat16_as_int16,
     int16_as_bfloat16,
+    bfloat16_as_uint16,
+    uint16_as_bfloat16,
+    bfloat16_to_float32,
+    float32_to_bfloat16,
+    float64_to_bfloat16,
+    float32_to_bfloat16_rn,
+    float32_to_bfloat16_rz,
+    float32_to_bfloat16_rd,
+    float32_to_bfloat16_ru,
 )
 from numba.cuda.testing import CUDATestCase
 
@@ -325,6 +344,20 @@ class TestBfloat16HighLevelBindings(CUDATestCase):
         self.assertAlmostEqual(out[2], 2.0, delta=1e-3)
         self.assertAlmostEqual(out[3], 2.0, delta=1e-3)
 
+    def test_bfloat16_as_bitcast(self):
+        @cuda.jit
+        def roundtrip_kernel(test_val, i2, u2):
+            i2[0] = int16_as_bfloat16(bfloat16_as_int16(test_val))
+            u2[0] = uint16_as_bfloat16(bfloat16_as_uint16(test_val))
+
+        test_val = np.int16(0x3FC0)  # 1.5 in bfloat16
+        i2 = cuda.device_array((1,), dtype="int16")
+        u2 = cuda.device_array((1,), dtype="uint16")
+        roundtrip_kernel[1, 1](test_val, i2, u2)
+
+        self.assertEqual(i2[0], test_val)
+        self.assertEqual(u2[0], test_val)
+
     def test_to_integer_conversions(self):
         self.skip_unsupported()
 
@@ -480,6 +513,66 @@ class TestBfloat16HighLevelBindings(CUDATestCase):
         np.testing.assert_array_less(_bf16_ulp_distance(res[12:16], u2arr), two)
         np.testing.assert_array_less(_bf16_ulp_distance(res[16:20], u3arr), two)
         np.testing.assert_array_less(_bf16_ulp_distance(res[20:24], u4arr), two)
+
+    def test_to_float_conversions(self):
+        self.skip_unsupported()
+
+        @cuda.jit
+        def kernel(out):
+            a = bfloat16(1.5)
+            out[0] = bfloat16_to_float32(a)
+
+        out = cuda.device_array((1,), dtype="float32")
+        kernel[1, 1](out)
+
+        self.assertAlmostEqual(out[0], 1.5, delta=1e-7)  # conversion is exact
+
+    def test_from_float_conversions(self):
+        self.skip_unsupported()
+
+        test_val = 1.5
+
+        @cuda.jit
+        def kernel(out):
+            f4 = float32(test_val)
+            f8 = float64(test_val)
+
+            f4rn = float32_to_bfloat16_rn(f4)
+            f4rz = float32_to_bfloat16_rz(f4)
+            f4rd = float32_to_bfloat16_rd(f4)
+            f4ru = float32_to_bfloat16_ru(f4)
+
+            f4_default = float32_to_bfloat16(f4)
+            f8_default = float64_to_bfloat16(f8)
+
+            out[0] = bfloat16_as_int16(f4rn)
+            out[1] = bfloat16_as_int16(f4rz)
+            out[2] = bfloat16_as_int16(f4rd)
+            out[3] = bfloat16_as_int16(f4ru)
+            out[4] = bfloat16_as_int16(f4_default)
+            out[5] = bfloat16_as_int16(f8_default)
+
+        out = cuda.device_array((1,), dtype="int16")
+        kernel[1, 1](out)
+        raw = out.copy_to_host()
+
+        f4_expected = (
+            np.array([test_val] * 4, "float32")
+            .astype(mldtypes_bf16)
+            .view("int16")
+        )
+        f8_expected = (
+            np.array([test_val] * 1, "float64")
+            .astype(mldtypes_bf16)
+            .view("int16")
+        )
+
+        np.testing.assert_array_less(
+            _bf16_ulp_distance(raw[0:4], f4_expected), 2
+        )
+        np.testing.assert_array_less(
+            _bf16_ulp_distance(raw[4:], f8_expected), 2
+        )
 
     @unittest.skipIf(
         find_spec("ml_dtypes") is None,

@@ -52,7 +52,7 @@ class Bfloat16(types.Number):
         self.alignof_ = 2
         self.bitwidth = 16
 
-    def can_convert_from(self, other):
+    def can_convert_from(self, typingctx, other):
         if isinstance(other, types.Float):
             return Conversion.unsafe
 
