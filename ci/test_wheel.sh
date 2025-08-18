@@ -8,10 +8,19 @@ CUDA_VER_MAJOR_MINOR=${CUDA_VER%.*}
 rapids-logger "Install wheel with test dependencies"
 package=$(realpath wheel/numba_cuda*.whl)
 echo "Package path: ${package}"
-python -m pip install \
-    "${package}[test]" \
-    "cuda-python==${CUDA_VER_MAJOR_MINOR%.*}.*" \
+
+DEPENDENCIES=(
+    "${package}[test]"
+    "cuda-python==${CUDA_VER_MAJOR_MINOR%.*}.*"
     "cuda-core==0.3.*"
+)
+
+# Constrain oldest supported dependencies for testing
+if [ "${RAPIDS_DEPENDENCIES:-}" = "oldest" ]; then
+    DEPENDENCIES+=("numba==0.60.0")
+fi
+
+python -m pip install "${DEPENDENCIES[@]}"
 
 GET_TEST_BINARY_DIR="
 import numba_cuda
@@ -20,18 +29,12 @@ test_dir = root + \"numba/cuda/tests/test_binary_generation/\"
 print(test_dir)
 "
 
-if [ "${CUDA_VER_MAJOR_MINOR%.*}" == "11" ]
-then
-  rapids-logger "Skipping test build for CUDA 11"
-else
-  rapids-logger "Build tests"
+rapids-logger "Build tests"
 
-  export NUMBA_CUDA_TEST_BIN_DIR=$(python -c "$GET_TEST_BINARY_DIR")
-  pushd $NUMBA_CUDA_TEST_BIN_DIR
-  make
-  popd
-fi
-
+export NUMBA_CUDA_TEST_BIN_DIR=$(python -c "$GET_TEST_BINARY_DIR")
+pushd $NUMBA_CUDA_TEST_BIN_DIR
+make
+popd
 
 rapids-logger "Check GPU usage"
 nvidia-smi

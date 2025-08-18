@@ -88,8 +88,9 @@ jobs:
     name: ${{ matrix.CUDA_VER }}, ${{ matrix.PY_VER }}, ${{ matrix.ARCH }}, ${{ matrix.LINUX_VER }}, ${{ matrix.GPU }}
     needs: compute-matrix
     env:
-      RAPIDS_TESTS_DIR: ${{ github.workspace }}/test-results
       RAPIDS_ARTIFACTS_DIR: ${{ github.workspace }}/artifacts
+      RAPIDS_DEPENDENCIES: ${{ matrix.DEPENDENCIES }}
+      RAPIDS_TESTS_DIR: ${{ github.workspace }}/test-results
     strategy:
       fail-fast: false
       matrix: ${{ fromJSON(needs.compute-matrix.outputs.MATRIX) }}
