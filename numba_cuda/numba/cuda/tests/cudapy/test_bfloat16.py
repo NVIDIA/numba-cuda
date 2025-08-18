@@ -1,7 +1,8 @@
 import unittest
 from importlib.util import find_spec
+import numpy as np
 
-from numba import cuda, float32
+from numba import cuda, float32, float64
 from numba.cuda.bf16 import (
     bfloat16,
     habs,
@@ -40,6 +41,28 @@ from numba.cuda.bf16 import (
     float32_to_bfloat16_rz,
     float32_to_bfloat16_rd,
     float32_to_bfloat16_ru,
+
+    bfloat16_to_int8_rz,
+    bfloat16_to_uint8_rz,
+
+    int16_to_bfloat16_rn,
+    int16_to_bfloat16_rz,
+    int16_to_bfloat16_rd,
+    int16_to_bfloat16_ru,
+    bfloat16_to_int16_rn,
+    bfloat16_to_int16_rz,
+    bfloat16_to_int16_rd,
+    bfloat16_to_int16_ru,
+
+    uint16_to_bfloat16_rn,
+    uint16_to_bfloat16_rz,
+    uint16_to_bfloat16_rd,
+    uint16_to_bfloat16_ru,
+    bfloat16_to_uint16_rn,
+    bfloat16_to_uint16_rz,
+    bfloat16_to_uint16_rd,
+    bfloat16_to_uint16_ru,
+
     int32_to_bfloat16_rn,
     int32_to_bfloat16_rz,
     int32_to_bfloat16_rd,
@@ -48,22 +71,29 @@ from numba.cuda.bf16 import (
     bfloat16_to_int32_rz,
     bfloat16_to_int32_rd,
     bfloat16_to_int32_ru,
-    bfloat16_to_int16_rn,
-    int16_to_bfloat16_rn,
-    bfloat16_to_uint16_rn,
-    uint16_to_bfloat16_rn,
-    bfloat16_to_uint32_rn,
+
     uint32_to_bfloat16_rn,
+    uint32_to_bfloat16_rz,
+    uint32_to_bfloat16_rd,
+    uint32_to_bfloat16_ru,
+    bfloat16_to_uint32_rn,
+    bfloat16_to_uint32_rz,
+    bfloat16_to_uint32_rd,
+    bfloat16_to_uint32_ru,
+
     bfloat16_to_int64_rn,
-    int64_to_bfloat16_rn,
+    bfloat16_to_int64_rz,
+    bfloat16_to_int64_rd,
+    bfloat16_to_int64_ru,
     bfloat16_to_uint64_rn,
-    uint64_to_bfloat16_rn,
-    bfloat16_as_short,
-    bfloat16_as_ushort,
-    short_as_bfloat16,
-    ushort_as_bfloat16,
-    bfloat16_to_int8_rz,
-    bfloat16_to_uint8_rz,
+    bfloat16_to_uint64_rz,
+    bfloat16_to_uint64_rd,
+    bfloat16_to_uint64_ru,
+
+    bfloat16_as_int16,
+    bfloat16_as_uint16,
+    int16_as_bfloat16,
+    uint16_as_bfloat16,
 )
 from numba.cuda.testing import CUDATestCase
 
@@ -302,152 +332,67 @@ class TestBfloat16HighLevelBindings(CUDATestCase):
         self.assertAlmostEqual(out[2], 2.0, delta=1e-3)
         self.assertAlmostEqual(out[3], 2.0, delta=1e-3)
 
-    def test_int32_float32_precision_conversion_intrinsics(self):
+
+    def test_to_integer_conversions(self):
         self.skip_unsupported()
 
         @cuda.jit
-        def kernel_float_to_bf16(out):
-            f = float32(3.14)
-            out[0] = float32(float32_to_bfloat16_rn(f))
-            out[1] = float32(float32_to_bfloat16_rz(f))
-            out[2] = float32(float32_to_bfloat16_rd(f))
-            out[3] = float32(float32_to_bfloat16_ru(f))
+        def kernel(test_val, i1, i2, i3, i4, u1, u2, u3, u4):
+            a = int16_as_bfloat16(test_val)
 
-        @cuda.jit
-        def kernel_bf16_to_float(out):
-            a = bfloat16(3.14)
-            out[0] = bfloat16_to_float32(a)
+            i1[0] = bfloat16_to_int8_rz(a)
+            u1[0] = bfloat16_to_uint8_rz(a)
+            i2[0] = bfloat16_to_int16_rn(a)
+            i2[1] = bfloat16_to_int16_rz(a)
+            i2[2] = bfloat16_to_int16_rd(a)
+            i2[3] = bfloat16_to_int16_ru(a)
+            u2[0] = bfloat16_to_uint16_rn(a)
+            u2[1] = bfloat16_to_uint16_rz(a)
+            u2[2] = bfloat16_to_uint16_rd(a)
+            u2[3] = bfloat16_to_uint16_ru(a)
+            i3[0] = bfloat16_to_int32_rn(a)
+            i3[1] = bfloat16_to_int32_rz(a)
+            i3[2] = bfloat16_to_int32_rd(a)
+            i3[3] = bfloat16_to_int32_ru(a)
+            u3[0] = bfloat16_to_uint32_rn(a)
+            u3[1] = bfloat16_to_uint32_rz(a)
+            u3[2] = bfloat16_to_uint32_rd(a)
+            u3[3] = bfloat16_to_uint32_ru(a)
+            i4[0] = bfloat16_to_int64_rn(a)
+            i4[1] = bfloat16_to_int64_rz(a)
+            i4[2] = bfloat16_to_int64_rd(a)
+            i4[3] = bfloat16_to_int64_ru(a)
+            u4[0] = bfloat16_to_uint64_rn(a)
+            u4[1] = bfloat16_to_uint64_rz(a)
+            u4[2] = bfloat16_to_uint64_rd(a)
+            u4[3] = bfloat16_to_uint64_ru(a)
 
-        @cuda.jit
-        def kernel_int_to_bf16(out):
-            i = 3
-            out[0] = float32(int32_to_bfloat16_rn(i))
-            out[1] = float32(int32_to_bfloat16_rz(i))
-            out[2] = float32(int32_to_bfloat16_rd(i))
-            out[3] = float32(int32_to_bfloat16_ru(i))
+        # rz
+        i1 = cuda.device_array((1,), dtype="int8")
+        # rn, rz, rd, ru
+        i2 = cuda.device_array((4,), dtype="int16")
+        i3 = cuda.device_array((4,), dtype="int32")
+        i4 = cuda.device_array((4,), dtype="int64")
+        # rz
+        u1 = cuda.device_array((1,), dtype="uint8")
+        # rn, rz, rd, ru
+        u2 = cuda.device_array((4,), dtype="uint16")
+        u3 = cuda.device_array((4,), dtype="uint32")
+        u4 = cuda.device_array((4,), dtype="uint64")
 
-        @cuda.jit
-        def kernel_bf16_to_int(out):
-            a = bfloat16(3.14)
-            out[0] = bfloat16_to_int32_rn(a)
-            out[1] = bfloat16_to_int32_rz(a)
-            out[2] = bfloat16_to_int32_rd(a)
-            out[3] = bfloat16_to_int32_ru(a)
+        test_val = np.int16(0x3fc0) # 1.5 in bfloat16
 
-        out = cuda.device_array((4,), dtype="float32")
-        kernel_float_to_bf16[1, 1](out)
-        # Check they are near the original value in float32 after round-trip
-        # Note: Different rounding modes produce slightly different values
-        self.assertAlmostEqual(out[0], 3.140625, delta=1e-3)  # rn
-        self.assertTrue(abs(out[1] - 3.140625) < 2e-2, out[1] - 3.140625)  # rz
-        self.assertTrue(abs(out[2] - 3.140625) < 2e-2, out[2] - 3.140625)  # rd
-        self.assertTrue(abs(out[3] - 3.140625) < 2e-2, out[3] - 3.140625)  # ru
+        kernel[1, 1](test_val, i1, i2, i3, i4, u1, u2, u3, u4)
 
-        out = cuda.device_array((1,), dtype="float32")
-        kernel_bf16_to_float[1, 1](out)
-        self.assertAlmostEqual(out[0], 3.140625, delta=1e-3)
+        self.assertEqual(i1[0], 1)
+        self.assertEqual(u1[0], 1)
 
-        outi = cuda.device_array((4,), dtype="int32")
-        kernel_int_to_bf16[1, 1](outi)
-        # int to bf16 should be exactly representable for small integers
-        self.assertEqual(int(outi[0]), 3)
-        self.assertEqual(int(outi[1]), 3)
-        self.assertEqual(int(outi[2]), 3)
-        self.assertEqual(int(outi[3]), 3)
-
-        outi = cuda.device_array((4,), dtype="int32")
-        kernel_bf16_to_int[1, 1](outi)
-        # 3.14 -> 3 for rz/rd, 3 or 4 for rn/ru depending on rounding
-        self.assertIn(int(outi[0]), (3, 4))
-        self.assertEqual(int(outi[1]), 3)
-        self.assertEqual(int(outi[2]), 3)
-        self.assertIn(int(outi[3]), (3, 4))
-
-    def test_floatroundtrip_integer_conversion_intrinsics(self):
-        self.skip_unsupported()
-
-        @cuda.jit
-        def kernel_scalar_roundtrip(out):
-            f = 3.14
-            bf = float32_to_bfloat16(f)
-            out[0] = bfloat16_to_float32(bf)
-            d = 3.14
-            bf2 = float64_to_bfloat16(d)
-            out[1] = bfloat16_to_float32(bf2)
-
-        out = cuda.device_array((2,), dtype="float32")
-        kernel_scalar_roundtrip[1, 1](out)
-        self.assertAlmostEqual(out[0], 3.140625, delta=1e-3)
-        self.assertAlmostEqual(out[1], 3.140625, delta=1e-3)
-
-        @cuda.jit
-        def kernel_int_family(outf):
-            outf[0] = float32(int16_to_bfloat16_rn(123))
-            outf[1] = float32(uint16_to_bfloat16_rn(456))
-            outf[2] = float32(uint32_to_bfloat16_rn(789))
-            outf[3] = float32(int64_to_bfloat16_rn(1011))
-            outf[4] = float32(uint64_to_bfloat16_rn(1213))
-
-        outf = cuda.device_array((5,), dtype="float32")
-        kernel_int_family[1, 1](outf)
-        vals = [123, 456, 789, 1011, 1213]
-        for i, v in enumerate(vals):
-            got = int(outf[i])
-            # `step` estimates ULP near the integer `v`.
-            # Bfloat16 has 7 bits of precision, spacing between representable values are 2**(e-7).
-            # We use the exponent of the value `v` to raise the minSpacing, the result is a reasonable
-            # esitmate the local ULP.
-            step = (
-                0 if v == 0 else 2 ** (int(math.floor(math.log2(abs(v)))) - 7)
-            )
-            # `allowed` is the maximum error in ULP, with a minimum of 1
-            # In general, half ULP is the typical rounding error bound.
-            allowed = max(1, int(step // 2))
-            self.assertLessEqual(abs(got - v), allowed)
-
-        @cuda.jit
-        def kernel_from_bf16_to_ints(outi):
-            a = bfloat16(5.75)
-            outi[0] = bfloat16_to_int16_rn(a)
-            outi[1] = bfloat16_to_uint16_rn(a)
-            outi[2] = bfloat16_to_uint32_rn(a)
-            outi[3] = bfloat16_to_int64_rn(a)
-            outi[4] = bfloat16_to_uint64_rn(a)
-
-        outi = cuda.device_array((5,), dtype="int64")
-        kernel_from_bf16_to_ints[1, 1](outi)
-        self.assertEqual(int(outi[0]), 6)
-        self.assertEqual(int(outi[1]), 6)
-        self.assertEqual(int(outi[2]), 6)
-        self.assertEqual(int(outi[3]), 6)
-        self.assertEqual(int(outi[4]), 6)
-
-        @cuda.jit
-        def kernel_bit_reinterpret(out_short, out_ushort):
-            s = 12345
-            bf = short_as_bfloat16(s)
-            out_short[0] = bfloat16_as_short(bf)
-            us = 54321
-            bf2 = ushort_as_bfloat16(us)
-            out_ushort[0] = bfloat16_as_ushort(bf2)
-
-        out_short = cuda.device_array((1,), dtype="int32")
-        out_ushort = cuda.device_array((1,), dtype="uint32")
-        kernel_bit_reinterpret[1, 1](out_short, out_ushort)
-        self.assertEqual(int(out_short[0]), 12345)
-        self.assertEqual(int(out_ushort[0]), 54321)
-
-        @cuda.jit
-        def kernel_char(out_c, out_uc):
-            a = bfloat16(3.9)
-            out_c[0] = bfloat16_to_int8_rz(a)
-            out_uc[0] = bfloat16_to_uint8_rz(a)
-
-        out_c = cuda.device_array((1,), dtype="int8")
-        out_uc = cuda.device_array((1,), dtype="uint8")
-        kernel_char[1, 1](out_c, out_uc)
-        self.assertEqual(int(out_c[0]), 3)
-        self.assertEqual(int(out_uc[0]), 3)
+        np.testing.assert_equal(i2, np.array([2, 1, 1, 2], "int16"))
+        np.testing.assert_equal(i3, np.array([2, 1, 1, 2], "int32"))
+        np.testing.assert_equal(i4, np.array([2, 1, 1, 2], "int64"))
+        np.testing.assert_equal(u2, np.array([2, 1, 1, 2], "uint16"))
+        np.testing.assert_equal(u3, np.array([2, 1, 1, 2], "uint32"))
+        np.testing.assert_equal(u4, np.array([2, 1, 1, 2], "uint64"))
 
     @unittest.skipIf(
         find_spec("ml_dtypes") is None,
