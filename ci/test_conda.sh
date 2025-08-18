@@ -42,7 +42,12 @@ if [ "${RAPIDS_DEPENDENCIES:-}" = "oldest" ]; then
     DEPENDENCIES+=("numba==0.60.0")
 fi
 
-rapids-mamba-retry create -n test -c "`pwd`/conda-repo" "${DEPENDENCIES[@]}"
+rapids-mamba-retry create \
+    -n test \
+    --strict-channel-priority \
+    --channel "`pwd`/conda-repo" \
+    --channel conda-forge \
+    "${DEPENDENCIES[@]}"
 
 # Temporarily allow unbound variables for conda activation.
 set +u

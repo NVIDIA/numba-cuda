@@ -7,20 +7,26 @@ set -euo pipefail
 
 rapids-logger "Install docs dependencies"
 # TODO: Replace with rapids-dependency-file-generator
-rapids-mamba-retry create -n docs \
-    make \
-    psutil \
-    sphinx \
-    sphinx_rtd_theme \
-    numpydoc \
-    python=${RAPIDS_PY_VERSION}
+DEPENDENCIES=(
+    "make"
+    "psutil"
+    "sphinx"
+    "sphinx_rtd_theme"
+    "numpydoc"
+    "python=${RAPIDS_PY_VERSION}"
+    "numba-cuda"
+)
+rapids-mamba-retry create \
+    -n docs \
+    --strict-channel-priority \
+    --channel "`pwd`/conda-repo" \
+    --channel conda-forge \
+    "${DEPENDENCIES[@]}"
 
 # Temporarily allow unbound variables for conda activation.
 set +u
 conda activate docs
 set -u
-
-rapids-mamba-retry install -c `pwd`/conda-repo numba-cuda
 
 pip install nvidia-sphinx-theme
 
