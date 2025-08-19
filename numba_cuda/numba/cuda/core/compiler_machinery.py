@@ -12,7 +12,7 @@ from numba.core import errors, config, transforms
 from numba.cuda import utils
 from numba.core.tracing import event
 from numba.core.postproc import PostProcessor
-from numba.core.ir_utils import enforce_no_dels, legalize_single_scope
+from numba.cuda.core.ir_utils import enforce_no_dels, legalize_single_scope
 import numba.core.event as ev
 
 import numba.core.compiler_machinery as nccm
