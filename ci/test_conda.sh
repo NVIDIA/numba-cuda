@@ -30,6 +30,7 @@ rapids-mamba-retry create -n test \
     pytest \
     pytest-xdist \
     cffi \
+    ml_dtypes \
     python=${RAPIDS_PY_VERSION}
 
 # Temporarily allow unbound variables for conda activation.
