@@ -43,7 +43,24 @@ class CUDADispatcher(types.Dispatcher):
 
 class Bfloat16(types.Number):
     """
-    A bfloat16 type.
+    A bfloat16 type. Has 8 exponent bits and 7 significand bits.
+
+    Conversion rules:
+    Floats:
+    from:
+        fp32, fp64: UNSAFE
+        fp16: UNSAFE (loses precision)
+    to:
+        fp32, fp64: PROMOTE (same exponent, more mantissa)
+        fp16: UNSAFE (loses range)
+
+    Integers:
+    from:
+        int8: SAFE
+        other int: All UNSAFE (bf16 cannot represent all integers in range)
+    to: UNSAFE (loses precision, round to zeros)
+
+    All other conversions are not allowed.
     """
 
     def __init__(self):
@@ -59,8 +76,8 @@ class Bfloat16(types.Number):
         elif isinstance(other, types.Integer):
             if other.bitwidth == 8:
                 return Conversion.safe
-
-        return Conversion.unsafe
+            else:
+                return Conversion.unsafe
 
     def can_convert_to(self, typingctx, other):
         if isinstance(other, types.Float):
@@ -70,8 +87,6 @@ class Bfloat16(types.Number):
                 return Conversion.unsafe
         elif isinstance(other, types.Integer):
             return Conversion.unsafe
-
-        return Conversion.unsafe
 
     def unify(self, typingctx, other):
         if isinstance(other, (types.Float, types.Integer)):
@@ -83,7 +98,9 @@ class Bfloat16(types.Number):
 
             return ml_dtypes.bfloat16(value)
         except ImportError:
-            raise NotImplementedError
+            raise NotImplementedError(
+                "Please install ml_dtypes to use bfloat16 on host."
+            )
 
 
 bfloat16 = Bfloat16()
