@@ -9,10 +9,10 @@ from numba.cuda.core.compiler_machinery import (
     SSACompliantMixin,
     register_pass,
 )
+from numba.cuda.core import ir
 from numba.core import (
     errors,
     types,
-    ir,
     bytecode,
     postproc,
     rewrites,

@@ -86,6 +86,12 @@ consider_namespace_packages = true
 # loadscope ensures the grouping required by CUDATestCase
 addopts = "--dist loadscope"
 
+[tool.pyright]
+reportMissingTypeStubs = false
+reportUnannotatedClassAttribute = false
+reportImplicitOverride = false
+reportMissingParameterType = false
+
 [tool.ruff]
 line-length = 80
 

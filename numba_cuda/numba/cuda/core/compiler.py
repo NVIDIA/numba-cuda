@@ -1,10 +1,11 @@
 from numba.core.tracing import event
 
-from numba.core import callconv, bytecode, config, errors
+from numba.cuda.core import interpreter  # , bytecode
+from numba.core import callconv, config, errors, bytecode, cpu, postproc
 from numba.core.errors import CompilerError
 from numba.parfors.parfor import ParforDiagnostics
 
-from numba.core.untyped_passes import ExtractByteCode, FixupArgs
+from numba.cuda.core.untyped_passes import ExtractByteCode, FixupArgs
 from numba.core.targetconfig import ConfigStack
 
 
@@ -203,3 +204,28 @@ class CompilerBase(object):
         """
         assert self.state.func_ir is not None
         return self._compile_core()
+
+
+def run_frontend(func, inline_closures=False, emit_dels=False):
+    """
+    Run the compiler frontend over the given Python function, and return
+    the function's canonical Numba IR.
+
+    If inline_closures is Truthy then closure inlining will be run
+    If emit_dels is Truthy the ir.Del nodes will be emitted appropriately
+    """
+    # XXX make this a dedicated Pipeline?
+    func_id = bytecode.FunctionIdentity.from_function(func)
+    interp = interpreter.Interpreter(func_id)
+    bc = bytecode.ByteCode(func_id=func_id)
+    func_ir = interp.interpret(bc)
+    if inline_closures:
+        from numba.core.inline_closurecall import InlineClosureCallPass
+
+        inline_pass = InlineClosureCallPass(
+            func_ir, cpu.ParallelOptions(False), {}, False
+        )
+        inline_pass.run()
+    post_proc = postproc.PostProcessor(func_ir)
+    post_proc.run(emit_dels)
+    return func_ir
