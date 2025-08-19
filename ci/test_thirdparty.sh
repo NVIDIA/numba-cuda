@@ -43,4 +43,8 @@ python -m pytest python/cudf/cudf/tests/test_udf_masked_ops.py -W ignore::UserWa
 rapids-logger "Run GroupBy UDF tests"
 python -m pytest python/cudf/cudf/tests/groupby/test_apply.py -k test_groupby_apply_jit -W ignore::UserWarning
 
+rapids-logger "Run NRT Stats Counting tests
+python -m pytest python/cudf/cudf/tests/test_nrt_stats.py -W ignore::UserWarning
+
+
 popd

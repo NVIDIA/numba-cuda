@@ -80,7 +80,7 @@ class _Runtime:
         cc = get_current_device().compute_capability
 
         # Create a new linker instance and add the cu file
-        linker = _Linker.new(cc=cc)
+        linker = _Linker.new(cc=cc, lto=True)
         linker.add_cu_file(memsys_mod)
 
         # Complete the linker and create a module from it
