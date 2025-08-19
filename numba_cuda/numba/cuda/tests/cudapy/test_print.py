@@ -99,6 +99,20 @@ print_too_many[1, 1](np.arange(33))
 cuda.synchronize()
 """
 
+print_bfloat16_usecase = """\
+from numba import cuda
+
+@cuda.jit
+def print_bfloat16():
+    # 0.9375 is a dyadic rational, it's integer significand can expand within 7 digits.
+    # printing this should not give any rounding error.
+    a = cuda.types.bfloat16(0.9375)
+    print(a, a, a)
+
+print_bfloat16[1, 1]()
+cuda.synchronize()
+"""
+
 
 class TestPrint(CUDATestCase):
     # Note that in these tests we generally strip the output to avoid dealing
@@ -144,6 +158,10 @@ class TestPrint(CUDATestCase):
         lines = [line.strip() for line in output.splitlines(True)]
         expected = [str(i) for i in np.ndindex(2, 2, 2)]
         self.assertEqual(sorted(lines), expected)
+
+    def test_bfloat16(self):
+        output, _ = self.run_code(print_bfloat16_usecase)
+        self.assertEqual(output.strip(), "0.937500 0.937500 0.937500")
 
     @skip_on_cudasim("cudasim can print unlimited output")
     def test_too_many_args(self):
