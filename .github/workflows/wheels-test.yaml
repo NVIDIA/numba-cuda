@@ -111,7 +111,7 @@ jobs:
         fetch-depth: 0 # unshallow fetch for setuptools-scm
         persist-credentials: false
     - uses: actions/download-artifact@v4
-      name: wheel
+      name: wheel-py${{ matrix.PY_VER }}
     - name: Display structure of downloaded files
       run: ls -R
     - name: Standardize repository information

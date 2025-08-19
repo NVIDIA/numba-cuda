@@ -1,4 +1,8 @@
 build-matrix:
+  - { ARCH: 'amd64', PY_VER: '3.9', CUDA_VER: '12.8.0', LINUX_VER: 'rockylinux8' }
+  - { ARCH: 'amd64', PY_VER: '3.10', CUDA_VER: '12.8.0', LINUX_VER: 'rockylinux8' }
+  - { ARCH: 'amd64', PY_VER: '3.11', CUDA_VER: '12.8.0', LINUX_VER: 'rockylinux8' }
+  - { ARCH: 'amd64', PY_VER: '3.12', CUDA_VER: '12.8.0', LINUX_VER: 'rockylinux8' }
   - { ARCH: 'amd64', PY_VER: '3.13', CUDA_VER: '12.8.0', LINUX_VER: 'rockylinux8' }
 simulator-matrix:
   - { ARCH: 'amd64', PY_VER: '3.12', CUDA_VER: '12.8.0', LINUX_VER: 'rockylinux8' }
