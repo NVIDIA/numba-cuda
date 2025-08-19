@@ -7,40 +7,42 @@ import functools
 import types as pytypes
 import weakref
 import uuid
+import re
+from warnings import warn
 
-from numba.core import compiler, types, typing, config
-from numba.cuda import serialize, utils
-from numba.cuda.core.caching import Cache, CacheImpl, NullCache
+from numba import cuda, _dispatcher
+
+from numba.core import types, typing, config
 from numba.core.compiler_lock import global_compiler_lock
 from numba.core.dispatcher import _DispatcherBase
 from numba.core.errors import NumbaPerformanceWarning, TypingError
-from numba.cuda.typing.templates import fold_arguments
 from numba.core.typing.typeof import Purpose, typeof
+
+from numba.cuda import serialize, utils
+from numba.cuda import types as cuda_types
 from numba.cuda.api import get_current_device
 from numba.cuda.args import wrap_arg
 from numba.cuda.compiler import (
     compile_cuda,
     CUDACompiler,
     kernel_fixup,
+    compile_extra,
 )
 from numba.cuda.core import sigutils
-import re
+from numba.cuda.flags import Flags
 from numba.cuda.cudadrv import driver, nvvm
-from numba.cuda.cudadrv.linkable_code import LinkableCode
-from numba.cuda.cudadrv.devices import get_context
+from numba.cuda.locks import module_init_lock
+from numba.cuda.core.caching import Cache, CacheImpl, NullCache
 from numba.cuda.descriptor import cuda_target
 from numba.cuda.errors import (
     missing_launch_config_msg,
     normalize_kernel_dimensions,
 )
-from numba.cuda import types as cuda_types
-from numba.cuda.locks import module_init_lock
+from numba.cuda.typing.templates import fold_arguments
+from numba.cuda.cudadrv.linkable_code import LinkableCode
+from numba.cuda.cudadrv.devices import get_context
 from numba.cuda.memory_management.nrt import rtsys, NRT_LIBRARY
 
-from numba import cuda
-from numba import _dispatcher
-
-from warnings import warn
 
 cuda_fp16_math_funcs = [
     "hsin",
@@ -773,6 +775,7 @@ class _FunctionCompiler(object):
         self.py_func = py_func
         self.targetdescr = targetdescr
         self.targetoptions = targetoptions
+        self.locals = {}
         self.pysig = utils.pysignature(self.py_func)
         self.pipeline_class = pipeline_class
         # Remember key=(args, return_type) combinations that will fail
@@ -831,19 +834,19 @@ class _FunctionCompiler(object):
             return True, retval
 
     def _compile_core(self, args, return_type):
-        flags = compiler.Flags()
+        flags = Flags()
         self.targetdescr.options.parse_as_flags(flags, self.targetoptions)
         flags = self._customize_flags(flags)
 
         impl = self._get_implementation(args, {})
-        cres = compiler.compile_extra(
+        cres = compile_extra(
             self.targetdescr.typing_context,
             self.targetdescr.target_context,
             impl,
             args=args,
             return_type=return_type,
             flags=flags,
-            locals={},
+            locals=self.locals,
             pipeline_class=self.pipeline_class,
         )
         # Check typing error if object mode is used
