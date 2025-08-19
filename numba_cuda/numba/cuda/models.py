@@ -1,4 +1,3 @@
-import struct
 import functools
 
 from llvmlite import ir
@@ -46,46 +45,8 @@ class FloatModel(models.PrimitiveModel):
 register_model(CUDADispatcher)(models.OpaqueModel)
 
 
-def _as_bfloat(value):
-    # Step 1: Reinterpret the input as u32 bits
-    u = struct.unpack("I", struct.pack("f", value))[0]
-
-    # Step 2: Truncate (or round, we choose truncate) last 16 bits
-    trunc = u >> 16
-
-    # Step 3: Unpack them back to Python floats
-    f = struct.unpack("f", struct.pack("I", trunc))[0]
-
-    return f
-
-
-class BfloatType(ir.types._BaseFloatType):
-    """Brain-float type"""
-
-    null = "0.0"
-    intrinsic_name = "bfloat"
-
-    def __str__(self):
-        return "bfloat"
-
-    def format_constant(self, value):
-        return ir.types._format_double(_as_bfloat(value))
-
-
-BfloatType._create_instance()
-
-
 @register_model(Bfloat16)
 class _model___nv_bfloat16(PrimitiveModel):
     def __init__(self, dmm, fe_type):
-        from numba.cuda.api import get_current_device
-
-        major, minor = get_current_device().compute_capability
-
-        # Blackwell device leverage latest nvvm (llvm 20+ dialect) which has
-        # bfloat type
-        if major >= 10:
-            be_type = BfloatType()
-        else:
-            be_type = ir.IntType(16)
+        be_type = ir.IntType(16)
         super(_model___nv_bfloat16, self).__init__(dmm, fe_type, be_type)
