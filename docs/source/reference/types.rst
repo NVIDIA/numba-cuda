@@ -80,7 +80,7 @@ Data Movement and Casts
 
 Construction of a single instance of a ``bfloat16`` object:
 
-.. function:: numba.cuda.bf16.bfloat16(b)
+.. function:: numba.cuda.types.bfloat16(b)
 
     Constructs a ``bfloat16`` from existing device `scalar`. Supported scalar
     types:
