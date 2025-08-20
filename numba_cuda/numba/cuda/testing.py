@@ -269,21 +269,6 @@ def skip_if_mvc_enabled(reason):
     )
 
 
-def skip_if_mvc_libraries_unavailable(fn):
-    libs_available = False
-    try:
-        import cubinlinker  # noqa: F401 # type: ignore
-        import ptxcompiler  # noqa: F401 # type: ignore
-
-        libs_available = True
-    except ImportError:
-        pass
-
-    return unittest.skipUnless(
-        libs_available, "Requires cubinlinker and ptxcompiler"
-    )(fn)
-
-
 def cc_X_or_above(major, minor):
     if not config.ENABLE_CUDASIM:
         cc = devices.get_context().device.compute_capability
