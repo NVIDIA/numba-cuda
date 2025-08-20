@@ -5,27 +5,36 @@ set -euo pipefail
 
 . /opt/conda/etc/profile.d/conda.sh
 
-if [ "${CUDA_VER%.*.*}" = "11" ]; then
-  CTK_PACKAGES="cudatoolkit"
-else
-  CTK_PACKAGES="cuda-nvcc-impl cuda-nvrtc cuda-cuobjdump libcurand-dev"
-fi
+CTK_PACKAGE_DEPENDENCIES=(
+    "cuda-nvcc-impl"
+    "cuda-nvrtc"
+    "cuda-cuobjdump"
+    "libcurand-dev"
+)
 
 rapids-logger "Install testing dependencies"
 # TODO: Replace with rapids-dependency-file-generator
-rapids-mamba-retry create -n test \
-    c-compiler \
-    cxx-compiler \
-    ${CTK_PACKAGES} \
-    cuda-python \
-    cuda-version=${CUDA_VER%.*} \
-    make \
-    psutil \
-    pytest \
-    pytest-xdist \
-    cffi \
-    ml_dtypes \
-    python=${RAPIDS_PY_VERSION}
+DEPENDENCIES=(
+    "c-compiler"
+    "cxx-compiler"
+    "${CTK_PACKAGE_DEPENDENCIES[@]}"
+    "cuda-python"
+    "cuda-version=${CUDA_VER%.*}"
+    "make"
+    "psutil"
+    "pytest"
+    "pytest-xdist"
+    "cffi"
+    "ml_dtypes"
+    "python=${RAPIDS_PY_VERSION}"
+    "numba-cuda"
+)
+rapids-mamba-retry create \
+    -n test \
+    --strict-channel-priority \
+    --channel "`pwd`/conda-repo" \
+    --channel conda-forge \
+    "${DEPENDENCIES[@]}"
 
 # Temporarily allow unbound variables for conda activation.
 set +u
@@ -33,8 +42,6 @@ conda activate test
 set -u
 
 pip install filecheck
-
-rapids-mamba-retry install -c `pwd`/conda-repo numba-cuda
 
 RAPIDS_TESTS_DIR=${RAPIDS_TESTS_DIR:-"${PWD}/test-results"}/
 mkdir -p "${RAPIDS_TESTS_DIR}"
