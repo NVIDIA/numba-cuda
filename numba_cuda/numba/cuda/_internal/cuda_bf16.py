@@ -25,6 +25,14 @@ from numba.core.extending import (
 from numba.core.imputils import Registry as TargetRegistry
 from numba.core.imputils import lower_cast
 from numba.core.typing import signature
+from numba.core.typing.old_builtins import (
+    BinOp,
+    BinOpTrueDiv,
+    UnaryNegate,
+    UnaryPositive,
+    UnorderedCmpOp,
+    OrderedCmpOp,
+)
 from numba.core.typing.templates import AttributeTemplate, ConcreteTemplate
 from numba.core.typing.templates import Registry as TypingRegistry
 from numba.cuda import CUSource, declare_device
@@ -1607,7 +1615,6 @@ def _from___nv_bfloat16_to_float64__lower():
         bits32 = builder.zext(value, ir.IntType(32))
         shift = builder.shl(bits32, ir.Constant(ir.IntType(32), 16))
         f32 = builder.bitcast(shift, ir.FloatType())
-        # printf("%f") expects a double; promote to f64 to match vararg expectation
         f64 = builder.fpext(f32, ir.DoubleType())
         return f64
 
@@ -15962,8 +15969,8 @@ register_global(__half, types.Function(_typing___half))
 
 
 @register_global(operator.add)
-class _typing_operator_add(ConcreteTemplate):
-    cases = [
+class _typing_operator_add(BinOp):
+    cases = BinOp.cases + [
         signature(
             _type___nv_bfloat16, _type___nv_bfloat16, _type___nv_bfloat16
         ),
@@ -15974,8 +15981,8 @@ class _typing_operator_add(ConcreteTemplate):
 
 
 @register_global(operator.sub)
-class _typing_operator_sub(ConcreteTemplate):
-    cases = [
+class _typing_operator_sub(BinOp):
+    cases = BinOp.cases + [
         signature(
             _type___nv_bfloat16, _type___nv_bfloat16, _type___nv_bfloat16
         ),
@@ -15986,8 +15993,8 @@ class _typing_operator_sub(ConcreteTemplate):
 
 
 @register_global(operator.mul)
-class _typing_operator_mul(ConcreteTemplate):
-    cases = [
+class _typing_operator_mul(BinOp):
+    cases = BinOp.cases + [
         signature(
             _type___nv_bfloat16, _type___nv_bfloat16, _type___nv_bfloat16
         ),
@@ -15998,8 +16005,8 @@ class _typing_operator_mul(ConcreteTemplate):
 
 
 @register_global(operator.truediv)
-class _typing_operator_truediv(ConcreteTemplate):
-    cases = [
+class _typing_operator_truediv(BinOpTrueDiv):
+    cases = BinOpTrueDiv.cases + [
         signature(
             _type___nv_bfloat16, _type___nv_bfloat16, _type___nv_bfloat16
         ),
@@ -16010,8 +16017,8 @@ class _typing_operator_truediv(ConcreteTemplate):
 
 
 @register_global(operator.iadd)
-class _typing_operator_iadd(ConcreteTemplate):
-    cases = [
+class _typing_operator_iadd(BinOp):
+    cases = BinOp.cases + [
         signature(
             _type___nv_bfloat16, _type___nv_bfloat16, _type___nv_bfloat16
         ),
@@ -16022,8 +16029,8 @@ class _typing_operator_iadd(ConcreteTemplate):
 
 
 @register_global(operator.isub)
-class _typing_operator_isub(ConcreteTemplate):
-    cases = [
+class _typing_operator_isub(BinOp):
+    cases = BinOp.cases + [
         signature(
             _type___nv_bfloat16, _type___nv_bfloat16, _type___nv_bfloat16
         ),
@@ -16034,8 +16041,8 @@ class _typing_operator_isub(ConcreteTemplate):
 
 
 @register_global(operator.imul)
-class _typing_operator_imul(ConcreteTemplate):
-    cases = [
+class _typing_operator_imul(BinOp):
+    cases = BinOp.cases + [
         signature(
             _type___nv_bfloat16, _type___nv_bfloat16, _type___nv_bfloat16
         ),
@@ -16046,8 +16053,8 @@ class _typing_operator_imul(ConcreteTemplate):
 
 
 @register_global(operator.itruediv)
-class _typing_operator_itruediv(ConcreteTemplate):
-    cases = [
+class _typing_operator_itruediv(BinOpTrueDiv):
+    cases = BinOp.cases + [
         signature(
             _type___nv_bfloat16, _type___nv_bfloat16, _type___nv_bfloat16
         ),
@@ -16058,64 +16065,64 @@ class _typing_operator_itruediv(ConcreteTemplate):
 
 
 @register_global(operator.pos)
-class _typing_operator_pos(ConcreteTemplate):
-    cases = [
+class _typing_operator_pos(UnaryPositive):
+    cases = UnaryPositive.cases + [
         signature(_type___nv_bfloat16, _type___nv_bfloat16),
         signature(_type___nv_bfloat162, _type___nv_bfloat162),
     ]
 
 
 @register_global(operator.neg)
-class _typing_operator_neg(ConcreteTemplate):
-    cases = [
+class _typing_operator_neg(UnaryNegate):
+    cases = UnaryNegate.cases + [
         signature(_type___nv_bfloat16, _type___nv_bfloat16),
         signature(_type___nv_bfloat162, _type___nv_bfloat162),
     ]
 
 
 @register_global(operator.eq)
-class _typing_operator_eq(ConcreteTemplate):
-    cases = [
+class _typing_operator_eq(UnorderedCmpOp):
+    cases = UnorderedCmpOp.cases + [
         signature(bool_, _type___nv_bfloat16, _type___nv_bfloat16),
         signature(bool_, _type___nv_bfloat162, _type___nv_bfloat162),
     ]
 
 
 @register_global(operator.ne)
-class _typing_operator_ne(ConcreteTemplate):
-    cases = [
+class _typing_operator_ne(UnorderedCmpOp):
+    cases = UnorderedCmpOp.cases + [
         signature(bool_, _type___nv_bfloat16, _type___nv_bfloat16),
         signature(bool_, _type___nv_bfloat162, _type___nv_bfloat162),
     ]
 
 
 @register_global(operator.gt)
-class _typing_operator_gt(ConcreteTemplate):
-    cases = [
+class _typing_operator_gt(OrderedCmpOp):
+    cases = OrderedCmpOp.cases + [
         signature(bool_, _type___nv_bfloat16, _type___nv_bfloat16),
         signature(bool_, _type___nv_bfloat162, _type___nv_bfloat162),
     ]
 
 
 @register_global(operator.lt)
-class _typing_operator_lt(ConcreteTemplate):
-    cases = [
+class _typing_operator_lt(OrderedCmpOp):
+    cases = OrderedCmpOp.cases + [
         signature(bool_, _type___nv_bfloat16, _type___nv_bfloat16),
         signature(bool_, _type___nv_bfloat162, _type___nv_bfloat162),
     ]
 
 
 @register_global(operator.ge)
-class _typing_operator_ge(ConcreteTemplate):
-    cases = [
+class _typing_operator_ge(OrderedCmpOp):
+    cases = OrderedCmpOp.cases + [
         signature(bool_, _type___nv_bfloat16, _type___nv_bfloat16),
         signature(bool_, _type___nv_bfloat162, _type___nv_bfloat162),
     ]
 
 
 @register_global(operator.le)
-class _typing_operator_le(ConcreteTemplate):
-    cases = [
+class _typing_operator_le(OrderedCmpOp):
+    cases = OrderedCmpOp.cases + [
         signature(bool_, _type___nv_bfloat16, _type___nv_bfloat16),
         signature(bool_, _type___nv_bfloat162, _type___nv_bfloat162),
     ]
