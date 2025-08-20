@@ -10,9 +10,8 @@ from numba.cuda.cudadrv import devices, drvapi, driver as _driver
 from numba.cuda.testing import unittest, CUDATestCase
 from numba.cuda.testing import skip_on_cudasim
 import contextlib
-from numba import config
 
-if config.USE_NV_BINDING:
+if _driver.USE_NV_BINDING:
     from cuda.core import experimental
 
 ptx1 = """
@@ -155,7 +154,7 @@ class TestCudaDriver(CUDATestCase):
         for i, v in enumerate(array):
             self.assertEqual(i, v)
 
-    @unittest.skipIf(not config.USE_NV_BINDING, "NV binding not enabled")
+    @unittest.skipIf(not _driver.USE_NV_BINDING, "NV binding not enabled")
     def test_cuda_core_stream_operations(self):
         module = self.context.create_module_ptx(self.ptx)
         function = module.get_function("_Z10helloworldPi")
