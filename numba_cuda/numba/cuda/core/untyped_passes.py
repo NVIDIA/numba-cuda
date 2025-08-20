@@ -34,8 +34,8 @@ else:
 
 
 from numba.misc.special import literal_unroll
+from numba.cuda.core.analysis import dead_branch_prune
 from numba.core.analysis import (
-    dead_branch_prune,
     rewrite_semantic_constants,
     find_literally_calls,
     compute_cfg_from_blocks,
