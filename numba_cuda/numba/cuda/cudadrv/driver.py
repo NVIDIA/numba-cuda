@@ -11,7 +11,6 @@ system to freeze in some cases.
 
 """
 
-from cuda.core import experimental
 import sys
 import os
 import ctypes
@@ -59,11 +58,11 @@ USE_NV_BINDING = config.CUDA_USE_NVIDIA_BINDING
 
 if USE_NV_BINDING:
     from cuda.bindings import driver as binding
-    from cuda.core.experimental import (
-        Linker,
-        LinkerOptions,
-        ObjectCode,
-    )
+
+    from cuda.core import experimental
+    #        Linker,
+    #        LinkerOptions,
+    #        ObjectCode,
 
     # There is no definition of the default stream in the Nvidia bindings (nor
     # is there at the C/C++ level), so we define it here so we don't need to
@@ -1508,7 +1507,7 @@ class Context(object):
         if isinstance(ptx, str):
             ptx = ptx.encode("utf8")
         if USE_NV_BINDING:
-            image = ObjectCode.from_ptx(ptx)
+            image = experimental.ObjectCode.from_ptx(ptx)
         else:
             image = c_char_p(ptx)
         return self.create_module_image(image)
@@ -2981,7 +2980,7 @@ class _Linker(_LinkerBase):
         self.lto = lto
         self.additional_flags = additional_flags
 
-        self.options = LinkerOptions(
+        self.options = experimental.LinkerOptions(
             max_register_count=self.max_registers,
             lineinfo=lineinfo,
             arch=arch,
@@ -3008,7 +3007,7 @@ class _Linker(_LinkerBase):
         raise RuntimeError("Link not yet complete.")
 
     def add_ptx(self, ptx, name="<cudapy-ptx>"):
-        obj = ObjectCode.from_ptx(ptx, name=name)
+        obj = experimental.ObjectCode.from_ptx(ptx, name=name)
         self._object_codes.append(obj)
 
     def add_cu(self, cu, name="<cudapy-cu>"):
@@ -3024,23 +3023,23 @@ class _Linker(_LinkerBase):
         self._object_codes.append(obj)
 
     def add_cubin(self, cubin, name="<cudapy-cubin>"):
-        obj = ObjectCode.from_cubin(cubin, name=name)
+        obj = experimental.ObjectCode.from_cubin(cubin, name=name)
         self._object_codes.append(obj)
 
     def add_ltoir(self, ltoir, name="<cudapy-ltoir>"):
-        obj = ObjectCode.from_ltoir(ltoir, name=name)
+        obj = experimental.ObjectCode.from_ltoir(ltoir, name=name)
         self._object_codes.append(obj)
 
     def add_fatbin(self, fatbin, name="<cudapy-fatbin>"):
-        obj = ObjectCode.from_fatbin(fatbin, name=name)
+        obj = experimental.ObjectCode.from_fatbin(fatbin, name=name)
         self._object_codes.append(obj)
 
     def add_object(self, obj, name="<cudapy-object>"):
-        obj = ObjectCode.from_object(obj, name=name)
+        obj = experimental.ObjectCode.from_object(obj, name=name)
         self._object_codes.append(obj)
 
     def add_library(self, lib, name="<cudapy-lib>"):
-        obj = ObjectCode.from_library(lib, name=name)
+        obj = experimental.ObjectCode.from_library(lib, name=name)
         self._object_codes.append(obj)
 
     def add_file(self, path, kind):
@@ -3074,7 +3073,7 @@ class _Linker(_LinkerBase):
         fn(data, name)
 
     def get_linked_ptx(self):
-        options = LinkerOptions(
+        options = experimental.LinkerOptions(
             max_register_count=self.max_registers,
             lineinfo=self.lineinfo,
             arch=self.arch,
@@ -3082,7 +3081,7 @@ class _Linker(_LinkerBase):
             ptx=True,
         )
 
-        self.linker = Linker(*self._object_codes, options=options)
+        self.linker = experimental.Linker(*self._object_codes, options=options)
 
         result = self.linker.link("ptx")
         self.close()
@@ -3095,7 +3094,9 @@ class _Linker(_LinkerBase):
         self.linker.close()
 
     def complete(self):
-        self.linker = Linker(*self._object_codes, options=self.options)
+        self.linker = experimental.Linker(
+            *self._object_codes, options=self.options
+        )
         result = self.linker.link("cubin")
         self.close()
         self._complete = True
@@ -3634,11 +3635,13 @@ def _stream_handle(stream):
         return stream
     elif hasattr(stream, "__cuda_stream__"):
         _, ptr = stream.__cuda_stream__()
-        if isinstance(stream, experimental.Stream):
+        if isinstance(ptr, binding.CUstream):
             return int(ptr)
         else:
             return ptr
     else:
-        raise TypeError(
-            "Expected a Stream object or 0, got %s" % type(stream).__name__
-        )
+        allowed = (Stream, experimental.Stream) if USE_NV_BINDING else Stream
+        if not isinstance(stream, allowed):
+            raise TypeError(
+                "Expected a Stream object or 0, got %s" % type(stream).__name__
+            )
