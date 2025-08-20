@@ -38,16 +38,16 @@ and ask for clarifications!
 ## Installation of Development Dependencies
 
 There are some dependencies that are required for developing Numba-CUDA, but are not required for installation or distribution.
-These dependencies are listed under the `test-cu11` and `test-cu12` optional dependency groups in our project configuration.
+These dependencies are listed under the `test-cu12` and `test-cu13` optional dependency groups in our project configuration.
 
 To install Numba-CUDA for development, run this in the root of the repository:
 
 ```shell
-pip install -e ".[test-cu11]"
+pip install -e ".[test-cu12]"
 ```
 or
 ```sh
-pip install -e ".[test-cu12]"
+pip install -e ".[test-cu13]"
 ```
 
 Numba-CUDA uses [`pre-commit`](https://pre-commit.com/) to run a number of style
