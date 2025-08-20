@@ -1599,6 +1599,34 @@ def _from___nv_bfloat16_to_bool__lower(shim_stream, shim_obj):
 _from___nv_bfloat16_to_bool__lower(shim_stream, shim_obj)
 
 
+# C++ does not provide a conversion operator from bfloat16 to double, so we need to implement it manually.
+def _from___nv_bfloat16_to_float64__lower():
+    @lower_cast(_type___nv_bfloat16, float64)
+    def impl(context, builder, fromty, toty, value):
+        # Hand rolled bfloat16 -> float32 -> double conversion with zero-ext
+        bits32 = builder.zext(value, ir.IntType(32))
+        shift = builder.shl(bits32, ir.Constant(ir.IntType(32), 16))
+        f32 = builder.bitcast(shift, ir.FloatType())
+        # printf("%f") expects a double; promote to f64 to match vararg expectation
+        f64 = builder.fpext(f32, ir.DoubleType())
+        return f64
+
+
+_from___nv_bfloat16_to_float64__lower()
+
+
+def _literalint_to_bf16_lower():
+    @lower_cast(types.IntegerLiteral, _type___nv_bfloat16)
+    def impl(context, builder, fromty, toty, value):
+        f32 = context.cast(builder, value, fromty, float32)
+        i32 = builder.bitcast(f32, ir.IntType(32))
+        i16 = builder.trunc(i32, ir.IntType(16))
+        return i16
+
+
+_literalint_to_bf16_lower()
+
+
 # Typing for __nv_bfloat162
 class _type_class___nv_bfloat162(Type):
     def __init__(self):
