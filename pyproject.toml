@@ -16,7 +16,7 @@ authors = [
     { name = "Anaconda Inc." },
     { name = "NVIDIA Corporation" }
 ]
-license = { text = "BSD 2-clause" }
+license = "BSD-2-clause"
 license-files = ["LICENSE", "LICENSE.numba"]
 requires-python = ">=3.9"
 dependencies = ["numba>=0.60.0"]

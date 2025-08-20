@@ -23,12 +23,12 @@ otherwise designated in writing by You as “Not a Submission.”
 “**Submission**” means the Code and any other copyrightable material Submitted by You, including any
 associated comments and documentation.
 
-## 2. Your Submission. 
+## 2. Your Submission.
 You must agree to the terms of this Agreement before making a Submission to any
 Project. This Agreement covers any and all Submissions that You, now or in the future (except as
 described in Section 4 below), Submit to any Project.
 
-## 3. Originality of Work. 
+## 3. Originality of Work.
 You represent that each of Your Submissions is entirely Your original work.
 Should You wish to Submit materials that are not Your original work, You may Submit them separately
 to the Project if You (a) retain all copyright and license information that was in the materials as You
@@ -37,7 +37,7 @@ containing materials of a third party:” followed by the names of the third par
 restrictions of which You are aware, and (c) follow any other instructions in the Project’s written
 guidelines concerning Submissions.
 
-## 4. Your Employer. 
+## 4. Your Employer.
 References to “employer” in this Agreement include Your employer or anyone else
 for whom You are acting in making Your Submission, e.g. as a contractor, vendor, or agent. If Your
 Submission is made in the course of Your work for an employer or Your employer has intellectual
@@ -66,7 +66,7 @@ import or otherwise dispose of the Submission alone or with the Project.
 No additional licenses or rights whatsoever (including, without limitation, any implied licenses) are
 granted by implication, exhaustion, estoppel or otherwise.
 
-## 6. Representations and Warranties. 
+## 6. Representations and Warranties.
 You represent that You are legally entitled to grant the above
 licenses. You represent that each of Your Submissions is entirely Your original work (except as You may
 have disclosed under Section 3). You represent that You have secured permission from Your employer to
@@ -80,20 +80,20 @@ EXPRESSLY STATED IN SECTIONS 3, 4, AND 6, THE SUBMISSION PROVIDED UNDER THIS AGR
 PROVIDED WITHOUT WARRANTY OF ANY KIND, INCLUDING, BUT NOT LIMITED TO, ANY WARRANTY OF
 NONINFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
 
-## 7. Notice to NVIDIA. 
+## 7. Notice to NVIDIA.
 You agree to notify NVIDIA in writing of any facts or circumstances of which
 You later become aware that would make Your representations in this Agreement inaccurate in any
 respect.
 
-## 8. Information about Submissions. 
+## 8. Information about Submissions.
 You agree that contributions to Projects and information about
 contributions may be maintained indefinitely and disclosed publicly, including Your name and other
 information that You submit with Your Submission.
 
-## 9. Governing Law/Jurisdiction. 
+## 9. Governing Law/Jurisdiction.
 Claims arising under this Agreement shall be governed by the laws of Delaware, excluding its principles of conflict of laws and the United Nations Convention on Contracts for the Sale of Goods. The state and/or federal courts residing in Santa Clara County, California shall have exclusive jurisdiction over any dispute or claim arising out of this Agreement. You may not export the Software in violation of applicable export laws and regulations.
 
-## 10. Entire Agreement/Assignment. 
+## 10. Entire Agreement/Assignment.
 This Agreement is the entire agreement between the parties, and
 supersedes any and all prior agreements, understandings or communications, written or oral, between
 the parties relating to the subject matter hereof. This Agreement may be assigned by NVIDIA.
