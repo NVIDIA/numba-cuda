@@ -25,10 +25,6 @@ class TestNvvmDriver(unittest.TestCase):
         # ("-gen-lto") - all other NVVM options are of the form
         # "-<name>=<value>"
 
-        # -gen-lto is not available prior to CUDA 11.5
-        if runtime.get_version() < (11, 5):
-            self.skipTest("-gen-lto unavailable in this toolkit version")
-
         nvvmir = self.get_nvvmir()
         arch = "compute_%d%d" % nvrtc.get_lowest_supported_cc()
         ltoir = nvvm.compile_ir(nvvmir, opt=3, gen_lto=None, arch=arch)

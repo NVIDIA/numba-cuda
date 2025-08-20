@@ -465,7 +465,7 @@ class TestCudaDebugInfoTypes(CUDATestCase):
                 f"Test DITypes for {sanitize_name(numba_type.name)}"
             ):
 
-                @cuda.jit((numba_type,), debug=True)
+                @cuda.jit((numba_type,), debug=True, opt=False)
                 def foo(a):
                     pass
 
