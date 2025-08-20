@@ -7,13 +7,11 @@ from numba.cuda.testing import (
     skip_on_cudasim,
     skip_if_cudadevrt_missing,
     skip_unless_cc_60,
-    skip_if_mvc_enabled,
 )
 
 
 @skip_if_cudadevrt_missing
 @skip_unless_cc_60
-@skip_if_mvc_enabled("CG not supported with MVC")
 @skip_on_cudasim("cudasim doesn't support cuda import at non-top-level")
 class TestCooperativeGroups(CUDATestCase):
     def test_ex_grid_sync(self):
