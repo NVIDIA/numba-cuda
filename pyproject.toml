@@ -71,9 +71,6 @@ Issues = "https://github.com/NVIDIA/numba-cuda/issues"
 [tool.setuptools.dynamic]
 version = {attr = "numba_cuda.__version__"}
 
-[tool.setuptools]
-license-files = ["LICENSE"]
-
 [tool.setuptools.packages.find]
 include = ["numba_cuda*"]
 
