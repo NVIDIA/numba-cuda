@@ -120,7 +120,7 @@ class TestSharedMemoryCreation(CUDATestCase):
         self.assertIn(
             "found for signature:\n \n "
             ">>> array(shape=Tuple(Literal[int](1), "
-            "array(float32, 1d, A)), dtype=class(float32))",
+            "array(float32, 1d, A, addrspace(0))), dtype=class(float32))",
             str(raises.exception),
         )
 

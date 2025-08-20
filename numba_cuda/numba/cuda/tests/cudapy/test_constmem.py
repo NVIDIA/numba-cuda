@@ -87,8 +87,7 @@ def cuconstAlign(z):
 
 class TestCudaConstantMemory(CUDATestCase):
     def test_const_array(self):
-        sig = (float64[:],)
-        jcuconst = cuda.jit(sig)(cuconst)
+        jcuconst = cuda.jit((float64[:],))(cuconst)
         A = np.zeros_like(CONST1D)
         jcuconst[2, 5](A)
         self.assertTrue(np.all(A == CONST1D + 1))
@@ -96,7 +95,7 @@ class TestCudaConstantMemory(CUDATestCase):
         if not ENABLE_CUDASIM:
             self.assertIn(
                 "ld.const.f64",
-                jcuconst.inspect_asm(sig),
+                jcuconst.inspect_asm(jcuconst.signatures[0]),
                 "as we're adding to it, load as a double",
             )
 
@@ -113,8 +112,7 @@ class TestCudaConstantMemory(CUDATestCase):
         self.assertTrue(np.all(A == (CONST3BYTES + CONST1D[:3])))
 
     def test_const_array_2d(self):
-        sig = (int32[:, :],)
-        jcuconst2d = cuda.jit(sig)(cuconst2d)
+        jcuconst2d = cuda.jit((int32[:, :],))(cuconst2d)
         A = np.zeros_like(CONST2D, order="C")
         jcuconst2d[(2, 2), (5, 5)](A)
         self.assertTrue(np.all(A == CONST2D))
@@ -122,19 +120,18 @@ class TestCudaConstantMemory(CUDATestCase):
         if not ENABLE_CUDASIM:
             self.assertIn(
                 "ld.const.u32",
-                jcuconst2d.inspect_asm(sig),
+                jcuconst2d.inspect_asm(jcuconst2d.signatures[0]),
                 "load the ints as ints",
             )
 
     def test_const_array_3d(self):
-        sig = (complex64[:, :, :],)
-        jcuconst3d = cuda.jit(sig)(cuconst3d)
+        jcuconst3d = cuda.jit((complex64[:, :, :],))(cuconst3d)
         A = np.zeros_like(CONST3D, order="F")
         jcuconst3d[1, (5, 5, 5)](A)
         self.assertTrue(np.all(A == CONST3D))
 
         if not ENABLE_CUDASIM:
-            asm = jcuconst3d.inspect_asm(sig)
+            asm = jcuconst3d.inspect_asm(jcuconst3d.signatures[0])
             complex_load = "ld.const.v2.f32"
             description = "Load the complex as a vector of 2x f32"
             self.assertIn(complex_load, asm, description)

@@ -14,13 +14,11 @@ class TestCudaInline(CUDATestCase):
         """Test @cuda.jit(inline=...)"""
         a = np.ones(2, dtype=np.int32)
 
-        sig = (types.int32[::1],)
-
         @cuda.jit(inline=inline)
         def set_zero(a):
             a[0] = 0
 
-        @cuda.jit(sig)
+        @cuda.jit((types.int32[::1],))
         def call_set_zero(a):
             set_zero(a)
 
@@ -29,7 +27,7 @@ class TestCudaInline(CUDATestCase):
         expected = np.arange(2, dtype=np.int32)
         self.assertTrue(np.all(a == expected))
 
-        llvm_ir = call_set_zero.inspect_llvm(sig)
+        llvm_ir = call_set_zero.inspect_llvm(call_set_zero.signatures[0])
         pat = r"call [a-zA-Z0-9]* @"
         match = re.compile(pat).search(llvm_ir)
 
@@ -71,13 +69,11 @@ class TestCudaInline(CUDATestCase):
         """Test @cuda.jit(forceinline=...)"""
         a = np.ones(2, dtype=np.int32)
 
-        sig = (types.int32[::1],)
-
         @cuda.jit(forceinline=forceinline)
         def set_zero(a):
             a[0] = 0
 
-        @cuda.jit(sig)
+        @cuda.jit((types.int32[::1],))
         def call_set_zero(a):
             set_zero(a)
 
@@ -86,7 +82,7 @@ class TestCudaInline(CUDATestCase):
         expected = np.arange(2, dtype=np.int32)
         self.assertTrue(np.all(a == expected))
 
-        llvm_ir = call_set_zero.inspect_llvm(sig)
+        llvm_ir = call_set_zero.inspect_llvm(call_set_zero.signatures[0])
         pat = r"call [a-zA-Z0-9]* @"
         match = re.compile(pat).search(llvm_ir)
 

@@ -1032,7 +1032,12 @@ class CUDADispatcher(serialize.ReduceMixin, _MemoMixin, _DispatcherBase):
         # Based on _DispatcherBase.typeof_pyval, but differs from it to support
         # the CUDA Array Interface.
         try:
-            return typeof(val, Purpose.argument)
+            tp = typeof(val, Purpose.argument)
+            if isinstance(tp, types.Array) and not isinstance(
+                tp, cuda_types.CUDAArray
+            ):
+                tp = cuda_types.CUDAArray.from_array_type(tp)
+            return tp
         except ValueError:
             if cuda.is_cuda_array(val):
                 # When typing, we don't need to synchronize on the array's

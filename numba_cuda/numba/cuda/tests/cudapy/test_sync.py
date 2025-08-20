@@ -182,33 +182,36 @@ class TestCudaSync(CUDATestCase):
 
     def test_threadfence_codegen(self):
         # Does not test runtime behavior, just the code generation.
-        sig = (int32[:],)
-        compiled = cuda.jit(sig)(use_threadfence)
+        compiled = cuda.jit((int32[:],))(use_threadfence)
         ary = np.zeros(10, dtype=np.int32)
         compiled[1, 1](ary)
         self.assertEqual(123 + 321, ary[0])
         if not ENABLE_CUDASIM:
-            self.assertIn("membar.gl;", compiled.inspect_asm(sig))
+            self.assertIn(
+                "membar.gl;", compiled.inspect_asm(compiled.signatures[0])
+            )
 
     def test_threadfence_block_codegen(self):
         # Does not test runtime behavior, just the code generation.
-        sig = (int32[:],)
-        compiled = cuda.jit(sig)(use_threadfence_block)
+        compiled = cuda.jit((int32[:],))(use_threadfence_block)
         ary = np.zeros(10, dtype=np.int32)
         compiled[1, 1](ary)
         self.assertEqual(123 + 321, ary[0])
         if not ENABLE_CUDASIM:
-            self.assertIn("membar.cta;", compiled.inspect_asm(sig))
+            self.assertIn(
+                "membar.cta;", compiled.inspect_asm(compiled.signatures[0])
+            )
 
     def test_threadfence_system_codegen(self):
         # Does not test runtime behavior, just the code generation.
-        sig = (int32[:],)
-        compiled = cuda.jit(sig)(use_threadfence_system)
+        compiled = cuda.jit((int32[:],))(use_threadfence_system)
         ary = np.zeros(10, dtype=np.int32)
         compiled[1, 1](ary)
         self.assertEqual(123 + 321, ary[0])
         if not ENABLE_CUDASIM:
-            self.assertIn("membar.sys;", compiled.inspect_asm(sig))
+            self.assertIn(
+                "membar.sys;", compiled.inspect_asm(compiled.signatures[0])
+            )
 
     def _test_syncthreads_count(self, in_dtype):
         compiled = cuda.jit(use_syncthreads_count)
