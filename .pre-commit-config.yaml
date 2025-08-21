@@ -24,3 +24,11 @@ repos:
     - id: ruff
       args: [--fix]
     - id: ruff-format
+- repo: local
+  hooks:
+    - id: check-spdx
+      name: Check SPDX Headers
+      entry: python ./toolshed/check_spdx.py
+      language: python
+      additional_dependencies:
+        - pathspec==0.12.1

@@ -28,9 +28,10 @@ into three categories:
 3. Comment on the issue saying you are going to work on it
 4. Code! Make sure to update unit tests!
 5. When done, [create your pull request](https://github.com/NVIDIA/numba-cuda/compare)
-6. Verify that CI passes all [status checks](https://help.github.com/articles/about-status-checks/). Fix if needed
-7. Wait for other developers to review your code and update code as needed
-8. Once reviewed and approved, a Numba-CUDA developer will merge your pull request
+6. Sign the [CLA](https://github.com/NVIDIA/numba-cuda/CLA.md)
+7. Verify that CI passes all [status checks](https://help.github.com/articles/about-status-checks/). Fix if needed
+8. Wait for other developers to review your code and update code as needed
+9. Once reviewed and approved, a Numba-CUDA developer will merge your pull request
 
 Remember, if you are unsure about anything, don't hesitate to comment on issues
 and ask for clarifications!

@@ -1359,18 +1359,10 @@ class Registry(object):
         self.globals = []
 
     def register(self, item):
-        assert issubclass(
-            item,
-            (FunctionTemplate, numba.core.typing.templates.FunctionTemplate),
-        )
         self.functions.append(item)
         return item
 
     def register_attr(self, item):
-        assert issubclass(
-            item,
-            (AttributeTemplate, numba.core.typing.templates.AttributeTemplate),
-        )
         self.attributes.append(item)
         return item
 
