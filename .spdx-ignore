@@ -22,7 +22,3 @@ docs/build/*
 build/*
 dist/*
 *.egg-info/*
-site-packages/*
-
-# Conda recipe files (these are data files, not source code)
-conda/recipes/*/meta.yaml
