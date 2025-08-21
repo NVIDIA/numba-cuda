@@ -344,6 +344,8 @@ class TestBfloat16HighLevelBindings(CUDATestCase):
         self.assertAlmostEqual(out[3], 2.0, delta=1e-3)
 
     def test_bfloat16_as_bitcast(self):
+        self.skip_unsupported()
+
         @cuda.jit
         def roundtrip_kernel(test_val, i2, u2):
             i2[0] = int16_as_bfloat16(bfloat16_as_int16(test_val))
