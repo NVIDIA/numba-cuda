@@ -92,15 +92,5 @@ class Bfloat16(types.Number):
         if isinstance(other, (types.Float, types.Integer)):
             return typingctx.unify_pairs(self, other)
 
-    def cast_python_value(self, value):
-        try:
-            import ml_dtypes  # noqa: F401
-
-            return ml_dtypes.bfloat16(value)
-        except ImportError:
-            raise NotImplementedError(
-                "Please install ml_dtypes to use bfloat16 on host."
-            )
-
 
 bfloat16 = Bfloat16()

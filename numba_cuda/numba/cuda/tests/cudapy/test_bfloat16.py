@@ -1,5 +1,3 @@
-import unittest
-from importlib.util import find_spec
 import numpy as np
 from ml_dtypes import bfloat16 as mldtypes_bf16
 
@@ -571,14 +569,6 @@ class TestBfloat16HighLevelBindings(CUDATestCase):
         np.testing.assert_array_less(
             _bf16_ulp_distance(raw[4:], f8_expected), 2
         )
-
-    @unittest.skipIf(
-        find_spec("ml_dtypes") is None,
-        "ml_dtypes is required to use bfloat16 on host",
-    )
-    def test_use_bfloat16_on_host(self):
-        x = bfloat16(3.0)
-        self.assertEqual(x, 3.0)
 
 
 def _bf16_ulp_rank(bits_int16: np.ndarray) -> np.ndarray:
