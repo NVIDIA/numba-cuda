@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: BSD-2-Clause
+
 from abc import abstractmethod, ABCMeta
 import itertools
 import numba
@@ -15,7 +18,7 @@ from numba.misc.appdirs import AppDirs
 from pathlib import Path
 
 from numba.core import config
-from numba.core.serialize import dumps
+from numba.cuda.serialize import dumps
 
 
 def _cache_log(msg, *args):

@@ -1,3 +1,7 @@
+..
+   SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+   SPDX-License-Identifier: BSD-2-Clause
+
 .. _numba-envvars-gpu-support:
 
 Environment Variables
@@ -84,8 +88,8 @@ target.
 
    .. seealso::
 
-      The `Default Stream section
-      <https://nvidia.github.io/cuda-python/release/11.6.0-notes.html#default-stream>`_
+      The `Runtime Environment Variables section
+      <https://nvidia.github.io/cuda-python/cuda-bindings/latest/environment_variables.html#runtime-environment-variables>`_
       in the NVIDIA Bindings documentation.
 
 .. envvar:: NUMBA_CUDA_LOW_OCCUPANCY_WARNINGS
@@ -118,13 +122,6 @@ target.
    be available to linked C/C++ sources. On Linux, it defaults to
    ``/usr/local/cuda/include``. On Windows, the default is
    ``$env:CUDA_PATH\include``.
-
-.. envvar:: NUMBA_CUDA_ENABLE_MINOR_VERSION_COMPATIBILITY
-
-      Enable minor version compatibility for the CUDA driver. Requires the
-      ``cubinlinker`` and ``ptxcompiler`` packages to be installed. Provides minor
-      version compatibility for driver versions less than 12.0.
-
 
 .. envvar:: NUMBA_CUDA_NVRTC_EXTRA_SEARCH_PATHS
 

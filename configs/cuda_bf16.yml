@@ -1,3 +1,5 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: BSD-2-Clause
 Name: Numba Bfloat16
 Version: 0.0.1
 Entry Point: ./numba_cuda/numba/cuda/include/12/cuda_bf16.h

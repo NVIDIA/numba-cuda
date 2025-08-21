@@ -1,5 +1,6 @@
 #!/bin/bash
-# Copyright (c) 2024, NVIDIA CORPORATION
+# SPDX-FileCopyrightText: Copyright (c) 2024 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: BSD-2-Clause
 
 set -euo pipefail
 
@@ -22,17 +23,12 @@ test_dir = root + \"numba/cuda/tests/test_binary_generation/\"
 print(test_dir)
 "
 
-if [ "${CUDA_VER_MAJOR_MINOR%.*}" == "11" ]
-then
-  rapids-logger "Skipping test build for CUDA 11"
-else
-  rapids-logger "Build tests"
+rapids-logger "Build tests"
 
-  export NUMBA_CUDA_TEST_BIN_DIR=$(python -c "$GET_TEST_BINARY_DIR")
-  pushd $NUMBA_CUDA_TEST_BIN_DIR
-  make
-  popd
-fi
+export NUMBA_CUDA_TEST_BIN_DIR=$(python -c "$GET_TEST_BINARY_DIR")
+pushd $NUMBA_CUDA_TEST_BIN_DIR
+make
+popd
 
 rapids-logger "Check GPU usage"
 nvidia-smi

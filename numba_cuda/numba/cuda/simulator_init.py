@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: BSD-2-Clause
+
 # We import * from simulator here because * is imported from simulator_init by
 # numba.cuda.__init__.
 from .simulator import *  # noqa: F403, F401
