@@ -1,4 +1,5 @@
 LICENSE
+LICENSE.numba
 *.html
 *.json
 *.md
@@ -8,26 +9,12 @@ LICENSE
 *.txt
 *.ptx
 *.pyc
-.gitattributes
-.gitignore
-.git-blame-ignore-revs
 requirements*.txt
 
-# Configuration files that shouldn't have SPDX headers
-conda/recipes/*/meta.yaml
-configs/*.yml
-configs/*.yaml
-.pre-commit-config.yaml
-pyproject.toml
-
-# Documentation build artifacts and specific docs files
+# Documentation build artifacts
 docs/build/*
-docs/make.bat
 
-# Test data and binary files  
-numba_cuda/numba/cuda/tests/test_binary_generation/*
-numba_cuda/numba/cuda/tests/cudadrv/test_device_functions.*
-numba_cuda/numba/cuda/tests/cudadrv/undefined_extern.*
+# Binary files
 *.so
 *.dll
 
@@ -37,5 +24,5 @@ dist/*
 *.egg-info/*
 site-packages/*
 
-# Version file that may be auto-generated
-numba_cuda/_version.py
+# Conda recipe files (these are data files, not source code)
+conda/recipes/*/meta.yaml
