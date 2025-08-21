@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: BSD-2-Clause
+
 import builtins
 import collections
 import dis
@@ -6,13 +9,13 @@ import logging
 import textwrap
 
 from numba.core import errors, ir, config
+from numba.cuda.errors import UnsupportedBytecodeError
 from numba.core.errors import (
     NotDefinedError,
-    UnsupportedBytecodeError,
     error_extras,
 )
 from numba.cuda.core import ir_utils
-from numba.core.utils import (
+from numba.cuda.utils import (
     PYVERSION,
     BINOPS_TO_OPERATORS,
     INPLACE_BINOPS_TO_OPERATORS,

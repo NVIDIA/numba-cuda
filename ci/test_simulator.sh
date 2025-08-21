@@ -1,5 +1,6 @@
 #!/bin/bash
-# Copyright (c) 2024, NVIDIA CORPORATION
+# SPDX-FileCopyrightText: Copyright (c) 2024 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: BSD-2-Clause
 
 set -euo pipefail
 
@@ -7,12 +8,20 @@ set -euo pipefail
 
 rapids-logger "Install testing dependencies"
 # TODO: Replace with rapids-dependency-file-generator
-rapids-mamba-retry create -n test \
-    psutil \
-    pytest \
-    pytest-xdist \
-    cffi \
-    python=${RAPIDS_PY_VERSION}
+DEPENDENCIES=(
+    "psutil"
+    "pytest"
+    "pytest-xdist"
+    "cffi"
+    "python=${RAPIDS_PY_VERSION}"
+    "numba-cuda"
+)
+rapids-mamba-retry create \
+    -n test \
+    --strict-channel-priority \
+    --channel "`pwd`/conda-repo" \
+    --channel conda-forge \
+    "${DEPENDENCIES[@]}"
 
 # Temporarily allow unbound variables for conda activation.
 set +u
@@ -20,8 +29,6 @@ conda activate test
 set -u
 
 pip install filecheck
-
-rapids-mamba-retry install -c `pwd`/conda-repo numba-cuda
 
 RAPIDS_TESTS_DIR=${RAPIDS_TESTS_DIR:-"${PWD}/test-results"}/
 mkdir -p "${RAPIDS_TESTS_DIR}"

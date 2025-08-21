@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: BSD-2-Clause
+
 """
 API that are reported to numba.cuda
 """
@@ -10,7 +13,6 @@ import numpy as np
 from .cudadrv import devicearray, devices, driver
 from numba.core import config
 from numba.cuda.api_util import prepare_shape_strides_dtype
-from numba.cuda.cudadrv.runtime import get_version
 
 # NDarray device helper
 
@@ -99,13 +101,9 @@ def is_float16_supported():
 def is_bfloat16_supported():
     """Whether bfloat16 are supported.
 
-    bfloat16 are only supported on devices with compute capability >= 8.0 and cuda version >= 12.0
+    bfloat16 is only supported on devices with compute capability >= 8.0
     """
-    cuda_version = get_version()
-    return current_context().device.supports_bfloat16 and cuda_version >= (
-        12,
-        0,
-    )
+    return current_context().device.supports_bfloat16
 
 
 @require_context
