@@ -1,3 +1,6 @@
+@REM SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+@REM SPDX-License-Identifier: BSD-2-Clause
+
 @echo off
 REM Test binaries are build taking into accoutn the CC of the GPU in the test machine
 for /f "tokens=*" %%i in ('nvidia-smi --query-gpu=compute_cap --format=csv ^| findstr /v compute_cap ^| head -n 1 ^| sed "s/\.//"') do set GPU_CC=%%i

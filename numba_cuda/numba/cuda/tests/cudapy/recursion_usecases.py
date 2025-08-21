@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: BSD-2-Clause
+
 """
 Usecases of recursive functions in the CUDA target, many derived from
 numba/tests/recursion_usecases.py.

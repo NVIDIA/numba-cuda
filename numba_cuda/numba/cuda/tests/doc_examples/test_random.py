@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: BSD-2-Clause
+
 # Contents in this file are referenced from the sphinx-generated docs.
 # "magictoken" is used for markers as beginning and ending of example text.
 
