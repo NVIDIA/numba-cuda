@@ -57,7 +57,7 @@ from numba.cuda.core.ir_utils import (
     transfer_scope,
     fixup_var_define_in_scope,
 )
-from numba.core.ssa import reconstruct_ssa
+from numba.cuda.core.ssa import reconstruct_ssa
 
 
 @contextmanager
