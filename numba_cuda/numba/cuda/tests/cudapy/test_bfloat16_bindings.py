@@ -5,6 +5,7 @@ import numba.cuda as cuda
 from numba.cuda.testing import unittest, CUDATestCase
 import numpy as np
 import operator
+from numba.cuda.testing import skip_if_nvjitlink_missing
 
 from numba import (
     config,
@@ -293,6 +294,7 @@ class Bfloat16Test(CUDATestCase):
 
         np.testing.assert_allclose(arr, [3], atol=1e-2)
 
+    @skip_if_nvjitlink_missing("LTO is not supported without nvjitlink.")
     def test_bf16_intrinsics_used_in_lto(self):
         self.skip_unsupported()
 
