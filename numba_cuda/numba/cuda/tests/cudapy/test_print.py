@@ -103,7 +103,11 @@ cuda.synchronize()
 """
 
 print_bfloat16_usecase = """\
-from numba import cuda
+from numba import cuda, config
+
+if config.ENABLE_CUDASIM:
+    print("bfloat16 on host is not yet supported.")
+    exit(0)
 
 @cuda.jit
 def print_bfloat16():
