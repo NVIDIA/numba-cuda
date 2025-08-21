@@ -35,8 +35,10 @@ about:
   home: {{ project_urls["Homepage"] }}
   dev_url: {{ project_urls["Repository"] }}
   doc_url: {{ project_urls["Documentation"] }}
-  license: {{ project_data["license"]["text"] }}
+  license: {{ project_data["license"] }}
   license_family: BSD
-  license_file: LICENSE
+  license_file:
+    - LICENSE
+    - LICENSE.numba
   license_url: {{ project_urls["License"] }}
   summary: Numba CUDA target
