@@ -8,13 +8,13 @@ import operator
 import logging
 import textwrap
 
-from numba.core import errors, ir, config
+from numba.core import errors, config
 from numba.cuda.errors import UnsupportedBytecodeError
 from numba.core.errors import (
     NotDefinedError,
     error_extras,
 )
-from numba.cuda.core import ir_utils
+from numba.cuda.core import ir_utils, ir
 from numba.cuda.utils import (
     PYVERSION,
     BINOPS_TO_OPERATORS,
