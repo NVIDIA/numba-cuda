@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: BSD-2-Clause
+
 import sys
 import re
 import os
@@ -148,7 +151,6 @@ def get_nvrtc_dso_path():
             # Check for each version of the NVRTC DLL, preferring the most
             # recent.
             versions = (
-                "112" if IS_WIN32 else "11.2",
                 "120" if IS_WIN32 else "12",
                 "130" if IS_WIN32 else "13",
             )
@@ -303,16 +305,16 @@ def get_nvidia_nvvm_ctk():
 
     # Assume the existence of NVVM in the conda env implies that a CUDA toolkit
     # conda package is installed.
-
-    # First, try the location used on Linux and the Windows 11.x packages
-    libdir = os.path.join(sys.prefix, "nvvm", _cudalib_path())
-    if not os.path.exists(libdir) or not os.path.isdir(libdir):
-        # If that fails, try the location used for Windows 12.x packages
+    if IS_WIN32:
+        # The path used on Windows
         libdir = os.path.join(sys.prefix, "Library", "nvvm", _cudalib_path())
-        if not os.path.exists(libdir) or not os.path.isdir(libdir):
-            # If that doesn't exist either, assume we don't have the NVIDIA
-            # conda package
-            return
+    else:
+        # The path used on Linux is different to that on Windows
+        libdir = os.path.join(sys.prefix, "nvvm", _cudalib_path())
+
+    if not os.path.exists(libdir) or not os.path.isdir(libdir):
+        # If the path doesn't exist, we didn't find the NVIDIA conda package
+        return
 
     paths = find_lib("nvvm", libdir=libdir)
     if not paths:
@@ -346,15 +348,8 @@ def get_nvidia_static_cudalib_ctk():
     if not nvvm_ctk:
         return
 
-    if IS_WIN32 and ("Library" not in nvvm_ctk):
-        # Location specific to CUDA 11.x packages on Windows
-        dirs = ("Lib", "x64")
-    else:
-        # Linux, or Windows with CUDA 12.x packages
-        dirs = ("lib",)
-
     env_dir = os.path.dirname(os.path.dirname(nvvm_ctk))
-    return os.path.join(env_dir, *dirs)
+    return os.path.join(env_dir, "lib")
 
 
 def get_cuda_home(*subdirs):

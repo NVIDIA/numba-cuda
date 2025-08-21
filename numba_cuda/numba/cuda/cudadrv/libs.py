@@ -1,9 +1,11 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: BSD-2-Clause
+
 """CUDA Toolkit libraries lookup utilities.
 
 CUDA Toolkit libraries can be available via either:
 
-- the `cuda-nvcc` and `cuda-nvrtc` conda packages for CUDA 12,
-- the `cudatoolkit` conda package for CUDA 11,
+- the `cuda-nvcc` and `cuda-nvrtc` conda packages,
 - a user supplied location from CUDA_HOME,
 - a system wide location,
 - package-specific locations (e.g. the Debian NVIDIA packages),

@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: BSD-2-Clause
+
 import warnings
 
 from llvmlite import ir
@@ -24,10 +27,6 @@ class TestNvvmDriver(unittest.TestCase):
         # Tests compilation with an option that doesn't take an argument
         # ("-gen-lto") - all other NVVM options are of the form
         # "-<name>=<value>"
-
-        # -gen-lto is not available prior to CUDA 11.5
-        if runtime.get_version() < (11, 5):
-            self.skipTest("-gen-lto unavailable in this toolkit version")
 
         nvvmir = self.get_nvvmir()
         arch = "compute_%d%d" % nvrtc.get_lowest_supported_cc()

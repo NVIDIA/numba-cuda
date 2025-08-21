@@ -1,11 +1,13 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: BSD-2-Clause
+
 import re
 from functools import cached_property
 import llvmlite.binding as ll
 from llvmlite import ir
 import warnings
-from numba.cuda import cgutils, itanium_mangler
+
 from numba.core import (
-    compiler,
     config,
     targetconfig,
     types,
@@ -15,15 +17,15 @@ from numba.core.compiler_lock import global_compiler_lock
 from numba.core.dispatcher import Dispatcher
 from numba.core.errors import NumbaWarning
 from numba.core.base import BaseContext
-from numba.cuda.core.callconv import BaseCallConv, MinimalCallConv
 from numba.core.typing import cmathdecl
 from numba.core import datamodel
 
 from .cudadrv import nvvm
-from numba.cuda import codegen, ufuncs
+from numba.cuda import cgutils, itanium_mangler, compiler, codegen, ufuncs
 from numba.cuda.debuginfo import CUDADIBuilder
 from numba.cuda.flags import CUDAFlags
 from numba.cuda.models import cuda_data_manager
+from numba.cuda.core.callconv import BaseCallConv, MinimalCallConv
 
 # -----------------------------------------------------------------------------
 # Typing
