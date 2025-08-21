@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: BSD-2-Clause
+
 # CUDA built-in Vector Types
 # https://docs.nvidia.com/cuda/cuda-c-programming-guide/index.html#built-in-vector-types
 

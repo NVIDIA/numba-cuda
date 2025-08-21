@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: BSD-2-Clause
+
 from abc import abstractmethod, ABCMeta
 from numba.misc.llvm_pass_timings import PassTimingsCollection
 

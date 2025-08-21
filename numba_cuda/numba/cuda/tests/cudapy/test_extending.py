@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: BSD-2-Clause
+
 from numba.cuda.testing import skip_on_cudasim, unittest, CUDATestCase
 from numba.cuda.cudadrv.driver import _have_nvjitlink
 from llvmlite import ir

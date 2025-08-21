@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: BSD-2-Clause
+
 from numba.cuda._internal.cuda_bf16 import (
     _type_class___nv_bfloat16,
     nv_bfloat16 as bfloat16,

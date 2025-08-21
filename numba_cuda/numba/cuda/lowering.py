@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: BSD-2-Clause
+
 from collections import namedtuple, defaultdict
 import operator
 import warnings
@@ -28,7 +31,7 @@ from numba.core.errors import (
     NumbaDebugInfoWarning,
 )
 from numba.core.funcdesc import default_mangler
-from numba.core.environment import Environment
+from numba.cuda.core.environment import Environment
 from numba.core.analysis import compute_use_defs, must_use_alloca
 from numba.misc.firstlinefinder import get_func_body_first_lineno
 from numba import version_info

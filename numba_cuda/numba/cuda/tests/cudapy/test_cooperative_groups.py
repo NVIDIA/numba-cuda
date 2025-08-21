@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: BSD-2-Clause
+
 from __future__ import print_function
 
 import os
@@ -14,7 +17,6 @@ from numba.cuda.testing import (
     skip_on_cudasim,
     skip_unless_cc_60,
     skip_if_cudadevrt_missing,
-    skip_if_mvc_enabled,
 )
 from numba.core.typing import signature
 
@@ -60,7 +62,6 @@ def sequential_rows(M):
 
 
 @skip_if_cudadevrt_missing
-@skip_if_mvc_enabled("CG not supported with MVC")
 class TestCudaCooperativeGroups(CUDATestCase):
     @skip_unless_cc_60
     def test_this_grid(self):

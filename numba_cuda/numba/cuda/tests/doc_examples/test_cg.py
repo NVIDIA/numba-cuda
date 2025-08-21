@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: BSD-2-Clause
+
 # Contents in this file are referenced from the sphinx-generated docs.
 # "magictoken" is used for markers as beginning and ending of example text.
 
@@ -7,13 +10,11 @@ from numba.cuda.testing import (
     skip_on_cudasim,
     skip_if_cudadevrt_missing,
     skip_unless_cc_60,
-    skip_if_mvc_enabled,
 )
 
 
 @skip_if_cudadevrt_missing
 @skip_unless_cc_60
-@skip_if_mvc_enabled("CG not supported with MVC")
 @skip_on_cudasim("cudasim doesn't support cuda import at non-top-level")
 class TestCooperativeGroups(CUDATestCase):
     def test_ex_grid_sync(self):

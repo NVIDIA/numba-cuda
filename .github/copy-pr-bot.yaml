@@ -1,4 +1,5 @@
-# Copyright (c) 2023, NVIDIA CORPORATION.
+# SPDX-FileCopyrightText: Copyright (c) 2023 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: BSD-2-Clause
 
 # Configuration file for `copy-pr-bot` GitHub App
 # https://docs.gha-runners.nvidia.com/apps/copy-pr-bot/

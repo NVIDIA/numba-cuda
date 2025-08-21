@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: BSD-2-Clause
+
 # Generates the input files used by the nvjitlink tests
 
 # Test binaries are built taking into account the CC of the GPU in the test machine

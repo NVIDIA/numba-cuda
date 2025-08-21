@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: BSD-2-Clause
+
 from collections import defaultdict, namedtuple
 from contextlib import contextmanager
 from copy import deepcopy, copy
@@ -31,8 +34,8 @@ else:
 
 
 from numba.misc.special import literal_unroll
+from numba.cuda.core.analysis import dead_branch_prune
 from numba.core.analysis import (
-    dead_branch_prune,
     rewrite_semantic_constants,
     find_literally_calls,
     compute_cfg_from_blocks,

@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: BSD-2-Clause
+
 """
 A CUDA ND Array is recognized by checking the __cuda_memory__ attribute
 on the object.  If it exists and evaluate to True, it must define shape,

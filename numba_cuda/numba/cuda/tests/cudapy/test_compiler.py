@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: BSD-2-Clause
+
 from math import sqrt
 from numba import cuda, float32, int16, int32, int64, types, uint32, void
 from numba.cuda import (

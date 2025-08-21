@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: BSD-2-Clause
+
+
 def check_static_lib(lib):
     raise FileNotFoundError("Linking libraries not supported by cudasim")
 

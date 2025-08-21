@@ -1,3 +1,8 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+ * SPDX-License-Identifier: BSD-2-Clause
+ */
+
 #include "memsys.cuh"
 
 __device__ size_t memsys_size = sizeof(NRT_MemSys);

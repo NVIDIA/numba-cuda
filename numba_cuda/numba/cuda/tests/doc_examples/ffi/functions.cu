@@ -1,3 +1,8 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+ * SPDX-License-Identifier: BSD-2-Clause
+ */
+
 // magictoken.ex_mul_f32_f32.begin
 // Foreign function example: multiplication of a pair of floats
 
