@@ -1,3 +1,5 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: BSD-2-Clause
 """
 Implement Dominance-Fronter-based SSA by Choi et al described in Inria SSA book
 
@@ -17,7 +19,7 @@ from collections import defaultdict
 
 from numba import config
 from numba.core import ir, ir_utils, errors
-from numba.core.utils import OrderedSet, _lazy_pformat
+from numba.cuda.utils import OrderedSet, _lazy_pformat
 from numba.core.analysis import compute_cfg_from_blocks
 
 
