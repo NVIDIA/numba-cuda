@@ -36,8 +36,8 @@ from numba.core.typing.builtins import (
     UnorderedCmpOp,
     OrderedCmpOp,
 )
-from numba.core.typing.templates import AttributeTemplate, ConcreteTemplate
-from numba.core.typing.templates import Registry as TypingRegistry
+from numba.cuda.typing.templates import AttributeTemplate, ConcreteTemplate
+from numba.cuda.typing.templates import Registry as TypingRegistry
 from numba.cuda import CUSource, declare_device
 from numba.cuda.vector_types import vector_types
 from numba.extending import as_numba_type
