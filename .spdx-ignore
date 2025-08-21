@@ -26,7 +26,7 @@ dist/*
 # Version files
 numba_cuda/VERSION
 
-# External CUDA SDK headers  
+# External CUDA SDK headers
 numba_cuda/numba/cuda/include/*/cuda_*.h
 numba_cuda/numba/cuda/include/*/cuda_*.hpp
 
