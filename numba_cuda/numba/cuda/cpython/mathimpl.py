@@ -464,7 +464,7 @@ def _unsigned(T):
     pass
 
 
-@overload(_unsigned)
+@overload(_unsigned, target="cuda")
 def _unsigned_impl(T):
     if T in types.unsigned_domain:
         return lambda T: T
