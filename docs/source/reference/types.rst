@@ -370,7 +370,7 @@ Special value predicates:
     <https://docs.nvidia.com/cuda/cuda-math-api/cuda_math_api/group__CUDA__MATH____BFLOAT16__COMPARISON.html#group__cuda__math____bfloat16__comparison>`_.
 
 Precision Conversion and Data Movement
-*************************************
+**************************************
 
 The following conversion intrinsics convert between ``bfloat16`` and other
 scalar types. Rounding-mode suffixes:
@@ -381,7 +381,7 @@ scalar types. Rounding-mode suffixes:
 - ``_ru``: round-up (towards +∞)
 
 Floating-point conversions
-==========================
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. function:: numba.cuda.bf16.float32_to_bfloat16(x)
 
@@ -403,13 +403,13 @@ Floating-point conversions
     Convert a ``float32`` to ``bfloat16`` using the specified rounding mode.
 
 Integer conversions
-===================
+^^^^^^^^^^^^^^^^^^^^
 
 Representative APIs for each integer width are listed below. All have
 rounding-mode variants ``_rn``, ``_rz``, ``_rd``, ``_ru``.
 
 int16 (signed 16-bit)
----------------------
+"""""""""""""""""""""
 
 .. function:: numba.cuda.bf16.int16_to_bfloat16_rn(x)
 .. function:: numba.cuda.bf16.int16_to_bfloat16_rz(x)
@@ -426,7 +426,7 @@ int16 (signed 16-bit)
     Convert a ``bfloat16`` to ``int16`` with the selected rounding mode.
 
 uint16 (unsigned 16-bit)
-------------------------
+"""""""""""""""""""""""""
 
 .. function:: numba.cuda.bf16.uint16_to_bfloat16_rn(x)
 .. function:: numba.cuda.bf16.uint16_to_bfloat16_rz(x)
@@ -443,7 +443,7 @@ uint16 (unsigned 16-bit)
     Convert a ``bfloat16`` to ``uint16`` with the selected rounding mode.
 
 int32 (signed 32-bit)
----------------------
+"""""""""""""""""""""
 
 .. function:: numba.cuda.bf16.int32_to_bfloat16_rn(x)
 .. function:: numba.cuda.bf16.int32_to_bfloat16_rz(x)
@@ -460,7 +460,7 @@ int32 (signed 32-bit)
     Convert a ``bfloat16`` to ``int32`` with the selected rounding mode.
 
 uint32 (unsigned 32-bit)
-------------------------
+"""""""""""""""""""""""""
 
 .. function:: numba.cuda.bf16.uint32_to_bfloat16_rn(x)
 .. function:: numba.cuda.bf16.uint32_to_bfloat16_rz(x)
@@ -477,7 +477,7 @@ uint32 (unsigned 32-bit)
     Convert a ``bfloat16`` to ``uint32`` with the selected rounding mode.
 
 int64 (signed 64-bit)
----------------------
+"""""""""""""""""""""
 
 .. function:: numba.cuda.bf16.int64_to_bfloat16_rn(x)
 .. function:: numba.cuda.bf16.int64_to_bfloat16_rz(x)
@@ -494,7 +494,7 @@ int64 (signed 64-bit)
     Convert a ``bfloat16`` to ``int64`` with the selected rounding mode.
 
 uint64 (unsigned 64-bit)
-------------------------
+"""""""""""""""""""""""""
 
 .. function:: numba.cuda.bf16.uint64_to_bfloat16_rn(x)
 .. function:: numba.cuda.bf16.uint64_to_bfloat16_rz(x)
@@ -511,7 +511,7 @@ uint64 (unsigned 64-bit)
     Convert a ``bfloat16`` to ``uint64`` with the selected rounding mode.
 
 8-bit conversions
-=================
+^^^^^^^^^^^^^^^^^^
 
 .. function:: numba.cuda.bf16.bfloat16_to_int8_rz(x)
 
@@ -522,7 +522,7 @@ uint64 (unsigned 64-bit)
     Convert a ``bfloat16`` to ``uint8`` with round-towards-zero.
 
 Bit Reinterpret Casts
-*********************
+^^^^^^^^^^^^^^^^^^^^^
 
 These APIs reinterpret bits without numeric conversion:
 
