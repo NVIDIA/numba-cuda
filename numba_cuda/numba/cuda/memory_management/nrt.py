@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: BSD-2-Clause
+
 import ctypes
 import os
 from functools import wraps
@@ -10,6 +13,7 @@ from numba.cuda.cudadrv.driver import (
     driver,
     launch_kernel,
     USE_NV_BINDING,
+    _have_nvjitlink,
 )
 from numba.cuda.cudadrv import devices
 from numba.cuda.api import get_current_device
@@ -80,7 +84,7 @@ class _Runtime:
         cc = get_current_device().compute_capability
 
         # Create a new linker instance and add the cu file
-        linker = _Linker.new(cc=cc)
+        linker = _Linker.new(cc=cc, lto=_have_nvjitlink())
         linker.add_cu_file(memsys_mod)
 
         # Complete the linker and create a module from it

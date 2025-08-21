@@ -1,5 +1,6 @@
 #!/bin/bash
-# Copyright (c) 2025, NVIDIA CORPORATION
+# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: BSD-2-Clause
 
 set -euo pipefail
 
@@ -38,9 +39,13 @@ rapids-logger "Show Numba system info"
 python -m numba --sysinfo
 
 rapids-logger "Run Scalar UDF tests"
-python -m pytest python/cudf/cudf/tests/test_udf_masked_ops.py -W ignore::UserWarning
+python -m pytest python/cudf/cudf/tests/dataframe/methods/test_apply.py -W ignore::UserWarning
 
 rapids-logger "Run GroupBy UDF tests"
 python -m pytest python/cudf/cudf/tests/groupby/test_apply.py -k test_groupby_apply_jit -W ignore::UserWarning
+
+rapids-logger "Run NRT Stats Counting tests"
+python -m pytest python/cudf/cudf/tests/test_nrt_stats.py -W ignore::UserWarning
+
 
 popd

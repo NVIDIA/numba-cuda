@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: BSD-2-Clause
+
 from numba import cuda, float32
 from numba.cuda.bf16 import bfloat16
 from numba.cuda.testing import CUDATestCase
