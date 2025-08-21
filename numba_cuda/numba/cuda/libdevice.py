@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: BSD-2-Clause
+
+
 def abs(x):
     """
     See https://docs.nvidia.com/cuda/libdevice-users-guide/__nv_abs.html

@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: BSD-2-Clause
+
 import builtins
 import collections
 import dis
@@ -6,13 +9,13 @@ import logging
 import textwrap
 
 from numba.core import errors, ir, config
+from numba.cuda.errors import UnsupportedBytecodeError
 from numba.core.errors import (
     NotDefinedError,
-    UnsupportedBytecodeError,
     error_extras,
 )
-from numba.core.ir_utils import get_definition, guard
-from numba.core.utils import (
+from numba.cuda.core import ir_utils
+from numba.cuda.utils import (
     PYVERSION,
     BINOPS_TO_OPERATORS,
     INPLACE_BINOPS_TO_OPERATORS,
@@ -1296,10 +1299,10 @@ def _build_new_build_map(func_ir, name, old_body, old_lineno, new_items):
     values = []
     for pair in new_items:
         k, v = pair
-        key_def = guard(get_definition, func_ir, k)
+        key_def = ir_utils.guard(ir_utils.get_definition, func_ir, k)
         if isinstance(key_def, (ir.Const, ir.Global, ir.FreeVar)):
             literal_keys.append(key_def.value)
-        value_def = guard(get_definition, func_ir, v)
+        value_def = ir_utils.guard(ir_utils.get_definition, func_ir, v)
         if isinstance(value_def, (ir.Const, ir.Global, ir.FreeVar)):
             values.append(value_def.value)
         else:

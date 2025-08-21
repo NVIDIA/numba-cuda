@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: BSD-2-Clause
+
 from numba import cuda, float32
 from numba.cuda.bf16 import bfloat16
 from numba.cuda.testing import CUDATestCase
@@ -8,9 +11,7 @@ import math
 class TestBfloat16HighLevelBindings(CUDATestCase):
     def skip_unsupported(self):
         if not cuda.is_bfloat16_supported():
-            self.skipTest(
-                "bfloat16 requires compute capability 8.0+ and CUDA version>= 12.0"
-            )
+            self.skipTest("bfloat16 requires compute capability 8.0+")
 
     def test_use_type_in_kernel(self):
         self.skip_unsupported()

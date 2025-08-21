@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: BSD-2-Clause
+
 """Contains information on how to translate different ufuncs for the CUDA
 target. It is a database of different ufuncs and how each of its loops maps to
 a function that implements the inner kernel of that ufunc (the inner kernel

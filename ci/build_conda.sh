@@ -1,9 +1,8 @@
 #!/bin/bash
-# Copyright (c) 2024, NVIDIA CORPORATION
+# SPDX-FileCopyrightText: Copyright (c) 2024 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: BSD-2-Clause
 
 set -euo pipefail
-
-rapids-configure-conda-channels
 
 source rapids-configure-sccache
 

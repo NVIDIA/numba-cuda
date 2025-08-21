@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: BSD-2-Clause
+
 import os
 import warnings
 import traceback
@@ -26,6 +29,7 @@ from inspect import Signature as pySignature  # noqa: F401
 from inspect import Parameter as pyParameter  # noqa: F401
 
 from numba.core.config import (
+    PYVERSION,  # noqa: F401
     MACHINE_BITS,  # noqa: F401
     DEVELOPER_MODE,
 )  # noqa: F401

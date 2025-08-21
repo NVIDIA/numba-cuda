@@ -1,3 +1,8 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+ * SPDX-License-Identifier: BSD-2-Clause
+ */
+
 #include <cuda_fp16.h>
 
 extern __device__ bool __heq(__half arg1, __half arg2);
