@@ -3,7 +3,8 @@
 
 from numba.core.tracing import event
 
-from numba.core import callconv, bytecode, config, errors
+from numba.cuda.core import bytecode
+from numba.core import callconv, config, errors
 from numba.core.errors import CompilerError
 from numba.parfors.parfor import ParforDiagnostics
 
