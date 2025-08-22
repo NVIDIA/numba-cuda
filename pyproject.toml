@@ -17,7 +17,8 @@ authors = [
     { name = "Anaconda Inc." },
     { name = "NVIDIA Corporation" }
 ]
-license = { text = "BSD 2-clause" }
+license = "BSD-2-clause"
+license-files = ["LICENSE", "LICENSE.numba"]
 requires-python = ">=3.9"
 dependencies = ["numba>=0.60.0"]
 
@@ -70,9 +71,6 @@ Issues = "https://github.com/NVIDIA/numba-cuda/issues"
 
 [tool.setuptools.dynamic]
 version = {attr = "numba_cuda.__version__"}
-
-[tool.setuptools]
-license-files = ["LICENSE"]
 
 [tool.setuptools.packages.find]
 include = ["numba_cuda*"]
