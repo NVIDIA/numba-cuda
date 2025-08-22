@@ -50,6 +50,7 @@ test = [
     "pytest",
     "pytest-xdist",
     "filecheck",
+    "ml_dtypes",
 ]
 test-cu12 = [
     "numba-cuda[cu12]",
