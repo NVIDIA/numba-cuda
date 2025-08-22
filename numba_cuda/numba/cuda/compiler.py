@@ -11,6 +11,7 @@ from numba.core import (
     types,
     funcdesc,
     config,
+    errors,
     bytecode,
     postproc,
     cpu,
@@ -67,6 +68,8 @@ from numba.cuda.core.typed_passes import (
     NoPythonSupportedFeatureValidation,
     ParforFusionPass,
     ParforPreLoweringPass,
+    fallback_context,
+    type_inference_stage,
 )
 
 
@@ -532,6 +535,144 @@ class CUDATranslateBytecode(FunctionPass):
         return True
 
 
+@register_pass(mutates_CFG=True, analysis_only=False)
+class CUDANopythonTypeInference(NopythonTypeInference):
+    def __init__(self):
+        NopythonTypeInference.__init__(self)
+
+    def _legalize_array_return_type(self, return_type, interp, targetctx):
+        # Walk IR to discover all arguments and all return statements
+        retstmts = set()
+        forest = dict()
+        args = set()
+        view_vars = dict()
+        call_vars = dict()
+        getitem_vars = dict()
+        for bid, blk in interp.blocks.items():
+            for inst in blk.body:
+                if isinstance(inst, numba_ir.Return):
+                    retstmts.add(inst.value.name)
+                elif isinstance(inst, numba_ir.Assign):
+                    if isinstance(inst.value, numba_ir.Expr):
+                        if inst.value.op == "phi":
+                            forest[inst.target.name] = tuple(
+                                v.name for v in inst.value.incoming_values
+                            )
+                        elif (
+                            inst.value.op == "getattr"
+                            and inst.value.attr == "view"
+                        ):
+                            view_vars[inst.target.name] = inst.value.value.name
+                        elif inst.value.op == "call":
+                            func_var = inst.value._kws.get("func")
+                            if isinstance(func_var, numba_ir.Var):
+                                call_vars[inst.target.name] = func_var.name
+                        elif inst.value.op in {
+                            "cast",
+                            "getitem",
+                            "getiter",
+                            "iternext",
+                            "pair_first",
+                        }:
+                            forest[inst.target.name] = (inst.value.value.name,)
+                        elif inst.value.op == "static_getitem":
+                            getitem_vars[inst.target.name] = (
+                                inst.value.value.name,
+                                inst.value.index,
+                            )
+                        elif inst.value.op == "build_tuple":
+                            forest[inst.target.name] = tuple(
+                                v.name for v in inst.value.items
+                            )
+                    elif isinstance(inst.value, numba_ir.Arg):
+                        args.add(inst.target.name)
+                    elif isinstance(inst.value, numba_ir.Var):
+                        forest[inst.target.name] = (inst.value.name,)
+
+        assert retstmts, "No return statements?"
+
+        # view vars extraction
+        for var, method in call_vars.items():
+            if method in view_vars:
+                forest[var] = (view_vars[method],)
+
+        # tuples extraction
+        for var, items in getitem_vars.items():
+            _tuple = forest.get(items[0], None)
+            if _tuple is None:
+                break
+            assert items[1] < len(_tuple)
+            forest[var] = (_tuple[items[1]],)
+
+        change = True
+        while change:
+            change = False
+            for var in retstmts:
+                if var not in forest:
+                    continue
+                change = True
+                retstmts.update(forest[var])
+                retstmts.remove(var)
+                break
+
+        if not all(var in args for var in retstmts) and self._raise_errors:
+            msg = (
+                "Only accept returning of array passed into "
+                "the function as argument"
+            )
+            raise errors.NumbaTypeError(msg)
+
+    def _legalize_return_type(self, return_type, interp, targetctx):
+        """
+        Only accept array return type iff it is passed into the function.
+        Reject function object return types if in nopython mode.
+        """
+        if not targetctx.enable_nrt and isinstance(return_type, types.Array):
+            self._legalize_array_return_type(return_type, interp, targetctx)
+
+        elif isinstance(return_type, types.Function) or isinstance(
+            return_type, types.Phantom
+        ):
+            if self._raise_errors:
+                msg = "Can't return function object ({}) in nopython mode"
+                raise errors.NumbaTypeError(msg.format(return_type))
+
+    def run_pass(self, state):
+        """
+        Type inference and legalization. Vendored from numba.core.typed_passes.
+        """
+        with fallback_context(
+            state,
+            'Function "%s" failed type inference' % (state.func_id.func_name,),
+        ):
+            # Type inference
+            typemap, return_type, calltypes, errs = type_inference_stage(
+                state.typingctx,
+                state.targetctx,
+                state.func_ir,
+                state.args,
+                state.return_type,
+                state.locals,
+                raise_errors=self._raise_errors,
+            )
+            state.typemap = typemap
+            # save errors in case of partial typing
+            state.typing_errors = errs
+            if self._raise_errors:
+                state.return_type = return_type
+            state.calltypes = calltypes
+
+        with fallback_context(
+            state,
+            'Function "%s" has invalid return type'
+            % (state.func_id.func_name,),
+        ):
+            self._legalize_return_type(
+                state.return_type, state.func_ir, state.targetctx
+            )
+        return True
+
+
 class CUDACompiler(CompilerBase):
     def define_pipelines(self):
         dpb = DefaultPassBuilder
@@ -557,7 +698,18 @@ class CUDACompiler(CompilerBase):
         pm.passes.extend(cuda_untyped_passes)
 
         typed_passes = dpb.define_typed_pipeline(self.state)
-        pm.passes.extend(typed_passes.passes)
+
+        def replace_nopython_type_inference(implementation, description):
+            if implementation is NopythonTypeInference:
+                return (CUDANopythonTypeInference, description)
+            else:
+                return (implementation, description)
+
+        cuda_typed_passes = [
+            replace_nopython_type_inference(implementation, description)
+            for implementation, description in typed_passes.passes
+        ]
+        pm.passes.extend(cuda_typed_passes)
 
         lowering_passes = self.define_cuda_lowering_pipeline(self.state)
         pm.passes.extend(lowering_passes.passes)
