@@ -10,13 +10,6 @@ from numba.cuda.testing import (
 )
 
 
-def skip_on_cuda_version_issues(self):
-    # FIXME: This should be unskipped once the cause of certain nvdisasm
-    # versions failing to dump SASS with certain driver / nvJitLink
-    # versions is understood
-    self.skipTest("Relocation information required for analysis not preserved")
-
-
 @skip_on_cudasim("Simulator does not generate code to be inspected")
 class TestInspect(CUDATestCase):
     @property
