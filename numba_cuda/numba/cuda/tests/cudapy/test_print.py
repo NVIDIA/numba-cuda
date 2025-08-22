@@ -105,10 +105,6 @@ cuda.synchronize()
 print_bfloat16_usecase = """\
 from numba import cuda, config
 
-if config.ENABLE_CUDASIM:
-    print("bfloat16 on host is not yet supported.")
-    exit(0)
-
 @cuda.jit
 def print_bfloat16():
     # 0.9375 is a dyadic rational, it's integer significand can expand within 7 digits.
@@ -166,6 +162,7 @@ class TestPrint(CUDATestCase):
         expected = [str(i) for i in np.ndindex(2, 2, 2)]
         self.assertEqual(sorted(lines), expected)
 
+    @skip_on_cudasim("bfloat16 on host is not yet supported.")
     def test_bfloat16(self):
         output, _ = self.run_code(print_bfloat16_usecase)
         self.assertEqual(output.strip(), "0.937500 0.937500 0.937500")
