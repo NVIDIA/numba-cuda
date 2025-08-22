@@ -10,11 +10,26 @@ from numba.cuda.testing import (
 )
 
 
+def skip_on_cuda_version_issues(self):
+    # FIXME: This should be unskipped once the cause of certain nvdisasm
+    # versions failing to dump SASS with certain driver / nvJitLink
+    # versions is understood
+    self.skipTest("Relocation information required for analysis not preserved")
+
+
 @skip_on_cudasim("Simulator does not generate code to be inspected")
 class TestInspect(CUDATestCase):
     @property
     def cc(self):
         return cuda.current_context().device.compute_capability
+
+    def skip_on_cuda_version_issues(self):
+        # FIXME: This should be unskipped once the cause of certain nvdisasm
+        # versions failing to dump SASS with certain driver / nvJitLink
+        # versions is understood
+        self.skipTest(
+            "Relocation information required for analysis not preserved"
+        )
 
     def test_monotyped(self):
         sig = (float32, int32)
@@ -110,6 +125,8 @@ class TestInspect(CUDATestCase):
 
     @skip_without_nvdisasm("nvdisasm needed for inspect_sass()")
     def test_inspect_sass_eager(self):
+        self.skip_on_cuda_version_issues()
+
         sig = (float32[::1], int32[::1])
 
         @cuda.jit(sig, lineinfo=True)
@@ -122,6 +139,8 @@ class TestInspect(CUDATestCase):
 
     @skip_without_nvdisasm("nvdisasm needed for inspect_sass()")
     def test_inspect_sass_lazy(self):
+        self.skip_on_cuda_version_issues()
+
         @cuda.jit(lineinfo=True)
         def add(x, y):
             i = cuda.grid(1)
@@ -139,6 +158,8 @@ class TestInspect(CUDATestCase):
         "Missing nvdisasm exception only generated when it is not present"
     )
     def test_inspect_sass_nvdisasm_missing(self):
+        self.skip_on_cuda_version_issues()
+
         @cuda.jit((float32[::1],))
         def f(x):
             x[0] = 0
@@ -150,6 +171,8 @@ class TestInspect(CUDATestCase):
 
     @skip_without_nvdisasm("nvdisasm needed for inspect_sass_cfg()")
     def test_inspect_sass_cfg(self):
+        self.skip_on_cuda_version_issues()
+
         sig = (float32[::1], int32[::1])
 
         @cuda.jit(sig)
