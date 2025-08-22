@@ -16,7 +16,7 @@ from numba.core import errors
 
 from numba.extending import overload
 from numba.tests.support import override_config
-from numba.cuda.testing import CUDATestCase
+from numba.cuda.testing import CUDATestCase, skip_on_cudasim
 
 
 _DEBUG = False
@@ -141,6 +141,9 @@ class TestSSA(SSABaseTest):
             result = np.array([0])
             foo.py_func(result, 0)
 
+    @skip_on_cudasim(
+        "Numba variable warnings are not supported in the simulator"
+    )
     def test_undefined_var(self):
         with override_config("ALWAYS_WARN_UNINIT_VAR", 0):
             self.check_undefined_var(should_warn=False)
