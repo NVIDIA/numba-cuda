@@ -12,8 +12,8 @@ from numba.core.errors import (
     error_extras,
 )
 from numba.cuda.core import ir_utils
+from numba.core.utils import PYVERSION
 from numba.cuda.utils import (
-    PYVERSION,
     BINOPS_TO_OPERATORS,
     INPLACE_BINOPS_TO_OPERATORS,
     _lazy_pformat,

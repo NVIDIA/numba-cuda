@@ -4,6 +4,7 @@ from numba import cuda
 from numba.core import types
 from numba.cuda.testing import CUDATestCase
 import itertools
+import numpy as np
 import re
 import unittest
 
