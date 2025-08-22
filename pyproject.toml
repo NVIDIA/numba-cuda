@@ -32,6 +32,7 @@ cu12 = [
     "nvidia-cuda-nvcc-cu12",  # for libNVVM
     "nvidia-cuda-runtime-cu12",
     "nvidia-cuda-nvrtc-cu12",
+    "nvidia-cuda-cccl-cu12",
 ]
 test = [
     "psutil",
