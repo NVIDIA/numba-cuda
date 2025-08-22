@@ -49,7 +49,7 @@ from numba.core.ir_utils import (
     is_operator_or_getitem,
     replace_vars,
 )
-from numba.core import postproc
+from numba.cuda.core import postproc
 from llvmlite import binding as llvm
 
 
