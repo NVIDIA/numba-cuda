@@ -61,7 +61,12 @@ USE_NV_BINDING = config.CUDA_USE_NVIDIA_BINDING
 
 if USE_NV_BINDING:
     from cuda.bindings import driver as binding
-    from cuda.core import experimental
+    from cuda.core.experimental import (
+        Linker,
+        LinkerOptions,
+        ObjectCode,
+        Stream as ExperimentalStream,
+    )
 
     # There is no definition of the default stream in the Nvidia bindings (nor
     # is there at the C/C++ level), so we define it here so we don't need to
@@ -1500,7 +1505,7 @@ class Context(object):
         if isinstance(ptx, str):
             ptx = ptx.encode("utf8")
         if USE_NV_BINDING:
-            image = experimental.ObjectCode.from_ptx(ptx)
+            image = ObjectCode.from_ptx(ptx)
         else:
             image = c_char_p(ptx)
         return self.create_module_image(image)
@@ -2973,7 +2978,7 @@ class _Linker(_LinkerBase):
         self.lto = lto
         self.additional_flags = additional_flags
 
-        self.options = experimental.LinkerOptions(
+        self.options = LinkerOptions(
             max_register_count=self.max_registers,
             lineinfo=lineinfo,
             arch=arch,
@@ -3000,7 +3005,7 @@ class _Linker(_LinkerBase):
         raise RuntimeError("Link not yet complete.")
 
     def add_ptx(self, ptx, name="<cudapy-ptx>"):
-        obj = experimental.ObjectCode.from_ptx(ptx, name=name)
+        obj = ObjectCode.from_ptx(ptx, name=name)
         self._object_codes.append(obj)
 
     def add_cu(self, cu, name="<cudapy-cu>"):
@@ -3016,23 +3021,23 @@ class _Linker(_LinkerBase):
         self._object_codes.append(obj)
 
     def add_cubin(self, cubin, name="<cudapy-cubin>"):
-        obj = experimental.ObjectCode.from_cubin(cubin, name=name)
+        obj = ObjectCode.from_cubin(cubin, name=name)
         self._object_codes.append(obj)
 
     def add_ltoir(self, ltoir, name="<cudapy-ltoir>"):
-        obj = experimental.ObjectCode.from_ltoir(ltoir, name=name)
+        obj = ObjectCode.from_ltoir(ltoir, name=name)
         self._object_codes.append(obj)
 
     def add_fatbin(self, fatbin, name="<cudapy-fatbin>"):
-        obj = experimental.ObjectCode.from_fatbin(fatbin, name=name)
+        obj = ObjectCode.from_fatbin(fatbin, name=name)
         self._object_codes.append(obj)
 
     def add_object(self, obj, name="<cudapy-object>"):
-        obj = experimental.ObjectCode.from_object(obj, name=name)
+        obj = ObjectCode.from_object(obj, name=name)
         self._object_codes.append(obj)
 
     def add_library(self, lib, name="<cudapy-lib>"):
-        obj = experimental.ObjectCode.from_library(lib, name=name)
+        obj = ObjectCode.from_library(lib, name=name)
         self._object_codes.append(obj)
 
     def add_file(self, path, kind):
@@ -3066,7 +3071,7 @@ class _Linker(_LinkerBase):
         fn(data, name)
 
     def get_linked_ptx(self):
-        options = experimental.LinkerOptions(
+        options = LinkerOptions(
             max_register_count=self.max_registers,
             lineinfo=self.lineinfo,
             arch=self.arch,
@@ -3074,7 +3079,7 @@ class _Linker(_LinkerBase):
             ptx=True,
         )
 
-        self.linker = experimental.Linker(*self._object_codes, options=options)
+        self.linker = Linker(*self._object_codes, options=options)
 
         result = self.linker.link("ptx")
         self.close()
@@ -3087,9 +3092,7 @@ class _Linker(_LinkerBase):
         self.linker.close()
 
     def complete(self):
-        self.linker = experimental.Linker(
-            *self._object_codes, options=self.options
-        )
+        self.linker = Linker(*self._object_codes, options=self.options)
         result = self.linker.link("cubin")
         self.close()
         self._complete = True
@@ -3405,7 +3408,7 @@ def host_to_device(dst, src, size, stream=0):
     args = (device_pointer(dst), host_pointer(src, readonly=True), size)
 
     if stream:
-        assert isinstance(stream, (Stream, experimental.Stream))
+        assert isinstance(stream, (Stream, ExperimentalStream))
         fn = driver.cuMemcpyHtoDAsync
         args += (_stream_handle(stream),)
 
@@ -3422,7 +3425,7 @@ def device_to_host(dst, src, size, stream=0):
     args = (host_pointer(dst), device_pointer(src), size)
 
     if stream:
-        assert isinstance(stream, (Stream, experimental.Stream))
+        assert isinstance(stream, (Stream, ExperimentalStream))
         fn = driver.cuMemcpyDtoHAsync
         args += (_stream_handle(stream),)
 
@@ -3439,7 +3442,7 @@ def device_to_device(dst, src, size, stream=0):
     args = (device_pointer(dst), device_pointer(src), size)
 
     if stream:
-        assert isinstance(stream, (Stream, experimental.Stream))
+        assert isinstance(stream, (Stream, ExperimentalStream))
         fn = driver.cuMemcpyDtoDAsync
         args += (_stream_handle(stream),)
 
@@ -3461,7 +3464,7 @@ def device_memset(dst, val, size, stream=0):
     args = (device_pointer(dst), val, size)
 
     if stream:
-        assert isinstance(stream, (Stream, experimental.Stream))
+        assert isinstance(stream, (Stream, ExperimentalStream))
         fn = driver.cuMemsetD8Async
         args += (_stream_handle(stream),)
 
@@ -3538,7 +3541,7 @@ def _stream_handle(stream):
         else:
             return ptr
     else:
-        allowed = (Stream, experimental.Stream) if USE_NV_BINDING else Stream
+        allowed = (Stream, ExperimentalStream) if USE_NV_BINDING else Stream
         if not isinstance(stream, allowed):
             raise TypeError(
                 "Expected a Stream object or 0, got %s" % type(stream).__name__

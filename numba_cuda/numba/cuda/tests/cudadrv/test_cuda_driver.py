@@ -15,7 +15,7 @@ from numba.cuda.testing import skip_on_cudasim
 import contextlib
 
 if _driver.USE_NV_BINDING:
-    from cuda.core import experimental
+    from cuda.core.experimental import Device
 
 ptx1 = """
     .version 1.4
@@ -162,7 +162,7 @@ class TestCudaDriver(CUDATestCase):
         module = self.context.create_module_ptx(self.ptx)
         function = module.get_function("_Z10helloworldPi")
         array = (c_int * 100)()
-        dev = experimental.Device()
+        dev = Device()
         dev.set_current()
         stream = dev.create_stream()
 
