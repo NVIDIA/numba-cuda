@@ -61,6 +61,7 @@ USE_NV_BINDING = config.CUDA_USE_NVIDIA_BINDING
 
 if USE_NV_BINDING:
     from cuda.bindings import driver as binding
+    from cuda.bindings.utils import get_cuda_native_handle
     from cuda.core.experimental import (
         Linker,
         LinkerOptions,
@@ -3532,12 +3533,18 @@ def inspect_obj_content(objpath: str):
 
 
 def _stream_handle(stream):
+    """
+    Obtain the appropriate handle for various types of
+    acceptable stream objects. Acceptable types are
+    int (0 for default stream), Stream, ExperimentalStream
+    """
+
     if stream == 0:
         return stream
     elif hasattr(stream, "__cuda_stream__"):
         _, ptr = stream.__cuda_stream__()
         if isinstance(ptr, binding.CUstream):
-            return int(ptr)
+            return get_cuda_native_handle(ptr)
         else:
             return ptr
     else:

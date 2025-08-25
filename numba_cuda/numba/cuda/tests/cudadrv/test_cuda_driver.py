@@ -9,6 +9,7 @@ from numba.cuda.cudadrv.driver import (
     driver,
     launch_kernel,
 )
+from numba import cuda
 from numba.cuda.cudadrv import devices, drvapi, driver as _driver
 from numba.cuda.testing import unittest, CUDATestCase
 from numba.cuda.testing import skip_on_cudasim
@@ -194,6 +195,26 @@ class TestCudaDriver(CUDATestCase):
 
             device_to_host(array, memory, sizeof(array), stream=stream)
         for i, v in enumerate(array):
+            self.assertEqual(i, v)
+
+    @unittest.skipIf(not _driver.USE_NV_BINDING, "NV binding not enabled")
+    def test_cuda_core_stream_launch_user_facing(self):
+        @cuda.jit
+        def kernel(a):
+            idx = cuda.grid(1)
+            if idx < len(a):
+                a[idx] = idx
+
+        ary = cuda.to_device([0] * 100)
+
+        dev = Device()
+        dev.set_current()
+        stream = dev.create_stream()
+
+        kernel[1, 100, stream](ary)
+
+        result = ary.copy_to_host()
+        for i, v in enumerate(result):
             self.assertEqual(i, v)
 
     def test_cuda_driver_default_stream(self):
