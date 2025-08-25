@@ -2339,7 +2339,7 @@ class Stream(object):
     def __cuda_stream__(self):
         if not self.handle.value:
             return (0, drvapi.CU_STREAM_DEFAULT)
-        return 0, self.handle.value if USE_NV_BINDING else self.handle
+        return (0, self.handle.value if USE_NV_BINDING else self.handle)
 
     def __repr__(self):
         default_streams = {
