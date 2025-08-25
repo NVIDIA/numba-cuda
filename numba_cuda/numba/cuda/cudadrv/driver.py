@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: BSD-2-Clause
+
 """
 CUDA driver bridge implementation
 
@@ -74,12 +77,6 @@ _py_decref = ctypes.pythonapi.Py_DecRef
 _py_incref = ctypes.pythonapi.Py_IncRef
 _py_decref.argtypes = [ctypes.py_object]
 _py_incref.argtypes = [ctypes.py_object]
-
-
-_MVC_ERROR_MESSAGE = (
-    "Minor version compatibility requires ptxcompiler and cubinlinker packages "
-    "to be available"
-)
 
 USE_NV_BINDING = config.CUDA_USE_NVIDIA_BINDING
 
@@ -3097,101 +3094,6 @@ class _Linker(_LinkerBase):
         self.close()
         self._complete = True
         return result
-
-
-class MVCLinker(_LinkerBase):
-    """
-    Linker supporting Minor Version Compatibility, backed by the cubinlinker
-    package.
-    """
-
-    def __init__(self, max_registers=None, lineinfo=False, cc=None):
-        try:
-            from cubinlinker import CubinLinker
-        except ImportError as err:
-            raise ImportError(_MVC_ERROR_MESSAGE) from err
-
-        if cc is None:
-            raise RuntimeError(
-                "MVCLinker requires Compute Capability to be "
-                "specified, but cc is None"
-            )
-
-        super().__init__(max_registers, lineinfo, cc)
-
-        arch = f"sm_{cc[0] * 10 + cc[1]}"
-        ptx_compile_opts = ["--gpu-name", arch, "-c"]
-        if max_registers:
-            arg = f"--maxrregcount={max_registers}"
-            ptx_compile_opts.append(arg)
-        if lineinfo:
-            ptx_compile_opts.append("--generate-line-info")
-        self.ptx_compile_options = tuple(ptx_compile_opts)
-
-        self._linker = CubinLinker(f"--arch={arch}")
-
-    @property
-    def info_log(self):
-        return self._linker.info_log
-
-    @property
-    def error_log(self):
-        return self._linker.error_log
-
-    def add_ptx(self, ptx, name="<cudapy-ptx>"):
-        try:
-            from ptxcompiler import compile_ptx
-            from cubinlinker import CubinLinkerError
-        except ImportError as err:
-            raise ImportError(_MVC_ERROR_MESSAGE) from err
-        compile_result = compile_ptx(ptx.decode(), self.ptx_compile_options)
-        try:
-            self._linker.add_cubin(compile_result.compiled_program, name)
-        except CubinLinkerError as e:
-            raise LinkerError from e
-
-    def add_data(self, data, kind, name):
-        msg = "Adding in-memory data unsupported in the MVC linker"
-        raise LinkerError(msg)
-
-    def add_file(self, path, kind):
-        try:
-            from cubinlinker import CubinLinkerError
-        except ImportError as err:
-            raise ImportError(_MVC_ERROR_MESSAGE) from err
-
-        try:
-            data = cached_file_read(path, how="rb")
-        except FileNotFoundError:
-            raise LinkerError(f"{path} not found")
-
-        name = pathlib.Path(path).name
-        if kind == FILE_EXTENSION_MAP["cubin"]:
-            fn = self._linker.add_cubin
-        elif kind == FILE_EXTENSION_MAP["fatbin"]:
-            fn = self._linker.add_fatbin
-        elif kind == FILE_EXTENSION_MAP["a"]:
-            raise LinkerError(f"Don't know how to link {kind}")
-        elif kind == FILE_EXTENSION_MAP["ptx"]:
-            return self.add_ptx(data, name)
-        else:
-            raise LinkerError(f"Don't know how to link {kind}")
-
-        try:
-            fn(data, name)
-        except CubinLinkerError as e:
-            raise LinkerError from e
-
-    def complete(self):
-        try:
-            from cubinlinker import CubinLinkerError
-        except ImportError as err:
-            raise ImportError(_MVC_ERROR_MESSAGE) from err
-
-        try:
-            return self._linker.complete()
-        except CubinLinkerError as e:
-            raise LinkerError from e
 
 
 class CtypesLinker(_LinkerBase):

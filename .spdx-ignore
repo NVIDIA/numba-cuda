@@ -1,0 +1,34 @@
+LICENSE
+LICENSE.numba
+*.html
+*.json
+*.md
+*.png
+*.svg
+*.rst
+*.txt
+*.ptx
+*.pyc
+requirements*.txt
+
+# Documentation build artifacts
+docs/build/*
+
+# Binary files
+*.so
+*.dll
+
+# Build artifacts and egg-info
+build/*
+dist/*
+*.egg-info/*
+
+# Version files
+numba_cuda/VERSION
+
+# External CUDA SDK headers
+numba_cuda/numba/cuda/include/*/cuda_*.h
+numba_cuda/numba/cuda/include/*/cuda_*.hpp
+
+# GitHub configuration files
+.github/CODEOWNERS

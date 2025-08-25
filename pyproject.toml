@@ -1,4 +1,5 @@
-# Copyright (c) 2023-2025, NVIDIA CORPORATION.
+# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: BSD-2-Clause
 
 [build-system]
 build-backend = "setuptools.build_meta"
@@ -16,7 +17,8 @@ authors = [
     { name = "Anaconda Inc." },
     { name = "NVIDIA Corporation" }
 ]
-license = { text = "BSD 2-clause" }
+license = "BSD-2-clause"
+license-files = ["LICENSE", "LICENSE.numba"]
 requires-python = ">=3.9"
 dependencies = ["numba>=0.60.0"]
 
@@ -28,7 +30,8 @@ cu12 = [
     "nvidia-cuda-nvcc-cu12",  # for libNVVM
     "nvidia-cuda-runtime-cu12",
     "nvidia-cuda-nvrtc-cu12",
-    "nvidia-nvjitlink-cu12"
+    "nvidia-nvjitlink-cu12",
+    "nvidia-cuda-cccl-cu12",
 ]
 # TODO: Use cuda-toolkit package dependencies - e.g. cuda-toolkit[curand,nvvm,nvrtc]=13.*
 cu13 = [
@@ -38,7 +41,8 @@ cu13 = [
     "nvidia-nvvm==13.*",
     "nvidia-cuda-runtime==13.*",
     "nvidia-cuda-nvrtc==13.*",
-    "nvidia-nvjitlink==13.*"
+    "nvidia-nvjitlink==13.*",
+    "nvidia-cuda-cccl==13.*",
 ]
 
 test = [
@@ -48,6 +52,7 @@ test = [
     "pytest",
     "pytest-xdist",
     "filecheck",
+    "ml_dtypes",
 ]
 test-cu12 = [
     "numba-cuda[cu12]",
@@ -69,9 +74,6 @@ Issues = "https://github.com/NVIDIA/numba-cuda/issues"
 
 [tool.setuptools.dynamic]
 version = {attr = "numba_cuda.__version__"}
-
-[tool.setuptools]
-license-files = ["LICENSE"]
 
 [tool.setuptools.packages.find]
 include = ["numba_cuda*"]

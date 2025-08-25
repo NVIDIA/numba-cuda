@@ -1,3 +1,7 @@
+..
+   SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+   SPDX-License-Identifier: BSD-2-Clause
+
 .. Numba CUDA documentation master file, created by
    sphinx-quickstart on Wed Jun 12 13:41:17 2024.
    You can adapt this file completely to your liking, but it should at least

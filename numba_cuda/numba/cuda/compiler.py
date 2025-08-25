@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: BSD-2-Clause
+
 from llvmlite import ir
 from collections import namedtuple
 from warnings import warn, catch_warnings, simplefilter
@@ -13,13 +16,8 @@ from numba.core import (
     cpu,
 )
 from numba.core.compiler_lock import global_compiler_lock
-from numba.core.utils import PYVERSION
 from numba.core.errors import NumbaWarning, NumbaInvalidConfigWarning
-
-if PYVERSION < (3, 10):
-    from numba.core.interpreter import Interpreter
-else:
-    from numba.cuda.core.interpreter import Interpreter
+from numba.cuda.core.interpreter import Interpreter
 
 from numba.cuda import cgutils, typing, lowering, nvvmutils, utils
 from numba.cuda.api import get_current_device
