@@ -1,5 +1,5 @@
 # SPDX-FileCopyrightText: Copyright (c) 2024 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-# SPDX-License-Identifier: Apache-2.0
+# SPDX-License-Identifier: BSD-2-Clause
 
 name: pr
 
@@ -152,7 +152,8 @@ jobs:
       build_type: pull-request
       script: "ci/test_thirdparty.sh"
       matrix: ${{ needs.compute-matrix.outputs.TEST_MATRIX }}
-      matrix_filter: map(select(.ARCH == "amd64" and (.CUDA_VER | split(".") | .[0] | tonumber >= 12))) | group_by(.CUDA_VER|split(".")|map(tonumber)|.[0]) | map(max_by([(.PY_VER|split(".")|map(tonumber)), (.CUDA_VER|split(".")|map(tonumber))]))
+      # TODO: Enable for CUDA 13 when a supporting version of cuDF is available
+      matrix_filter: map(select(.ARCH == "amd64" and (.CUDA_VER | split(".") | .[0] | tonumber == 12))) | group_by(.CUDA_VER|split(".")|map(tonumber)|.[0]) | map(max_by([(.PY_VER|split(".")|map(tonumber)), (.CUDA_VER|split(".")|map(tonumber))]))
   build-docs:
     needs:
       - build-conda
@@ -168,4 +169,4 @@ jobs:
       build_type: pull-request
       script: "ci/coverage_report.sh"
       matrix: ${{ needs.compute-matrix.outputs.TEST_MATRIX }}
-      matrix_filter: 'map(select(.ARCH == "amd64" and .CUDA_VER == "12.8.0" and .PY_VER == "3.13")) | .[0:1]'
+      matrix_filter: 'map(select(.ARCH == "amd64" and .CUDA_VER == "12.9.1" and .PY_VER == "3.11")) | .[0:1]'

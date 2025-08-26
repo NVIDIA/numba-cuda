@@ -1,13 +1,16 @@
+@REM SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+@REM SPDX-License-Identifier: BSD-2-Clause
+
 @echo off
 REM Test binaries are build taking into accoutn the CC of the GPU in the test machine
 for /f "tokens=*" %%i in ('nvidia-smi --query-gpu=compute_cap --format=csv ^| findstr /v compute_cap ^| head -n 1 ^| sed "s/\.//"') do set GPU_CC=%%i
 if "%GPU_CC%"=="" set GPU_CC=75
 
-REM Use CC 7.0 as an alternative in fatbin testing, unless CC is 7.x
+REM Use CC 7.5 as an alternative in fatbin testing, unless CC is 7.x
 if "%GPU_CC:~0,1%"=="7" (
     set ALT_CC=80
 ) else (
-    set ALT_CC=70
+    set ALT_CC=75
 )
 
 REM Gencode flags suitable for most tests

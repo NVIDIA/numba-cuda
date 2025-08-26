@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: BSD-2-Clause
+
 import cmath
 import contextlib
 import enum
@@ -28,7 +31,7 @@ from numba.core.extending import (
     NativeValue,
 )
 from numba.core.datamodel.models import OpaqueModel
-from numba.np import numpy_support
+from numba.cuda.np import numpy_support
 
 
 class EnableNRTStatsMixin(object):

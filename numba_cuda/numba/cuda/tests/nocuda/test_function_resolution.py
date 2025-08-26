@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: BSD-2-Clause
+
 from numba.cuda.testing import unittest, skip_on_cudasim
 import operator
 from numba.core import types, typing

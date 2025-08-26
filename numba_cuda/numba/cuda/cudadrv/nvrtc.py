@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: BSD-2-Clause
+
 from ctypes import byref, c_char, c_char_p, c_int, c_size_t, c_void_p, POINTER
 from enum import IntEnum
 from numba.cuda.cudadrv.error import (
@@ -29,6 +32,7 @@ nvrtc_program = c_void_p
 nvrtc_result = c_int
 
 if config.CUDA_USE_NVIDIA_BINDING:
+    from cuda.bindings import nvrtc as bindings_nvrtc
     from cuda.core.experimental import Program, ProgramOptions
 
 
@@ -142,6 +146,10 @@ class NVRTC:
 
     def __new__(cls):
         with _nvrtc_lock:
+            if config.CUDA_USE_NVIDIA_BINDING:
+                raise RuntimeError(
+                    "NVRTC objects should not be used with cuda-python bindings"
+                )
             if cls.__INSTANCE is None:
                 from numba.cuda.cudadrv.libs import open_cudalib
 
@@ -154,16 +162,9 @@ class NVRTC:
 
                 # Find & populate functions
                 for name, proto in inst._PROTOTYPES.items():
-                    try:
-                        func = getattr(lib, name)
-                        func.restype = proto[0]
-                        func.argtypes = proto[1:]
-                    except AttributeError:
-                        if "LTOIR" in name:
-                            # CUDA 11 does not have LTOIR functions; ignore
-                            continue
-                        else:
-                            raise
+                    func = getattr(lib, name)
+                    func.restype = proto[0]
+                    func.argtypes = proto[1:]
 
                     @functools.wraps(func)
                     def checked_call(*args, func=func, name=name):
@@ -303,32 +304,35 @@ def compile(src, name, cc, ltoir=False):
     :return: The compiled PTX and compilation log
     :rtype: tuple
     """
-    nvrtc = NVRTC()
-    program = nvrtc.create_program(src, name)
 
-    version = nvrtc.get_version()
-    ver_str = lambda v: ".".join(v)
-    if version < (11, 2):
-        raise RuntimeError(
-            "Unsupported CUDA version. CUDA 11.2 or higher is required."
-        )
-    else:
-        supported_arch = nvrtc.get_supported_archs()
-        try:
-            found = max(filter(lambda v: v <= cc, [v for v in supported_arch]))
-        except ValueError:
+    if config.CUDA_USE_NVIDIA_BINDING:
+        retcode, *version = bindings_nvrtc.nvrtcVersion()
+        if retcode != bindings_nvrtc.nvrtcResult.NVRTC_SUCCESS:
             raise RuntimeError(
-                f"Device compute capability {ver_str(cc)} is less than the "
-                f"minimum supported by NVRTC {ver_str(version)}. Supported "
-                "compute capabilities are "
-                f"{', '.join([ver_str(v) for v in supported_arch])}."
+                f"{retcode.name} when calling nvrtcGetSupportedArchs()"
             )
+        version = tuple(version)
+    else:
+        nvrtc = NVRTC()
+        version = nvrtc.get_version()
 
-        if found != cc:
-            warnings.warn(
-                f"Device compute capability {ver_str(cc)} is not supported by "
-                f"NVRTC {ver_str(version)}. Using {ver_str(found)} instead."
-            )
+    ver_str = lambda version: ".".join(str(v) for v in version)
+    supported_ccs = get_supported_ccs()
+    try:
+        found = max(filter(lambda v: v <= cc, [v for v in supported_ccs]))
+    except ValueError:
+        raise RuntimeError(
+            f"Device compute capability {ver_str(cc)} is less than the "
+            f"minimum supported by NVRTC {ver_str(version)}. Supported "
+            "compute capabilities are "
+            f"{', '.join([ver_str(v) for v in supported_ccs])}."
+        )
+
+    if found != cc:
+        warnings.warn(
+            f"Device compute capability {ver_str(cc)} is not supported by "
+            f"NVRTC {ver_str(version)}. Using {ver_str(found)} instead."
+        )
 
     # Compilation options:
     # - Compile for the current device's compute capability.
@@ -348,16 +352,14 @@ def compile(src, name, cc, ltoir=False):
         f"{os.path.join(cuda_include_dir, 'cccl')}",
     ]
 
-    nvrtc_version = nvrtc.get_version()
-    nvrtc_ver_major = nvrtc_version[0]
-
     cudadrv_path = os.path.dirname(os.path.abspath(__file__))
     numba_cuda_path = os.path.dirname(cudadrv_path)
 
-    if nvrtc_ver_major == 11:
-        numba_include = f"{os.path.join(numba_cuda_path, 'include', '11')}"
-    else:
+    nvrtc_ver_major = version[0]
+    if nvrtc_ver_major == 12:
         numba_include = f"{os.path.join(numba_cuda_path, 'include', '12')}"
+    elif nvrtc_ver_major == 13:
+        numba_include = f"{os.path.join(numba_cuda_path, 'include', '13')}"
 
     if config.CUDA_NVRTC_EXTRA_SEARCH_PATHS:
         extra_includes = config.CUDA_NVRTC_EXTRA_SEARCH_PATHS.split(":")
@@ -373,7 +375,6 @@ def compile(src, name, cc, ltoir=False):
             arch=arch,
             include_path=includes,
             relocatable_device_code=True,
-            std="c++17" if nvrtc_version < (12, 0) else None,
             link_time_optimization=ltoir,
             name=name,
         )
@@ -399,6 +400,7 @@ def compile(src, name, cc, ltoir=False):
         return result, log
 
     else:
+        program = nvrtc.create_program(src, name)
         includes = [f"-I{path}" for path in includes]
         options = [
             arch,
@@ -409,9 +411,6 @@ def compile(src, name, cc, ltoir=False):
 
         if ltoir:
             options.append("-dlto")
-
-        if nvrtc_version < (12, 0):
-            options.append("-std=c++17")
 
         # Compile the program
         compile_error = nvrtc.compile_program(program, options)
@@ -482,4 +481,12 @@ def get_lowest_supported_cc():
 
 
 def get_supported_ccs():
-    return NVRTC().get_supported_archs()
+    if config.CUDA_USE_NVIDIA_BINDING:
+        retcode, archs = bindings_nvrtc.nvrtcGetSupportedArchs()
+        if retcode != bindings_nvrtc.nvrtcResult.NVRTC_SUCCESS:
+            raise RuntimeError(
+                f"{retcode.name} when calling nvrtcGetSupportedArchs()"
+            )
+        return [(arch // 10, arch % 10) for arch in archs]
+    else:
+        return NVRTC().get_supported_archs()

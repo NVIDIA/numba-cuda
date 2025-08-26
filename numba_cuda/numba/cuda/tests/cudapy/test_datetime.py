@@ -1,7 +1,10 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: BSD-2-Clause
+
 import numpy as np
 
 from numba import cuda, vectorize, guvectorize
-from numba.np.numpy_support import from_dtype
+from numba.cuda.np.numpy_support import from_dtype
 from numba.cuda.testing import CUDATestCase, skip_on_cudasim
 import unittest
 

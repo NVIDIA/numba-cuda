@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: BSD-2-Clause
+
 import numpy as np
 from ctypes import byref, c_size_t
 from numba.cuda.cudadrv.driver import device_memset, driver, USE_NV_BINDING

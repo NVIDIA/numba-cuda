@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: BSD-2-Clause
+
 """
 Serialization support for compiled functions.
 """
@@ -9,7 +12,7 @@ import copyreg
 
 
 import pickle
-from numba import cloudpickle
+from numba.cuda import cloudpickle
 from llvmlite import ir
 
 

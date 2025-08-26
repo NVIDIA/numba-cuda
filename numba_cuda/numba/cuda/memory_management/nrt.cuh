@@ -1,3 +1,8 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+ * SPDX-License-Identifier: BSD-2-Clause
+ */
+
 #include <cuda/atomic>
 
 typedef void (*NRT_dtor_function)(void* ptr, size_t size, void* info);
