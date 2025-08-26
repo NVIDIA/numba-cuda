@@ -196,6 +196,9 @@ def _get_nvrtc_wheel():
                     raise RuntimeError(
                         f'Path does not exist: "{builtins_path}"'
                     )
+                # Add the directory containing the builtins DLL to the DLL search path
+                # We already have a side effect of loading the nvrtc DLL by the time we get here and this function is only called lazily if nvrtc isn't found elsewhere
+                os.add_dll_directory(os.path.dirname(builtins_path))
         return Path(dso_path)
 
 
