@@ -813,7 +813,6 @@ def has_no_side_effect(rhs, lives, call_table):
     """Returns True if this expression has no side effects that
     would prevent re-ordering.
     """
-    from numba.parfors import array_analysis, parfor
     from numba.misc.special import prange
 
     if isinstance(rhs, ir.Expr) and rhs.op == "call":
@@ -827,11 +826,9 @@ def has_no_side_effect(rhs, lives, call_table):
             or call_list == ["stencil", numba]
             or call_list == ["log", numpy]
             or call_list == ["dtype", numpy]
-            or call_list == [array_analysis.wrap_index]
             or call_list == [prange]
             or call_list == ["prange", numba]
             or call_list == ["pndindex", numba]
-            or call_list == [parfor.internal_prange]
             or call_list == ["ceil", math]
             or call_list == [max]
             or call_list == [int]
