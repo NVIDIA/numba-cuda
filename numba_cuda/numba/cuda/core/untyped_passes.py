@@ -21,16 +21,9 @@ from numba.core import (
     rewrites,
     config,
     transforms,
-    consts,
 )
-
-
-from numba.core.utils import PYVERSION
-
-if PYVERSION < (3, 10):
-    from numba.core.interpreter import Interpreter
-else:
-    from numba.cuda.core.interpreter import Interpreter
+from numba.cuda.core import consts
+from numba.cuda.core.interpreter import Interpreter
 
 
 from numba.misc.special import literal_unroll
