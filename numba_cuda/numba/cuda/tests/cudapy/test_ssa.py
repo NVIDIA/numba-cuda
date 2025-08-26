@@ -177,6 +177,73 @@ class TestSSA(SSABaseTest):
 
         self.check_func(foo, np.array([1, 2]), np.array([1, 2]))
 
+    def test_unhandled_undefined(self):
+        @cuda.jit
+        def function1(arg1, arg2, arg3, arg4, arg5):
+            # This function is auto-generated.
+            if arg1:
+                var1 = arg2
+                var2 = arg3
+                var3 = var2
+                var4 = arg1
+                return
+            else:
+                if arg2:
+                    if arg4:
+                        var5 = arg4  # noqa: F841
+                        return
+                    else:
+                        var6 = var4
+                        return
+                    return var6
+                else:
+                    if arg5:
+                        if var1:
+                            if arg5:
+                                var1 = var6
+                                return
+                            else:
+                                var7 = arg2  # noqa: F841
+                                return arg2
+                            return
+                        else:
+                            if var2:
+                                arg5 = arg2
+                                return arg1
+                            else:
+                                var6 = var3
+                                return var4
+                            return
+                        return
+                    else:
+                        var8 = var1
+                        return
+                    return var8
+                var9 = var3  # noqa: F841
+                var10 = arg5  # noqa: F841
+                return var1
+
+        NONE_SENTINEL = 99
+
+        @cuda.jit
+        def function1_caller(result, arg1, arg2, arg3, arg4, arg5):
+            retval = function1(arg1, arg2, arg3, arg4, arg5)
+            if retval is None:
+                result[0] = NONE_SENTINEL
+            else:
+                result[0] = retval
+
+        # The argument values is not critical for re-creating the bug
+        # because the bug is in compile-time.
+
+        expect = function1.py_func(2, 3, 6, 0, 7)
+        if expect is None:
+            expect = NONE_SENTINEL
+        result = np.zeros(1, dtype=np.int64)
+        function1_caller[1, 1](result, 2, 3, 6, 0, 7)
+        got = result[0]
+        self.assertEqual(expect, got)
+
 
 class TestReportedSSAIssues(SSABaseTest):
     # Tests from issues
@@ -311,7 +378,6 @@ class TestReportedSSAIssues(SSABaseTest):
         # a definition before use.
         @jit
         def foo(result, x, v, n):
-            problematic = 0  # Initialize to avoid unbound variable
             for i in range(n):
                 if i == 0:
                     if i == x:
