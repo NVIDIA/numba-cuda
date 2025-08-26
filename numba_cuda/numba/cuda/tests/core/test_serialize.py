@@ -14,7 +14,7 @@ import numba
 from numba.core.errors import TypingError
 from numba.tests.support import TestCase
 from numba.core.target_extension import resolve_dispatcher_from_str
-from numba.cloudpickle import dumps, loads
+from numba.cuda.cloudpickle import dumps, loads
 
 
 class TestDispatcherPickling(TestCase):
@@ -318,7 +318,7 @@ def issue_7356():
 def check_main_class_reset_on_unpickle():
     # Load module and get its global dictionary
     glbs = runpy.run_module(
-        "numba.tests.cloudpickle_main_class",
+        "numba.cuda.tests.cloudpickle_main_class",
         run_name="__main__",
     )
     # Get the Klass and check it is from __main__

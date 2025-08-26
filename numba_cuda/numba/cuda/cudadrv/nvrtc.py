@@ -355,7 +355,11 @@ def compile(src, name, cc, ltoir=False):
     cudadrv_path = os.path.dirname(os.path.abspath(__file__))
     numba_cuda_path = os.path.dirname(cudadrv_path)
 
-    numba_include = f"{os.path.join(numba_cuda_path, 'include', '12')}"
+    nvrtc_ver_major = version[0]
+    if nvrtc_ver_major == 12:
+        numba_include = f"{os.path.join(numba_cuda_path, 'include', '12')}"
+    elif nvrtc_ver_major == 13:
+        numba_include = f"{os.path.join(numba_cuda_path, 'include', '13')}"
 
     if config.CUDA_NVRTC_EXTRA_SEARCH_PATHS:
         extra_includes = config.CUDA_NVRTC_EXTRA_SEARCH_PATHS.split(":")

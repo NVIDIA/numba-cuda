@@ -10,7 +10,7 @@ from numba.cuda.cudadrv.devicearray import (
 )
 from numba.cuda.testing import unittest, CUDATestCase
 from numba.cuda.testing import skip_on_cudasim
-from numba.np import numpy_support
+from numba.cuda.np import numpy_support
 from numba import cuda
 
 N_CHARS = 5

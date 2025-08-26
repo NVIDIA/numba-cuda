@@ -3,7 +3,8 @@
 
 from collections import namedtuple
 from numba import types
-from numba.core import consts, ir
+from numba.core import ir
+from numba.cuda.core import consts
 from numba.core.analysis import compute_cfg_from_blocks
 
 

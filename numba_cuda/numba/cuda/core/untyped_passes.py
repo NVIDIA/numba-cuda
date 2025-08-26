@@ -13,24 +13,16 @@ from numba.cuda.core.compiler_machinery import (
     register_pass,
 )
 from numba.cuda.core import ir
+from numba.cuda.core import postproc, bytecode
 from numba.core import (
     errors,
     types,
-    bytecode,
-    postproc,
     rewrites,
     config,
     transforms,
-    consts,
 )
-
-
-from numba.core.utils import PYVERSION
-
-if PYVERSION < (3, 10):
-    from numba.core.interpreter import Interpreter
-else:
-    from numba.cuda.core.interpreter import Interpreter
+from numba.cuda.core import consts
+from numba.cuda.core.interpreter import Interpreter
 
 
 from numba.misc.special import literal_unroll
@@ -1868,7 +1860,7 @@ class LiteralUnroll(FunctionPass):
             return False
 
         # run as subpipeline
-        from numba.cuda.compiler_machinery import PassManager
+        from numba.cuda.core.compiler_machinery import PassManager
         from numba.cuda.core.typed_passes import PartialTypeInference
 
         pm = PassManager("literal_unroll_subpipeline")

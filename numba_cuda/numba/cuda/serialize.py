@@ -12,7 +12,7 @@ import copyreg
 
 
 import pickle
-from numba import cloudpickle
+from numba.cuda import cloudpickle
 from llvmlite import ir
 
 

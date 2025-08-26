@@ -31,7 +31,7 @@ from numba.core.extending import (
     NativeValue,
 )
 from numba.core.datamodel.models import OpaqueModel
-from numba.np import numpy_support
+from numba.cuda.np import numpy_support
 
 
 class EnableNRTStatsMixin(object):

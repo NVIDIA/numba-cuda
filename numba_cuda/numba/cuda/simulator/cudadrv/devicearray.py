@@ -7,7 +7,7 @@ stubs to allow tests to import correctly.
 """
 
 from contextlib import contextmanager
-from numba.np.numpy_support import numpy_version
+from numba.cuda.np.numpy_support import numpy_version
 
 import numpy as np
 

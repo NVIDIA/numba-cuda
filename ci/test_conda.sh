@@ -36,6 +36,7 @@ DEPENDENCIES=(
     "pytest"
     "pytest-xdist"
     "cffi"
+    "ml_dtypes"
     "python=${RAPIDS_PY_VERSION}"
 )
 # Constrain oldest supported dependencies for testing

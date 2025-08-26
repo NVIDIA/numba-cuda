@@ -6,9 +6,10 @@ import functools
 from llvmlite import ir
 
 from numba.core.datamodel.registry import DataModelManager, register
+from numba.core.datamodel import PrimitiveModel
 from numba.core.extending import models
 from numba.core import types
-from numba.cuda.types import Dim3, GridGroup, CUDADispatcher
+from numba.cuda.types import Dim3, GridGroup, CUDADispatcher, Bfloat16
 
 
 cuda_data_manager = DataModelManager()
@@ -45,3 +46,10 @@ class FloatModel(models.PrimitiveModel):
 
 
 register_model(CUDADispatcher)(models.OpaqueModel)
+
+
+@register_model(Bfloat16)
+class _model___nv_bfloat16(PrimitiveModel):
+    def __init__(self, dmm, fe_type):
+        be_type = ir.IntType(16)
+        super(_model___nv_bfloat16, self).__init__(dmm, fe_type, be_type)

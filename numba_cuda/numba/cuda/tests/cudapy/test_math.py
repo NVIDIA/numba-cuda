@@ -8,7 +8,7 @@ from numba.cuda.testing import (
     CUDATestCase,
     skip_on_cudasim,
 )
-from numba.np import numpy_support
+from numba.cuda.np import numpy_support
 from numba import cuda, float32, float64, int32, vectorize, void, int64
 import math
 
