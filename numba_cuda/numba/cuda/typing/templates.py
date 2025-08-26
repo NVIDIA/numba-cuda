@@ -645,7 +645,7 @@ class _OverloadFunctionTemplate(AbstractTemplate):
         Type the overloaded function by compiling the appropriate
         implementation for the given args.
         """
-        from numba.core.typed_passes import PreLowerStripPhis
+        from numba.cuda.core.typed_passes import PreLowerStripPhis
 
         disp, new_args = self._get_impl(args, kws)
         if disp is None:
@@ -658,7 +658,7 @@ class _OverloadFunctionTemplate(AbstractTemplate):
         if not self._inline.is_never_inline:
             # need to run the compiler front end up to type inference to compute
             # a signature
-            from numba.core import typed_passes, compiler
+            from numba.cuda.core import typed_passes, compiler
             from numba.core.inline_closurecall import InlineWorker
 
             fcomp = disp._compiler

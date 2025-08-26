@@ -1868,7 +1868,7 @@ class LiteralUnroll(FunctionPass):
             return False
 
         # run as subpipeline
-        from numba.cuda.compiler_machinery import PassManager
+        from numba.cuda.core.compiler_machinery import PassManager
         from numba.cuda.core.typed_passes import PartialTypeInference
 
         pm = PassManager("literal_unroll_subpipeline")
