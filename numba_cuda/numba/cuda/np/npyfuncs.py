@@ -51,7 +51,7 @@ def _check_arity_and_homogeneity(sig, args, arity, return_type=None):
         assert False, msg
 
 
-if config.USE_LEGACY_TYPE_SYSTEM:
+if getattr(config, "USE_LEGACY_TYPE_SYSTEM", True):
     cast_arg_ty = types.float64
 else:
     cast_arg_ty = types.np_float64
