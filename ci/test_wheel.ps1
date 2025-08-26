@@ -35,12 +35,6 @@ python -m pip install "${package}[cu${CUDA_VER_MAJOR},test-cu${CUDA_VER_MAJOR}]"
 
 $SYS_PREFIX = (python -c "import sys; print(sys.prefix)")
 
-# WAR for "nvrtc: error: failed to open nvrtc-builtins64_129.dll."
-copy "$SYS_PREFIX\Lib\site-packages\nvidia\cuda_nvrtc\bin\nvrtc-builtins64_*.dll" "$SYS_PREFIX"
-
-# WAR for CCCL headers in non-standard location in wheel
-$env:NUMBA_CUDA_NVRTC_EXTRA_SEARCH_PATHS = "$SYS_PREFIX\Lib\site-packages\nvidia\cuda_cccl\include"
-
 rapids-logger "Build tests"
 $NUMBA_CUDA_TEST_BIN_DIR = (python ci\get_test_binary_dir.py)
 echo "Test binary dir: $NUMBA_CUDA_TEST_BIN_DIR"
