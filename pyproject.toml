@@ -30,7 +30,8 @@ cu12 = [
     "nvidia-cuda-nvcc-cu12",  # for libNVVM
     "nvidia-cuda-runtime-cu12",
     "nvidia-cuda-nvrtc-cu12",
-    "nvidia-nvjitlink-cu12"
+    "nvidia-nvjitlink-cu12",
+    "nvidia-cuda-cccl-cu12",
 ]
 # TODO: Use cuda-toolkit package dependencies - e.g. cuda-toolkit[curand,nvvm,nvrtc]=13.*
 cu13 = [
@@ -40,7 +41,8 @@ cu13 = [
     "nvidia-nvvm==13.*",
     "nvidia-cuda-runtime==13.*",
     "nvidia-cuda-nvrtc==13.*",
-    "nvidia-nvjitlink==13.*"
+    "nvidia-nvjitlink==13.*",
+    "nvidia-cuda-cccl==13.*",
 ]
 
 test = [
@@ -50,6 +52,7 @@ test = [
     "pytest",
     "pytest-xdist",
     "filecheck",
+    "ml_dtypes",
 ]
 test-cu12 = [
     "numba-cuda[cu12]",

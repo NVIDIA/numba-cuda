@@ -9,7 +9,7 @@ import platform
 import site
 from pathlib import Path
 from numba.core.config import IS_WIN32
-from numba.misc.findlib import find_lib
+from numba.cuda.misc.findlib import find_lib
 from numba import config
 import ctypes
 

@@ -11,7 +11,8 @@ import warnings
 
 import numba
 from numba.core.extending import _Intrinsic
-from numba.core import types, typing, ir, analysis, postproc, rewrites, config
+from numba.core import types, typing, ir, analysis, rewrites, config
+from numba.cuda.core import postproc
 from numba.core.typing.templates import signature
 from numba.core.analysis import (
     compute_live_map,
@@ -1893,7 +1894,7 @@ def compile_to_numba_ir(
     if typingctx and other typing inputs are available and update typemap and
     calltypes.
     """
-    from numba.core import typed_passes
+    from numba.cuda.core import typed_passes
 
     # mk_func can be actual function or make_function node, or a njit function
     if hasattr(mk_func, "code"):
@@ -2013,8 +2014,8 @@ def get_ir_of_code(glbls, fcode):
     # added to create valid IR.
 
     # rebuild IR in SSA form
-    from numba.core.untyped_passes import ReconstructSSA
-    from numba.core.typed_passes import PreLowerStripPhis
+    from numba.cuda.core.untyped_passes import ReconstructSSA
+    from numba.cuda.core.typed_passes import PreLowerStripPhis
 
     reconstruct_ssa = ReconstructSSA()
     phistrip = PreLowerStripPhis()

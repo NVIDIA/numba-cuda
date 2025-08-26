@@ -4,18 +4,19 @@
 from numba.cuda.testing import CUDATestCase
 import numba
 from numba.core.registry import cpu_target
-from numba.core.compiler import CompilerBase, Flags
-from numba.core.compiler_machinery import PassManager
-from numba.cuda.core import ir_utils, bytecode
-from numba.core import types, ir, compiler, registry
-from numba.core.untyped_passes import (
+from numba.cuda.core.compiler import CompilerBase
+from numba.cuda.flags import Flags
+from numba.cuda.core.compiler_machinery import PassManager
+from numba.cuda.core import ir_utils
+from numba.core import types, ir, bytecode, compiler, registry
+from numba.cuda.core.untyped_passes import (
     ExtractByteCode,
     TranslateByteCode,
     FixupArgs,
     IRProcessing,
 )
 from numba.experimental import jitclass
-from numba.core.typed_passes import (
+from numba.cuda.core.typed_passes import (
     NopythonTypeInference,
     type_inference_stage,
     DeadCodeElimination,

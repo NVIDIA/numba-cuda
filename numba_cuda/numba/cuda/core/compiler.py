@@ -8,7 +8,7 @@ from numba.core import callconv, config, errors
 from numba.core.errors import CompilerError
 from numba.parfors.parfor import ParforDiagnostics
 
-from numba.core.untyped_passes import ExtractByteCode, FixupArgs
+from numba.cuda.core.untyped_passes import ExtractByteCode, FixupArgs
 from numba.core.targetconfig import ConfigStack
 
 

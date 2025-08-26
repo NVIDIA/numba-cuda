@@ -15,7 +15,7 @@ from numba.core.types import f2, b1
 from numba.cuda.typing import signature
 import operator
 import itertools
-from numba.np.numpy_support import from_dtype
+from numba.cuda.np.numpy_support import from_dtype
 
 
 def simple_fp16_div_scalar(ary, a, b):
