@@ -38,7 +38,7 @@ from numba.cuda.locks import module_init_lock
 from numba.cuda.memory_management.nrt import rtsys, NRT_LIBRARY
 
 from numba import cuda
-from numba_cuda.cext import _dispatcher
+from numba.cuda import _dispatcher
 
 from warnings import warn
 

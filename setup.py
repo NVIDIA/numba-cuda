@@ -38,13 +38,13 @@ def get_ext_modules():
         ]
 
     ext_devicearray = Extension(
-        name="numba_cuda.cext._devicearray",
-        sources=["numba_cuda/cext/_devicearray.cpp"],
+        name="numba_cuda._devicearray",
+        sources=["numba_cuda/numba/cuda/cext/_devicearray.cpp"],
         depends=[
-            "numba_cuda/cext/_pymodule.h",
-            "numba_cuda/cext/_devicearray.h",
+            "numba_cuda/numba/cuda/cext/_pymodule.h",
+            "numba_cuda/numba/cuda/cext/_devicearray.h",
         ],
-        include_dirs=["numba_cuda/cext"],
+        include_dirs=["numba_cuda/numba/cuda/cext"],
         extra_compile_args=["-std=c++11"],
     )
 
@@ -53,31 +53,31 @@ def get_ext_modules():
         install_name_tool_fixer = ["-headerpad_max_install_names"]
 
     ext_mviewbuf = Extension(
-        name="numba_cuda.cext.mviewbuf",
+        name="numba_cuda.numba.cuda.mviewbuf",
         extra_link_args=install_name_tool_fixer,
-        sources=["numba_cuda/cext/mviewbuf.c"],
+        sources=["numba_cuda/numba/cuda/cext/mviewbuf.c"],
     )
 
     dispatcher_sources = [
-        "numba_cuda/cext/_dispatcher.cpp",
-        "numba_cuda/cext/_typeof.cpp",
-        "numba_cuda/cext/_hashtable.cpp",
-        "numba_cuda/cext/typeconv.cpp",
+        "numba_cuda/numba/cuda/cext/_dispatcher.cpp",
+        "numba_cuda/numba/cuda/cext/_typeof.cpp",
+        "numba_cuda/numba/cuda/cext/_hashtable.cpp",
+        "numba_cuda/numba/cuda/cext/typeconv.cpp",
     ]
     ext_dispatcher = Extension(
-        name="numba_cuda.cext._dispatcher",
+        name="numba_cuda.numba.cuda._dispatcher",
         sources=dispatcher_sources,
         depends=[
-            "numba_cuda/cext/_pymodule.h",
-            "numba_cuda/cext/_typeof.h",
-            "numba_cuda/cext/_hashtable.h",
+            "numba_cuda/numba/cuda/cext/_pymodule.h",
+            "numba_cuda/numba/cuda/cext/_typeof.h",
+            "numba_cuda/numba/cuda/cext/_hashtable.h",
         ],
         extra_compile_args=["-std=c++11"],
         **np_compile_args,
     )
 
     # Append our cext dir to include_dirs
-    ext_dispatcher.include_dirs.append("numba_cuda/cext")
+    ext_dispatcher.include_dirs.append("numba_cuda/numba/cuda/cext")
 
     return [ext_dispatcher, ext_mviewbuf, ext_devicearray]
 
