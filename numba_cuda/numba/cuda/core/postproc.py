@@ -1,8 +1,8 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-2-Clause
 from functools import cached_property
-from numba.core import ir, transforms, analysis
-from numba.cuda.core import ir_utils
+from numba.core import transforms, analysis
+from numba.cuda.core import ir_utils, ir
 
 
 class YieldPoint(object):

@@ -659,7 +659,7 @@ class _OverloadFunctionTemplate(AbstractTemplate):
             # need to run the compiler front end up to type inference to compute
             # a signature
             from numba.cuda.core import typed_passes, compiler
-            from numba.core.inline_closurecall import InlineWorker
+            from numba.cuda.core.inline_closurecall import InlineWorker
 
             fcomp = disp._compiler
             flags = compiler.Flags()

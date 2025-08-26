@@ -8,11 +8,11 @@ from functools import partial
 from copy import copy
 import warnings
 
+from numba.cuda.core import ir
 from numba.core import (
     errors,
     types,
     typing,
-    ir,
     funcdesc,
     rewrites,
     typeinfer,
@@ -697,7 +697,7 @@ class InlineOverloads(FunctionPass):
             print(state.func_id.unique_name)
             print(state.func_ir.dump())
             print("".center(80, "-"))
-        from numba.core.inline_closurecall import (
+        from numba.cuda.core.inline_closurecall import (
             InlineWorker,
             callee_ir_validator,
         )
