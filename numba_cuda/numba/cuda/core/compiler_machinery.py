@@ -11,11 +11,11 @@ from numba.core.compiler_lock import global_compiler_lock
 from numba.core import errors, config, transforms
 from numba.cuda import utils
 from numba.core.tracing import event
-from numba.core.postproc import PostProcessor
+from numba.cuda.core.postproc import PostProcessor
 from numba.cuda.core.ir_utils import enforce_no_dels, legalize_single_scope
 import numba.core.event as ev
 
-import numba.core.compiler_machinery as nccm
+import numba.cuda.core.compiler_machinery as nccm
 
 # terminal color markup
 _termcolor = errors.termcolor()
