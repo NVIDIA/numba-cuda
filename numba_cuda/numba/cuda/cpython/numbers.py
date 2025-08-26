@@ -10,12 +10,10 @@ import operator
 from llvmlite import ir
 from llvmlite.ir import Constant
 
-from numba.core.imputils import (
-    lower_builtin,
-    lower_getattr,
-    lower_cast,
-    lower_constant,
-    impl_ret_untracked,
+from numba.cuda.cudaimpl import lower_cast, lower_constant, impl_ret_untracked
+from numba.cuda.cudaimpl import (
+    lower as lower_builtin,
+    lower_attr as lower_getattr,
 )
 from numba.core import typing, types, errors
 from numba.core.extending import overload_method

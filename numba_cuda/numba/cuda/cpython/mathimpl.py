@@ -12,26 +12,17 @@ import numpy as np
 
 import llvmlite.ir
 from llvmlite.ir import Constant
-from numba.core.imputils import impl_ret_untracked
+
+from numba.core.imputils import Registry
+from numba.cuda.cudaimpl import impl_ret_untracked
 from numba.core import types, config
 from numba.core.extending import overload
 from numba.core.typing import signature
 from numba.cpython.unsafe.numbers import trailing_zeros
 from numba.cuda import cgutils
-from numba.cuda.cudaimpl import lower
 
-
-# ---------------------------------------------------------------------
-# XXX: In upstream Numba, this file would create a mathimpl registry
-# if it was installed in the target (as it is for the CUDA target).
-# The mathimpl registry has been removed from this file (it was
-# initialized as `registry = Registry('mathimpl')`) as it would duplicate
-# the mathimpl registry in upstream Numba, which would be likely to lead
-# to confusion / mixing things up between two mathimpl registries. The
-# comment that accompanied this behaviour is left here, even though the
-# code that would pick the mathimpl registry has been removed, for the
-# benefit of future understanding.
-#
+registry = Registry("mathimpl")
+lower = registry.lower
 
 # Helpers, shared with cmathimpl.
 _NP_FLT_FINFO = np.finfo(np.dtype("float32"))
