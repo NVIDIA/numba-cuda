@@ -397,7 +397,7 @@ class InlineInlinables(FunctionPass):
         from numba.core.cpu import InlineOptions
 
         # try and get a definition for the call, this isn't always possible as
-        # it might be a eval(str)/part generated awaiting update etc.
+        # it might be a eval(str)/part generated awaiting update etc. (parfors)
         to_inline = None
         try:
             to_inline = state.func_ir.get_definition(expr.func)
@@ -877,6 +877,7 @@ class MixedContainerUnroller(FunctionPass):
 
         new_blocks = {}
         for l, b in blocks.items():
+            # some parfor last blocks might be empty
             term = None
             if b.body:
                 term = b.body[-1]

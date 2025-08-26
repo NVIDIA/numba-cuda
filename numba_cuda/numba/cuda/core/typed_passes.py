@@ -608,7 +608,7 @@ class InlineOverloads(FunctionPass):
         if expr.op == "call":
             # try and get a definition for the call, this isn't always
             # possible as it might be a eval(str)/part generated
-            # awaiting update etc.
+            # awaiting update etc. (parfors)
             to_inline = None
             try:
                 to_inline = state.func_ir.get_definition(expr.func)

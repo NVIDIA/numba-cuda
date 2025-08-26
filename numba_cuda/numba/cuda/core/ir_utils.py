@@ -529,6 +529,7 @@ def add_offset_to_labels(blocks, offset):
     """add an offset to all block labels and jump/branch targets"""
     new_blocks = {}
     for l, b in blocks.items():
+        # some parfor last blocks might be empty
         term = None
         if b.body:
             term = b.body[-1]
@@ -579,6 +580,7 @@ def flatten_labels(blocks):
 
     for t_node in topo_order:
         b = blocks[t_node]
+        # some parfor last blocks might be empty
         term = None
         if b.body:
             term = b.body[-1]
@@ -1069,6 +1071,7 @@ def copy_propagate(blocks, typemap):
 def init_copy_propagate_data(blocks, entry, typemap):
     """get initial condition of copy propagation data flow for each block."""
     # gen is all definite copies, extra_kill is additional ones that may hit
+    # for example, parfors can have control flow so they may hit extra copies
     gen_copies, extra_kill = get_block_copies(blocks, typemap)
     # set of all program copies
     all_copies = set()
