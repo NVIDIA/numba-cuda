@@ -355,11 +355,17 @@ def compile(src, name, cc, ltoir=False):
     nvrtc_ver_major = version[0]
     if nvrtc_ver_major == 12:
         numba_include = f"{os.path.join(numba_cuda_path, 'include', '12')}"
+        # For CUDA 12 wheels, `cuda_include_dir` is `site-packages/nvidia/cuda_runtime/include`
+        # We need to find CCCL at `site-packages/nvidia/cuda_cccl/include`
+        # For CUDA 12 conda / system install, CCCL is just in the `include` directory
         cuda_includes.append(
-            f"{os.path.join(cuda_include_dir, '..', 'cuda_cccl')}"
+            f"{os.path.join(cuda_include_dir, '..', '..', 'cuda_cccl', 'include')}"
         )  # CUDA 12 Wheel layout
     elif nvrtc_ver_major == 13:
         numba_include = f"{os.path.join(numba_cuda_path, 'include', '13')}"
+        # For CUDA 13 wheels, `cuda_include_dir` is `site-packages/nvidia/cu13/include`
+        # We need to find CCCL at `site-packages/nvidia/cu13/include/cccl`
+        # For CUDA 13 conda / system install, CCCL is in the `include/cccl` directory
         cuda_includes.append(
             f"{os.path.join(cuda_include_dir, 'cccl')}"
         )  # CUDA 13 layout
