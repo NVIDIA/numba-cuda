@@ -18,7 +18,7 @@ source:
 build:
   noarch: python
   script:
-    - {{ PYTHON }} -m pip install . -e -vv
+    - {{ PYTHON }} -m pip install -e . -vv
 
 requirements:
   host:
