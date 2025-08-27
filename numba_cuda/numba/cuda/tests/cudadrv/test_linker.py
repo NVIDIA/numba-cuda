@@ -333,15 +333,15 @@ class TestLinker(CUDATestCase):
         if not config.CUDA_USE_NVIDIA_BINDING:
             self.skipTest("Ctypes Linker does not support outputting PTX.")
 
-        linker = _Linker.new(cc=(12, 0))
+        linker = _Linker.new(cc=(7, 5), lto=True)
         code = """
 __device__ int foo(int x) {
     return x + 1;
 }
 """
         linker.add_cu(code, "foo")
-        ptx = linker.complete()
-        assert "target sm_120" in str(ptx.code)
+        ptx = linker.get_linked_ptx().decode()
+        assert "target sm_75" in str(ptx.code)
 
 
 if __name__ == "__main__":
