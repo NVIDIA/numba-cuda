@@ -235,7 +235,7 @@ class InlineClosureLikes(FunctionPass):
         # no ability to resolve certain typed function calls in the array
         # inlining code, use this variable to indicate
         typed_pass = not isinstance(state.return_type, types.misc.PyObject)
-        from numba.core.inline_closurecall import InlineClosureCallPass
+        from numba.cuda.core.inline_closurecall import InlineClosureCallPass
 
         inline_pass = InlineClosureCallPass(
             state.func_ir,
@@ -340,7 +340,7 @@ class InlineInlinables(FunctionPass):
             print(state.func_ir.dump())
             print("".center(80, "-"))
 
-        from numba.core.inline_closurecall import (
+        from numba.cuda.core.inline_closurecall import (
             InlineWorker,
             callee_ir_validator,
         )
@@ -1589,7 +1589,7 @@ class IterLoopCanonicalization(FunctionPass):
         entry_block.body[idx + 1].value.value = call_get_range_var
 
         glbls = copy(func_ir.func_id.func.__globals__)
-        from numba.core.inline_closurecall import inline_closure_call
+        from numba.cuda.core.inline_closurecall import inline_closure_call
 
         inline_closure_call(
             func_ir,

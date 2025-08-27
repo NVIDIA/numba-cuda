@@ -104,7 +104,7 @@ def run_frontend(func, inline_closures=False, emit_dels=False):
     bc = bytecode.ByteCode(func_id=func_id)
     func_ir = interp.interpret(bc)
     if inline_closures:
-        from numba.core.inline_closurecall import InlineClosureCallPass
+        from numba.cuda.core.inline_closurecall import InlineClosureCallPass
 
         inline_pass = InlineClosureCallPass(
             func_ir, cpu.ParallelOptions(False), {}, False
