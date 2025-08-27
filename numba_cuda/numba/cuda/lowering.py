@@ -17,10 +17,10 @@ from numba.core import (
     funcdesc,
     generators,
     config,
-    cgutils,
     removerefctpass,
     targetconfig,
 )
+from numba.cuda import cgutils
 from numba.cuda.core import ir_utils
 from numba.core.errors import (
     LoweringError,

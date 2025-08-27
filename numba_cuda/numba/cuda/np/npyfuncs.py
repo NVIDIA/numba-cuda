@@ -14,7 +14,8 @@ import numpy as np
 
 from numba.core.extending import overload
 from numba.core.imputils import impl_ret_untracked
-from numba.core import typing, types, errors, cgutils, config
+from numba.core import typing, types, errors, config
+from numba.cuda import cgutils
 from numba.core.extending import register_jitable
 from numba.np import npdatetime
 from numba.np.math import cmathimpl, mathimpl, numbers
