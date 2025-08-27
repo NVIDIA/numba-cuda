@@ -213,13 +213,11 @@ class _Kernel(serialize.ReduceMixin):
         # The following are referred to by the cache implementation. Note:
         # - There are no referenced environments in CUDA.
         # - Kernels don't have lifted code.
-        # - reload_init is only for parfors.
         self.target_context = tgt_ctx
         self.fndesc = cres.fndesc
         self.environment = cres.environment
         self._referenced_environments = []
         self.lifted = []
-        self.reload_init = []
 
     def maybe_link_nrt(self, link, tgt_ctx, asm):
         """
@@ -1346,27 +1344,6 @@ class CUDADispatcher(serialize.ReduceMixin, _MemoMixin, _DispatcherBase):
             cache_hits=self._cache_hits,
             cache_misses=self._cache_misses,
         )
-
-    def parallel_diagnostics(self, signature=None, level=1):
-        """
-        Print parallel diagnostic information for the given signature. If no
-        signature is present it is printed for all known signatures. level is
-        used to adjust the verbosity, level=1 (default) is minimal verbosity,
-        and 2, 3, and 4 provide increasing levels of verbosity.
-        """
-
-        def dump(sig):
-            ol = self.overloads[sig]
-            pfdiag = ol.metadata.get("parfor_diagnostics", None)
-            if pfdiag is None:
-                msg = "No parfors diagnostic available, is 'parallel=True' set?"
-                raise ValueError(msg)
-            pfdiag.dump(level)
-
-        if signature is not None:
-            dump(signature)
-        else:
-            [dump(sig) for sig in self.signatures]
 
     def get_metadata(self, signature=None):
         """

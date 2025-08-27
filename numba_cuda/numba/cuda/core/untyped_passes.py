@@ -240,7 +240,7 @@ class InlineClosureLikes(FunctionPass):
         inline_pass = InlineClosureCallPass(
             state.func_ir,
             state.flags.auto_parallel,
-            state.parfor_diagnostics.replaced_fns,
+            None,
             typed_pass,
         )
         inline_pass.run()
