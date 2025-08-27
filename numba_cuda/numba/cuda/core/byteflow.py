@@ -44,7 +44,7 @@ if PYVERSION in ((3, 12), (3, 13)):
         INTRINSIC_LIST_TO_TUPLE = 6
 
     ci1op = CALL_INTRINSIC_1_Operand
-elif PYVERSION in ((3, 10), (3, 11)):
+elif PYVERSION in ((3, 9), (3, 10), (3, 11)):
     pass
 else:
     raise NotImplementedError(PYVERSION)
@@ -194,7 +194,10 @@ class Flow(object):
                         eh_block["push_lasti"] = eh.lasti
                         state.fork(pc=state._pc, extra_block=eh_block)
                         return True
-    elif PYVERSION in ((3, 10),):
+    elif PYVERSION in (
+        (3, 9),
+        (3, 10),
+    ):
 
         def _run_handle_exception(self, runner, state):
             if (
@@ -363,7 +366,10 @@ class TraceRunner(object):
                         state._blockstack.pop()
                     else:
                         break
-        elif PYVERSION in ((3, 10),):
+        elif PYVERSION in (
+            (3, 9),
+            (3, 10),
+        ):
             pass
         else:
             raise NotImplementedError(PYVERSION)
@@ -510,7 +516,10 @@ class TraceRunner(object):
             if inst.arg & 1:
                 state.push(state.make_null())
             state.push(res)
-    elif PYVERSION in ((3, 10),):
+    elif PYVERSION in (
+        (3, 9),
+        (3, 10),
+    ):
 
         def op_LOAD_GLOBAL(self, state, inst):
             res = state.make_temp()
@@ -547,7 +556,7 @@ class TraceRunner(object):
             if inst.arg & 1:
                 state.push(state.make_null())
             state.push(res)
-        elif PYVERSION in ((3, 10), (3, 11)):
+        elif PYVERSION in ((3, 9), (3, 10), (3, 11)):
             state.push(res)
         else:
             raise NotImplementedError(PYVERSION)
@@ -609,7 +618,7 @@ class TraceRunner(object):
             value2 = state.pop()
             state.append(inst, value1=value1, value2=value2)
 
-    elif PYVERSION in ((3, 10), (3, 11), (3, 12)):
+    elif PYVERSION in ((3, 9), (3, 10), (3, 11), (3, 12)):
         pass
     else:
         raise NotImplementedError(PYVERSION)
@@ -617,7 +626,7 @@ class TraceRunner(object):
     if PYVERSION in ((3, 12), (3, 13)):
         op_LOAD_FAST_CHECK = op_LOAD_FAST
         op_LOAD_FAST_AND_CLEAR = op_LOAD_FAST
-    elif PYVERSION in ((3, 10), (3, 11)):
+    elif PYVERSION in ((3, 9), (3, 10), (3, 11)):
         pass
     else:
         raise NotImplementedError(PYVERSION)
@@ -899,7 +908,7 @@ class TraceRunner(object):
                 temp_res=temp_res,
             )
             state.push(res)
-    elif PYVERSION in ((3, 10), (3, 11)):
+    elif PYVERSION in ((3, 9), (3, 10), (3, 11)):
         pass
     else:
         raise NotImplementedError(PYVERSION)
@@ -923,7 +932,7 @@ class TraceRunner(object):
                 res=res,
                 slicevar=slicevar,
             )
-    elif PYVERSION in ((3, 10), (3, 11)):
+    elif PYVERSION in ((3, 9), (3, 10), (3, 11)):
         pass
     else:
         raise NotImplementedError(PYVERSION)
@@ -946,7 +955,7 @@ class TraceRunner(object):
     if PYVERSION in ((3, 12), (3, 13)):
         op_POP_JUMP_IF_NONE = _op_POP_JUMP_IF
         op_POP_JUMP_IF_NOT_NONE = _op_POP_JUMP_IF
-    elif PYVERSION in ((3, 10), (3, 11)):
+    elif PYVERSION in ((3, 9), (3, 10), (3, 11)):
         pass
     else:
         raise NotImplementedError(PYVERSION)
@@ -1015,7 +1024,7 @@ class TraceRunner(object):
             res = state.make_temp("const")
             state.append(inst, retval=res, castval=state.make_temp())
             state.terminate()
-    elif PYVERSION in ((3, 10), (3, 11)):
+    elif PYVERSION in ((3, 9), (3, 10), (3, 11)):
         pass
     else:
         raise NotImplementedError(PYVERSION)
@@ -1049,7 +1058,10 @@ class TraceRunner(object):
             else:
                 state.terminate()
 
-    elif PYVERSION in ((3, 10),):
+    elif PYVERSION in (
+        (3, 9),
+        (3, 10),
+    ):
 
         def op_RAISE_VARARGS(self, state, inst):
             in_exc_block = any(
@@ -1095,7 +1107,7 @@ class TraceRunner(object):
         def op_END_FOR(self, state, inst):
             state.pop()
             state.pop()
-    elif PYVERSION in ((3, 10), (3, 11)):
+    elif PYVERSION in ((3, 9), (3, 10), (3, 11)):
         pass
     else:
         raise NotImplementedError(PYVERSION)
@@ -1222,7 +1234,10 @@ class TraceRunner(object):
         def op_POP_EXCEPT(self, state, inst):
             state.pop()
 
-    elif PYVERSION in ((3, 10),):
+    elif PYVERSION in (
+        (3, 9),
+        (3, 10),
+    ):
 
         def op_POP_EXCEPT(self, state, inst):
             blk = state.pop_block()
@@ -1328,7 +1343,7 @@ class TraceRunner(object):
             )
             state.push(res)
 
-    elif PYVERSION in ((3, 10), (3, 11), (3, 12)):
+    elif PYVERSION in ((3, 9), (3, 10), (3, 11), (3, 12)):
         pass
     else:
         raise NotImplementedError(PYVERSION)
@@ -1352,7 +1367,7 @@ class TraceRunner(object):
             )
             state.push(res)
 
-    elif PYVERSION in ((3, 10), (3, 11), (3, 12)):
+    elif PYVERSION in ((3, 9), (3, 10), (3, 11), (3, 12)):
 
         def op_CALL_FUNCTION_EX(self, state, inst):
             if inst.arg & 1:
@@ -1365,7 +1380,10 @@ class TraceRunner(object):
             if PYVERSION in ((3, 11), (3, 12)):
                 if _is_null_temp_reg(state.peek(1)):
                     state.pop()  # pop NULL, it's not used
-            elif PYVERSION in ((3, 10),):
+            elif PYVERSION in (
+                (3, 9),
+                (3, 10),
+            ):
                 pass
             else:
                 raise NotImplementedError(PYVERSION)
@@ -1420,7 +1438,7 @@ class TraceRunner(object):
             else:
                 raise NotImplementedError(operand)
 
-    elif PYVERSION in ((3, 10), (3, 11)):
+    elif PYVERSION in ((3, 9), (3, 10), (3, 11)):
         pass
     else:
         raise NotImplementedError(PYVERSION)
@@ -1626,7 +1644,7 @@ class TraceRunner(object):
             # popped when it was exhausted. Now this is handled using END_FOR
             # op code.
             state.fork(pc=end)
-        elif PYVERSION in ((3, 10), (3, 11)):
+        elif PYVERSION in ((3, 9), (3, 10), (3, 11)):
             state.fork(pc=end, npop=2)
         else:
             raise NotImplementedError(PYVERSION)
@@ -1711,7 +1729,10 @@ class TraceRunner(object):
             # https://github.com/python/cpython/commit/2f180ce
             # name set via co_qualname
             name = None
-        elif PYVERSION in ((3, 10),):
+        elif PYVERSION in (
+            (3, 9),
+            (3, 10),
+        ):
             name = state.pop()
         else:
             raise NotImplementedError(PYVERSION)
@@ -1808,7 +1829,10 @@ class TraceRunner(object):
             else:
                 state.terminate()
 
-    elif PYVERSION in ((3, 10),):
+    elif PYVERSION in (
+        (3, 9),
+        (3, 10),
+    ):
 
         def op_RERAISE(self, state, inst):
             # This isn't handled, but the state is set up anyway
@@ -1833,7 +1857,10 @@ class TraceRunner(object):
             res = state.make_temp()
             state.append(inst, item=item, res=res)
             state.push(res)
-    elif PYVERSION in ((3, 10),):
+    elif PYVERSION in (
+        (3, 9),
+        (3, 10),
+    ):
 
         def op_LOAD_METHOD(self, state, inst):
             self.op_LOAD_ATTR(state, inst)
@@ -2100,7 +2127,10 @@ class _State(object):
                     blockstack.pop()
                 else:
                     break
-        elif PYVERSION in ((3, 10),):
+        elif PYVERSION in (
+            (3, 9),
+            (3, 10),
+        ):
             pass  # intentionally bypass
         else:
             raise NotImplementedError(PYVERSION)
@@ -2245,7 +2275,7 @@ def adapt_state_infos(state):
 
     if PYVERSION in ((3, 13),):
         insts = tuple(map(process_function_attributes, state.instructions))
-    elif PYVERSION in ((3, 10), (3, 11), (3, 12)):
+    elif PYVERSION in ((3, 9), (3, 10), (3, 11), (3, 12)):
         insts = tuple(state.instructions)
     else:
         raise NotImplementedError(PYVERSION)
