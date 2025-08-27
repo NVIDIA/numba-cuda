@@ -154,7 +154,7 @@ class CUDATargetContext(BaseContext):
         from numba.cuda.cpython import numbers  # noqa: F401
         from numba.cpython import rangeobj, iterators, enumimpl  # noqa: F401
         from numba.cpython import unicode, charseq  # noqa: F401
-        from numba.cuda.cpython import cmathimpl
+        from numba.cuda.cpython import cmathimpl, mathimpl
         from numba.misc import cffiimpl
         from numba.np import arrayobj  # noqa: F401
         from numba.np import npdatetime  # noqa: F401
@@ -163,7 +163,7 @@ class CUDATargetContext(BaseContext):
             fp16,
             printimpl,
             libdeviceimpl,
-            mathimpl,
+            mathimpl as cuda_mathimpl,
             vector_types,
             bf16,
         )
@@ -177,6 +177,8 @@ class CUDATargetContext(BaseContext):
         self.install_registry(libdeviceimpl.registry)
         self.install_registry(cmathimpl.registry)
         self.install_registry(mathimpl.registry)
+        self.install_registry(numbers.registry)
+        self.install_registry(cuda_mathimpl.registry)
         self.install_registry(vector_types.impl_registry)
         self.install_registry(fp16.target_registry)
         self.install_registry(bf16.target_registry)
