@@ -15,7 +15,7 @@ from numba.core import types, ir, analysis, config
 from numba.cuda import typing
 from numba.cuda.core import postproc, rewrites
 from numba.core.typing.templates import signature
-from numba.core.analysis import (
+from numba.cuda.core.analysis import (
     compute_live_map,
     compute_use_defs,
     compute_cfg_from_blocks,
