@@ -137,47 +137,57 @@ def _get_nvvm_wheel():
 
 def get_nvrtc_dso_path():
     site_paths = [site.getusersitepackages()] + site.getsitepackages()
+    versions = (12, 13)
 
     for sp in site_paths:
-        lib_dir = os.path.join(
-            sp,
-            "nvidia",
-            "cuda_nvrtc",
-            ("bin" if IS_WIN32 else "lib") if sp else None,
-        )
-        if lib_dir and os.path.exists(lib_dir):
-            chosen_path = None
+        for version in versions:
+            if version == 12:
+                lib_dir = os.path.join(
+                    sp,
+                    "nvidia",
+                    "cuda_nvrtc",
+                    ("bin" if IS_WIN32 else "lib"),
+                )
+            elif version == 13:
+                lib_dir = os.path.join(
+                    sp,
+                    "nvidia",
+                    "cu13",
+                    ("bin" if IS_WIN32 else "lib"),
+                    ("x86_64" if IS_WIN32 else ""),
+                )
+            if os.path.exists(lib_dir):
+                chosen_path = None
 
-            # Check for each version of the NVRTC DLL, preferring the most
-            # recent.
-            versions = (
-                "120" if IS_WIN32 else "12",
-                "130" if IS_WIN32 else "13",
-            )
+                if version == 12:
+                    version_str = "120" if IS_WIN32 else "12"
+                elif version == 13:
+                    version_str = "130" if IS_WIN32 else "13"
 
-            for version in versions:
                 dso_path = os.path.join(
                     lib_dir,
-                    f"nvrtc64_{version}_0.dll"
+                    f"nvrtc64_{version_str}_0.dll"
                     if IS_WIN32
-                    else f"libnvrtc.so.{version}",
+                    else f"libnvrtc.so.{version_str}",
                 )
 
                 if os.path.exists(dso_path) and os.path.isfile(dso_path):
                     chosen_path = dso_path
 
-            return chosen_path
+                return chosen_path
 
 
 def _get_nvrtc_wheel():
     dso_path = get_nvrtc_dso_path()
     if dso_path:
-        try:
-            result = ctypes.CDLL(dso_path, mode=ctypes.RTLD_GLOBAL)
-        except OSError:
-            pass
-        else:
-            if IS_WIN32:
+        if IS_WIN32:
+            try:
+                # Add the directory containing the nvrtc builtins DLL to the DLL search path
+                os.add_dll_directory(os.path.dirname(dso_path))
+                result = ctypes.CDLL(dso_path, mode=ctypes.RTLD_GLOBAL)
+            except OSError:
+                pass
+            else:
                 import win32api
 
                 # This absolute path will
@@ -196,9 +206,11 @@ def _get_nvrtc_wheel():
                     raise RuntimeError(
                         f'Path does not exist: "{builtins_path}"'
                     )
-                # Add the directory containing the builtins DLL to the DLL search path
-                # We already have a side effect of loading the nvrtc DLL by the time we get here and this function is only called lazily if nvrtc isn't found elsewhere
-                os.add_dll_directory(os.path.dirname(builtins_path))
+        else:  # Linux
+            try:
+                result = ctypes.CDLL(dso_path, mode=ctypes.RTLD_GLOBAL)
+            except OSError:
+                pass
         return Path(dso_path)
 
 
