@@ -20,7 +20,7 @@ registry = Registry("numbers")
 lower_builtin = registry.lower
 lower_cast = registry.lower_cast
 lower_constant = registry.lower_constant
-lower_getattr = registry.lower_attr
+lower_getattr = registry.lower_getattr
 
 
 def _int_arith_flags(rettype):
