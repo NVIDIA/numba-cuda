@@ -764,3 +764,56 @@ class TestCase(unittest.TestCase):
 
         if not external_compiler_works():
             self.skipTest("No suitable external compiler was found.")
+
+
+class MemoryLeak(object):
+    __enable_leak_check = True
+
+    def memory_leak_setup(self):
+        # Clean up any NRT-backed objects hanging in a dead reference cycle
+        gc.collect()
+        self.__init_stats = rtsys.get_allocation_stats()
+
+    def memory_leak_teardown(self):
+        if self.__enable_leak_check:
+            self.assert_no_memory_leak()
+
+    def assert_no_memory_leak(self):
+        old = self.__init_stats
+        new = rtsys.get_allocation_stats()
+        total_alloc = new.alloc - old.alloc
+        total_free = new.free - old.free
+        total_mi_alloc = new.mi_alloc - old.mi_alloc
+        total_mi_free = new.mi_free - old.mi_free
+        self.assertEqual(total_alloc, total_free)
+        self.assertEqual(total_mi_alloc, total_mi_free)
+
+    def disable_leak_check(self):
+        # For per-test use when MemoryLeakMixin is injected into a TestCase
+        self.__enable_leak_check = False
+
+
+class MemoryLeakMixin(EnableNRTStatsMixin, MemoryLeak):
+    def setUp(self):
+        super(MemoryLeakMixin, self).setUp()
+        self.memory_leak_setup()
+
+    def tearDown(self):
+        gc.collect()
+        self.memory_leak_teardown()
+        super(MemoryLeakMixin, self).tearDown()
+
+
+class CheckWarningsMixin(object):
+    @contextlib.contextmanager
+    def check_warnings(self, messages, category=RuntimeWarning):
+        with warnings.catch_warnings(record=True) as catch:
+            warnings.simplefilter("always")
+            yield
+        found = 0
+        for w in catch:
+            for m in messages:
+                if m in str(w.message):
+                    self.assertEqual(w.category, category)
+                    found += 1
+        self.assertEqual(found, len(messages))
