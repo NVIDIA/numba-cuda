@@ -2,7 +2,6 @@
 # SPDX-License-Identifier: BSD-2-Clause
 
 import sys
-import re
 import os
 from collections import namedtuple
 import platform
@@ -11,7 +10,6 @@ from pathlib import Path
 from numba.core.config import IS_WIN32
 from numba.cuda.misc.findlib import find_lib
 from numba import config
-import ctypes
 
 _env_path_tuple = namedtuple("_env_path_tuple", ["by", "info"])
 
@@ -135,82 +133,79 @@ def _get_nvvm_wheel():
     return None
 
 
-def get_nvrtc_dso_path():
-    site_paths = [site.getusersitepackages()] + site.getsitepackages()
-    versions = (12, 13)
+# def get_nvrtc_dso_path():
+#     site_paths = [site.getusersitepackages()] + site.getsitepackages()
+#     versions = (12, 13)
 
-    for sp in site_paths:
-        for version in versions:
-            if version == 12:
-                lib_dir = os.path.join(
-                    sp,
-                    "nvidia",
-                    "cuda_nvrtc",
-                    ("bin" if IS_WIN32 else "lib"),
-                )
-            elif version == 13:
-                lib_dir = os.path.join(
-                    sp,
-                    "nvidia",
-                    "cu13",
-                    ("bin" if IS_WIN32 else "lib"),
-                    ("x86_64" if IS_WIN32 else ""),
-                )
-            if os.path.exists(lib_dir):
-                chosen_path = None
+#     for sp in site_paths:
+#         for version in versions:
+#             if version == 12:
+#                 lib_dir = os.path.join(
+#                     sp,
+#                     "nvidia",
+#                     "cuda_nvrtc",
+#                     ("bin" if IS_WIN32 else "lib"),
+#                 )
+#             elif version == 13:
+#                 lib_dir = os.path.join(
+#                     sp,
+#                     "nvidia",
+#                     "cu13",
+#                     ("bin" if IS_WIN32 else "lib"),
+#                     ("x86_64" if IS_WIN32 else ""),
+#                 )
+#             if os.path.exists(lib_dir):
+#                 chosen_path = None
 
-                if version == 12:
-                    version_str = "120" if IS_WIN32 else "12"
-                elif version == 13:
-                    version_str = "130" if IS_WIN32 else "13"
+#                 if version == 12:
+#                     version_str = "120" if IS_WIN32 else "12"
+#                 elif version == 13:
+#                     version_str = "130" if IS_WIN32 else "13"
 
-                dso_path = os.path.join(
-                    lib_dir,
-                    f"nvrtc64_{version_str}_0.dll"
-                    if IS_WIN32
-                    else f"libnvrtc.so.{version_str}",
-                )
+#                 dso_path = os.path.join(
+#                     lib_dir,
+#                     f"nvrtc64_{version_str}_0.dll"
+#                     if IS_WIN32
+#                     else f"libnvrtc.so.{version_str}",
+#                 )
 
-                if os.path.exists(dso_path) and os.path.isfile(dso_path):
-                    chosen_path = dso_path
+#                 if os.path.exists(dso_path) and os.path.isfile(dso_path):
+#                     chosen_path = dso_path
 
-                return chosen_path
+#                 return chosen_path
 
 
 def _get_nvrtc_wheel():
-    dso_path = get_nvrtc_dso_path()
-    if dso_path:
-        if IS_WIN32:
-            try:
-                # Add the directory containing the nvrtc builtins DLL to the DLL search path
-                os.add_dll_directory(os.path.dirname(dso_path))
-                result = ctypes.CDLL(dso_path, mode=ctypes.RTLD_GLOBAL)
-            except OSError:
-                pass
-            else:
-                import win32api
+    dso_path = None
+    # CUDA 12
+    try:
+        import nvidia.cuda_nvrtc
 
-                # This absolute path will
-                # always be correct regardless of the package source
-                nvrtc_path = win32api.GetModuleFileNameW(result._handle)
-                dso_dir = os.path.dirname(nvrtc_path)
-                builtins_path = os.path.join(
-                    dso_dir,
-                    [
-                        f
-                        for f in os.listdir(dso_dir)
-                        if re.match("^nvrtc-builtins.*.dll$", f)
-                    ][0],
-                )
-                if not os.path.exists(builtins_path):
-                    raise RuntimeError(
-                        f'Path does not exist: "{builtins_path}"'
-                    )
-        else:  # Linux
-            try:
-                result = ctypes.CDLL(dso_path, mode=ctypes.RTLD_GLOBAL)
-            except OSError:
-                pass
+        nvrtc_path = nvidia.cuda_nvrtc.__path__[0]
+        nvrtc_lib_dir = os.path.join(nvrtc_path, "bin" if IS_WIN32 else "lib")
+        dso_path = os.path.join(
+            nvrtc_lib_dir, "nvrtc64_120_0.dll" if IS_WIN32 else "libnvrtc.so.12"
+        )
+    except ImportError:
+        pass
+
+    # CUDA 13
+    try:
+        import nvidia.cu13
+
+        cuda13_path = nvidia.cu13.__path__[0]
+        nvrtc_lib_dir = os.path.join(
+            cuda13_path,
+            "bin" if IS_WIN32 else "lib",
+            "x86_64" if IS_WIN32 else "",
+        )
+        dso_path = os.path.join(
+            nvrtc_lib_dir, "nvrtc64_130_0.dll" if IS_WIN32 else "libnvrtc.so.13"
+        )
+    except ImportError:
+        pass
+
+    if dso_path:
         return Path(dso_path)
 
 
