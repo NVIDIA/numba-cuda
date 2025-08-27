@@ -133,48 +133,6 @@ def _get_nvvm_wheel():
     return None
 
 
-# def get_nvrtc_dso_path():
-#     site_paths = [site.getusersitepackages()] + site.getsitepackages()
-#     versions = (12, 13)
-
-#     for sp in site_paths:
-#         for version in versions:
-#             if version == 12:
-#                 lib_dir = os.path.join(
-#                     sp,
-#                     "nvidia",
-#                     "cuda_nvrtc",
-#                     ("bin" if IS_WIN32 else "lib"),
-#                 )
-#             elif version == 13:
-#                 lib_dir = os.path.join(
-#                     sp,
-#                     "nvidia",
-#                     "cu13",
-#                     ("bin" if IS_WIN32 else "lib"),
-#                     ("x86_64" if IS_WIN32 else ""),
-#                 )
-#             if os.path.exists(lib_dir):
-#                 chosen_path = None
-
-#                 if version == 12:
-#                     version_str = "120" if IS_WIN32 else "12"
-#                 elif version == 13:
-#                     version_str = "130" if IS_WIN32 else "13"
-
-#                 dso_path = os.path.join(
-#                     lib_dir,
-#                     f"nvrtc64_{version_str}_0.dll"
-#                     if IS_WIN32
-#                     else f"libnvrtc.so.{version_str}",
-#                 )
-
-#                 if os.path.exists(dso_path) and os.path.isfile(dso_path):
-#                     chosen_path = dso_path
-
-#                 return chosen_path
-
-
 def _get_nvrtc_wheel():
     dso_path = None
     # CUDA 12
@@ -205,7 +163,7 @@ def _get_nvrtc_wheel():
     except ImportError:
         pass
 
-    if dso_path:
+    if dso_path and os.path.exists(dso_path) and os.path.isfile(dso_path):
         return Path(dso_path)
 
 

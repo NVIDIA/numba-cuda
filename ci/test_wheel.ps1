@@ -33,8 +33,6 @@ $package = Resolve-Path wheel\numba_cuda*.whl | Select-Object -ExpandProperty Pa
 echo "Package path: $package"
 python -m pip install "${package}[cu${CUDA_VER_MAJOR},test-cu${CUDA_VER_MAJOR}]"
 
-$SYS_PREFIX = (python -c "import sys; print(sys.prefix)")
-
 rapids-logger "Build tests"
 $NUMBA_CUDA_TEST_BIN_DIR = (python ci\get_test_binary_dir.py)
 echo "Test binary dir: $NUMBA_CUDA_TEST_BIN_DIR"
