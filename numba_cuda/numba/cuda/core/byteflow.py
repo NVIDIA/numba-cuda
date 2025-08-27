@@ -18,7 +18,7 @@ from numba.cuda.utils import (
 )
 from numba.cuda.core.controlflow import NEW_BLOCKERS, CFGraph
 from numba.core.ir import Loc
-from numba.core.errors import UnsupportedBytecodeError
+from numba.cuda.errors import UnsupportedBytecodeError
 
 
 _logger = logging.getLogger(__name__)
