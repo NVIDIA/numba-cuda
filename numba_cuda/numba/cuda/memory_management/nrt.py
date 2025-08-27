@@ -159,6 +159,10 @@ class _Runtime:
         if self._initialized:
             return
 
+        from numba_cuda.numba.cuda.memory_management import arrayobj_extras
+
+        arrayobj_extras.initialize()
+
         # Initialize the memsys
         self.initialize(stream)
 
