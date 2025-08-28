@@ -1,6 +1,9 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-2-Clause
 
+from collections import OrderedDict
+import bisect
+
 import numba.cuda as cuda
 from numba.cuda.testing import unittest, CUDATestCase
 import numpy as np
@@ -299,12 +302,52 @@ class Bfloat16Test(CUDATestCase):
         self.skip_unsupported()
 
         operations = [
-            (operator.add, "fma.rn.bf16"),
-            (operator.sub, "fma.rn.bf16"),
-            (operator.mul, "fma.rn.bf16"),
+            (
+                operator.add,
+                OrderedDict(
+                    {
+                        (
+                            7,
+                            0,
+                        ): ".s16",  # All CC prior to 8.0 uses bit operations
+                        (8, 0): "fma.rn.bf16",  # 8.0 uses fma
+                        (9, 0): "add.bf16",  # 9.0 uses native add
+                    }
+                ),
+            ),
+            (
+                operator.sub,
+                OrderedDict(
+                    {
+                        (
+                            7,
+                            0,
+                        ): ".s16",  # All CC prior to 8.0 uses bit operations
+                        (8, 0): "fma.rn.bf16",  # 8.0 uses fma
+                        (9, 0): "sub.bf16",  # 9.0 uses native sub
+                    }
+                ),
+            ),
+            (
+                operator.mul,
+                OrderedDict(
+                    {
+                        (
+                            7,
+                            0,
+                        ): ".s16",  # All CC prior to 8.0 uses bit operations
+                        (8, 0): "fma.rn.bf16",  # 8.0 uses fma
+                        (9, 0): "mul.bf16",  # 9.0 uses native mul
+                    }
+                ),
+            ),
             (
                 operator.truediv,
-                "div.approx.f32",
+                OrderedDict(
+                    {
+                        (10, 0): "div.approx.f32",
+                    }
+                ),
             ),  # no native bf16 div, see cuda_bf16.hpp:L3067
         ]
 
@@ -322,8 +365,12 @@ class Bfloat16Test(CUDATestCase):
                 np.testing.assert_allclose(arr, [op(3.14, 5)], atol=1e-1)
 
                 ptx = next(iter(kernel.inspect_lto_ptx().values()))
-
-                assert ptx_op in ptx, ptx
+                cc = cuda.get_current_device().compute_capability
+                idx = bisect.bisect_right(list(ptx_op.keys()), cc)
+                # find the lowest major version from ptx_op dictionary
+                idx = max(0, idx - 1)
+                expected = list(ptx_op.values())[idx]
+                assert expected in ptx, ptx
 
 
 if __name__ == "__main__":
