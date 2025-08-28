@@ -47,7 +47,7 @@ def from_cuda_array_interface(desc, owner=None, sync=True):
     )
     size = driver.memory_size_from_info(shape, strides, dtype.itemsize)
 
-    devptr = driver.get_devptr_for_active_ctx(desc["data"][0])
+    devptr = driver.binding.CUdeviceptr(desc["data"][0]) # driver.get_devptr_for_active_ctx(desc["data"][0])
     data = driver.MemoryPointer(
         current_context(), devptr, size=size, owner=owner
     )
