@@ -2130,8 +2130,8 @@ class MemoryPointer(object):
 
     @property
     def device_ctypes_pointer(self):
-        # if USE_NV_BINDING:
-        #     return drvapi.cu_device_ptr(int(self.device_pointer))
+        if USE_NV_BINDING:
+            return drvapi.cu_device_ptr(int(self.device_pointer))
         return self.device_pointer
 
     @property
