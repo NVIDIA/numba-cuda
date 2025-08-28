@@ -8,13 +8,13 @@ from copy import copy
 import warnings
 
 from numba.cuda.core import ir
+from numba.cuda.core import typeinfer
 from numba.core import (
     errors,
     types,
     typing,
     funcdesc,
     rewrites,
-    typeinfer,
     config,
     lowering,
 )

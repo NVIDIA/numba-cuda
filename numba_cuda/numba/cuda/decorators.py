@@ -199,7 +199,7 @@ def jit(
                     raise TypeError("CUDA kernel must have void return type.")
 
                 if device:
-                    from numba.core import typeinfer
+                    from numba.cuda.core import typeinfer
 
                     with typeinfer.register_dispatcher(disp):
                         disp.compile_device(argtypes, restype)

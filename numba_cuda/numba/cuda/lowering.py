@@ -12,7 +12,6 @@ from numba.core import (
     typing,
     utils,
     types,
-    ir,
     debuginfo,
     funcdesc,
     generators,
@@ -21,7 +20,7 @@ from numba.core import (
     removerefctpass,
     targetconfig,
 )
-from numba.cuda.core import ir_utils
+from numba.cuda.core import ir_utils, ir
 from numba.core.errors import (
     LoweringError,
     new_error_context,

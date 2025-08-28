@@ -12,15 +12,8 @@ from numba.cuda.core.compiler_machinery import (
     SSACompliantMixin,
     register_pass,
 )
-from numba.cuda.core import ir
-from numba.cuda.core import postproc, bytecode
-from numba.core import (
-    errors,
-    types,
-    rewrites,
-    config,
-    transforms,
-)
+from numba.cuda.core import postproc, bytecode, ir, rewrites, errors, transforms
+from numba.core import types, config
 from numba.cuda.core import consts
 from numba.cuda.core.interpreter import Interpreter
 

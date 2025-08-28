@@ -5,9 +5,10 @@ import types as pytypes  # avoid confusion with numba.types
 import copy
 import ctypes
 import numba.core.analysis
-from numba.cuda.core import ir, ir_utils
-from numba.core import types, typing, errors, rewrites, config, cgutils
+from numba.cuda.core import ir_utils, ir, rewrites, errors
+from numba.core import types, typing, config, cgutils
 from numba.parfors.parfor import internal_prange
+from numba.cuda import utils
 from numba.cuda.core.ir_utils import (
     next_label,
     add_offset_to_labels,
@@ -378,7 +379,7 @@ class InlineWorker(object):
             if arg is None:
                 raise TypeError("{} must not be None".format(name))
 
-        from numba.core.compiler import DefaultPassBuilder
+        from numba.cuda.core.compiler import DefaultPassBuilder
 
         # check the stuff needed to run the more advanced compilation pipeline
         # is valid if any of it is provided
@@ -564,9 +565,9 @@ class InlineWorker(object):
         Disable SSA transformation by default, since the call site won't be in
         SSA form and self.inline_ir depends on this being the case.
         """
-        from numba.core.compiler import StateDict, _CompileStatus
-        from numba.core.untyped_passes import ExtractByteCode
-        from numba.core import bytecode
+        from numba.cuda.core.compiler import StateDict, _CompileStatus
+        from numba.cuda.core.untyped_passes import ExtractByteCode
+        from numba.cuda.core import bytecode
         from numba.parfors.parfor import ParforDiagnostics
 
         state = StateDict()
@@ -602,8 +603,8 @@ class InlineWorker(object):
     def update_type_and_call_maps(self, callee_ir, arg_typs):
         """Updates the type and call maps based on calling callee_ir with
         arguments from arg_typs"""
-        from numba.core.ssa import reconstruct_ssa
-        from numba.core.typed_passes import PreLowerStripPhis
+        from numba.cuda.core.ssa import reconstruct_ssa
+        from numba.cuda.core.typed_passes import PreLowerStripPhis
 
         if not self._permit_update_type_and_call_maps:
             msg = (
@@ -611,7 +612,7 @@ class InlineWorker(object):
                 "calltypes missing in initialization."
             )
             raise ValueError(msg)
-        from numba.core import typed_passes
+        from numba.cuda.core import typed_passes
 
         # call branch pruning to simplify IR and avoid inference errors
         callee_ir._definitions = ir_utils.build_definitions(callee_ir.blocks)
@@ -685,7 +686,7 @@ def inline_closure_call(
     )
     # first, get the IR of the callee
     if isinstance(callee, pytypes.FunctionType):
-        from numba.core import compiler
+        from numba.cuda.core import compiler
 
         callee_ir = compiler.run_frontend(callee, inline_closures=True)
     else:
@@ -754,11 +755,11 @@ def inline_closure_call(
         _debug_dump(callee_ir)
 
     if typingctx:
-        from numba.core import typed_passes
+        from numba.cuda.core import typed_passes
 
         # call branch pruning to simplify IR and avoid inference errors
         callee_ir._definitions = ir_utils.build_definitions(callee_ir.blocks)
-        numba.core.analysis.dead_branch_prune(callee_ir, arg_typs)
+        numba.cuda.core.analysis.dead_branch_prune(callee_ir, arg_typs)
         try:
             [f_typemap, f_return_type, f_calltypes, _] = (
                 typed_passes.type_inference_stage(
@@ -839,7 +840,7 @@ def _get_callee_args(call_expr, callee, loc, func_ir):
 
     # handle defaults and kw arguments using pysignature if callee is function
     if isinstance(callee, pytypes.FunctionType):
-        pysig = numba.core.utils.pysignature(callee)
+        pysig = utils.pysignature(callee)
         normal_handler = lambda index, param, default: default
         default_handler = lambda index, param, default: ir.Const(default, loc)
 

@@ -12,7 +12,7 @@ from functools import total_ordering
 from io import StringIO
 
 from numba.core import errors, config
-from numba.cuda.utils import UNARY_BUITINS_TO_OPERATORS, OPERATORS_TO_BUILTINS
+from numba.cuda.utils import UNARY_BUILTINS_TO_OPERATORS, OPERATORS_TO_BUILTINS
 from numba.core.errors import (
     NotDefinedError,
     RedefinedError,
@@ -445,7 +445,7 @@ class Expr(Inst):
         assert isinstance(value, (str, Var, FunctionType))
         assert isinstance(loc, Loc)
         op = "unary"
-        fn = UNARY_BUITINS_TO_OPERATORS.get(fn, fn)
+        fn = UNARY_BUILTINS_TO_OPERATORS.get(fn, fn)
         return cls(op=op, loc=loc, fn=fn, value=value)
 
     @classmethod
