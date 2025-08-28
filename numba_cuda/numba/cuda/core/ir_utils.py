@@ -1987,7 +1987,7 @@ def get_ir_of_code(glbls, fcode):
     import numba.core.inline_closurecall
 
     inline_pass = numba.core.inline_closurecall.InlineClosureCallPass(
-        ir, numba.core.cpu.ParallelOptions(False), swapped
+        ir, numba.cuda.core.options.ParallelOptions(False), swapped
     )
     inline_pass.run()
 

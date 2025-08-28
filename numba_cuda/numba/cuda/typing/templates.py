@@ -20,7 +20,7 @@ from numba.core.errors import (
     TypingError,
     InternalError,
 )
-from numba.core.cpu_options import InlineOptions
+from numba.cuda.core.options import InlineOptions
 from numba.core.typing.templates import Signature as CoreSignature
 from numba.cuda.core import ir_utils
 
