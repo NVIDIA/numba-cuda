@@ -1007,10 +1007,3 @@ def cuda_dispatcher_const(context, builder, ty, pyval):
 # NumPy
 
 register_ufuncs(ufunc_db.get_ufuncs(), lower)
-
-
-def impl_ret_untracked(ctx, builder, retty, ret):
-    """
-    The return type is not a NRT object.
-    """
-    return ret
