@@ -19,7 +19,9 @@ import operator
 import numba
 from llvmlite import ir
 from numba import types
+from numba.cuda.cudadrv.driver import _have_nvjitlink
 from numba.core.datamodel import PrimitiveModel, StructModel
+from numba.core.errors import NumbaPerformanceWarning
 from numba.core.extending import (
     lower_cast,
     make_attribute_wrapper,
@@ -56,6 +58,7 @@ from numba.types import (
     uint64,
     void,
 )
+from warnings import warn
 
 float32x2 = vector_types["float32x2"]
 
@@ -70,6 +73,17 @@ lower_attr = target_registry.lower_getattr
 lower_constant = target_registry.lower_constant
 
 # Shim Stream:
+
+lto_warning_raised = False
+
+
+def lto_warning_callback(_):
+    global lto_warning_raised
+    if not _have_nvjitlink():
+        if not lto_warning_raised:
+            lto_warning_raised = True
+            msg = "float16 relies on LTO for performance. LTO requires nvjitlink, which is not available or not sufficiently recent (>=12.3)"
+            warn(NumbaPerformanceWarning(msg))
 
 
 class _KeyedStringIO(io.StringIO):
@@ -93,7 +107,7 @@ shim_include = "#include <" + "cuda_fp16.h" + ">"
 shim_prefix = shim_defines + "\n" + shim_include
 shim_stream = _KeyedStringIO()
 shim_stream.write(shim_prefix)
-shim_obj = CUSource(shim_stream)
+shim_obj = CUSource(shim_stream, setup_callback=lto_warning_callback)
 
 
 # Enums:
