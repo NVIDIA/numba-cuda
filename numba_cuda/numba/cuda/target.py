@@ -148,12 +148,14 @@ class CUDATargetContext(BaseContext):
         self._target_data = None
 
     def load_additional_registries(self):
-        # side effect of import needed for numba.cpython.*, the builtins
+        # side effect of import needed for numba.cpython.*, numba.cuda.cpython.*, the builtins
         # registry is updated at import time.
-        from numba.cpython import numbers, tupleobj, slicing  # noqa: F401
+        from numba.cpython import tupleobj, slicing  # noqa: F401
+        from numba.cuda.cpython import numbers  # noqa: F401
         from numba.cpython import rangeobj, iterators, enumimpl  # noqa: F401
         from numba.cpython import unicode, charseq  # noqa: F401
-        from numba.cpython import cmathimpl
+        from numba.cuda.cpython import cmathimpl, mathimpl
+        from numba.core import optional  # noqa: F401
         from numba.misc import cffiimpl
         from numba.np import arrayobj  # noqa: F401
         from numba.np import npdatetime  # noqa: F401
@@ -162,7 +164,7 @@ class CUDATargetContext(BaseContext):
             fp16,
             printimpl,
             libdeviceimpl,
-            mathimpl,
+            mathimpl as cuda_mathimpl,
             vector_types,
             bf16,
         )
@@ -176,6 +178,8 @@ class CUDATargetContext(BaseContext):
         self.install_registry(libdeviceimpl.registry)
         self.install_registry(cmathimpl.registry)
         self.install_registry(mathimpl.registry)
+        self.install_registry(numbers.registry)
+        self.install_registry(cuda_mathimpl.registry)
         self.install_registry(vector_types.impl_registry)
         self.install_registry(fp16.target_registry)
         self.install_registry(bf16.target_registry)

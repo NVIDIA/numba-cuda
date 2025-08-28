@@ -249,12 +249,7 @@ def mk_range_block(typemap, start, stop, step, calltypes, scope, loc):
     range_call_assign = ir.Assign(range_call, range_call_var, loc)
     # iter_var = getiter(range_call_var)
     iter_call = ir.Expr.getiter(range_call_var, loc)
-    if config.USE_LEGACY_TYPE_SYSTEM:
-        calltype_sig = signature(
-            types.range_iter64_type, types.range_state64_type
-        )
-    else:
-        calltype_sig = signature(types.range_iter_type, types.range_state_type)
+    calltype_sig = signature(types.range_iter64_type, types.range_state64_type)
     calltypes[iter_call] = calltype_sig
     iter_var = ir.Var(scope, mk_unique_var("$iter_var"), loc)
     typemap[iter_var.name] = types.iterators.RangeIteratorType(types.intp)
@@ -333,10 +328,7 @@ def mk_loop_header(typemap, phi_var, calltypes, scope, loc):
         types.intp, types.boolean
     )
     iternext_call = ir.Expr.iternext(phi_var, loc)
-    if config.USE_LEGACY_TYPE_SYSTEM:
-        range_iter_type = types.range_iter64_type
-    else:
-        range_iter_type = types.range_iter_type
+    range_iter_type = types.range_iter64_type
     calltypes[iternext_call] = signature(
         types.containers.Pair(types.intp, types.boolean), range_iter_type
     )
@@ -813,7 +805,6 @@ def has_no_side_effect(rhs, lives, call_table):
     """Returns True if this expression has no side effects that
     would prevent re-ordering.
     """
-    from numba.misc.special import prange
 
     if isinstance(rhs, ir.Expr) and rhs.op == "call":
         func_name = rhs.func.name
@@ -826,8 +817,6 @@ def has_no_side_effect(rhs, lives, call_table):
             or call_list == ["stencil", numba]
             or call_list == ["log", numpy]
             or call_list == ["dtype", numpy]
-            or call_list == [prange]
-            or call_list == ["prange", numba]
             or call_list == ["pndindex", numba]
             or call_list == ["ceil", math]
             or call_list == [max]

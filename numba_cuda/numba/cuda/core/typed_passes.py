@@ -451,9 +451,9 @@ class NoPythonBackend(LoweringPass):
         lowered = state["cr"]
         signature = typing.signature(state.return_type, *state.args)
 
-        from numba.core.compiler import compile_result
+        from numba.cuda.compiler import cuda_compile_result
 
-        state.cr = compile_result(
+        state.cr = cuda_compile_result(
             typing_context=state.typingctx,
             target_context=state.targetctx,
             entry_point=lowered.cfunc,
