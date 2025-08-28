@@ -341,7 +341,7 @@ __device__ int foo(int x) {
 """
         linker.add_cu(code, "foo")
         ptx = linker.get_linked_ptx().decode()
-        assert "target sm_75" in str(ptx.code)
+        assert "target sm_75" in ptx
 
 
 if __name__ == "__main__":
