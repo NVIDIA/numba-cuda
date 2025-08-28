@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: BSD-2-Clause
+
 import numpy as np
 import operator
 
@@ -5,8 +8,7 @@ from numba.cuda.typing.templates import AbstractTemplate, Registry, signature
 from numba.core import types
 from numba.cuda import utils
 from numba.core.errors import TypingError, NumbaTypeError
-from numba import pndindex
-from numba.np.numpy_support import (
+from numba.cuda.np.numpy_support import (
     ufunc_find_matching_loop,
     supported_ufunc_loop,
     from_dtype,
@@ -628,7 +630,6 @@ class NdIter(AbstractTemplate):
         return signature(nditerty, *args)
 
 
-@infer_global(pndindex)
 @infer_global(np.ndindex)
 class NdIndex(AbstractTemplate):
     def generic(self, args, kws):
