@@ -3,7 +3,7 @@
 
 from numba.core.targetconfig import TargetConfig, Option
 
-from numba.core import cpu
+from numba.cuda.core import cpu
 
 
 class Flags(TargetConfig):
