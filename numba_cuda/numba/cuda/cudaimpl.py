@@ -10,7 +10,7 @@ from llvmlite import ir
 import llvmlite.binding as ll
 
 from numba.core.imputils import Registry
-from numba.core.typing.npydecl import parse_dtype
+from numba.cuda.typing.npydecl import parse_dtype
 from numba.core.datamodel import models
 from numba.core import types
 from numba.cuda import cgutils
