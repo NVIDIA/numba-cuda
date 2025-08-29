@@ -7,7 +7,7 @@ import sys
 
 from numba.core.ir import Loc
 from numba.core.errors import UnsupportedError
-from numba.core.utils import PYVERSION
+from numba.cuda.utils import PYVERSION
 
 # List of bytecodes creating a new block in the control flow graph
 # (in addition to explicit jump labels).

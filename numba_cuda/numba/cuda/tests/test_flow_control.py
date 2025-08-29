@@ -9,7 +9,7 @@ from numba.cuda.core.controlflow import CFGraph, ControlFlowAnalysis
 from numba.core import types
 from numba.core.bytecode import FunctionIdentity, ByteCode, _fix_LOAD_GLOBAL_arg
 from numba.cuda.tests.support import TestCase
-from numba.cuda.core import utils
+from numba.cuda import utils
 
 enable_pyobj_flags = {}
 
