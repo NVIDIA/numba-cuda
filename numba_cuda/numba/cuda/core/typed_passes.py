@@ -7,6 +7,7 @@ from collections import defaultdict, namedtuple
 from copy import copy
 import warnings
 
+from numba.cuda.core import typeinfer
 from numba.core import (
     errors,
     types,
@@ -14,7 +15,6 @@ from numba.core import (
     ir,
     funcdesc,
     rewrites,
-    typeinfer,
     config,
     lowering,
 )
