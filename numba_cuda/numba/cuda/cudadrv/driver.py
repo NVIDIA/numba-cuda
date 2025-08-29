@@ -2836,10 +2836,7 @@ class _LinkerBase(metaclass=ABCMeta):
     def add_cu(self, cu, name):
         """Add CUDA source in a string to the link. The name of the source
         file should be specified in `name`."""
-        with driver.get_active_context() as ac:
-            dev = driver.get_device(ac.devnum)
-            cc = dev.compute_capability
-        ptx, log = nvrtc.compile(cu, name, cc)
+        ptx, log = nvrtc.compile(cu, name, self.cc)
 
         if config.DUMP_ASSEMBLY:
             print(("ASSEMBLY %s" % name).center(80, "-"))
@@ -3003,10 +3000,7 @@ class _Linker(_LinkerBase):
         self._object_codes.append(obj)
 
     def add_cu(self, cu, name="<cudapy-cu>"):
-        with driver.get_active_context() as ac:
-            dev = driver.get_device(ac.devnum)
-            cc = dev.compute_capability
-        obj, log = nvrtc.compile(cu, name, cc, ltoir=self.lto)
+        obj, log = nvrtc.compile(cu, name, self.cc, ltoir=self.lto)
 
         if not self.lto and config.DUMP_ASSEMBLY:
             print(("ASSEMBLY %s" % name).center(80, "-"))

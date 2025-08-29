@@ -329,6 +329,20 @@ class TestLinker(CUDATestCase):
         calc_size = np.dtype(np.float64).itemsize * LMEM_SIZE
         self.assertGreaterEqual(local_mem_size, calc_size)
 
+    def test_link_for_different_cc(self):
+        if not config.CUDA_USE_NVIDIA_BINDING:
+            self.skipTest("Ctypes Linker does not support outputting PTX.")
+
+        linker = _Linker.new(cc=(7, 5), lto=True)
+        code = """
+__device__ int foo(int x) {
+    return x + 1;
+}
+"""
+        linker.add_cu(code, "foo")
+        ptx = linker.get_linked_ptx().decode()
+        assert "target sm_75" in ptx
+
 
 if __name__ == "__main__":
     unittest.main()
