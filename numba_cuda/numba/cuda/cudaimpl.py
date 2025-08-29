@@ -25,6 +25,10 @@ registry = Registry()
 lower = registry.lower
 lower_attr = registry.lower_getattr
 lower_constant = registry.lower_constant
+lower_getattr_generic = registry.lower_getattr_generic
+lower_setattr = registry.lower_setattr
+lower_setattr_generic = registry.lower_setattr_generic
+lower_cast = registry.lower_cast
 
 
 def initialize_dim3(builder, prefix):
