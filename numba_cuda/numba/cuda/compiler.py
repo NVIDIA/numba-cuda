@@ -10,7 +10,6 @@ from numba.core import ir as numba_ir
 from numba.core import (
     types,
     funcdesc,
-    config,
     bytecode,
     cpu,
 )
@@ -21,7 +20,7 @@ from numba.cuda.core.interpreter import Interpreter
 from numba.cuda import cgutils, typing, lowering, nvvmutils, utils
 from numba.cuda.api import get_current_device
 from numba.cuda.codegen import ExternalCodeLibrary
-from numba.cuda.core import sigutils, postproc
+from numba.cuda.core import sigutils, postproc, config
 from numba.cuda.cudadrv import nvvm, nvrtc
 from numba.cuda.descriptor import cuda_target
 from numba.cuda.flags import CUDAFlags
