@@ -17,11 +17,10 @@ from numba.core import (
     errors,
     types,
     ir,
-    rewrites,
     config,
     transforms,
 )
-from numba.cuda.core import consts
+from numba.cuda.core import consts, rewrites
 from numba.cuda.core.interpreter import Interpreter
 
 
