@@ -13,5 +13,5 @@ compile_ptx_for_current_device = None
 declare_device_function = None
 
 
-def run_frontend(func, inline_closures=False, emit_dels=False):
+def run_frontend(func):
     pass
