@@ -37,9 +37,6 @@ from numba.core.analysis import (
 from numba.core.imputils import impl_ret_untracked
 from numba.core.extending import intrinsic
 from numba.core.typing import signature
-from numba.cpython.listobj import ListIterInstance
-from numba.cpython.rangeobj import range_impl_map
-from numba.np.arrayobj import make_array
 
 from numba.cuda.core import postproc
 from numba.np.unsafe.ndarray import empty_inferred as unsafe_empty_inferred
@@ -1091,6 +1088,8 @@ def length_of_iterator(typingctx, val):
 
         def codegen(context, builder, sig, args):
             (value,) = args
+            from numba.cpython.rangeobj import range_impl_map
+
             iter_type = range_impl_map[val_type][1]
             iterobj = cgutils.create_struct_proxy(iter_type)(
                 context, builder, value
@@ -1106,6 +1105,8 @@ def length_of_iterator(typingctx, val):
         def codegen(context, builder, sig, args):
             (value,) = args
             intp_t = context.get_value_type(types.intp)
+            from numba.cpython.listobj import ListIterInstance
+
             iterobj = ListIterInstance(context, builder, sig.args[0], value)
             return impl_ret_untracked(context, builder, intp_t, iterobj.size)
 
@@ -1118,6 +1119,8 @@ def length_of_iterator(typingctx, val):
             intp_t = context.get_value_type(types.intp)
             iterobj = context.make_helper(builder, iterty, value=value)
             arrayty = iterty.array_type
+            from numba.np.arrayobj import make_array
+
             ary = make_array(arrayty)(context, builder, value=iterobj.array)
             shape = cgutils.unpack_tuple(builder, ary.shape)
             # array iterates along the outer dimension
