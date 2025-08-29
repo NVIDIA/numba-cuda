@@ -20,7 +20,7 @@ from collections import defaultdict
 from numba import config
 from numba.core import ir, ir_utils, errors
 from numba.cuda.utils import OrderedSet, _lazy_pformat
-from numba.core.analysis import compute_cfg_from_blocks
+from numba.cuda.core.analysis import compute_cfg_from_blocks
 
 
 _logger = logging.getLogger(__name__)
