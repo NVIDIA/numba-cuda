@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-2-Clause
 
-from numba.core.tracing import event
+from numba.cuda.core.tracing import event
 
 from numba.cuda.core import bytecode
 from numba.core import callconv, config, errors
