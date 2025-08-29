@@ -1,15 +1,12 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-2-Clause
 
-import dis
 import itertools
-
-from numba.cuda.compiler import CompilerBase, PassManager
 
 from numba.core import errors, types, typing
 from numba.core.typeconv import Conversion
 
-from numba.cuda.testing import CUDATestCase
+from numba.cuda.testing import CUDATestCase, skip_on_cudasim
 from numba.tests.test_typeconv import CompatibilityTestMixin
 from numba.cuda.core.untyped_passes import TranslateByteCode, IRProcessing
 from numba.cuda.core.typed_passes import PartialTypeInference
@@ -31,11 +28,6 @@ f32 = types.float32
 f64 = types.float64
 c64 = types.complex64
 c128 = types.complex128
-
-skip_unless_load_fast_and_clear = unittest.skipUnless(
-    "LOAD_FAST_AND_CLEAR" in dis.opmap,
-    "Requires LOAD_FAST_AND_CLEAR opcode",
-)
 
 
 class TestUnify(CUDATestCase):
@@ -481,26 +473,27 @@ class DummyCR(FunctionPass):
         return True
 
 
-class TyperCompiler(CompilerBase):
-    """A compiler pipeline that skips passes after typing (provides partial typing info
-    but not lowering).
-    """
-
-    def define_pipelines(self):
-        pm = PassManager("custom_pipeline")
-        pm.add_pass(TranslateByteCode, "analyzing bytecode")
-        pm.add_pass(IRProcessing, "processing IR")
-        pm.add_pass(PartialTypeInference, "do partial typing")
-        pm.add_pass_after(DummyCR, PartialTypeInference)
-        pm.finalize()
-        return [pm]
-
-
 def get_func_typing_errs(func, arg_types):
     """
     Get typing errors for function 'func'. It creates a pipeline that runs untyped
     passes as well as type inference.
     """
+    from numba.cuda.compiler import CompilerBase, PassManager
+
+    class TyperCompiler(CompilerBase):
+        """A compiler pipeline that skips passes after typing (provides partial typing info
+        but not lowering).
+        """
+
+        def define_pipelines(self):
+            pm = PassManager("custom_pipeline")
+            pm.add_pass(TranslateByteCode, "analyzing bytecode")
+            pm.add_pass(IRProcessing, "processing IR")
+            pm.add_pass(PartialTypeInference, "do partial typing")
+            pm.add_pass_after(DummyCR, PartialTypeInference)
+            pm.finalize()
+            return [pm]
+
     from numba.cuda.descriptor import cuda_target
 
     typingctx = cuda_target.typing_context
@@ -517,6 +510,7 @@ def get_func_typing_errs(func, arg_types):
     return pipeline.state.typing_errors
 
 
+@skip_on_cudasim
 class TestPartialTypingErrors(CUDATestCase):
     """
     Make sure partial typing stores type errors in compiler state properly
