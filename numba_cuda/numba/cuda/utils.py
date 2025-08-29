@@ -29,13 +29,15 @@ from inspect import Signature as pySignature  # noqa: F401
 from inspect import Parameter as pyParameter  # noqa: F401
 
 from numba.core.config import (
-    PYVERSION,  # noqa: F401
     MACHINE_BITS,  # noqa: F401
     DEVELOPER_MODE,
 )  # noqa: F401
 from numba.core import types, config
 
 from collections.abc import Mapping, Sequence, MutableSet, MutableMapping
+
+# Python version in (major, minor) tuple
+PYVERSION = sys.version_info[:2]
 
 
 def erase_traceback(exc_value):

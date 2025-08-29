@@ -3,48 +3,29 @@
 
 import numpy as np
 import re
-from numba.core import types, errors, config
+from numba.core import types, errors
 
 
 numpy_version = tuple(map(int, np.__version__.split(".")[:2]))
 
 
-if getattr(config, "USE_LEGACY_TYPE_SYSTEM", True):
-    FROM_DTYPE = {
-        np.dtype("bool"): types.boolean,
-        np.dtype("int8"): types.int8,
-        np.dtype("int16"): types.int16,
-        np.dtype("int32"): types.int32,
-        np.dtype("int64"): types.int64,
-        np.dtype("uint8"): types.uint8,
-        np.dtype("uint16"): types.uint16,
-        np.dtype("uint32"): types.uint32,
-        np.dtype("uint64"): types.uint64,
-        np.dtype("float32"): types.float32,
-        np.dtype("float64"): types.float64,
-        np.dtype("float16"): types.float16,
-        np.dtype("complex64"): types.complex64,
-        np.dtype("complex128"): types.complex128,
-        np.dtype(object): types.pyobject,
-    }
-else:
-    FROM_DTYPE = {
-        np.dtype("bool"): types.np_bool_,
-        np.dtype("int8"): types.np_int8,
-        np.dtype("int16"): types.np_int16,
-        np.dtype("int32"): types.np_int32,
-        np.dtype("int64"): types.np_int64,
-        np.dtype("uint8"): types.np_uint8,
-        np.dtype("uint16"): types.np_uint16,
-        np.dtype("uint32"): types.np_uint32,
-        np.dtype("uint64"): types.np_uint64,
-        np.dtype("float32"): types.np_float32,
-        np.dtype("float64"): types.np_float64,
-        np.dtype("float16"): types.np_float16,
-        np.dtype("complex64"): types.np_complex64,
-        np.dtype("complex128"): types.np_complex128,
-        np.dtype(object): types.pyobject,
-    }
+FROM_DTYPE = {
+    np.dtype("bool"): types.boolean,
+    np.dtype("int8"): types.int8,
+    np.dtype("int16"): types.int16,
+    np.dtype("int32"): types.int32,
+    np.dtype("int64"): types.int64,
+    np.dtype("uint8"): types.uint8,
+    np.dtype("uint16"): types.uint16,
+    np.dtype("uint32"): types.uint32,
+    np.dtype("uint64"): types.uint64,
+    np.dtype("float32"): types.float32,
+    np.dtype("float64"): types.float64,
+    np.dtype("float16"): types.float16,
+    np.dtype("complex64"): types.complex64,
+    np.dtype("complex128"): types.complex128,
+    np.dtype(object): types.pyobject,
+}
 
 
 re_typestr = re.compile(r"[<>=\|]([a-z])(\d+)?$", re.I)

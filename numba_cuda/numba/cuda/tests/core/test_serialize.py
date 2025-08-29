@@ -12,7 +12,7 @@ from multiprocessing import get_context
 
 import numba
 from numba.core.errors import TypingError
-from numba.tests.support import TestCase
+from numba.cuda.tests.support import TestCase
 from numba.core.target_extension import resolve_dispatcher_from_str
 from numba.cuda.cloudpickle import dumps, loads
 
