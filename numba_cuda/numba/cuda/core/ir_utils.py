@@ -11,9 +11,9 @@ import warnings
 
 import numba
 from numba.core.extending import _Intrinsic
-from numba.core import types, ir, analysis, config
+from numba.core import types, ir, config
 from numba.cuda import typing
-from numba.cuda.core import postproc, rewrites
+from numba.cuda.core import analysis, postproc, rewrites
 from numba.core.typing.templates import signature
 from numba.cuda.core.analysis import (
     compute_live_map,

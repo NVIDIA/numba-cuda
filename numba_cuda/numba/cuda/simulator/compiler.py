@@ -15,3 +15,23 @@ declare_device_function = None
 
 def run_frontend(func):
     pass
+
+
+class DefaultPassBuilder(object):
+    @staticmethod
+    def define_nopython_lowering_pipeline(state, name="nopython_lowering"):
+        pass
+
+    @staticmethod
+    def define_typed_pipeline(state, name="typed"):
+        pass
+
+
+class CompilerBase:
+    def __init__(
+        self, typingctx, targetctx, library, args, return_type, flags, locals
+    ):
+        pass
+
+
+PassManager = None
