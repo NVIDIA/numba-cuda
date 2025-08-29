@@ -6,7 +6,8 @@ import os
 from functools import wraps
 import numpy as np
 
-from numba import cuda, config
+from numba import cuda
+from numba.cuda import config
 from numba.core.runtime.nrt import _nrt_mstats
 from numba.cuda.cudadrv.driver import (
     _Linker,

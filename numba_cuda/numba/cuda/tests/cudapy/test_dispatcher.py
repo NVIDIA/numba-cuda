@@ -7,7 +7,6 @@ import threading
 
 from numba import (
     boolean,
-    config,
     cuda,
     float32,
     float64,
@@ -17,6 +16,7 @@ from numba import (
     uint32,
     void,
 )
+from numba.cuda import config
 from numba.core.errors import TypingError
 from numba.cuda.testing import (
     cc_X_or_above,

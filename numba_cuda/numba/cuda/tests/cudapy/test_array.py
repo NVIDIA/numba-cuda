@@ -5,7 +5,8 @@ import numpy as np
 
 from numba.cuda.testing import unittest, CUDATestCase
 from numba.cuda.testing import skip_on_cudasim, skip_unless_cudasim
-from numba import config, cuda
+from numba import cuda
+from numba.cuda import config
 
 
 if config.ENABLE_CUDASIM:

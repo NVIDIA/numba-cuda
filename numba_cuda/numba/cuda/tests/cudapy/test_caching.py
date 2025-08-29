@@ -620,7 +620,7 @@ class TestMultiCCCaching(DispatcherCacheUsecasesTest):
 def child_initializer():
     # Disable occupancy and implicit copy warnings in processes in a
     # multiprocessing pool.
-    from numba.core import config
+    from numba.cuda.core import config
 
     config.CUDA_LOW_OCCUPANCY_WARNINGS = 0
     config.CUDA_WARN_ON_IMPLICIT_COPY = 0

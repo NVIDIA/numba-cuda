@@ -10,7 +10,7 @@ from numba.cuda.cudadrv.error import (
     NvrtcCompilationError,
     NvrtcSupportError,
 )
-from numba import config
+from numba.cuda import config
 from numba.cuda.cuda_paths import get_cuda_paths
 from numba.cuda.utils import _readenv
 

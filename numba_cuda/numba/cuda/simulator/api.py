@@ -20,7 +20,7 @@ from .cudadrv.linkable_code import (
     LTOIR,  # noqa: F401
 )  # noqa: F401
 from .kernel import FakeCUDAKernel
-from numba.core import config
+from numba.cuda.core import config
 from numba.cuda.core.sigutils import is_signature
 from warnings import warn
 from ..args import In, Out, InOut  # noqa: F401

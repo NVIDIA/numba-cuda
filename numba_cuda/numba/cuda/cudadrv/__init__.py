@@ -9,6 +9,6 @@
 
 """
 
-from numba.core import config
+from numba.cuda.core import config
 
 assert not config.ENABLE_CUDASIM, "Cannot use real driver API with simulator"
