@@ -9,6 +9,7 @@ from numba.cuda.core.controlflow import CFGraph, ControlFlowAnalysis
 from numba.core import types
 from numba.core.bytecode import FunctionIdentity, ByteCode, _fix_LOAD_GLOBAL_arg
 from numba.cuda.tests.support import TestCase
+from numba.cuda.core import utils
 
 enable_pyobj_flags = {}
 
@@ -1427,13 +1428,17 @@ class TestRealCodeDomFront(TestCase):
         cfa, blkpts = self.get_cfa_and_namedblocks(foo)
 
         idoms = cfa.graph.immediate_dominators()
-        # Py3.10 optimizes away the infinite loop and removes SET_BLOCK_E from
-        # the bytecode.
         self.assertNotIn("E", blkpts)
+        if utils.PYVERSION >= (3, 10):
+            self.assertNotIn("E", blkpts)
+        else:
+            self.assertNotIn(blkpts["E"], idoms)
         self.assertEqual(blkpts["B"], idoms[blkpts["C"]])
         self.assertEqual(blkpts["B"], idoms[blkpts["D"]])
 
         domfront = cfa.graph.dominance_frontier()
+        if utils.PYVERSION < (3, 10):
+            self.assertNotIn(blkpts["E"], domfront)
         self.assertFalse(domfront[blkpts["A"]])
         self.assertFalse(domfront[blkpts["C"]])
         self.assertEqual({blkpts["B"]}, domfront[blkpts["B"]])

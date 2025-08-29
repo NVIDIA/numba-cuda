@@ -26,6 +26,7 @@ from numba.core.untyped_passes import (
     PreserveIR,
 )
 from numba.core.compiler import DefaultPassBuilder, CompilerBase, PassManager
+from numba.core import utils
 
 
 _GLOBAL = 123
@@ -285,7 +286,16 @@ class TestBranchPrune(TestBranchPruneBase, SerialMixin):
 
         # Python 3.10 creates a block with a NOP in it for the `pass` which
         # means it gets pruned.
-        self.assert_prune(impl, (types.NoneType("none"),), [False, None], None)
+        if utils.PYVERSION >= (3, 10):
+            # Python 3.10 creates a block with a NOP in it for the `pass` which
+            # means it gets pruned.
+            self.assert_prune(
+                impl, (types.NoneType("none"),), [False, None], None
+            )
+        else:
+            self.assert_prune(
+                impl, (types.NoneType("none"),), [None, None], None
+            )
 
         self.assert_prune(impl, (types.IntegerLiteral(10),), [True, None], 10)
 
