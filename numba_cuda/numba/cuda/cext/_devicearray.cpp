@@ -120,7 +120,7 @@ MOD_INIT(_devicearray) {
     if (m == NULL)
         goto error_occurred;
 
-    c_api = PyCapsule_New((void *)_DeviceArray_API, "numba_cuda._devicearray._DEVICEARRAY_API", NULL);
+    c_api = PyCapsule_New((void *)_DeviceArray_API, NUMBA_DEVICEARRAY_IMPORT_NAME "._DEVICEARRAY_API", NULL);
     if (c_api == NULL)
         goto error_occurred;
 

@@ -13,7 +13,7 @@ from ctypes import c_void_p
 import numpy as np
 
 import numba
-from numba_cuda import _devicearray
+from numba.cuda.cext import _devicearray
 from numba.cuda.cudadrv import devices, dummyarray
 from numba.cuda.cudadrv import driver as _driver
 from numba.core import types, config

@@ -935,13 +935,13 @@ CLEANUP:
 static int
 import_devicearray(void)
 {
-    PyObject *devicearray = PyImport_ImportModule("numba_cuda._devicearray");
+    PyObject *devicearray = PyImport_ImportModule(NUMBA_DEVICEARRAY_IMPORT_NAME);
     if (devicearray == NULL) {
         return -1;
     }
     Py_DECREF(devicearray);
 
-    DeviceArray_API = (void**)PyCapsule_Import("numba_cuda._devicearray._DEVICEARRAY_API", 0);
+    DeviceArray_API = (void**)PyCapsule_Import(NUMBA_DEVICEARRAY_IMPORT_NAME "._DEVICEARRAY_API", 0);
     if (DeviceArray_API == NULL) {
         return -1;
     }
@@ -1056,7 +1056,7 @@ static PyMethodDef ext_methods[] = {
 MOD_INIT(_dispatcher) {
     if (import_devicearray() < 0) {
       PyErr_Print();
-      PyErr_SetString(PyExc_ImportError, "numba_cuda._devicearray failed to import");
+      PyErr_SetString(PyExc_ImportError, NUMBA_DEVICEARRAY_IMPORT_NAME " failed to import");
       return MOD_ERROR_VAL;
     }
 

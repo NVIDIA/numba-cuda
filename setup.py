@@ -53,7 +53,7 @@ def get_ext_modules():
         install_name_tool_fixer = ["-headerpad_max_install_names"]
 
     ext_mviewbuf = Extension(
-        name="numba_cuda.numba.cuda.mviewbuf",
+        name="numba_cuda.mviewbuf",
         extra_link_args=install_name_tool_fixer,
         sources=["numba_cuda/numba/cuda/cext/mviewbuf.c"],
     )
@@ -65,7 +65,7 @@ def get_ext_modules():
         "numba_cuda/numba/cuda/cext/typeconv.cpp",
     ]
     ext_dispatcher = Extension(
-        name="numba_cuda.numba.cuda._dispatcher",
+        name="numba_cuda._dispatcher",
         sources=dispatcher_sources,
         depends=[
             "numba_cuda/numba/cuda/cext/_pymodule.h",
