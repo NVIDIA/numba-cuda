@@ -2,6 +2,7 @@
 # Copyright (c) 2024, NVIDIA CORPORATION
 
 set -euo pipefail
+set -x
 
 . /opt/conda/etc/profile.d/conda.sh
 
