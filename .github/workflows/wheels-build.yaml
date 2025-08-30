@@ -152,11 +152,11 @@ jobs:
         if: "!cancelled()"
         uses: actions/upload-artifact@v4
         with:
-          name: sdist
+          name: sdist-py${{ matrix.PY_VER }}-${{ matrix.ARCH }}
           path: ${{ env.sdist_path }}
       - name: Upload wheel
         if: "!cancelled()"
         uses: actions/upload-artifact@v4
         with:
-          name: wheel
+          name: wheel-py${{ matrix.PY_VER }}-${{ matrix.ARCH }}
           path: ${{ env.wheel_path }}
