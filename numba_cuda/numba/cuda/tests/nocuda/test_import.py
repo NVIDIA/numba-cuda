@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: BSD-2-Clause
+
 from numba.cuda.tests.support import run_in_subprocess
 import unittest
 
@@ -23,6 +26,9 @@ class TestImport(unittest.TestCase):
             "numba.cpython.mathimpl",
             "numba.cpython.printimpl",
             "numba.cpython.randomimpl",
+            "numba.cuda.cpython.numbers",
+            "numba.cuda.cpython.cmathimpl",
+            "numba.cuda.cpython.mathimpl",
             "numba.core.optional",
             "numba.misc.gdb_hook",
             "numba.misc.literal",

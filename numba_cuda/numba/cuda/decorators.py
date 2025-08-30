@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: BSD-2-Clause
+
 from warnings import warn
 from numba.core import types, config
 from numba.core.errors import DeprecationError, NumbaInvalidConfigWarning

@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: BSD-2-Clause
+
 from math import sqrt
 from numba import cuda, float32, int16, int32, int64, types, uint32, void
 from numba.cuda import (
@@ -6,7 +9,6 @@ from numba.cuda import (
     compile_ptx,
     compile_ptx_for_current_device,
 )
-from numba.cuda.cudadrv import runtime
 from numba.cuda.testing import skip_on_cudasim, unittest, CUDATestCase
 
 
@@ -226,9 +228,6 @@ class TestCompile(unittest.TestCase):
         )
 
     def test_compile_to_ltoir(self):
-        if runtime.get_version() < (11, 5):
-            self.skipTest("-gen-lto unavailable in this toolkit version")
-
         ltoir, resty = compile(
             f_module, int32(int32, int32), device=True, output="ltoir"
         )
@@ -251,6 +250,21 @@ class TestCompile(unittest.TestCase):
                 device=True,
                 output=illegal_output,
             )
+
+    def test_functioncompiler_locals(self):
+        # Tests against regression fixed in:
+        # https://github.com/NVIDIA/numba-cuda/pull/381
+        #
+        # "AttributeError: '_FunctionCompiler' object has no attribute
+        # 'locals'"
+        cond = None
+
+        @cuda.jit("void(float32[::1])")
+        def f(b_arg):
+            b_smem = cuda.shared.array(shape=(1,), dtype=float32)
+
+            if cond:
+                b_smem[0] = b_arg[0]
 
 
 @skip_on_cudasim("Compilation unsupported in the simulator")

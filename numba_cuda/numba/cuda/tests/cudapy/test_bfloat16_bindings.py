@@ -1,6 +1,14 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: BSD-2-Clause
+
+from collections import OrderedDict
+import bisect
+
 import numba.cuda as cuda
 from numba.cuda.testing import unittest, CUDATestCase
 import numpy as np
+import operator
+from numba.cuda.testing import skip_if_nvjitlink_missing
 
 from numba import (
     config,
@@ -43,9 +51,7 @@ dtypes = [int16, int32, int64, uint16, uint32, uint64, float32]
 class Bfloat16Test(CUDATestCase):
     def skip_unsupported(self):
         if not cuda.is_bfloat16_supported():
-            self.skipTest(
-                "bfloat16 requires compute capability 8.0+ and CUDA version>= 12.0"
-            )
+            self.skipTest("bfloat16 requires compute capability 8.0+")
 
     def test_ctor(self):
         self.skip_unsupported()
@@ -290,6 +296,81 @@ class Bfloat16Test(CUDATestCase):
         kernel[1, 1](arr)
 
         np.testing.assert_allclose(arr, [3], atol=1e-2)
+
+    @skip_if_nvjitlink_missing("LTO is not supported without nvjitlink.")
+    def test_bf16_intrinsics_used_in_lto(self):
+        self.skip_unsupported()
+
+        operations = [
+            (
+                operator.add,
+                OrderedDict(
+                    {
+                        (
+                            7,
+                            0,
+                        ): ".s16",  # All CC prior to 8.0 uses bit operations
+                        (8, 0): "fma.rn.bf16",  # 8.0 uses fma
+                        (9, 0): "add.bf16",  # 9.0 uses native add
+                    }
+                ),
+            ),
+            (
+                operator.sub,
+                OrderedDict(
+                    {
+                        (
+                            7,
+                            0,
+                        ): ".s16",  # All CC prior to 8.0 uses bit operations
+                        (8, 0): "fma.rn.bf16",  # 8.0 uses fma
+                        (9, 0): "sub.bf16",  # 9.0 uses native sub
+                    }
+                ),
+            ),
+            (
+                operator.mul,
+                OrderedDict(
+                    {
+                        (
+                            7,
+                            0,
+                        ): ".s16",  # All CC prior to 8.0 uses bit operations
+                        (8, 0): "fma.rn.bf16",  # 8.0 uses fma
+                        (9, 0): "mul.bf16",  # 9.0 uses native mul
+                    }
+                ),
+            ),
+            (
+                operator.truediv,
+                OrderedDict(
+                    {
+                        (10, 0): "div.approx.f32",
+                    }
+                ),
+            ),  # no native bf16 div, see cuda_bf16.hpp:L3067
+        ]
+
+        for op, ptx_op in operations:
+            with self.subTest(op=op):
+
+                @cuda.jit(lto=True)
+                def kernel(arr):
+                    a = nv_bfloat16(3.14)
+                    b = nv_bfloat16(5)
+                    arr[0] = float32(op(a, b))
+
+                arr = np.zeros(1, np.float32)
+                kernel[1, 1](arr)
+                np.testing.assert_allclose(arr, [op(3.14, 5)], atol=1e-1)
+
+                ptx = next(iter(kernel.inspect_lto_ptx().values()))
+                cc = cuda.get_current_device().compute_capability
+                idx = bisect.bisect_right(list(ptx_op.keys()), cc)
+                # find the lowest major version from ptx_op dictionary
+                idx = max(0, idx - 1)
+                expected = list(ptx_op.values())[idx]
+                assert expected in ptx, ptx
 
 
 if __name__ == "__main__":

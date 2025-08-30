@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: BSD-2-Clause
+
 import os
 import warnings
 import traceback
@@ -32,6 +35,9 @@ from numba.core.config import (
 from numba.core import types, config
 
 from collections.abc import Mapping, Sequence, MutableSet, MutableMapping
+
+# Python version in (major, minor) tuple
+PYVERSION = sys.version_info[:2]
 
 
 def erase_traceback(exc_value):

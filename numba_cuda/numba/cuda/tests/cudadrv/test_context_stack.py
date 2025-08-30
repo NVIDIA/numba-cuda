@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: BSD-2-Clause
+
 import numbers
 from ctypes import byref
 import weakref
@@ -128,11 +131,17 @@ class Test3rdPartyContext(CUDATestCase):
                 "Error getting CUDA driver version",
             )
 
-            # CUDA 13's cuCtxCreate has an optional parameter prepended
-            if version >= 13000:
-                args = (None, flags, dev)
-            else:
+            # CUDA 13's cuCtxCreate has an optional parameter prepended. The
+            # version of cuCtxCreate in use depends on the cuda.bindings major
+            # version rather than the installed driver version on the machine
+            # we're running on.
+            from cuda import bindings
+
+            bindings_version = int(bindings.__version__.split(".")[0])
+            if bindings_version in (11, 12):
                 args = (flags, dev)
+            else:
+                args = (None, flags, dev)
 
             hctx = the_driver.cuCtxCreate(*args)
         else:

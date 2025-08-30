@@ -1,4 +1,9 @@
 /*
+ * SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+ * SPDX-License-Identifier: BSD-2-Clause
+ */
+
+/*
  * Handle reshaping of zero-sized array.
  * See numba_attempt_nocopy_reshape() below.
  */

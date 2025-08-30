@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: BSD-2-Clause
+
 import contextlib
 import gc
 import pickle
@@ -9,9 +12,9 @@ from multiprocessing import get_context
 
 import numba
 from numba.core.errors import TypingError
-from numba.tests.support import TestCase
+from numba.cuda.tests.support import TestCase
 from numba.core.target_extension import resolve_dispatcher_from_str
-from numba.cloudpickle import dumps, loads
+from numba.cuda.cloudpickle import dumps, loads
 
 
 class TestDispatcherPickling(TestCase):
@@ -227,7 +230,7 @@ class TestDispatcherPickling(TestCase):
 class TestSerializationMisc(TestCase):
     def test_numba_unpickle(self):
         # Test that _numba_unpickle is memorizing its output
-        from numba.core.serialize import _numba_unpickle
+        from numba.cuda.serialize import _numba_unpickle
 
         random_obj = object()
         bytebuf = pickle.dumps(random_obj)
@@ -315,7 +318,7 @@ def issue_7356():
 def check_main_class_reset_on_unpickle():
     # Load module and get its global dictionary
     glbs = runpy.run_module(
-        "numba.tests.cloudpickle_main_class",
+        "numba.cuda.tests.cloudpickle_main_class",
         run_name="__main__",
     )
     # Get the Klass and check it is from __main__

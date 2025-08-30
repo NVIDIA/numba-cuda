@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: BSD-2-Clause
+
 import numba.core.types as types
 from numba.cuda._internal.cuda_fp16 import (
     typing_registry,
@@ -70,7 +73,6 @@ from numba.cuda._internal.cuda_fp16 import (
     __hadd,
     __hadd_rn,
     __hadd_sat,
-    __hcmadd,
     __hdiv as hdiv,
     __hdiv,
     __heq as heq,
@@ -284,7 +286,6 @@ __all__ = [
     "__hadd",
     "__hadd_rn",
     "__hadd_sat",
-    "__hcmadd",
     "hdiv",
     "__hdiv",
     "heq",

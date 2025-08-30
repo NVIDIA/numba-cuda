@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: BSD-2-Clause
+
 """
 Generic helpers for LLVM code generation.
 """
@@ -8,8 +11,8 @@ import functools
 
 from llvmlite import ir
 
-from numba.core import types, debuginfo
-from numba.cuda import config, utils
+from numba.core import types
+from numba.cuda import config, utils, debuginfo
 import numba.core.datamodel
 
 

@@ -1,11 +1,13 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: BSD-2-Clause
+
 import re
 from functools import cached_property
 import llvmlite.binding as ll
 from llvmlite import ir
 import warnings
-from numba.cuda import cgutils, itanium_mangler
+
 from numba.core import (
-    compiler,
     config,
     targetconfig,
     types,
@@ -15,15 +17,15 @@ from numba.core.compiler_lock import global_compiler_lock
 from numba.core.dispatcher import Dispatcher
 from numba.core.errors import NumbaWarning
 from numba.core.base import BaseContext
-from numba.cuda.core.callconv import BaseCallConv, MinimalCallConv
 from numba.core.typing import cmathdecl
 from numba.core import datamodel
 
 from .cudadrv import nvvm
-from numba.cuda import codegen, ufuncs
+from numba.cuda import cgutils, itanium_mangler, compiler, codegen, ufuncs
 from numba.cuda.debuginfo import CUDADIBuilder
 from numba.cuda.flags import CUDAFlags
 from numba.cuda.models import cuda_data_manager
+from numba.cuda.core.callconv import BaseCallConv, MinimalCallConv
 
 # -----------------------------------------------------------------------------
 # Typing
@@ -31,8 +33,15 @@ from numba.cuda.models import cuda_data_manager
 
 class CUDATypingContext(typing.BaseContext):
     def load_additional_registries(self):
-        from . import cudadecl, cudamath, fp16, libdevicedecl, vector_types
-        from numba.core.typing import enumdecl, cffi_utils
+        from . import (
+            cudadecl,
+            cudamath,
+            fp16,
+            bf16,
+            libdevicedecl,
+            vector_types,
+        )
+        from numba.cuda.typing import enumdecl, cffi_utils
 
         self.install_registry(cudadecl.registry)
         self.install_registry(cffi_utils.registry)
@@ -42,6 +51,7 @@ class CUDATypingContext(typing.BaseContext):
         self.install_registry(enumdecl.registry)
         self.install_registry(vector_types.typing_registry)
         self.install_registry(fp16.typing_registry)
+        self.install_registry(bf16.typing_registry)
 
     def resolve_value_type(self, val):
         # treat other dispatcher object as another device function
@@ -138,12 +148,14 @@ class CUDATargetContext(BaseContext):
         self._target_data = None
 
     def load_additional_registries(self):
-        # side effect of import needed for numba.cpython.*, the builtins
+        # side effect of import needed for numba.cpython.*, numba.cuda.cpython.*, the builtins
         # registry is updated at import time.
-        from numba.cpython import numbers, tupleobj, slicing  # noqa: F401
+        from numba.cpython import tupleobj, slicing  # noqa: F401
+        from numba.cuda.cpython import numbers  # noqa: F401
         from numba.cpython import rangeobj, iterators, enumimpl  # noqa: F401
         from numba.cpython import unicode, charseq  # noqa: F401
-        from numba.cpython import cmathimpl
+        from numba.cuda.cpython import cmathimpl, mathimpl
+        from numba.core import optional  # noqa: F401
         from numba.misc import cffiimpl
         from numba.np import arrayobj  # noqa: F401
         from numba.np import npdatetime  # noqa: F401
@@ -152,8 +164,9 @@ class CUDATargetContext(BaseContext):
             fp16,
             printimpl,
             libdeviceimpl,
-            mathimpl,
+            mathimpl as cuda_mathimpl,
             vector_types,
+            bf16,
         )
 
         # fix for #8940
@@ -165,8 +178,11 @@ class CUDATargetContext(BaseContext):
         self.install_registry(libdeviceimpl.registry)
         self.install_registry(cmathimpl.registry)
         self.install_registry(mathimpl.registry)
+        self.install_registry(numbers.registry)
+        self.install_registry(cuda_mathimpl.registry)
         self.install_registry(vector_types.impl_registry)
         self.install_registry(fp16.target_registry)
+        self.install_registry(bf16.target_registry)
 
     def codegen(self):
         return self._internal_codegen

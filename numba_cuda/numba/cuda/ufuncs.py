@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: BSD-2-Clause
+
 """Contains information on how to translate different ufuncs for the CUDA
 target. It is a database of different ufuncs and how each of its loops maps to
 a function that implements the inner kernel of that ufunc (the inner kernel
@@ -23,9 +26,9 @@ def get_ufunc_info(ufunc_key):
 @lru_cache
 def ufunc_db():
     # Imports here are at function scope to avoid circular imports
-    from numba.cpython import cmathimpl, mathimpl, numbers
-    from numba.np import npyfuncs
-    from numba.np.numpy_support import numpy_version
+    from numba.cuda.cpython import cmathimpl, mathimpl, numbers
+    from numba.cuda.np import npyfuncs
+    from numba.cuda.np.numpy_support import numpy_version
 
     def np_unary_impl(fn, context, builder, sig, args):
         npyfuncs._check_arity_and_homogeneity(sig, args, 1)

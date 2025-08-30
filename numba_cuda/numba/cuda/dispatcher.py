@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: BSD-2-Clause
+
 import numpy as np
 import os
 import sys
@@ -7,14 +10,17 @@ import functools
 import types as pytypes
 import weakref
 import uuid
+import re
+from warnings import warn
 
-from numba.core import compiler, types, typing, config, errors, entrypoints
+from numba.core import types, typing, config, errors, entrypoints
 from numba.cuda import serialize, utils
-from numba.cuda.core.caching import Cache, CacheImpl, NullCache
 from numba.core.compiler_lock import global_compiler_lock
 from numba.core.typeconv.rules import default_type_manager
 from numba.cuda.typing.templates import fold_arguments
 from numba.core.typing.typeof import Purpose, typeof
+
+from numba.cuda import types as cuda_types
 from numba.cuda.api import get_current_device
 from numba.cuda.args import wrap_arg
 from numba.core.bytecode import get_code_object
@@ -22,25 +28,25 @@ from numba.cuda.compiler import (
     compile_cuda,
     CUDACompiler,
     kernel_fixup,
+    compile_extra,
 )
 from numba.cuda.core import sigutils
-import re
+from numba.cuda.flags import Flags
 from numba.cuda.cudadrv import driver, nvvm
-from numba.cuda.cudadrv.linkable_code import LinkableCode
-from numba.cuda.cudadrv.devices import get_context
+from numba.cuda.locks import module_init_lock
+from numba.cuda.core.caching import Cache, CacheImpl, NullCache
 from numba.cuda.descriptor import cuda_target
 from numba.cuda.errors import (
     missing_launch_config_msg,
     normalize_kernel_dimensions,
 )
-from numba.cuda import types as cuda_types
-from numba.cuda.locks import module_init_lock
+from numba.cuda.cudadrv.linkable_code import LinkableCode
+from numba.cuda.cudadrv.devices import get_context
 from numba.cuda.memory_management.nrt import rtsys, NRT_LIBRARY
 
 from numba import cuda
 from numba.cuda.cext import _dispatcher
 
-from warnings import warn
 
 cuda_fp16_math_funcs = [
     "hsin",
@@ -208,13 +214,11 @@ class _Kernel(serialize.ReduceMixin):
         # The following are referred to by the cache implementation. Note:
         # - There are no referenced environments in CUDA.
         # - Kernels don't have lifted code.
-        # - reload_init is only for parfors.
         self.target_context = tgt_ctx
         self.fndesc = cres.fndesc
         self.environment = cres.environment
         self._referenced_environments = []
         self.lifted = []
-        self.reload_init = []
 
     def maybe_link_nrt(self, link, tgt_ctx, asm):
         """
@@ -1368,6 +1372,7 @@ class _FunctionCompiler(object):
         self.py_func = py_func
         self.targetdescr = targetdescr
         self.targetoptions = targetoptions
+        self.locals = {}
         self.pysig = utils.pysignature(self.py_func)
         self.pipeline_class = pipeline_class
         # Remember key=(args, return_type) combinations that will fail
@@ -1426,19 +1431,19 @@ class _FunctionCompiler(object):
             return True, retval
 
     def _compile_core(self, args, return_type):
-        flags = compiler.Flags()
+        flags = Flags()
         self.targetdescr.options.parse_as_flags(flags, self.targetoptions)
         flags = self._customize_flags(flags)
 
         impl = self._get_implementation(args, {})
-        cres = compiler.compile_extra(
+        cres = compile_extra(
             self.targetdescr.typing_context,
             self.targetdescr.target_context,
             impl,
             args=args,
             return_type=return_type,
             flags=flags,
-            locals={},
+            locals=self.locals,
             pipeline_class=self.pipeline_class,
         )
         # Check typing error if object mode is used
@@ -1935,27 +1940,6 @@ class CUDADispatcher(serialize.ReduceMixin, _MemoMixin, _DispatcherBase):
             cache_hits=self._cache_hits,
             cache_misses=self._cache_misses,
         )
-
-    def parallel_diagnostics(self, signature=None, level=1):
-        """
-        Print parallel diagnostic information for the given signature. If no
-        signature is present it is printed for all known signatures. level is
-        used to adjust the verbosity, level=1 (default) is minimal verbosity,
-        and 2, 3, and 4 provide increasing levels of verbosity.
-        """
-
-        def dump(sig):
-            ol = self.overloads[sig]
-            pfdiag = ol.metadata.get("parfor_diagnostics", None)
-            if pfdiag is None:
-                msg = "No parfors diagnostic available, is 'parallel=True' set?"
-                raise ValueError(msg)
-            pfdiag.dump(level)
-
-        if signature is not None:
-            dump(signature)
-        else:
-            [dump(sig) for sig in self.signatures]
 
     def get_metadata(self, signature=None):
         """

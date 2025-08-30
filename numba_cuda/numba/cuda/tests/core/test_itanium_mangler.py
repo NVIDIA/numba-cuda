@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: BSD-2-Clause
+
 # -*- coding: utf-8 -*-
 from numba import int32, int64, uint32, uint64, float32, float64
 from numba.core.types import range_iter32_type

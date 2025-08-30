@@ -1,14 +1,11 @@
 #!/bin/bash
-# Copyright (c) 2023-2024, NVIDIA CORPORATION
+# SPDX-FileCopyrightText: Copyright (c) 2024 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: BSD-2-Clause
 
 set -euo pipefail
 
-# cuRAND versions don't follow the toolkit versions - map toolkit versions to
-# appropriate cuRAND versions
-declare -A CTK_CURAND_VMAP=( ["12.8"]="10.3.9" ["12.9"]="10.3.10")
 CUDA_VER_MAJOR_MINOR=${CUDA_VER%.*}
 CUDA_VER_MAJOR=${CUDA_VER%.*.*}
-CURAND_VER="${CTK_CURAND_VMAP[${CUDA_VER_MAJOR_MINOR}]}"
 
 rapids-logger "Install wheel with test dependencies"
 package=$(realpath wheel/numba_cuda*.whl)
