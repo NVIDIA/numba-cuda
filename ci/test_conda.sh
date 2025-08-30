@@ -76,6 +76,11 @@ test_dir = root + \"numba/cuda/tests/test_binary_generation/\"
 print(test_dir)
 "
 
+python -c "import numba.cuda as cuda; print(cuda.__file__)"
+python -c "import numba_cuda as cuda; print(cuda.__file__)"
+pip freeze | grep numba
+python -c "import numba.cuda.testing; print(numba.cuda.testing.test_binary_generation_dir())"
+
 CUDA_VER_MAJOR_MINOR=${CUDA_VER%.*}
 if [ "${CUDA_VER_MAJOR_MINOR%.*}" == "11" ]
 then
