@@ -6,7 +6,7 @@ import os
 from functools import wraps
 import numpy as np
 
-from numba import cuda, config
+from numba import cuda, config, types
 from numba.core.runtime.nrt import _nrt_mstats
 from numba.cuda.cudadrv.driver import (
     _Linker,
@@ -19,7 +19,9 @@ from numba.cuda.cudadrv import devices
 from numba.cuda.api import get_current_device
 from numba.cuda.utils import _readenv, cached_file_read
 from numba.cuda.cudadrv.linkable_code import CUSource
+from numba.cuda.typing.templates import signature
 
+from numba.core.extending import intrinsic, overload_classmethod
 
 # Check environment variable or config for NRT statistics enablement
 NRT_STATS = _readenv("NUMBA_CUDA_NRT_STATS", bool, False) or getattr(
@@ -40,6 +42,34 @@ if not hasattr(config, "NUMBA_CUDA_ENABLE_NRT"):
 def get_include():
     """Return the include path for the NRT header"""
     return os.path.dirname(os.path.abspath(__file__))
+
+
+# Provide an implementation of Array._allocate() for the CUDA target (used
+# internally by Numba when generating the allocation of an array)
+
+
+@intrinsic
+def intrin_alloc(typingctx, allocsize, align):
+    """Intrinsic to call into the allocator for Array"""
+
+    def codegen(context, builder, signature, args):
+        [allocsize, align] = args
+        meminfo = context.nrt.meminfo_alloc_aligned(builder, allocsize, align)
+        return meminfo
+
+    mip = types.MemInfoPointer(types.voidptr)  # return untyped pointer
+    sig = signature(mip, allocsize, align)
+    return sig, codegen
+
+
+@overload_classmethod(types.Array, "_allocate", target="CUDA")
+def _ol_array_allocate(cls, allocsize, align):
+    """Implements a Numba-only CUDA-target classmethod on the array type."""
+
+    def impl(cls, allocsize, align):
+        return intrin_alloc(allocsize, align)
+
+    return impl
 
 
 # Protect method to ensure NRT memory allocation and initialization
@@ -158,10 +188,6 @@ class _Runtime:
         """
         if self._initialized:
             return
-
-        # Ensure we have an Array._allocate() overload registered with the CUDA
-        # target
-        from numba.cuda.memory_management import arrayobj_extras  # noqa: F401
 
         # Initialize the memsys
         self.initialize(stream)
