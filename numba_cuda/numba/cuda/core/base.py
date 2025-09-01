@@ -16,12 +16,11 @@ from numba.core import (
     types,
     utils,
     datamodel,
-    debuginfo,
     funcdesc,
     config,
-    cgutils,
     imputils,
 )
+from numba.cuda import cgutils, debuginfo
 from numba.core import event, errors, targetconfig
 from numba import _dynfunc, _helperlib
 from numba.core.compiler_lock import global_compiler_lock
