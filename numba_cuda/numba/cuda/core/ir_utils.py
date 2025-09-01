@@ -11,7 +11,8 @@ import warnings
 
 import numba
 from numba.core.extending import _Intrinsic
-from numba.core import types, typing, ir, analysis, rewrites, config
+from numba.core import types, ir, analysis, rewrites, config
+from numba.cuda import typing
 from numba.cuda.core import postproc
 from numba.core.typing.templates import signature
 from numba.core.analysis import (
@@ -1987,7 +1988,7 @@ def get_ir_of_code(glbls, fcode):
     from numba.cuda.core.inline_closurecall import InlineClosureCallPass
 
     inline_pass = InlineClosureCallPass(
-        ir, numba.core.cpu.ParallelOptions(False), swapped
+        ir, numba.cuda.core.options.ParallelOptions(False), swapped
     )
     inline_pass.run()
 
