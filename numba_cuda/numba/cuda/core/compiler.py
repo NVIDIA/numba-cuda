@@ -1,12 +1,11 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-2-Clause
 
-from numba.core.tracing import event
+from numba.cuda.core.tracing import event
 
 from numba.cuda.core import bytecode
 from numba.core import callconv, config, errors
 from numba.core.errors import CompilerError
-from numba.parfors.parfor import ParforDiagnostics
 
 from numba.cuda.core.untyped_passes import ExtractByteCode, FixupArgs
 from numba.core.targetconfig import ConfigStack
@@ -66,8 +65,6 @@ def _make_subtarget(targetctx, flags):
         subtargetoptions["enable_boundscheck"] = True
     if flags.nrt:
         subtargetoptions["enable_nrt"] = True
-    if flags.auto_parallel:
-        subtargetoptions["auto_parallel"] = flags.auto_parallel
     if flags.fastmath:
         subtargetoptions["fastmath"] = flags.fastmath
     error_model = callconv.create_error_model(flags.error_model, targetctx)
@@ -113,13 +110,6 @@ class CompilerBase(object):
         self.state.reload_init = []
         # hold this for e.g. with_lifting, null out on exit
         self.state.pipeline = self
-
-        # parfor diagnostics info, add to metadata
-        self.state.parfor_diagnostics = ParforDiagnostics()
-        self.state.metadata["parfor_diagnostics"] = (
-            self.state.parfor_diagnostics
-        )
-        self.state.metadata["parfors"] = {}
 
         self.state.status = _CompileStatus(
             can_fallback=self.state.flags.enable_pyobject

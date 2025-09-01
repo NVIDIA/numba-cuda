@@ -17,6 +17,7 @@ from numba.core import (
 from numba.core.compiler_lock import global_compiler_lock
 from numba.core.errors import NumbaWarning, NumbaInvalidConfigWarning
 from numba.cuda.core.interpreter import Interpreter
+from numba.cuda.core import inline_closurecall
 
 from numba.cuda import cgutils, typing, lowering, nvvmutils, utils
 from numba.cuda.api import get_current_device
@@ -57,15 +58,9 @@ from numba.cuda.core.typed_passes import (
     IRLegalization,
     NopythonTypeInference,
     NopythonRewrites,
-    PreParforPass,
-    ParforPass,
-    DumpParforDiagnostics,
     InlineOverloads,
     PreLowerStripPhis,
-    NativeParforLowering,
     NoPythonSupportedFeatureValidation,
-    ParforFusionPass,
-    ParforPreLoweringPass,
 )
 
 
@@ -110,9 +105,7 @@ def run_frontend(func, inline_closures=False, emit_dels=False):
     bc = bytecode.ByteCode(func_id=func_id)
     func_ir = interp.interpret(bc)
     if inline_closures:
-        from numba.core.inline_closurecall import InlineClosureCallPass
-
-        inline_pass = InlineClosureCallPass(
+        inline_pass = inline_closurecall.InlineClosureCallPass(
             func_ir, cpu.ParallelOptions(False), {}, False
         )
         inline_pass.run()
@@ -163,12 +156,8 @@ class DefaultPassBuilder(object):
         # Annotate only once legalized
         pm.add_pass(AnnotateTypes, "annotate types")
         # lower
-        if state.flags.auto_parallel.enabled:
-            pm.add_pass(NativeParforLowering, "native parfor lowering")
-        else:
-            pm.add_pass(NativeLowering, "native lowering")
+        pm.add_pass(NativeLowering, "native lowering")
         pm.add_pass(CUDABackend, "nopython mode backend")
-        pm.add_pass(DumpParforDiagnostics, "dump parfor diagnostics")
         pm.finalize()
         return pm
 
@@ -186,10 +175,7 @@ class DefaultPassBuilder(object):
         # Annotate only once legalized
         pm.add_pass(AnnotateTypes, "annotate types")
         # lower
-        if state.flags.auto_parallel.enabled:
-            pm.add_pass(NativeParforLowering, "native parfor lowering")
-        else:
-            pm.add_pass(NativeLowering, "native lowering")
+        pm.add_pass(NativeLowering, "native lowering")
         pm.add_pass(CUDABackend, "nopython mode backend")
         pm.finalize()
         return pm
@@ -206,26 +192,8 @@ class DefaultPassBuilder(object):
 
         # optimisation
         pm.add_pass(InlineOverloads, "inline overloaded functions")
-        if state.flags.auto_parallel.enabled:
-            pm.add_pass(PreParforPass, "Preprocessing for parfors")
         if not state.flags.no_rewrites:
             pm.add_pass(NopythonRewrites, "nopython rewrites")
-        if state.flags.auto_parallel.enabled:
-            pm.add_pass(ParforPass, "convert to parfors")
-            pm.add_pass(ParforFusionPass, "fuse parfors")
-            pm.add_pass(ParforPreLoweringPass, "parfor prelowering")
-
-        pm.finalize()
-        return pm
-
-    @staticmethod
-    def define_parfor_gufunc_pipeline(state, name="parfor_gufunc_typed"):
-        """Returns the typed part of the nopython pipeline"""
-        pm = PassManager(name)
-        assert state.func_ir
-        pm.add_pass(IRProcessing, "processing IR")
-        pm.add_pass(NopythonTypeInference, "nopython frontend")
-        pm.add_pass(ParforPreLoweringPass, "parfor prelowering")
 
         pm.finalize()
         return pm
