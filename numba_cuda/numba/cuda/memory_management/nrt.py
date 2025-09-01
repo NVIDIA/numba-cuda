@@ -159,9 +159,9 @@ class _Runtime:
         if self._initialized:
             return
 
-        from numba_cuda.numba.cuda.memory_management import arrayobj_extras
-
-        arrayobj_extras.initialize()
+        # Ensure we have an Array._allocate() overload registered with the CUDA
+        # target
+        from numba.cuda.memory_management import arrayobj_extras  # noqa: F401
 
         # Initialize the memsys
         self.initialize(stream)
