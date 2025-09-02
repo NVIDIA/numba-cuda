@@ -10,8 +10,8 @@ from numba.cuda.compiler import run_frontend
 from numba.cuda.flags import Flags
 from numba.cuda.core.compiler import StateDict
 from numba import jit, njit
-from numba.core import types, errors, ir, ir_utils
-from numba.cuda.core import postproc, rewrites
+from numba.core import types, errors, ir
+from numba.cuda.core import postproc, rewrites, ir_utils
 from numba.cuda.core.options import ParallelOptions
 from numba.cuda.core.inline_closurecall import InlineClosureCallPass
 from numba.cuda.tests.support import (
