@@ -7,14 +7,13 @@ from collections import defaultdict, namedtuple
 from copy import copy
 import warnings
 
+from numba.cuda.core import typeinfer
 from numba.core import (
     errors,
     types,
     typing,
     ir,
     funcdesc,
-    rewrites,
-    typeinfer,
     config,
     lowering,
 )
@@ -37,7 +36,7 @@ from numba.cuda.core.ir_utils import (
     compute_cfg_from_blocks,
     is_operator_or_getitem,
 )
-from numba.cuda.core import postproc
+from numba.cuda.core import postproc, rewrites
 from llvmlite import binding as llvm
 
 
