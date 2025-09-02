@@ -195,20 +195,20 @@ class _EnvReloader(object):
     def process_environ(self, environ):
         def _readenv(name, ctor, default):
             value = environ.get(name)
-            result = None
             if value is None:
                 result = default() if callable(default) else default
-            try:
-                result = ctor(value)
-            except Exception:
-                warnings.warn(
-                    f"Environment variable '{name}' is defined but "
-                    f"its associated value '{value}' could not be "
-                    "parsed.\nThe parse failed with exception:\n"
-                    f"{traceback.format_exc()}",
-                    RuntimeWarning,
-                )
-                result = default
+            else:
+                try:
+                    result = ctor(value)
+                except Exception:
+                    warnings.warn(
+                        f"Environment variable '{name}' is defined but "
+                        f"its associated value '{value}' could not be "
+                        "parsed.\nThe parse failed with exception:\n"
+                        f"{traceback.format_exc()}",
+                        RuntimeWarning,
+                    )
+                    result = default() if callable(default) else default
             try:
                 from numba import config as numba_config
 
