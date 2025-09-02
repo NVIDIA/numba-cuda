@@ -13,7 +13,6 @@ from numba.core import (
     typing,
     ir,
     funcdesc,
-    rewrites,
     typeinfer,
     config,
     lowering,
@@ -37,7 +36,7 @@ from numba.cuda.core.ir_utils import (
     compute_cfg_from_blocks,
     is_operator_or_getitem,
 )
-from numba.cuda.core import postproc
+from numba.cuda.core import postproc, rewrites
 
 try:
     # llvmlite < 0.45
