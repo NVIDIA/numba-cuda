@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: BSD-2-Clause
 
 from fnmatch import fnmatch
-from numba.testing import unittest
+import unittest
 from numba import cuda
 from os.path import dirname, isfile, join, normpath, relpath, splitext
 
