@@ -1432,7 +1432,6 @@ class TestRealCodeDomFront(TestCase):
         cfa, blkpts = self.get_cfa_and_namedblocks(foo)
 
         idoms = cfa.graph.immediate_dominators()
-        self.assertNotIn("E", blkpts)
         if utils.PYVERSION >= (3, 10):
             self.assertNotIn("E", blkpts)
         else:
