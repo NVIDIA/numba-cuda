@@ -7,7 +7,7 @@ set -euo pipefail
 CUDA_VER_MAJOR_MINOR=${CUDA_VER%.*}
 
 rapids-logger "Install wheel with test dependencies"
-package=$(realpath wheel/numba_cuda*.whl)
+package=$(realpath wheel*/numba_cuda*.whl)
 echo "Package path: ${package}"
 
 DEPENDENCIES=(
