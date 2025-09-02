@@ -15,7 +15,7 @@ from numba.cuda.core.untyped_passes import (
     FixupArgs,
     IRProcessing,
 )
-from numba.experimental import jitclass
+from numba.cuda.experimental import jitclass
 from numba.cuda.core.typed_passes import (
     NopythonTypeInference,
     type_inference_stage,

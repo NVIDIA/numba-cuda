@@ -1310,7 +1310,9 @@ class Lower(BaseLower):
         return builder.load(res_slot)
 
     def __get_first_class_function_pointer(self, ftype, fname, sig):
-        from numba.experimental.function_type import lower_get_wrapper_address
+        from numba.cuda.experimental.function_type import (
+            lower_get_wrapper_address,
+        )
 
         llty = self.context.get_value_type(ftype)
         fstruct = self.loadvar(fname)
