@@ -32,6 +32,10 @@ from numba.core.extending import (
 )
 from numba.core.datamodel.models import OpaqueModel
 from numba.cuda.np import numpy_support
+from numba.cuda.core.compiler import CompilerBase
+from numba.cuda.compiler import DefaultPassBuilder
+from numba.cuda.core.untyped_passes import PreserveIR
+from numba.cuda.core.typed_passes import IRLegalization
 
 
 class EnableNRTStatsMixin(object):
@@ -803,3 +807,28 @@ class CheckWarningsMixin(object):
                     self.assertEqual(w.category, category)
                     found += 1
         self.assertEqual(found, len(messages))
+
+
+class SerialMixin(object):
+    """Mixin to mark test for serial execution."""
+
+    _numba_parallel_test_ = False
+
+
+class IRPreservingTestPipeline(CompilerBase):
+    """Same as the standard pipeline, but preserves the func_ir into the
+    metadata store after legalisation, useful for testing IR changes"""
+
+    def define_pipelines(self):
+        pipeline = DefaultPassBuilder.define_nopython_pipeline(
+            self.state, "ir_preserving_custom_pipe"
+        )
+        # mangle the default pipeline and inject DCE and IR preservation ahead
+        # of legalisation
+
+        # TODO: add a way to not do this! un-finalizing is not a good idea
+        pipeline._finalized = False
+        pipeline.add_pass_after(PreserveIR, IRLegalization)
+
+        pipeline.finalize()
+        return [pipeline]

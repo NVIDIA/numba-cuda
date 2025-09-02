@@ -10,10 +10,11 @@ from numba.cuda.compiler import run_frontend
 from numba.cuda.core.compiler import StateDict
 from numba.cuda.flags import Flags
 from numba import jit, njit, literal_unroll
-from numba.core import types, errors, ir, rewrites, cpu
-from numba.cuda.core import ir_utils, postproc
-from numba.core.inline_closurecall import InlineClosureCallPass
-from numba.tests.support import (
+from numba.core import types, errors, ir
+from numba.cuda.core import ir_utils, postproc, rewrites
+from numba.cuda.core.inline_closurecall import InlineClosureCallPass
+from numba.cuda.core.options import ParallelOptions
+from numba.cuda.tests.support import (
     TestCase,
     MemoryLeakMixin,
     SerialMixin,
@@ -94,7 +95,7 @@ class TestBranchPruneBase(MemoryLeakMixin, TestCase):
         # run closure inlining to ensure that nonlocals in closures are visible
         inline_pass = InlineClosureCallPass(
             func_ir,
-            cpu.ParallelOptions(False),
+            ParallelOptions(False),
         )
         inline_pass.run()
 
@@ -1114,7 +1115,6 @@ class TestBranchPrunePostSemanticConstRewrites(TestBranchPruneBase):
             s = 0
             for arg in literal_unroll(args):
                 s += len(arg)
-            return s
 
         inp = ((), (1, 2, 3), ())
         self.assertPreciseEqual(impl(*inp), impl.py_func(*inp))
