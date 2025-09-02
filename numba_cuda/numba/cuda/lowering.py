@@ -10,17 +10,15 @@ from llvmlite import ir as llvm_ir
 
 from numba.core import (
     typing,
-    utils,
     types,
     ir,
-    debuginfo,
     funcdesc,
     generators,
     config,
     removerefctpass,
     targetconfig,
 )
-from numba.cuda import cgutils
+from numba.cuda import debuginfo, cgutils, utils
 from numba.cuda.core import ir_utils
 from numba.core.errors import (
     LoweringError,
@@ -1052,7 +1050,7 @@ class Lower(BaseLower):
         )
 
     def _lower_call_ObjModeDispatcher(self, fnty, expr, signature):
-        from numba.core.pythonapi import ObjModeUtils
+        from numba.cuda.core.pythonapi import ObjModeUtils
 
         self.init_pyapi()
         # Acquire the GIL
