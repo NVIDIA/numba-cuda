@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-2-Clause
 
-#============================================================================#
+# ========================================================================== #
 #                                                                            #
 # IMPORTANT: Before modifying type inference, it is important to port the    #
 #            following tests from `numba.tests.test_typeinfer`:              #
@@ -12,7 +12,7 @@
 #              - test_list_unify{1,2}: Lists not supported                   #
 #              - test_load_fast_and_clear*: Uses list comprehensions         #
 #                                                                            #
-#============================================================================#
+# ========================================================================== #
 """
 Type inference base on CPA.
 The algorithm guarantees monotonic growth of type-sets for each variable.
