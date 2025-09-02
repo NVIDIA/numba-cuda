@@ -13,7 +13,6 @@ from numba.core import (
     typing,
     ir,
     funcdesc,
-    rewrites,
     typeinfer,
     lowering,
 )
@@ -36,7 +35,7 @@ from numba.cuda.core.ir_utils import (
     compute_cfg_from_blocks,
     is_operator_or_getitem,
 )
-from numba.cuda.core import postproc, config
+from numba.cuda.core import postproc, rewrites, config
 from llvmlite import binding as llvm
 
 
@@ -496,7 +495,7 @@ class InlineOverloads(FunctionPass):
             print(state.func_id.unique_name)
             print(state.func_ir.dump())
             print("".center(80, "-"))
-        from numba.core.inline_closurecall import (
+        from numba.cuda.core.inline_closurecall import (
             InlineWorker,
             callee_ir_validator,
         )

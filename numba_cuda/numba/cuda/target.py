@@ -10,7 +10,6 @@ import warnings
 from numba.core import (
     targetconfig,
     types,
-    typing,
 )
 from numba.core.compiler_lock import global_compiler_lock
 from numba.core.dispatcher import Dispatcher
@@ -20,7 +19,14 @@ from numba.core.typing import cmathdecl
 from numba.core import datamodel
 
 from .cudadrv import nvvm
-from numba.cuda import cgutils, itanium_mangler, compiler, codegen, ufuncs
+from numba.cuda import (
+    cgutils,
+    itanium_mangler,
+    compiler,
+    codegen,
+    ufuncs,
+    typing,
+)
 from numba.cuda.debuginfo import CUDADIBuilder
 from numba.cuda.flags import CUDAFlags
 from numba.cuda.models import cuda_data_manager

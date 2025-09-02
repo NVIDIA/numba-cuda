@@ -10,7 +10,7 @@ from numba import cuda, types, njit, typeof
 from numba.cuda import config
 from numba.np import numpy_support
 from numba.cuda.tests.support import TestCase
-from numba.tests.support import MemoryLeakMixin
+from numba.cuda.tests.support import MemoryLeakMixin
 
 
 class BaseUFuncTest(MemoryLeakMixin):

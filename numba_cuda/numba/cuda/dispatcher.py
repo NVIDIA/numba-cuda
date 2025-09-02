@@ -15,13 +15,13 @@ from warnings import warn
 
 from numba import cuda, _dispatcher
 
-from numba.core import types, typing
+from numba.core import types
 from numba.core.compiler_lock import global_compiler_lock
 from numba.core.dispatcher import _DispatcherBase
 from numba.core.errors import NumbaPerformanceWarning, TypingError
 from numba.core.typing.typeof import Purpose, typeof
 
-from numba.cuda import serialize, utils
+from numba.cuda import serialize, utils, typing
 from numba.cuda import types as cuda_types
 from numba.cuda.api import get_current_device
 from numba.cuda.args import wrap_arg

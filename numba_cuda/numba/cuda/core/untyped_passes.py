@@ -12,15 +12,14 @@ from numba.cuda.core.compiler_machinery import (
     SSACompliantMixin,
     register_pass,
 )
-from numba.cuda.core import postproc, bytecode
+from numba.cuda.core import postproc, bytecode, inline_closurecall
 from numba.core import (
     errors,
     types,
     ir,
-    rewrites,
     transforms,
 )
-from numba.cuda.core import consts, config
+from numba.cuda.core import consts, rewrites, config
 from numba.cuda.core.interpreter import Interpreter
 
 
@@ -234,9 +233,8 @@ class InlineClosureLikes(FunctionPass):
         # no ability to resolve certain typed function calls in the array
         # inlining code, use this variable to indicate
         typed_pass = not isinstance(state.return_type, types.misc.PyObject)
-        from numba.core.inline_closurecall import InlineClosureCallPass
 
-        inline_pass = InlineClosureCallPass(
+        inline_pass = inline_closurecall.InlineClosureCallPass(
             state.func_ir,
             state.flags.auto_parallel,
             None,
@@ -339,18 +337,13 @@ class InlineInlinables(FunctionPass):
             print(state.func_ir.dump())
             print("".center(80, "-"))
 
-        from numba.core.inline_closurecall import (
-            InlineWorker,
-            callee_ir_validator,
-        )
-
-        inline_worker = InlineWorker(
+        inline_worker = inline_closurecall.InlineWorker(
             state.typingctx,
             state.targetctx,
             state.locals,
             state.pipeline,
             state.flags,
-            validator=callee_ir_validator,
+            validator=inline_closurecall.callee_ir_validator,
         )
 
         modified = False
@@ -393,7 +386,7 @@ class InlineInlinables(FunctionPass):
 
     def _do_work(self, state, work_list, block, i, expr, inline_worker):
         from numba.cuda.compiler import run_frontend
-        from numba.core.cpu import InlineOptions
+        from numba.cuda.core.options import InlineOptions
 
         # try and get a definition for the call, this isn't always possible as
         # it might be a eval(str)/part generated awaiting update etc. (parfors)
@@ -1588,9 +1581,8 @@ class IterLoopCanonicalization(FunctionPass):
         entry_block.body[idx + 1].value.value = call_get_range_var
 
         glbls = copy(func_ir.func_id.func.__globals__)
-        from numba.core.inline_closurecall import inline_closure_call
 
-        inline_closure_call(
+        inline_closurecall.inline_closure_call(
             func_ir,
             glbls,
             entry_block,
