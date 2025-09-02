@@ -11,6 +11,7 @@ from numba.cuda.flags import Flags
 from numba.cuda.core.compiler import StateDict
 from numba import jit, njit
 from numba.core import types, errors, ir
+from numba.cuda.utils import PYVERSION
 from numba.cuda.core import postproc, rewrites, ir_utils
 from numba.cuda.core.options import ParallelOptions
 from numba.cuda.core.inline_closurecall import InlineClosureCallPass
@@ -297,7 +298,16 @@ class TestBranchPrune(TestBranchPruneBase, SerialMixin):
 
         # Python 3.10 creates a block with a NOP in it for the `pass` which
         # means it gets pruned.
-        self.assert_prune(impl, (types.NoneType("none"),), [False, None], None)
+        if PYVERSION >= (3, 10):
+            # Python 3.10 creates a block with a NOP in it for the `pass` which
+            # means it gets pruned.
+            self.assert_prune(
+                impl, (types.NoneType("none"),), [False, None], None
+            )
+        else:
+            self.assert_prune(
+                impl, (types.NoneType("none"),), [None, None], None
+            )
 
         self.assert_prune(impl, (types.IntegerLiteral(10),), [True, None], 10)
 
