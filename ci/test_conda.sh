@@ -45,20 +45,6 @@ if [ "${RAPIDS_DEPENDENCIES:-}" = "oldest" ]; then
     DEPENDENCIES+=("numba==0.60.0")
 fi
 
-rapids-mamba-retry create \
-    -n test \
-    --strict-channel-priority \
-    --channel "`pwd`/conda-repo" \
-    --channel conda-forge \
-    "${DEPENDENCIES[@]}"
-
-# Temporarily allow unbound variables for conda activation.
-set +u
-conda activate test
-set -u
-
-pip install filecheck
-
 # Detect system architecture to set conda repo path
 ARCH=$(uname -m)
 if [[ "$ARCH" == "x86_64" ]]; then
@@ -70,7 +56,25 @@ else
     exit 1
 fi
 
-rapids-mamba-retry install -c `pwd`/conda-repo-py${RAPIDS_PY_VERSION}-${ARCH_SUFFIX} numba-cuda
+PY="${RAPIDS_PY_VER//./}"
+
+repo=`pwd`/conda-repo-py${PY}-${ARCH}
+
+rapids-mamba-retry create \
+    -n test \
+    --strict-channel-priority \
+    --channel "$repo" \
+    --channel conda-forge \
+    "${DEPENDENCIES[@]}"
+
+# Temporarily allow unbound variables for conda activation.
+set +u
+conda activate test
+set -u
+
+pip install filecheck
+
+rapids-mamba-retry install -c ${repo} numba-cuda
 
 RAPIDS_TESTS_DIR=${RAPIDS_TESTS_DIR:-"${PWD}/test-results"}/
 mkdir -p "${RAPIDS_TESTS_DIR}"
