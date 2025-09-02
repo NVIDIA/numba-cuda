@@ -7,13 +7,13 @@ import types as pytypes
 
 import numpy as np
 from numba.cuda.compiler import run_frontend
-from numba.cuda.core.compiler import StateDict
 from numba.cuda.flags import Flags
+from numba.cuda.core.compiler import StateDict
 from numba import jit, njit, literal_unroll
-from numba.core import types, errors, ir
-from numba.cuda.core import ir_utils, postproc, rewrites
-from numba.cuda.core.inline_closurecall import InlineClosureCallPass
+from numba.core import types, errors, ir, rewrites, ir_utils
+from numba.cuda.core import postproc
 from numba.cuda.core.options import ParallelOptions
+from numba.cuda.core.inline_closurecall import InlineClosureCallPass
 from numba.cuda.tests.support import (
     TestCase,
     MemoryLeakMixin,
@@ -31,9 +31,8 @@ from numba.cuda.core.untyped_passes import (
     DeadBranchPrune,
     PreserveIR,
 )
-from numba.cuda.compiler import DefaultPassBuilder, CompilerBase, PassManager
-from numba.cuda import utils
-from numba.cuda.testing import skip_on_cudasim
+from numba.cuda.core.compiler import CompilerBase
+from numba.cuda.compiler import DefaultPassBuilder, PassManager
 
 
 _GLOBAL = 123
@@ -161,7 +160,6 @@ class TestBranchPruneBase(MemoryLeakMixin, TestCase):
 
 
 class TestBranchPrune(TestBranchPruneBase, SerialMixin):
-    @skip_on_cudasim("Analysis passes not done in simulator")
     def test_single_if(self):
         def impl(x):
             if 1 == 0:
@@ -205,7 +203,6 @@ class TestBranchPrune(TestBranchPruneBase, SerialMixin):
         self.assert_prune(impl, (types.NoneType("none"),), [False], None)
         self.assert_prune(impl, (types.IntegerLiteral(10),), [True], 10)
 
-    @skip_on_cudasim("Analysis passes not done in simulator")
     def test_single_if_else(self):
         def impl(x):
             if x is None:
@@ -216,7 +213,6 @@ class TestBranchPrune(TestBranchPruneBase, SerialMixin):
         self.assert_prune(impl, (types.NoneType("none"),), [False], None)
         self.assert_prune(impl, (types.IntegerLiteral(10),), [True], 10)
 
-    @skip_on_cudasim("Analysis passes not done in simulator")
     def test_single_if_const_val(self):
         def impl(x):
             if x == 100:
@@ -233,7 +229,6 @@ class TestBranchPrune(TestBranchPruneBase, SerialMixin):
         self.assert_prune(impl, (types.NoneType("none"),), [True], None)
         self.assert_prune(impl, (types.IntegerLiteral(100),), [None], 100)
 
-    @skip_on_cudasim("Analysis passes not done in simulator")
     def test_single_if_else_two_const_val(self):
         def impl(x, y):
             if x == y:
@@ -265,7 +260,6 @@ class TestBranchPrune(TestBranchPruneBase, SerialMixin):
             1000,
         )
 
-    @skip_on_cudasim("Analysis passes not done in simulator")
     def test_single_if_else_w_following_undetermined(self):
         def impl(x):
             x_is_none_work = False
@@ -298,20 +292,10 @@ class TestBranchPrune(TestBranchPruneBase, SerialMixin):
 
         # Python 3.10 creates a block with a NOP in it for the `pass` which
         # means it gets pruned.
-        if utils.PYVERSION >= (3, 10):
-            # Python 3.10 creates a block with a NOP in it for the `pass` which
-            # means it gets pruned.
-            self.assert_prune(
-                impl, (types.NoneType("none"),), [False, None], None
-            )
-        else:
-            self.assert_prune(
-                impl, (types.NoneType("none"),), [None, None], None
-            )
+        self.assert_prune(impl, (types.NoneType("none"),), [False, None], None)
 
         self.assert_prune(impl, (types.IntegerLiteral(10),), [True, None], 10)
 
-    @skip_on_cudasim("Analysis passes not done in simulator")
     def test_double_if_else_rt_const(self):
         def impl(x):
             one_hundred = 100
@@ -331,7 +315,6 @@ class TestBranchPrune(TestBranchPruneBase, SerialMixin):
         self.assert_prune(impl, (types.NoneType("none"),), [False, None], None)
         self.assert_prune(impl, (types.IntegerLiteral(10),), [True, None], 10)
 
-    @skip_on_cudasim("Analysis passes not done in simulator")
     def test_double_if_else_non_literal_const(self):
         def impl(x):
             one_hundred = 100
@@ -345,7 +328,6 @@ class TestBranchPrune(TestBranchPruneBase, SerialMixin):
         self.assert_prune(impl, (types.IntegerLiteral(10),), [None], 10)
         self.assert_prune(impl, (types.IntegerLiteral(100),), [None], 100)
 
-    @skip_on_cudasim("Analysis passes not done in simulator")
     def test_single_two_branches_same_cond(self):
         def impl(x):
             if x is None:
@@ -363,7 +345,6 @@ class TestBranchPrune(TestBranchPruneBase, SerialMixin):
         self.assert_prune(impl, (types.NoneType("none"),), [False, True], None)
         self.assert_prune(impl, (types.IntegerLiteral(10),), [True, False], 10)
 
-    @skip_on_cudasim("Analysis passes not done in simulator")
     def test_cond_is_kwarg_none(self):
         def impl(x=None):
             if x is None:
@@ -382,7 +363,6 @@ class TestBranchPrune(TestBranchPruneBase, SerialMixin):
         self.assert_prune(impl, (types.NoneType("none"),), [False, True], None)
         self.assert_prune(impl, (types.IntegerLiteral(10),), [True, False], 10)
 
-    @skip_on_cudasim("Analysis passes not done in simulator")
     def test_cond_is_kwarg_value(self):
         def impl(x=1000):
             if x == 1000:
@@ -404,7 +384,6 @@ class TestBranchPrune(TestBranchPruneBase, SerialMixin):
         self.assert_prune(impl, (types.IntegerLiteral(0),), [None, None], 0)
         self.assert_prune(impl, (types.NoneType("none"),), [True, False], None)
 
-    @skip_on_cudasim("Analysis passes not done in simulator")
     def test_cond_rewrite_is_correct(self):
         # this checks that when a condition is replaced, it is replace by a
         # true/false bit that correctly represents the evaluated condition
@@ -448,7 +427,6 @@ class TestBranchPrune(TestBranchPruneBase, SerialMixin):
         check(fn, (types.NoneType("none"),), 1)
         check(fn, (types.IntegerLiteral(10),), 0)
 
-    @skip_on_cudasim("Analysis passes not done in simulator")
     def test_global_bake_in(self):
         def impl(x):
             if _GLOBAL == 123:
@@ -474,7 +452,6 @@ class TestBranchPrune(TestBranchPruneBase, SerialMixin):
         finally:
             _GLOBAL = tmp
 
-    @skip_on_cudasim("Analysis passes not done in simulator")
     def test_freevar_bake_in(self):
         _FREEVAR = 123
 
@@ -496,7 +473,6 @@ class TestBranchPrune(TestBranchPruneBase, SerialMixin):
 
         self.assert_prune(impl, (types.IntegerLiteral(1),), [True], 1)
 
-    @skip_on_cudasim("Analysis passes not done in simulator")
     def test_redefined_variables_are_not_considered_in_prune(self):
         # see issue #4163, checks that if a variable that is an argument is
         # redefined in the user code it is not considered const
@@ -519,7 +495,6 @@ class TestBranchPrune(TestBranchPruneBase, SerialMixin):
             None,
         )
 
-    @skip_on_cudasim("Analysis passes not done in simulator")
     def test_comparison_operators(self):
         # see issue #4163, checks that a variable that is an argument and has
         # value None survives TypeError from invalid comparison which should be
@@ -557,7 +532,6 @@ class TestBranchPrune(TestBranchPruneBase, SerialMixin):
             12.0,
         )
 
-    @skip_on_cudasim("Analysis passes not done in simulator")
     def test_redefinition_analysis_same_block(self):
         # checks that a redefinition in a block with prunable potential doesn't
         # break
@@ -587,7 +561,6 @@ class TestBranchPrune(TestBranchPruneBase, SerialMixin):
             None,
         )
 
-    @skip_on_cudasim("Analysis passes not done in simulator")
     def test_redefinition_analysis_different_block_can_exec(self):
         # checks that a redefinition in a block that may be executed prevents
         # pruning
@@ -619,7 +592,6 @@ class TestBranchPrune(TestBranchPruneBase, SerialMixin):
             None,
         )
 
-    @skip_on_cudasim("Analysis passes not done in simulator")
     def test_redefinition_analysis_different_block_cannot_exec(self):
         # checks that a redefinition in a block guarded by something that
         # has prune potential
@@ -673,7 +645,6 @@ class TestBranchPrune(TestBranchPruneBase, SerialMixin):
             None,
         )
 
-    @skip_on_cudasim("Analysis passes not done in simulator")
     def test_closure_and_nonlocal_can_prune(self):
         # Closures must be inlined ahead of branch pruning in case nonlocal
         # is used. See issue #6585.
@@ -699,7 +670,6 @@ class TestBranchPrune(TestBranchPruneBase, SerialMixin):
             ],
         )
 
-    @skip_on_cudasim("Analysis passes not done in simulator")
     def test_closure_and_nonlocal_cannot_prune(self):
         # Closures must be inlined ahead of branch pruning in case nonlocal
         # is used. See issue #6585.
@@ -759,7 +729,6 @@ class TestBranchPrunePredicates(TestBranchPruneBase, SerialMixin):
         # get function
         return pytypes.FunctionType(new_code, globals())
 
-    @skip_on_cudasim("Analysis passes not done in simulator")
     def test_literal_const_code_gen(self):
         def impl(x):
             _CONST1 = "PLACEHOLDER1"
@@ -779,7 +748,6 @@ class TestBranchPrunePredicates(TestBranchPruneBase, SerialMixin):
         self.assertEqual(impl(None), 3.14159)
         self.assertEqual(new(None), 24)
 
-    @skip_on_cudasim("Analysis passes not done in simulator")
     def test_single_if_const(self):
         def impl(x):
             _CONST1 = "PLACEHOLDER1"
@@ -793,7 +761,6 @@ class TestBranchPrunePredicates(TestBranchPruneBase, SerialMixin):
                     func, (types.NoneType("none"),), [prune], None
                 )
 
-    @skip_on_cudasim("Analysis passes not done in simulator")
     def test_single_if_negate_const(self):
         def impl(x):
             _CONST1 = "PLACEHOLDER1"
@@ -807,7 +774,6 @@ class TestBranchPrunePredicates(TestBranchPruneBase, SerialMixin):
                     func, (types.NoneType("none"),), [prune], None
                 )
 
-    @skip_on_cudasim("Analysis passes not done in simulator")
     def test_single_if_else_const(self):
         def impl(x):
             _CONST1 = "PLACEHOLDER1"
@@ -823,7 +789,6 @@ class TestBranchPrunePredicates(TestBranchPruneBase, SerialMixin):
                     func, (types.NoneType("none"),), [prune], None
                 )
 
-    @skip_on_cudasim("Analysis passes not done in simulator")
     def test_single_if_else_negate_const(self):
         def impl(x):
             _CONST1 = "PLACEHOLDER1"
@@ -839,7 +804,6 @@ class TestBranchPrunePredicates(TestBranchPruneBase, SerialMixin):
                     func, (types.NoneType("none"),), [prune], None
                 )
 
-    @skip_on_cudasim("Analysis passes not done in simulator")
     def test_single_if_freevar(self):
         for c_inp, prune in (self._TRUTHY, False), (self._FALSEY, True):
             for const in c_inp:
@@ -852,7 +816,6 @@ class TestBranchPrunePredicates(TestBranchPruneBase, SerialMixin):
                     func, (types.NoneType("none"),), [prune], None
                 )
 
-    @skip_on_cudasim("Analysis passes not done in simulator")
     def test_single_if_negate_freevar(self):
         for c_inp, prune in (self._TRUTHY, False), (self._FALSEY, True):
             for const in c_inp:
@@ -865,7 +828,6 @@ class TestBranchPrunePredicates(TestBranchPruneBase, SerialMixin):
                     func, (types.NoneType("none"),), [prune], None
                 )
 
-    @skip_on_cudasim("Analysis passes not done in simulator")
     def test_single_if_else_freevar(self):
         for c_inp, prune in (self._TRUTHY, False), (self._FALSEY, True):
             for const in c_inp:
@@ -880,7 +842,6 @@ class TestBranchPrunePredicates(TestBranchPruneBase, SerialMixin):
                     func, (types.NoneType("none"),), [prune], None
                 )
 
-    @skip_on_cudasim("Analysis passes not done in simulator")
     def test_single_if_else_negate_freevar(self):
         for c_inp, prune in (self._TRUTHY, False), (self._FALSEY, True):
             for const in c_inp:
@@ -897,7 +858,6 @@ class TestBranchPrunePredicates(TestBranchPruneBase, SerialMixin):
 
     # globals in this section have absurd names after their test usecase names
     # so as to prevent collisions and permit tests to run in parallel
-    @skip_on_cudasim("Analysis passes not done in simulator")
     def test_single_if_global(self):
         global c_test_single_if_global
 
@@ -913,7 +873,6 @@ class TestBranchPrunePredicates(TestBranchPruneBase, SerialMixin):
                     func, (types.NoneType("none"),), [prune], None
                 )
 
-    @skip_on_cudasim("Analysis passes not done in simulator")
     def test_single_if_negate_global(self):
         global c_test_single_if_negate_global
 
@@ -929,7 +888,6 @@ class TestBranchPrunePredicates(TestBranchPruneBase, SerialMixin):
                     func, (types.NoneType("none"),), [prune], None
                 )
 
-    @skip_on_cudasim("Analysis passes not done in simulator")
     def test_single_if_else_global(self):
         global c_test_single_if_else_global
 
@@ -947,7 +905,6 @@ class TestBranchPrunePredicates(TestBranchPruneBase, SerialMixin):
                     func, (types.NoneType("none"),), [prune], None
                 )
 
-    @skip_on_cudasim("Analysis passes not done in simulator")
     def test_single_if_else_negate_global(self):
         global c_test_single_if_else_negate_global
 
@@ -965,7 +922,6 @@ class TestBranchPrunePredicates(TestBranchPruneBase, SerialMixin):
                     func, (types.NoneType("none"),), [prune], None
                 )
 
-    @skip_on_cudasim("Analysis passes not done in simulator")
     def test_issue_5618(self):
         @njit
         def foo():
@@ -1002,11 +958,52 @@ class TestBranchPruneSSA(MemoryLeakMixin, TestCase):
             pm.finalize()
             return [pm]
 
+    def test_ssa_update_phi(self):
+        # This checks that dead branch pruning is rewiring phi nodes correctly
+        # after a block containing an incoming for a phi is removed.
+
+        @njit(pipeline_class=self.SSAPrunerCompiler)
+        def impl(p=None, q=None):
+            z = 1
+            r = False
+            if p is None:
+                r = True  # live
+
+            if r and q is not None:
+                z = 20  # dead
+
+            # one of the incoming blocks for z is dead, the phi needs an update
+            # were this not done, it would refer to variables that do not exist
+            # and result in a lowering error.
+            return z, r
+
+        self.assertPreciseEqual(impl(), impl.py_func())
+
+    def test_ssa_replace_phi(self):
+        # This checks that when a phi only has one incoming, because the other
+        # has been pruned, that a direct assignment is used instead.
+
+        @njit(pipeline_class=self.SSAPrunerCompiler)
+        def impl(p=None):
+            z = 0
+            if p is None:
+                z = 10
+            else:
+                z = 20
+
+            return z
+
+        self.assertPreciseEqual(impl(), impl.py_func())
+        func_ir = impl.overloads[impl.signatures[0]].metadata["preserved_ir"]
+
+        # check the func_ir, make sure there's no phi nodes
+        for blk in func_ir.blocks.values():
+            self.assertFalse([*blk.find_exprs("phi")])
+
 
 class TestBranchPrunePostSemanticConstRewrites(TestBranchPruneBase):
     # Tests that semantic constants rewriting works by virtue of branch pruning
 
-    @skip_on_cudasim("Analysis passes not done in simulator")
     def test_array_ndim_attr(self):
         def impl(array):
             if array.ndim == 2:
@@ -1028,7 +1025,6 @@ class TestBranchPrunePostSemanticConstRewrites(TestBranchPruneBase):
             np.zeros((2,)),
         )
 
-    @skip_on_cudasim("Analysis passes not done in simulator")
     def test_tuple_len(self):
         def impl(tup):
             if len(tup) == 3:
@@ -1050,7 +1046,6 @@ class TestBranchPrunePostSemanticConstRewrites(TestBranchPruneBase):
             tuple([1, 2]),
         )
 
-    @skip_on_cudasim("Analysis passes not done in simulator")
     def test_attr_not_len(self):
         # The purpose of this test is to make sure that the conditions guarding
         # the rewrite part do not themselves raise exceptions.
@@ -1067,7 +1062,6 @@ class TestBranchPrunePostSemanticConstRewrites(TestBranchPruneBase):
 
         self.assertIn("Unknown attribute 'as_integer_ratio'", str(e.exception))
 
-    @skip_on_cudasim("Analysis passes not done in simulator")
     def test_ndim_not_on_array(self):
         FakeArray = collections.namedtuple("FakeArray", ["ndim"])
         fa = FakeArray(ndim=2)
@@ -1096,7 +1090,6 @@ class TestBranchPrunePostSemanticConstRewrites(TestBranchPruneBase):
             flags={"nopython": False, "forceobj": True},
         )
 
-    @skip_on_cudasim("Analysis passes not done in simulator")
     def test_semantic_const_propagates_before_static_rewrites(self):
         # see issue #5015, the ndim needs writing in as a const before
         # the rewrite passes run to make e.g. getitems static where possible
@@ -1108,13 +1101,13 @@ class TestBranchPrunePostSemanticConstRewrites(TestBranchPruneBase):
 
         self.assertPreciseEqual(impl(*args), impl.py_func(*args))
 
-    @skip_on_cudasim("Analysis passes not done in simulator")
     def test_tuple_const_propagation(self):
         @njit(pipeline_class=IRPreservingTestPipeline)
         def impl(*args):
             s = 0
             for arg in literal_unroll(args):
                 s += len(arg)
+            return s
 
         inp = ((), (1, 2, 3), ())
         self.assertPreciseEqual(impl(*inp), impl.py_func(*inp))
