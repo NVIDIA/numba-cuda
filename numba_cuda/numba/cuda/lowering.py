@@ -1050,7 +1050,7 @@ class Lower(BaseLower):
         )
 
     def _lower_call_ObjModeDispatcher(self, fnty, expr, signature):
-        from numba.core.pythonapi import ObjModeUtils
+        from numba.cuda.core.pythonapi import ObjModeUtils
 
         self.init_pyapi()
         # Acquire the GIL
