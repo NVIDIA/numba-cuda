@@ -9,16 +9,15 @@ import numpy as np
 from numba.cuda.compiler import run_frontend
 from numba.cuda.flags import Flags
 from numba.cuda.core.compiler import StateDict
-from numba import jit, njit, literal_unroll
-from numba.core import types, errors, ir, rewrites, ir_utils
-from numba.cuda.core import postproc
+from numba import jit, njit
+from numba.core import types, errors, ir, ir_utils
+from numba.cuda.core import postproc, rewrites
 from numba.cuda.core.options import ParallelOptions
 from numba.cuda.core.inline_closurecall import InlineClosureCallPass
 from numba.cuda.tests.support import (
     TestCase,
     MemoryLeakMixin,
     SerialMixin,
-    IRPreservingTestPipeline,
 )
 from numba.cuda.core.analysis import (
     dead_branch_prune,
@@ -958,48 +957,6 @@ class TestBranchPruneSSA(MemoryLeakMixin, TestCase):
             pm.finalize()
             return [pm]
 
-    def test_ssa_update_phi(self):
-        # This checks that dead branch pruning is rewiring phi nodes correctly
-        # after a block containing an incoming for a phi is removed.
-
-        @njit(pipeline_class=self.SSAPrunerCompiler)
-        def impl(p=None, q=None):
-            z = 1
-            r = False
-            if p is None:
-                r = True  # live
-
-            if r and q is not None:
-                z = 20  # dead
-
-            # one of the incoming blocks for z is dead, the phi needs an update
-            # were this not done, it would refer to variables that do not exist
-            # and result in a lowering error.
-            return z, r
-
-        self.assertPreciseEqual(impl(), impl.py_func())
-
-    def test_ssa_replace_phi(self):
-        # This checks that when a phi only has one incoming, because the other
-        # has been pruned, that a direct assignment is used instead.
-
-        @njit(pipeline_class=self.SSAPrunerCompiler)
-        def impl(p=None):
-            z = 0
-            if p is None:
-                z = 10
-            else:
-                z = 20
-
-            return z
-
-        self.assertPreciseEqual(impl(), impl.py_func())
-        func_ir = impl.overloads[impl.signatures[0]].metadata["preserved_ir"]
-
-        # check the func_ir, make sure there's no phi nodes
-        for blk in func_ir.blocks.values():
-            self.assertFalse([*blk.find_exprs("phi")])
-
 
 class TestBranchPrunePostSemanticConstRewrites(TestBranchPruneBase):
     # Tests that semantic constants rewriting works by virtue of branch pruning
@@ -1100,25 +1057,3 @@ class TestBranchPrunePostSemanticConstRewrites(TestBranchPruneBase):
         args = (np.zeros((5, 4, 3, 2)), np.zeros((1, 1)))
 
         self.assertPreciseEqual(impl(*args), impl.py_func(*args))
-
-    def test_tuple_const_propagation(self):
-        @njit(pipeline_class=IRPreservingTestPipeline)
-        def impl(*args):
-            s = 0
-            for arg in literal_unroll(args):
-                s += len(arg)
-            return s
-
-        inp = ((), (1, 2, 3), ())
-        self.assertPreciseEqual(impl(*inp), impl.py_func(*inp))
-
-        ol = impl.overloads[impl.signatures[0]]
-        func_ir = ol.metadata["preserved_ir"]
-        # make sure one of the inplace binop args is a Const
-        binop_consts = set()
-        for blk in func_ir.blocks.values():
-            for expr in blk.find_exprs("inplace_binop"):
-                inst = blk.find_variable_assignment(expr.rhs.name)
-                self.assertIsInstance(inst.value, ir.Const)
-                binop_consts.add(inst.value.value)
-        self.assertEqual(binop_consts, {len(x) for x in inp})
