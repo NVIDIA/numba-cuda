@@ -195,10 +195,11 @@ class _EnvReloader(object):
     def process_environ(self, environ):
         def _readenv(name, ctor, default):
             value = environ.get(name)
+            result = None
             if value is None:
-                return default() if callable(default) else default
+                result = default() if callable(default) else default
             try:
-                return ctor(value)
+                result = ctor(value)
             except Exception:
                 warnings.warn(
                     f"Environment variable '{name}' is defined but "
@@ -207,7 +208,27 @@ class _EnvReloader(object):
                     f"{traceback.format_exc()}",
                     RuntimeWarning,
                 )
-                return default
+                result = default
+            try:
+                from numba import config as numba_config
+
+                if name.startswith("NUMBA_") and hasattr(
+                    numba_config, name[6:]
+                ):
+                    config_value = getattr(numba_config, name[6:])
+                    if config_value != result:
+                        warnings.warn(
+                            f"Environment variable '{name}' is explicitly set "
+                            f"with `{config_value}` in numba.config. "
+                            f"numba.config is deprecated for numba-cuda. "
+                            f"This will be removed in a future release. "
+                            f"Please use numba.cuda.config instead.",
+                            RuntimeWarning,
+                        )
+                        result = config_value
+            except ImportError:
+                pass
+            return result
 
         def optional_str(x):
             return str(x) if x is not None else None
