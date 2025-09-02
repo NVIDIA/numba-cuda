@@ -21,7 +21,7 @@ from numba.core import (
     imputils,
 )
 from numba.cuda import cgutils, debuginfo
-from numba.core import event, errors, targetconfig
+from numba.core import errors, targetconfig
 from numba import _dynfunc, _helperlib
 from numba.core.compiler_lock import global_compiler_lock
 from numba.cuda.core.pythonapi import PythonAPI
@@ -1287,5 +1287,3 @@ class _wrap_missing_loc(object):
 
     def __repr__(self):
         return "<wrapped %s>" % self.func
-
-
