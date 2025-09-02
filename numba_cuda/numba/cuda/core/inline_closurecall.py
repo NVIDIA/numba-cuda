@@ -5,7 +5,7 @@ import types as pytypes  # avoid confusion with numba.types
 import copy
 import ctypes
 import numba.core.analysis
-from numba.core import types, typing, config, cgutils, ir, rewrites, errors
+from numba.core import types, typing, config, cgutils, ir, errors
 from numba.parfors.parfor import internal_prange
 from numba.cuda import utils
 from numba.cuda.core.ir_utils import (
@@ -38,7 +38,7 @@ from numba.core.imputils import impl_ret_untracked
 from numba.core.extending import intrinsic
 from numba.core.typing import signature
 
-from numba.cuda.core import postproc
+from numba.cuda.core import postproc, rewrites
 from numba.np.unsafe.ndarray import empty_inferred as unsafe_empty_inferred
 import numpy as np
 import operator
