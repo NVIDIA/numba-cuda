@@ -13,7 +13,7 @@ from numba.cuda import utils
 from numba.cuda.core.tracing import event
 from numba.cuda.core.postproc import PostProcessor
 from numba.cuda.core.ir_utils import enforce_no_dels, legalize_single_scope
-import numba.core.event as ev
+import numba.cuda.core.event as ev
 
 import numba.cuda.core.compiler_machinery as nccm
 

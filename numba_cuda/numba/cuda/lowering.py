@@ -12,14 +12,12 @@ from numba.core import (
     typing,
     types,
     ir,
-    funcdesc,
     generators,
     config,
     removerefctpass,
-    targetconfig,
 )
 from numba.cuda import debuginfo, cgutils, utils
-from numba.cuda.core import ir_utils
+from numba.cuda.core import ir_utils, targetconfig, funcdesc
 from numba.core.errors import (
     LoweringError,
     new_error_context,
@@ -28,7 +26,7 @@ from numba.core.errors import (
     UnsupportedError,
     NumbaDebugInfoWarning,
 )
-from numba.core.funcdesc import default_mangler
+from numba.cuda.core.funcdesc import default_mangler
 from numba.cuda.core.environment import Environment
 from numba.core.analysis import compute_use_defs, must_use_alloca
 from numba.misc.firstlinefinder import get_func_body_first_lineno

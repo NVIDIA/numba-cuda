@@ -9,7 +9,6 @@ import copy
 from numba.core import ir as numba_ir
 from numba.core import (
     types,
-    funcdesc,
     config,
     bytecode,
     cpu,
@@ -17,12 +16,11 @@ from numba.core import (
 from numba.core.compiler_lock import global_compiler_lock
 from numba.core.errors import NumbaWarning, NumbaInvalidConfigWarning
 from numba.cuda.core.interpreter import Interpreter
-from numba.cuda.core import inline_closurecall
 
 from numba.cuda import cgutils, typing, lowering, nvvmutils, utils
 from numba.cuda.api import get_current_device
 from numba.cuda.codegen import ExternalCodeLibrary
-from numba.cuda.core import sigutils, postproc
+from numba.cuda.core import inline_closurecall, sigutils, postproc, funcdesc
 from numba.cuda.cudadrv import nvvm, nvrtc
 from numba.cuda.descriptor import cuda_target
 from numba.cuda.flags import CUDAFlags
