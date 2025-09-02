@@ -98,11 +98,6 @@ test_dir = root + \"numba/cuda/tests/test_binary_generation/\"
 print(test_dir)
 "
 
-python -c "import numba.cuda as cuda; print(cuda.__file__)"
-python -c "import numba_cuda as cuda; print(cuda.__file__)"
-pip freeze | grep numba
-python -c "import numba.cuda.testing; print(numba.cuda.testing.test_binary_generation_dir())"
-
 rapids-logger "Build tests"
 
 export NUMBA_CUDA_TEST_BIN_DIR=$(python -c "$GET_TEST_BINARY_DIR")
