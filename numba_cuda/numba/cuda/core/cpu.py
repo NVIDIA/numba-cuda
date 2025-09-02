@@ -27,8 +27,10 @@ import numba.core.entrypoints
 
 # Re-export these options, they are used from the cpu module throughout the code
 # base.
-from numba.core.cpu_options import (
+from numba.cuda.core.options import (
     ParallelOptions,  # noqa F401
+    FastMathOptions,  # noqa F401
+    InlineOptions,  # noqa F401
 )  # noqa F401
 from numba.np import ufunc_db
 
