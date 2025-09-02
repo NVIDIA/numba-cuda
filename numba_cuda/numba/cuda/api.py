@@ -11,6 +11,7 @@ import os
 import numpy as np
 
 from .cudadrv import devicearray, devices, driver
+
 from numba.core import config
 from numba.cuda.api_util import prepare_shape_strides_dtype
 
@@ -509,6 +510,9 @@ def close():
     contexts if the current thread is the main thread.
     """
     devices.reset()
+    from .memory_management import rtsys
+
+    rtsys.close()
 
 
 def _auto_device(ary, stream=0, copy=True):

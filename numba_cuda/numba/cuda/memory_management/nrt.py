@@ -69,9 +69,17 @@ class _Runtime:
 
     def __init__(self):
         """Initialize memsys module and variable"""
+        self._reset()
+
+    def _reset(self):
+        """Reset to the uninitialized state"""
         self._memsys_module = None
         self._memsys = None
         self._initialized = False
+
+    def close(self):
+        """Close and reset"""
+        self._reset()
 
     def _compile_memsys_module(self):
         """
