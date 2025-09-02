@@ -4,7 +4,7 @@
 from numba import cuda
 from numba.core.errors import TypingError
 from numba.cuda.testing import unittest, CUDATestCase, skip_on_cudasim
-from numba import config
+from numba.cuda import config
 
 
 def noop(x):

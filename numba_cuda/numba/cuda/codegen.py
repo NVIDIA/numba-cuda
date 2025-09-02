@@ -3,7 +3,7 @@
 
 from llvmlite import ir
 
-from numba.core import config
+from numba.cuda.core import config
 from numba.cuda import serialize
 from .cudadrv import devices, driver, nvvm, runtime, nvrtc
 from numba.cuda.core.codegen import Codegen, CodeLibrary

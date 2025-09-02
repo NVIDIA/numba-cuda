@@ -14,12 +14,11 @@ from numba.core import (
     ir,
     funcdesc,
     generators,
-    config,
     removerefctpass,
     targetconfig,
 )
 from numba.cuda import debuginfo, cgutils, utils
-from numba.cuda.core import ir_utils
+from numba.cuda.core import ir_utils, config
 from numba.core.errors import (
     LoweringError,
     new_error_context,

@@ -6,7 +6,8 @@ import warnings
 import numpy as np
 import unittest
 
-from numba import config, cuda, types, njit, typeof
+from numba import cuda, types, njit, typeof
+from numba.cuda import config
 from numba.np import numpy_support
 from numba.cuda.tests.support import TestCase
 from numba.cuda.tests.support import MemoryLeakMixin

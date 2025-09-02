@@ -15,7 +15,7 @@ from numba.cuda.tests.support import linux_only
 
 def child_test():
     from numba import cuda, int32, void
-    from numba.core import config
+    from numba.cuda.core import config
     import io
     import numpy as np
     import threading

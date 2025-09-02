@@ -3,7 +3,7 @@
 
 import numpy as np
 from numba import cuda
-from numba.core.config import ENABLE_CUDASIM
+from numba.cuda.core.config import ENABLE_CUDASIM
 from numba.cuda.testing import CUDATestCase
 import unittest
 

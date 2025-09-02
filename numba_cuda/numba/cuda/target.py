@@ -8,7 +8,6 @@ from llvmlite import ir
 import warnings
 
 from numba.core import (
-    config,
     targetconfig,
     types,
 )
@@ -32,6 +31,7 @@ from numba.cuda.debuginfo import CUDADIBuilder
 from numba.cuda.flags import CUDAFlags
 from numba.cuda.models import cuda_data_manager
 from numba.cuda.core.callconv import BaseCallConv, MinimalCallConv
+from numba.cuda.core import config
 
 # -----------------------------------------------------------------------------
 # Typing

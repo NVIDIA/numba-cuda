@@ -20,7 +20,7 @@ from numba.cuda.misc.findlib import find_lib
 from numba.cuda.cuda_paths import get_cuda_paths
 from numba.cuda.cudadrv.driver import locate_driver_and_loader, load_driver
 from numba.cuda.cudadrv.error import CudaSupportError
-from numba.core import config
+from numba.cuda.core import config
 
 
 if sys.platform == "win32":

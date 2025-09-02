@@ -23,7 +23,7 @@ _DEBUG = False
 
 if _DEBUG:
     # Enable debug logger on SSA reconstruction
-    ssa_logger = logging.getLogger("numba.core.ssa")
+    ssa_logger = logging.getLogger("numba.cuda.core.ssa")
     ssa_logger.setLevel(level=logging.DEBUG)
     ssa_logger.addHandler(logging.StreamHandler(sys.stderr))
 
