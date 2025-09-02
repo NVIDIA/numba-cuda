@@ -53,7 +53,7 @@ def intrin_alloc(typingctx, allocsize, align):
     """Intrinsic to call into the allocator for Array"""
 
     def codegen(context, builder, signature, args):
-        [allocsize, align] = args
+        allocsize, align = args
         meminfo = context.nrt.meminfo_alloc_aligned(builder, allocsize, align)
         return meminfo
 
