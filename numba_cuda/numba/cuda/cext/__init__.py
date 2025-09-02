@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: Copyright (c) 2024 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: BSD-2-Clause
+
 import sys
 import importlib
 import importlib.util
@@ -67,7 +70,7 @@ def _load_cext_module(
     # 2) Fallback: scan sys.path for installed numba_cuda directory
     if spec is None:
         for entry in sys.path:
-            numba_cuda_dir = Path(entry) / "numba_cuda"
+            numba_cuda_dir = Path(entry) / "numba_cuda/numba/cuda/cext"
             spec = _find_in_dir(module_basename, numba_cuda_dir)
             if spec is not None:
                 break
