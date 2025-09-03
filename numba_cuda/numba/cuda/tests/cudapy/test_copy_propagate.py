@@ -14,6 +14,7 @@ from numba.cuda.core.ir_utils import (
     get_name_var_table,
 )
 from numba.cuda.core.typed_passes import type_inference_stage
+from numba.cuda.testing import CUDATestCase, skip_on_cudasim
 import unittest
 
 
@@ -57,7 +58,8 @@ def _find_assign(func_ir, var):
     return False
 
 
-class TestCopyPropagate(unittest.TestCase):
+@skip_on_cudasim("cudasim doesn't support run_frontend")
+class TestCopyPropagate(CUDATestCase):
     def test1(self):
         typingctx = cpu_target.typing_context
         targetctx = cpu_target.target_context
