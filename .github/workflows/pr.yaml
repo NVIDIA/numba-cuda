@@ -41,6 +41,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       BUILD_MATRIX: ${{ steps.compute-matrix.outputs.BUILD_MATRIX }}
+      WINDOWS_MATRIX: ${{ steps.compute-matrix.outputs.WINDOWS_MATRIX }}
       SIMULATOR_MATRIX: ${{ steps.compute-matrix.outputs.SIMULATOR_MATRIX }}
       TEST_MATRIX: ${{ steps.compute-matrix.outputs.TEST_MATRIX }}
     steps:
