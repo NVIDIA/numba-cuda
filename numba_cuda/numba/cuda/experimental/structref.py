@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: BSD-2-Clause
+
 """Utilities for defining a mutable struct.
 
 A mutable struct is passed by reference;
@@ -16,8 +19,6 @@ from numba.core.extending import (
     box,
     unbox,
     NativeValue,
-    intrinsic,
-    overload,
 )
 from numba.cuda.typing.templates import AttributeTemplate
 
@@ -191,61 +192,6 @@ def define_boxing(struct_type, obj_class):
         return NativeValue(out)
 
 
-def define_constructor(py_class, struct_typeclass, fields):
-    """Define the jit-code constructor for `struct_typeclass` using the
-    Python type `py_class` and the required `fields`.
-
-    Use this instead of `define_proxy()` if the user does not want boxing
-    logic defined.
-    """
-    # Build source code for the constructor
-    params = ", ".join(fields)
-    indent = " " * 8
-    init_fields_buf = []
-    for k in fields:
-        init_fields_buf.append(f"st.{k} = {k}")
-    init_fields = f"\n{indent}".join(init_fields_buf)
-
-    source = f"""
-def ctor({params}):
-    struct_type = struct_typeclass(list(zip({list(fields)}, [{params}])))
-    def impl({params}):
-        st = new(struct_type)
-        {init_fields}
-        return st
-    return impl
-"""
-
-    glbs = dict(struct_typeclass=struct_typeclass, new=new)
-    exec(source, glbs)
-    ctor = glbs["ctor"]
-    # Make it an overload
-    overload(py_class)(ctor)
-
-
-def define_proxy(py_class, struct_typeclass, fields):
-    """Defines a PyObject proxy for a structref.
-
-    This makes `py_class` a valid constructor for creating a instance of
-    `struct_typeclass` that contains the members as defined by `fields`.
-
-    Parameters
-    ----------
-    py_class : type
-        The Python class for constructing an instance of `struct_typeclass`.
-    struct_typeclass : numba.core.types.Type
-        The structref type class to bind to.
-    fields : Sequence[str]
-        A sequence of field names.
-
-    Returns
-    -------
-    None
-    """
-    define_constructor(py_class, struct_typeclass, fields)
-    define_boxing(struct_typeclass, py_class)
-
-
 def register(struct_type):
     """Register a `numba.core.types.StructRef` for use in jit-code.
 
@@ -279,49 +225,6 @@ def register(struct_type):
     default_manager.register(struct_type, models.StructRefModel)
     define_attributes(struct_type)
     return struct_type
-
-
-@intrinsic
-def new(typingctx, struct_type):
-    """new(struct_type)
-
-    A jit-code only intrinsic. Used to allocate an **empty** mutable struct.
-    The fields are zero-initialized and must be set manually after calling
-    the function.
-
-    Example:
-
-        instance = new(MyStruct)
-        instance.field = field_value
-    """
-    from numba.cuda.experimental.jitclass.base import imp_dtor
-
-    inst_type = struct_type.instance_type
-
-    def codegen(context, builder, signature, args):
-        # FIXME: mostly the same as jitclass ctor_impl()
-        model = context.data_model_manager[inst_type.get_data_type()]
-        alloc_type = model.get_value_type()
-        alloc_size = context.get_abi_sizeof(alloc_type)
-
-        meminfo = context.nrt.meminfo_alloc_dtor(
-            builder,
-            context.get_constant(types.uintp, alloc_size),
-            imp_dtor(context, builder.module, inst_type),
-        )
-        data_pointer = context.nrt.meminfo_data(builder, meminfo)
-        data_pointer = builder.bitcast(data_pointer, alloc_type.as_pointer())
-
-        # Nullify all data
-        builder.store(cgutils.get_null_value(alloc_type), data_pointer)
-
-        inst_struct = context.make_helper(builder, inst_type)
-        inst_struct.meminfo = meminfo
-
-        return inst_struct._getvalue()
-
-    sig = inst_type(struct_type)
-    return sig, codegen
 
 
 class StructRefProxy:

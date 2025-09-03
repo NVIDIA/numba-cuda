@@ -40,7 +40,6 @@ class TestImport(unittest.TestCase):
             "numba.np.npyimpl",
             "numba.typed.typeddict",
             "numba.typed.typedlist",
-            "numba.cuda.experimental.jitclass.base",
         )
 
         code = "import sys; from numba import cuda; print(list(sys.modules))"
