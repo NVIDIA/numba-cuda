@@ -354,12 +354,13 @@ class TestCudaDebugInfo(CUDATestCase):
         @cuda.jit("void(int64,)", debug=True, opt=False)
         def foo(x):
             """
-            CHECK-LABEL: define void @{{.+}}foo
+            CHECK: store i1 true, i1* %"second.1"
+            CHECK: call void @"llvm.dbg.value"
+            CHECK: store i1 true, i1* %"second.2"
+            CHECK: call void @"llvm.dbg.value"
 
-            CHECK: %[[VAL_0:.+]] = load i8*, i8** %"$bool32"
-            CHECK: store i8* null, i8** %"$bool32"
-            CHECK: %[[VAL_1:.+]] = load i1, i1* %"second.2"
-            CHECK: %[[VAL_2:.+]] = load i1, i1* %[[VAL_3:.+]]
+            CHECK: %[[VAL_1:.*]] = load i1, i1* %"second.2"
+            CHECK: %[[VAL_2:.*]] = load i1, i1* %[[VAL_3:.*]]
             CHECK: store i1 %[[VAL_1]], i1* %[[VAL_3]]
             CHECK: call void @"llvm.dbg.value"(metadata i1 %[[VAL_1]], metadata ![[VAL_4:[0-9]+]]
 
