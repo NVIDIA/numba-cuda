@@ -70,7 +70,7 @@ else
     exit 1
 fi
 
-rapids-mamba-retry install -c `pwd`/conda-repo-py${RAPIDS_PY_VERSION}-${ARCH_SUFFIX} numba-cuda
+rapids-mamba-retry install -c `pwd`/conda-repo numba-cuda
 
 RAPIDS_TESTS_DIR=${RAPIDS_TESTS_DIR:-"${PWD}/test-results"}/
 mkdir -p "${RAPIDS_TESTS_DIR}"
