@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: Copyright (c) 2024 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-License-Identifier: BSD-2-Clause
+
 #include "_pymodule.h"
 
 static int get_writable_buffer(PyObject* obj, Py_buffer *buf, int force)
