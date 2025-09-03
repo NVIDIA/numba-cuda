@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: Copyright (c) 2024 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-License-Identifier: BSD-2-Clause
+
 #ifndef NUMBA_DEVICEARRAY_H_
 #define NUMBA_DEVICEARRAY_H_
 

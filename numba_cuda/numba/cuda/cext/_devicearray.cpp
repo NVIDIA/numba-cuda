@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: Copyright (c) 2024 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-License-Identifier: BSD-2-Clause
+
 /* This file contains the base class implementation for all device arrays. The
  * base class is implemented in C so that computing typecodes for device arrays
  * can be implemented efficiently. */

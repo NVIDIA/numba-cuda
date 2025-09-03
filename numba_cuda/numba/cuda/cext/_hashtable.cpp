@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: Copyright (c) 2024 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-License-Identifier: BSD-2-Clause
+
 /*
  * This file and _hashtable.h are from CPython 3.5.  The symbols have been
  * renamed from _Py_hashxxx to _Numba_hashxxx to avoid name clashes with
