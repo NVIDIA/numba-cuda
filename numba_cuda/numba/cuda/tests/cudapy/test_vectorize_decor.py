@@ -6,7 +6,7 @@ import math
 
 from numba import vectorize, cuda, int32, uint32, float32, float64
 from numba.cuda.testing import skip_on_cudasim, CUDATestCase
-from numba.tests.support import CheckWarningsMixin
+from numba.cuda.tests.support import CheckWarningsMixin
 
 import unittest
 

@@ -20,7 +20,7 @@ from numba.core.errors import (
     TypingError,
     InternalError,
 )
-from numba.core.cpu_options import InlineOptions
+from numba.cuda.core.options import InlineOptions
 from numba.core.typing.templates import Signature as CoreSignature
 from numba.cuda import utils
 from numba.cuda.core import ir_utils
@@ -660,7 +660,7 @@ class _OverloadFunctionTemplate(AbstractTemplate):
             # need to run the compiler front end up to type inference to compute
             # a signature
             from numba.cuda.core import typed_passes, compiler
-            from numba.core.inline_closurecall import InlineWorker
+            from numba.cuda.core.inline_closurecall import InlineWorker
 
             fcomp = disp._compiler
             flags = compiler.Flags()
