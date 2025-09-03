@@ -97,7 +97,8 @@ jobs:
           ref: ${{ inputs.sha }}
           fetch-depth: 0
       - uses: actions/download-artifact@v4
-        name: conda-repo-py${{ matrix.PY_VER }}-${{ matrix.ARCH }}
+        with:
+          name: conda-repo-py${{ matrix.PY_VER }}-${{ matrix.ARCH }}
       - name: Display structure of downloaded files
         run: ls -R
       - name: Standardize repository information

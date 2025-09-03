@@ -49,7 +49,8 @@ jobs:
         run: nvidia-smi
 
       - uses: actions/download-artifact@v4
-        name: wheel
+        with:
+          name: wheel
 
       - name: Display structure of downloaded files
         run: Get-ChildItem -Recurse
