@@ -30,6 +30,8 @@ jobs:
     steps:
       - name: Compute Python Test Matrix
         id: compute-matrix
+        env:
+          MATRIX: ${{ inputs.matrix }}
         run: |
           set -eo pipefail
           MATRIX=$(yq -n -o json 'env(MATRIX)' | jq -c)
