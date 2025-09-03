@@ -508,10 +508,12 @@ def close():
     Explicitly clears all contexts in the current thread, and destroys all
     contexts if the current thread is the main thread.
     """
-    devices.reset()
+    # Must clear memsys object in case it has been used already
     from .memory_management import rtsys
 
     rtsys.close()
+
+    devices.reset()
 
 
 def _auto_device(ary, stream=0, copy=True):
