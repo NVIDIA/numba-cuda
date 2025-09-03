@@ -7,13 +7,13 @@ from collections import defaultdict, namedtuple
 from copy import copy
 import warnings
 
+from numba.cuda.core import typeinfer
 from numba.core import (
     errors,
     types,
     typing,
     ir,
     funcdesc,
-    typeinfer,
     config,
     lowering,
 )
