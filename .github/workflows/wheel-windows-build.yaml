@@ -33,7 +33,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix: ${{ fromJSON('{"ARCH":["amd64"],"PY_VER":["3.12"],"CUDA_VER":["12.8.0"]}') }}
-    runs-on: "cuda-python-windows-gpu-github"
+    runs-on: windows-2022
     steps:
       - uses: actions/checkout@v4
         with:
