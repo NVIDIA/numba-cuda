@@ -56,9 +56,7 @@ else
     exit 1
 fi
 
-PY="${RAPIDS_PY_VER//./}"
-
-repo=`pwd`/conda-repo-py${PY}-${ARCH}
+repo=`pwd`/conda-repo-py${RAPIDS_PY_VERSION}-${ARCH}
 
 rapids-mamba-retry create \
     -n test \
