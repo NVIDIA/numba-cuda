@@ -24,15 +24,13 @@ jobs:
         id: compute-matrix
         run: |
           set -eo pipefail
-          export TEST_MATRIX="{ ARCH: 'amd64', PY_VER: '3.12', CUDA_VER: '12.8.0' }"
-          MATRIX=$(yq -n -o json 'env(TEST_MATRIX)' | jq -c)
+          MATRIX=$(yq -n -o json 'env(MATRIX)' | jq -c)
           echo "MATRIX=${MATRIX}" | tee --append "${GITHUB_OUTPUT}"
   build:
-    name: ${{ matrix.CUDA_VER }}, ${{ matrix.PY_VER }}, ${{ matrix.ARCH }}, windows
+    name: ${{ matrix.CUDA_VER }}, ${{ matrix.PY_VER }}, windows
     needs: compute-matrix
     strategy:
-      fail-fast: false
-      matrix: ${{ fromJSON('{"ARCH":["amd64"],"PY_VER":["3.12"],"CUDA_VER":["12.8.0"]}') }}
+      matrix: ${{ fromJSON(needs.compute-matrix.outputs.MATRIX) }}
     runs-on: windows-2022
     steps:
       - uses: actions/checkout@v4
@@ -59,5 +57,5 @@ jobs:
         if: "!cancelled()"
         uses: actions/upload-artifact@v4
         with:
-          name: wheel-py${{ matrix.PY_VER }}-${{ matrix.ARCH }}-windows
+          name: wheel-py${{ matrix.PY_VER }}-windows
           path: ${{ env.wheel_path }}
