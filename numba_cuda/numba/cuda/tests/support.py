@@ -33,17 +33,6 @@ from numba.core.extending import (
 from numba.core.datamodel.models import OpaqueModel
 from numba.cuda.np import numpy_support
 
-try:
-    import setuptools  # noqa: F401
-
-    has_setuptools = True
-except (ImportError, OSError):
-    # Suppress error caused by https://github.com/python/cpython/issues/118234
-    has_setuptools = False
-
-# decorator for a test that need setuptools
-needs_setuptools = unittest.skipUnless(has_setuptools, "Test needs setuptools")
-
 
 class EnableNRTStatsMixin(object):
     """Mixin to enable the NRT statistics counters."""
@@ -761,20 +750,6 @@ class TestCase(unittest.TestCase):
             return NativeValue(c.context.get_dummy_value())
 
         return Dummy, DummyType
-
-    def skip_if_no_external_compiler(self):
-        """
-        Call this to ensure the test is skipped if no suitable external compiler
-        is found. This is a method on the TestCase opposed to a stand-alone
-        decorator so as to make it "lazy" via runtime evaluation opposed to
-        running at test-discovery time.
-        """
-        # This is a local import to avoid deprecation warnings being generated
-        # through the use of the numba.pycc module.
-        from numba.cuda.pycc.platform import external_compiler_works
-
-        if not external_compiler_works():
-            self.skipTest("No suitable external compiler was found.")
 
 
 class MemoryLeak(object):
