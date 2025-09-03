@@ -39,10 +39,6 @@ def _test_wont_propagate(b, z, w):
     return a < b
 
 
-def _null_func(a, b, c, d):
-    False
-
-
 def _in_list_var(list_var, var):
     for i in list_var:
         if i.name == var:
