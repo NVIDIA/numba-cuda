@@ -40,16 +40,21 @@ jobs:
           repository: ${{ inputs.repo }}
           ref: ${{ inputs.sha }}
           fetch-depth: 0
+
       - name: Set up Python ${{ matrix.PY_VER }}
         uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065  # v5.6.0
         with:
           python-version: ${{ matrix.PY_VER }}
+
+      - name: Set up MSVC
+        uses: ilammy/msvc-dev-cmd@v1  # TODO: ask admin to allow pinning commits
 
       - name: Python build
         run: |
           ${{ inputs.script }}
         env:
           CUDA_VER: ${{ matrix.CUDA_VER }}
+
       - name: Upload wheel
         if: "!cancelled()"
         uses: actions/upload-artifact@v4
