@@ -30,4 +30,4 @@ python -m build .
 
 $wheel_path = Resolve-Path dist\numba_cuda*.whl | Select-Object -ExpandProperty Path
 echo "Wheel path: $wheel_path"
-echo "wheel_path=$wheel_path" >> $GITHUB_ENV
+echo "wheel_path=$wheel_path" >> $env:GITHUB_ENV
