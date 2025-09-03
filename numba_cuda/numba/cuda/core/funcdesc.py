@@ -157,8 +157,6 @@ class FunctionDescriptor(object):
         """
         return self.mangled_name
 
-    # XXX refactor this
-
     @property
     def llvm_cpython_wrapper_name(self):
         """
