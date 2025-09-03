@@ -1,7 +1,6 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-2-Clause
 
-from abc import ABCMeta
 from numba.cuda.core.options import TargetOptions
 from .target import CUDATargetContext, CUDATypingContext
 
@@ -10,7 +9,7 @@ class CUDATargetOptions(TargetOptions):
     pass
 
 
-class CUDATarget(metaclass=ABCMeta):
+class CUDATarget:
     def __init__(self, name):
         self.options = CUDATargetOptions
         # The typing and target contexts are initialized only when needed -

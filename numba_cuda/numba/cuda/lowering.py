@@ -11,13 +11,14 @@ from llvmlite import ir as llvm_ir
 from numba.core import (
     typing,
     types,
+    targetconfig,
     ir,
     generators,
     config,
     removerefctpass,
 )
 from numba.cuda import debuginfo, cgutils, utils
-from numba.cuda.core import ir_utils, targetconfig, funcdesc
+from numba.cuda.core import ir_utils, funcdesc
 from numba.core.errors import (
     LoweringError,
     new_error_context,

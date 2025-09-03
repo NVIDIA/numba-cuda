@@ -3,7 +3,7 @@
 
 import itertools
 from llvmlite import ir
-from numba.cuda.core import targetconfig
+from numba.core import targetconfig
 from numba.cuda import cgutils
 from .cudadrv import nvvm
 

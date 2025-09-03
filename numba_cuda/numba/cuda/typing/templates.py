@@ -15,7 +15,7 @@ from collections.abc import Sequence
 from types import MethodType, FunctionType, MappingProxyType
 
 import numba
-from numba.core import types
+from numba.core import types, targetconfig
 from numba.core.errors import (
     TypingError,
     InternalError,
@@ -23,7 +23,7 @@ from numba.core.errors import (
 from numba.cuda.core.options import InlineOptions
 from numba.core.typing.templates import Signature as CoreSignature
 from numba.cuda import utils
-from numba.cuda.core import ir_utils, targetconfig
+from numba.cuda.core import ir_utils
 
 # info store for inliner callback functions e.g. cost model
 _inline_info = namedtuple("inline_info", "func_ir typemap calltypes signature")
