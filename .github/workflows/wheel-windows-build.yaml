@@ -12,7 +12,7 @@ on:
         type: string
       script:
         type: string
-        default: "./ci/test_wheel.ps1"
+        default: "./ci/build_wheel.ps1"
 
 jobs:
   compute-matrix:
