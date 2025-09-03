@@ -24,7 +24,7 @@ from numba.cuda.core.compiler_machinery import (
     AnalysisPass,
     register_pass,
 )
-from numba.core.annotations import type_annotations
+from numba.cuda.core.annotations import type_annotations
 from numba.cuda.core.ir_utils import (
     raise_on_unsupported_feature,
     warn_deprecated,
