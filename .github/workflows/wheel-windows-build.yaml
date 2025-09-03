@@ -14,6 +14,15 @@ on:
         type: string
         default: "./ci/build_wheel.ps1"
 
+      # general settings
+      matrix:
+        type: string
+        required: true
+      matrix_filter:
+        type: string
+        default: "."
+
+
 jobs:
   compute-matrix:
     runs-on: ubuntu-latest
@@ -30,6 +39,7 @@ jobs:
     name: ${{ matrix.CUDA_VER }}, ${{ matrix.PY_VER }}, windows
     needs: compute-matrix
     strategy:
+      fail-fast: false
       matrix: ${{ fromJSON(needs.compute-matrix.outputs.MATRIX) }}
     runs-on: windows-2022
     steps:

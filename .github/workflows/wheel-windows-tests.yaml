@@ -14,6 +14,14 @@ on:
         type: string
         default: "./ci/test_wheel.ps1"
 
+      # general settings
+      matrix:
+        type: string
+        required: true
+      matrix_filter:
+        type: string
+        default: "."
+
 jobs:
   compute-matrix:
     runs-on: ubuntu-latest
