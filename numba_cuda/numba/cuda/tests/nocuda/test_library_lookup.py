@@ -168,6 +168,8 @@ class TestNvvmLookUp(LibraryLookupBase):
         else:
             # Use system available cudatoolkit
             by, info, warns = self.remote_do(self.do_clear_envs)
+            print(f"by: {by}, info: {info}, warns: {warns}")
+            print(f"/usr/local/cuda: {os.listdir('/usr/local/cuda')}")
             self.assertEqual(by, "System")
             self.assertFalse(warns)
 

@@ -123,7 +123,9 @@ def _get_nvvm_wheel_path():
             "bin" if IS_WIN32 else "lib",
             "x86_64" if IS_WIN32 else "",
         )
-        dso_path = os.path.join(nvvm_lib_dir, "libnvvm.so.4")
+        dso_path = os.path.join(
+            nvvm_lib_dir, "nvvm64_40_0.dll" if IS_WIN32 else "libnvvm.so.4"
+        )
     except ImportError:
         pass
 
@@ -546,13 +548,8 @@ def _get_nvvm_path():
 
 def _get_nvrtc_path():
     by, path = _get_nvrtc_path_decision()
-    if by == "NVIDIA NVCC Wheel":
-        path = str(path)
-    elif by == "System":
-        return _env_path_tuple(by, path)
-    else:
-        candidates = find_lib("nvrtc", path)
-        path = max(candidates) if candidates else None
+    candidates = find_lib("nvrtc", libdir=path)
+    path = max(candidates) if candidates else None
     return _env_path_tuple(by, path)
 
 
