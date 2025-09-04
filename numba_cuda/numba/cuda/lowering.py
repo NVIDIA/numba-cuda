@@ -11,7 +11,6 @@ from llvmlite import ir as llvm_ir
 from numba.core import (
     typing,
     types,
-    ir,
     funcdesc,
     generators,
     config,
@@ -19,7 +18,7 @@ from numba.core import (
     targetconfig,
 )
 from numba.cuda import debuginfo, cgutils, utils
-from numba.cuda.core import ir_utils
+from numba.cuda.core import ir_utils, ir
 from numba.core.errors import (
     LoweringError,
     new_error_context,

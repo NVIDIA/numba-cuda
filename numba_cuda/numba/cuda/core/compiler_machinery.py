@@ -8,9 +8,9 @@ import inspect
 
 
 from numba.core.compiler_lock import global_compiler_lock
-from numba.core import errors, config
+from numba.core import config
+from numba.cuda.core import transforms, errors
 from numba.cuda import utils
-from numba.cuda.core import transforms
 from numba.cuda.core.tracing import event
 from numba.cuda.core.postproc import PostProcessor
 from numba.cuda.core.ir_utils import enforce_no_dels, legalize_single_scope

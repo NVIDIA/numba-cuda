@@ -3,10 +3,9 @@
 
 from collections import namedtuple
 from numba.cuda.tests.support import override_config, captured_stdout
-from numba.cuda.testing import skip_on_cudasim
+from numba.cuda.testing import skip_on_cudasim, CUDATestCase
 from numba import cuda
 from numba.core import types
-from numba.cuda.testing import CUDATestCase
 from textwrap import dedent
 import math
 import itertools
@@ -584,11 +583,11 @@ class TestCudaDebugInfo(CUDATestCase):
         # conflict. baz will not be marked as 'alwaysinline' as a result of
         # DEBUGINFO_DEFAULT
 
-        @cuda.jit(forceinline=True)
+        @cuda.jit(device=True, forceinline=True)
         def bar(x):
             return math.sin(x)
 
-        @cuda.jit(forceinline=False)
+        @cuda.jit(device=True, forceinline=False)
         def baz(x):
             return math.cos(x)
 

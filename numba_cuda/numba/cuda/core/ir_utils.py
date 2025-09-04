@@ -11,9 +11,8 @@ import warnings
 
 import numba
 from numba.core.extending import _Intrinsic
-from numba.core import types, ir, analysis, config
-from numba.cuda import typing
-from numba.cuda.core import postproc, rewrites
+from numba.core import types, typing, analysis, config
+from numba.cuda.core import postproc, ir, rewrites
 from numba.core.typing.templates import signature
 from numba.core.analysis import (
     compute_live_map,
@@ -1987,10 +1986,9 @@ def get_ir_of_code(glbls, fcode):
     # call inline pass to handle cases like stencils and comprehensions
     swapped = {}  # TODO: get this from diagnostics store
     from numba.cuda.core.inline_closurecall import InlineClosureCallPass
+    from numba.cuda.core import cpu
 
-    inline_pass = InlineClosureCallPass(
-        ir, numba.cuda.core.options.ParallelOptions(False), swapped
-    )
+    inline_pass = InlineClosureCallPass(ir, cpu.ParallelOptions(False), swapped)
     inline_pass.run()
 
     # TODO: DO NOT ADD MORE THINGS HERE!

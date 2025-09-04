@@ -3,12 +3,45 @@
 
 from numba.cuda.core.tracing import event
 
-from numba.cuda.core import bytecode
-from numba.core import callconv, config, errors
+from numba.cuda.core import bytecode, interpreter, postproc, errors
+from numba.core import callconv, config, cpu
 from numba.core.errors import CompilerError
 
 from numba.cuda.core.untyped_passes import ExtractByteCode, FixupArgs
 from numba.core.targetconfig import ConfigStack
+
+from numba.cuda.core.compiler_machinery import PassManager
+
+from numba.cuda.core.untyped_passes import (
+    TranslateByteCode,
+    IRProcessing,
+    DeadBranchPrune,
+    RewriteSemanticConstants,
+    InlineClosureLikes,
+    GenericRewrites,
+    WithLifting,
+    InlineInlinables,
+    FindLiterallyCalls,
+    MakeFunctionToJitFunction,
+    CanonicalizeLoopExit,
+    CanonicalizeLoopEntry,
+    LiteralUnroll,
+    ReconstructSSA,
+    RewriteDynamicRaises,
+    LiteralPropagationSubPipelinePass,
+)
+
+from numba.cuda.core.typed_passes import (
+    NopythonTypeInference,
+    AnnotateTypes,
+    NopythonRewrites,
+    IRLegalization,
+    NoPythonBackend,
+    InlineOverloads,
+    PreLowerStripPhis,
+    NativeLowering,
+    NoPythonSupportedFeatureValidation,
+)
 
 
 class _CompileStatus(object):
@@ -197,3 +230,205 @@ class CompilerBase(object):
         """
         assert self.state.func_ir is not None
         return self._compile_core()
+
+
+def run_frontend(func, inline_closures=False, emit_dels=False):
+    """
+    Run the compiler frontend over the given Python function, and return
+    the function's canonical Numba IR.
+
+    If inline_closures is Truthy then closure inlining will be run
+    If emit_dels is Truthy the ir.Del nodes will be emitted appropriately
+    """
+    # XXX make this a dedicated Pipeline?
+    func_id = bytecode.FunctionIdentity.from_function(func)
+    interp = interpreter.Interpreter(func_id)
+    bc = bytecode.ByteCode(func_id=func_id)
+    func_ir = interp.interpret(bc)
+    if inline_closures:
+        from numba.core.inline_closurecall import InlineClosureCallPass
+
+        inline_pass = InlineClosureCallPass(
+            func_ir, cpu.ParallelOptions(False), {}, False
+        )
+        inline_pass.run()
+    post_proc = postproc.PostProcessor(func_ir)
+    post_proc.run(emit_dels)
+    return func_ir
+
+
+class DefaultPassBuilder(object):
+    """
+    This is the default pass builder, it contains the "classic" default
+    pipelines as pre-canned PassManager instances:
+      - nopython
+      - objectmode
+      - interpreted
+      - typed
+      - untyped
+      - nopython lowering
+    """
+
+    @staticmethod
+    def define_nopython_pipeline(state, name="nopython"):
+        """Returns an nopython mode pipeline based PassManager"""
+        # compose pipeline from untyped, typed and lowering parts
+        dpb = DefaultPassBuilder
+        pm = PassManager(name)
+        untyped_passes = dpb.define_untyped_pipeline(state)
+        pm.passes.extend(untyped_passes.passes)
+
+        typed_passes = dpb.define_typed_pipeline(state)
+        pm.passes.extend(typed_passes.passes)
+
+        lowering_passes = dpb.define_nopython_lowering_pipeline(state)
+        pm.passes.extend(lowering_passes.passes)
+
+        pm.finalize()
+        return pm
+
+    @staticmethod
+    def define_nopython_lowering_pipeline(state, name="nopython_lowering"):
+        pm = PassManager(name)
+        # legalise
+        pm.add_pass(
+            NoPythonSupportedFeatureValidation,
+            "ensure features that are in use are in a valid form",
+        )
+        pm.add_pass(IRLegalization, "ensure IR is legal prior to lowering")
+        # Annotate only once legalized
+        pm.add_pass(AnnotateTypes, "annotate types")
+        # lower
+        pm.add_pass(NativeLowering, "native lowering")
+        pm.add_pass(NoPythonBackend, "nopython mode backend")
+        pm.finalize()
+        return pm
+
+    @staticmethod
+    def define_parfor_gufunc_nopython_lowering_pipeline(
+        state, name="parfor_gufunc_nopython_lowering"
+    ):
+        pm = PassManager(name)
+        # legalise
+        pm.add_pass(
+            NoPythonSupportedFeatureValidation,
+            "ensure features that are in use are in a valid form",
+        )
+        pm.add_pass(IRLegalization, "ensure IR is legal prior to lowering")
+        # Annotate only once legalized
+        pm.add_pass(AnnotateTypes, "annotate types")
+        # lower
+        pm.add_pass(NativeLowering, "native lowering")
+        pm.add_pass(NoPythonBackend, "nopython mode backend")
+        pm.finalize()
+        return pm
+
+    @staticmethod
+    def define_typed_pipeline(state, name="typed"):
+        """Returns the typed part of the nopython pipeline"""
+        pm = PassManager(name)
+        # typing
+        pm.add_pass(NopythonTypeInference, "nopython frontend")
+
+        # strip phis
+        pm.add_pass(PreLowerStripPhis, "remove phis nodes")
+
+        # optimisation
+        pm.add_pass(InlineOverloads, "inline overloaded functions")
+        if not state.flags.no_rewrites:
+            pm.add_pass(NopythonRewrites, "nopython rewrites")
+
+        pm.finalize()
+        return pm
+
+    @staticmethod
+    def define_parfor_gufunc_pipeline(state, name="parfor_gufunc_typed"):
+        """Returns the typed part of the nopython pipeline"""
+        pm = PassManager(name)
+        assert state.func_ir
+        pm.add_pass(IRProcessing, "processing IR")
+        pm.add_pass(NopythonTypeInference, "nopython frontend")
+
+        pm.finalize()
+        return pm
+
+    @staticmethod
+    def define_untyped_pipeline(state, name="untyped"):
+        """Returns an untyped part of the nopython pipeline"""
+        pm = PassManager(name)
+        if state.func_ir is None:
+            pm.add_pass(TranslateByteCode, "analyzing bytecode")
+            pm.add_pass(FixupArgs, "fix up args")
+        pm.add_pass(IRProcessing, "processing IR")
+        pm.add_pass(WithLifting, "Handle with contexts")
+
+        # inline closures early in case they are using nonlocal's
+        # see issue #6585.
+        pm.add_pass(
+            InlineClosureLikes, "inline calls to locally defined closures"
+        )
+
+        # pre typing
+        if not state.flags.no_rewrites:
+            pm.add_pass(RewriteSemanticConstants, "rewrite semantic constants")
+            pm.add_pass(DeadBranchPrune, "dead branch pruning")
+            pm.add_pass(GenericRewrites, "nopython rewrites")
+
+        pm.add_pass(RewriteDynamicRaises, "rewrite dynamic raises")
+
+        # convert any remaining closures into functions
+        pm.add_pass(
+            MakeFunctionToJitFunction,
+            "convert make_function into JIT functions",
+        )
+        # inline functions that have been determined as inlinable and rerun
+        # branch pruning, this needs to be run after closures are inlined as
+        # the IR repr of a closure masks call sites if an inlinable is called
+        # inside a closure
+        pm.add_pass(InlineInlinables, "inline inlinable functions")
+        if not state.flags.no_rewrites:
+            pm.add_pass(DeadBranchPrune, "dead branch pruning")
+
+        pm.add_pass(FindLiterallyCalls, "find literally calls")
+        pm.add_pass(LiteralUnroll, "handles literal_unroll")
+
+        if state.flags.enable_ssa:
+            pm.add_pass(ReconstructSSA, "ssa")
+
+        if not state.flags.no_rewrites:
+            pm.add_pass(DeadBranchPrune, "dead branch pruning")
+
+        pm.add_pass(LiteralPropagationSubPipelinePass, "Literal propagation")
+
+        pm.finalize()
+        return pm
+
+    @staticmethod
+    def define_objectmode_pipeline(state, name="object"):
+        """Returns an object-mode pipeline based PassManager"""
+        pm = PassManager(name)
+        if state.func_ir is None:
+            pm.add_pass(TranslateByteCode, "analyzing bytecode")
+            pm.add_pass(FixupArgs, "fix up args")
+        else:
+            # Reaches here if it's a fallback from nopython mode.
+            # Strip the phi nodes.
+            pm.add_pass(PreLowerStripPhis, "remove phis nodes")
+        pm.add_pass(IRProcessing, "processing IR")
+
+        # The following passes are needed to adjust for looplifting
+        pm.add_pass(CanonicalizeLoopEntry, "canonicalize loop entry")
+        pm.add_pass(CanonicalizeLoopExit, "canonicalize loop exit")
+
+        pm.add_pass(
+            InlineClosureLikes, "inline calls to locally defined closures"
+        )
+        # convert any remaining closures into functions
+        pm.add_pass(
+            MakeFunctionToJitFunction,
+            "convert make_function into JIT functions",
+        )
+        pm.add_pass(IRLegalization, "ensure IR is legal prior to lowering")
+        pm.add_pass(AnnotateTypes, "annotate types")
+        pm.finalize()
+        return pm

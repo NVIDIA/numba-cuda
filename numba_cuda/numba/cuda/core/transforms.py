@@ -10,8 +10,8 @@ import logging
 import operator
 
 from numba.core.analysis import compute_cfg_from_blocks, find_top_level_loops
-from numba.core import ir, errors
-from numba.cuda.core import ir_utils
+from numba.core import errors
+from numba.cuda.core import ir_utils, ir
 from numba.core.analysis import compute_use_defs
 
 
