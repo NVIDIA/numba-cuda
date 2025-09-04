@@ -14,7 +14,8 @@ import numpy as np
 
 from numba.core.extending import overload
 from numba.core.imputils import impl_ret_untracked
-from numba.core import typing, types, errors, cgutils, config
+from numba.core import typing, types, errors
+from numba.cuda import cgutils
 from numba.core.extending import register_jitable
 from numba.np import npdatetime
 from numba.np.math import cmathimpl, mathimpl, numbers
@@ -51,10 +52,7 @@ def _check_arity_and_homogeneity(sig, args, arity, return_type=None):
         assert False, msg
 
 
-if getattr(config, "USE_LEGACY_TYPE_SYSTEM", True):
-    cast_arg_ty = types.float64
-else:
-    cast_arg_ty = types.np_float64
+cast_arg_ty = types.float64
 
 
 def _call_func_by_name_with_cast(

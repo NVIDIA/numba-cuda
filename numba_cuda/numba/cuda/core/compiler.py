@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-2-Clause
 
-from numba.core.tracing import event
+from numba.cuda.core.tracing import event
 
 from numba.cuda.core import bytecode, interpreter, postproc, errors
 from numba.core import callconv, config, cpu
@@ -299,12 +299,8 @@ class DefaultPassBuilder(object):
         # Annotate only once legalized
         pm.add_pass(AnnotateTypes, "annotate types")
         # lower
-        if state.flags.auto_parallel.enabled:
-            pm.add_pass(NativeParforLowering, "native parfor lowering")
-        else:
-            pm.add_pass(NativeLowering, "native lowering")
+        pm.add_pass(NativeLowering, "native lowering")
         pm.add_pass(NoPythonBackend, "nopython mode backend")
-        pm.add_pass(DumpParforDiagnostics, "dump parfor diagnostics")
         pm.finalize()
         return pm
 
@@ -322,10 +318,7 @@ class DefaultPassBuilder(object):
         # Annotate only once legalized
         pm.add_pass(AnnotateTypes, "annotate types")
         # lower
-        if state.flags.auto_parallel.enabled:
-            pm.add_pass(NativeParforLowering, "native parfor lowering")
-        else:
-            pm.add_pass(NativeLowering, "native lowering")
+        pm.add_pass(NativeLowering, "native lowering")
         pm.add_pass(NoPythonBackend, "nopython mode backend")
         pm.finalize()
         return pm
@@ -342,14 +335,8 @@ class DefaultPassBuilder(object):
 
         # optimisation
         pm.add_pass(InlineOverloads, "inline overloaded functions")
-        if state.flags.auto_parallel.enabled:
-            pm.add_pass(PreParforPass, "Preprocessing for parfors")
         if not state.flags.no_rewrites:
             pm.add_pass(NopythonRewrites, "nopython rewrites")
-        if state.flags.auto_parallel.enabled:
-            pm.add_pass(ParforPass, "convert to parfors")
-            pm.add_pass(ParforFusionPass, "fuse parfors")
-            pm.add_pass(ParforPreLoweringPass, "parfor prelowering")
 
         pm.finalize()
         return pm
@@ -361,7 +348,6 @@ class DefaultPassBuilder(object):
         assert state.func_ir
         pm.add_pass(IRProcessing, "processing IR")
         pm.add_pass(NopythonTypeInference, "nopython frontend")
-        pm.add_pass(ParforPreLoweringPass, "parfor prelowering")
 
         pm.finalize()
         return pm
@@ -434,7 +420,6 @@ class DefaultPassBuilder(object):
         pm.add_pass(CanonicalizeLoopEntry, "canonicalize loop entry")
         pm.add_pass(CanonicalizeLoopExit, "canonicalize loop exit")
 
-        pm.add_pass(ObjectModeFrontEnd, "object mode frontend")
         pm.add_pass(
             InlineClosureLikes, "inline calls to locally defined closures"
         )
@@ -445,6 +430,5 @@ class DefaultPassBuilder(object):
         )
         pm.add_pass(IRLegalization, "ensure IR is legal prior to lowering")
         pm.add_pass(AnnotateTypes, "annotate types")
-        pm.add_pass(ObjectModeBackEnd, "object mode backend")
         pm.finalize()
         return pm

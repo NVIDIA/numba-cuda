@@ -5,9 +5,8 @@ import types as pytypes  # avoid confusion with numba.types
 import copy
 import ctypes
 import numba.core.analysis
-from numba.cuda.core import ir_utils, ir, rewrites, errors
-from numba.core import types, typing, config, cgutils
-from numba.parfors.parfor import internal_prange
+from numba.core import types, typing, config, cgutils, errors
+from numba.cuda.core import ir
 from numba.cuda import utils
 from numba.cuda.core.ir_utils import (
     next_label,
@@ -38,11 +37,8 @@ from numba.core.analysis import (
 from numba.core.imputils import impl_ret_untracked
 from numba.core.extending import intrinsic
 from numba.core.typing import signature
-from numba.cpython.listobj import ListIterInstance
-from numba.cpython.rangeobj import range_impl_map
-from numba.np.arrayobj import make_array
 
-from numba.cuda.core import postproc
+from numba.cuda.core import postproc, rewrites
 from numba.np.unsafe.ndarray import empty_inferred as unsafe_empty_inferred
 import numpy as np
 import operator
@@ -379,7 +375,7 @@ class InlineWorker(object):
             if arg is None:
                 raise TypeError("{} must not be None".format(name))
 
-        from numba.cuda.core.compiler import DefaultPassBuilder
+        from numba.cuda.compiler import DefaultPassBuilder
 
         # check the stuff needed to run the more advanced compilation pipeline
         # is valid if any of it is provided
@@ -450,6 +446,7 @@ class InlineWorker(object):
         instr = block.body[i]
         call_expr = instr.value
         callee_blocks = callee_ir.blocks
+        from numba.cuda.core import ir_utils
 
         # 1. relabel callee_ir by adding an offset
         max_label = max(
@@ -568,7 +565,6 @@ class InlineWorker(object):
         from numba.cuda.core.compiler import StateDict, _CompileStatus
         from numba.cuda.core.untyped_passes import ExtractByteCode
         from numba.cuda.core import bytecode
-        from numba.parfors.parfor import ParforDiagnostics
 
         state = StateDict()
         state.func_ir = None
@@ -586,7 +582,6 @@ class InlineWorker(object):
         state.type_annotation = None
         state.status = _CompileStatus(False)
         state.return_type = None
-        state.parfor_diagnostics = ParforDiagnostics()
         state.metadata = {}
 
         ExtractByteCode().run_pass(state)
@@ -612,7 +607,7 @@ class InlineWorker(object):
                 "calltypes missing in initialization."
             )
             raise ValueError(msg)
-        from numba.cuda.core import typed_passes
+        from numba.cuda.core import typed_passes, ir_utils
 
         # call branch pruning to simplify IR and avoid inference errors
         callee_ir._definitions = ir_utils.build_definitions(callee_ir.blocks)
@@ -684,6 +679,8 @@ def inline_closure_call(
     callee_closure = (
         callee.closure if hasattr(callee, "closure") else callee.__closure__
     )
+    from numba.cuda.core import ir_utils
+
     # first, get the IR of the callee
     if isinstance(callee, pytypes.FunctionType):
         from numba.cuda.core import compiler
@@ -824,6 +821,8 @@ def _get_callee_args(call_expr, callee, loc, func_ir):
     """Get arguments for calling 'callee', including the default arguments.
     keyword arguments are currently only handled when 'callee' is a function.
     """
+    from numba.cuda.core import ir_utils
+
     if call_expr.op == "call":
         args = list(call_expr.args)
         if call_expr.vararg:
@@ -1087,6 +1086,8 @@ def length_of_iterator(typingctx, val):
 
         def codegen(context, builder, sig, args):
             (value,) = args
+            from numba.cpython.rangeobj import range_impl_map
+
             iter_type = range_impl_map[val_type][1]
             iterobj = cgutils.create_struct_proxy(iter_type)(
                 context, builder, value
@@ -1102,6 +1103,8 @@ def length_of_iterator(typingctx, val):
         def codegen(context, builder, sig, args):
             (value,) = args
             intp_t = context.get_value_type(types.intp)
+            from numba.cpython.listobj import ListIterInstance
+
             iterobj = ListIterInstance(context, builder, sig.args[0], value)
             return impl_ret_untracked(context, builder, intp_t, iterobj.size)
 
@@ -1114,6 +1117,8 @@ def length_of_iterator(typingctx, val):
             intp_t = context.get_value_type(types.intp)
             iterobj = context.make_helper(builder, iterty, value=value)
             arrayty = iterty.array_type
+            from numba.np.arrayobj import make_array
+
             ary = make_array(arrayty)(context, builder, value=iterobj.array)
             shape = cgutils.unpack_tuple(builder, ary.shape)
             # array iterates along the outer dimension
@@ -1318,11 +1323,6 @@ def _inline_arraycall(
             size_val = ir.Expr.binop(
                 fn=operator.sub, lhs=stop, rhs=start, loc=loc
             )
-        # we can parallelize this loop if enable_prange = True, by changing
-        # range function from range, to prange.
-        if enable_prange and isinstance(range_func_def, ir.Global):
-            range_func_def.name = "internal_prange"
-            range_func_def.value = internal_prange
 
     else:
         # this doesn't work in objmode as it's effectively untyped

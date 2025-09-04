@@ -15,7 +15,7 @@ from numba.cuda import jit
 from numba.core import errors
 
 from numba.extending import overload
-from numba.tests.support import override_config
+from numba.cuda.tests.support import override_config
 from numba.cuda.testing import CUDATestCase, skip_on_cudasim
 
 

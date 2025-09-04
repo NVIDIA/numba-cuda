@@ -12,7 +12,7 @@ import warnings
 import numba
 from numba.core.extending import _Intrinsic
 from numba.core import types, typing, analysis, config
-from numba.cuda.core import ir, postproc, rewrites
+from numba.cuda.core import postproc, ir, rewrites
 from numba.core.typing.templates import signature
 from numba.core.analysis import (
     compute_live_map,
@@ -249,12 +249,7 @@ def mk_range_block(typemap, start, stop, step, calltypes, scope, loc):
     range_call_assign = ir.Assign(range_call, range_call_var, loc)
     # iter_var = getiter(range_call_var)
     iter_call = ir.Expr.getiter(range_call_var, loc)
-    if config.USE_LEGACY_TYPE_SYSTEM:
-        calltype_sig = signature(
-            types.range_iter64_type, types.range_state64_type
-        )
-    else:
-        calltype_sig = signature(types.range_iter_type, types.range_state_type)
+    calltype_sig = signature(types.range_iter64_type, types.range_state64_type)
     calltypes[iter_call] = calltype_sig
     iter_var = ir.Var(scope, mk_unique_var("$iter_var"), loc)
     typemap[iter_var.name] = types.iterators.RangeIteratorType(types.intp)
@@ -333,10 +328,7 @@ def mk_loop_header(typemap, phi_var, calltypes, scope, loc):
         types.intp, types.boolean
     )
     iternext_call = ir.Expr.iternext(phi_var, loc)
-    if config.USE_LEGACY_TYPE_SYSTEM:
-        range_iter_type = types.range_iter64_type
-    else:
-        range_iter_type = types.range_iter_type
+    range_iter_type = types.range_iter64_type
     calltypes[iternext_call] = signature(
         types.containers.Pair(types.intp, types.boolean), range_iter_type
     )
@@ -813,7 +805,6 @@ def has_no_side_effect(rhs, lives, call_table):
     """Returns True if this expression has no side effects that
     would prevent re-ordering.
     """
-    from numba.misc.special import prange
 
     if isinstance(rhs, ir.Expr) and rhs.op == "call":
         func_name = rhs.func.name
@@ -826,8 +817,6 @@ def has_no_side_effect(rhs, lives, call_table):
             or call_list == ["stencil", numba]
             or call_list == ["log", numpy]
             or call_list == ["dtype", numpy]
-            or call_list == [prange]
-            or call_list == ["prange", numba]
             or call_list == ["pndindex", numba]
             or call_list == ["ceil", math]
             or call_list == [max]
@@ -1973,7 +1962,8 @@ def get_ir_of_code(glbls, fcode):
         fcode, func_env, func_arg, func_clo, glbls
     )
 
-    from numba.core import compiler
+    from numba.cuda import compiler
+    from numba.cuda.core.compiler import StateDict
 
     ir = compiler.run_frontend(f)
 
@@ -1982,7 +1972,7 @@ def get_ir_of_code(glbls, fcode):
     # for example, Raise nodes need to become StaticRaise before type inference
     class DummyPipeline(object):
         def __init__(self, f_ir):
-            self.state = compiler.StateDict()
+            self.state = StateDict()
             self.state.typingctx = None
             self.state.targetctx = None
             self.state.args = None
@@ -1996,10 +1986,9 @@ def get_ir_of_code(glbls, fcode):
     # call inline pass to handle cases like stencils and comprehensions
     swapped = {}  # TODO: get this from diagnostics store
     from numba.cuda.core.inline_closurecall import InlineClosureCallPass
+    from numba.cuda.core import cpu
 
-    inline_pass = InlineClosureCallPass(
-        ir, numba.core.cpu.ParallelOptions(False), swapped
-    )
+    inline_pass = InlineClosureCallPass(ir, cpu.ParallelOptions(False), swapped)
     inline_pass.run()
 
     # TODO: DO NOT ADD MORE THINGS HERE!
@@ -2492,7 +2481,7 @@ def legalize_single_scope(blocks):
     return len({blk.scope for blk in blocks.values()}) == 1
 
 
-def check_and_legalize_ir(func_ir, flags: "numba.core.compiler.Flags"):
+def check_and_legalize_ir(func_ir, flags: "numba.core.flags.Flags"):
     """
     This checks that the IR presented is legal
     """

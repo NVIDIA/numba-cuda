@@ -12,7 +12,6 @@ from numba.core import (
     funcdesc,
     config,
     bytecode,
-    cpu,
 )
 from numba.core.compiler_lock import global_compiler_lock
 from numba.core.errors import NumbaWarning, NumbaInvalidConfigWarning
@@ -105,6 +104,7 @@ def run_frontend(func, inline_closures=False, emit_dels=False):
     func_ir = interp.interpret(bc)
     if inline_closures:
         from numba.cuda.core.inline_closurecall import InlineClosureCallPass
+        from numba.cuda.core import cpu
 
         inline_pass = InlineClosureCallPass(
             func_ir, cpu.ParallelOptions(False), {}, False

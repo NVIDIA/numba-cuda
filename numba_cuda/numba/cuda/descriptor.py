@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: BSD-2-Clause
 
 from numba.core.descriptors import TargetDescriptor
-from numba.core.options import TargetOptions
+from numba.cuda.core.options import TargetOptions
 from .target import CUDATargetContext, CUDATypingContext
 
 
