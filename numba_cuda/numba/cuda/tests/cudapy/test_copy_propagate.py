@@ -6,7 +6,6 @@
 
 from numba.core import types, ir, config
 from numba.cuda import compiler
-from numba.cuda.descriptor import cuda_target
 from numba.cuda.core.annotations import type_annotations
 from numba.cuda.core.ir_utils import (
     copy_propagate,
@@ -61,6 +60,8 @@ def _find_assign(func_ir, var):
 @skip_on_cudasim("cudasim doesn't support run_frontend")
 class TestCopyPropagate(CUDATestCase):
     def test1(self):
+        from numba.cuda.descriptor import cuda_target
+
         typingctx = cuda_target.typing_context
         targetctx = cuda_target.target_context
         test_ir = compiler.run_frontend(_test_will_propagate)
@@ -92,6 +93,8 @@ class TestCopyPropagate(CUDATestCase):
         self.assertFalse(_find_assign(test_ir, "x1"))
 
     def test2(self):
+        from numba.cuda.descriptor import cuda_target
+
         typingctx = cuda_target.typing_context
         targetctx = cuda_target.target_context
         test_ir = compiler.run_frontend(_test_wont_propagate)
