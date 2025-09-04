@@ -5,8 +5,6 @@ import sys
 import os
 from collections import namedtuple
 import platform
-import site
-from pathlib import Path
 from numba.core.config import IS_WIN32
 from numba.cuda.misc.findlib import find_lib
 from numba import config
@@ -91,7 +89,7 @@ def _get_nvrtc_path_decision():
     options = _build_options(
         [
             ("Conda environment", get_conda_ctk_libdir),
-            ("NVIDIA NVCC Wheel", _get_nvrtc_wheel_dir),
+            ("NVIDIA NVCC Wheel", _get_nvrtc_wheel_libdir),
             ("CUDA_HOME", get_cuda_home_libdir),
             ("System", get_system_ctk_libdir),
         ]
@@ -133,7 +131,7 @@ def _get_nvvm_wheel_path():
         return dso_path
 
 
-def _get_nvrtc_wheel_dir():
+def _get_nvrtc_wheel_libdir():
     dso_path = None
     # CUDA 12
     try:
@@ -174,29 +172,49 @@ def _get_libdevice_path():
     return _env_path_tuple(by, out)
 
 
-def _cuda_static_lib_path():
+def _cuda_static_libdir():
     if IS_WIN32:
         return os.path.join("lib", "x64")
     else:
         return ("lib64",)
 
 
-def _get_cudalib_wheel():
-    """Get the cudalib path from the NVCC wheel."""
-    site_paths = [site.getusersitepackages()] + site.getsitepackages()
-    libdir = "bin" if IS_WIN32 else "lib"
-    for sp in filter(None, site_paths):
-        cudalib_path = Path(sp, "nvidia", "cuda_runtime", libdir)
-        if cudalib_path.exists():
-            return str(cudalib_path)
-    return None
+def _get_cudalib_wheel_libdir():
+    """Get the cudalib path from the cudart wheel."""
+    cuda_module = None
+    try:
+        import nvidia.cuda_runtime
+
+        cuda_module = nvidia.cuda_runtime
+    except ImportError:
+        try:
+            import nvidia.cu13
+
+            cuda_module = nvidia.cu13
+        except ImportError:
+            return
+    if cuda_module is None:
+        return
+
+    cuda_module_path = cuda_module.__path__[0]
+
+    cuda_module_lib_dir = os.path.join(
+        cuda_module_path, "bin" if IS_WIN32 else "lib"
+    )
+
+    if (
+        cuda_module_lib_dir
+        and os.path.exists(cuda_module_lib_dir)
+        and os.path.isdir(cuda_module_lib_dir)
+    ):
+        return cuda_module_lib_dir
 
 
 def _get_cudalib_dir_path_decision():
     options = _build_options(
         [
             ("Conda environment", get_conda_ctk_libdir),
-            ("NVIDIA NVCC Wheel", _get_cudalib_wheel),
+            ("NVIDIA NVCC Wheel", _get_cudalib_wheel_libdir),
             ("CUDA_HOME", get_cuda_home_libdir),
             ("System", get_system_ctk_libdir),
         ]
@@ -208,12 +226,12 @@ def _get_static_cudalib_dir_path_decision():
     options = _build_options(
         [
             ("Conda environment", get_conda_ctk_libdir),
-            ("NVIDIA NVCC Wheel", get_wheel_static_lib),
+            ("NVIDIA NVCC Wheel", get_wheel_static_libdir),
             (
                 "CUDA_HOME",
-                lambda: get_cuda_home(*_cuda_static_lib_path()),
+                lambda: get_cuda_home(*_cuda_static_libdir()),
             ),
-            ("System", lambda: get_system_ctk(_cuda_static_lib_path())),
+            ("System", lambda: get_system_ctk(*_cuda_static_libdir())),
         ]
     )
     return _find_first_valid_lazy(options)
@@ -371,7 +389,7 @@ def _get_nvvm_conda_path():
     return nvvm_path
 
 
-def get_wheel_static_lib():
+def get_wheel_static_libdir():
     cuda_module = None
     # CUDA 12
     try:
@@ -402,7 +420,7 @@ def get_wheel_static_lib():
         and os.path.exists(cudadevrt_path)
         and os.path.isfile(cudadevrt_path)
     ):
-        return cudadevrt_path
+        return os.path.dirname(cudadevrt_path)
 
 
 def get_wheel_include():
