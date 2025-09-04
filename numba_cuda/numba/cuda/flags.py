@@ -3,7 +3,11 @@
 
 from numba.core.targetconfig import TargetConfig, Option
 
-from numba.cuda.core import cpu
+from numba.cuda.core.options import (
+    ParallelOptions,
+    FastMathOptions,
+    InlineOptions,
+)
 
 
 class Flags(TargetConfig):
@@ -70,8 +74,8 @@ class Flags(TargetConfig):
         doc="TODO",
     )
     auto_parallel = Option(
-        type=cpu.ParallelOptions,
-        default=cpu.ParallelOptions(False),
+        type=ParallelOptions,
+        default=ParallelOptions(False),
         doc="""Enable automatic parallel optimization, can be fine-tuned by
 taking a dictionary of sub-options instead of a boolean, see parfor.py for
 detail""",
@@ -92,8 +96,8 @@ detail""",
         doc="TODO",
     )
     fastmath = Option(
-        type=cpu.FastMathOptions,
-        default=cpu.FastMathOptions(False),
+        type=FastMathOptions,
+        default=FastMathOptions(False),
         doc="TODO",
     )
     noalias = Option(
@@ -102,8 +106,8 @@ detail""",
         doc="TODO",
     )
     inline = Option(
-        type=cpu.InlineOptions,
-        default=cpu.InlineOptions("never"),
+        type=InlineOptions,
+        default=InlineOptions("never"),
         doc="TODO",
     )
 
