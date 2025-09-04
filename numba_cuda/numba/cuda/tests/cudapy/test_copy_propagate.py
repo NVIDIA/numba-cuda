@@ -92,8 +92,8 @@ class TestCopyPropagate(CUDATestCase):
         self.assertFalse(_find_assign(test_ir, "x1"))
 
     def test2(self):
-        typingctx = cpu_target.typing_context
-        targetctx = cpu_target.target_context
+        typingctx = cuda_target.typing_context
+        targetctx = cuda_target.target_context
         test_ir = compiler.run_frontend(_test_wont_propagate)
         typingctx.refresh()
         targetctx.refresh()
