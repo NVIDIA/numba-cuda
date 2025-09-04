@@ -277,7 +277,9 @@ def get_system_ctk_libdir():
         and os.path.isdir(os.path.join(libdir, "x64"))
     ):
         libdir = os.path.join(libdir, "x64")
-    return os.path.normpath(libdir)
+
+    if libdir and os.path.exists(libdir) and os.path.isdir(libdir):
+        return os.path.normpath(libdir)
 
 
 def get_system_ctk_include():
@@ -297,7 +299,6 @@ def get_system_ctk_include():
             os.path.join(include_dir, "cuda_device_runtime_api.h")
         ):
             return include_dir
-    return
 
 
 def _get_nvvm_system_path():

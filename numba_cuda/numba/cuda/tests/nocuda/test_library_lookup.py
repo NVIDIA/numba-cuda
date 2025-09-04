@@ -19,6 +19,7 @@ from numba.cuda.cuda_paths import (
     _get_nvvm_path_decision,
     _get_cudalib_dir_path_decision,
     get_system_ctk,
+    get_system_ctk_libdir,
 )
 
 
@@ -107,7 +108,7 @@ class TestLibDeviceLookUp(LibraryLookupBase):
         )
         self.assertFalse(warns)
 
-        if get_system_ctk() is None:
+        if get_system_ctk("nvvm", "libdevice") is None:
             # Fake remove conda environment so no cudatoolkit is available
             by, info, warns = self.remote_do(self.do_clear_envs)
             self.assertEqual(by, "<unknown>")
@@ -159,7 +160,7 @@ class TestNvvmLookUp(LibraryLookupBase):
                 os.path.join("mycudahome", "nvvm", "lib64"),
             )
 
-        if get_system_ctk() is None:
+        if get_system_ctk("nvvm") is None:
             # Fake remove conda environment so no cudatoolkit is available
             by, info, warns = self.remote_do(self.do_clear_envs)
             self.assertEqual(by, "<unknown>")
@@ -168,8 +169,6 @@ class TestNvvmLookUp(LibraryLookupBase):
         else:
             # Use system available cudatoolkit
             by, info, warns = self.remote_do(self.do_clear_envs)
-            print(f"by: {by}, info: {info}, warns: {warns}")
-            print(f"/usr/local/cuda: {os.listdir('/usr/local/cuda')}")
             self.assertEqual(by, "System")
             self.assertFalse(warns)
 
@@ -216,7 +215,7 @@ class TestCudaLibLookUp(LibraryLookupBase):
             )
         else:
             self.assertEqual(info, os.path.join("mycudahome", "lib64"))
-        if get_system_ctk() is None:
+        if get_system_ctk_libdir() is None:
             # Fake remove conda environment so no cudatoolkit is available
             by, info, warns = self.remote_do(self.do_clear_envs)
             self.assertEqual(by, "<unknown>")
