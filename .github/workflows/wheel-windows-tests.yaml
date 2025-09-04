@@ -38,7 +38,8 @@ jobs:
           echo "MATRIX=${MATRIX}" | tee --append "${GITHUB_OUTPUT}"
   tests:
     name: ${{ matrix.CUDA_VER }}, ${{ matrix.PY_VER }}, windows
-    needs: compute-matrix
+    needs:
+      - compute-matrix
     strategy:
       fail-fast: false
       matrix: ${{ fromJSON(needs.compute-matrix.outputs.MATRIX) }}
