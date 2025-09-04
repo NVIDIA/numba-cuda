@@ -6,7 +6,7 @@
 
 from numba.core import types, ir, config
 from numba.cuda import compiler
-from numba.core.registry import cpu_target
+from numba.cuda.descriptor import cuda_target
 from numba.cuda.core.annotations import type_annotations
 from numba.cuda.core.ir_utils import (
     copy_propagate,
