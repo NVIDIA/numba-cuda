@@ -183,6 +183,7 @@ class TestArgInfo(unittest.TestCase):
 
 class TestMemInfo(CUDATestCase):
     def setUp(self):
+        super().setUp()
         self.dmm = datamodel.default_manager
 
     def test_number(self):

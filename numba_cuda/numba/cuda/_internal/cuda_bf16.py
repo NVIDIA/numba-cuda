@@ -19,7 +19,7 @@ import operator
 import numba
 from llvmlite import ir
 from numba import types
-from numba.core.datamodel import PrimitiveModel, StructModel
+from numba.cuda.core.datamodel import PrimitiveModel, StructModel
 from numba.cuda.extending import (
     lower_cast,
     make_attribute_wrapper,

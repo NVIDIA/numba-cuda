@@ -20,7 +20,7 @@ import numba
 from llvmlite import ir
 from numba import types
 from numba.cuda.cudadrv.driver import _have_nvjitlink
-from numba.core.datamodel import PrimitiveModel, StructModel
+from numba.cuda.core.datamodel import PrimitiveModel, StructModel
 from numba.core.errors import NumbaPerformanceWarning
 from numba.cuda.extending import (
     lower_cast,
