@@ -3111,6 +3111,7 @@ class CtypesLinker(_LinkerBase):
         if lineinfo:
             options[enums.CU_JIT_GENERATE_LINE_INFO] = c_void_p(1)
 
+        self.cc = cc
         if cc is None:
             # No option value is needed, but we need something as a placeholder
             options[enums.CU_JIT_TARGET_FROM_CUCONTEXT] = 1
