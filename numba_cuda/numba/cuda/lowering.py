@@ -464,7 +464,7 @@ class Lower(BaseLower):
         self._blk_local_varmap = {}
 
     def pre_block(self, block):
-        from numba.core.unsafe import eh
+        from numba.cuda.core.unsafe import eh
 
         super(Lower, self).pre_block(block)
         self._cur_ir_block = block
