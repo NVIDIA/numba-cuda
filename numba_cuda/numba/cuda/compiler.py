@@ -5,6 +5,7 @@ from llvmlite import ir
 from collections import namedtuple
 from warnings import warn, catch_warnings, simplefilter
 import copy
+import os
 
 from numba.core import ir as numba_ir
 from numba.core import (
@@ -24,7 +25,7 @@ from numba.cuda.api import get_current_device
 from numba.cuda.codegen import ExternalCodeLibrary
 from numba.cuda.core import sigutils, postproc
 from numba.cuda.cudadrv import nvvm, nvrtc
-from numba.cuda.cudadrv.driver import _LinkerBase
+from numba.cuda.cudadrv.linkable_code import LinkableCode
 from numba.cuda.descriptor import cuda_target
 from numba.cuda.flags import CUDAFlags
 from numba.cuda.target import CUDACABICallConv
@@ -974,7 +975,7 @@ def add_exception_store_helper(kernel):
     return helper_func
 
 
-def _compile_with_link_all_option(
+def compile_all(
     pyfunc,
     sig,
     debug=None,
@@ -988,39 +989,74 @@ def _compile_with_link_all_option(
     output="ptx",
     forceinline=False,
     launch_bounds=None,
-    link_all=False,
-    max_registers=None,
 ):
-    """Perform compilation with an option to link all files in code library.
+    """Return a list of PTX/LTO-IR for kernel as well as external functions depended by the kernel."""
 
-    When link_all is True, only PTX is supported as output.
+    lto = output == "ltoir"
+    lib, resty = _compile_pyfunc_with_fixup(
+        pyfunc,
+        sig,
+        debug=debug,
+        lineinfo=lineinfo,
+        device=device,
+        fastmath=fastmath,
+        cc=cc,
+        opt=opt,
+        abi=abi,
+        abi_info=abi_info,
+        forceinline=forceinline,
+        launch_bounds=launch_bounds,
+        lto=lto,
+    )
+
+    if lto:
+        code = lib.get_ltoir(cc=cc)
+    else:
+        code = lib.get_asm_str(cc=cc)
+    out_list = [code]
+
+    # linking_files
+    for path_or_obj in lib.linking_files:
+        if isinstance(path_or_obj, LinkableCode):
+            if path_or_obj.kind == "cu":
+                lto = output == "ltoir"
+                code, log = nvrtc.compile(
+                    path_or_obj.data,
+                    os.path.basename(path_or_obj.name),
+                    cc,
+                    ltoir=lto,
+                )
+        else:
+            code = path_or_obj
+
+    return out_list, resty
+
+
+def _compile_pyfunc_with_fixup(
+    pyfunc,
+    sig,
+    debug=None,
+    lineinfo=False,
+    device=True,
+    fastmath=False,
+    cc=None,
+    opt=None,
+    abi="c",
+    abi_info=None,
+    forceinline=False,
+    launch_bounds=None,
+    lto=False,
+):
+    """Internal method to compile a python function and perform post-processing
+
+    - If pyfunc is a kernel, post-processing includes kernel fixup and setting
+    launch bounds.
+    - If pyfunc is a device function, post-processing includes ABI wrapper.
+
+    `lto` means that all internal pipeline options use LTO.
+
+    Returns the code library and return type.
     """
-    if link_all and output != "ptx":
-        raise ValueError("Nvjitlink does not support outputting to LTOIR.")
-
-    if not link_all and max_registers is not None:
-        warn(
-            NumbaInvalidConfigWarning(
-                "`max_registers` is a linker argument, but link pass is not run."
-                " Therefore, the value of max_registers is ignored."
-            )
-        )
-
-    if abi not in ("numba", "c"):
-        raise NotImplementedError(f"Unsupported ABI: {abi}")
-
-    if abi == "c" and not device:
-        raise NotImplementedError("The C ABI is not supported for kernels")
-
-    if output not in ("ptx", "ltoir"):
-        raise NotImplementedError(f"Unsupported output type: {output}")
-
-    if forceinline and not device:
-        raise ValueError("Cannot force-inline kernels")
-
-    if forceinline and output != "ltoir":
-        raise ValueError("Can only designate forced inlining in LTO-IR")
-
     debug = config.CUDA_DEBUGINFO_DEFAULT if debug is None else debug
     opt = (config.OPT != 0) if opt is None else opt
 
@@ -1032,7 +1068,6 @@ def _compile_with_link_all_option(
         )
         warn(NumbaInvalidConfigWarning(msg))
 
-    lto = output == "ltoir"
     abi_info = abi_info or dict()
 
     nvvm_options = {"fastmath": fastmath, "opt": 3 if opt else 0}
@@ -1083,20 +1118,7 @@ def _compile_with_link_all_option(
         kernel_fixup(kernel, debug)
         nvvm.set_launch_bounds(kernel, launch_bounds)
 
-    if not link_all:
-        if lto:
-            code = lib.get_ltoir(cc=cc)
-        else:
-            code = lib.get_asm_str(cc=cc)
-        return code, resty
-    else:
-        # Code here is only enabled when output=ptx
-        linker = _LinkerBase.new(
-            max_registers=max_registers, lineinfo=lineinfo, cc=cc, lto=lto
-        )
-        lib._link_all(linker, cc, ignore_nonlto=True)
-        ptx = lib.get_lto_ptx(cc=cc)
-        return ptx, resty
+    return lib, resty
 
 
 @global_compiler_lock
@@ -1172,8 +1194,23 @@ def compile(
     :return: (code, resty): The compiled code and inferred return type
     :rtype: tuple
     """
+    if abi not in ("numba", "c"):
+        raise NotImplementedError(f"Unsupported ABI: {abi}")
 
-    return _compile_with_link_all_option(
+    if abi == "c" and not device:
+        raise NotImplementedError("The C ABI is not supported for kernels")
+
+    if output not in ("ptx", "ltoir"):
+        raise NotImplementedError(f"Unsupported output type: {output}")
+
+    if forceinline and not device:
+        raise ValueError("Cannot force-inline kernels")
+
+    if forceinline and output != "ltoir":
+        raise ValueError("Can only designate forced inlining in LTO-IR")
+
+    lto = output == "ltoir"
+    lib, resty = _compile_pyfunc_with_fixup(
         pyfunc,
         sig,
         debug=debug,
@@ -1184,11 +1221,16 @@ def compile(
         opt=opt,
         abi=abi,
         abi_info=abi_info,
-        output=output,
         forceinline=forceinline,
         launch_bounds=launch_bounds,
-        link_all=False,
+        lto=lto,
     )
+
+    if lto:
+        code = lib.get_ltoir(cc=cc)
+    else:
+        code = lib.get_asm_str(cc=cc)
+    return code, resty
 
 
 def compile_for_current_device(
@@ -1246,7 +1288,7 @@ def compile_ptx(
     :func:`compile`. The defaults for this function are to compile a kernel
     with the Numba ABI, rather than :func:`compile`'s default of compiling a
     device function with the C ABI."""
-    return _compile_with_link_all_option(
+    return compile(
         pyfunc,
         sig,
         debug=debug,

@@ -8,6 +8,7 @@ from numba.cuda import (
     compile_for_current_device,
     compile_ptx,
     compile_ptx_for_current_device,
+    compile_all,
 )
 from numba.cuda.testing import skip_on_cudasim, unittest, CUDATestCase
 
@@ -279,7 +280,7 @@ class TestCompile(unittest.TestCase):
         def f(z, x, y):
             z[0] = add(x, y)
 
-        ptx, resty = compile_ptx(f, (int32[::1], int32, int32), link_all=True)
+        code_list, resty = compile_all(f, (int32[::1], int32, int32))
 
 
 @skip_on_cudasim("Compilation unsupported in the simulator")
