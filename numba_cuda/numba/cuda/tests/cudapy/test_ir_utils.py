@@ -8,7 +8,8 @@ from numba.cuda.core.compiler import CompilerBase
 from numba.cuda.flags import Flags
 from numba.cuda.core.compiler_machinery import PassManager
 from numba.cuda.core import ir_utils
-from numba.core import types, ir, bytecode, compiler, registry
+from numba.core import types, ir, bytecode, registry
+from numba.cuda import compiler
 from numba.cuda.core.untyped_passes import (
     ExtractByteCode,
     TranslateByteCode,
@@ -21,6 +22,7 @@ from numba.cuda.core.typed_passes import (
     type_inference_stage,
     DeadCodeElimination,
 )
+from numba.cuda.testing import skip_on_cudasim
 
 
 # global constant for testing find_const
@@ -38,6 +40,7 @@ class TestIrUtils(CUDATestCase):
     Tests ir handling utility functions like find_callname.
     """
 
+    @skip_on_cudasim("Skipping ir utils tests on CUDA simulator")
     def test_obj_func_match(self):
         """Test matching of an object method (other than Array see #3449)"""
 
@@ -60,6 +63,7 @@ class TestIrUtils(CUDATestCase):
             and matched_call[0] == "append"
         )
 
+    @skip_on_cudasim("Skipping ir utils tests on CUDA simulator")
     def test_dead_code_elimination(self):
         class Tester(CompilerBase):
             @classmethod
@@ -178,6 +182,7 @@ class TestIrUtils(CUDATestCase):
             len(no_dce.blocks[0].body) - len(removed), len(w_dce.blocks[0].body)
         )
 
+    @skip_on_cudasim("Skipping ir utils tests on CUDA simulator")
     def test_find_const_global(self):
         """
         Test find_const() for values in globals (ir.Global) and freevars
@@ -204,6 +209,7 @@ class TestIrUtils(CUDATestCase):
         self.assertEqual(const_b, GLOBAL_B)
         self.assertEqual(const_c, FREEVAR_C)
 
+    @skip_on_cudasim("Skipping ir utils tests on CUDA simulator")
     def test_flatten_labels(self):
         """tests flatten_labels"""
 
