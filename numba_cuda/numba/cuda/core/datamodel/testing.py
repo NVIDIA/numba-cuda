@@ -16,6 +16,7 @@ class DataModelTester(CUDATestCase):
     fe_type = NotImplemented
 
     def setUp(self):
+        super().setUp()
         self.module = ir.Module()
         self.datamodel = datamodel.default_manager[self.fe_type]
 
