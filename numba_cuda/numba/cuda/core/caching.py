@@ -14,7 +14,7 @@ import inspect
 import tempfile
 import sys
 
-from numba.misc.appdirs import AppDirs
+from numba.cuda.misc.appdirs import AppDirs
 from pathlib import Path
 
 from numba.core import config

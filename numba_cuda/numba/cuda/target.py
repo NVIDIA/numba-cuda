@@ -162,7 +162,7 @@ class CUDATargetContext(BaseContext):
         from numba.cpython import unicode, charseq  # noqa: F401
         from numba.cuda.cpython import cmathimpl, mathimpl
         from numba.core import optional  # noqa: F401
-        from numba.misc import cffiimpl
+        from numba.cuda.misc import cffiimpl
         from numba.np import arrayobj  # noqa: F401
         from numba.np import npdatetime  # noqa: F401
         from . import (
