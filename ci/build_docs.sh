@@ -29,8 +29,6 @@ set +u
 conda activate docs
 set -u
 
-rapids-mamba-retry install -c `pwd`/conda-repo numba-cuda
-
 pip install nvidia-sphinx-theme
 
 rapids-print-env
