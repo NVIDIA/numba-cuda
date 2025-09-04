@@ -266,6 +266,21 @@ class TestCompile(unittest.TestCase):
             if cond:
                 b_smem[0] = b_arg[0]
 
+    def test_link_all(self):
+        src = cuda.CUSource("""
+        extern "C"
+        __device__ int add(int *ret, int *a, int *b) {
+            *ret = *a + *b;
+            return 0;
+        }
+        """)
+        add = cuda.declare_device("add", "int32(int32, int32)", link=src)
+
+        def f(z, x, y):
+            z[0] = add(x, y)
+
+        ptx, resty = compile_ptx(f, (int32[::1], int32, int32), link_all=True)
+
 
 @skip_on_cudasim("Compilation unsupported in the simulator")
 class TestCompileForCurrentDevice(CUDATestCase):

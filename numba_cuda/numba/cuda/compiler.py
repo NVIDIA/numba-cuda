@@ -24,6 +24,7 @@ from numba.cuda.api import get_current_device
 from numba.cuda.codegen import ExternalCodeLibrary
 from numba.cuda.core import sigutils, postproc
 from numba.cuda.cudadrv import nvvm, nvrtc
+from numba.cuda.cudadrv.driver import _LinkerBase
 from numba.cuda.descriptor import cuda_target
 from numba.cuda.flags import CUDAFlags
 from numba.cuda.target import CUDACABICallConv
@@ -973,8 +974,7 @@ def add_exception_store_helper(kernel):
     return helper_func
 
 
-@global_compiler_lock
-def compile(
+def _compile_with_link_all_option(
     pyfunc,
     sig,
     debug=None,
@@ -988,64 +988,24 @@ def compile(
     output="ptx",
     forceinline=False,
     launch_bounds=None,
+    link_all=False,
+    max_registers=None,
 ):
-    """Compile a Python function to PTX or LTO-IR for a given set of argument
-    types.
+    """Perform compilation with an option to link all files in code library.
 
-    :param pyfunc: The Python function to compile.
-    :param sig: The signature representing the function's input and output
-                types. If this is a tuple of argument types without a return
-                type, the inferred return type is returned by this function. If
-                a signature including a return type is passed, the compiled code
-                will include a cast from the inferred return type to the
-                specified return type, and this function will return the
-                specified return type.
-    :param debug: Whether to include debug info in the compiled code.
-    :type debug: bool
-    :param lineinfo: Whether to include a line mapping from the compiled code
-                     to the source code. Usually this is used with optimized
-                     code (since debug mode would automatically include this),
-                     so we want debug info in the LLVM IR but only the line
-                     mapping in the final output.
-    :type lineinfo: bool
-    :param device: Whether to compile a device function.
-    :type device: bool
-    :param fastmath: Whether to enable fast math flags (ftz=1, prec_sqrt=0,
-                     prec_div=, and fma=1)
-    :type fastmath: bool
-    :param cc: Compute capability to compile for, as a tuple
-               ``(MAJOR, MINOR)``. Defaults to ``(5, 0)``.
-    :type cc: tuple
-    :param opt: Whether to enable optimizations in the compiled code.
-    :type opt: bool
-    :param abi: The ABI for a compiled function - either ``"numba"`` or
-                ``"c"``. Note that the Numba ABI is not considered stable.
-                The C ABI is only supported for device functions at present.
-    :type abi: str
-    :param abi_info: A dict of ABI-specific options. The ``"c"`` ABI supports
-                     one option, ``"abi_name"``, for providing the wrapper
-                     function's name. The ``"numba"`` ABI has no options.
-    :type abi_info: dict
-    :param output: Type of output to generate, either ``"ptx"`` or ``"ltoir"``.
-    :type output: str
-    :param forceinline: Enables inlining at the NVVM IR level when set to
-                        ``True``. This is accomplished by adding the
-                        ``alwaysinline`` function attribute to the function
-                        definition. This is only valid when the output is
-                        ``"ltoir"``.
-    :param launch_bounds: Kernel launch bounds, specified as a scalar or a tuple
-                          of between one and three items. Tuple items provide:
-
-                          - The maximum number of threads per block,
-                          - The minimum number of blocks per SM,
-                          - The maximum number of blocks per cluster.
-
-                          If a scalar is provided, it is used as the maximum
-                          number of threads per block.
-    :type launch_bounds: int | tuple[int]
-    :return: (code, resty): The compiled code and inferred return type
-    :rtype: tuple
+    When link_all is True, only PTX is supported as output.
     """
+    if link_all and output != "ptx":
+        raise ValueError("Nvjitlink does not support outputting to LTOIR.")
+
+    if not link_all and max_registers is not None:
+        warn(
+            NumbaInvalidConfigWarning(
+                "`max_registers` is a linker argument, but link pass is not run."
+                " Therefore, the value of max_registers is ignored."
+            )
+        )
+
     if abi not in ("numba", "c"):
         raise NotImplementedError(f"Unsupported ABI: {abi}")
 
@@ -1123,11 +1083,112 @@ def compile(
         kernel_fixup(kernel, debug)
         nvvm.set_launch_bounds(kernel, launch_bounds)
 
-    if lto:
-        code = lib.get_ltoir(cc=cc)
+    if not link_all:
+        if lto:
+            code = lib.get_ltoir(cc=cc)
+        else:
+            code = lib.get_asm_str(cc=cc)
+        return code, resty
     else:
-        code = lib.get_asm_str(cc=cc)
-    return code, resty
+        # Code here is only enabled when output=ptx
+        linker = _LinkerBase.new(
+            max_registers=max_registers, lineinfo=lineinfo, cc=cc, lto=lto
+        )
+        lib._link_all(linker, cc, ignore_nonlto=True)
+        ptx = lib.get_lto_ptx(cc=cc)
+        return ptx, resty
+
+
+@global_compiler_lock
+def compile(
+    pyfunc,
+    sig,
+    debug=None,
+    lineinfo=False,
+    device=True,
+    fastmath=False,
+    cc=None,
+    opt=None,
+    abi="c",
+    abi_info=None,
+    output="ptx",
+    forceinline=False,
+    launch_bounds=None,
+):
+    """Compile a Python function to PTX or LTO-IR for a given set of argument
+    types.
+
+    :param pyfunc: The Python function to compile.
+    :param sig: The signature representing the function's input and output
+                types. If this is a tuple of argument types without a return
+                type, the inferred return type is returned by this function. If
+                a signature including a return type is passed, the compiled code
+                will include a cast from the inferred return type to the
+                specified return type, and this function will return the
+                specified return type.
+    :param debug: Whether to include debug info in the compiled code.
+    :type debug: bool
+    :param lineinfo: Whether to include a line mapping from the compiled code
+                     to the source code. Usually this is used with optimized
+                     code (since debug mode would automatically include this),
+                     so we want debug info in the LLVM IR but only the line
+                     mapping in the final output.
+    :type lineinfo: bool
+    :param device: Whether to compile a device function.
+    :type device: bool
+    :param fastmath: Whether to enable fast math flags (ftz=1, prec_sqrt=0,
+                     prec_div=, and fma=1)
+    :type fastmath: bool
+    :param cc: Compute capability to compile for, as a tuple
+               ``(MAJOR, MINOR)``. Defaults to ``(5, 0)``.
+    :type cc: tuple
+    :param opt: Whether to enable optimizations in the compiled code.
+    :type opt: bool
+    :param abi: The ABI for a compiled function - either ``"numba"`` or
+                ``"c"``. Note that the Numba ABI is not considered stable.
+                The C ABI is only supported for device functions at present.
+    :type abi: str
+    :param abi_info: A dict of ABI-specific options. The ``"c"`` ABI supports
+                     one option, ``"abi_name"``, for providing the wrapper
+                     function's name. The ``"numba"`` ABI has no options.
+    :type abi_info: dict
+    :param output: Type of output to generate, either ``"ptx"`` or ``"ltoir"``.
+    :type output: str
+    :param forceinline: Enables inlining at the NVVM IR level when set to
+                        ``True``. This is accomplished by adding the
+                        ``alwaysinline`` function attribute to the function
+                        definition. This is only valid when the output is
+                        ``"ltoir"``.
+    :param launch_bounds: Kernel launch bounds, specified as a scalar or a tuple
+                          of between one and three items. Tuple items provide:
+
+                          - The maximum number of threads per block,
+                          - The minimum number of blocks per SM,
+                          - The maximum number of blocks per cluster.
+
+                          If a scalar is provided, it is used as the maximum
+                          number of threads per block.
+    :type launch_bounds: int | tuple[int]
+    :return: (code, resty): The compiled code and inferred return type
+    :rtype: tuple
+    """
+
+    return _compile_with_link_all_option(
+        pyfunc,
+        sig,
+        debug=debug,
+        lineinfo=lineinfo,
+        device=device,
+        fastmath=fastmath,
+        cc=cc,
+        opt=opt,
+        abi=abi,
+        abi_info=abi_info,
+        output=output,
+        forceinline=forceinline,
+        launch_bounds=launch_bounds,
+        link_all=False,
+    )
 
 
 def compile_for_current_device(
@@ -1178,12 +1239,14 @@ def compile_ptx(
     abi_info=None,
     forceinline=False,
     launch_bounds=None,
+    link_all=False,
+    max_registers=None,
 ):
     """Compile a Python function to PTX for a given signature. See
     :func:`compile`. The defaults for this function are to compile a kernel
     with the Numba ABI, rather than :func:`compile`'s default of compiling a
     device function with the C ABI."""
-    return compile(
+    return _compile_with_link_all_option(
         pyfunc,
         sig,
         debug=debug,
@@ -1197,6 +1260,8 @@ def compile_ptx(
         output="ptx",
         forceinline=forceinline,
         launch_bounds=launch_bounds,
+        link_all=link_all,
+        max_registers=max_registers,
     )
 
 
@@ -1212,6 +1277,8 @@ def compile_ptx_for_current_device(
     abi_info=None,
     forceinline=False,
     launch_bounds=None,
+    link_all=False,
+    max_registers=None,
 ):
     """Compile a Python function to PTX for a given signature for the current
     device's compute capabilility. See :func:`compile_ptx`."""
@@ -1229,6 +1296,8 @@ def compile_ptx_for_current_device(
         abi_info=abi_info,
         forceinline=forceinline,
         launch_bounds=launch_bounds,
+        link_all=link_all,
+        max_registers=max_registers,
     )
 
 
