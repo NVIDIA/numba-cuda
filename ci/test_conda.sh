@@ -3,7 +3,6 @@
 # SPDX-License-Identifier: BSD-2-Clause
 
 set -euo pipefail
-set -x
 
 . /opt/conda/etc/profile.d/conda.sh
 
@@ -59,19 +58,6 @@ set -u
 
 pip install filecheck
 
-# Detect system architecture to set conda repo path
-ARCH=$(uname -m)
-if [[ "$ARCH" == "x86_64" ]]; then
-    ARCH_SUFFIX="amd64"
-elif [[ "$ARCH" == "aarch64" ]]; then
-    ARCH_SUFFIX="arm64"
-else
-    echo "Unsupported architecture: $ARCH"
-    exit 1
-fi
-
-rapids-mamba-retry install -c `pwd`/conda-repo numba-cuda
-
 RAPIDS_TESTS_DIR=${RAPIDS_TESTS_DIR:-"${PWD}/test-results"}/
 mkdir -p "${RAPIDS_TESTS_DIR}"
 pushd "${RAPIDS_TESTS_DIR}"
@@ -99,12 +85,10 @@ print(test_dir)
 "
 
 rapids-logger "Build tests"
-
 export NUMBA_CUDA_TEST_BIN_DIR=$(python -c "$GET_TEST_BINARY_DIR")
 pushd $NUMBA_CUDA_TEST_BIN_DIR
 make
 popd
-
 
 rapids-logger "Run Tests"
 pytest --pyargs numba.cuda.tests -v

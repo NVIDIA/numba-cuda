@@ -44,8 +44,6 @@ set -u
 
 pip install filecheck
 
-rapids-mamba-retry install -c `pwd`/conda-repo numba-cuda
-
 RAPIDS_TESTS_DIR=${RAPIDS_TESTS_DIR:-"${PWD}/test-results"}/
 mkdir -p "${RAPIDS_TESTS_DIR}"
 pushd "${RAPIDS_TESTS_DIR}"
