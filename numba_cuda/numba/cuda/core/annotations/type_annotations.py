@@ -12,7 +12,7 @@ import textwrap
 from io import StringIO
 
 import numba.core.dispatcher
-from numba.core import ir
+from numba.cuda.core import ir
 
 
 class SourceLines(Mapping):
