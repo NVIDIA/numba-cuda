@@ -61,8 +61,8 @@ def _find_assign(func_ir, var):
 @skip_on_cudasim("cudasim doesn't support run_frontend")
 class TestCopyPropagate(CUDATestCase):
     def test1(self):
-        typingctx = cpu_target.typing_context
-        targetctx = cpu_target.target_context
+        typingctx = cuda_target.typing_context
+        targetctx = cuda_target.target_context
         test_ir = compiler.run_frontend(_test_will_propagate)
         typingctx.refresh()
         targetctx.refresh()
