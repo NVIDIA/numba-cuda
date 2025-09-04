@@ -28,7 +28,7 @@ jobs:
     outputs:
       MATRIX: ${{ steps.compute-matrix.outputs.MATRIX }}
     steps:
-      - name: Compute Python Test Matrix
+      - name: Compute Build Matrix
         id: compute-matrix
         env:
           MATRIX: ${{ inputs.matrix }}
@@ -42,7 +42,11 @@ jobs:
       - compute-matrix
     strategy:
       fail-fast: false
-      matrix: ${{ fromJSON(needs.compute-matrix.outputs.MATRIX) }}
+      matrix:
+        - {"PY_VER": "3.10", "CUDA_VER": "12.8.0"}
+        - {"PY_VER": "3.11", "CUDA_VER": "12.8.0"}
+        - {"PY_VER": "3.12", "CUDA_VER": "12.8.0"}
+        - {"PY_VER": "3.13", "CUDA_VER": "12.8.0"}
     runs-on: windows-2022
     steps:
       - uses: actions/checkout@v4
