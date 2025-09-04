@@ -1,6 +1,9 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-2-Clause
 
+# Copyright (c) 2005-2010 ActiveState Software Inc.
+# Copyright (c) 2013 Eddy Petrișor
+
 """Utilities for determining application-specific dirs.
 
 See <http://github.com/ActiveState/appdirs> for details and usage.

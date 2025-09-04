@@ -67,7 +67,7 @@ def _confirm_gdb(need_ptrace_attach=True):
             raise RuntimeError(msg)
 
 
-@overload(gdb)
+@overload(gdb, target="cuda")
 def hook_gdb(*args):
     _confirm_gdb()
     gdbimpl = gen_gdb_impl(args, True)
@@ -78,7 +78,7 @@ def hook_gdb(*args):
     return impl
 
 
-@overload(gdb_init)
+@overload(gdb_init, target="cuda")
 def hook_gdb_init(*args):
     _confirm_gdb()
     gdbimpl = gen_gdb_impl(args, False)
@@ -205,7 +205,7 @@ def gen_gdb_impl(const_args, do_break):
     return gdb_internal
 
 
-@overload(gdb_breakpoint)
+@overload(gdb_breakpoint, target="cuda")
 def hook_gdb_breakpoint():
     """
     Adds the Numba break point into the source

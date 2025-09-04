@@ -7,7 +7,7 @@ from numba.cuda.misc.special import literally, literal_unroll
 from numba.core.errors import TypingError
 
 
-@overload(literally)
+@overload(literally, target="cuda")
 def _ov_literally(obj):
     if isinstance(obj, (types.Literal, types.InitialValue)):
         return lambda obj: obj
@@ -16,7 +16,7 @@ def _ov_literally(obj):
         raise TypingError(m)
 
 
-@overload(literal_unroll)
+@overload(literal_unroll, target="cuda")
 def literal_unroll_impl(container):
     if isinstance(container, types.Poison):
         m = f"Invalid use of non-Literal type in literal_unroll({container})"
