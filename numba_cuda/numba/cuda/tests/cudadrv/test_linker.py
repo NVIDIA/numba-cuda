@@ -5,7 +5,11 @@ import numpy as np
 import warnings
 from numba import config
 from numba.cuda.testing import unittest
-from numba.cuda.testing import skip_on_cudasim, skip_if_cuda_includes_missing
+from numba.cuda.testing import (
+    skip_on_cudasim,
+    skip_if_cuda_includes_missing,
+    skip_if_nvjitlink_missing,
+)
 from numba.cuda.testing import CUDATestCase, test_data_dir
 from numba.cuda.cudadrv.driver import CudaAPIError, _Linker, LinkerError
 from numba.cuda import require_context
@@ -329,10 +333,8 @@ class TestLinker(CUDATestCase):
         calc_size = np.dtype(np.float64).itemsize * LMEM_SIZE
         self.assertGreaterEqual(local_mem_size, calc_size)
 
+    @skip_if_nvjitlink_missing("nvJitLink not installed or new enough (>12.3)")
     def test_link_for_different_cc(self):
-        if not config.CUDA_USE_NVIDIA_BINDING:
-            self.skipTest("Ctypes Linker does not support outputting PTX.")
-
         linker = _Linker.new(cc=(7, 5), lto=True)
         code = """
 __device__ int foo(int x) {
