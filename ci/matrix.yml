@@ -13,11 +13,6 @@ build-matrix:
   - { ARCH: 'arm64', PY_VER: '3.11', CUDA_VER: '12.8.0', LINUX_VER: 'rockylinux8' }
   - { ARCH: 'arm64', PY_VER: '3.12', CUDA_VER: '12.8.0', LINUX_VER: 'rockylinux8' }
   - { ARCH: 'arm64', PY_VER: '3.13', CUDA_VER: '12.8.0', LINUX_VER: 'rockylinux8' }
-windows-matrix:
-  - { PY_VER: '3.10', CUDA_VER: '12.8.0' }
-  - { PY_VER: '3.11', CUDA_VER: '12.8.0' }
-  - { PY_VER: '3.12', CUDA_VER: '12.8.0' }
-  - { PY_VER: '3.13', CUDA_VER: '12.8.0' }
 simulator-matrix:
   - { ARCH: 'amd64', PY_VER: '3.12', CUDA_VER: '12.8.0', LINUX_VER: 'rockylinux8' }
 # We test "oldest" dependencies with the oldest supported Python version and

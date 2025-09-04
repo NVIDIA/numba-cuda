@@ -14,40 +14,17 @@ on:
         type: string
         default: "./ci/build_wheel.ps1"
 
-      # general settings
-      matrix:
-        type: string
-        required: true
-      matrix_filter:
-        type: string
-        default: "."
-
 jobs:
-  compute-matrix:
-    runs-on: ubuntu-latest
-    outputs:
-      MATRIX: ${{ steps.compute-matrix.outputs.MATRIX }}
-    steps:
-      - name: Compute Build Matrix
-        id: compute-matrix
-        env:
-          MATRIX: ${{ inputs.matrix }}
-        run: |
-          set -eo pipefail
-          MATRIX=$(yq -n -o json 'env(MATRIX)' | jq -c)
-          echo "MATRIX=${MATRIX}" | tee --append "${GITHUB_OUTPUT}"
   build:
-    name: ${{ matrix.config.CUDA_VER }}, ${{ matrix.config.PY_VER }}, windows
-    needs:
-      - compute-matrix
+    name: ${{ matrix.PY_VER }}, windows
     strategy:
       fail-fast: false
       matrix:
-        config:
-          - {"PY_VER": "3.10", "CUDA_VER": "12.8.0"}
-          - {"PY_VER": "3.11", "CUDA_VER": "12.8.0"}
-          - {"PY_VER": "3.12", "CUDA_VER": "12.8.0"}
-          - {"PY_VER": "3.13", "CUDA_VER": "12.8.0"}
+        PY_VER:
+          - "3.10"
+          - "3.11"
+          - "3.12"
+          - "3.13"
     runs-on: windows-2022
     steps:
       - uses: actions/checkout@v4
@@ -56,10 +33,10 @@ jobs:
           ref: ${{ inputs.sha }}
           fetch-depth: 0
 
-      - name: Set up Python ${{ matrix.config.PY_VER }}
+      - name: Set up Python ${{ matrix.PY_VER }}
         uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065  # v5.6.0
         with:
-          python-version: ${{ matrix.config.PY_VER }}
+          python-version: ${{ matrix.PY_VER }}
 
       - name: Set up MSVC
         uses: ilammy/msvc-dev-cmd@v1  # TODO: ask admin to allow pinning commits
@@ -68,11 +45,11 @@ jobs:
         run: |
           ${{ inputs.script }}
         env:
-          CUDA_VER: ${{ matrix.config.CUDA_VER }}
+          CUDA_VER: "12.8.0"
 
       - name: Upload wheel
         if: "!cancelled()"
         uses: actions/upload-artifact@v4
         with:
-          name: wheel-py${{ matrix.config.PY_VER }}-windows
+          name: wheel-py${{ matrix.PY_VER }}-windows
           path: ${{ env.wheel_path }}

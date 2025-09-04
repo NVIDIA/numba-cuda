@@ -41,7 +41,6 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       BUILD_MATRIX: ${{ steps.compute-matrix.outputs.BUILD_MATRIX }}
-      WINDOWS_MATRIX: ${{ steps.compute-matrix.outputs.WINDOWS_MATRIX }}
       SIMULATOR_MATRIX: ${{ steps.compute-matrix.outputs.SIMULATOR_MATRIX }}
       TEST_MATRIX: ${{ steps.compute-matrix.outputs.TEST_MATRIX }}
     steps:
@@ -50,15 +49,11 @@ jobs:
         id: compute-matrix
         run: |
           BUILD_MATRIX="$(yq '.build-matrix' ci/matrix.yml)"
-          WINDOWS_MATRIX="$(yq '.windows-matrix' ci/matrix.yml)"
           SIMULATOR_MATRIX="$(yq '.simulator-matrix' ci/matrix.yml)"
           TEST_MATRIX="$(yq '.test-matrix' ci/matrix.yml)"
           {
             echo 'BUILD_MATRIX<<EOF'
             echo "${BUILD_MATRIX}"
-            echo 'EOF'
-            echo 'WINDOWS_MATRIX<<EOF'
-            echo "${WINDOWS_MATRIX}"
             echo 'EOF'
             echo 'SIMULATOR_MATRIX<<EOF'
             echo "${SIMULATOR_MATRIX}"
@@ -115,18 +110,11 @@ jobs:
       script: "ci/build_wheel.sh"
       matrix: ${{ needs.compute-matrix.outputs.BUILD_MATRIX }}
   build-wheels-windows:
-    needs:
-      - compute-matrix
     uses: ./.github/workflows/wheel-windows-build.yaml
-    with:
-      matrix: ${{ needs.compute-matrix.outputs.WINDOWS_MATRIX }}
   test-wheels-windows:
     needs:
       - build-wheels-windows
-      - compute-matrix
     uses: ./.github/workflows/wheel-windows-tests.yaml
-    with:
-      matrix: ${{ needs.compute-matrix.outputs.WINDOWS_MATRIX }}
   test-wheels:
     needs:
       - build-wheels
