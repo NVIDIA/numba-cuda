@@ -336,9 +336,3 @@ class ForeignArray(object):
     def __init__(self, arr):
         self._arr = arr
         self.__cuda_array_interface__ = arr.__cuda_array_interface__
-
-
-def test_binary_generation_dir():
-    testing = Path(__file__)
-    binary_gen_dir = testing.parent / "tests" / "test_binary_generation"
-    return binary_gen_dir
