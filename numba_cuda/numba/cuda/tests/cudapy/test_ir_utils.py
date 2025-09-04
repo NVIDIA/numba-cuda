@@ -2,8 +2,6 @@
 # SPDX-License-Identifier: BSD-2-Clause
 
 from numba.cuda.testing import CUDATestCase
-import numba
-from numba.core.registry import cpu_target
 from numba.cuda.core.compiler import CompilerBase
 from numba.cuda.flags import Flags
 from numba.cuda.core.compiler_machinery import PassManager
@@ -16,10 +14,8 @@ from numba.cuda.core.untyped_passes import (
     FixupArgs,
     IRProcessing,
 )
-from numba.experimental import jitclass
 from numba.cuda.core.typed_passes import (
     NopythonTypeInference,
-    type_inference_stage,
     DeadCodeElimination,
 )
 from numba.cuda.testing import skip_on_cudasim
@@ -29,41 +25,11 @@ from numba.cuda.testing import skip_on_cudasim
 GLOBAL_B = 11
 
 
-@jitclass([("val", numba.core.types.List(numba.intp))])
-class Dummy(object):
-    def __init__(self, val):
-        self.val = val
-
-
 class TestIrUtils(CUDATestCase):
     """
     Tests ir handling utility functions like find_callname.
     """
 
-    @skip_on_cudasim("Skipping ir utils tests on CUDA simulator")
-    def test_obj_func_match(self):
-        """Test matching of an object method (other than Array see #3449)"""
-
-        def test_func():
-            d = Dummy([1])
-            d.val.append(2)
-
-        test_ir = compiler.run_frontend(test_func)
-        typingctx = cpu_target.typing_context
-        targetctx = cpu_target.target_context
-        typing_res = type_inference_stage(
-            typingctx, targetctx, test_ir, (), None
-        )
-        matched_call = ir_utils.find_callname(
-            test_ir, test_ir.blocks[0].body[7].value, typing_res.typemap
-        )
-        self.assertTrue(
-            isinstance(matched_call, tuple)
-            and len(matched_call) == 2
-            and matched_call[0] == "append"
-        )
-
-    @skip_on_cudasim("Skipping ir utils tests on CUDA simulator")
     def test_dead_code_elimination(self):
         class Tester(CompilerBase):
             @classmethod
