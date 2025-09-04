@@ -11,7 +11,18 @@ from numba.core import types
 from numba.cuda import cgutils
 from numba.core.extending import intrinsic
 
-from numba.core.runtime.nrtdynmod import _meminfo_struct_type
+_word_type = ir.IntType(64)
+_pointer_type = ir.PointerType(ir.IntType(8))
+
+_meminfo_struct_type = ir.LiteralStructType(
+    [
+        _word_type,  # size_t refct
+        _pointer_type,  # dtor_function dtor
+        _pointer_type,  # void *dtor_info
+        _pointer_type,  # void *data
+        _word_type,  # size_t size
+    ]
+)
 
 
 @intrinsic
