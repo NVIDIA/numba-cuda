@@ -583,11 +583,11 @@ class TestCudaDebugInfo(CUDATestCase):
         # conflict. baz will not be marked as 'alwaysinline' as a result of
         # DEBUGINFO_DEFAULT
 
-        @cuda.jit(forceinline=True)
+        @cuda.jit(device=True, forceinline=True)
         def bar(x):
             return math.sin(x)
 
-        @cuda.jit(forceinline=False)
+        @cuda.jit(device=True, forceinline=False)
         def baz(x):
             return math.cos(x)
 
