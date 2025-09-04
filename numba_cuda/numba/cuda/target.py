@@ -11,17 +11,23 @@ from numba.core import (
     config,
     targetconfig,
     types,
-    typing,
 )
 from numba.core.compiler_lock import global_compiler_lock
 from numba.core.dispatcher import Dispatcher
 from numba.core.errors import NumbaWarning
-from numba.core.base import BaseContext
+from numba.cuda.core.base import BaseContext
 from numba.core.typing import cmathdecl
 from numba.core import datamodel
 
 from .cudadrv import nvvm
-from numba.cuda import cgutils, itanium_mangler, compiler, codegen, ufuncs
+from numba.cuda import (
+    cgutils,
+    itanium_mangler,
+    compiler,
+    codegen,
+    ufuncs,
+    typing,
+)
 from numba.cuda.debuginfo import CUDADIBuilder
 from numba.cuda.flags import CUDAFlags
 from numba.cuda.models import cuda_data_manager
@@ -41,7 +47,7 @@ class CUDATypingContext(typing.BaseContext):
             libdevicedecl,
             vector_types,
         )
-        from numba.core.typing import enumdecl, cffi_utils
+        from numba.cuda.typing import enumdecl, cffi_utils
 
         self.install_registry(cudadecl.registry)
         self.install_registry(cffi_utils.registry)

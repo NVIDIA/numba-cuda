@@ -12,11 +12,12 @@ from numba.core import (
     funcdesc,
     config,
     bytecode,
-    cpu,
 )
+from numba.cuda.core.options import ParallelOptions
 from numba.core.compiler_lock import global_compiler_lock
 from numba.core.errors import NumbaWarning, NumbaInvalidConfigWarning
 from numba.cuda.core.interpreter import Interpreter
+from numba.cuda.core import inline_closurecall
 
 from numba.cuda import cgutils, typing, lowering, nvvmutils, utils
 from numba.cuda.api import get_current_device
@@ -104,10 +105,8 @@ def run_frontend(func, inline_closures=False, emit_dels=False):
     bc = bytecode.ByteCode(func_id=func_id)
     func_ir = interp.interpret(bc)
     if inline_closures:
-        from numba.core.inline_closurecall import InlineClosureCallPass
-
-        inline_pass = InlineClosureCallPass(
-            func_ir, cpu.ParallelOptions(False), {}, False
+        inline_pass = inline_closurecall.InlineClosureCallPass(
+            func_ir, ParallelOptions(False), {}, False
         )
         inline_pass.run()
     post_proc = postproc.PostProcessor(func_ir)
