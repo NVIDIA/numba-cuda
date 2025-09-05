@@ -948,16 +948,26 @@ import_devicearray(void)
         return -1;
     }
     printf("Imported device array\n");
-    Py_DECREF(devicearray);
 
-    DeviceArray_API = (void**)PyCapsule_Import(NUMBA_DEVICEARRAY_IMPORT_NAME "._DEVICEARRAY_API", 0);
-    if (DeviceArray_API == NULL) {
-        printf("Capsule did not import.\n");
-        return -1;
+    PyObject *d = PyModule_GetDict(devicearray);
+    if (d == NULL) {
+      printf("Couldn't get dict of device array module\n");
+      Py_DECREF(devicearray);
+      return -1;
     }
+    printf("Got dict of device array module\n");
 
-    printf("Capsule imported.\n");
-    return 0;
+    PyObject *c_api = PyDict_GetItemString(d, "_DEVICEARRAY_API");
+    if (PyCapsule_IsValid(c_api, NUMBA_DEVICEARRAY_IMPORT_NAME "._DEVICEARRAY_API")) {
+      printf("Capsule is valid\n");
+      DeviceArray_API = (void**)PyCapsule_GetPointer(c_api, NUMBA_DEVICEARRAY_IMPORT_NAME "._DEVICEARRAY_API");
+      Py_DECREF(devicearray);
+      return 0;
+    } else {
+      printf("Capsule is not valid.\n");
+      Py_DECREF(devicearray);
+      return -1;
+    }
 }
 
 static PyMethodDef Dispatcher_methods[] = {
