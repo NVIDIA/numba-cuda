@@ -6,12 +6,11 @@ from collections import namedtuple
 from warnings import warn, catch_warnings, simplefilter
 import copy
 
-from numba.cuda.core import ir as numba_ir
+from numba.cuda.core import bytecode, ir as numba_ir
 from numba.core import (
     types,
     funcdesc,
     config,
-    bytecode,
 )
 from numba.core.compiler_lock import global_compiler_lock
 from numba.core.errors import NumbaWarning, NumbaInvalidConfigWarning
