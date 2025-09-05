@@ -119,27 +119,35 @@ MOD_INIT(_devicearray) {
     PyObject *c_api = nullptr;
     int error = 0;
 
+
+    printf("In init\n");
     MOD_DEF(m, "_devicearray", "No docs", NULL)
     if (m == NULL)
         goto error_occurred;
 
+    printf("About to create capsule\n");
     c_api = PyCapsule_New((void *)_DeviceArray_API, NUMBA_DEVICEARRAY_IMPORT_NAME "._DEVICEARRAY_API", NULL);
     if (c_api == NULL)
         goto error_occurred;
 
+    printf("About to check if type ready\n");
     DeviceArrayType.tp_new = PyType_GenericNew;
     if (PyType_Ready(&DeviceArrayType) < 0)
         goto error_occurred;
 
+
+    printf("About to add object\n");
     Py_INCREF(&DeviceArrayType);
     error = PyModule_AddObject(m, "DeviceArray", (PyObject*)(&DeviceArrayType));
     if (error)
         goto error_occurred;
 
+    printf("About to get module dict\n");
     d = PyModule_GetDict(m);
     if (d == NULL)
         goto error_occurred;
 
+    printf("About to set item\n");
     error = PyDict_SetItemString(d, "_DEVICEARRAY_API", c_api);
     /* Decref and set c_api to NULL, Py_XDECREF in error_occurred will have no
      * effect. */
@@ -148,6 +156,8 @@ MOD_INIT(_devicearray) {
     if (error)
         goto error_occurred;
 
+
+    printf("Success\n");
     return MOD_SUCCESS_VAL(m);
 
 error_occurred:
