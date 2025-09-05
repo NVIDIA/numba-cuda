@@ -947,24 +947,19 @@ import_devicearray(void)
     if (devicearray == NULL) {
         return -1;
     }
-    printf("Imported device array\n");
 
     PyObject *d = PyModule_GetDict(devicearray);
     if (d == NULL) {
-      printf("Couldn't get dict of device array module\n");
       Py_DECREF(devicearray);
       return -1;
     }
-    printf("Got dict of device array module\n");
 
     PyObject *c_api = PyDict_GetItemString(d, "_DEVICEARRAY_API");
     if (PyCapsule_IsValid(c_api, NUMBA_DEVICEARRAY_IMPORT_NAME "._DEVICEARRAY_API")) {
-      printf("Capsule is valid\n");
       DeviceArray_API = (void**)PyCapsule_GetPointer(c_api, NUMBA_DEVICEARRAY_IMPORT_NAME "._DEVICEARRAY_API");
       Py_DECREF(devicearray);
       return 0;
     } else {
-      printf("Capsule is not valid.\n");
       Py_DECREF(devicearray);
       return -1;
     }
