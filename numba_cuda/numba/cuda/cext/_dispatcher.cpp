@@ -947,13 +947,16 @@ import_devicearray(void)
     if (devicearray == NULL) {
         return -1;
     }
+    printf("Imported device array\n");
     Py_DECREF(devicearray);
 
     DeviceArray_API = (void**)PyCapsule_Import(NUMBA_DEVICEARRAY_IMPORT_NAME "._DEVICEARRAY_API", 0);
     if (DeviceArray_API == NULL) {
+        printf("Capsule did not import.\n");
         return -1;
     }
 
+    printf("Capsule imported.\n");
     return 0;
 }
 
