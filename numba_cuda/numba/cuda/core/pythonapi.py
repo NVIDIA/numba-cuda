@@ -17,10 +17,10 @@ from numba.core import (
     config,
     lowering,
     cgutils,
-    imputils,
     serialize,
 )
-from numba.core.utils import PYVERSION
+from numba.cuda.core import imputils
+from numba.cuda.utils import PYVERSION
 
 PY_UNICODE_1BYTE_KIND = _helperlib.py_unicode_1byte_kind
 PY_UNICODE_2BYTE_KIND = _helperlib.py_unicode_2byte_kind
