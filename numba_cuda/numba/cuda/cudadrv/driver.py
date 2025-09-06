@@ -2836,10 +2836,7 @@ class _LinkerBase(metaclass=ABCMeta):
     def add_cu(self, cu, name):
         """Add CUDA source in a string to the link. The name of the source
         file should be specified in `name`."""
-        with driver.get_active_context() as ac:
-            dev = driver.get_device(ac.devnum)
-            cc = dev.compute_capability
-        ptx, log = nvrtc.compile(cu, name, cc)
+        ptx, log = nvrtc.compile(cu, name, self.cc)
 
         if config.DUMP_ASSEMBLY:
             print(("ASSEMBLY %s" % name).center(80, "-"))
@@ -3003,10 +3000,7 @@ class _Linker(_LinkerBase):
         self._object_codes.append(obj)
 
     def add_cu(self, cu, name="<cudapy-cu>"):
-        with driver.get_active_context() as ac:
-            dev = driver.get_device(ac.devnum)
-            cc = dev.compute_capability
-        obj, log = nvrtc.compile(cu, name, cc, ltoir=self.lto)
+        obj, log = nvrtc.compile(cu, name, self.cc, ltoir=self.lto)
 
         if not self.lto and config.DUMP_ASSEMBLY:
             print(("ASSEMBLY %s" % name).center(80, "-"))
@@ -3117,6 +3111,7 @@ class CtypesLinker(_LinkerBase):
         if lineinfo:
             options[enums.CU_JIT_GENERATE_LINE_INFO] = c_void_p(1)
 
+        self.cc = cc
         if cc is None:
             # No option value is needed, but we need something as a placeholder
             options[enums.CU_JIT_TARGET_FROM_CUCONTEXT] = 1
