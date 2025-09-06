@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-2-Clause
 
-from numba.core.targetconfig import TargetConfig, Option
+from numba.cuda.core.targetconfig import TargetConfig, Option
 
 from numba.cuda.core.options import (
     ParallelOptions,
