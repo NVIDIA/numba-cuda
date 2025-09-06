@@ -5,6 +5,7 @@ import sys
 import os
 from collections import namedtuple
 import platform
+import importlib.metadata
 from numba.core.config import IS_WIN32
 from numba.cuda.misc.findlib import find_lib
 from numba import config
@@ -17,6 +18,15 @@ SEARCH_PRIORITY = [
     "CUDA_HOME",
     "System",
 ]
+
+
+def _get_distribution(distribution_name):
+    """Get the distribution path using importlib.metadata, returning None if not found."""
+    try:
+        dist = importlib.metadata.distribution(distribution_name)
+        return dist
+    except importlib.metadata.PackageNotFoundError:
+        return None
 
 
 def _priority_index(label):
@@ -100,70 +110,80 @@ def _get_nvrtc_path_decision():
 def _get_nvvm_wheel_path():
     dso_path = None
     # CUDA 12
-    try:
-        import nvidia.cuda_nvcc
-
-        nvvm_path = nvidia.cuda_nvcc.__path__[0]
+    nvcc_distribution = _get_distribution("nvidia-cuda-nvcc-cu12")
+    if nvcc_distribution is not None:
+        site_packages_path = nvcc_distribution.locate_file("")
         nvvm_lib_dir = os.path.join(
-            nvvm_path, "nvvm", "bin" if IS_WIN32 else "lib64"
+            site_packages_path,
+            "nvidia",
+            "cuda_nvcc",
+            "nvvm",
+            "bin" if IS_WIN32 else "lib64",
         )
         dso_path = os.path.join(
             nvvm_lib_dir, "nvvm64_40_0.dll" if IS_WIN32 else "libnvvm.so"
         )
-    except ImportError:
-        pass
 
     # CUDA 13
-    try:
-        import nvidia.cu13
+    if dso_path is None:
+        nvcc_distribution = _get_distribution("nvidia-nvvm")
+        if (
+            nvcc_distribution is not None
+            and nvcc_distribution.version.startswith("13.")
+        ):
+            site_packages_path = nvcc_distribution.locate_file("")
+            nvvm_lib_dir = os.path.join(
+                site_packages_path,
+                "nvidia",
+                "cu13",
+                "bin" if IS_WIN32 else "lib",
+                "x86_64" if IS_WIN32 else "",
+            )
+            dso_path = os.path.join(
+                nvvm_lib_dir, "nvvm64_40_0.dll" if IS_WIN32 else "libnvvm.so.4"
+            )
 
-        cuda13_path = nvidia.cu13.__path__[0]
-        nvvm_lib_dir = os.path.join(
-            cuda13_path,
-            "bin" if IS_WIN32 else "lib",
-            "x86_64" if IS_WIN32 else "",
-        )
-        dso_path = os.path.join(
-            nvvm_lib_dir, "nvvm64_40_0.dll" if IS_WIN32 else "libnvvm.so.4"
-        )
-    except ImportError:
-        pass
-
-    if dso_path and os.path.exists(dso_path) and os.path.isfile(dso_path):
+    if dso_path and os.path.isfile(dso_path):
         return dso_path
 
 
 def _get_nvrtc_wheel_libdir():
     dso_path = None
     # CUDA 12
-    try:
-        import nvidia.cuda_nvrtc
-
-        nvrtc_path = nvidia.cuda_nvrtc.__path__[0]
-        nvrtc_lib_dir = os.path.join(nvrtc_path, "bin" if IS_WIN32 else "lib")
+    nvrtc_distribution = _get_distribution("nvidia-cuda-nvrtc-cu12")
+    if nvrtc_distribution is not None:
+        site_packages_path = nvrtc_distribution.locate_file("")
+        nvrtc_lib_dir = os.path.join(
+            site_packages_path,
+            "nvidia",
+            "cuda_nvrtc",
+            "bin" if IS_WIN32 else "lib",
+        )
         dso_path = os.path.join(
             nvrtc_lib_dir, "nvrtc64_120_0.dll" if IS_WIN32 else "libnvrtc.so.12"
         )
-    except ImportError:
-        pass
 
     # CUDA 13
-    try:
-        import nvidia.cu13
+    if dso_path is None:
+        nvrtc_distribution = _get_distribution("nvidia-cuda-nvrtc")
+        if (
+            nvrtc_distribution is not None
+            and nvrtc_distribution.version.startswith("13.")
+        ):
+            site_packages_path = nvrtc_distribution.locate_file("")
+            nvrtc_lib_dir = os.path.join(
+                site_packages_path,
+                "nvidia",
+                "cu13",
+                "bin" if IS_WIN32 else "lib",
+                "x86_64" if IS_WIN32 else "",
+            )
+            dso_path = os.path.join(
+                nvrtc_lib_dir,
+                "nvrtc64_130_0.dll" if IS_WIN32 else "libnvrtc.so.13",
+            )
 
-        cuda13_path = nvidia.cu13.__path__[0]
-        nvrtc_lib_dir = os.path.join(
-            cuda13_path,
-            "bin" if IS_WIN32 else "lib",
-            "x86_64" if IS_WIN32 else "",
-        )
-        dso_path = os.path.join(
-            nvrtc_lib_dir, "nvrtc64_130_0.dll" if IS_WIN32 else "libnvrtc.so.13"
-        )
-    except ImportError:
-        pass
-
-    if dso_path and os.path.exists(dso_path) and os.path.isfile(dso_path):
+    if dso_path and os.path.isfile(dso_path):
         return os.path.dirname(dso_path)
 
 
@@ -176,39 +196,42 @@ def _get_libdevice_path():
 
 def _cuda_static_libdir():
     if IS_WIN32:
-        return os.path.join("lib", "x64")
+        return ("lib", "x64")
     else:
         return ("lib64",)
 
 
 def _get_cudalib_wheel_libdir():
     """Get the cudalib path from the cudart wheel."""
-    cuda_module = None
-    try:
-        import nvidia.cuda_runtime
+    cuda_module_lib_dir = None
+    cuda_runtime_distribution = _get_distribution("nvidia-cuda-runtime-cu12")
+    if cuda_runtime_distribution is not None:
+        site_packages_path = cuda_runtime_distribution.locate_file("")
+        cuda_module_lib_dir = os.path.join(
+            site_packages_path,
+            "nvidia",
+            "cuda_runtime",
+            "bin" if IS_WIN32 else "lib",
+        )
+    else:
+        cuda_runtime_distribution = _get_distribution("nvidia-cuda-runtime")
+        if (
+            cuda_runtime_distribution is not None
+            and cuda_runtime_distribution.version.startswith("13.")
+        ):
+            site_packages_path = cuda_runtime_distribution.locate_file("")
+            cuda_module_lib_dir = os.path.join(
+                site_packages_path,
+                "nvidia",
+                "cu13",
+                "bin" if IS_WIN32 else "lib",
+                "x86_64" if IS_WIN32 else "",
+            )
 
-        cuda_module = nvidia.cuda_runtime
-    except ImportError:
-        try:
-            import nvidia.cu13
-
-            cuda_module = nvidia.cu13
-        except ImportError:
-            return
-    if cuda_module is None:
+    if cuda_module_lib_dir is None:
         return
 
-    cuda_module_path = cuda_module.__path__[0]
-
-    cuda_module_lib_dir = os.path.join(
-        cuda_module_path, "bin" if IS_WIN32 else "lib"
-    )
-
-    if (
-        cuda_module_lib_dir
-        and os.path.exists(cuda_module_lib_dir)
-        and os.path.isdir(cuda_module_lib_dir)
-    ):
+    if cuda_module_lib_dir and os.path.isdir(cuda_module_lib_dir):
         return cuda_module_lib_dir
 
 
@@ -270,15 +293,11 @@ def get_system_ctk_libdir():
         "Library" if IS_WIN32 else "lib64",
         "bin" if IS_WIN32 else "",
     )
-    # Windows CUDA 13.0 uses "bin\x64" directory
-    if (
-        IS_WIN32
-        and os.path.exists(os.path.join(libdir, "x64"))
-        and os.path.isdir(os.path.join(libdir, "x64"))
-    ):
+    # Windows CUDA 13 system CTK uses "bin\x64" directory
+    if IS_WIN32 and os.path.isdir(os.path.join(libdir, "x64")):
         libdir = os.path.join(libdir, "x64")
 
-    if libdir and os.path.exists(libdir) and os.path.isdir(libdir):
+    if libdir and os.path.isdir(libdir):
         return os.path.normpath(libdir)
 
 
@@ -288,14 +307,8 @@ def get_system_ctk_include():
         return
     include_dir = os.path.join(system_ctk_dir, "include")
 
-    if (
-        include_dir
-        and os.path.exists(include_dir)
-        and os.path.isdir(include_dir)
-    ):
-        if os.path.exists(
-            os.path.join(include_dir, "cuda_device_runtime_api.h")
-        ) and os.path.isfile(
+    if include_dir and os.path.isdir(include_dir):
+        if os.path.isfile(
             os.path.join(include_dir, "cuda_device_runtime_api.h")
         ):
             return include_dir
@@ -306,24 +319,20 @@ def _get_nvvm_system_path():
     if nvvm_lib_dir is None:
         return
     nvvm_lib_dir = os.path.join(nvvm_lib_dir, "bin" if IS_WIN32 else "lib64")
-    if (
-        IS_WIN32
-        and os.path.exists(os.path.join(nvvm_lib_dir, "x64"))
-        and os.path.isdir(os.path.join(nvvm_lib_dir, "x64"))
-    ):
+    if IS_WIN32 and os.path.isdir(os.path.join(nvvm_lib_dir, "x64")):
         nvvm_lib_dir = os.path.join(nvvm_lib_dir, "x64")
 
     nvvm_path = os.path.join(
         nvvm_lib_dir, "nvvm64_40_0.dll" if IS_WIN32 else "libnvvm.so.4"
     )
-    # if os.path.exists(nvvm_path) and os.path.isfile(nvvm_path):
+    # if os.path.isfile(nvvm_path):
     #     return nvvm_path
     return nvvm_path
 
 
 def get_conda_ctk_libdir():
     """Return path to directory containing the shared libraries of cudatoolkit."""
-    is_conda_env = os.path.exists(os.path.join(sys.prefix, "conda-meta"))
+    is_conda_env = os.path.isdir(os.path.join(sys.prefix, "conda-meta"))
     if not is_conda_env:
         return
     libdir = os.path.join(
@@ -331,12 +340,8 @@ def get_conda_ctk_libdir():
         "Library" if IS_WIN32 else "lib",
         "bin" if IS_WIN32 else "",
     )
-    # Windows CUDA 13.0 uses "bin\x64" directory
-    if (
-        IS_WIN32
-        and os.path.exists(os.path.join(libdir, "x64"))
-        and os.path.isdir(os.path.join(libdir, "x64"))
-    ):
+    # Windows CUDA 13.0.0 uses "bin\x64" directory but 13.0.1+ just uses "bin" directory
+    if IS_WIN32 and os.path.isdir(os.path.join(libdir, "x64")):
         libdir = os.path.join(libdir, "x64")
     # Assume the existence of nvrtc to imply needed CTK libraries are installed
     paths = find_lib("nvrtc", libdir)
@@ -348,7 +353,7 @@ def get_conda_ctk_libdir():
 
 def get_libdevice_conda_path():
     """Return path to directory containing the libdevice bitcode library."""
-    is_conda_env = os.path.exists(os.path.join(sys.prefix, "conda-meta"))
+    is_conda_env = os.path.isdir(os.path.join(sys.prefix, "conda-meta"))
     if not is_conda_env:
         return
 
@@ -361,13 +366,13 @@ def get_libdevice_conda_path():
         "libdevice",
         "libdevice.10.bc",
     )
-    if os.path.exists(libdevice_path) and os.path.isfile(libdevice_path):
+    if os.path.isfile(libdevice_path):
         return libdevice_path
 
 
 def _get_nvvm_conda_path():
     """Return path to directory containing the nvvm library."""
-    is_conda_env = os.path.exists(os.path.join(sys.prefix, "conda-meta"))
+    is_conda_env = os.path.isdir(os.path.join(sys.prefix, "conda-meta"))
     if not is_conda_env:
         return
     nvvm_dir = os.path.join(
@@ -376,82 +381,86 @@ def _get_nvvm_conda_path():
         "nvvm",
         "bin" if IS_WIN32 else "lib64",
     )
-    # Windows CUDA 13.0 puts in "bin\x64" directory
-    if (
-        IS_WIN32
-        and os.path.exists(os.path.join(nvvm_dir, "x64"))
-        and os.path.isdir(os.path.join(nvvm_dir, "x64"))
-    ):
+    # Windows CUDA 13.0.0 puts in "bin\x64" directory but 13.0.1+ just uses "bin" directory
+    if IS_WIN32 and os.path.isdir(os.path.join(nvvm_dir, "x64")):
         nvvm_dir = os.path.join(nvvm_dir, "x64")
 
     nvvm_path = os.path.join(
         nvvm_dir, "nvvm64_40_0.dll" if IS_WIN32 else "libnvvm.so.4"
     )
-    # if os.path.exists(nvvm_path) and os.path.isfile(nvvm_path):
+    # if os.path.isfile(nvvm_path):
     #     return nvvm_path
     return nvvm_path
 
 
 def get_wheel_static_libdir():
-    cuda_module = None
+    cuda_module_static_lib_dir = None
     # CUDA 12
-    try:
-        import nvidia.cuda_runtime
+    cuda_runtime_distribution = _get_distribution("nvidia-cuda-runtime-cu12")
+    if cuda_runtime_distribution is not None:
+        site_packages_path = cuda_runtime_distribution.locate_file("")
+        cuda_module_static_lib_dir = os.path.join(
+            site_packages_path,
+            "nvidia",
+            "cuda_runtime",
+            "lib",
+            "x64" if IS_WIN32 else "",
+        )
+    else:
+        cuda_runtime_distribution = _get_distribution("nvidia-cuda-runtime")
+        if (
+            cuda_runtime_distribution is not None
+            and cuda_runtime_distribution.version.startswith("13.")
+        ):
+            site_packages_path = cuda_runtime_distribution.locate_file("")
+            cuda_module_static_lib_dir = os.path.join(
+                site_packages_path,
+                "nvidia",
+                "cu13",
+                "lib",
+                "x64" if IS_WIN32 else "",
+            )
 
-        cuda_module = nvidia.cuda_runtime
-    except ImportError:
-        try:
-            import nvidia.cu13
+    if cuda_module_static_lib_dir is None:
+        return
 
-            cuda_module = nvidia.cu13
-        except ImportError:
-            return
-
-    cudadevrt_path = None
-    cuda_module_path = cuda_module.__path__[0]
-
-    cuda_module_static_lib_dir = os.path.join(
-        cuda_module_path, "lib", "x64" if IS_WIN32 else ""
-    )
     cudadevrt_path = os.path.join(
         cuda_module_static_lib_dir,
         "cudadevrt.lib" if IS_WIN32 else "libcudadevrt.a",
     )
 
-    if (
-        cudadevrt_path
-        and os.path.exists(cudadevrt_path)
-        and os.path.isfile(cudadevrt_path)
-    ):
+    if cudadevrt_path and os.path.isfile(cudadevrt_path):
         return os.path.dirname(cudadevrt_path)
 
 
 def get_wheel_include():
-    cuda_module = None
+    cuda_module_include_dir = None
     # CUDA 12
-    try:
-        import nvidia.cuda_runtime
+    cuda_runtime_distribution = _get_distribution("nvidia-cuda-runtime-cu12")
+    if cuda_runtime_distribution is not None:
+        site_packages_path = cuda_runtime_distribution.locate_file("")
+        cuda_module_include_dir = os.path.join(
+            site_packages_path,
+            "nvidia",
+            "cuda_runtime",
+            "include",
+        )
+    else:
+        cuda_runtime_distribution = _get_distribution("nvidia-cuda-runtime")
+        if (
+            cuda_runtime_distribution is not None
+            and cuda_runtime_distribution.version.startswith("13.")
+        ):
+            site_packages_path = cuda_runtime_distribution.locate_file("")
+            cuda_module_include_dir = os.path.join(
+                site_packages_path,
+                "nvidia",
+                "cu13",
+                "include",
+            )
 
-        cuda_module = nvidia.cuda_runtime
-    except ImportError:
-        try:
-            import nvidia.cu13
-
-            cuda_module = nvidia.cu13
-        except ImportError:
-            return
-
-    cuda_module_path = cuda_module.__path__[0]
-    cuda_module_include_dir = os.path.join(cuda_module_path, "include")
-
-    if (
-        cuda_module_include_dir
-        and os.path.exists(cuda_module_include_dir)
-        and os.path.isdir(cuda_module_include_dir)
-    ):
-        if os.path.exists(
-            os.path.join(cuda_module_include_dir, "cuda_device_runtime_api.h")
-        ) and os.path.isfile(
+    if cuda_module_include_dir and os.path.isdir(cuda_module_include_dir):
+        if os.path.isfile(
             os.path.join(cuda_module_include_dir, "cuda_device_runtime_api.h")
         ):
             return cuda_module_include_dir
@@ -480,12 +489,8 @@ def get_cuda_home_libdir():
         "Library" if IS_WIN32 else "lib64",
         "bin" if IS_WIN32 else "",
     )
-    # Windows CUDA 13.0 uses "bin\x64" directory
-    if (
-        IS_WIN32
-        and os.path.exists(os.path.join(libdir, "x64"))
-        and os.path.isdir(os.path.join(libdir, "x64"))
-    ):
+    # Windows CUDA 13 system CTK uses "bin\x64" directory while conda just uses "bin" directory
+    if IS_WIN32 and os.path.isdir(os.path.join(libdir, "x64")):
         libdir = os.path.join(libdir, "x64")
     return os.path.normpath(libdir)
 
@@ -497,23 +502,15 @@ def get_cuda_home_include():
     include_dir = cuda_home_dir
     # For Windows, CTK puts it in $CTK/include but conda puts it in $CTK/Library/include
     if IS_WIN32:
-        if os.path.exists(
-            os.path.join(include_dir, "Library")
-        ) and os.path.isdir(os.path.join(include_dir, "Library")):
+        if os.path.isdir(os.path.join(include_dir, "Library")):
             include_dir = os.path.join(include_dir, "Library", "include")
         else:
             include_dir = os.path.join(include_dir, "include")
     else:
         include_dir = os.path.join(include_dir, "include")
 
-    if (
-        include_dir
-        and os.path.exists(include_dir)
-        and os.path.isdir(include_dir)
-    ):
-        if os.path.exists(
-            os.path.join(include_dir, "cuda_device_runtime_api.h")
-        ) and os.path.isfile(
+    if include_dir and os.path.isdir(include_dir):
+        if os.path.isfile(
             os.path.join(include_dir, "cuda_device_runtime_api.h")
         ):
             return include_dir
@@ -525,17 +522,13 @@ def _get_nvvm_cuda_home_path():
     if nvvm_lib_dir is None:
         return
     nvvm_lib_dir = os.path.join(nvvm_lib_dir, "bin" if IS_WIN32 else "lib64")
-    if (
-        IS_WIN32
-        and os.path.exists(os.path.join(nvvm_lib_dir, "x64"))
-        and os.path.isdir(os.path.join(nvvm_lib_dir, "x64"))
-    ):
+    if IS_WIN32 and os.path.isdir(os.path.join(nvvm_lib_dir, "x64")):
         nvvm_lib_dir = os.path.join(nvvm_lib_dir, "x64")
 
     nvvm_path = os.path.join(
         nvvm_lib_dir, "nvvm64_40_0.dll" if IS_WIN32 else "libnvvm.so.4"
     )
-    # if os.path.exists(nvvm_path) and os.path.isfile(nvvm_path):
+    # if os.path.isfile(nvvm_path):
     #     return nvvm_path
     return nvvm_path
 
@@ -589,30 +582,36 @@ def get_cuda_paths():
 def get_libdevice_wheel_path():
     libdevice_path = None
     # CUDA 12
-    try:
-        import nvidia.cuda_nvcc
-
+    nvvm_distribution = _get_distribution("nvidia-cuda-nvcc-cu12")
+    if nvvm_distribution is not None:
+        site_packages_path = nvvm_distribution.locate_file("")
         libdevice_path = os.path.join(
-            nvidia.cuda_nvcc.__path__[0], "nvvm", "libdevice", "libdevice.10.bc"
+            site_packages_path,
+            "nvidia",
+            "cuda_nvcc",
+            "nvvm",
+            "libdevice",
+            "libdevice.10.bc",
         )
-    except ImportError:
-        pass
 
     # CUDA 13
-    try:
-        import nvidia.cu13
+    if libdevice_path is None:
+        nvvm_distribution = _get_distribution("nvidia-nvvm")
+        if (
+            nvvm_distribution is not None
+            and nvvm_distribution.version.startswith("13.")
+        ):
+            site_packages_path = nvvm_distribution.locate_file("")
+            libdevice_path = os.path.join(
+                site_packages_path,
+                "nvidia",
+                "cu13",
+                "nvvm",
+                "libdevice",
+                "libdevice.10.bc",
+            )
 
-        libdevice_path = os.path.join(
-            nvidia.cu13.__path__[0], "nvvmlibdevice", "libdevice.10.bc"
-        )
-    except ImportError:
-        pass
-
-    if (
-        libdevice_path
-        and os.path.exists(libdevice_path)
-        and os.path.isfile(libdevice_path)
-    ):
+    if libdevice_path and os.path.isfile(libdevice_path):
         return libdevice_path
 
 
@@ -645,7 +644,7 @@ def get_conda_include_dir():
     Return the include directory in the current conda environment, if one
     is active and it exists.
     """
-    is_conda_env = os.path.exists(os.path.join(sys.prefix, "conda-meta"))
+    is_conda_env = os.path.isdir(os.path.join(sys.prefix, "conda-meta"))
     if not is_conda_env:
         return
 
@@ -660,12 +659,8 @@ def get_conda_include_dir():
         # though usually it shouldn't.
         include_dir = os.path.join(sys.prefix, "include")
 
-    if (
-        os.path.exists(include_dir)
-        and os.path.isdir(include_dir)
-        and os.path.exists(
-            os.path.join(include_dir, "cuda_device_runtime_api.h")
-        )
+    if os.path.isdir(include_dir) and os.path.isfile(
+        os.path.join(include_dir, "cuda_device_runtime_api.h")
     ):
         return include_dir
     return
