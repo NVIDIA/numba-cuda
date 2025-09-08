@@ -1733,6 +1733,10 @@ class CUDALower(Lower):
                             # Not yet covered by the dbg.value range
                             and src_name not in self.dbg_val_names
                         ):
+                            for index, item in enumerate(self.fnargs):
+                                if item.name == src_name:
+                                    argidx = index + 1
+                                    break
                             # Insert the llvm.dbg.value intrinsic call
                             self.debuginfo.update_variable(
                                 self.builder,
