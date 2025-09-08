@@ -766,20 +766,6 @@ class TestCase(unittest.TestCase):
 
         return Dummy, DummyType
 
-    def skip_if_no_external_compiler(self):
-        """
-        Call this to ensure the test is skipped if no suitable external compiler
-        is found. This is a method on the TestCase opposed to a stand-alone
-        decorator so as to make it "lazy" via runtime evaluation opposed to
-        running at test-discovery time.
-        """
-        # This is a local import to avoid deprecation warnings being generated
-        # through the use of the numba.pycc module.
-        from numba.pycc.platform import external_compiler_works
-
-        if not external_compiler_works():
-            self.skipTest("No suitable external compiler was found.")
-
 
 class MemoryLeak(object):
     __enable_leak_check = True
