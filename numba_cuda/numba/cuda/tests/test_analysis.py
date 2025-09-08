@@ -18,7 +18,6 @@ from numba.cuda.core.inline_closurecall import InlineClosureCallPass
 from numba.cuda.tests.support import (
     TestCase,
     MemoryLeakMixin,
-    SerialMixin,
 )
 from numba.cuda.testing import skip_on_cudasim
 from numba.cuda.core.analysis import (
@@ -27,14 +26,7 @@ from numba.cuda.core.analysis import (
 )
 from numba.cuda.core.untyped_passes import (
     ReconstructSSA,
-    TranslateByteCode,
-    IRProcessing,
-    DeadBranchPrune,
-    PreserveIR,
 )
-from numba.cuda.core.compiler import CompilerBase
-from numba.cuda.compiler import DefaultPassBuilder, PassManager
-
 
 _GLOBAL = 123
 
@@ -160,7 +152,7 @@ class TestBranchPruneBase(MemoryLeakMixin, TestCase):
         self.assertEqual(res, expected)
 
 
-class TestBranchPrune(TestBranchPruneBase, SerialMixin):
+class TestBranchPrune(TestBranchPruneBase):
     @skip_on_cudasim("Analysis passes not done in simulator")
     def test_single_if(self):
         def impl(x):
@@ -727,7 +719,7 @@ class TestBranchPrune(TestBranchPruneBase, SerialMixin):
         )
 
 
-class TestBranchPrunePredicates(TestBranchPruneBase, SerialMixin):
+class TestBranchPrunePredicates(TestBranchPruneBase):
     # Really important thing to remember... the branch on predicates end up as
     # POP_JUMP_IF_<bool> and the targets are backwards compared to normal, i.e.
     # the true condition is far jump and the false the near i.e. `if x` would
@@ -977,30 +969,6 @@ class TestBranchPrunePredicates(TestBranchPruneBase, SerialMixin):
 
         self.assertPreciseEqual(foo.py_func()[0], 666.0)
         self.assertPreciseEqual(foo()[0], 666.0)
-
-
-class TestBranchPruneSSA(MemoryLeakMixin, TestCase):
-    # Tests SSA rewiring of phi nodes after branch pruning.
-
-    class SSAPrunerCompiler(CompilerBase):
-        def define_pipelines(self):
-            # This is a simple pipeline that does branch pruning on IR in SSA
-            # form, then types and lowers as per the standard nopython pipeline.
-            pm = PassManager("testing pm")
-            pm.add_pass(TranslateByteCode, "analyzing bytecode")
-            pm.add_pass(IRProcessing, "processing IR")
-            # SSA early
-            pm.add_pass(ReconstructSSA, "ssa")
-            pm.add_pass(DeadBranchPrune, "dead branch pruning")
-            # type and then lower as usual
-            pm.add_pass(PreserveIR, "preserves the IR as metadata")
-            dpb = DefaultPassBuilder
-            typed_passes = dpb.define_typed_pipeline(self.state)
-            pm.passes.extend(typed_passes.passes)
-            lowering_passes = dpb.define_nopython_lowering_pipeline(self.state)
-            pm.passes.extend(lowering_passes.passes)
-            pm.finalize()
-            return [pm]
 
 
 class TestBranchPrunePostSemanticConstRewrites(TestBranchPruneBase):
