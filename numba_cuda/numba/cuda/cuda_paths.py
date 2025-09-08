@@ -145,6 +145,7 @@ def _get_nvvm_wheel_path():
 
     if dso_path and os.path.isfile(dso_path):
         return dso_path
+    return None
 
 
 def _get_nvrtc_wheel_libdir():
@@ -185,6 +186,7 @@ def _get_nvrtc_wheel_libdir():
 
     if dso_path and os.path.isfile(dso_path):
         return os.path.dirname(dso_path)
+    return None
 
 
 def _get_libdevice_path():
@@ -229,10 +231,11 @@ def _get_cudalib_wheel_libdir():
             )
 
     if cuda_module_lib_dir is None:
-        return
+        return None
 
     if cuda_module_lib_dir and os.path.isdir(cuda_module_lib_dir):
         return cuda_module_lib_dir
+    return None
 
 
 def _get_cudalib_dir_path_decision():
@@ -281,13 +284,15 @@ def get_system_ctk(*subdirs):
         result = os.path.join("/usr/local/cuda", *subdirs)
         if os.path.exists(result):
             return result
+        return None
+    return None
 
 
 def get_system_ctk_libdir():
     """Return path to directory containing the shared libraries of cudatoolkit."""
     system_ctk_dir = get_system_ctk()
     if system_ctk_dir is None:
-        return
+        return None
     libdir = os.path.join(
         system_ctk_dir,
         "Library" if IS_WIN32 else "lib64",
@@ -299,12 +304,13 @@ def get_system_ctk_libdir():
 
     if libdir and os.path.isdir(libdir):
         return os.path.normpath(libdir)
+    return None
 
 
 def get_system_ctk_include():
     system_ctk_dir = get_system_ctk()
     if system_ctk_dir is None:
-        return
+        return None
     include_dir = os.path.join(system_ctk_dir, "include")
 
     if include_dir and os.path.isdir(include_dir):
@@ -312,12 +318,13 @@ def get_system_ctk_include():
             os.path.join(include_dir, "cuda_device_runtime_api.h")
         ):
             return include_dir
+    return None
 
 
 def _get_nvvm_system_path():
     nvvm_lib_dir = get_system_ctk("nvvm")
     if nvvm_lib_dir is None:
-        return
+        return None
     nvvm_lib_dir = os.path.join(nvvm_lib_dir, "bin" if IS_WIN32 else "lib64")
     if IS_WIN32 and os.path.isdir(os.path.join(nvvm_lib_dir, "x64")):
         nvvm_lib_dir = os.path.join(nvvm_lib_dir, "x64")
@@ -334,7 +341,7 @@ def get_conda_ctk_libdir():
     """Return path to directory containing the shared libraries of cudatoolkit."""
     is_conda_env = os.path.isdir(os.path.join(sys.prefix, "conda-meta"))
     if not is_conda_env:
-        return
+        return None
     libdir = os.path.join(
         sys.prefix,
         "Library" if IS_WIN32 else "lib",
@@ -346,7 +353,7 @@ def get_conda_ctk_libdir():
     # Assume the existence of nvrtc to imply needed CTK libraries are installed
     paths = find_lib("nvrtc", libdir)
     if not paths:
-        return
+        return None
     # Use the directory name of the max path
     return os.path.dirname(max(paths))
 
@@ -355,7 +362,7 @@ def get_libdevice_conda_path():
     """Return path to directory containing the libdevice bitcode library."""
     is_conda_env = os.path.isdir(os.path.join(sys.prefix, "conda-meta"))
     if not is_conda_env:
-        return
+        return None
 
     # Linux: nvvm/libdevice/libdevice.10.bc
     # Windows: Library/nvvm/libdevice/libdevice.10.bc
@@ -368,13 +375,14 @@ def get_libdevice_conda_path():
     )
     if os.path.isfile(libdevice_path):
         return libdevice_path
+    return None
 
 
 def _get_nvvm_conda_path():
     """Return path to directory containing the nvvm library."""
     is_conda_env = os.path.isdir(os.path.join(sys.prefix, "conda-meta"))
     if not is_conda_env:
-        return
+        return None
     nvvm_dir = os.path.join(
         sys.prefix,
         "Library" if IS_WIN32 else "",
@@ -388,9 +396,9 @@ def _get_nvvm_conda_path():
     nvvm_path = os.path.join(
         nvvm_dir, "nvvm64_40_0.dll" if IS_WIN32 else "libnvvm.so.4"
     )
-    # if os.path.isfile(nvvm_path):
-    #     return nvvm_path
-    return nvvm_path
+    if os.path.isfile(nvvm_path):
+        return nvvm_path
+    return None
 
 
 def get_wheel_static_libdir():
@@ -422,7 +430,7 @@ def get_wheel_static_libdir():
             )
 
     if cuda_module_static_lib_dir is None:
-        return
+        return None
 
     cudadevrt_path = os.path.join(
         cuda_module_static_lib_dir,
@@ -431,6 +439,7 @@ def get_wheel_static_libdir():
 
     if cudadevrt_path and os.path.isfile(cudadevrt_path):
         return os.path.dirname(cudadevrt_path)
+    return None
 
 
 def get_wheel_include():
@@ -464,6 +473,7 @@ def get_wheel_include():
             os.path.join(cuda_module_include_dir, "cuda_device_runtime_api.h")
         ):
             return cuda_module_include_dir
+    return None
 
 
 def get_cuda_home(*subdirs):
@@ -477,13 +487,14 @@ def get_cuda_home(*subdirs):
         cuda_home = os.environ.get("CUDA_PATH")
     if cuda_home is not None:
         return os.path.join(cuda_home, *subdirs)
+    return None
 
 
 def get_cuda_home_libdir():
     """Return path to directory containing the shared libraries of cudatoolkit."""
     cuda_home_dir = get_cuda_home()
     if cuda_home_dir is None:
-        return
+        return None
     libdir = os.path.join(
         cuda_home_dir,
         "Library" if IS_WIN32 else "lib64",
@@ -498,7 +509,7 @@ def get_cuda_home_libdir():
 def get_cuda_home_include():
     cuda_home_dir = get_cuda_home()
     if cuda_home_dir is None:
-        return
+        return None
     include_dir = cuda_home_dir
     # For Windows, CTK puts it in $CTK/include but conda puts it in $CTK/Library/include
     if IS_WIN32:
@@ -514,7 +525,7 @@ def get_cuda_home_include():
             os.path.join(include_dir, "cuda_device_runtime_api.h")
         ):
             return include_dir
-    return
+    return None
 
 
 def _get_nvvm_cuda_home_path():
@@ -613,6 +624,7 @@ def get_libdevice_wheel_path():
 
     if libdevice_path and os.path.isfile(libdevice_path):
         return libdevice_path
+    return None
 
 
 def get_current_cuda_target_name():
@@ -663,7 +675,7 @@ def get_conda_include_dir():
         os.path.join(include_dir, "cuda_device_runtime_api.h")
     ):
         return include_dir
-    return
+    return None
 
 
 def _get_include_dir():
