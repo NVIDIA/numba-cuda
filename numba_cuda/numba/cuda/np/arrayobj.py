@@ -18,7 +18,7 @@ import numpy as np
 
 from numba import pndindex, literal_unroll
 from numba.core import types, typing, errors, cgutils, extending, config
-from numba.np.numpy_support import (
+from numba.cuda.np.numpy_support import (
     as_dtype,
     from_dtype,
     carray,
@@ -30,7 +30,8 @@ from numba.np.numpy_support import (
     lt_complex,
     lt_floats,
 )
-from numba.np.numpy_support import type_can_asarray, is_nonelike, numpy_version
+from numba.cuda.np.numpy_support import type_can_asarray, numpy_version
+from numba.cuda.cgutils import is_nonelike
 from numba.core.imputils import (
     lower_builtin,
     lower_getattr,

@@ -6,6 +6,8 @@ import re
 from numba.core import types, errors
 from numba.cuda.typing import signature
 import collections
+import ctypes
+from numba.core.errors import TypingError
 
 
 numpy_version = tuple(map(int, np.__version__.split(".")[:2]))
@@ -295,3 +297,215 @@ def ufunc_can_cast(from_, to, has_mixed_inputs, casting="safe"):
         # Decide that all integers can cast to any real or complex type.
         return True
     return np.can_cast(from_, to, casting)
+
+
+def _get_bytes_buffer(ptr, nbytes):
+    """
+    Get a ctypes array of *nbytes* starting at *ptr*.
+    """
+    if isinstance(ptr, ctypes.c_void_p):
+        ptr = ptr.value
+    arrty = ctypes.c_byte * nbytes
+    return arrty.from_address(ptr)
+
+
+def _get_array_from_ptr(ptr, nbytes, dtype):
+    return np.frombuffer(_get_bytes_buffer(ptr, nbytes), dtype)
+
+
+def carray(ptr, shape, dtype=None):
+    """
+    Return a Numpy array view over the data pointed to by *ptr* with the
+    given *shape*, in C order.  If *dtype* is given, it is used as the
+    array's dtype, otherwise the array's dtype is inferred from *ptr*'s type.
+    """
+    from numba.core.typing.ctypes_utils import from_ctypes
+
+    try:
+        # Use ctypes parameter protocol if available
+        ptr = ptr._as_parameter_
+    except AttributeError:
+        pass
+
+    # Normalize dtype, to accept e.g. "int64" or np.int64
+    if dtype is not None:
+        dtype = np.dtype(dtype)
+
+    if isinstance(ptr, ctypes.c_void_p):
+        if dtype is None:
+            raise TypeError("explicit dtype required for void* argument")
+        p = ptr
+    elif isinstance(ptr, ctypes._Pointer):
+        ptrty = from_ctypes(ptr.__class__)
+        assert isinstance(ptrty, types.CPointer)
+        ptr_dtype = as_dtype(ptrty.dtype)
+        if dtype is not None and dtype != ptr_dtype:
+            raise TypeError(
+                "mismatching dtype '%s' for pointer %s" % (dtype, ptr)
+            )
+        dtype = ptr_dtype
+        p = ctypes.cast(ptr, ctypes.c_void_p)
+    else:
+        raise TypeError("expected a ctypes pointer, got %r" % (ptr,))
+
+    nbytes = dtype.itemsize * np.prod(shape, dtype=np.intp)
+    return _get_array_from_ptr(p, nbytes, dtype).reshape(shape)
+
+
+def farray(ptr, shape, dtype=None):
+    """
+    Return a Numpy array view over the data pointed to by *ptr* with the
+    given *shape*, in Fortran order.  If *dtype* is given, it is used as the
+    array's dtype, otherwise the array's dtype is inferred from *ptr*'s type.
+    """
+    if not isinstance(shape, int):
+        shape = shape[::-1]
+    return carray(ptr, shape, dtype).T
+
+
+def is_contiguous(dims, strides, itemsize):
+    """Is the given shape, strides, and itemsize of C layout?
+
+    Note: The code is usable as a numba-compiled function
+    """
+    nd = len(dims)
+    # Check and skip 1s or 0s in inner dims
+    innerax = nd - 1
+    while innerax > -1 and dims[innerax] <= 1:
+        innerax -= 1
+
+    # Early exit if all axis are 1s or 0s
+    if innerax < 0:
+        return True
+
+    # Check itemsize matches innermost stride
+    if itemsize != strides[innerax]:
+        return False
+
+    # Check and skip 1s or 0s in outer dims
+    outerax = 0
+    while outerax < innerax and dims[outerax] <= 1:
+        outerax += 1
+
+    # Check remaining strides to be contiguous
+    ax = innerax
+    while ax > outerax:
+        if strides[ax] * dims[ax] != strides[ax - 1]:
+            return False
+        ax -= 1
+    return True
+
+
+def is_fortran(dims, strides, itemsize):
+    """Is the given shape, strides, and itemsize of F layout?
+
+    Note: The code is usable as a numba-compiled function
+    """
+    nd = len(dims)
+    # Check and skip 1s or 0s in inner dims
+    firstax = 0
+    while firstax < nd and dims[firstax] <= 1:
+        firstax += 1
+
+    # Early exit if all axis are 1s or 0s
+    if firstax >= nd:
+        return True
+
+    # Check itemsize matches innermost stride
+    if itemsize != strides[firstax]:
+        return False
+
+    # Check and skip 1s or 0s in outer dims
+    lastax = nd - 1
+    while lastax > firstax and dims[lastax] <= 1:
+        lastax -= 1
+
+    # Check remaining strides to be contiguous
+    ax = firstax
+    while ax < lastax:
+        if strides[ax] * dims[ax] != strides[ax + 1]:
+            return False
+        ax += 1
+    return True
+
+
+def type_can_asarray(arr):
+    """Returns True if the type of 'arr' is supported by the Numba `np.asarray`
+    implementation, False otherwise.
+    """
+
+    ok = (
+        types.Array,
+        types.Sequence,
+        types.Tuple,
+        types.StringLiteral,
+        types.Number,
+        types.Boolean,
+        types.containers.ListType,
+    )
+
+    return isinstance(arr, ok)
+
+
+def type_is_scalar(typ):
+    """Returns True if the type of 'typ' is a scalar type, according to
+    NumPy rules. False otherwise.
+    https://numpy.org/doc/stable/reference/arrays.scalars.html#built-in-scalar-types
+    """
+
+    ok = (
+        types.Boolean,
+        types.Number,
+        types.UnicodeType,
+        types.StringLiteral,
+        types.NPTimedelta,
+        types.NPDatetime,
+    )
+    return isinstance(typ, ok)
+
+
+def check_is_integer(v, name):
+    """Raises TypingError if the value is not an integer."""
+    if not isinstance(v, (int, types.Integer)):
+        raise TypingError("{} must be an integer".format(name))
+
+
+def lt_floats(a, b):
+    # Adapted from NumPy commit 717c7acf which introduced the behavior of
+    # putting NaNs at the end.
+    # The code is later moved to numpy/core/src/npysort/npysort_common.h
+    # This info is gathered as of NumPy commit d8c09c50
+    return a < b or (np.isnan(b) and not np.isnan(a))
+
+
+def lt_complex(a, b):
+    if np.isnan(a.real):
+        if np.isnan(b.real):
+            if np.isnan(a.imag):
+                return False
+            else:
+                if np.isnan(b.imag):
+                    return True
+                else:
+                    return a.imag < b.imag
+        else:
+            return False
+
+    else:
+        if np.isnan(b.real):
+            return True
+        else:
+            if np.isnan(a.imag):
+                if np.isnan(b.imag):
+                    return a.real < b.real
+                else:
+                    return False
+            else:
+                if np.isnan(b.imag):
+                    return True
+                else:
+                    if a.real < b.real:
+                        return True
+                    elif a.real == b.real:
+                        return a.imag < b.imag
+                    return False
