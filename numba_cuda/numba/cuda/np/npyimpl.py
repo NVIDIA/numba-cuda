@@ -13,7 +13,8 @@ import llvmlite.ir as ir
 import numpy as np
 import operator
 
-from numba.cuda.np import arrayobj, ufunc_db
+from numba.cuda.np import arrayobj
+from numba.cuda.np import ufunc_db
 from numba.cuda.np.ufunc.sigparse import parse_signature
 from numba.core.imputils import (
     Registry,
