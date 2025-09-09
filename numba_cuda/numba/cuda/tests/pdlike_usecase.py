@@ -7,9 +7,10 @@ Implementation of a minimal Pandas-like API.
 
 import numpy as np
 
-from numba.core import types, cgutils
-from numba.core.datamodel import models
-from numba.core.extending import (
+from numba.core import types
+from numba.cuda import cgutils
+from numba.cuda.models import core_models
+from numba.cuda.extending import (
     typeof_impl,
     type_callable,
     register_model,
@@ -171,20 +172,20 @@ def type_series_constructor(context):
 
 
 @register_model(IndexType)
-class IndexModel(models.StructModel):
+class IndexModel(core_models.StructModel):
     def __init__(self, dmm, fe_type):
         members = [("data", fe_type.as_array)]
-        models.StructModel.__init__(self, dmm, fe_type, members)
+        core_models.StructModel.__init__(self, dmm, fe_type, members)
 
 
 @register_model(SeriesType)
-class SeriesModel(models.StructModel):
+class SeriesModel(core_models.StructModel):
     def __init__(self, dmm, fe_type):
         members = [
             ("index", fe_type.index),
             ("values", fe_type.as_array),
         ]
-        models.StructModel.__init__(self, dmm, fe_type, members)
+        core_models.StructModel.__init__(self, dmm, fe_type, members)
 
 
 make_attribute_wrapper(IndexType, "data", "_data")

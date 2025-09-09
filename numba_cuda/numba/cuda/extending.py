@@ -12,7 +12,8 @@ import collections
 import functools
 
 import numba
-from numba.core import types, errors, utils, config
+from numba.core import types, errors, config
+from numba.cuda import utils
 
 # # Exported symbols
 from numba.core.typing.typeof import typeof_impl  # noqa: F401
@@ -506,25 +507,6 @@ def _intrinsic(*args, **kwargs):
 
 
 intrinsic = _intrinsic(target="cuda")
-
-
-def get_cython_function_address(module_name, function_name):
-    """
-    Get the address of a Cython function.
-
-    Args
-    ----
-    module_name:
-        Name of the Cython module
-    function_name:
-        Name of the Cython function
-
-    Returns
-    -------
-    A Python int containing the address of the function
-
-    """
-    return _import_cython_function(module_name, function_name)
 
 
 def include_path():
