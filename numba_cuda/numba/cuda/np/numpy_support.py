@@ -4,6 +4,8 @@
 import numpy as np
 import re
 from numba.core import types, errors
+from numba.cuda.typing import signature
+import collections
 
 
 numpy_version = tuple(map(int, np.__version__.split(".")[:2]))
@@ -223,3 +225,73 @@ def from_struct_dtype(dtype):
     aligned = _is_aligned_struct(dtype)
 
     return types.Record(fields, size, aligned)
+
+
+def select_array_wrapper(inputs):
+    """
+    Given the array-compatible input types to an operation (e.g. ufunc),
+    select the appropriate input for wrapping the operation output,
+    according to each input's __array_priority__.
+
+    An index into *inputs* is returned.
+    """
+    max_prio = float("-inf")
+    selected_index = None
+    for index, ty in enumerate(inputs):
+        # Ties are broken by choosing the first winner, as in Numpy
+        if (
+            isinstance(ty, types.ArrayCompatible)
+            and ty.array_priority > max_prio
+        ):
+            selected_index = index
+            max_prio = ty.array_priority
+
+    assert selected_index is not None
+    return selected_index
+
+
+class UFuncLoopSpec(
+    collections.namedtuple("_UFuncLoopSpec", ("inputs", "outputs", "ufunc_sig"))
+):
+    """
+    An object describing a ufunc loop's inner types.  Properties:
+    - inputs: the inputs' Numba types
+    - outputs: the outputs' Numba types
+    - ufunc_sig: the string representing the ufunc's type signature, in
+      Numpy format (e.g. "ii->i")
+    """
+
+    __slots__ = ()
+
+    @property
+    def numpy_inputs(self):
+        return [as_dtype(x) for x in self.inputs]
+
+    @property
+    def numpy_outputs(self):
+        return [as_dtype(x) for x in self.outputs]
+
+
+def _ufunc_loop_sig(out_tys, in_tys):
+    if len(out_tys) == 1:
+        return signature(out_tys[0], *in_tys)
+    else:
+        return signature(types.Tuple(out_tys), *in_tys)
+
+
+def ufunc_can_cast(from_, to, has_mixed_inputs, casting="safe"):
+    """
+    A variant of np.can_cast() that can allow casting any integer to
+    any real or complex type, in case the operation has mixed-kind
+    inputs.
+
+    For example we want `np.power(float32, int32)` to be computed using
+    SP arithmetic and return `float32`.
+    However, `np.sqrt(int32)` should use DP arithmetic and return `float64`.
+    """
+    from_ = np.dtype(from_)
+    to = np.dtype(to)
+    if has_mixed_inputs and from_.kind in "iu" and to.kind in "cf":
+        # Decide that all integers can cast to any real or complex type.
+        return True
+    return np.can_cast(from_, to, casting)
