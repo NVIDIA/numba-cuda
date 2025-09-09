@@ -7,14 +7,12 @@ from collections import defaultdict, namedtuple
 from copy import copy
 import warnings
 
+from numba.cuda.core import typeinfer
 from numba.core import (
     errors,
     types,
     typing,
     ir,
-    funcdesc,
-    rewrites,
-    typeinfer,
     config,
     lowering,
 )
@@ -25,7 +23,7 @@ from numba.cuda.core.compiler_machinery import (
     AnalysisPass,
     register_pass,
 )
-from numba.core.annotations import type_annotations
+from numba.cuda.core.annotations import type_annotations
 from numba.cuda.core.ir_utils import (
     raise_on_unsupported_feature,
     warn_deprecated,
@@ -37,9 +35,14 @@ from numba.cuda.core.ir_utils import (
     compute_cfg_from_blocks,
     is_operator_or_getitem,
 )
-from numba.cuda.core import postproc
-from llvmlite import binding as llvm
+from numba.cuda.core import postproc, rewrites, funcdesc
 
+try:
+    # llvmlite < 0.45
+    from llvmlite.binding import passmanagers
+except ImportError:
+    # llvmlite >= 0.45
+    from llvmlite.binding import newpassmanagers as passmanagers
 
 # Outputs of type inference pass
 _TypingResults = namedtuple(
@@ -325,7 +328,7 @@ class BaseNativeLowering(abc.ABC, LoweringPass):
         calltypes = state.calltypes
         flags = state.flags
         metadata = state.metadata
-        pre_stats = llvm.passmanagers.dump_refprune_stats()
+        pre_stats = passmanagers.dump_refprune_stats()
 
         msg = "Function %s failed at nopython mode lowering" % (
             state.func_id.func_name,
@@ -388,7 +391,7 @@ class BaseNativeLowering(abc.ABC, LoweringPass):
                 )
 
             # capture pruning stats
-            post_stats = llvm.passmanagers.dump_refprune_stats()
+            post_stats = passmanagers.dump_refprune_stats()
             metadata["prune_stats"] = post_stats - pre_stats
 
             # Save the LLVM pass timings
@@ -497,7 +500,7 @@ class InlineOverloads(FunctionPass):
             print(state.func_id.unique_name)
             print(state.func_ir.dump())
             print("".center(80, "-"))
-        from numba.core.inline_closurecall import (
+        from numba.cuda.core.inline_closurecall import (
             InlineWorker,
             callee_ir_validator,
         )

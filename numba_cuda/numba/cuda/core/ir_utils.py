@@ -11,8 +11,9 @@ import warnings
 
 import numba
 from numba.core.extending import _Intrinsic
-from numba.core import types, typing, ir, analysis, rewrites, config
-from numba.cuda.core import postproc
+from numba.core import types, ir, analysis, config
+from numba.cuda import typing
+from numba.cuda.core import postproc, rewrites
 from numba.core.typing.templates import signature
 from numba.core.analysis import (
     compute_live_map,
@@ -1962,7 +1963,8 @@ def get_ir_of_code(glbls, fcode):
         fcode, func_env, func_arg, func_clo, glbls
     )
 
-    from numba.core import compiler
+    from numba.cuda import compiler
+    from numba.cuda.core.compiler import StateDict
 
     ir = compiler.run_frontend(f)
 
@@ -1971,7 +1973,7 @@ def get_ir_of_code(glbls, fcode):
     # for example, Raise nodes need to become StaticRaise before type inference
     class DummyPipeline(object):
         def __init__(self, f_ir):
-            self.state = compiler.StateDict()
+            self.state = StateDict()
             self.state.typingctx = None
             self.state.targetctx = None
             self.state.args = None
@@ -1984,10 +1986,10 @@ def get_ir_of_code(glbls, fcode):
     rewrites.rewrite_registry.apply("before-inference", state)
     # call inline pass to handle cases like stencils and comprehensions
     swapped = {}  # TODO: get this from diagnostics store
-    import numba.core.inline_closurecall
+    from numba.cuda.core.inline_closurecall import InlineClosureCallPass
 
-    inline_pass = numba.core.inline_closurecall.InlineClosureCallPass(
-        ir, numba.core.cpu.ParallelOptions(False), swapped
+    inline_pass = InlineClosureCallPass(
+        ir, numba.cuda.core.options.ParallelOptions(False), swapped
     )
     inline_pass.run()
 
@@ -2481,7 +2483,7 @@ def legalize_single_scope(blocks):
     return len({blk.scope for blk in blocks.values()}) == 1
 
 
-def check_and_legalize_ir(func_ir, flags: "numba.core.compiler.Flags"):
+def check_and_legalize_ir(func_ir, flags: "numba.core.flags.Flags"):
     """
     This checks that the IR presented is legal
     """
