@@ -22,7 +22,7 @@ from numba.core.imputils import (
     force_error_model,
     impl_ret_borrowed,
 )
-from numba.core import typing, types, config
+from numba.core import typing, types
 from numba.cuda import cgutils
 from numba.cuda.np.numpy_support import (
     select_array_wrapper,
@@ -395,20 +395,12 @@ def _prepare_argument(ctxt, bld, inp, tyinp, where="input operand"):
         )
 
 
-if config.USE_LEGACY_TYPE_SYSTEM:
-    _broadcast_onto_sig = types.intp(
-        types.intp,
-        types.CPointer(types.intp),
-        types.intp,
-        types.CPointer(types.intp),
-    )
-else:
-    _broadcast_onto_sig = types.np_intp(
-        types.np_intp,
-        types.CPointer(types.np_intp),
-        types.np_intp,
-        types.CPointer(types.np_intp),
-    )
+_broadcast_onto_sig = types.intp(
+    types.intp,
+    types.CPointer(types.intp),
+    types.intp,
+    types.CPointer(types.intp),
+)
 
 
 def _broadcast_onto(src_ndim, src_shape, dest_ndim, dest_shape):

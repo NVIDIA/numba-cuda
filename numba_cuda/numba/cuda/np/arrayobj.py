@@ -17,7 +17,7 @@ from llvmlite.ir import Constant
 import numpy as np
 
 from numba import pndindex, literal_unroll
-from numba.core import types, typing, errors, cgutils, extending, config
+from numba.core import types, typing, errors, cgutils, extending
 from numba.cuda.np.numpy_support import (
     as_dtype,
     from_dtype,
@@ -5424,10 +5424,7 @@ def numpy_linspace(start, stop, num=50):
         raise errors.TypingError(msg)
 
     if any(isinstance(arg, types.Complex) for arg in [start, stop]):
-        if config.USE_LEGACY_TYPE_SYSTEM:
-            dtype = types.complex128
-        else:
-            dtype = types.np_complex128
+        dtype = types.complex128
     else:
         dtype = types.float64
 
