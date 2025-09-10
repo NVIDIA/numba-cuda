@@ -17,7 +17,7 @@ from numba.core.imputils import impl_ret_untracked, Registry
 from numba.core import types, config
 from numba.core.extending import overload
 from numba.core.typing import signature
-from numba.cpython.unsafe.numbers import trailing_zeros
+from numba.cuda.cpython.unsafe.numbers import trailing_zeros
 from numba.cuda import cgutils
 
 registry = Registry("mathimpl")

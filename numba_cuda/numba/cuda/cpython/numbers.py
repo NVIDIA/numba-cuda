@@ -13,7 +13,7 @@ from llvmlite.ir import Constant
 from numba.core.imputils import impl_ret_untracked, Registry
 from numba.core import typing, types, errors
 from numba.core.extending import overload_method
-from numba.cpython.unsafe.numbers import viewer
+from numba.cuda.cpython.unsafe.numbers import viewer
 from numba.cuda import cgutils
 
 registry = Registry("numbers")
