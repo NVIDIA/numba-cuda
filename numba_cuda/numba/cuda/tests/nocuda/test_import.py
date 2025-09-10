@@ -30,6 +30,7 @@ class TestImport(unittest.TestCase):
             "numba.cuda.cpython.cmathimpl",
             "numba.cuda.cpython.mathimpl",
             "numba.cuda.cpython.rangeobj",
+            "numba.cuda.cpython.tupleobj",
             "numba.core.optional",
             "numba.misc.gdb_hook",
             "numba.misc.literal",
