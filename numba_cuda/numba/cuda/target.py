@@ -158,8 +158,8 @@ class CUDATargetContext(BaseContext):
         # registry is updated at import time.
         from numba.cpython import slicing  # noqa: F401
         from numba.cuda.cpython import numbers  # noqa: F401
-        from numba.cuda.cpython import rangeobj, tupleobj
-        from numba.cpython import iterators, enumimpl  # noqa: F401
+        from numba.cuda.cpython import rangeobj, tupleobj, enumimpl
+        from numba.cpython import iterators  # noqa: F401
         from numba.cpython import unicode  # noqa: F401
         from numba.cuda.cpython import cmathimpl, mathimpl
         from numba.cuda.cpython import charseq
@@ -194,6 +194,7 @@ class CUDATargetContext(BaseContext):
         self.install_registry(rangeobj.registry)
         self.install_registry(tupleobj.registry)
         self.install_registry(charseq.registry)
+        self.install_registry(enumimpl.registry)
 
     def codegen(self):
         return self._internal_codegen
