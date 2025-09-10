@@ -160,8 +160,9 @@ class CUDATargetContext(BaseContext):
         from numba.cuda.cpython import numbers  # noqa: F401
         from numba.cuda.cpython import rangeobj, tupleobj
         from numba.cpython import iterators, enumimpl  # noqa: F401
-        from numba.cpython import unicode, charseq  # noqa: F401
+        from numba.cpython import unicode  # noqa: F401
         from numba.cuda.cpython import cmathimpl, mathimpl
+        from numba.cuda.cpython import charseq
         from numba.core import optional  # noqa: F401
         from numba.misc import cffiimpl
         from numba.np import arrayobj  # noqa: F401
@@ -192,6 +193,7 @@ class CUDATargetContext(BaseContext):
         self.install_registry(bf16.target_registry)
         self.install_registry(rangeobj.registry)
         self.install_registry(tupleobj.registry)
+        self.install_registry(charseq.registry)
 
     def codegen(self):
         return self._internal_codegen
