@@ -130,7 +130,7 @@ from numba.cuda._internal.cuda_bf16 import (
     htanh,
     htanh_approx,
 )
-from numba.extending import overload
+from numba.cuda.extending import overload
 
 import math
 
