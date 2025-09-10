@@ -1178,7 +1178,7 @@ def complex_div_impl(context, builder, sig, args):
 
 
 def complex_negate_impl(context, builder, sig, args):
-    from numba.cpython import mathimpl
+    from numba.cuda.cpython import mathimpl
 
     [typ] = sig.args
     [val] = args
