@@ -21,14 +21,14 @@ from numba.cuda.utils import (
     INPLACE_BINOPS_TO_OPERATORS,
 )
 from numba.cuda.utils import _lazy_pformat
-from numba.core.byteflow import Flow, AdaptDFA, AdaptCFA, BlockKind
+from numba.cuda.core.byteflow import Flow, AdaptDFA, AdaptCFA, BlockKind
 from numba.cuda.core.unsafe import eh
 from numba.cpython.unsafe.tuple import unpack_single_tuple
 
 
 if PYVERSION in ((3, 12), (3, 13)):
     # Operands for CALL_INTRINSIC_1
-    from numba.core.byteflow import CALL_INTRINSIC_1_Operand as ci1op
+    from numba.cuda.core.byteflow import CALL_INTRINSIC_1_Operand as ci1op
 elif PYVERSION in ((3, 9), (3, 10), (3, 11)):
     pass
 else:
