@@ -21,8 +21,8 @@ import warnings
 
 NVRTC_EXTRA_SEARCH_PATHS = _readenv(
     "NUMBA_CUDA_NVRTC_EXTRA_SEARCH_PATHS", str, ""
-) or getattr(config, "NUMBA_CUDA_NVRTC_EXTRA_SEARCH_PATHS", "")
-if not hasattr(config, "NUMBA_CUDA_NVRTC_EXTRA_SEARCH_PATHS"):
+) or getattr(config, "CUDA_NVRTC_EXTRA_SEARCH_PATHS", "")
+if not hasattr(config, "CUDA_NVRTC_EXTRA_SEARCH_PATHS"):
     config.CUDA_NVRTC_EXTRA_SEARCH_PATHS = NVRTC_EXTRA_SEARCH_PATHS
 
 # Opaque handle for compilation unit
