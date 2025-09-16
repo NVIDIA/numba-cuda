@@ -15,7 +15,7 @@ from numba.core.compiler_lock import global_compiler_lock
 from numba.core.dispatcher import Dispatcher
 from numba.core.errors import NumbaWarning
 from numba.cuda.core.base import BaseContext
-from numba.core.typing import cmathdecl
+from numba.cuda.typing import cmathdecl
 from numba.core import datamodel
 
 from .cudadrv import nvvm

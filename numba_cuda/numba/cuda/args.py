@@ -8,7 +8,7 @@ memory transfers before & after the kernel call.
 
 import abc
 
-from numba.core.typing.typeof import typeof, Purpose
+from numba.cuda.typing.typeof import typeof, Purpose
 
 
 class ArgHint(metaclass=abc.ABCMeta):
