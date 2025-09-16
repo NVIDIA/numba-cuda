@@ -15,11 +15,10 @@ from numba.core import (
     errors,
     types,
     config,
-    lowering,
-    cgutils,
     imputils,
     serialize,
 )
+from numba.cuda import cgutils, lowering
 from numba.core.utils import PYVERSION
 
 PY_UNICODE_1BYTE_KIND = _helperlib.py_unicode_1byte_kind
