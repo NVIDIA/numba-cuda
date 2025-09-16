@@ -25,11 +25,11 @@ from numba.core import errors, config
 from numba.cuda.typing import cffi_utils
 from numba.cuda.memory_management.nrt import rtsys
 from numba.core.extending import (
-    typeof_impl,
     register_model,
     unbox,
     NativeValue,
 )
+from numba.cuda.typing.typeof import typeof_impl
 from numba.core.datamodel.models import OpaqueModel
 from numba.cuda.np import numpy_support
 

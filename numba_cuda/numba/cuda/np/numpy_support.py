@@ -195,6 +195,35 @@ def as_dtype(nbtype):
     raise errors.NumbaNotImplementedError(msg)
 
 
+def map_arrayscalar_type(val):
+    if isinstance(val, np.generic):
+        # We can't blindly call np.dtype() as it loses information
+        # on some types, e.g. datetime64 and timedelta64.
+        dtype = val.dtype
+    else:
+        try:
+            dtype = np.dtype(type(val))
+        except TypeError:
+            raise errors.NumbaNotImplementedError(
+                "no corresponding numpy dtype for %r" % type(val)
+            )
+    return from_dtype(dtype)
+
+
+def is_array(val):
+    return isinstance(val, np.ndarray)
+
+
+def map_layout(val):
+    if val.flags["C_CONTIGUOUS"]:
+        layout = "C"
+    elif val.flags["F_CONTIGUOUS"]:
+        layout = "F"
+    else:
+        layout = "A"
+    return layout
+
+
 def select_array_wrapper(inputs):
     """
     Given the array-compatible input types to an operation (e.g. ufunc),

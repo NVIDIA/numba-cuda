@@ -23,7 +23,7 @@ from numba.core.errors import (
 from numba.cuda.core.options import InlineOptions
 from numba.core.typing.templates import Signature as CoreSignature
 from numba.cuda import utils
-from numba.cuda.core import ir_utils, targetconfig
+from numba.cuda.core import targetconfig
 
 # info store for inliner callback functions e.g. cost model
 _inline_info = namedtuple("inline_info", "func_ir typemap calltypes signature")
@@ -93,7 +93,8 @@ class Signature(CoreSignature):
         return hash((self.args, self.return_type))
 
     def __eq__(self, other):
-        if isinstance(other, Signature):
+        # HACK: Remove this inheritance once all references to CoreSignature are removed
+        if isinstance(other, (Signature, CoreSignature)):
             return (
                 self.args == other.args
                 and self.return_type == other.return_type
@@ -375,9 +376,7 @@ class AbstractTemplate(FunctionTemplate):
         # Enforce that *generic()* must return None or Signature
         if sig is not None:
             # HACK: Remove this inheritance once all references to CoreSignature are removed
-            if not isinstance(
-                sig, (Signature, numba.core.typing.templates.Signature)
-            ):
+            if not isinstance(sig, (Signature, CoreSignature)):
                 raise AssertionError(
                     "generic() must return a Signature or None. "
                     "{} returned {}".format(generic, type(sig)),
@@ -711,7 +710,7 @@ class _OverloadFunctionTemplate(AbstractTemplate):
                 )
             )
             ir = PreLowerStripPhis()._strip_phi_nodes(ir)
-            ir._definitions = ir_utils.build_definitions(ir.blocks)
+            ir._definitions = numba.cuda.ir_utils.build_definitions(ir.blocks)
 
             sig = Signature(return_type, folded_args, None)
             # this stores a load of info for the cost model function if supplied
@@ -1447,3 +1446,9 @@ class RegistryLoader(BaseRegistryLoader):
     """
 
     registry_items = ("functions", "attributes", "globals")
+
+
+builtin_registry = Registry()
+infer = builtin_registry.register
+infer_getattr = builtin_registry.register_attr
+infer_global = builtin_registry.register_global

@@ -5,8 +5,8 @@ import types as pytypes  # avoid confusion with numba.types
 import copy
 import ctypes
 import numba.core.analysis
-from numba.core import types, typing, config, cgutils, ir, errors
-from numba.cuda import utils
+from numba.core import types, config, cgutils, ir, errors
+from numba.cuda import typing, utils
 from numba.cuda.core.ir_utils import (
     next_label,
     add_offset_to_labels,
@@ -35,7 +35,7 @@ from numba.core.analysis import (
 )
 from numba.core.imputils import impl_ret_untracked
 from numba.core.extending import intrinsic
-from numba.core.typing import signature
+from numba.cuda.typing import signature
 
 from numba.cuda.core import postproc, rewrites
 from numba.np.unsafe.ndarray import empty_inferred as unsafe_empty_inferred
@@ -855,7 +855,7 @@ def _get_callee_args(call_expr, callee, loc, func_ir):
             kws = dict(call_expr.kws)
         else:
             kws = {}
-        return numba.core.typing.fold_arguments(
+        return numba.cuda.typing.fold_arguments(
             pysig, args, kws, normal_handler, default_handler, stararg_handler
         )
     else:

@@ -19,7 +19,7 @@ from numba.core import types, config
 from numba.core.compiler_lock import global_compiler_lock
 from numba.core.dispatcher import _DispatcherBase
 from numba.core.errors import NumbaPerformanceWarning, TypingError
-from numba.core.typing.typeof import Purpose, typeof
+from numba.cuda.typing.typeof import Purpose, typeof
 
 from numba.cuda import serialize, utils, typing
 from numba.cuda import types as cuda_types
