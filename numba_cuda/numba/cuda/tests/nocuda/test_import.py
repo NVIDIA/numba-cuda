@@ -29,7 +29,7 @@ class TestImport(unittest.TestCase):
             "numba.cuda.cpython.numbers",
             "numba.cuda.cpython.cmathimpl",
             "numba.cuda.cpython.mathimpl",
-            "numba.core.optional",
+            "numba.cuda.core.optional",
             "numba.misc.gdb_hook",
             "numba.misc.literal",
             "numba.misc.cffiimpl",
