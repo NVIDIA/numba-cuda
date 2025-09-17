@@ -34,7 +34,7 @@ from numba.core.analysis import (
     compute_live_variables,
 )
 from numba.core.imputils import impl_ret_untracked
-from numba.core.extending import intrinsic
+from numba.cuda.extending import intrinsic
 from numba.core.typing import signature
 
 from numba.cuda.core import postproc, rewrites
