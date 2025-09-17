@@ -27,9 +27,9 @@ from numba.cuda.memory_management.nrt import rtsys
 from numba.core.extending import (
     typeof_impl,
     register_model,
-    unbox,
     NativeValue,
 )
+from numba.cuda.core.pythonapi import unbox
 from numba.core.datamodel.models import OpaqueModel
 from numba.cuda.np import numpy_support
 
