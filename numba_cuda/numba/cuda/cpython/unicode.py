@@ -80,7 +80,7 @@ lower_cast = registry.lower_cast
 lower_constant = registry.lower_constant
 lower_getattr = registry.lower_getattr
 
-if PYVERSION in ((3, 10), (3, 11)):
+if PYVERSION in ((3, 9), (3, 10), (3, 11)):
     from numba.core.pythonapi import PY_UNICODE_WCHAR_KIND
 
 # https://github.com/python/cpython/blob/1d4b6ba19466aba0eb91c4ba01ba509acf18c723/Objects/unicodeobject.c#L84-L85    # noqa: E501
@@ -409,7 +409,7 @@ if PYVERSION in ((3, 12), (3, 13)):
             raise AssertionError(
                 "Unexpected unicode representation in _pick_kind"
             )
-elif PYVERSION in ((3, 10), (3, 11)):
+elif PYVERSION in ((3, 9), (3, 10), (3, 11)):
 
     @register_jitable
     def _pick_kind(kind1, kind2):
@@ -452,7 +452,7 @@ if PYVERSION in ((3, 12), (3, 13)):
             return 4
         else:
             raise AssertionError("Unexpected unicode encoding encountered")
-elif PYVERSION in ((3, 10), (3, 11)):
+elif PYVERSION in ((3, 9), (3, 10), (3, 11)):
 
     @register_jitable
     def _kind_to_byte_width(kind):
