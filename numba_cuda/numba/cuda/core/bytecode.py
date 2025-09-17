@@ -8,8 +8,9 @@ import itertools
 
 from types import CodeType, ModuleType
 
-from numba.core import errors, utils, serialize
-from numba.core.utils import PYVERSION
+from numba.core import errors, serialize
+from numba.cuda import utils
+from numba.cuda.utils import PYVERSION
 
 
 if PYVERSION in ((3, 12), (3, 13)):
