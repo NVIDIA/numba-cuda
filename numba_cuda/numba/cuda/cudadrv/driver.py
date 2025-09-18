@@ -3056,12 +3056,16 @@ class _Linker(_LinkerBase):
         # _object_codes list. This has to be deferred until now as it requires
         # the full set of objects to be available.
         has_ltoir = any(obj._code_type == "ltoir" for obj in self._object_codes)
+
+        # Due to a bug in cuda.core linker flag creation, we need to pass in None
+        # instead of False for boolean values. Once cuda_core is fixed, we can
+        # remove this workaround.
         return LinkerOptions(
             max_register_count=self.max_registers,
-            lineinfo=self.lineinfo,
+            lineinfo=True if self.lineinfo else None,
             arch=self.arch,
-            link_time_optimization=has_ltoir,
-            ptx=ptx and has_ltoir,
+            link_time_optimization=True if has_ltoir else None,
+            ptx=True if ptx and has_ltoir else None,
         )
 
     def get_linked_ptx(self):
