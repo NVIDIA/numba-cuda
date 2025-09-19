@@ -3,7 +3,6 @@
 
 import numpy as np
 import warnings
-from numba import config
 from numba.cuda.testing import unittest
 from numba.cuda.testing import (
     skip_on_cudasim,
@@ -15,7 +14,6 @@ from numba.cuda.cudadrv.driver import CudaAPIError, _Linker, LinkerError
 from numba.cuda import require_context
 from numba.cuda.tests.support import ignore_internal_warnings
 from numba import cuda, void, float64, int64, int32, typeof, float32
-from numba.cuda.cudadrv.error import NvrtcError
 
 CONST1D = np.arange(10, dtype=np.float64)
 
@@ -191,6 +189,7 @@ class TestLinker(CUDATestCase):
         link = str(test_data_dir / "error.cu")
 
         from cuda.core.experimental._utils.cuda_utils import NVRTCError
+
         errty = NVRTCError
         with self.assertRaises(errty) as e:
 

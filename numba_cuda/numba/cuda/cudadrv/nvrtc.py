@@ -22,6 +22,7 @@ if not hasattr(config, "NUMBA_CUDA_NVRTC_EXTRA_SEARCH_PATHS"):
 try:
     # Prefer cuda.core for compilation
     from cuda.core.experimental import Program, ProgramOptions  # type: ignore
+
     _HAVE_CORE = True
 except Exception:  # pragma: no cover - environment dependent
     _HAVE_CORE = False
@@ -29,6 +30,7 @@ except Exception:  # pragma: no cover - environment dependent
 try:
     # Use bindings for version / supported archs and as fallback for gaps
     from cuda.bindings import nvrtc as bindings_nvrtc  # type: ignore
+
     _HAVE_BINDINGS = True
 except Exception:  # pragma: no cover - environment dependent
     bindings_nvrtc = None
@@ -43,9 +45,7 @@ def _get_nvrtc_version():
         )
     retcode, major, minor = bindings_nvrtc.nvrtcVersion()
     if retcode != bindings_nvrtc.nvrtcResult.NVRTC_SUCCESS:
-        raise RuntimeError(
-            f"{retcode.name} when calling nvrtcVersion()"
-        )
+        raise RuntimeError(f"{retcode.name} when calling nvrtcVersion()")
     return (major, minor)
 
 
