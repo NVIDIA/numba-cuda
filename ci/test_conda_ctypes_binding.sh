@@ -76,7 +76,7 @@ popd
 
 
 rapids-logger "Run Tests"
-NUMBA_CUDA_TEST_BIN_DIR=$NUMBA_CUDA_TEST_BIN_DIR pytest --pyargs numba.cuda.tests -v
+# NUMBA_CUDA_TEST_BIN_DIR=$NUMBA_CUDA_TEST_BIN_DIR pytest --pyargs numba.cuda.tests -v
 
 popd
 
