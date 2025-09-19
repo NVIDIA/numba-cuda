@@ -126,13 +126,22 @@ def _have_nvjitlink():
         from cuda.bindings._internal.utils import NotSupportedError
     except ImportError:
         return False
+
     try:
-        return (
+        if (
             nvjitlink_internal._inspect_function_pointer("__nvJitLinkVersion")
-            != 0
-        )
+            == 0
+        ):
+            return False
+        try:
+            ver = nvjitlink_internal.nvJitLinkVersion()
+            major, minor = ver
+            if (major, minor) < (12, 3):
+                return False
+        except Exception:
+            return False
+        return True
     except (RuntimeError, NotSupportedError):
-        # no driver
         return False
 
 

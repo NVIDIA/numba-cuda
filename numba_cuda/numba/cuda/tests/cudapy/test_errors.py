@@ -4,6 +4,7 @@
 from numba import cuda
 from numba.core.errors import TypingError
 from numba.cuda.testing import unittest, CUDATestCase, skip_on_cudasim
+from numba.cuda.cudadrv import driver
 
 
 def noop(x):
@@ -93,6 +94,9 @@ class TestJitErrors(CUDATestCase):
         self.assertIn("NameError: name 'floor' is not defined", excstr)
 
     @skip_on_cudasim("Simulator does not use nvjitlink")
+    @unittest.skipIf(
+        driver._have_nvjitlink(), "nvJitLink available; LTO should not error"
+    )
     def test_lto_without_nvjitlink_error(self):
         with self.assertRaisesRegex(RuntimeError, "LTO requires nvjitlink"):
 
