@@ -54,7 +54,7 @@ jobs:
           $wheel = Get-ChildItem -Name "llvmlite-0.45.0-*.whl" | Select-Object -First 1
           Write-Host "Found wheel: $wheel"
           if ($wheel) {
-            delvewheel repair $wheel --wheel-dir repaired
+            delvewheel repair --analyze-existing $wheel --wheel-dir repaired
           } else {
             Write-Error "No llvmlite wheel found!"
             exit 1
