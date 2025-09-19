@@ -108,12 +108,11 @@ target.
    Enable warnings if a kernel is launched with host memory which forces a copy to and
    from the device. This option is on by default (default value is 1).
 
-.. envvar:: NUMBA_CUDA_USE_NVIDIA_BINDING
+.. note::
 
-   When set to 1, Numba will attempt to use the `NVIDIA CUDA Python binding
-   <https://nvidia.github.io/cuda-python/>`_ to make calls to the driver API
-   instead of using its own ctypes binding. This defaults to 1 (on). Set to
-   0 to use the ctypes bindings.
+   Numba-CUDA always uses the NVIDIA CUDA Python bindings. The legacy ctypes
+   bindings and the ``NUMBA_CUDA_USE_NVIDIA_BINDING`` environment variable have
+   been removed.
 
 .. envvar:: NUMBA_CUDA_INCLUDE_PATH
 

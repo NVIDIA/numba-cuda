@@ -57,7 +57,7 @@ from .linkable_code import LinkableCode, LTOIR, Fatbin, Object
 from numba.cuda.utils import cached_file_read
 from numba.cuda.cudadrv import enums, drvapi, nvrtc
 
-USE_NV_BINDING = config.CUDA_USE_NVIDIA_BINDING
+USE_NV_BINDING = True
 
 if USE_NV_BINDING:
     from cuda.bindings import driver as binding
@@ -82,7 +82,7 @@ _py_incref = ctypes.pythonapi.Py_IncRef
 _py_decref.argtypes = [ctypes.py_object]
 _py_incref.argtypes = [ctypes.py_object]
 
-USE_NV_BINDING = config.CUDA_USE_NVIDIA_BINDING
+USE_NV_BINDING = True
 
 if USE_NV_BINDING:
     from cuda.bindings import driver as binding

@@ -94,9 +94,6 @@ class TestJitErrors(CUDATestCase):
         self.assertIn("NameError: name 'floor' is not defined", excstr)
 
     @skip_on_cudasim("Simulator does not use nvjitlink")
-    @unittest.skipIf(
-        config.CUDA_USE_NVIDIA_BINDING, "NVIDIA cuda bindings enabled"
-    )
     def test_lto_without_nvjitlink_error(self):
         with self.assertRaisesRegex(RuntimeError, "LTO requires nvjitlink"):
 
