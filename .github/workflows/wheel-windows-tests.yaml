@@ -27,9 +27,47 @@ jobs:
           export TEST_MATRIX="{ ARCH: 'amd64', PY_VER: '3.12', CUDA_VER: '12.8.0' }"
           MATRIX=$(yq -n -o json 'env(TEST_MATRIX)' | jq -c)
           echo "MATRIX=${MATRIX}" | tee --append "${GITHUB_OUTPUT}"
+
+  fix-llvmlite-wheel:
+    name: Fix llvmlite wheel for Python ${{ matrix.PY_VER }}
+    needs: compute-matrix
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON('{"PY_VER":["3.12"]}') }}
+    runs-on: windows-2025
+    steps:
+      - name: Set up Python ${{ matrix.PY_VER }}
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065  # v5.6.0
+        with:
+          python-version: ${{ matrix.PY_VER }}
+
+      - name: Install delvewheel
+        run: |
+          python -m pip install delvewheel
+
+      - name: Download llvmlite wheel
+        run: |
+          python -m pip download --only-binary=:all: --no-deps llvmlite==0.45.0 --dest .
+
+      - name: Repair llvmlite wheel with delvewheel
+        run: |
+          $wheel = Get-ChildItem -Name "llvmlite-0.45.0-*.whl" | Select-Object -First 1
+          Write-Host "Found wheel: $wheel"
+          if ($wheel) {
+            delvewheel repair $wheel --wheel-dir repaired
+          } else {
+            Write-Error "No llvmlite wheel found!"
+            exit 1
+          }
+
+      - name: Upload repaired llvmlite wheel
+        uses: actions/upload-artifact@v4
+        with:
+          name: repaired-llvmlite-py${{ matrix.PY_VER }}
+          path: repaired/*.whl
   tests:
     name: ${{ matrix.CUDA_VER }}, ${{ matrix.PY_VER }}, ${{ matrix.ARCH }}, windows
-    needs: compute-matrix
+    needs: [compute-matrix, fix-llvmlite-wheel]
     strategy:
       fail-fast: false
       matrix: ${{ fromJSON('{"ARCH":["amd64"],"PY_VER":["3.12"],"CUDA_VER":["12.8.0"]}') }}
@@ -51,6 +89,12 @@ jobs:
       - uses: actions/download-artifact@v4
         name: wheel
 
+      - name: Download repaired llvmlite wheel
+        uses: actions/download-artifact@v4
+        with:
+          name: repaired-llvmlite-py${{ matrix.PY_VER }}
+          path: repaired-llvmlite
+
       - name: Display structure of downloaded files
         run: Get-ChildItem -Recurse
 
@@ -58,6 +102,12 @@ jobs:
         uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065  # v5.6.0
         with:
           python-version: ${{ matrix.PY_VER }}
+
+      - name: Install repaired llvmlite wheel
+        run: |
+          $repairedWheel = Get-ChildItem -Path "repaired-llvmlite" -Name "*.whl"
+          Write-Host "Installing repaired llvmlite wheel: $repairedWheel"
+          python -m pip install "repaired-llvmlite\$repairedWheel"
 
       - name: Python tests
         run: |
