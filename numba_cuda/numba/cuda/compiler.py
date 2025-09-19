@@ -979,13 +979,13 @@ def compile_all(
     sig,
     debug=None,
     lineinfo=False,
-    device=True,
+    device=False,
     fastmath=False,
     cc=None,
     opt=None,
-    abi="c",
+    abi="numba",
     abi_info=None,
-    output="ptx",
+    output="ltoir",
     forceinline=False,
     launch_bounds=None,
 ):
@@ -994,6 +994,12 @@ def compile_all(
     kind is the same as the `output` parameter.
     Otherwise, they will be passed through to the return list.
     """
+
+    if output not in ("ptx", "ltoir"):
+        raise NotImplementedError(f"Unsupported output type: {output}")
+
+    if forceinline and output != "ltoir":
+        raise ValueError("Can only designate forced inlining in LTO-IR")
 
     lto = output == "ltoir"
 
@@ -1064,6 +1070,15 @@ def _compile_pyfunc_with_fixup(
 
     Returns the code library and return type.
     """
+    if abi not in ("numba", "c"):
+        raise NotImplementedError(f"Unsupported ABI: {abi}")
+
+    if abi == "c" and not device:
+        raise NotImplementedError("The C ABI is not supported for kernels")
+
+    if forceinline and not device:
+        raise ValueError("Cannot force-inline kernels")
+
     debug = config.CUDA_DEBUGINFO_DEFAULT if debug is None else debug
     opt = (config.OPT != 0) if opt is None else opt
 
@@ -1197,17 +1212,8 @@ def compile(
     :return: (code, resty): The compiled code and inferred return type
     :rtype: tuple
     """
-    if abi not in ("numba", "c"):
-        raise NotImplementedError(f"Unsupported ABI: {abi}")
-
-    if abi == "c" and not device:
-        raise NotImplementedError("The C ABI is not supported for kernels")
-
     if output not in ("ptx", "ltoir"):
         raise NotImplementedError(f"Unsupported output type: {output}")
-
-    if forceinline and not device:
-        raise ValueError("Cannot force-inline kernels")
 
     if forceinline and output != "ltoir":
         raise ValueError("Can only designate forced inlining in LTO-IR")
@@ -1284,8 +1290,6 @@ def compile_ptx(
     abi_info=None,
     forceinline=False,
     launch_bounds=None,
-    link_all=False,
-    max_registers=None,
 ):
     """Compile a Python function to PTX for a given signature. See
     :func:`compile`. The defaults for this function are to compile a kernel
@@ -1305,8 +1309,6 @@ def compile_ptx(
         output="ptx",
         forceinline=forceinline,
         launch_bounds=launch_bounds,
-        link_all=link_all,
-        max_registers=max_registers,
     )
 
 
@@ -1322,8 +1324,6 @@ def compile_ptx_for_current_device(
     abi_info=None,
     forceinline=False,
     launch_bounds=None,
-    link_all=False,
-    max_registers=None,
 ):
     """Compile a Python function to PTX for a given signature for the current
     device's compute capabilility. See :func:`compile_ptx`."""
@@ -1341,8 +1341,6 @@ def compile_ptx_for_current_device(
         abi_info=abi_info,
         forceinline=forceinline,
         launch_bounds=launch_bounds,
-        link_all=link_all,
-        max_registers=max_registers,
     )
 
 

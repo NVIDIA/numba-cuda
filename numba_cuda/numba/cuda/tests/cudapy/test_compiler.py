@@ -60,66 +60,107 @@ class TestCompile(unittest.TestCase):
                 r[i] = x[i] + y[i]
 
         args = (float32[:], float32[:], float32[:])
-        ptx, resty = compile_ptx(f, args)
 
-        # Kernels should not have a func_retval parameter
-        self.assertNotIn("func_retval", ptx)
-        # .visible .func is used to denote a device function
-        self.assertNotIn(".visible .func", ptx)
-        # .visible .entry would denote the presence of a global function
-        self.assertIn(".visible .entry", ptx)
-        # Return type for kernels should always be void
-        self.assertEqual(resty, void)
+        with self.subTest("compile_ptx"):
+            ptx, resty = compile_ptx(f, args)
+            # Kernels should not have a func_retval parameter
+            self.assertNotIn("func_retval", ptx)
+            # .visible .func is used to denote a device function
+            self.assertNotIn(".visible .func", ptx)
+            # .visible .entry would denote the presence of a global function
+            self.assertIn(".visible .entry", ptx)
+            # Return type for kernels should always be void
+            self.assertEqual(resty, void)
+
+        with self.subTest("compile_all"):
+            code_list, resty = compile_all(f, args, output="ptx")
+            assert len(code_list) == 1
+            self.assertNotIn("func_retval", code_list[0])
+            self.assertNotIn(".visible .func", code_list[0])
+            self.assertIn(".visible .entry", code_list[0])
+            self.assertEqual(resty, void)
 
     def test_device_function(self):
         def add(x, y):
             return x + y
 
         args = (float32, float32)
-        ptx, resty = compile_ptx(add, args, device=True)
 
-        # Device functions take a func_retval parameter for storing the
-        # returned value in by reference
-        self.assertIn("func_retval", ptx)
-        # .visible .func is used to denote a device function
-        self.assertIn(".visible .func", ptx)
-        # .visible .entry would denote the presence of a global function
-        self.assertNotIn(".visible .entry", ptx)
-        # Inferred return type as expected?
-        self.assertEqual(resty, float32)
+        with self.subTest("compile_ptx"):
+            ptx, resty = compile_ptx(add, args, device=True)
 
-        # Check that function's output matches signature
-        sig_int32 = int32(int32, int32)
-        ptx, resty = compile_ptx(add, sig_int32, device=True)
-        self.assertEqual(resty, int32)
+            # Device functions take a func_retval parameter for storing the
+            # returned value in by reference
+            self.assertIn("func_retval", ptx)
+            # .visible .func is used to denote a device function
+            self.assertIn(".visible .func", ptx)
+            # .visible .entry would denote the presence of a global function
+            self.assertNotIn(".visible .entry", ptx)
+            # Inferred return type as expected?
+            self.assertEqual(resty, float32)
 
-        sig_int16 = int16(int16, int16)
-        ptx, resty = compile_ptx(add, sig_int16, device=True)
-        self.assertEqual(resty, int16)
-        # Using string as signature
-        sig_string = "uint32(uint32, uint32)"
-        ptx, resty = compile_ptx(add, sig_string, device=True)
-        self.assertEqual(resty, uint32)
+            # Check that function's output matches signature
+            sig_int32 = int32(int32, int32)
+            ptx, resty = compile_ptx(add, sig_int32, device=True)
+            self.assertEqual(resty, int32)
+
+            sig_int16 = int16(int16, int16)
+            ptx, resty = compile_ptx(add, sig_int16, device=True)
+            self.assertEqual(resty, int16)
+            # Using string as signature
+            sig_string = "uint32(uint32, uint32)"
+            ptx, resty = compile_ptx(add, sig_string, device=True)
+            self.assertEqual(resty, uint32)
+
+        with self.subTest("compile_all"):
+            code_list, resty = compile_all(add, args, device=True, output="ptx")
+            assert len(code_list) == 1
+            self.assertIn("func_retval", code_list[0])
+            self.assertIn(".visible .func", code_list[0])
+            self.assertNotIn(".visible .entry", code_list[0])
+
+            code_list, resty = compile_all(add, sig_int32, device=True)
+            self.assertEqual(resty, int32)
+            code_list, resty = compile_all(add, sig_int16, device=True)
+            self.assertEqual(resty, int16)
+            code_list, resty = compile_all(add, sig_string, device=True)
+            self.assertEqual(resty, uint32)
 
     def test_fastmath(self):
         def f(x, y, z, d):
             return sqrt((x * y + z) / d)
 
         args = (float32, float32, float32, float32)
-        ptx, resty = compile_ptx(f, args, device=True)
 
-        # Without fastmath, fma contraction is enabled by default, but ftz and
-        # approximate div / sqrt is not.
-        self.assertIn("fma.rn.f32", ptx)
-        self.assertIn("div.rn.f32", ptx)
-        self.assertIn("sqrt.rn.f32", ptx)
+        with self.subTest("compile_ptx"):
+            ptx, resty = compile_ptx(f, args, device=True)
 
-        ptx, resty = compile_ptx(f, args, device=True, fastmath=True)
+            # Without fastmath, fma contraction is enabled by default, but ftz and
+            # approximate div / sqrt is not.
+            self.assertIn("fma.rn.f32", ptx)
+            self.assertIn("div.rn.f32", ptx)
+            self.assertIn("sqrt.rn.f32", ptx)
 
-        # With fastmath, ftz and approximate div / sqrt are enabled
-        self.assertIn("fma.rn.ftz.f32", ptx)
-        self.assertIn("div.approx.ftz.f32", ptx)
-        self.assertIn("sqrt.approx.ftz.f32", ptx)
+            ptx, resty = compile_ptx(f, args, device=True, fastmath=True)
+
+            # With fastmath, ftz and approximate div / sqrt are enabled
+            self.assertIn("fma.rn.ftz.f32", ptx)
+            self.assertIn("div.approx.ftz.f32", ptx)
+            self.assertIn("sqrt.approx.ftz.f32", ptx)
+
+        with self.subTest("compile_all"):
+            code_list, resty = compile_all(f, args, device=True, output="ptx")
+            assert len(code_list) == 1
+            self.assertIn("fma.rn.f32", code_list[0])
+            self.assertIn("div.rn.f32", code_list[0])
+            self.assertIn("sqrt.rn.f32", code_list[0])
+            code_list, resty = compile_all(
+                f, args, device=True, fastmath=True, output="ptx"
+            )
+            assert len(code_list) == 1
+            self.assertIn("fma.rn.ftz.f32", code_list[0])
+            self.assertIn("div.approx.ftz.f32", code_list[0])
+            self.assertIn("sqrt.approx.ftz.f32", code_list[0])
 
     def check_debug_info(self, ptx):
         # A debug_info section should exist in the PTX. Whitespace varies
@@ -140,16 +181,32 @@ class TestCompile(unittest.TestCase):
         def f():
             pass
 
-        ptx, resty = compile_ptx(f, (), device=True, debug=True, opt=False)
-        self.check_debug_info(ptx)
+        with self.subTest("compile_ptx"):
+            ptx, resty = compile_ptx(f, (), device=True, debug=True, opt=False)
+            self.check_debug_info(ptx)
+
+        with self.subTest("compile_all"):
+            code_list, resty = compile_all(
+                f, (), device=True, debug=True, opt=False, output="ptx"
+            )
+            assert len(code_list) == 1
+            self.check_debug_info(code_list[0])
 
     def test_kernel_with_debug(self):
         # Inspired by (but not originally affected by) Issue #6719
         def f():
             pass
 
-        ptx, resty = compile_ptx(f, (), debug=True, opt=False)
-        self.check_debug_info(ptx)
+        with self.subTest("compile_ptx"):
+            ptx, resty = compile_ptx(f, (), debug=True, opt=False)
+            self.check_debug_info(ptx)
+
+        with self.subTest("compile_all"):
+            code_list, resty = compile_all(
+                f, (), debug=True, opt=False, output="ptx"
+            )
+            assert len(code_list) == 1
+            self.check_debug_info(code_list[0])
 
     def check_line_info(self, ptx):
         # A .file directive should be produced and include the name of the
@@ -161,128 +218,262 @@ class TestCompile(unittest.TestCase):
         def f():
             pass
 
-        ptx, resty = compile_ptx(f, (), device=True, lineinfo=True)
-        self.check_line_info(ptx)
+        with self.subTest("compile_ptx"):
+            ptx, resty = compile_ptx(f, (), device=True, lineinfo=True)
+            self.check_line_info(ptx)
+
+        with self.subTest("compile_all"):
+            code_list, resty = compile_all(
+                f, (), device=True, lineinfo=True, output="ptx"
+            )
+            assert len(code_list) == 1
+            self.check_line_info(code_list[0])
 
     def test_kernel_with_line_info(self):
         def f():
             pass
 
-        ptx, resty = compile_ptx(f, (), lineinfo=True)
-        self.check_line_info(ptx)
+        with self.subTest("compile_ptx"):
+            ptx, resty = compile_ptx(f, (), lineinfo=True)
+            self.check_line_info(ptx)
+
+        with self.subTest("compile_all"):
+            code_list, resty = compile_all(f, (), lineinfo=True, output="ptx")
+            assert len(code_list) == 1
+            self.check_line_info(code_list[0])
 
     def test_non_void_return_type(self):
         def f(x, y):
             return x[0] + y[0]
 
-        with self.assertRaisesRegex(TypeError, "must have void return type"):
-            compile_ptx(f, (uint32[::1], uint32[::1]))
+        with self.subTest("compile_ptx"):
+            with self.assertRaisesRegex(
+                TypeError, "must have void return type"
+            ):
+                compile_ptx(f, (uint32[::1], uint32[::1]))
+
+        with self.subTest("compile_all"):
+            with self.assertRaisesRegex(
+                TypeError, "must have void return type"
+            ):
+                compile_all(f, (uint32[::1], uint32[::1]), output="ptx")
 
     def test_c_abi_disallowed_for_kernel(self):
         def f(x, y):
             return x + y
 
-        with self.assertRaisesRegex(
-            NotImplementedError, "The C ABI is not supported for kernels"
-        ):
-            compile_ptx(f, (int32, int32), abi="c")
+        with self.subTest("compile_ptx"):
+            with self.assertRaisesRegex(
+                NotImplementedError, "The C ABI is not supported for kernels"
+            ):
+                compile_ptx(f, (int32, int32), abi="c")
+
+        with self.subTest("compile_all"):
+            with self.assertRaisesRegex(
+                NotImplementedError, "The C ABI is not supported for kernels"
+            ):
+                compile_all(
+                    f, (int32, int32), abi="c", device=False, output="ptx"
+                )
 
     def test_unsupported_abi(self):
         def f(x, y):
             return x + y
 
-        with self.assertRaisesRegex(
-            NotImplementedError, "Unsupported ABI: fastcall"
-        ):
-            compile_ptx(f, (int32, int32), abi="fastcall")
+        with self.subTest("compile_ptx"):
+            with self.assertRaisesRegex(
+                NotImplementedError, "Unsupported ABI: fastcall"
+            ):
+                compile_ptx(f, (int32, int32), abi="fastcall")
+
+        with self.subTest("compile_all"):
+            with self.assertRaisesRegex(
+                NotImplementedError, "Unsupported ABI: fastcall"
+            ):
+                compile_all(f, (int32, int32), abi="fastcall", output="ptx")
 
     def test_c_abi_device_function(self):
         def f(x, y):
             return x + y
 
-        ptx, resty = compile_ptx(f, int32(int32, int32), device=True, abi="c")
-        # There should be no more than two parameters
-        self.assertNotIn(ptx, "param_2")
+        with self.subTest("compile_ptx"):
+            ptx, resty = compile_ptx(
+                f, int32(int32, int32), device=True, abi="c"
+            )
+            # There should be no more than two parameters
+            self.assertNotIn(ptx, "param_2")
 
-        # The function name should match the Python function name (not the
-        # qualname, which includes additional info), and its return value
-        # should be 32 bits
-        self.assertRegex(
-            ptx,
-            r"\.visible\s+\.func\s+\(\.param\s+\.b32\s+"
-            r"func_retval0\)\s+f\(",
-        )
+            # The function name should match the Python function name (not the
+            # qualname, which includes additional info), and its return value
+            # should be 32 bits
+            self.assertRegex(
+                ptx,
+                r"\.visible\s+\.func\s+\(\.param\s+\.b32\s+"
+                r"func_retval0\)\s+f\(",
+            )
 
-        # If we compile for 64-bit integers, the return type should be 64 bits
-        # wide
-        ptx, resty = compile_ptx(f, int64(int64, int64), device=True, abi="c")
-        self.assertRegex(ptx, r"\.visible\s+\.func\s+\(\.param\s+\.b64")
+            # If we compile for 64-bit integers, the return type should be 64 bits
+            # wide
+            ptx, resty = compile_ptx(
+                f, int64(int64, int64), device=True, abi="c"
+            )
+            self.assertRegex(ptx, r"\.visible\s+\.func\s+\(\.param\s+\.b64")
+
+        with self.subTest("compile_all"):
+            code_list, resty = compile_all(
+                f, int32(int32, int32), device=True, abi="c", output="ptx"
+            )
+            assert len(code_list) == 1
+            self.assertRegex(
+                code_list[0],
+                r"\.visible\s+\.func\s+\(\.param\s+\.b32\s+"
+                r"func_retval0\)\s+f\(",
+            )
+
+            code_list, resty = compile_all(
+                f, int64(int64, int64), device=True, abi="c", output="ptx"
+            )
+            assert len(code_list) == 1
+            self.assertRegex(
+                code_list[0], r"\.visible\s+\.func\s+\(\.param\s+\.b64"
+            )
 
     def test_c_abi_device_function_module_scope(self):
-        ptx, resty = compile_ptx(
-            f_module, int32(int32, int32), device=True, abi="c"
-        )
+        with self.subTest("compile_ptx"):
+            ptx, resty = compile_ptx(
+                f_module, int32(int32, int32), device=True, abi="c"
+            )
 
-        # The function name should match the Python function name, and its
-        # return value should be 32 bits
-        self.assertRegex(
-            ptx,
-            r"\.visible\s+\.func\s+\(\.param\s+\.b32\s+"
-            r"func_retval0\)\s+f_module\(",
-        )
+            # The function name should match the Python function name, and its
+            # return value should be 32 bits
+            self.assertRegex(
+                ptx,
+                r"\.visible\s+\.func\s+\(\.param\s+\.b32\s+"
+                r"func_retval0\)\s+f_module\(",
+            )
+
+        with self.subTest("compile_all"):
+            code_list, resty = compile_all(
+                f_module,
+                int32(int32, int32),
+                device=True,
+                abi="c",
+                output="ptx",
+            )
+            assert len(code_list) == 1
+            self.assertRegex(
+                code_list[0],
+                r"\.visible\s+\.func\s+\(\.param\s+\.b32\s+"
+                r"func_retval0\)\s+f_module\(",
+            )
 
     def test_c_abi_with_abi_name(self):
         abi_info = {"abi_name": "_Z4funcii"}
-        ptx, resty = compile_ptx(
-            f_module,
-            int32(int32, int32),
-            device=True,
-            abi="c",
-            abi_info=abi_info,
-        )
 
-        # The function name should match the one given in the ABI info, and its
-        # return value should be 32 bits
-        self.assertRegex(
-            ptx,
-            r"\.visible\s+\.func\s+\(\.param\s+\.b32\s+"
-            r"func_retval0\)\s+_Z4funcii\(",
-        )
+        with self.subTest("compile_ptx"):
+            ptx, resty = compile_ptx(
+                f_module,
+                int32(int32, int32),
+                device=True,
+                abi="c",
+                abi_info=abi_info,
+            )
+
+            # The function name should match the one given in the ABI info, and its
+            # return value should be 32 bits
+            self.assertRegex(
+                ptx,
+                r"\.visible\s+\.func\s+\(\.param\s+\.b32\s+"
+                r"func_retval0\)\s+_Z4funcii\(",
+            )
+
+        with self.subTest("compile_all"):
+            code_list, resty = compile_all(
+                f_module,
+                int32(int32, int32),
+                device=True,
+                abi="c",
+                abi_info=abi_info,
+                output="ptx",
+            )
+            assert len(code_list) == 1
+            self.assertRegex(
+                code_list[0],
+                r"\.visible\s+\.func\s+\(\.param\s+\.b32\s+"
+                r"func_retval0\)\s+_Z4funcii\(",
+            )
 
     def test_compile_defaults_to_c_abi(self):
-        ptx, resty = compile(f_module, int32(int32, int32), device=True)
+        with self.subTest("compile"):
+            ptx, resty = compile(f_module, int32(int32, int32), device=True)
 
-        # The function name should match the Python function name, and its
-        # return value should be 32 bits
-        self.assertRegex(
-            ptx,
-            r"\.visible\s+\.func\s+\(\.param\s+\.b32\s+"
-            r"func_retval0\)\s+f_module\(",
-        )
+            # The function name should match the Python function name, and its
+            # return value should be 32 bits
+            self.assertRegex(
+                ptx,
+                r"\.visible\s+\.func\s+\(\.param\s+\.b32\s+"
+                r"func_retval0\)\s+f_module\(",
+            )
+
+        with self.subTest("compile_all"):
+            code_list, resty = compile_all(
+                f_module,
+                int32(int32, int32),
+                device=True,
+                abi="c",
+                output="ptx",
+            )
+            assert len(code_list) == 1
+            self.assertRegex(
+                code_list[0],
+                r"\.visible\s+\.func\s+\(\.param\s+\.b32\s+"
+                r"func_retval0\)\s+f_module\(",
+            )
 
     def test_compile_to_ltoir(self):
-        ltoir, resty = compile(
-            f_module, int32(int32, int32), device=True, output="ltoir"
-        )
+        with self.subTest("compile"):
+            ltoir, resty = compile(
+                f_module, int32(int32, int32), device=True, output="ltoir"
+            )
 
-        # There are no tools to interpret the LTOIR output, but we can check
-        # that we appear to have obtained an LTOIR file. This magic number is
-        # not documented, but is expected to remain consistent.
-        LTOIR_MAGIC = 0x7F4E43ED
-        header = int.from_bytes(ltoir[:4], byteorder="little")
-        self.assertEqual(header, LTOIR_MAGIC)
-        self.assertEqual(resty, int32)
+            # There are no tools to interpret the LTOIR output, but we can check
+            # that we appear to have obtained an LTOIR file. This magic number is
+            # not documented, but is expected to remain consistent.
+            LTOIR_MAGIC = 0x7F4E43ED
+            header = int.from_bytes(ltoir[:4], byteorder="little")
+            self.assertEqual(header, LTOIR_MAGIC)
+            self.assertEqual(resty, int32)
+
+        with self.subTest("compile_all"):
+            code_list, resty = compile_all(
+                f_module, int32(int32, int32), device=True, output="ltoir"
+            )
+            assert len(code_list) == 1
+            LTOIR_MAGIC = 0x7F4E43ED
+            header = int.from_bytes(code_list[0][:4], byteorder="little")
+            self.assertEqual(header, LTOIR_MAGIC)
+            self.assertEqual(resty, int32)
 
     def test_compile_to_invalid_error(self):
         illegal_output = "illegal"
         msg = f"Unsupported output type: {illegal_output}"
-        with self.assertRaisesRegex(NotImplementedError, msg):
-            compile(
-                f_module,
-                int32(int32, int32),
-                device=True,
-                output=illegal_output,
-            )
+        with self.subTest("compile"):
+            with self.assertRaisesRegex(NotImplementedError, msg):
+                compile(
+                    f_module,
+                    int32(int32, int32),
+                    device=True,
+                    output=illegal_output,
+                )
+
+        with self.subTest("compile_all"):
+            with self.assertRaisesRegex(NotImplementedError, msg):
+                compile_all(
+                    f_module,
+                    int32(int32, int32),
+                    device=True,
+                    output=illegal_output,
+                )
 
     def test_functioncompiler_locals(self):
         # Tests against regression fixed in:
@@ -310,23 +501,26 @@ class TestCompile(unittest.TestCase):
             test_device_functions_ptx,
             test_device_functions_ltoir,
         ]:
-            add = cuda.declare_device(
-                "add_from_numba", "uint32(uint32, uint32)", link=[link]
-            )
+            with self.subTest(link=link):
+                add = cuda.declare_device(
+                    "add_from_numba", "uint32(uint32, uint32)", link=[link]
+                )
 
-            def f(z, x, y):
-                z[0] = add(x, y)
+                def f(z, x, y):
+                    z[0] = add(x, y)
 
-            code_list, resty = compile_all(f, (uint32[::1], uint32, uint32))
+                code_list, resty = compile_all(f, (uint32[::1], uint32, uint32))
 
-            assert resty == void
-            assert len(code_list) == 2
-            link_obj = LinkableCode.from_path(link)
-            if link_obj.kind == "cu":
-                # if link is a cu file, result contains a compiled object code
-                assert isinstance(code_list[1], ObjectCode)
-            else:
-                assert code_list[1].kind == link_obj.kind
+                assert resty == void
+                assert len(code_list) == 2
+                link_obj = LinkableCode.from_path(link)
+                if link_obj.kind == "cu":
+                    # if link is a cu file, result contains a compiled object code
+                    assert isinstance(code_list[1], ObjectCode)
+                else:
+                    assert code_list[1].kind == link_obj.kind
+
+    # TODO: Add a test case for debug info and line info for external code
 
 
 @skip_on_cudasim("Compilation unsupported in the simulator")
