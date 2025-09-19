@@ -319,6 +319,7 @@ class TestCompile(unittest.TestCase):
 
             code_list, resty = compile_all(f, (uint32[::1], uint32, uint32))
 
+            assert resty == void
             assert len(code_list) == 2
             link_obj = LinkableCode.from_path(link)
             if link_obj.kind == "cu":
