@@ -1,7 +1,11 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-2-Clause
 
+import os
 from math import sqrt
+
+from cuda.core.experimental import ObjectCode
+
 from numba import cuda, float32, int16, int32, int64, types, uint32, void
 from numba.cuda import (
     compile,
@@ -9,8 +13,36 @@ from numba.cuda import (
     compile_ptx,
     compile_ptx_for_current_device,
     compile_all,
+    LinkableCode,
 )
 from numba.cuda.testing import skip_on_cudasim, unittest, CUDATestCase
+
+TEST_BIN_DIR = os.getenv("NUMBA_CUDA_TEST_BIN_DIR")
+if TEST_BIN_DIR:
+    test_device_functions_a = os.path.join(
+        TEST_BIN_DIR, "test_device_functions.a"
+    )
+    test_device_functions_cubin = os.path.join(
+        TEST_BIN_DIR, "test_device_functions.cubin"
+    )
+    test_device_functions_cu = os.path.join(
+        TEST_BIN_DIR, "test_device_functions.cu"
+    )
+    test_device_functions_fatbin = os.path.join(
+        TEST_BIN_DIR, "test_device_functions.fatbin"
+    )
+    test_device_functions_fatbin_multi = os.path.join(
+        TEST_BIN_DIR, "test_device_functions_multi.fatbin"
+    )
+    test_device_functions_o = os.path.join(
+        TEST_BIN_DIR, "test_device_functions.o"
+    )
+    test_device_functions_ptx = os.path.join(
+        TEST_BIN_DIR, "test_device_functions.ptx"
+    )
+    test_device_functions_ltoir = os.path.join(
+        TEST_BIN_DIR, "test_device_functions.ltoir"
+    )
 
 
 # A test function at the module scope to ensure we get the name right for the C
@@ -267,20 +299,33 @@ class TestCompile(unittest.TestCase):
             if cond:
                 b_smem[0] = b_arg[0]
 
-    def test_link_all(self):
-        src = cuda.CUSource("""
-        extern "C"
-        __device__ int add(int *ret, int *a, int *b) {
-            *ret = *a + *b;
-            return 0;
-        }
-        """)
-        add = cuda.declare_device("add", "int32(int32, int32)", link=src)
+    def test_compile_all_with_external_functions(self):
+        for link in [
+            test_device_functions_a,
+            test_device_functions_cubin,
+            test_device_functions_cu,
+            test_device_functions_fatbin,
+            test_device_functions_fatbin_multi,
+            test_device_functions_o,
+            test_device_functions_ptx,
+            test_device_functions_ltoir,
+        ]:
+            add = cuda.declare_device(
+                "add_from_numba", "uint32(uint32, uint32)", link=[link]
+            )
 
-        def f(z, x, y):
-            z[0] = add(x, y)
+            def f(z, x, y):
+                z[0] = add(x, y)
 
-        code_list, resty = compile_all(f, (int32[::1], int32, int32))
+            code_list, resty = compile_all(f, (uint32[::1], uint32, uint32))
+
+            assert len(code_list) == 2
+            link_obj = LinkableCode.from_path(link)
+            if link_obj.kind == "cu":
+                # if link is a cu file, result contains a compiled object code
+                assert isinstance(code_list[1], ObjectCode)
+            else:
+                assert code_list[1].kind == link_obj.kind
 
 
 @skip_on_cudasim("Compilation unsupported in the simulator")

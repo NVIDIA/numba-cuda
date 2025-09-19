@@ -5,7 +5,6 @@ from llvmlite import ir
 from collections import namedtuple
 from warnings import warn, catch_warnings, simplefilter
 import copy
-import os
 
 from numba.core import ir as numba_ir
 from numba.core import (
@@ -990,9 +989,16 @@ def compile_all(
     forceinline=False,
     launch_bounds=None,
 ):
-    """Return a list of PTX/LTO-IR for kernel as well as external functions depended by the kernel."""
+    """Return a list of PTX/LTO-IR for kernel as well as external functions depended by the kernel.
+    If external functions are cuda c/c++ source, they will be compiled with NVRTC. The output code
+    kind is the same as the `output` parameter.
+    Otherwise, they will be passed through to the return list.
+    """
 
     lto = output == "ltoir"
+
+    cc = _default_cc(cc)
+
     lib, resty = _compile_pyfunc_with_fixup(
         pyfunc,
         sig,
@@ -1013,23 +1019,24 @@ def compile_all(
         code = lib.get_ltoir(cc=cc)
     else:
         code = lib.get_asm_str(cc=cc)
-    out_list = [code]
+    codes = [code]
 
     # linking_files
-    for path_or_obj in lib.linking_files:
-        if isinstance(path_or_obj, LinkableCode):
-            if path_or_obj.kind == "cu":
-                lto = output == "ltoir"
-                code, log = nvrtc.compile(
-                    path_or_obj.data,
-                    os.path.basename(path_or_obj.name),
-                    cc,
-                    ltoir=lto,
-                )
+    lto = output == "ltoir"
+    for path_or_obj in lib._linking_files:
+        obj = LinkableCode.from_path_or_obj(path_or_obj)
+        if obj.kind == "cu":
+            code, log = nvrtc.compile(
+                obj.data,
+                obj.name,
+                cc,
+                ltoir=lto,
+            )
+            codes.append(code)
         else:
-            code = path_or_obj
+            codes.append(obj)
 
-    return out_list, resty
+    return codes, resty
 
 
 def _compile_pyfunc_with_fixup(
@@ -1080,11 +1087,7 @@ def _compile_pyfunc_with_fixup(
 
     args, return_type = sigutils.normalize_signature(sig)
 
-    # If the user has used the config variable to specify a non-default that is
-    # greater than the lowest non-deprecated one, then we should default to
-    # their specified CC instead of the lowest non-deprecated one.
-    MIN_CC = max(config.CUDA_DEFAULT_PTX_CC, nvrtc.get_lowest_supported_cc())
-    cc = cc or MIN_CC
+    cc = _default_cc(cc)
 
     cres = compile_cuda(
         pyfunc,
@@ -1379,3 +1382,14 @@ class ExternFunction:
     def __init__(self, name, sig):
         self.name = name
         self.sig = sig
+
+
+def _default_cc(cc):
+    """
+    Return default compute capability based on config and nvrtc lowest supported cc.
+
+    If user specifies a cc, return that.
+    """
+    if cc:
+        return cc
+    return max(config.CUDA_DEFAULT_PTX_CC, nvrtc.get_lowest_supported_cc())
