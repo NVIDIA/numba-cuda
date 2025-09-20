@@ -61,14 +61,9 @@ Configuration
 CUDA Bindings
 -------------
 
-Numba supports interacting with the CUDA Driver API via either the `NVIDIA CUDA
-Python bindings <https://nvidia.github.io/cuda-python/>`_ or its own ctypes-based
-bindings. Functionality is equivalent between the two binding choices. The
-NVIDIA bindings are the default, and the ctypes bindings are now deprecated.
-
-If you do not want to use the NVIDIA bindings, the (deprecated) ctypes bindings
-can be enabled by setting the environment variable
-:envvar:`NUMBA_CUDA_USE_NVIDIA_BINDING` to ``"0"``.
+Numba-CUDA uses the `NVIDIA CUDA Python bindings <https://nvidia.github.io/cuda-python/>`_
+for interacting with the CUDA Driver API. The legacy ctypes bindings and the
+``NUMBA_CUDA_USE_NVIDIA_BINDING`` environment variable have been removed.
 
 
 .. _cudatoolkit-lookup:
@@ -79,28 +74,13 @@ CUDA Driver and Toolkit search paths
 Default behavior
 ~~~~~~~~~~~~~~~~
 
-When using the NVIDIA bindings, searches for the CUDA driver and toolkit
-libraries use its `built-in path-finding logic <https://github.com/NVIDIA/cuda-python/tree/main/cuda_bindings/cuda/bindings/_path_finder>`_.
-
-Ctypes bindings (deprecated) behavior
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-When using the ctypes bindings, Numba searches for a CUDA toolkit installation
-in the following order:
-
-1. Conda-installed CUDA Toolkit packages
-2. Pip-installed CUDA Toolkit packages
-3. The environment variable ``CUDA_HOME``, which points to the directory of the
-   installed CUDA toolkit (i.e. ``/home/user/cuda-12``)
-4. System-wide installation at exactly ``/usr/local/cuda`` on Linux platforms.
-   Versioned installation paths (i.e. ``/usr/local/cuda-12.0``) are intentionally
-   ignored. Users can use ``CUDA_HOME`` to select specific versions.
+Searches for the CUDA driver and toolkit libraries use the NVIDIA bindings'
+`built-in path-finding logic <https://github.com/NVIDIA/cuda-python/tree/main/cuda_bindings/cuda/bindings/_path_finder>`_.
 
 In addition to the CUDA toolkit libraries, which can be installed by conda into
 an environment or installed system-wide by the `CUDA SDK installer
 <https://developer.nvidia.com/cuda-downloads>`_, the CUDA target in Numba also
-requires an up-to-date NVIDIA driver.  Updated NVIDIA drivers are also installed
-by the CUDA SDK installer, so there is no need to do both. If the ``libcuda``
-library is in a non-standard location, users can set environment variable
+requires an up-to-date NVIDIA driver. If the ``libcuda`` library is in a
+non-standard location, users can set environment variable
 :envvar:`NUMBA_CUDA_DRIVER` to the file path (not the directory path) of the
 shared library file.
