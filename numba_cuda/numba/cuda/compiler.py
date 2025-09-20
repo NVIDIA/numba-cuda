@@ -1037,6 +1037,8 @@ def compile_all(
                 obj.name,
                 cc,
                 ltoir=lto,
+                lineinfo=lineinfo,
+                debug=debug,
             )
             codes.append(code)
         else:

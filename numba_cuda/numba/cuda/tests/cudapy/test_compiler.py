@@ -520,7 +520,35 @@ class TestCompile(unittest.TestCase):
                 else:
                     assert code_list[1].kind == link_obj.kind
 
-    # TODO: Add a test case for debug info and line info for external code
+    def test_compile_all_lineinfo(self):
+        add = cuda.declare_device(
+            "add", "float32(float32, float32)", link=[test_device_functions_cu]
+        )
+
+        def f(z, x, y):
+            z[0] = add(x, y)
+
+        args = (float32[::1], float32, float32)
+        code_list, resty = compile_all(f, args, lineinfo=True, output="ptx")
+        assert len(code_list) == 2
+        self.assertRegex(
+            str(code_list[1].code.decode()), r"\.file.*test_device_functions"
+        )
+
+    def test_compile_all_debug(self):
+        add = cuda.declare_device(
+            "add", "float32(float32, float32)", link=[test_device_functions_cu]
+        )
+
+        def f(z, x, y):
+            z[0] = add(x, y)
+
+        args = (float32[::1], float32, float32)
+        code_list, resty = compile_all(f, args, debug=True, output="ptx")
+        assert len(code_list) == 2
+        self.assertRegex(
+            str(code_list[1].code.decode()), r"\.section\s+\.debug_info"
+        )
 
 
 @skip_on_cudasim("Compilation unsupported in the simulator")
