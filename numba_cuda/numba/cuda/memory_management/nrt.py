@@ -18,24 +18,8 @@ from numba.cuda.cudadrv.driver import (
 )
 from numba.cuda.cudadrv import devices
 from numba.cuda.api import get_current_device
-from numba.cuda.utils import _readenv, cached_file_read
+from numba.cuda.utils import cached_file_read
 from numba.cuda.cudadrv.linkable_code import CUSource
-
-
-# Check environment variable or config for NRT statistics enablement
-NRT_STATS = _readenv("NUMBA_CUDA_NRT_STATS", bool, False) or getattr(
-    config, "CUDA_NRT_STATS", False
-)
-if not hasattr(config, "CUDA_NRT_STATS"):
-    config.CUDA_NRT_STATS = NRT_STATS
-
-
-# Check environment variable or config for NRT enablement
-ENABLE_NRT = _readenv("NUMBA_CUDA_ENABLE_NRT", bool, False) or getattr(
-    config, "CUDA_ENABLE_NRT", False
-)
-if not hasattr(config, "CUDA_ENABLE_NRT"):
-    config.CUDA_ENABLE_NRT = ENABLE_NRT
 
 
 def get_include():

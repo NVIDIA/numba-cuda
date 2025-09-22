@@ -140,13 +140,11 @@ class _EnvVar(object):
         try:
             from numba import config as numba_config
 
-            if self.name.startswith("NUMBA_") and hasattr(
-                numba_config, self.name[6:]
-            ):
-                config_value = getattr(numba_config, self.name[6:])
+            if hasattr(numba_config, self.name):
+                config_value = getattr(numba_config, self.name)
                 if config_value != self.value:
                     msg = (
-                        f"Configuration value '{self.name[6:]}' is explicitly set "
+                        f"Configuration value '{self.name}' is explicitly set "
                         f"to `{config_value}` in numba.config. "
                         "numba.config is deprecated for numba-cuda "
                         "and support for configuration values from it "
@@ -155,6 +153,9 @@ class _EnvVar(object):
                     )
                     warnings.warn(msg, category=DeprecationWarning)
                     self.value = config_value
+            else:
+                # Initialize any missing variables in numba.config
+                setattr(numba_config, self.name, self.value)
         except ImportError:
             pass
 
@@ -164,7 +165,6 @@ class _EnvVar(object):
 
     def __set__(self, value):
         self.value = value
-        self.check_numba_config()
 
 
 class _EnvReloader(object):
@@ -215,14 +215,14 @@ class _EnvReloader(object):
         try:
             CUDA_USE_NVIDIA_BINDING = current_module.CUDA_USE_NVIDIA_BINDING
         except AttributeError:
-            CUDA_USE_NVIDIA_BINDING = False
+            CUDA_USE_NVIDIA_BINDING = 0
 
         try:
             CUDA_PER_THREAD_DEFAULT_STREAM = (
                 current_module.CUDA_PER_THREAD_DEFAULT_STREAM
             )
         except AttributeError:
-            CUDA_PER_THREAD_DEFAULT_STREAM = False
+            CUDA_PER_THREAD_DEFAULT_STREAM = 0
 
         if CUDA_USE_NVIDIA_BINDING:  # noqa: F821
             try:
@@ -235,7 +235,7 @@ class _EnvReloader(object):
                 )
                 warnings.warn(msg)
 
-                current_module.CUDA_USE_NVIDIA_BINDING = False
+                current_module.CUDA_USE_NVIDIA_BINDING = 0
 
             if CUDA_PER_THREAD_DEFAULT_STREAM:  # noqa: F821
                 warnings.warn(
@@ -263,7 +263,10 @@ class _EnvReloader(object):
                         RuntimeWarning,
                     )
                     result = default() if callable(default) else default
-            return _EnvVar(result, name)
+            var_name = name
+            if name.startswith("NUMBA_"):
+                var_name = name[6:]
+            return _EnvVar(result, var_name)
 
         def optional_str(x):
             return str(x) if x is not None else None
@@ -344,6 +347,12 @@ class _EnvReloader(object):
 
         # Enable NRT statistics counters
         NRT_STATS = _readenv("NUMBA_NRT_STATS", int, 0)
+
+        # Enable NRT statistics
+        CUDA_NRT_STATS = _readenv("NUMBA_CUDA_NRT_STATS", int, 0)
+
+        # Enable NRT
+        CUDA_ENABLE_NRT = _readenv("NUMBA_CUDA_ENABLE_NRT", int, 0)
 
         # How many recently deserialized functions to retain regardless
         # of external references
