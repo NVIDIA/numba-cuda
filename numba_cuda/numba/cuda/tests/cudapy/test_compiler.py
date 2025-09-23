@@ -4,7 +4,6 @@
 import os
 from math import sqrt
 
-from cuda.core.experimental import ObjectCode
 
 from numba import (
     cuda,
@@ -559,6 +558,8 @@ class TestCompile(unittest.TestCase):
                 if link_obj.kind == "cu":
                     # if link is a cu file, result contains a compiled object code
                     if config.CUDA_USE_NVIDIA_BINDING:
+                        from cuda.core.experimental import ObjectCode
+
                         assert isinstance(code_list[1], ObjectCode)
                     else:
                         assert isinstance(code_list[1], bytes)
