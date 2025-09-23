@@ -6,7 +6,17 @@ from math import sqrt
 
 from cuda.core.experimental import ObjectCode
 
-from numba import cuda, float32, int16, int32, int64, types, uint32, void
+from numba import (
+    cuda,
+    float32,
+    int16,
+    int32,
+    int64,
+    types,
+    uint32,
+    void,
+    config,
+)
 from numba.cuda import (
     compile,
     compile_for_current_device,
@@ -516,7 +526,10 @@ class TestCompile(unittest.TestCase):
                 link_obj = LinkableCode.from_path(link)
                 if link_obj.kind == "cu":
                     # if link is a cu file, result contains a compiled object code
-                    assert isinstance(code_list[1], ObjectCode)
+                    if config.CUDA_USE_NVIDIA_BINDING:
+                        assert isinstance(code_list[1], ObjectCode)
+                    else:
+                        assert isinstance(code_list[1], bytes)
                 else:
                     assert code_list[1].kind == link_obj.kind
 
@@ -531,9 +544,14 @@ class TestCompile(unittest.TestCase):
         args = (float32[::1], float32, float32)
         code_list, resty = compile_all(f, args, lineinfo=True, output="ptx")
         assert len(code_list) == 2
-        self.assertRegex(
-            str(code_list[1].code.decode()), r"\.file.*test_device_functions"
-        )
+
+        if config.CUDA_USE_NVIDIA_BINDING:
+            self.assertRegex(
+                str(code_list[1].code.decode()),
+                r"\.file.*test_device_functions",
+            )
+        else:
+            self.assertRegex(code_list[1], r"\.file.*test_device_functions")
 
     def test_compile_all_debug(self):
         add = cuda.declare_device(
@@ -546,9 +564,13 @@ class TestCompile(unittest.TestCase):
         args = (float32[::1], float32, float32)
         code_list, resty = compile_all(f, args, debug=True, output="ptx")
         assert len(code_list) == 2
-        self.assertRegex(
-            str(code_list[1].code.decode()), r"\.section\s+\.debug_info"
-        )
+
+        if config.CUDA_USE_NVIDIA_BINDING:
+            self.assertRegex(
+                str(code_list[1].code.decode()), r"\.section\s+\.debug_info"
+            )
+        else:
+            self.assertRegex(code_list[1], r"\.section\s+\.debug_info")
 
 
 @skip_on_cudasim("Compilation unsupported in the simulator")
