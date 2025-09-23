@@ -31,6 +31,7 @@ $CUDA_VER_MAJOR = ($env:CUDA_VER -split '\.')[0] -join '.'
 rapids-logger "Install wheel with test dependencies"
 $package = Resolve-Path wheel\numba_cuda*.whl | Select-Object -ExpandProperty Path
 echo "Package path: $package"
+python -m pip install "llvmlite<0.45" # WAR for https://github.com/numba/llvmlite/issues/1297
 python -m pip install "${package}[cu${CUDA_VER_MAJOR},test-cu${CUDA_VER_MAJOR}]"
 
 rapids-logger "Build tests"
