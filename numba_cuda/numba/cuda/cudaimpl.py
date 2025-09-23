@@ -10,7 +10,7 @@ from llvmlite import ir
 import llvmlite.binding as ll
 
 from numba.core.imputils import Registry
-from numba.core.typing.npydecl import parse_dtype
+from numba.cuda.typing.npydecl import parse_dtype
 from numba.core.datamodel import models
 from numba.core import types
 from numba.cuda import cgutils
@@ -25,6 +25,10 @@ registry = Registry()
 lower = registry.lower
 lower_attr = registry.lower_getattr
 lower_constant = registry.lower_constant
+lower_getattr_generic = registry.lower_getattr_generic
+lower_setattr = registry.lower_setattr
+lower_setattr_generic = registry.lower_setattr_generic
+lower_cast = registry.lower_cast
 
 
 def initialize_dim3(builder, prefix):
