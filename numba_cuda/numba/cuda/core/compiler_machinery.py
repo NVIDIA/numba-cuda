@@ -14,7 +14,7 @@ from numba.cuda.core import transforms
 from numba.cuda.core.tracing import event
 from numba.cuda.core.postproc import PostProcessor
 from numba.cuda.core.ir_utils import enforce_no_dels, legalize_single_scope
-import numba.core.event as ev
+import numba.cuda.core.event as ev
 
 import numba.cuda.core.compiler_machinery as nccm
 
@@ -330,7 +330,7 @@ class PassManager(object):
             return_type=str(internal_state.return_type),
         )
         errctx = errors.new_error_context(f"Pass {pss.name()}")
-        with ev.trigger_event("numba:run_pass", data=ev_details), errctx:
+        with ev.trigger_event("numba-cuda:run_pass", data=ev_details), errctx:
             with SimpleTimer() as init_time:
                 mutated |= check(pss.run_initialization, internal_state)
             with SimpleTimer() as pass_time:
