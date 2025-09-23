@@ -325,7 +325,9 @@ def check_reduce_func(func_ir, func_var):
                             analysis"
         )
     if isinstance(reduce_func, (ir.FreeVar, ir.Global)):
-        if not isinstance(reduce_func.value, numba.core.registry.CPUDispatcher):
+        if not isinstance(
+            reduce_func.value, numba.cuda.core.registry.CPUDispatcher
+        ):
             raise ValueError("Invalid reduction function")
         # pull out the python function for inlining
         reduce_func = reduce_func.value.py_func
