@@ -83,7 +83,9 @@ class TestCompile(unittest.TestCase):
             self.assertEqual(resty, void)
 
         with self.subTest("compile_all"):
-            code_list, resty = compile_all(f, args, output="ptx")
+            code_list, resty = compile_all(
+                f, args, device=False, abi="numba", output="ptx"
+            )
             assert len(code_list) == 1
             self.assertNotIn("func_retval", code_list[0])
             self.assertNotIn(".visible .func", code_list[0])
@@ -123,17 +125,21 @@ class TestCompile(unittest.TestCase):
             self.assertEqual(resty, uint32)
 
         with self.subTest("compile_all"):
-            code_list, resty = compile_all(add, args, device=True, output="ptx")
+            code_list, resty = compile_all(
+                add, args, device=True, abi="c", output="ptx"
+            )
             assert len(code_list) == 1
             self.assertIn("func_retval", code_list[0])
             self.assertIn(".visible .func", code_list[0])
             self.assertNotIn(".visible .entry", code_list[0])
 
-            code_list, resty = compile_all(add, sig_int32, device=True)
+            code_list, resty = compile_all(add, sig_int32, device=True, abi="c")
             self.assertEqual(resty, int32)
-            code_list, resty = compile_all(add, sig_int16, device=True)
+            code_list, resty = compile_all(add, sig_int16, device=True, abi="c")
             self.assertEqual(resty, int16)
-            code_list, resty = compile_all(add, sig_string, device=True)
+            code_list, resty = compile_all(
+                add, sig_string, device=True, abi="c"
+            )
             self.assertEqual(resty, uint32)
 
     def test_fastmath(self):
@@ -213,7 +219,13 @@ class TestCompile(unittest.TestCase):
 
         with self.subTest("compile_all"):
             code_list, resty = compile_all(
-                f, (), debug=True, opt=False, output="ptx"
+                f,
+                (),
+                device=False,
+                abi="numba",
+                debug=True,
+                opt=False,
+                output="ptx",
             )
             assert len(code_list) == 1
             self.check_debug_info(code_list[0])
@@ -234,7 +246,12 @@ class TestCompile(unittest.TestCase):
 
         with self.subTest("compile_all"):
             code_list, resty = compile_all(
-                f, (), device=True, lineinfo=True, output="ptx"
+                f,
+                (),
+                device=True,
+                abi="numba",
+                lineinfo=True,
+                output="ptx",
             )
             assert len(code_list) == 1
             self.check_line_info(code_list[0])
@@ -248,7 +265,9 @@ class TestCompile(unittest.TestCase):
             self.check_line_info(ptx)
 
         with self.subTest("compile_all"):
-            code_list, resty = compile_all(f, (), lineinfo=True, output="ptx")
+            code_list, resty = compile_all(
+                f, (), device=False, abi="numba", lineinfo=True, output="ptx"
+            )
             assert len(code_list) == 1
             self.check_line_info(code_list[0])
 
@@ -266,7 +285,13 @@ class TestCompile(unittest.TestCase):
             with self.assertRaisesRegex(
                 TypeError, "must have void return type"
             ):
-                compile_all(f, (uint32[::1], uint32[::1]), output="ptx")
+                compile_all(
+                    f,
+                    (uint32[::1], uint32[::1]),
+                    device=False,
+                    abi="numba",
+                    output="ptx",
+                )
 
     def test_c_abi_disallowed_for_kernel(self):
         def f(x, y):
@@ -456,7 +481,11 @@ class TestCompile(unittest.TestCase):
 
         with self.subTest("compile_all"):
             code_list, resty = compile_all(
-                f_module, int32(int32, int32), device=True, output="ltoir"
+                f_module,
+                int32(int32, int32),
+                device=True,
+                abi="c",
+                output="ltoir",
             )
             assert len(code_list) == 1
             LTOIR_MAGIC = 0x7F4E43ED
@@ -482,6 +511,7 @@ class TestCompile(unittest.TestCase):
                     f_module,
                     int32(int32, int32),
                     device=True,
+                    abi="c",
                     output=illegal_output,
                 )
 
@@ -519,7 +549,9 @@ class TestCompile(unittest.TestCase):
                 def f(z, x, y):
                     z[0] = add(x, y)
 
-                code_list, resty = compile_all(f, (uint32[::1], uint32, uint32))
+                code_list, resty = compile_all(
+                    f, (uint32[::1], uint32, uint32), device=False, abi="numba"
+                )
 
                 assert resty == void
                 assert len(code_list) == 2
@@ -542,7 +574,9 @@ class TestCompile(unittest.TestCase):
             z[0] = add(x, y)
 
         args = (float32[::1], float32, float32)
-        code_list, resty = compile_all(f, args, lineinfo=True, output="ptx")
+        code_list, resty = compile_all(
+            f, args, lineinfo=True, output="ptx", device=False, abi="numba"
+        )
         assert len(code_list) == 2
 
         if config.CUDA_USE_NVIDIA_BINDING:
@@ -562,7 +596,9 @@ class TestCompile(unittest.TestCase):
             z[0] = add(x, y)
 
         args = (float32[::1], float32, float32)
-        code_list, resty = compile_all(f, args, debug=True, output="ptx")
+        code_list, resty = compile_all(
+            f, args, debug=True, output="ptx", device=False, abi="numba"
+        )
         assert len(code_list) == 2
 
         if config.CUDA_USE_NVIDIA_BINDING:
