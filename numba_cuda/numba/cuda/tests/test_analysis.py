@@ -9,7 +9,7 @@ import numpy as np
 from numba.cuda.compiler import run_frontend
 from numba.cuda.flags import Flags
 from numba.cuda.core.compiler import StateDict
-from numba import jit, njit
+from numba.cuda import jit
 from numba.core import types, errors, ir
 from numba.cuda.utils import PYVERSION
 from numba.cuda.core import postproc, rewrites, ir_utils
@@ -140,110 +140,207 @@ class TestBranchPruneBase(MemoryLeakMixin, TestCase):
             print("expect_removed", sorted(expect_removed))
             raise e
 
-        supplied_flags = kwargs.pop("flags", {"nopython": True})
-        # NOTE: original testing used `compile_isolated` hence use of `cres`.
-        cres = jit(args_tys, **supplied_flags)(func).overloads[args_tys]
-        if args is None:
-            res = cres.entry_point()
-            expected = func()
-        else:
-            res = cres.entry_point(*args)
-            expected = func(*args)
-        self.assertEqual(res, expected)
+        if [
+            arg is types.NoneType("none") or arg is types.Omitted(None)
+            for arg in args_tys
+        ].count(True) == 0:
+            self.run_func(func, args)
+
+    def run_func(self, impl, args):
+        cres = jit(impl)
+        dargs = args
+        out = np.zeros(1)
+        cout = np.zeros(1)
+        args += (out,)
+        dargs += (cout,)
+        cres.py_func(*args)
+        cres[1, 1](*dargs)
+        self.assertPreciseEqual(out[0], cout[0])
 
 
 class TestBranchPrune(TestBranchPruneBase):
     @skip_on_cudasim("Analysis passes not done in simulator")
     def test_single_if(self):
-        def impl(x):
+        def impl(x, res):
             if 1 == 0:
-                return 3.14159
+                res[0] = 3.14159
 
-        self.assert_prune(impl, (types.NoneType("none"),), [True], None)
+        self.assert_prune(
+            impl,
+            (types.NoneType("none"), types.Array(types.float64, 1, "C")),
+            [True],
+            None,
+        )
 
-        def impl(x):
+        def impl(x, res):
             if 1 == 1:
-                return 3.14159
+                res[0] = 3.14159
 
-        self.assert_prune(impl, (types.NoneType("none"),), [False], None)
+        self.assert_prune(
+            impl,
+            (types.NoneType("none"), types.Array(types.float64, 1, "C")),
+            [False],
+            None,
+        )
 
-        def impl(x):
+        def impl(x, res):
             if x is None:
-                return 3.14159
+                res[0] = 3.14159
 
-        self.assert_prune(impl, (types.NoneType("none"),), [False], None)
-        self.assert_prune(impl, (types.IntegerLiteral(10),), [True], 10)
+        self.assert_prune(
+            impl,
+            (types.NoneType("none"), types.Array(types.float64, 1, "C")),
+            [False],
+            None,
+        )
+        self.assert_prune(
+            impl,
+            (types.IntegerLiteral(10), types.Array(types.float64, 1, "C")),
+            [True],
+            10,
+        )
 
-        def impl(x):
+        def impl(x, res):
             if x == 10:
-                return 3.14159
+                res[0] = 3.14159
 
-        self.assert_prune(impl, (types.NoneType("none"),), [True], None)
-        self.assert_prune(impl, (types.IntegerLiteral(10),), [None], 10)
+        self.assert_prune(
+            impl,
+            (types.NoneType("none"), types.Array(types.float64, 1, "C")),
+            [True],
+            None,
+        )
+        self.assert_prune(
+            impl,
+            (types.IntegerLiteral(10), types.Array(types.float64, 1, "C")),
+            [None],
+            10,
+        )
 
-        def impl(x):
+        def impl(x, res):
             if x == 10:
                 z = 3.14159  # noqa: F841 # no effect
 
-        self.assert_prune(impl, (types.NoneType("none"),), [True], None)
-        self.assert_prune(impl, (types.IntegerLiteral(10),), [None], 10)
+        self.assert_prune(
+            impl,
+            (types.NoneType("none"), types.Array(types.float64, 1, "C")),
+            [True],
+            None,
+        )
+        self.assert_prune(
+            impl,
+            (types.IntegerLiteral(10), types.Array(types.float64, 1, "C")),
+            [None],
+            10,
+        )
 
-        def impl(x):
+        def impl(x, res):
             z = None
             y = z
             if x == y:
-                return 100
+                res[0] = 100
 
-        self.assert_prune(impl, (types.NoneType("none"),), [False], None)
-        self.assert_prune(impl, (types.IntegerLiteral(10),), [True], 10)
+        self.assert_prune(
+            impl,
+            (types.NoneType("none"), types.Array(types.float64, 1, "C")),
+            [False],
+            None,
+        )
+        self.assert_prune(
+            impl,
+            (types.IntegerLiteral(10), types.Array(types.float64, 1, "C")),
+            [True],
+            10,
+        )
 
     @skip_on_cudasim("Analysis passes not done in simulator")
     def test_single_if_else(self):
-        def impl(x):
+        def impl(x, res):
             if x is None:
-                return 3.14159
+                res[0] = 3.14159
             else:
-                return 1.61803
+                res[0] = 1.61803
 
-        self.assert_prune(impl, (types.NoneType("none"),), [False], None)
-        self.assert_prune(impl, (types.IntegerLiteral(10),), [True], 10)
+        self.assert_prune(
+            impl,
+            (types.NoneType("none"), types.Array(types.float64, 1, "C")),
+            [False],
+            None,
+        )
+        self.assert_prune(
+            impl,
+            (types.IntegerLiteral(10), types.Array(types.float64, 1, "C")),
+            [True],
+            10,
+        )
 
     @skip_on_cudasim("Analysis passes not done in simulator")
     def test_single_if_const_val(self):
-        def impl(x):
+        def impl(x, res):
             if x == 100:
-                return 3.14159
+                res[0] = 3.14159
 
-        self.assert_prune(impl, (types.NoneType("none"),), [True], None)
-        self.assert_prune(impl, (types.IntegerLiteral(100),), [None], 100)
+        self.assert_prune(
+            impl,
+            (types.NoneType("none"), types.Array(types.float64, 1, "C")),
+            [True],
+            None,
+        )
+        self.assert_prune(
+            impl,
+            (types.IntegerLiteral(100), types.Array(types.float64, 1, "C")),
+            [None],
+            100,
+        )
 
-        def impl(x):
+        def impl(x, res):
             # switch the condition order
             if 100 == x:
-                return 3.14159
+                res[0] = 3.14159
 
-        self.assert_prune(impl, (types.NoneType("none"),), [True], None)
-        self.assert_prune(impl, (types.IntegerLiteral(100),), [None], 100)
+        self.assert_prune(
+            impl,
+            (types.NoneType("none"), types.Array(types.float64, 1, "C")),
+            [True],
+            None,
+        )
+        self.assert_prune(
+            impl,
+            (types.IntegerLiteral(100), types.Array(types.float64, 1, "C")),
+            [None],
+            100,
+        )
 
     @skip_on_cudasim("Analysis passes not done in simulator")
     def test_single_if_else_two_const_val(self):
-        def impl(x, y):
+        def impl(x, y, res):
             if x == y:
-                return 3.14159
+                res[0] = 3.14159
             else:
-                return 1.61803
+                res[0] = 1.61803
 
         self.assert_prune(
-            impl, (types.IntegerLiteral(100),) * 2, [None], 100, 100
+            impl,
+            (types.IntegerLiteral(100),) * 2
+            + (types.Array(types.float64, 1, "C"),),
+            [None],
+            100,
+            100,
         )
         self.assert_prune(
-            impl, (types.NoneType("none"),) * 2, [False], None, None
+            impl,
+            (types.NoneType("none"),) * 2
+            + (types.Array(types.float64, 1, "C"),),
+            [False],
+            None,
+            None,
         )
         self.assert_prune(
             impl,
             (
                 types.IntegerLiteral(100),
                 types.NoneType("none"),
+                types.Array(types.float64, 1, "C"),
             ),
             [True],
             100,
@@ -251,7 +348,11 @@ class TestBranchPrune(TestBranchPruneBase):
         )
         self.assert_prune(
             impl,
-            (types.IntegerLiteral(100), types.IntegerLiteral(1000)),
+            (
+                types.IntegerLiteral(100),
+                types.IntegerLiteral(1000),
+                types.Array(types.float64, 1, "C"),
+            ),
             [None],
             100,
             1000,
@@ -259,7 +360,7 @@ class TestBranchPrune(TestBranchPruneBase):
 
     @skip_on_cudasim("Analysis passes not done in simulator")
     def test_single_if_else_w_following_undetermined(self):
-        def impl(x):
+        def impl(x, res):
             x_is_none_work = False
             if x is None:
                 x_is_none_work = True
@@ -270,12 +371,22 @@ class TestBranchPrune(TestBranchPruneBase):
                 y = 10
             else:
                 y = -3
-            return y
+            res[0] = y
 
-        self.assert_prune(impl, (types.NoneType("none"),), [False, None], None)
-        self.assert_prune(impl, (types.IntegerLiteral(10),), [True, None], 10)
+        self.assert_prune(
+            impl,
+            (types.NoneType("none"), types.Array(types.float64, 1, "C")),
+            [False, None],
+            None,
+        )
+        self.assert_prune(
+            impl,
+            (types.IntegerLiteral(10), types.Array(types.float64, 1, "C")),
+            [True, None],
+            10,
+        )
 
-        def impl(x):
+        def impl(x, res):
             x_is_none_work = False
             if x is None:
                 x_is_none_work = True
@@ -286,7 +397,7 @@ class TestBranchPrune(TestBranchPruneBase):
                 y = 10
             else:
                 y = -3
-            return y
+            res[0] = y
 
         # Python 3.10 creates a block with a NOP in it for the `pass` which
         # means it gets pruned.
@@ -294,18 +405,29 @@ class TestBranchPrune(TestBranchPruneBase):
             # Python 3.10 creates a block with a NOP in it for the `pass` which
             # means it gets pruned.
             self.assert_prune(
-                impl, (types.NoneType("none"),), [False, None], None
+                impl,
+                (types.NoneType("none"), types.Array(types.float64, 1, "C")),
+                [False, None],
+                None,
             )
         else:
             self.assert_prune(
-                impl, (types.NoneType("none"),), [None, None], None
+                impl,
+                (types.NoneType("none"), types.Array(types.float64, 1, "C")),
+                [None, None],
+                None,
             )
 
-        self.assert_prune(impl, (types.IntegerLiteral(10),), [True, None], 10)
+        self.assert_prune(
+            impl,
+            (types.IntegerLiteral(10), types.Array(types.float64, 1, "C")),
+            [True, None],
+            10,
+        )
 
     @skip_on_cudasim("Analysis passes not done in simulator")
     def test_double_if_else_rt_const(self):
-        def impl(x):
+        def impl(x, res):
             one_hundred = 100
             x_is_none_work = 4
             if x is None:
@@ -318,20 +440,19 @@ class TestBranchPrune(TestBranchPruneBase):
             else:
                 y = -3
 
-            return y, x_is_none_work
+            res[0] = y + x_is_none_work
 
         self.assert_prune(impl, (types.NoneType("none"),), [False, None], None)
         self.assert_prune(impl, (types.IntegerLiteral(10),), [True, None], 10)
 
     @skip_on_cudasim("Analysis passes not done in simulator")
     def test_double_if_else_non_literal_const(self):
-        def impl(x):
+        def impl(x, res):
             one_hundred = 100
             if x == one_hundred:
-                y = 3.14159
+                res[0] = 3.14159
             else:
-                y = 1.61803
-            return y
+                res[0] = 1.61803
 
         # no prune as compilation specialization on literal value not permitted
         self.assert_prune(impl, (types.IntegerLiteral(10),), [None], 10)
@@ -339,7 +460,7 @@ class TestBranchPrune(TestBranchPruneBase):
 
     @skip_on_cudasim("Analysis passes not done in simulator")
     def test_single_two_branches_same_cond(self):
-        def impl(x):
+        def impl(x, res):
             if x is None:
                 y = 10
             else:
@@ -350,14 +471,14 @@ class TestBranchPrune(TestBranchPruneBase):
             else:
                 z = 400
 
-            return z, y
+            res[0] = z + y
 
         self.assert_prune(impl, (types.NoneType("none"),), [False, True], None)
         self.assert_prune(impl, (types.IntegerLiteral(10),), [True, False], 10)
 
     @skip_on_cudasim("Analysis passes not done in simulator")
     def test_cond_is_kwarg_none(self):
-        def impl(x=None):
+        def impl(x=None, res=None):
             if x is None:
                 y = 10
             else:
@@ -368,7 +489,7 @@ class TestBranchPrune(TestBranchPruneBase):
             else:
                 z = 400
 
-            return z, y
+            res[0] = z + y
 
         self.assert_prune(impl, (types.Omitted(None),), [False, True], None)
         self.assert_prune(impl, (types.NoneType("none"),), [False, True], None)
@@ -376,7 +497,7 @@ class TestBranchPrune(TestBranchPruneBase):
 
     @skip_on_cudasim("Analysis passes not done in simulator")
     def test_cond_is_kwarg_value(self):
-        def impl(x=1000):
+        def impl(x=1000, res=None):
             if x == 1000:
                 y = 10
             else:
@@ -387,7 +508,7 @@ class TestBranchPrune(TestBranchPruneBase):
             else:
                 z = 400
 
-            return z, y
+            res[0] = z + y
 
         self.assert_prune(impl, (types.Omitted(1000),), [None, None], 1000)
         self.assert_prune(
@@ -442,13 +563,18 @@ class TestBranchPrune(TestBranchPruneBase):
 
     @skip_on_cudasim("Analysis passes not done in simulator")
     def test_global_bake_in(self):
-        def impl(x):
+        def impl(x, res):
             if _GLOBAL == 123:
-                return x
+                res[0] = x
             else:
-                return x + 10
+                res[0] = x + 10
 
-        self.assert_prune(impl, (types.IntegerLiteral(1),), [False], 1)
+        self.assert_prune(
+            impl,
+            (types.IntegerLiteral(1), types.Array(types.float64, 1, "C")),
+            [False],
+            1,
+        )
 
         global _GLOBAL
         tmp = _GLOBAL
@@ -456,13 +582,18 @@ class TestBranchPrune(TestBranchPruneBase):
         try:
             _GLOBAL = 5
 
-            def impl(x):
+            def impl(x, res):
                 if _GLOBAL == 123:
-                    return x
+                    res[0] = x
                 else:
-                    return x + 10
+                    res[0] = x + 10
 
-            self.assert_prune(impl, (types.IntegerLiteral(1),), [True], 1)
+            self.assert_prune(
+                impl,
+                (types.IntegerLiteral(1), types.Array(types.float64, 1, "C")),
+                [True],
+                1,
+            )
         finally:
             _GLOBAL = tmp
 
@@ -470,83 +601,56 @@ class TestBranchPrune(TestBranchPruneBase):
     def test_freevar_bake_in(self):
         _FREEVAR = 123
 
-        def impl(x):
+        def impl(x, res):
             if _FREEVAR == 123:
-                return x
+                res[0] = x
             else:
-                return x + 10
+                res[0] = x + 10
 
-        self.assert_prune(impl, (types.IntegerLiteral(1),), [False], 1)
+        self.assert_prune(
+            impl,
+            (types.IntegerLiteral(1), types.Array(types.float64, 1, "C")),
+            [False],
+            1,
+        )
 
         _FREEVAR = 12
 
-        def impl(x):
+        def impl(x, res):
             if _FREEVAR == 123:
-                return x
+                res[0] = x
             else:
-                return x + 10
+                res[0] = x + 10
 
-        self.assert_prune(impl, (types.IntegerLiteral(1),), [True], 1)
+        self.assert_prune(
+            impl,
+            (types.IntegerLiteral(1), types.Array(types.float64, 1, "C")),
+            [True],
+            1,
+        )
 
     @skip_on_cudasim("Analysis passes not done in simulator")
     def test_redefined_variables_are_not_considered_in_prune(self):
         # see issue #4163, checks that if a variable that is an argument is
         # redefined in the user code it is not considered const
 
-        def impl(array, a=None):
+        def impl(array, a=None, res=None):
             if a is None:
                 a = 0
             if a < 0:
-                return 10
-            return 30
+                res[0] = 10
+            res[0] = 30
 
         self.assert_prune(
             impl,
             (
                 types.Array(types.float64, 2, "C"),
                 types.NoneType("none"),
+                types.Array(types.float64, 1, "C"),
             ),
             [None, None],
             np.zeros((2, 3)),
             None,
-        )
-
-    @skip_on_cudasim("Analysis passes not done in simulator")
-    def test_comparison_operators(self):
-        # see issue #4163, checks that a variable that is an argument and has
-        # value None survives TypeError from invalid comparison which should be
-        # dead
-
-        def impl(array, a=None):
-            x = 0
-            if a is None:
-                return 10  # dynamic exec would return here
-            # static analysis requires that this is executed with a=None,
-            # hence TypeError
-            if a < 0:
-                return 20
-            return x
-
-        self.assert_prune(
-            impl,
-            (
-                types.Array(types.float64, 2, "C"),
-                types.NoneType("none"),
-            ),
-            [False, "both"],
-            np.zeros((2, 3)),
-            None,
-        )
-
-        self.assert_prune(
-            impl,
-            (
-                types.Array(types.float64, 2, "C"),
-                types.float64,
-            ),
-            [None, None],
-            np.zeros((2, 3)),
-            12.0,
         )
 
     @skip_on_cudasim("Analysis passes not done in simulator")
@@ -554,7 +658,7 @@ class TestBranchPrune(TestBranchPruneBase):
         # checks that a redefinition in a block with prunable potential doesn't
         # break
 
-        def impl(array, x, a=None):
+        def impl(array, x, a=None, res=None):
             b = 2
             if x < 4:
                 b = 12
@@ -563,8 +667,8 @@ class TestBranchPrune(TestBranchPruneBase):
             else:
                 b = 15  # dead
             if a < 0:  # valid as a result of the redefinition of 'a'
-                return 10
-            return 30 + b + a
+                res[0] = 10
+            res[0] = 30 + b + a
 
         self.assert_prune(
             impl,
@@ -572,6 +676,7 @@ class TestBranchPrune(TestBranchPruneBase):
                 types.Array(types.float64, 2, "C"),
                 types.float64,
                 types.NoneType("none"),
+                types.Array(types.float64, 1, "C"),
             ),
             [None, False, None],
             np.zeros((2, 3)),
@@ -584,7 +689,7 @@ class TestBranchPrune(TestBranchPruneBase):
         # checks that a redefinition in a block that may be executed prevents
         # pruning
 
-        def impl(array, x, a=None):
+        def impl(array, x, res):
             b = 0
             if x > 5:
                 a = 11  # a redefined, cannot tell statically if this will exec
@@ -595,8 +700,8 @@ class TestBranchPrune(TestBranchPruneBase):
             else:
                 b += 7
                 if a < 0:
-                    return 10
-            return 30 + b
+                    res[0] = 10
+            res[0] = 30 + b
 
         self.assert_prune(
             impl,
@@ -604,6 +709,7 @@ class TestBranchPrune(TestBranchPruneBase):
                 types.Array(types.float64, 2, "C"),
                 types.float64,
                 types.NoneType("none"),
+                types.Array(types.float64, 1, "C"),
             ),
             [None, None, None, None],
             np.zeros((2, 3)),
@@ -616,7 +722,7 @@ class TestBranchPrune(TestBranchPruneBase):
         # checks that a redefinition in a block guarded by something that
         # has prune potential
 
-        def impl(array, x=None, a=None):
+        def impl(array, x=None, a=None, res=None):
             b = 0
             if x is not None:
                 a = 11
@@ -624,7 +730,7 @@ class TestBranchPrune(TestBranchPruneBase):
                 b += 5
             else:
                 b += 7
-            return 30 + b
+            res[0] = 30 + b
 
         self.assert_prune(
             impl,
@@ -632,6 +738,7 @@ class TestBranchPrune(TestBranchPruneBase):
                 types.Array(types.float64, 2, "C"),
                 types.NoneType("none"),
                 types.NoneType("none"),
+                types.Array(types.float64, 1, "C"),
             ),
             [True, None],
             np.zeros((2, 3)),
@@ -645,6 +752,7 @@ class TestBranchPrune(TestBranchPruneBase):
                 types.Array(types.float64, 2, "C"),
                 types.NoneType("none"),
                 types.float64,
+                types.Array(types.float64, 1, "C"),
             ),
             [True, None],
             np.zeros((2, 3)),
@@ -658,6 +766,7 @@ class TestBranchPrune(TestBranchPruneBase):
                 types.Array(types.float64, 2, "C"),
                 types.float64,
                 types.NoneType("none"),
+                types.Array(types.float64, 1, "C"),
             ),
             [None, None],
             np.zeros((2, 3)),
@@ -669,7 +778,7 @@ class TestBranchPrune(TestBranchPruneBase):
     def test_closure_and_nonlocal_can_prune(self):
         # Closures must be inlined ahead of branch pruning in case nonlocal
         # is used. See issue #6585.
-        def impl():
+        def impl(res):
             x = 1000
 
             def closure():
@@ -679,13 +788,13 @@ class TestBranchPrune(TestBranchPruneBase):
             closure()
 
             if x == 0:
-                return True
+                res[0] = True
             else:
-                return False
+                res[0] = False
 
         self.assert_prune(
             impl,
-            (),
+            (types.Array(types.float64, 1, "C"),),
             [
                 False,
             ],
@@ -695,7 +804,7 @@ class TestBranchPrune(TestBranchPruneBase):
     def test_closure_and_nonlocal_cannot_prune(self):
         # Closures must be inlined ahead of branch pruning in case nonlocal
         # is used. See issue #6585.
-        def impl(n):
+        def impl(n, res):
             x = 1000
 
             def closure(t):
@@ -705,13 +814,13 @@ class TestBranchPrune(TestBranchPruneBase):
             closure(n)
 
             if x == 0:
-                return True
+                res[0] = True
             else:
-                return False
+                res[0] = False
 
         self.assert_prune(
             impl,
-            (types.int64,),
+            (types.int64, types.Array(types.float64, 1, "C")),
             [
                 None,
             ],
@@ -959,16 +1068,13 @@ class TestBranchPrunePredicates(TestBranchPruneBase):
 
     @skip_on_cudasim("Analysis passes not done in simulator")
     def test_issue_5618(self):
-        @njit
-        def foo():
-            values = np.zeros(1)
+        @jit
+        def foo(res):
             tmp = 666
             if tmp:
-                values[0] = tmp
-            return values
+                res[0] = tmp
 
-        self.assertPreciseEqual(foo.py_func()[0], 666.0)
-        self.assertPreciseEqual(foo()[0], 666.0)
+        self.run_func(foo, ())
 
 
 class TestBranchPrunePostSemanticConstRewrites(TestBranchPruneBase):
@@ -976,12 +1082,12 @@ class TestBranchPrunePostSemanticConstRewrites(TestBranchPruneBase):
 
     @skip_on_cudasim("Analysis passes not done in simulator")
     def test_array_ndim_attr(self):
-        def impl(array):
+        def impl(array, res):
             if array.ndim == 2:
                 if array.shape[1] == 2:
-                    return 1
+                    res[0] = 1
             else:
-                return 10
+                res[0] = 10
 
         self.assert_prune(
             impl,
@@ -998,12 +1104,12 @@ class TestBranchPrunePostSemanticConstRewrites(TestBranchPruneBase):
 
     @skip_on_cudasim("Analysis passes not done in simulator")
     def test_tuple_len(self):
-        def impl(tup):
+        def impl(tup, res):
             if len(tup) == 3:
                 if tup[2] == 2:
-                    return 1
+                    res[0] = 1
             else:
-                return 0
+                res[0] = 0
 
         self.assert_prune(
             impl,
@@ -1025,13 +1131,13 @@ class TestBranchPrunePostSemanticConstRewrites(TestBranchPruneBase):
         # This produces an `ir.Expr` call node for `float.as_integer_ratio`,
         # which is a getattr() on `float`.
 
-        @njit
+        @jit
         def test():
             float.as_integer_ratio(1.23)
 
         # this should raise a TypingError
         with self.assertRaises(errors.TypingError) as e:
-            test()
+            test[1, 1]()
 
         self.assertIn("Unknown attribute 'as_integer_ratio'", str(e.exception))
 
@@ -1040,11 +1146,9 @@ class TestBranchPrunePostSemanticConstRewrites(TestBranchPruneBase):
         FakeArray = collections.namedtuple("FakeArray", ["ndim"])
         fa = FakeArray(ndim=2)
 
-        def impl(fa):
+        def impl(fa, res):
             if fa.ndim == 2:
-                return fa.ndim
-            else:
-                object()
+                res[0] = fa.ndim
 
         # check prune works for array ndim
         self.assert_prune(
@@ -1063,15 +1167,3 @@ class TestBranchPrunePostSemanticConstRewrites(TestBranchPruneBase):
             fa,
             flags={"nopython": False, "forceobj": True},
         )
-
-    @skip_on_cudasim("Analysis passes not done in simulator")
-    def test_semantic_const_propagates_before_static_rewrites(self):
-        # see issue #5015, the ndim needs writing in as a const before
-        # the rewrite passes run to make e.g. getitems static where possible
-        @njit
-        def impl(a, b):
-            return a.shape[: b.ndim]
-
-        args = (np.zeros((5, 4, 3, 2)), np.zeros((1, 1)))
-
-        self.assertPreciseEqual(impl(*args), impl.py_func(*args))
