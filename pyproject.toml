@@ -20,10 +20,7 @@ authors = [
 license = "BSD-2-clause"
 license-files = ["LICENSE", "LICENSE.numba"]
 requires-python = ">=3.9"
-dependencies = [
-    "numba>=0.60.0",
-    "llvmlite<0.45; platform_system == 'Windows'"
-]
+dependencies = ["numba>=0.60.0"]
 
 [project.optional-dependencies]
 cu12 = [
