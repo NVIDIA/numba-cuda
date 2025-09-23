@@ -9,7 +9,7 @@ from numba.cuda.core import config
 from numba.core.errors import CompilerError
 
 from numba.cuda.core.untyped_passes import ExtractByteCode, FixupArgs
-from numba.core.targetconfig import ConfigStack
+from numba.cuda.core.targetconfig import ConfigStack
 
 
 class _CompileStatus(object):

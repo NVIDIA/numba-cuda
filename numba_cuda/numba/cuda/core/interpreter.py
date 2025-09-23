@@ -23,7 +23,7 @@ from numba.cuda.utils import (
 )
 from numba.cuda.utils import _lazy_pformat
 from numba.core.byteflow import Flow, AdaptDFA, AdaptCFA, BlockKind
-from numba.core.unsafe import eh
+from numba.cuda.core.unsafe import eh
 from numba.cpython.unsafe.tuple import unpack_single_tuple
 
 

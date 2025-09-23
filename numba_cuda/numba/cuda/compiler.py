@@ -9,19 +9,24 @@ import copy
 from numba.core import ir as numba_ir
 from numba.core import (
     types,
-    funcdesc,
     bytecode,
-    cpu,
 )
+from numba.cuda.core.options import ParallelOptions
 from numba.core.compiler_lock import global_compiler_lock
 from numba.core.errors import NumbaWarning, NumbaInvalidConfigWarning
 from numba.cuda.core.interpreter import Interpreter
-from numba.cuda.core import inline_closurecall
 
 from numba.cuda import cgutils, typing, lowering, nvvmutils, utils
 from numba.cuda.api import get_current_device
 from numba.cuda.codegen import ExternalCodeLibrary
-from numba.cuda.core import sigutils, postproc, config
+
+from numba.cuda.core import (
+    inline_closurecall,
+    sigutils,
+    postproc,
+    config,
+    funcdesc,
+)
 from numba.cuda.cudadrv import nvvm, nvrtc
 from numba.cuda.descriptor import cuda_target
 from numba.cuda.flags import CUDAFlags
@@ -105,7 +110,7 @@ def run_frontend(func, inline_closures=False, emit_dels=False):
     func_ir = interp.interpret(bc)
     if inline_closures:
         inline_pass = inline_closurecall.InlineClosureCallPass(
-            func_ir, cpu.ParallelOptions(False), {}, False
+            func_ir, ParallelOptions(False), {}, False
         )
         inline_pass.run()
     post_proc = postproc.PostProcessor(func_ir)

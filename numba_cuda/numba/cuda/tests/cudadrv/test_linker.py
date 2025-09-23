@@ -5,7 +5,11 @@ import numpy as np
 import warnings
 from numba.cuda import config
 from numba.cuda.testing import unittest
-from numba.cuda.testing import skip_on_cudasim, skip_if_cuda_includes_missing
+from numba.cuda.testing import (
+    skip_on_cudasim,
+    skip_if_cuda_includes_missing,
+    skip_if_nvjitlink_missing,
+)
 from numba.cuda.testing import CUDATestCase, test_data_dir
 from numba.cuda.cudadrv.driver import CudaAPIError, _Linker, LinkerError
 from numba.cuda import require_context
@@ -328,6 +332,18 @@ class TestLinker(CUDATestCase):
         local_mem_size = compiled_specialized.get_local_mem_per_thread()
         calc_size = np.dtype(np.float64).itemsize * LMEM_SIZE
         self.assertGreaterEqual(local_mem_size, calc_size)
+
+    @skip_if_nvjitlink_missing("nvJitLink not installed or new enough (>12.3)")
+    def test_link_for_different_cc(self):
+        linker = _Linker.new(cc=(7, 5), lto=True)
+        code = """
+__device__ int foo(int x) {
+    return x + 1;
+}
+"""
+        linker.add_cu(code, "foo")
+        ptx = linker.get_linked_ptx().decode()
+        assert "target sm_75" in ptx
 
 
 if __name__ == "__main__":

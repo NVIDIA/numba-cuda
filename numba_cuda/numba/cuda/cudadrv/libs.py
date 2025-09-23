@@ -54,9 +54,9 @@ def get_cudalib(lib, static=False):
     """
     if lib in {"nvrtc", "nvvm"}:
         return get_cuda_paths()[lib].info or _dllnamepattern % lib
-    else:
-        dir_type = "static_cudalib_dir" if static else "cudalib_dir"
-        libdir = get_cuda_paths()[dir_type].info
+
+    dir_type = "static_cudalib_dir" if static else "cudalib_dir"
+    libdir = get_cuda_paths()[dir_type].info
 
     candidates = find_lib(lib, libdir, static=static)
     namepattern = _staticnamepattern if static else _dllnamepattern
