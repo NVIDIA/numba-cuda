@@ -5,7 +5,7 @@ import numpy as np
 
 from numba import cuda
 from numba.cuda.testing import unittest, xfail_unless_cudasim, CUDATestCase
-from numba.core import config
+from numba.cuda.core import config
 
 
 class TestException(CUDATestCase):

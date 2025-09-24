@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: BSD-2-Clause
 
 from numba import types
-from numba.core import config
+from numba.cuda.core import config
 
 
 class TestStruct:
