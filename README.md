@@ -1,4 +1,4 @@
-<div align="center"><img src="docs/source/_static/numba-green-icon-rgb.svg" width="200"/></div>
+<div align="center"><img src="https://raw.githubusercontent.com/NVIDIA/numba-cuda/main/docs/source/_static/numba-green-icon-rgb.svg" width="200"/></div>
 
 # Numba CUDA Target
 
