@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-2-Clause
 
-name: "CI: Test wheel on Windows"
+name: "CI: Build wheel on Windows"
 
 on:
   workflow_call:
@@ -12,10 +12,10 @@ on:
         type: string
       script:
         type: string
-        default: "./ci/test_wheel.ps1"
+        default: "./ci/build_wheel.ps1"
 
 jobs:
-  tests:
+  build:
     name: ${{ matrix.PY_VER }}, windows
     strategy:
       fail-fast: false
@@ -25,7 +25,7 @@ jobs:
           - "3.11"
           - "3.12"
           - "3.13"
-    runs-on: "cuda-python-windows-gpu-github"
+    runs-on: windows-2022
     steps:
       - uses: actions/checkout@v4
         with:
@@ -33,28 +33,23 @@ jobs:
           ref: ${{ inputs.sha }}
           fetch-depth: 0
 
-      - name: Update driver
-        run: |
-          .github/workflows/install_gpu_driver.ps1
-
-      - name: Ensure GPU is working
-        run: nvidia-smi
-
-      - uses: actions/download-artifact@v4
-        with:
-          name: wheel-py${{ matrix.PY_VER }}-windows
-          path: wheel
-
-      - name: Display structure of downloaded files
-        run: Get-ChildItem -Recurse
-
       - name: Set up Python ${{ matrix.PY_VER }}
         uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065  # v5.6.0
         with:
           python-version: ${{ matrix.PY_VER }}
 
-      - name: Python tests
+      - name: Set up MSVC
+        uses: ilammy/msvc-dev-cmd@v1  # TODO: ask admin to allow pinning commits
+
+      - name: Python build
         run: |
           ${{ inputs.script }}
         env:
           CUDA_VER: "12.8.0"
+
+      - name: Upload wheel
+        if: "!cancelled()"
+        uses: actions/upload-artifact@v4
+        with:
+          name: wheel-py${{ matrix.PY_VER }}-windows
+          path: ${{ env.wheel_path }}

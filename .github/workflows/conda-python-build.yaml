@@ -104,7 +104,7 @@ jobs:
         if: "!cancelled()"
         uses: actions/upload-artifact@v4
         with:
-          name: conda-repo
+          name: conda-repo-py${{ matrix.PY_VER }}-${{ matrix.ARCH }}
           path: "/tmp/conda-bld-output"
       - name: Publish conda package
         if: inputs.upload_to_anaconda

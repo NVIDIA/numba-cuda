@@ -46,7 +46,7 @@ import numpy as np
 from collections import namedtuple, deque
 
 
-from numba import mviewbuf
+from numba.cuda.cext import mviewbuf
 from numba.core import config
 from numba.cuda import utils, serialize
 from .error import CudaSupportError, CudaDriverError
