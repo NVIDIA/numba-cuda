@@ -32,6 +32,8 @@ rapids-logger "Install wheel with test dependencies"
 $package = Resolve-Path wheel\numba_cuda*.whl | Select-Object -ExpandProperty Path
 echo "Package path: $package"
 python -m pip install "${package}[cu${CUDA_VER_MAJOR},test-cu${CUDA_VER_MAJOR}]"
+python -m pip install "llvmlite<0.45" "numba==0.61.*" # WAR for https://github.com/numba/llvmlite/issues/1297
+
 
 rapids-logger "Build tests"
 $NUMBA_CUDA_TEST_BIN_DIR = (python ci\get_test_binary_dir.py)
