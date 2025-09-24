@@ -6,9 +6,9 @@ import os
 from collections import namedtuple
 import platform
 import importlib.metadata
-from numba.core.config import IS_WIN32
+from numba.cuda.core.config import IS_WIN32
 from numba.cuda.misc.findlib import find_lib
-from numba import config
+from numba.cuda import config
 
 _env_path_tuple = namedtuple("_env_path_tuple", ["by", "info"])
 
