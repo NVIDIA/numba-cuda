@@ -3,7 +3,7 @@
 
 import numpy as np
 import warnings
-from numba import config
+from numba.cuda import config
 from numba.cuda.testing import unittest
 from numba.cuda.testing import (
     skip_on_cudasim,

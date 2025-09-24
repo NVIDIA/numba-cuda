@@ -17,7 +17,7 @@ from functools import reduce
 from copy import copy
 from collections import defaultdict
 
-from numba import config
+from numba.cuda import config
 from numba.core import ir, errors
 from numba.cuda.core import ir_utils
 from numba.cuda.utils import OrderedSet, _lazy_pformat
