@@ -6,7 +6,10 @@ import os
 from functools import wraps
 import numpy as np
 
-from numba import cuda, config, types
+
+from numba import cuda, types
+from numba.cuda import config
+
 from numba.core.runtime.nrt import _nrt_mstats
 from numba.cuda.cudadrv.driver import (
     _Linker,
@@ -17,26 +20,11 @@ from numba.cuda.cudadrv.driver import (
 )
 from numba.cuda.cudadrv import devices
 from numba.cuda.api import get_current_device
-from numba.cuda.utils import _readenv, cached_file_read
+from numba.cuda.utils import cached_file_read
 from numba.cuda.cudadrv.linkable_code import CUSource
 from numba.cuda.typing.templates import signature
 
 from numba.core.extending import intrinsic, overload_classmethod
-
-# Check environment variable or config for NRT statistics enablement
-NRT_STATS = _readenv("NUMBA_CUDA_NRT_STATS", bool, False) or getattr(
-    config, "NUMBA_CUDA_NRT_STATS", False
-)
-if not hasattr(config, "NUMBA_CUDA_NRT_STATS"):
-    config.CUDA_NRT_STATS = NRT_STATS
-
-
-# Check environment variable or config for NRT enablement
-ENABLE_NRT = _readenv("NUMBA_CUDA_ENABLE_NRT", bool, False) or getattr(
-    config, "NUMBA_CUDA_ENABLE_NRT", False
-)
-if not hasattr(config, "NUMBA_CUDA_ENABLE_NRT"):
-    config.CUDA_ENABLE_NRT = ENABLE_NRT
 
 
 def get_include():
@@ -99,9 +87,17 @@ class _Runtime:
 
     def __init__(self):
         """Initialize memsys module and variable"""
+        self._reset()
+
+    def _reset(self):
+        """Reset to the uninitialized state"""
         self._memsys_module = None
         self._memsys = None
         self._initialized = False
+
+    def close(self):
+        """Close and reset"""
+        self._reset()
 
     def _compile_memsys_module(self):
         """

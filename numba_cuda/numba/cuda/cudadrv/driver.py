@@ -47,7 +47,7 @@ from collections import namedtuple, deque
 
 
 from numba import mviewbuf
-from numba.core import config
+from numba.cuda.core import config
 from numba.cuda import utils, serialize
 from .error import CudaSupportError, CudaDriverError
 from .drvapi import API_PROTOTYPES
@@ -155,12 +155,6 @@ class CudaAPIError(CudaDriverError):
 
 
 def locate_driver_and_loader():
-    envpath = config.CUDA_DRIVER
-
-    if envpath == "0":
-        # Force fail
-        _raise_driver_not_found()
-
     # Determine DLL type
     if sys.platform == "win32":
         dlloader = ctypes.WinDLL
@@ -176,26 +170,11 @@ def locate_driver_and_loader():
         dldir = ["/usr/lib", "/usr/lib64"]
         dlnames = ["libcuda.so", "libcuda.so.1"]
 
-    if envpath:
-        try:
-            envpath = os.path.abspath(envpath)
-        except ValueError:
-            raise ValueError(
-                "NUMBA_CUDA_DRIVER %s is not a valid path" % envpath
-            )
-        if not os.path.isfile(envpath):
-            raise ValueError(
-                "NUMBA_CUDA_DRIVER %s is not a valid file "
-                "path.  Note it must be a filepath of the .so/"
-                ".dll/.dylib or the driver" % envpath
-            )
-        candidates = [envpath]
-    else:
-        # First search for the name in the default library path.
-        # If that is not found, try the specific path.
-        candidates = dlnames + [
-            os.path.join(x, y) for x, y in product(dldir, dlnames)
-        ]
+    # First search for the name in the default library path.
+    # If that is not found, try specific common paths.
+    candidates = dlnames + [
+        os.path.join(x, y) for x, y in product(dldir, dlnames)
+    ]
 
     return dlloader, candidates
 
@@ -231,9 +210,7 @@ def find_driver():
 
 DRIVER_NOT_FOUND_MSG = """
 CUDA driver library cannot be found.
-If you are sure that a CUDA driver is installed,
-try setting environment variable NUMBA_CUDA_DRIVER
-with the file path of the CUDA driver shared library.
+Ensure that a compatible NVIDIA driver is installed and available on your system path.
 """
 
 DRIVER_LOAD_ERROR_MSG = """
@@ -2836,10 +2813,7 @@ class _LinkerBase(metaclass=ABCMeta):
     def add_cu(self, cu, name):
         """Add CUDA source in a string to the link. The name of the source
         file should be specified in `name`."""
-        with driver.get_active_context() as ac:
-            dev = driver.get_device(ac.devnum)
-            cc = dev.compute_capability
-        ptx, log = nvrtc.compile(cu, name, cc)
+        ptx, log = nvrtc.compile(cu, name, self.cc)
 
         if config.DUMP_ASSEMBLY:
             print(("ASSEMBLY %s" % name).center(80, "-"))
@@ -3003,10 +2977,7 @@ class _Linker(_LinkerBase):
         self._object_codes.append(obj)
 
     def add_cu(self, cu, name="<cudapy-cu>"):
-        with driver.get_active_context() as ac:
-            dev = driver.get_device(ac.devnum)
-            cc = dev.compute_capability
-        obj, log = nvrtc.compile(cu, name, cc, ltoir=self.lto)
+        obj, log = nvrtc.compile(cu, name, self.cc, ltoir=self.lto)
 
         if not self.lto and config.DUMP_ASSEMBLY:
             print(("ASSEMBLY %s" % name).center(80, "-"))
@@ -3117,6 +3088,7 @@ class CtypesLinker(_LinkerBase):
         if lineinfo:
             options[enums.CU_JIT_GENERATE_LINE_INFO] = c_void_p(1)
 
+        self.cc = cc
         if cc is None:
             # No option value is needed, but we need something as a placeholder
             options[enums.CU_JIT_TARGET_FROM_CUCONTEXT] = 1

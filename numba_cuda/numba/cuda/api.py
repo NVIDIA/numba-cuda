@@ -11,7 +11,7 @@ import os
 import numpy as np
 
 from .cudadrv import devicearray, devices, driver
-from numba.core import config
+from numba.cuda.core import config
 from numba.cuda.api_util import prepare_shape_strides_dtype
 
 # NDarray device helper
@@ -508,6 +508,11 @@ def close():
     Explicitly clears all contexts in the current thread, and destroys all
     contexts if the current thread is the main thread.
     """
+    # Must clear memsys object in case it has been used already
+    from .memory_management import rtsys
+
+    rtsys.close()
+
     devices.reset()
 
 

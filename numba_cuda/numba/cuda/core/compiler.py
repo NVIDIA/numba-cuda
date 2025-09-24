@@ -4,11 +4,12 @@
 from numba.cuda.core.tracing import event
 
 from numba.cuda.core import bytecode
-from numba.core import callconv, config, errors
+from numba.core import callconv, errors
+from numba.cuda.core import config
 from numba.core.errors import CompilerError
 
 from numba.cuda.core.untyped_passes import ExtractByteCode, FixupArgs
-from numba.core.targetconfig import ConfigStack
+from numba.cuda.core.targetconfig import ConfigStack
 
 
 class _CompileStatus(object):

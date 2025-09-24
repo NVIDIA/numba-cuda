@@ -13,8 +13,6 @@ from numba.core import (
     types,
     typing,
     ir,
-    funcdesc,
-    config,
     lowering,
 )
 
@@ -24,7 +22,7 @@ from numba.cuda.core.compiler_machinery import (
     AnalysisPass,
     register_pass,
 )
-from numba.core.annotations import type_annotations
+from numba.cuda.core.annotations import type_annotations
 from numba.cuda.core.ir_utils import (
     raise_on_unsupported_feature,
     warn_deprecated,
@@ -36,7 +34,9 @@ from numba.cuda.core.ir_utils import (
     compute_cfg_from_blocks,
     is_operator_or_getitem,
 )
-from numba.cuda.core import postproc, rewrites
+
+from numba.cuda.core import postproc, rewrites, funcdesc, config
+
 
 try:
     # llvmlite < 0.45
