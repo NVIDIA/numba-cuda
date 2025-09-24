@@ -23,7 +23,8 @@ import traceback
 import numpy as np
 
 from numba import types
-from numba.core import errors, config
+from numba.core import errors
+from numba.cuda.core import config
 from numba.cuda.typing import cffi_utils
 from numba.cuda.memory_management.nrt import rtsys
 from numba.cuda.extending import (
