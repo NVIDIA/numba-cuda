@@ -14,9 +14,8 @@ from numba import (
     uint16,
     uint32,
     uint64,
-    config,
 )
-
+from numba.cuda import config
 
 if not config.ENABLE_CUDASIM:
     from numba.cuda.bf16 import (
