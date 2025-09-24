@@ -7,7 +7,8 @@ from llvmlite import ir
 
 import numpy as np
 import os
-from numba import config, cuda, njit, types
+from numba import cuda, njit, types
+from numba.cuda import config
 from numba.extending import overload
 
 

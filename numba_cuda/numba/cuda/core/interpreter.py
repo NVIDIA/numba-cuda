@@ -8,7 +8,8 @@ import operator
 import logging
 import textwrap
 
-from numba.core import errors, ir, config
+from numba.core import errors, ir
+from numba.cuda.core import config
 from numba.cuda.errors import UnsupportedBytecodeError
 from numba.core.errors import (
     NotDefinedError,
