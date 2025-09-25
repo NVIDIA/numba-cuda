@@ -6,7 +6,7 @@ from numba.cuda.core.compiler import CompilerBase
 from numba.cuda.flags import Flags
 from numba.cuda.core.compiler_machinery import PassManager
 from numba.cuda.core import ir_utils
-from numba.core import types, ir, bytecode, registry
+from numba.core import types, ir, bytecode
 from numba.cuda import compiler
 from numba.cuda.core.untyped_passes import (
     ExtractByteCode,
@@ -47,11 +47,15 @@ class TestIrUtils(CUDATestCase):
                     locals = {}
                 if not flags:
                     flags = Flags()
-                flags.nrt = True
+                # flags.nrt = True
                 if typing_context is None:
-                    typing_context = registry.cpu_target.typing_context
+                    from numba.cuda.descriptor import cuda_target
+
+                    typing_context = cuda_target.typing_context
                 if target_context is None:
-                    target_context = registry.cpu_target.target_context
+                    from numba.cuda.descriptor import cuda_target
+
+                    target_context = cuda_target.target_context
                 return cls(
                     typing_context,
                     target_context,
