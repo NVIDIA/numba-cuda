@@ -43,7 +43,7 @@
 #endif
 #undef _PyGC_FINALIZED
 
-/* dynamic_annotations.h is needed for building Python with --with-valgrind 
+/* dynamic_annotations.h is needed for building Python with --with-valgrind
  * support. The following include is to workaround issues described in
  * https://github.com/numba/numba/pull/10073
  */
