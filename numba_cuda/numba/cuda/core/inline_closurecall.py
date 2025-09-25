@@ -6,7 +6,6 @@ import copy
 import ctypes
 import numba.core.analysis
 from numba.core import types, typing, config, cgutils, ir, errors
-from numba.parfors.parfor import internal_prange
 from numba.cuda import utils
 from numba.cuda.core.ir_utils import (
     next_label,
@@ -35,7 +34,7 @@ from numba.core.analysis import (
     compute_live_variables,
 )
 from numba.core.imputils import impl_ret_untracked
-from numba.core.extending import intrinsic
+from numba.cuda.extending import intrinsic
 from numba.core.typing import signature
 
 from numba.cuda.core import postproc, rewrites
@@ -565,7 +564,6 @@ class InlineWorker(object):
         from numba.cuda.core.compiler import StateDict, _CompileStatus
         from numba.cuda.core.untyped_passes import ExtractByteCode
         from numba.cuda.core import bytecode
-        from numba.parfors.parfor import ParforDiagnostics
 
         state = StateDict()
         state.func_ir = None
@@ -583,7 +581,6 @@ class InlineWorker(object):
         state.type_annotation = None
         state.status = _CompileStatus(False)
         state.return_type = None
-        state.parfor_diagnostics = ParforDiagnostics()
         state.metadata = {}
 
         ExtractByteCode().run_pass(state)
@@ -1105,7 +1102,7 @@ def length_of_iterator(typingctx, val):
         def codegen(context, builder, sig, args):
             (value,) = args
             intp_t = context.get_value_type(types.intp)
-            from numba.cpython.listobj import ListIterInstance
+            from numba.cuda.cpython.listobj import ListIterInstance
 
             iterobj = ListIterInstance(context, builder, sig.args[0], value)
             return impl_ret_untracked(context, builder, intp_t, iterobj.size)
@@ -1325,11 +1322,6 @@ def _inline_arraycall(
             size_val = ir.Expr.binop(
                 fn=operator.sub, lhs=stop, rhs=start, loc=loc
             )
-        # we can parallelize this loop if enable_prange = True, by changing
-        # range function from range, to prange.
-        if enable_prange and isinstance(range_func_def, ir.Global):
-            range_func_def.name = "internal_prange"
-            range_func_def.value = internal_prange
 
     else:
         # this doesn't work in objmode as it's effectively untyped

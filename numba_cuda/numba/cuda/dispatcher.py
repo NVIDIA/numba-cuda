@@ -13,7 +13,7 @@ import uuid
 import re
 from warnings import warn
 
-from numba.core import types, config, errors, entrypoints
+from numba.core import types, errors, entrypoints
 from numba.cuda import serialize, utils
 from numba import cuda
 
@@ -33,7 +33,7 @@ from numba.cuda.compiler import (
     kernel_fixup,
     compile_extra,
 )
-from numba.cuda.core import sigutils
+from numba.cuda.core import sigutils, config
 from numba.cuda.flags import Flags
 from numba.cuda.cudadrv import driver, nvvm
 from numba.cuda.locks import module_init_lock

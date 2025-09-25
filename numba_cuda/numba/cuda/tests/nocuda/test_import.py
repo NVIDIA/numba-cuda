@@ -29,6 +29,11 @@ class TestImport(unittest.TestCase):
             "numba.cuda.cpython.numbers",
             "numba.cuda.cpython.cmathimpl",
             "numba.cuda.cpython.mathimpl",
+            "numba.cuda.cpython.slicing",
+            "numba.cuda.cpython.iterators",
+            "numba.cuda.cpython.listobj",
+            "numba.cuda.cpython.unicode",
+            "numba.cuda.cpython.charseq",
             "numba.core.optional",
             "numba.misc.gdb_hook",
             "numba.misc.literal",
@@ -40,7 +45,6 @@ class TestImport(unittest.TestCase):
             "numba.np.npyimpl",
             "numba.typed.typeddict",
             "numba.typed.typedlist",
-            "numba.experimental.jitclass.base",
         )
 
         code = "import sys; from numba import cuda; print(list(sys.modules))"
