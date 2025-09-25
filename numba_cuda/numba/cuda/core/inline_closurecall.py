@@ -1102,7 +1102,7 @@ def length_of_iterator(typingctx, val):
         def codegen(context, builder, sig, args):
             (value,) = args
             intp_t = context.get_value_type(types.intp)
-            from numba.cpython.listobj import ListIterInstance
+            from numba.cuda.cpython.listobj import ListIterInstance
 
             iterobj = ListIterInstance(context, builder, sig.args[0], value)
             return impl_ret_untracked(context, builder, intp_t, iterobj.size)
