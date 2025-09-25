@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-2-Clause
 
-from numba.cuda.testing import CUDATestCase
+from numba.cuda.testing import CUDATestCase, skip_on_cudasim
 from numba.cuda.core.compiler import CompilerBase
 from numba.cuda.flags import Flags
 from numba.cuda.core.compiler_machinery import PassManager
@@ -18,13 +18,13 @@ from numba.cuda.core.typed_passes import (
     NopythonTypeInference,
     DeadCodeElimination,
 )
-from numba.cuda.testing import skip_on_cudasim
 
 
 # global constant for testing find_const
 GLOBAL_B = 11
 
 
+@skip_on_cudasim("Requires CUDA target")
 class TestIrUtils(CUDATestCase):
     """
     Tests ir handling utility functions like find_callname.
