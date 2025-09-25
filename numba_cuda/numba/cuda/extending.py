@@ -5,13 +5,11 @@
 Added for symmetry with the core API
 """
 
-import os
 import uuid
 import weakref
 import collections
 import functools
 
-import numba
 from numba.core import types, errors, config
 from numba.cuda import utils
 
@@ -507,13 +505,6 @@ def _intrinsic(*args, **kwargs):
 
 
 intrinsic = _intrinsic(target="cuda")
-
-
-def include_path():
-    """Returns the C include directory path."""
-    include_dir = os.path.dirname(os.path.dirname(numba.__file__))
-    path = os.path.abspath(include_dir)
-    return path
 
 
 def sentry_literal_args(pysig, literal_args, args, kwargs):
