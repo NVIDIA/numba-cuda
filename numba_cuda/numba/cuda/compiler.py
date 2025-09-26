@@ -9,7 +9,6 @@ import copy
 from numba.core import ir as numba_ir
 from numba.core import (
     types,
-    config,
     bytecode,
 )
 from numba.cuda.core.options import ParallelOptions
@@ -20,7 +19,14 @@ from numba.cuda.core.interpreter import Interpreter
 from numba.cuda import cgutils, typing, lowering, nvvmutils, utils
 from numba.cuda.api import get_current_device
 from numba.cuda.codegen import ExternalCodeLibrary
-from numba.cuda.core import inline_closurecall, sigutils, postproc, funcdesc
+
+from numba.cuda.core import (
+    inline_closurecall,
+    sigutils,
+    postproc,
+    config,
+    funcdesc,
+)
 from numba.cuda.cudadrv import nvvm, nvrtc
 from numba.cuda.cudadrv.linkable_code import LinkableCode
 from numba.cuda.descriptor import cuda_target

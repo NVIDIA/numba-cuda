@@ -8,7 +8,7 @@ from numba.cuda import get_current_device
 from numba.cuda.cudadrv.driver import _Linker, _have_nvjitlink
 
 from numba import cuda
-from numba import config
+from numba.cuda import config
 
 import os
 import io
