@@ -19,7 +19,7 @@ from numba.core.imputils import (
 )
 from numba.core.extending import overload_method, overload
 from numba.misc import quicksort
-from numba.cpython import slicing
+from numba.cuda.cpython import slicing
 from numba import literal_unroll
 
 registry = Registry("listobj")
