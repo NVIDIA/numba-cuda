@@ -153,7 +153,7 @@ class CUDATargetContext(BaseContext):
         self._target_data = None
 
     def load_additional_registries(self):
-        # side effect of import needed for numba.cpython.*, numba.cuda.cpython.*, the builtins
+        # side effect of import needed for numba.cuda.cpython.*, the builtins
         # registry is updated at import time.
         from numba.cuda.cpython import (
             numbers,
