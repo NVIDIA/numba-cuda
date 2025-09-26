@@ -14,7 +14,6 @@ from numba import (
     types,
     uint32,
     void,
-    config,
 )
 from numba.cuda import (
     compile,
@@ -558,7 +557,7 @@ class TestCompile(unittest.TestCase):
                 link_obj = LinkableCode.from_path(link)
                 if link_obj.kind == "cu":
                     # if link is a cu file, result contains a compiled object code
-                    if config.CUDA_USE_NVIDIA_BINDING:
+                    if cuda.config.CUDA_USE_NVIDIA_BINDING:
                         from cuda.core.experimental import ObjectCode
 
                         assert isinstance(code_list[1], ObjectCode)
@@ -582,7 +581,7 @@ class TestCompile(unittest.TestCase):
         )
         assert len(code_list) == 2
 
-        if config.CUDA_USE_NVIDIA_BINDING:
+        if cuda.config.CUDA_USE_NVIDIA_BINDING:
             self.assertRegex(
                 str(code_list[1].code.decode()),
                 r"\.file.*test_device_functions",
@@ -605,7 +604,7 @@ class TestCompile(unittest.TestCase):
         )
         assert len(code_list) == 2
 
-        if config.CUDA_USE_NVIDIA_BINDING:
+        if cuda.config.CUDA_USE_NVIDIA_BINDING:
             self.assertRegex(
                 str(code_list[1].code.decode()), r"\.section\s+\.debug_info"
             )
