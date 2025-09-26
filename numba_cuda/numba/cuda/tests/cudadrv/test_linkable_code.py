@@ -5,6 +5,7 @@ import os
 from numba import cuda
 from numba.cuda.cudadrv.linkable_code import LinkableCode
 from numba.cuda.testing import CUDATestCase, skip_on_cudasim
+import unittest
 
 TEST_BIN_DIR = os.getenv("NUMBA_CUDA_TEST_BIN_DIR")
 if TEST_BIN_DIR:
@@ -36,6 +37,7 @@ if TEST_BIN_DIR:
 
 class TestLinkableCode(CUDATestCase):
     @skip_on_cudasim(reason="Simulator does not support linkable code")
+    @unittest.skipIf(not TEST_BIN_DIR, "necessary binaries not generated.")
     def test_linkable_code_from_path_or_obj(self):
         files_kind = [
             (test_device_functions_a, cuda.Archive),

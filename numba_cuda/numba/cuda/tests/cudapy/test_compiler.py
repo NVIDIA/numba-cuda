@@ -529,6 +529,7 @@ class TestCompile(unittest.TestCase):
             if cond:
                 b_smem[0] = b_arg[0]
 
+    @unittest.skipIf(not TEST_BIN_DIR, "necessary binaries not generated.")
     def test_compile_all_with_external_functions(self):
         for link in [
             test_device_functions_a,
@@ -566,6 +567,7 @@ class TestCompile(unittest.TestCase):
                 else:
                     assert code_list[1].kind == link_obj.kind
 
+    @unittest.skipIf(not TEST_BIN_DIR, "necessary binaries not generated.")
     def test_compile_all_lineinfo(self):
         add = cuda.declare_device(
             "add", "float32(float32, float32)", link=[test_device_functions_cu]
@@ -588,6 +590,7 @@ class TestCompile(unittest.TestCase):
         else:
             self.assertRegex(code_list[1], r"\.file.*test_device_functions")
 
+    @unittest.skipIf(not TEST_BIN_DIR, "necessary binaries not generated.")
     def test_compile_all_debug(self):
         add = cuda.declare_device(
             "add", "float32(float32, float32)", link=[test_device_functions_cu]
