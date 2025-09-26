@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: BSD-2-Clause
 
 from abc import abstractmethod, ABCMeta
-from numba.misc.llvm_pass_timings import PassTimingsCollection
+from numba.cuda.misc.llvm_pass_timings import PassTimingsCollection
 
 
 class CodeLibrary(metaclass=ABCMeta):
