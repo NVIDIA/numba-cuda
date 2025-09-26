@@ -1026,7 +1026,7 @@ def compile_all(
     codes = [code]
 
     # linking_files
-    lto = output == "ltoir"
+    is_ltoir = output == "ltoir"
     for path_or_obj in lib._linking_files:
         obj = LinkableCode.from_path_or_obj(path_or_obj)
         if obj.kind == "cu":
@@ -1034,7 +1034,7 @@ def compile_all(
                 obj.data,
                 obj.name,
                 cc,
-                ltoir=lto,
+                ltoir=is_ltoir,
                 lineinfo=lineinfo,
                 debug=debug,
             )
