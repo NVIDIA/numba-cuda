@@ -169,7 +169,7 @@ class CUDATargetContext(BaseContext):
         from numba.cpython import rangeobj, enumimpl  # noqa: F401
         from numba.core import optional  # noqa: F401
         from numba.misc import cffiimpl
-        from numba.np import arrayobj  # noqa: F401
+        from numba.cuda.np import arrayobj  # noqa: F401
         from numba.np import npdatetime  # noqa: F401
         from . import (
             cudaimpl,
@@ -182,7 +182,7 @@ class CUDATargetContext(BaseContext):
         )
 
         # fix for #8940
-        from numba.np.unsafe import ndarray  # noqa F401
+        from numba.cuda.np.unsafe import ndarray  # noqa F401
 
         self.install_registry(cudaimpl.registry)
         self.install_registry(cffiimpl.registry)
