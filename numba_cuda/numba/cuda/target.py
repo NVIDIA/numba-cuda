@@ -155,13 +155,19 @@ class CUDATargetContext(BaseContext):
     def load_additional_registries(self):
         # side effect of import needed for numba.cpython.*, numba.cuda.cpython.*, the builtins
         # registry is updated at import time.
-        from numba.cpython import slicing  # noqa: F401
-        from numba.cuda.cpython import numbers  # noqa: F401
-        from numba.cuda.cpython import rangeobj, tupleobj, enumimpl
-        from numba.cpython import iterators  # noqa: F401
-        from numba.cpython import unicode  # noqa: F401
-        from numba.cuda.cpython import cmathimpl, mathimpl
-        from numba.cuda.cpython import charseq
+        from numba.cuda.cpython import (
+            numbers,
+            slicing,
+            iterators,
+            listobj,
+            unicode,
+            charseq,
+            cmathimpl,
+            mathimpl,
+            tupleobj,
+            rangeobj,
+            enumimpl,
+        )
         from numba.core import optional  # noqa: F401
         from numba.misc import cffiimpl
         from numba.np import arrayobj  # noqa: F401
@@ -194,6 +200,11 @@ class CUDATargetContext(BaseContext):
         self.install_registry(tupleobj.registry)
         self.install_registry(charseq.registry)
         self.install_registry(enumimpl.registry)
+        self.install_registry(slicing.registry)
+        self.install_registry(iterators.registry)
+        self.install_registry(listobj.registry)
+        self.install_registry(unicode.registry)
+        self.install_registry(charseq.registry)
 
     def codegen(self):
         return self._internal_codegen

@@ -9,17 +9,18 @@ from llvmlite import ir
 
 from numba.core import types
 from numba.cuda import cgutils
-from numba.core.extending import (
-    intrinsic,
+from numba.cuda.extending import (
+    overload,
     overload_method,
     register_jitable,
-    overload,
+    intrinsic,
 )
 from numba.core.imputils import Registry
 from numba.cuda.cgutils import is_nonelike
-from numba.cpython import unicode
+from numba.cuda.cpython import unicode
 
 registry = Registry("charseq")
+lower = registry.lower
 lower_cast = registry.lower_cast
 
 # bytes and str arrays items are of type CharSeq and UnicodeCharSeq,
