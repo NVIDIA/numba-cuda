@@ -34,7 +34,6 @@ from numba.cuda.core.pythonapi import (
     PY_UNICODE_4BYTE_KIND,
 )
 from numba._helperlib import c_helpers
-from numba.cpython.hashing import _Py_hash_t
 from numba.cuda.core.unsafe.bytes import memcpy_region
 from numba.core.errors import TypingError
 from numba.cuda.cpython.unicode_support import (
@@ -73,6 +72,9 @@ from numba.cuda.cpython.unicode_support import (
     _PyUnicode_IsDecimalDigit,
 )
 from numba.cuda.cpython import slicing
+
+_hash_width = sys.hash_info.width
+_Py_hash_t = getattr(types, "int%s" % _hash_width)
 
 registry = Registry("unicode")
 lower = registry.lower
