@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: BSD-2-Clause
 
 from numba.cuda.cudadrv import devices, driver
-from numba.core.registry import cpu_target
+from numba.cuda.core.registry import cpu_target
 
 
 def _calc_array_sizeof(ndim):
