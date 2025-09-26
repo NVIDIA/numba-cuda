@@ -47,7 +47,7 @@ class TestIrUtils(CUDATestCase):
                     locals = {}
                 if not flags:
                     flags = Flags()
-                # flags.nrt = True
+
                 if typing_context is None:
                     from numba.cuda.descriptor import cuda_target
 
