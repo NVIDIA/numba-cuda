@@ -8,22 +8,20 @@ from llvmlite import ir
 
 from numba import _dynfunc
 from numba.core.callwrapper import PyCallWrapper
-from numba.core.base import BaseContext
+from numba.cuda.core.base import BaseContext
 from numba.core import (
-    utils,
     types,
     config,
-    cgutils,
     callconv,
-    codegen,
     externals,
     fastmathpass,
-    intrinsics,
 )
+from numba.cuda import utils, cgutils, intrinsics
 from numba.core.options import TargetOptions, include_default_options
 from numba.core.runtime import rtsys
 from numba.core.compiler_lock import global_compiler_lock
 import numba.core.entrypoints
+from numba.cuda.core import codegen
 
 # Re-export these options, they are used from the cpu module throughout the code
 # base.
@@ -89,7 +87,7 @@ class CPUContext(BaseContext):
             rangeobj,  # noqa F401
             tupleobj,  # noqa F401
         )  # noqa F401
-        from numba.core import optional, inline_closurecall  # noqa F401
+        from numba.cuda.core import optional, inline_closurecall  # noqa F401
         from numba.misc import gdb_hook, literal  # noqa F401
         from numba.np import linalg, arraymath, arrayobj  # noqa F401
         from numba.np.random import generator_core, generator_methods  # noqa F401
@@ -108,6 +106,7 @@ class CPUContext(BaseContext):
         )
 
         self.install_registry(cmathimpl.registry)
+        self.install_registry(optional.registry)
         self.install_registry(cffiimpl.registry)
         self.install_registry(mathimpl.registry)
         self.install_registry(npyimpl.registry)
