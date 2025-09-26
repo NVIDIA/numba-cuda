@@ -3,7 +3,7 @@
 
 from numba.cuda.testing import unittest, CUDATestCase
 from numba import cuda
-from numba.core import config
+from numba.cuda.core import config
 
 
 class MyError(Exception):

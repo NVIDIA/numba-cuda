@@ -20,7 +20,7 @@ import numba
 from llvmlite import ir
 from numba import types
 from numba.core.datamodel import PrimitiveModel, StructModel
-from numba.core.extending import (
+from numba.cuda.extending import (
     lower_cast,
     make_attribute_wrapper,
     register_model,
@@ -40,7 +40,7 @@ from numba.cuda.typing.templates import AttributeTemplate, ConcreteTemplate
 from numba.cuda.typing.templates import Registry as TypingRegistry
 from numba.cuda import CUSource, declare_device
 from numba.cuda.vector_types import vector_types
-from numba.extending import as_numba_type
+from numba.cuda.extending import as_numba_type
 from numba.types import (
     CPointer,
     Function,

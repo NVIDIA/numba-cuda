@@ -10,10 +10,10 @@ import collections
 import warnings
 
 import numba
-from numba.core.extending import _Intrinsic
-from numba.core import types, ir, analysis, config
+from numba.cuda.extending import _Intrinsic
+from numba.core import types, ir, analysis
 from numba.cuda import typing
-from numba.cuda.core import postproc, rewrites
+from numba.cuda.core import postproc, rewrites, config
 from numba.cuda.typing.templates import signature
 from numba.core.analysis import (
     compute_live_map,
@@ -1788,7 +1788,7 @@ def find_callname(
             def_val = callee_def.value
             # get the underlying definition of Intrinsic object to be able to
             # find the module effectively.
-            # Otherwise, it will return numba.extending
+            # Otherwise, it will return numba.cuda.extending
             if isinstance(def_val, _Intrinsic):
                 def_val = def_val._defn
             if hasattr(def_val, "__module__"):
