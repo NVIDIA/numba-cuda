@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: BSD-2-Clause
 
 import importlib
-from numba.core import config
+from numba.cuda.core import config
 from .utils import _readenv
 import warnings
 

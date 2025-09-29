@@ -15,7 +15,7 @@ from warnings import warn
 
 from numba import cuda, _dispatcher
 
-from numba.core import types, config
+from numba.core import types
 from numba.core.compiler_lock import global_compiler_lock
 from numba.core.dispatcher import _DispatcherBase
 from numba.core.errors import NumbaPerformanceWarning, TypingError
@@ -31,7 +31,7 @@ from numba.cuda.compiler import (
     kernel_fixup,
     compile_extra,
 )
-from numba.cuda.core import sigutils
+from numba.cuda.core import sigutils, config
 from numba.cuda.flags import Flags
 from numba.cuda.cudadrv import driver, nvvm
 from numba.cuda.locks import module_init_lock

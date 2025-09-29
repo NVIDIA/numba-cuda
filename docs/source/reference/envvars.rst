@@ -52,12 +52,7 @@ target.
    Setting this variable to 1 also includes the values of arguments to Driver
    API calls in the logs.
 
-.. envvar:: NUMBA_CUDA_DRIVER
 
-   Path of the directory in which the CUDA driver libraries are to be found.
-   Normally this should not need to be set as Numba can locate the driver in
-   standard locations. However, this variable can be used if the driver is in a
-   non-standard location.
 
 .. envvar:: NUMBA_CUDA_LOG_SIZE
 

@@ -4,7 +4,6 @@
 import math
 
 from numba import (
-    config,
     cuda,
     float32,
     float64,
@@ -14,6 +13,7 @@ from numba import (
     from_dtype,
     jit,
 )
+from numba.cuda import config
 
 import numpy as np
 

@@ -8,7 +8,8 @@ import inspect
 
 
 from numba.core.compiler_lock import global_compiler_lock
-from numba.core import errors, config
+from numba.core import errors
+from numba.cuda.core import config
 from numba.cuda import utils
 from numba.cuda.core import transforms
 from numba.cuda.core.tracing import event

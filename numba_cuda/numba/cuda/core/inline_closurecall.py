@@ -5,8 +5,8 @@ import types as pytypes  # avoid confusion with numba.types
 import copy
 import ctypes
 import numba.core.analysis
-from numba.core import types, typing, config, cgutils, ir, errors
-from numba.cuda import utils
+from numba.core import types, typing, config, ir, errors
+from numba.cuda import utils, cgutils
 from numba.cuda.core.ir_utils import (
     next_label,
     add_offset_to_labels,
@@ -34,7 +34,7 @@ from numba.core.analysis import (
     compute_live_variables,
 )
 from numba.core.imputils import impl_ret_untracked
-from numba.core.extending import intrinsic
+from numba.cuda.extending import intrinsic
 from numba.core.typing import signature
 
 from numba.cuda.core import postproc, rewrites
@@ -1102,7 +1102,7 @@ def length_of_iterator(typingctx, val):
         def codegen(context, builder, sig, args):
             (value,) = args
             intp_t = context.get_value_type(types.intp)
-            from numba.cpython.listobj import ListIterInstance
+            from numba.cuda.cpython.listobj import ListIterInstance
 
             iterobj = ListIterInstance(context, builder, sig.args[0], value)
             return impl_ret_untracked(context, builder, intp_t, iterobj.size)

@@ -17,9 +17,8 @@ from numba.core import (
     errors,
     types,
     ir,
-    config,
 )
-from numba.cuda.core import consts, rewrites
+from numba.cuda.core import consts, rewrites, config
 from numba.cuda.core.interpreter import Interpreter
 
 

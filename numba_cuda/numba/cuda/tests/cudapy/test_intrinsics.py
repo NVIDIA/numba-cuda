@@ -629,7 +629,7 @@ class TestCudaIntrinsic(CUDATestCase):
         arg1 = np.array([3.0], dtype=np.float16)
         arg2 = np.array([4.0], dtype=np.float16)
         compiled[1, 1](ary, arg1, arg2)
-        np.testing.assert_allclose(ary[0], arg1 + arg2)
+        np.testing.assert_allclose(ary[0], arg1 + arg2, rtol=self.FLOAT16_RTOL)
 
     @skip_unless_cc_53
     def test_hadd_scalar(self):
@@ -639,7 +639,7 @@ class TestCudaIntrinsic(CUDATestCase):
         arg2 = np.float16(3.0)
         compiled[1, 1](ary, arg1, arg2)
         ref = arg1 + arg2
-        np.testing.assert_allclose(ary[0], ref)
+        np.testing.assert_allclose(ary[0], ref, rtol=self.FLOAT16_RTOL)
 
     @skip_on_cudasim("Compilation unsupported in the simulator")
     @skip_if_nvjitlink_missing("Numbast generated bindings")
@@ -657,7 +657,9 @@ class TestCudaIntrinsic(CUDATestCase):
         arg2 = np.array([3.0], dtype=np.float16)
         arg3 = np.array([4.0], dtype=np.float16)
         compiled[1, 1](ary, arg1, arg2, arg3)
-        np.testing.assert_allclose(ary[0], arg1 * arg2 + arg3)
+        np.testing.assert_allclose(
+            ary[0], arg1 * arg2 + arg3, rtol=self.FLOAT16_RTOL
+        )
 
     @skip_unless_cc_53
     def test_hfma_scalar(self):
@@ -668,7 +670,7 @@ class TestCudaIntrinsic(CUDATestCase):
         arg3 = np.float16(4.0)
         compiled[1, 1](ary, arg1, arg2, arg3)
         ref = arg1 * arg2 + arg3
-        np.testing.assert_allclose(ary[0], ref)
+        np.testing.assert_allclose(ary[0], ref, rtol=self.FLOAT16_RTOL)
 
     @skip_on_cudasim("Compilation unsupported in the simulator")
     @skip_if_nvjitlink_missing("Numbast generated bindings")
@@ -687,7 +689,7 @@ class TestCudaIntrinsic(CUDATestCase):
         arg1 = np.array([3.0], dtype=np.float16)
         arg2 = np.array([4.0], dtype=np.float16)
         compiled[1, 1](ary, arg1, arg2)
-        np.testing.assert_allclose(ary[0], arg1 - arg2)
+        np.testing.assert_allclose(ary[0], arg1 - arg2, rtol=self.FLOAT16_RTOL)
 
     @skip_unless_cc_53
     def test_hsub_scalar(self):
@@ -697,7 +699,7 @@ class TestCudaIntrinsic(CUDATestCase):
         arg2 = np.float16(1.57)
         compiled[1, 1](ary, arg1, arg2)
         ref = arg1 - arg2
-        np.testing.assert_allclose(ary[0], ref)
+        np.testing.assert_allclose(ary[0], ref, rtol=self.FLOAT16_RTOL)
 
     @skip_on_cudasim("Compilation unsupported in the simulator")
     @skip_if_nvjitlink_missing("Numbast generated bindings")
@@ -714,7 +716,7 @@ class TestCudaIntrinsic(CUDATestCase):
         arg1 = np.array([3.0], dtype=np.float16)
         arg2 = np.array([4.0], dtype=np.float16)
         compiled[1, 1](ary, arg1, arg2)
-        np.testing.assert_allclose(ary[0], arg1 * arg2)
+        np.testing.assert_allclose(ary[0], arg1 * arg2, rtol=self.FLOAT16_RTOL)
 
     @skip_unless_cc_53
     def test_hmul_scalar(self):
@@ -724,7 +726,7 @@ class TestCudaIntrinsic(CUDATestCase):
         arg2 = np.float16(1.57)
         compiled[1, 1](ary, arg1, arg2)
         ref = arg1 * arg2
-        np.testing.assert_allclose(ary[0], ref)
+        np.testing.assert_allclose(ary[0], ref, rtol=self.FLOAT16_RTOL)
 
     @skip_on_cudasim("Compilation unsupported in the simulator")
     @skip_if_nvjitlink_missing("Numbast generated bindings")
@@ -743,7 +745,7 @@ class TestCudaIntrinsic(CUDATestCase):
 
         compiled[1, 1](ary, arg1, arg2)
         ref = arg1 / arg2
-        np.testing.assert_allclose(ary[0], ref)
+        np.testing.assert_allclose(ary[0], ref, rtol=self.FLOAT16_RTOL)
 
     @skip_unless_cc_53
     def test_hdiv(self):
@@ -754,7 +756,7 @@ class TestCudaIntrinsic(CUDATestCase):
 
         compiled.forall(ary.size)(ary, arry1, arry2)
         ref = arry1 / arry2
-        np.testing.assert_allclose(ary, ref)
+        np.testing.assert_allclose(ary, ref, rtol=self.FLOAT16_RTOL)
 
     @skip_unless_cc_53
     def test_hneg(self):
@@ -762,7 +764,7 @@ class TestCudaIntrinsic(CUDATestCase):
         ary = np.zeros(1, dtype=np.float16)
         arg1 = np.array([3.0], dtype=np.float16)
         compiled[1, 1](ary, arg1)
-        np.testing.assert_allclose(ary[0], -arg1)
+        np.testing.assert_allclose(ary[0], -arg1, rtol=self.FLOAT16_RTOL)
 
     @skip_unless_cc_53
     def test_hneg_scalar(self):
@@ -771,7 +773,7 @@ class TestCudaIntrinsic(CUDATestCase):
         arg1 = np.float16(3.1415926)
         compiled[1, 1](ary, arg1)
         ref = -arg1
-        np.testing.assert_allclose(ary[0], ref)
+        np.testing.assert_allclose(ary[0], ref, rtol=self.FLOAT16_RTOL)
 
     @skip_on_cudasim("Compilation unsupported in the simulator")
     @skip_if_nvjitlink_missing("Numbast generated bindings")
@@ -787,7 +789,7 @@ class TestCudaIntrinsic(CUDATestCase):
         ary = np.zeros(1, dtype=np.float16)
         arg1 = np.array([-3.0], dtype=np.float16)
         compiled[1, 1](ary, arg1)
-        np.testing.assert_allclose(ary[0], abs(arg1))
+        np.testing.assert_allclose(ary[0], abs(arg1), rtol=self.FLOAT16_RTOL)
 
     @skip_unless_cc_53
     def test_habs_scalar(self):
@@ -796,7 +798,7 @@ class TestCudaIntrinsic(CUDATestCase):
         arg1 = np.float16(-3.1415926)
         compiled[1, 1](ary, arg1)
         ref = abs(arg1)
-        np.testing.assert_allclose(ary[0], ref)
+        np.testing.assert_allclose(ary[0], ref, rtol=self.FLOAT16_RTOL)
 
     @skip_on_cudasim("Compilation unsupported in the simulator")
     @skip_if_nvjitlink_missing("Numbast generated bindings")
@@ -849,7 +851,7 @@ class TestCudaIntrinsic(CUDATestCase):
                 kernel = cuda.jit("void(f2[:], f2[:])")(kernel)
                 kernel[1, N](r, x)
                 expected = fn(x, dtype=np.float16)
-                np.testing.assert_allclose(r, expected)
+                np.testing.assert_allclose(r, expected, rtol=self.FLOAT16_RTOL)
 
         x2 = np.random.randint(1, 10, size=N).astype(np.float16)
         for kernel, fn in zip(exp_kernels, expected_exp_functions):
@@ -857,7 +859,7 @@ class TestCudaIntrinsic(CUDATestCase):
                 kernel = cuda.jit("void(f2[:], f2[:])")(kernel)
                 kernel[1, N](r, x2)
                 expected = fn(x2, dtype=np.float16)
-                np.testing.assert_allclose(r, expected)
+                np.testing.assert_allclose(r, expected, rtol=self.FLOAT16_RTOL)
 
     @skip_unless_cc_53
     def test_hexp10(self):
@@ -876,7 +878,7 @@ class TestCudaIntrinsic(CUDATestCase):
 
         # Run the kernel
         hexp10_vectors[1, N](r, x)
-        np.testing.assert_allclose(r, 10**x)
+        np.testing.assert_allclose(r, 10**x, rtol=self.FLOAT16_RTOL)
 
     @skip_unless_cc_53
     def test_fp16_comparison(self):
@@ -948,10 +950,10 @@ class TestCudaIntrinsic(CUDATestCase):
         arg1 = np.float16(3.0)
         arg2 = np.float16(4.0)
         compiled[1, 1](ary, arg1, arg2)
-        np.testing.assert_allclose(ary[0], arg2)
+        np.testing.assert_allclose(ary[0], arg2, rtol=self.FLOAT16_RTOL)
         arg1 = np.float16(5.0)
         compiled[1, 1](ary, arg1, arg2)
-        np.testing.assert_allclose(ary[0], arg1)
+        np.testing.assert_allclose(ary[0], arg1, rtol=self.FLOAT16_RTOL)
 
     @skip_unless_cc_53
     def test_hmin(self):
@@ -960,10 +962,10 @@ class TestCudaIntrinsic(CUDATestCase):
         arg1 = np.float16(3.0)
         arg2 = np.float16(4.0)
         compiled[1, 1](ary, arg1, arg2)
-        np.testing.assert_allclose(ary[0], arg1)
+        np.testing.assert_allclose(ary[0], arg1, rtol=self.FLOAT16_RTOL)
         arg1 = np.float16(5.0)
         compiled[1, 1](ary, arg1, arg2)
-        np.testing.assert_allclose(ary[0], arg2)
+        np.testing.assert_allclose(ary[0], arg2, rtol=self.FLOAT16_RTOL)
 
     def test_cbrt_f32(self):
         compiled = cuda.jit("void(float32[:], float32)")(simple_cbrt)

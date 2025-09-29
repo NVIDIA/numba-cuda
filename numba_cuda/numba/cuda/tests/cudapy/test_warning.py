@@ -15,7 +15,7 @@ from numba.cuda.tests.support import (
     run_in_subprocess,
 )
 from numba.core.errors import NumbaPerformanceWarning
-from numba.core import config
+from numba.cuda.core import config
 import warnings
 
 

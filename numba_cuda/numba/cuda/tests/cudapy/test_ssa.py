@@ -14,7 +14,7 @@ from numba import types, cuda
 from numba.cuda import jit
 from numba.core import errors
 
-from numba.extending import overload
+from numba.cuda.extending import overload
 from numba.cuda.tests.support import override_config
 from numba.cuda.testing import CUDATestCase, skip_on_cudasim
 
@@ -23,7 +23,7 @@ _DEBUG = False
 
 if _DEBUG:
     # Enable debug logger on SSA reconstruction
-    ssa_logger = logging.getLogger("numba.core.ssa")
+    ssa_logger = logging.getLogger("numba.cuda.core.ssa")
     ssa_logger.setLevel(level=logging.DEBUG)
     ssa_logger.addHandler(logging.StreamHandler(sys.stderr))
 

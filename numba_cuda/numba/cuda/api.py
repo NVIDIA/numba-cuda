@@ -11,7 +11,7 @@ import os
 import numpy as np
 
 from .cudadrv import devicearray, devices, driver
-from numba.core import config
+from numba.cuda.core import config
 from numba.cuda.api_util import prepare_shape_strides_dtype
 
 # NDarray device helper

@@ -9,7 +9,7 @@ from llvmlite import ir
 
 from numba.core import types
 from numba.cuda import cgutils
-from numba.core.extending import intrinsic
+from numba.cuda.extending import intrinsic
 
 _word_type = ir.IntType(64)
 _pointer_type = ir.PointerType(ir.IntType(8))

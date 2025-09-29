@@ -47,7 +47,7 @@ from collections import namedtuple, deque
 
 
 from numba import mviewbuf
-from numba.core import config
+from numba.cuda.core import config
 from numba.cuda import utils, serialize
 from .error import CudaSupportError, CudaDriverError
 from .drvapi import API_PROTOTYPES
@@ -155,12 +155,6 @@ class CudaAPIError(CudaDriverError):
 
 
 def locate_driver_and_loader():
-    envpath = config.CUDA_DRIVER
-
-    if envpath == "0":
-        # Force fail
-        _raise_driver_not_found()
-
     # Determine DLL type
     if sys.platform == "win32":
         dlloader = ctypes.WinDLL
@@ -176,26 +170,11 @@ def locate_driver_and_loader():
         dldir = ["/usr/lib", "/usr/lib64"]
         dlnames = ["libcuda.so", "libcuda.so.1"]
 
-    if envpath:
-        try:
-            envpath = os.path.abspath(envpath)
-        except ValueError:
-            raise ValueError(
-                "NUMBA_CUDA_DRIVER %s is not a valid path" % envpath
-            )
-        if not os.path.isfile(envpath):
-            raise ValueError(
-                "NUMBA_CUDA_DRIVER %s is not a valid file "
-                "path.  Note it must be a filepath of the .so/"
-                ".dll/.dylib or the driver" % envpath
-            )
-        candidates = [envpath]
-    else:
-        # First search for the name in the default library path.
-        # If that is not found, try the specific path.
-        candidates = dlnames + [
-            os.path.join(x, y) for x, y in product(dldir, dlnames)
-        ]
+    # First search for the name in the default library path.
+    # If that is not found, try specific common paths.
+    candidates = dlnames + [
+        os.path.join(x, y) for x, y in product(dldir, dlnames)
+    ]
 
     return dlloader, candidates
 
@@ -231,9 +210,7 @@ def find_driver():
 
 DRIVER_NOT_FOUND_MSG = """
 CUDA driver library cannot be found.
-If you are sure that a CUDA driver is installed,
-try setting environment variable NUMBA_CUDA_DRIVER
-with the file path of the CUDA driver shared library.
+Ensure that a compatible NVIDIA driver is installed and available on your system path.
 """
 
 DRIVER_LOAD_ERROR_MSG = """

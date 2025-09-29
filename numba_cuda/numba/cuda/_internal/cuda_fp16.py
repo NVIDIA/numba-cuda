@@ -22,7 +22,7 @@ from numba import types
 from numba.cuda.cudadrv.driver import _have_nvjitlink
 from numba.core.datamodel import PrimitiveModel, StructModel
 from numba.core.errors import NumbaPerformanceWarning
-from numba.core.extending import (
+from numba.cuda.extending import (
     lower_cast,
     make_attribute_wrapper,
     register_model,
@@ -39,7 +39,7 @@ from numba.cuda.typing.templates import (
 )
 from numba.cuda.typing.templates import Registry as TypingRegistry
 from numba.cuda.vector_types import vector_types
-from numba.extending import as_numba_type
+from numba.cuda.extending import as_numba_type
 from numba.types import (
     CPointer,
     Function,
