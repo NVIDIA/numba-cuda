@@ -34,7 +34,7 @@ class TestImport(unittest.TestCase):
             "numba.cuda.cpython.listobj",
             "numba.cuda.cpython.unicode",
             "numba.cuda.cpython.charseq",
-            "numba.core.optional",
+            "numba.cuda.core.optional",
             "numba.cuda.misc.gdb_hook",
             "numba.cuda.misc.literal",
             "numba.cuda.misc.cffiimpl",
