@@ -14,8 +14,8 @@ from numba.cuda.typing.npydecl import parse_dtype
 from numba.core.datamodel import models
 from numba.core import types
 from numba.cuda import cgutils
-from numba.np import ufunc_db
-from numba.np.npyimpl import register_ufuncs
+from numba.cuda.np import ufunc_db
+from numba.cuda.np.npyimpl import register_ufuncs
 from .cudadrv import nvvm
 from numba import cuda
 from numba.cuda import nvvmutils, stubs

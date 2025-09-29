@@ -4,7 +4,7 @@
 from numba import cuda
 from numba.cuda.cudadrv.driver import driver
 import math
-from numba.np import numpy_support as nps
+from numba.cuda.np import numpy_support as nps
 
 
 def transpose(a, b=None):
