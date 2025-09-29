@@ -14,13 +14,11 @@ from numba import _helperlib
 from numba.core import (
     errors,
     types,
-    config,
-    lowering,
     imputils,
-    serialize,
 )
-from numba.cuda import cgutils
+from numba.cuda import cgutils, lowering, config, serialize
 from numba.cuda.utils import PYVERSION
+
 
 PY_UNICODE_1BYTE_KIND = _helperlib.py_unicode_1byte_kind
 PY_UNICODE_2BYTE_KIND = _helperlib.py_unicode_2byte_kind

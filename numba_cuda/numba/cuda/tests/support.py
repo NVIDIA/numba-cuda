@@ -17,6 +17,8 @@ import tempfile
 import time
 import types as pytypes
 from functools import cached_property
+import multiprocessing as mp
+import traceback
 
 import numpy as np
 
@@ -25,7 +27,7 @@ from numba.core import errors
 from numba.cuda.core import config
 from numba.cuda.typing import cffi_utils
 from numba.cuda.memory_management.nrt import rtsys
-from numba.core.extending import (
+from numba.cuda.extending import (
     typeof_impl,
     register_model,
     NativeValue,
@@ -55,6 +57,19 @@ windows_only = unittest.skipIf(not sys.platform.startswith("win"), _win_reason)
 
 IS_NUMPY_2 = numpy_support.numpy_version >= (2, 0)
 skip_if_numpy_2 = unittest.skipIf(IS_NUMPY_2, "Not supported on numpy 2.0+")
+
+# Typeguard
+has_typeguard = bool(os.environ.get("NUMBA_USE_TYPEGUARD", 0))
+
+skip_unless_typeguard = unittest.skipUnless(
+    has_typeguard,
+    "Typeguard is not enabled",
+)
+
+skip_if_typeguard = unittest.skipIf(
+    has_typeguard,
+    "Broken if Typeguard is enabled",
+)
 
 _trashcan_dir = "numba-cuda-tests"
 
@@ -804,3 +819,81 @@ class CheckWarningsMixin(object):
                     self.assertEqual(w.category, category)
                     found += 1
         self.assertEqual(found, len(messages))
+
+
+@contextlib.contextmanager
+def override_env_config(name, value):
+    """
+    Return a context manager that temporarily sets an Numba config environment
+    *name* to *value*.
+    """
+    old = os.environ.get(name)
+    os.environ[name] = value
+    config.reload_config()
+
+    try:
+        yield
+    finally:
+        if old is None:
+            # If it wasn't set originally, delete the environ var
+            del os.environ[name]
+        else:
+            # Otherwise, restore to the old value
+            os.environ[name] = old
+        # Always reload config
+        config.reload_config()
+
+
+def run_in_new_process_in_cache_dir(func, cache_dir, verbose=True):
+    """Spawn a new process to run `func` with a temporary cache directory.
+
+    The childprocess's stdout and stderr will be captured and redirected to
+    the current process's stdout and stderr.
+
+    Similar to ``run_in_new_process_caching()`` but the ``cache_dir`` is a
+    directory path instead of a name prefix for the directory path.
+
+    Returns
+    -------
+    ret : dict
+        exitcode: 0 for success. 1 for exception-raised.
+        stdout: str
+        stderr: str
+    """
+    ctx = mp.get_context("spawn")
+    qout = ctx.Queue()
+    with override_env_config("NUMBA_CACHE_DIR", cache_dir):
+        proc = ctx.Process(target=_remote_runner, args=[func, qout])
+        proc.start()
+        proc.join()
+        stdout = qout.get_nowait()
+        stderr = qout.get_nowait()
+        if verbose and stdout.strip():
+            print()
+            print("STDOUT".center(80, "-"))
+            print(stdout)
+        if verbose and stderr.strip():
+            print(file=sys.stderr)
+            print("STDERR".center(80, "-"), file=sys.stderr)
+            print(stderr, file=sys.stderr)
+    return {
+        "exitcode": proc.exitcode,
+        "stdout": stdout,
+        "stderr": stderr,
+    }
+
+
+def _remote_runner(fn, qout):
+    """Used by `run_in_new_process_caching()`"""
+    with captured_stderr() as stderr:
+        with captured_stdout() as stdout:
+            try:
+                fn()
+            except Exception:
+                traceback.print_exc()
+                exitcode = 1
+            else:
+                exitcode = 0
+        qout.put(stdout.getvalue())
+    qout.put(stderr.getvalue())
+    sys.exit(exitcode)
