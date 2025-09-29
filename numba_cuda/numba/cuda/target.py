@@ -168,6 +168,7 @@ class CUDATargetContext(BaseContext):
             rangeobj,
             enumimpl,
         )
+        from numba.cuda.cpython import builtins as cpython_builtins
         from numba.core import optional  # noqa: F401
         from numba.misc import cffiimpl
         from numba.np import arrayobj  # noqa: F401
@@ -205,6 +206,7 @@ class CUDATargetContext(BaseContext):
         self.install_registry(listobj.registry)
         self.install_registry(unicode.registry)
         self.install_registry(charseq.registry)
+        self.install_registry(cpython_builtins.registry)
 
     def codegen(self):
         return self._internal_codegen
