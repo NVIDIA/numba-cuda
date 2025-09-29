@@ -202,7 +202,7 @@ class InlineOptions(AbstractOptionValue):
 
 class TargetOptions:
     """Target options maps user options from decorators to the
-    ``numba.core.compiler.Flags`` used by lowering and target context.
+    ``numba.cuda.core.compiler.Flags`` used by lowering and target context.
     """
 
     class Mapping:
