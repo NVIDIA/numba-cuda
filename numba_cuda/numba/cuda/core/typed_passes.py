@@ -13,9 +13,8 @@ from numba.core import (
     types,
     typing,
     ir,
-    lowering,
 )
-
+from numba.cuda import lowering
 from numba.cuda.core.compiler_machinery import (
     FunctionPass,
     LoweringPass,
