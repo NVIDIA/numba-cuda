@@ -14,7 +14,7 @@ from numba.cuda.extending import _Intrinsic
 from numba.core import types, ir, analysis
 from numba.cuda import typing
 from numba.cuda.core import postproc, rewrites, config
-from numba.core.typing.templates import signature
+from numba.cuda.typing.templates import signature
 from numba.core.analysis import (
     compute_live_map,
     compute_use_defs,

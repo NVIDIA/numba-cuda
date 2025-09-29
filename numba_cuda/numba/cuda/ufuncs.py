@@ -12,7 +12,7 @@ Use get_ufunc_info() to get the information related to a ufunc.
 import math
 import numpy as np
 from functools import lru_cache
-from numba.core import typing
+from numba.cuda import typing
 from numba.cuda.mathimpl import (
     get_unary_impl_for_fn_and_ty,
     get_binary_impl_for_fn_and_ty,
