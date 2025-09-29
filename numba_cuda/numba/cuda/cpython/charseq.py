@@ -9,11 +9,15 @@ from llvmlite import ir
 
 from numba.core import types
 from numba.cuda import cgutils
-from numba.core.extending import overload, overload_method, register_jitable
+from numba.cuda.extending import (
+    overload,
+    overload_method,
+    register_jitable,
+    intrinsic,
+)
 from numba.core.imputils import Registry
 from numba.cuda.cgutils import is_nonelike
 from numba.cuda.cpython import unicode
-from numba.cuda.extending import intrinsic
 
 registry = Registry("charseq")
 lower = registry.lower
