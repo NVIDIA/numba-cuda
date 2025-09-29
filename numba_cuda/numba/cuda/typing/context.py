@@ -522,7 +522,13 @@ class BaseContext(object):
             else:
                 # A type was already inserted, see if we can add to it
                 newty = existing.augment(gty)
-                if newty is None:
+                if (
+                    newty is None
+                    and ".".join(
+                        str(existing.__class__.__module__).split(".")[:2]
+                    )
+                    != "numba.core"
+                ):
                     raise TypeError(
                         "cannot augment %s with %s" % (existing, gty)
                     )
