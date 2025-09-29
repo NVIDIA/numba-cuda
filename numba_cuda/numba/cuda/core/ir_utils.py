@@ -10,7 +10,6 @@ import collections
 import warnings
 
 import numba
-from numba.cuda.extending import _Intrinsic
 from numba.core import types, ir, analysis
 from numba.cuda import typing
 from numba.cuda.core import postproc, rewrites, config
@@ -806,6 +805,7 @@ def has_no_side_effect(rhs, lives, call_table):
     """Returns True if this expression has no side effects that
     would prevent re-ordering.
     """
+    from numba.cuda.extending import _Intrinsic
 
     if isinstance(rhs, ir.Expr) and rhs.op == "call":
         func_name = rhs.func.name
@@ -1766,6 +1766,8 @@ def find_callname(
     Providing typemap can make the call matching more accurate in corner cases
     such as bounded call on an object which is inside another object.
     """
+    from numba.cuda.extending import _Intrinsic
+
     require(isinstance(expr, ir.Expr) and expr.op == "call")
     callee = expr.func
     callee_def = definition_finder(func_ir, callee)
