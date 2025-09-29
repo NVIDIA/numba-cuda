@@ -17,6 +17,7 @@ from pathlib import Path
 from typing import Iterable, Union
 from io import StringIO
 import unittest
+import numpy as np
 
 if PYVERSION >= (3, 10):
     from filecheck.matcher import Matcher
@@ -43,6 +44,8 @@ class CUDATestCase(TestCase):
     Method assertFileCheckMatches can be used to assert that a given string
     matches FileCheck checks, and is not specific to CUDADispatcher.
     """
+
+    FLOAT16_RTOL = np.finfo(np.float16).eps
 
     def setUp(self):
         self._low_occupancy_warnings = config.CUDA_LOW_OCCUPANCY_WARNINGS
