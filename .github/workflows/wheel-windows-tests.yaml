@@ -62,10 +62,10 @@ jobs:
       - name: Download fixed llvmlite wheel
         uses: actions/download-artifact@v4
         with:
-          name: llvmlite-win-64-py3.12
+          artifact-ids: 4137350031
           path: wheel-artifacts
           repository: numba/llvmlite
-          run-id: 18111409657
+          github-token: ${{ github.token }}
 
       - name: Extract fixed llvmlite wheel
         run: |
