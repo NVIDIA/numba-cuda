@@ -92,14 +92,14 @@ class TestFFI(CUDATestCase):
         import numpy as np
         from numba import cuda
         from numba.cuda import config
+        from numba.cuda.testing import test_data_dir
         import os
 
         basedir = os.path.dirname(os.path.abspath(__file__))
         mul_dir = os.path.join(basedir, "ffi", "include")
         saxpy_cu = os.path.join(basedir, "ffi", "saxpy.cu")
 
-        testdir = os.path.dirname(basedir)
-        add_dir = os.path.join(testdir, "data", "include")
+        add_dir = os.path.join(test_data_dir, "include")
 
         includedir = ":".join([mul_dir, add_dir])
         with override_config("CUDA_NVRTC_EXTRA_SEARCH_PATHS", includedir):

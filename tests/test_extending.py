@@ -710,9 +710,9 @@ class TestNumbaInternalOverloads(TestCase):
                         else:
                             # Only error/report on functions that have a module
                             # or are from somewhere other than Numba.
-                            if (
-                                not func.__module__
-                                or not func.__module__.startswith("numba")
+                            if not func.__module__ or (
+                                not func.__module__.startswith("numba")
+                                and not func.__module__.startswith("tests")
                             ):
                                 msgstr = create_message(
                                     func, overload_func, func_sig, ol_sig
