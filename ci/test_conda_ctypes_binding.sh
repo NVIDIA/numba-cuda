@@ -62,14 +62,7 @@ set +e
 
 rapids-logger "Build tests"
 
-PY_SCRIPT="
-import numba_cuda
-root = numba_cuda.__file__.rstrip('__init__.py')
-test_dir = root + \"tests/test_binary_generation/\"
-print(test_dir)
-"
-
-NUMBA_CUDA_TEST_BIN_DIR=$(python -c "$PY_SCRIPT")
+export NUMBA_CUDA_TEST_BIN_DIR=tests/test_binary_generation/
 pushd $NUMBA_CUDA_TEST_BIN_DIR
 make
 popd

@@ -36,7 +36,7 @@ python -m pip install "llvmlite<0.45" "numba==0.61.*" # WAR for https://github.c
 
 
 rapids-logger "Build tests"
-$NUMBA_CUDA_TEST_BIN_DIR = (python ci\get_test_binary_dir.py)
+$NUMBA_CUDA_TEST_BIN_DIR = tests\test_binary_generation
 echo "Test binary dir: $NUMBA_CUDA_TEST_BIN_DIR"
 pushd $NUMBA_CUDA_TEST_BIN_DIR
 Get-Location
