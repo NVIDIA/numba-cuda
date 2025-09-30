@@ -58,7 +58,6 @@ set -u
 
 pip install filecheck
 
-export NUMBA_CUDA_TEST_BIN_DIR=tests/test_binary_generation/
 RAPIDS_TESTS_DIR=${RAPIDS_TESTS_DIR:-"${PWD}/test-results"}/
 mkdir -p "${RAPIDS_TESTS_DIR}"
 pushd "${RAPIDS_TESTS_DIR}"
