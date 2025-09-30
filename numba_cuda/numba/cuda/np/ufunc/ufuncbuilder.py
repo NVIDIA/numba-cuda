@@ -2,9 +2,15 @@
 # SPDX-License-Identifier: BSD-2-Clause
 
 from numba.cuda.core import sigutils
-from numba.np.ufunc import _internal
 
 # Utility functions
+
+# HACK: These are explicitly defined here to avoid having a CExt just to import these constants.
+#   np doesn't expose these in the python API.
+PyUFunc_Zero = 0
+PyUFunc_One = 1
+PyUFunc_None = -1
+PyUFunc_ReorderableNone = -2
 
 
 def _compile_element_wise_function(nb_func, targetoptions, sig):
@@ -40,10 +46,10 @@ class _BaseUFuncBuilder(object):
 
 
 _identities = {
-    0: _internal.PyUFunc_Zero,
-    1: _internal.PyUFunc_One,
-    None: _internal.PyUFunc_None,
-    "reorderable": _internal.PyUFunc_ReorderableNone,
+    0: PyUFunc_Zero,
+    1: PyUFunc_One,
+    None: PyUFunc_None,
+    "reorderable": PyUFunc_ReorderableNone,
 }
 
 

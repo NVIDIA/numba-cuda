@@ -30,7 +30,7 @@ from numba.cuda.core.options import (
     FastMathOptions,  # noqa F401
     InlineOptions,  # noqa F401
 )  # noqa F401
-from numba.np import ufunc_db
+from numba.cuda.np import ufunc_db
 
 # Keep those structures in sync with _dynfunc.c.
 
@@ -89,16 +89,15 @@ class CPUContext(BaseContext):
         )  # noqa F401
         from numba.cuda.core import optional, inline_closurecall  # noqa F401
         from numba.misc import gdb_hook, literal  # noqa F401
-        from numba.np import linalg, arraymath, arrayobj  # noqa F401
-        from numba.np.random import generator_core, generator_methods  # noqa F401
-        from numba.np.polynomial import polynomial_core, polynomial_functions  # noqa F401
+        from numba.cuda.np import linalg, arraymath, arrayobj  # noqa F401
+        from numba.cuda.np.random import generator_core, generator_methods  # noqa F401
         from numba.typed import typeddict, dictimpl  # noqa F401
         from numba.typed import typedlist, listobject  # noqa F401
         from numba.experimental import jitclass, function_type  # noqa F401
-        from numba.np import npdatetime  # noqa F401
+        from numba.cuda.np import npdatetime  # noqa F401
 
         # Add target specific implementations
-        from numba.np import npyimpl
+        from numba.cuda.np import npyimpl
         from numba.cpython import cmathimpl, mathimpl, printimpl, randomimpl
         from numba.misc import cffiimpl
         from numba.experimental.jitclass.base import (
@@ -118,7 +117,7 @@ class CPUContext(BaseContext):
         numba.core.entrypoints.init_all()
 
         # fix for #8940
-        from numba.np.unsafe import ndarray  # noqa F401
+        from numba.cuda.np.unsafe import ndarray  # noqa F401
 
     @property
     def target_data(self):
