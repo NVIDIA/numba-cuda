@@ -46,7 +46,7 @@ set +e
 
 rapids-logger "Run Tests"
 export NUMBA_ENABLE_CUDASIM=1
-pytest --pyargs numba_cuda_tests -v
+pytest numba_cuda_tests -v
 
 popd
 

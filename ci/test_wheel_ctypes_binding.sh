@@ -39,7 +39,7 @@ rapids-logger "Show Numba system info"
 NUMBA_CUDA_USE_NVIDIA_BINDING=0 python -m numba --sysinfo
 
 rapids-logger "Run Tests"
-# NUMBA_CUDA_USE_NVIDIA_BINDING=0 NUMBA_CUDA_TEST_BIN_DIR=$NUMBA_CUDA_TEST_BIN_DIR python -m pytest --pyargs numba_cuda_tests -v
-NUMBA_CUDA_USE_NVIDIA_BINDING=0 python -m pytest --pyargs numba_cuda_tests -v
+# NUMBA_CUDA_USE_NVIDIA_BINDING=0 NUMBA_CUDA_TEST_BIN_DIR=$NUMBA_CUDA_TEST_BIN_DIR python -m pytest numba_cuda_tests -v
+NUMBA_CUDA_USE_NVIDIA_BINDING=0 python -m pytest numba_cuda_tests -v
 
 popd
