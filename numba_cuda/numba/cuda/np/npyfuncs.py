@@ -16,10 +16,10 @@ from numba.cuda.extending import overload
 from numba.core.imputils import impl_ret_untracked
 from numba.core import typing, types, errors
 from numba.cuda import cgutils
+from numba.cuda.np import npdatetime
 from numba.cuda.extending import register_jitable
-from numba.np import npdatetime
-from numba.np.math import cmathimpl, mathimpl, numbers
-from numba.np.numpy_support import numpy_version
+from numba.cuda.np.math import cmathimpl, mathimpl, numbers
+from numba.cuda.np.numpy_support import numpy_version
 
 # some NumPy constants. Note that we could generate some of them using
 # the math library, but having the values copied from npy_math seems to

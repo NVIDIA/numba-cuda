@@ -2,7 +2,6 @@
 # SPDX-License-Identifier: BSD-2-Clause
 
 from numba.cuda.core import sigutils
-from numba.np.ufunc import _internal
 
 # Utility functions
 
@@ -40,10 +39,10 @@ class _BaseUFuncBuilder(object):
 
 
 _identities = {
-    0: _internal.PyUFunc_Zero,
-    1: _internal.PyUFunc_One,
-    None: _internal.PyUFunc_None,
-    "reorderable": _internal.PyUFunc_ReorderableNone,
+    0: 0,
+    1: 1,
+    None: -1,
+    "reorderable": -2,
 }
 
 
