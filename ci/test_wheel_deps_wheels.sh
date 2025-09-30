@@ -4,6 +4,8 @@
 
 set -euo pipefail
 
+source ci/common_variables.sh
+
 CUDA_VER_MAJOR_MINOR=${CUDA_VER%.*}
 CUDA_VER_MAJOR=${CUDA_VER%.*.*}
 
@@ -14,7 +16,6 @@ echo "Package path: ${package}"
 python -m pip install "${package}[cu${CUDA_VER_MAJOR},test-cu${CUDA_VER_MAJOR}]"
 
 rapids-logger "Build tests"
-export NUMBA_CUDA_TEST_BIN_DIR=tests/test_binary_generation/
 pushd $NUMBA_CUDA_TEST_BIN_DIR
 make
 popd
@@ -36,6 +37,6 @@ apt remove --purge `dpkg --get-selections | grep cuda-nvvm | awk '{print $1}'` -
 apt remove --purge `dpkg --get-selections | grep cuda-nvrtc | awk '{print $1}'` -y
 
 rapids-logger "Run Tests"
-NUMBA_CUDA_TEST_BIN_DIR=$NUMBA_CUDA_TEST_BIN_DIR python -m pytest tests -v
+NUMBA_CUDA_TEST_BIN_DIR=$NUMBA_CUDA_TEST_BIN_DIR python -m pytest $NUMBA_CUDA_TEST_DIR -v
 
 popd

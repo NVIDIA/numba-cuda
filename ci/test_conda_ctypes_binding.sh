@@ -62,14 +62,13 @@ set +e
 
 rapids-logger "Build tests"
 
-export NUMBA_CUDA_TEST_BIN_DIR=tests/test_binary_generation/
 pushd $NUMBA_CUDA_TEST_BIN_DIR
 make
 popd
 
 
 rapids-logger "Run Tests"
-NUMBA_CUDA_USE_NVIDIA_BINDING=0 NUMBA_CUDA_TEST_BIN_DIR=$NUMBA_CUDA_TEST_BIN_DIR pytest tests -v
+NUMBA_CUDA_USE_NVIDIA_BINDING=0 NUMBA_CUDA_TEST_BIN_DIR=$NUMBA_CUDA_TEST_BIN_DIR pytest $NUMBA_CUDA_TEST_DIR -v
 
 popd
 

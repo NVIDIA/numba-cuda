@@ -58,6 +58,7 @@ set -u
 
 pip install filecheck
 
+export NUMBA_CUDA_TEST_BIN_DIR=tests/test_binary_generation/
 RAPIDS_TESTS_DIR=${RAPIDS_TESTS_DIR:-"${PWD}/test-results"}/
 mkdir -p "${RAPIDS_TESTS_DIR}"
 pushd "${RAPIDS_TESTS_DIR}"
@@ -78,13 +79,12 @@ rapids-logger "Test importing numba.cuda"
 python -c "from numba import cuda"
 
 rapids-logger "Build tests"
-export NUMBA_CUDA_TEST_BIN_DIR=tests/test_binary_generation/
 pushd $NUMBA_CUDA_TEST_BIN_DIR
 make
 popd
 
 rapids-logger "Run Tests"
-pytest tests -v
+pytest $NUMBA_CUDA_TEST_DIR -v
 
 popd
 

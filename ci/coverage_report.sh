@@ -4,6 +4,8 @@
 
 set -euo pipefail
 
+source ci/common_variables.sh
+
 CUDA_VER_MAJOR_MINOR=${CUDA_VER%.*}
 
 rapids-logger "Install wheel with test dependencies and coverage tools"
@@ -18,7 +20,6 @@ python -m pip install \
 
 rapids-logger "Build tests"
 
-export NUMBA_CUDA_TEST_BIN_DIR=tests/test_binary_generation/
 pushd $NUMBA_CUDA_TEST_BIN_DIR
 make
 popd
@@ -34,7 +35,7 @@ rapids-logger "Show Numba system info"
 python -m numba --sysinfo
 
 rapids-logger "Run Tests with Coverage"
-python -m pytest tests -v --cov
+python -m pytest $NUMBA_CUDA_TEST_DIR -v --cov
 
 rapids-logger "Generate Markdown Coverage Report"
 python -m coverage report --format markdown >> $GITHUB_STEP_SUMMARY

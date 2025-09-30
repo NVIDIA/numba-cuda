@@ -4,6 +4,8 @@
 
 set -euo pipefail
 
+source ci/common_variables.sh
+
 CUDA_VER_MAJOR=${CUDA_VER%.*.*}
 
 rapids-logger "Install wheel with testing dependencies"
@@ -22,7 +24,6 @@ python -m pip install \
 #print(test_dir)
 #"
 #
-#NUMBA_CUDA_TEST_BIN_DIR=$(python -c "$PY_SCRIPT")
 #pushd $NUMBA_CUDA_TEST_BIN_DIR
 #NUMBA_CUDA_USE_NVIDIA_BINDING=0 make
 #popd
@@ -39,7 +40,6 @@ rapids-logger "Show Numba system info"
 NUMBA_CUDA_USE_NVIDIA_BINDING=0 python -m numba --sysinfo
 
 rapids-logger "Run Tests"
-# NUMBA_CUDA_USE_NVIDIA_BINDING=0 NUMBA_CUDA_TEST_BIN_DIR=$NUMBA_CUDA_TEST_BIN_DIR python -m pytest tests -v
-NUMBA_CUDA_USE_NVIDIA_BINDING=0 python -m pytest tests -v
+NUMBA_CUDA_USE_NVIDIA_BINDING=0 python -m pytest $NUMBA_CUDA_TEST_DIR -v
 
 popd

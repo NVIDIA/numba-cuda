@@ -4,6 +4,7 @@
 
 set -euo pipefail
 
+source ci/common_variables.sh
 CUDA_VER_MAJOR_MINOR=${CUDA_VER%.*}
 
 rapids-logger "Install wheel with test dependencies"
@@ -26,10 +27,7 @@ python -m pip install "${DEPENDENCIES[@]}"
 rapids-logger "Test importing numba.cuda"
 python -c "from numba import cuda"
 
-GET_TEST_BINARY_DIR="tests/test_binary_generation/"
-
 rapids-logger "Build tests"
-export NUMBA_CUDA_TEST_BIN_DIR=$(python -c "$GET_TEST_BINARY_DIR")
 pushd $NUMBA_CUDA_TEST_BIN_DIR
 make
 popd
@@ -45,6 +43,6 @@ rapids-logger "Show Numba system info"
 python -m numba --sysinfo
 
 rapids-logger "Run Tests"
-python -m pytest tests -v
+python -m pytest $NUMBA_CUDA_TEST_DIR -v
 
 popd
