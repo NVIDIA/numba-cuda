@@ -60,13 +60,18 @@ jobs:
           python-version: ${{ matrix.PY_VER }}
 
       - name: Download fixed llvmlite wheel
+        uses: actions/download-artifact@v4
+        with:
+          name: llvmlite-win-64-py3.12
+          path: wheel-artifacts
+          repository: numba/llvmlite
+          run-id: 18111409657
+
+      - name: Extract fixed llvmlite wheel
         run: |
-          # Download the fixed llvmlite wheel from the specific GitHub Actions run
+          # Extract the wheel from the downloaded artifact
           # This addresses the llvmlite 0.45.0 Windows wheel dependency issue
           # See: https://github.com/numba/llvmlite/issues/1297
-          gh run download 18111409657 --repo numba/llvmlite --name "llvmlite-win-64-py3.12" --dir wheel-artifacts
-
-          # Extract the wheel from the downloaded artifact
           if (Test-Path "wheel-artifacts\llvmlite-win-64-py3.12.zip") {
             Expand-Archive -Path "wheel-artifacts\llvmlite-win-64-py3.12.zip" -DestinationPath "wheel-artifacts\extracted" -Force
             $wheelFile = Get-ChildItem -Path "wheel-artifacts\extracted" -Filter "*.whl" -Recurse | Select-Object -First 1
