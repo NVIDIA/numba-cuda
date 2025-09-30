@@ -91,7 +91,7 @@ make
 popd
 
 rapids-logger "Run Tests"
-pytest numba_cuda_tests -v
+pytest tests -v
 
 popd
 

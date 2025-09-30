@@ -523,9 +523,7 @@ class TestIntrinsic(TestCase):
 
             return sig, codegen
 
-        self.assertEqual(
-            "numba_cuda_tests.test_extending", void_func.__module__
-        )
+        self.assertEqual("tests.test_extending", void_func.__module__)
         self.assertEqual("void_func", void_func.__name__)
         self.assertEqual(
             "TestIntrinsic.test_docstring.<locals>.void_func",

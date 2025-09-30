@@ -50,6 +50,6 @@ rapids-logger "Show Numba system info"
 python -m numba --sysinfo
 
 rapids-logger "Run Tests"
-python -m pytest numba_cuda_tests -v
+python -m pytest tests -v
 
 popd

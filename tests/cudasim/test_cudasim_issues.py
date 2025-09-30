@@ -57,7 +57,7 @@ class TestCudaSimIssues(CUDATestCase):
         When the `cuda` module is referenced in a device function,
         it does not have the kernel API (e.g. cuda.threadIdx, cuda.shared)
         """
-        from numba_cuda_tests.cudasim import support
+        from tests.cudasim import support
 
         inner = support.cuda_module_in_device_function
 

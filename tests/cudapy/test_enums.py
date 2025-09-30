@@ -11,7 +11,7 @@ from numba import int16, int32
 from numba import cuda, vectorize, njit
 from numba.core import types
 from numba.cuda.testing import unittest, CUDATestCase, skip_on_cudasim
-from numba_cuda_tests.enum_usecases import (
+from tests.enum_usecases import (
     Color,
     Shape,
     Planet,

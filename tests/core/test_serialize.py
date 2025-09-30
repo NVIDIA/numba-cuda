@@ -318,7 +318,7 @@ def issue_7356():
 def check_main_class_reset_on_unpickle():
     # Load module and get its global dictionary
     glbs = runpy.run_module(
-        "numba_cuda_tests.cloudpickle_main_class",
+        "tests.cloudpickle_main_class",
         run_name="__main__",
     )
     # Get the Klass and check it is from __main__

@@ -12,7 +12,7 @@ class TestSelfRecursion(CUDATestCase):
     def setUp(self):
         # Avoid importing this module at the top level, as it triggers
         # compilation and can therefore fail
-        from numba_cuda_tests.cudapy import recursion_usecases
+        from tests.cudapy import recursion_usecases
 
         self.mod = recursion_usecases
         super().setUp()

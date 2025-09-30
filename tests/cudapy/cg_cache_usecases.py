@@ -5,7 +5,7 @@ from numba import cuda
 from numba.cuda.testing import CUDATestCase
 import sys
 
-from numba_cuda_tests.cudapy.cache_usecases import CUDAUseCase
+from tests.cudapy.cache_usecases import CUDAUseCase
 
 
 # Usecase with cooperative groups
