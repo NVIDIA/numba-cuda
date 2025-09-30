@@ -32,7 +32,25 @@ rapids-logger "Install wheel with test dependencies"
 $package = Resolve-Path wheel\numba_cuda*.whl | Select-Object -ExpandProperty Path
 echo "Package path: $package"
 python -m pip install "${package}[cu${CUDA_VER_MAJOR},test-cu${CUDA_VER_MAJOR}]"
-python -m pip install "llvmlite<0.45" "numba==0.61.*" # WAR for https://github.com/numba/llvmlite/issues/1297
+
+# Fix for llvmlite 0.45.0 Windows wheel missing dependencies
+# See: https://github.com/numba/llvmlite/issues/1297
+rapids-logger "Install fixed llvmlite 0.45.0 Windows wheel"
+
+# Check if the fixed wheel was downloaded by the workflow
+$fixed_wheel_path = "llvmlite-fixed.whl"
+
+if (Test-Path $fixed_wheel_path) {
+    rapids-logger "Installing fixed llvmlite wheel"
+    python -m pip install --force-reinstall --no-deps $fixed_wheel_path
+    rapids-logger "Successfully installed fixed llvmlite wheel"
+
+    # Clean up the wheel file
+    Remove-Item $fixed_wheel_path -Force -ErrorAction SilentlyContinue
+} else {
+    rapids-logger "Fixed wheel not found, falling back to version pinning"
+    python -m pip install "llvmlite<0.45" "numba==0.61.*"
+}
 
 
 rapids-logger "Build tests"
