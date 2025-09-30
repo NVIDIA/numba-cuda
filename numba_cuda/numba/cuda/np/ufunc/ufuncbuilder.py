@@ -5,6 +5,13 @@ from numba.cuda.core import sigutils
 
 # Utility functions
 
+# HACK: These are explicitly defined here to avoid having a CExt just to import these constants.
+#   np doesn't expose these in the python API.
+PyUFunc_Zero = 0
+PyUFunc_One = 1
+PyUFunc_None = -1
+PyUFunc_ReorderableNone = -2
+
 
 def _compile_element_wise_function(nb_func, targetoptions, sig):
     # Do compilation
@@ -39,10 +46,10 @@ class _BaseUFuncBuilder(object):
 
 
 _identities = {
-    0: 0,
-    1: 1,
-    None: -1,
-    "reorderable": -2,
+    0: PyUFunc_Zero,
+    1: PyUFunc_One,
+    None: PyUFunc_None,
+    "reorderable": PyUFunc_ReorderableNone,
 }
 
 
