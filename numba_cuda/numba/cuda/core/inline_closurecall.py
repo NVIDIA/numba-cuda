@@ -1082,7 +1082,7 @@ def length_of_iterator(typingctx, val):
 
         def codegen(context, builder, sig, args):
             (value,) = args
-            from numba.cpython.rangeobj import range_impl_map
+            from numba.cuda.cpython.rangeobj import range_impl_map
 
             iter_type = range_impl_map[val_type][1]
             iterobj = cgutils.create_struct_proxy(iter_type)(
