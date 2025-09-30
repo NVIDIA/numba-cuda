@@ -19,7 +19,7 @@ python -m pip install \
 GET_TEST_BINARY_DIR="
 import numba_cuda
 root = numba_cuda.__file__.rstrip('__init__.py')
-test_dir = root + \"numba/cuda/tests/test_binary_generation/\"
+test_dir = root + \"tests/test_binary_generation/\"
 print(test_dir)
 "
 

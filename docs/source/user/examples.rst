@@ -17,9 +17,9 @@ it is a warmup for learning how to write GPU kernels using Numba. We'll begin
 with some required imports:
 
 
-.. literalinclude:: ../../../numba_cuda/numba/cuda/tests/doc_examples/test_vecadd.py
+.. literalinclude:: ../../../numba_cuda/tests/doc_examples/test_vecadd.py
    :language: python
-   :caption: from ``test_ex_vecadd`` in ``numba/cuda/tests/doc_examples/test_vecadd.py``
+   :caption: from ``test_ex_vecadd`` in ``tests/doc_examples/test_vecadd.py``
    :start-after: ex_vecadd.import.begin
    :end-before: ex_vecadd.import.end
    :dedent: 8
@@ -35,9 +35,9 @@ arrays passed in as parameters (this is similar to the requirement that CUDA
 C/C++ kernels have ``void`` return type). Here we pass in ``c`` for the results
 to be written into.
 
-.. literalinclude:: ../../../numba_cuda/numba/cuda/tests/doc_examples/test_vecadd.py
+.. literalinclude:: ../../../numba_cuda/tests/doc_examples/test_vecadd.py
    :language: python
-   :caption: from ``test_ex_vecadd`` in ``numba/cuda/tests/doc_examples/test_vecadd.py``
+   :caption: from ``test_ex_vecadd`` in ``tests/doc_examples/test_vecadd.py``
    :start-after: ex_vecadd.kernel.begin
    :end-before: ex_vecadd.kernel.end
    :dedent: 8
@@ -49,9 +49,9 @@ copies of arrays.  :func:`cuda.device_array_like()
 and type as an existing array.  Here we transfer two vectors and create an empty
 vector to hold our results:
 
-.. literalinclude:: ../../../numba_cuda/numba/cuda/tests/doc_examples/test_vecadd.py
+.. literalinclude:: ../../../numba_cuda/tests/doc_examples/test_vecadd.py
    :language: python
-   :caption: from ``test_ex_vecadd`` in ``numba/cuda/tests/doc_examples/test_vecadd.py``
+   :caption: from ``test_ex_vecadd`` in ``tests/doc_examples/test_vecadd.py``
    :start-after: ex_vecadd.allocate.begin
    :end-before: ex_vecadd.allocate.end
    :dedent: 8
@@ -62,9 +62,9 @@ an appropriate launch configuration with a 1D grid (see
 :ref:`cuda-kernel-invocation`) for a given data size and is often the simplest
 way of launching a kernel:
 
-.. literalinclude:: ../../../numba_cuda/numba/cuda/tests/doc_examples/test_vecadd.py
+.. literalinclude:: ../../../numba_cuda/tests/doc_examples/test_vecadd.py
    :language: python
-   :caption: from ``test_ex_vecadd`` in ``numba/cuda/tests/doc_examples/test_vecadd.py``
+   :caption: from ``test_ex_vecadd`` in ``tests/doc_examples/test_vecadd.py``
    :start-after: ex_vecadd.forall.begin
    :end-before: ex_vecadd.forall.end
    :dedent: 8
@@ -80,9 +80,9 @@ One can also configure the grid manually using the subscripting syntax. The
 following example launches a grid with sufficient threads to operate on every
 vector element:
 
-.. literalinclude:: ../../../numba_cuda/numba/cuda/tests/doc_examples/test_vecadd.py
+.. literalinclude:: ../../../numba_cuda/tests/doc_examples/test_vecadd.py
    :language: python
-   :caption: from ``test_ex_vecadd`` in ``numba/cuda/tests/doc_examples/test_vecadd.py``
+   :caption: from ``test_ex_vecadd`` in ``tests/doc_examples/test_vecadd.py``
    :start-after: ex_vecadd.launch.begin
    :end-before: ex_vecadd.launch.end
    :dedent: 8
@@ -118,9 +118,9 @@ we have a one dimensional object which we'll represent with an array of values. 
 of the element in the array is the position of a point within the object, and the value
 of the element represents the temperature.
 
-.. literalinclude:: ../../../numba_cuda/numba/cuda/tests/doc_examples/test_laplace.py
+.. literalinclude:: ../../../numba_cuda/tests/doc_examples/test_laplace.py
    :language: python
-   :caption: from ``test_ex_laplace`` in ``numba/cuda/tests/doc_examples/test_laplace.py``
+   :caption: from ``test_ex_laplace`` in ``tests/doc_examples/test_laplace.py``
    :start-after: ex_laplace.import.begin
    :end-before: ex_laplace.import.end
    :dedent: 8
@@ -129,9 +129,9 @@ of the element represents the temperature.
 
 Some initial setup here. Let's make one point in the center of the object very hot.
 
-.. literalinclude:: ../../../numba_cuda/numba/cuda/tests/doc_examples/test_laplace.py
+.. literalinclude:: ../../../numba_cuda/tests/doc_examples/test_laplace.py
    :language: python
-   :caption: from ``test_ex_laplace`` in ``numba/cuda/tests/doc_examples/test_laplace.py``
+   :caption: from ``test_ex_laplace`` in ``tests/doc_examples/test_laplace.py``
    :start-after: ex_laplace.allocate.begin
    :end-before: ex_laplace.allocate.end
    :dedent: 8
@@ -146,9 +146,9 @@ in a loop over the desired number of timesteps. The kernel is below. Note the us
 synchronization and the use of two buffers swapped at each iteration to avoid race conditions. See
 :func:`numba.cuda.cg.this_grid() <numba.cuda.cg.this_grid>` for details.
 
-.. literalinclude:: ../../../numba_cuda/numba/cuda/tests/doc_examples/test_laplace.py
+.. literalinclude:: ../../../numba_cuda/tests/doc_examples/test_laplace.py
    :language: python
-   :caption: from ``test_ex_laplace`` in ``numba/cuda/tests/doc_examples/test_laplace.py``
+   :caption: from ``test_ex_laplace`` in ``tests/doc_examples/test_laplace.py``
    :start-after: ex_laplace.kernel.begin
    :end-before: ex_laplace.kernel.end
    :dedent: 8
@@ -157,9 +157,9 @@ synchronization and the use of two buffers swapped at each iteration to avoid ra
 
 Calling the kernel:
 
-.. literalinclude:: ../../../numba_cuda/numba/cuda/tests/doc_examples/test_laplace.py
+.. literalinclude:: ../../../numba_cuda/tests/doc_examples/test_laplace.py
    :language: python
-   :caption: from ``test_ex_laplace`` in ``numba/cuda/tests/doc_examples/test_laplace.py``
+   :caption: from ``test_ex_laplace`` in ``tests/doc_examples/test_laplace.py``
    :start-after: ex_laplace.launch.begin
    :end-before: ex_laplace.launch.end
    :dedent: 8
@@ -186,9 +186,9 @@ using a successively smaller number of threads.
 Note that this is a fairly naive implementation, and there are more efficient ways of implementing reductions
 using Numba - see :ref:`cuda_montecarlo` for an example.
 
-.. literalinclude:: ../../../numba_cuda/numba/cuda/tests/doc_examples/test_reduction.py
+.. literalinclude:: ../../../numba_cuda/tests/doc_examples/test_reduction.py
    :language: python
-   :caption: from ``test_ex_reduction`` in ``numba/cuda/tests/doc_examples/test_reduction.py``
+   :caption: from ``test_ex_reduction`` in ``tests/doc_examples/test_reduction.py``
    :start-after: ex_reduction.import.begin
    :end-before: ex_reduction.import.end
    :dedent: 8
@@ -197,9 +197,9 @@ using Numba - see :ref:`cuda_montecarlo` for an example.
 Let's create some one dimensional data that we'll use to demonstrate the
 kernel itself:
 
-.. literalinclude:: ../../../numba_cuda/numba/cuda/tests/doc_examples/test_reduction.py
+.. literalinclude:: ../../../numba_cuda/tests/doc_examples/test_reduction.py
    :language: python
-   :caption: from ``test_ex_reduction`` in ``numba/cuda/tests/doc_examples/test_reduction.py``
+   :caption: from ``test_ex_reduction`` in ``tests/doc_examples/test_reduction.py``
    :start-after: ex_reduction.allocate.begin
    :end-before: ex_reduction.allocate.end
    :dedent: 8
@@ -208,9 +208,9 @@ kernel itself:
 
 Here is a version of the kernel implemented using Numba:
 
-.. literalinclude:: ../../../numba_cuda/numba/cuda/tests/doc_examples/test_reduction.py
+.. literalinclude:: ../../../numba_cuda/tests/doc_examples/test_reduction.py
    :language: python
-   :caption: from ``test_ex_reduction`` in ``numba/cuda/tests/doc_examples/test_reduction.py``
+   :caption: from ``test_ex_reduction`` in ``tests/doc_examples/test_reduction.py``
    :start-after: ex_reduction.kernel.begin
    :end-before: ex_reduction.kernel.end
    :dedent: 8
@@ -219,9 +219,9 @@ Here is a version of the kernel implemented using Numba:
 We can run kernel and verify that the same result is obtained through
 summing data on the host as follows:
 
-.. literalinclude:: ../../../numba_cuda/numba/cuda/tests/doc_examples/test_reduction.py
+.. literalinclude:: ../../../numba_cuda/tests/doc_examples/test_reduction.py
    :language: python
-   :caption: from ``test_ex_reduction`` in ``numba/cuda/tests/doc_examples/test_reduction.py``
+   :caption: from ``test_ex_reduction`` in ``tests/doc_examples/test_reduction.py``
    :start-after: ex_reduction.launch.begin
    :end-before: ex_reduction.launch.end
    :dedent: 8
@@ -254,9 +254,9 @@ Our goal will be to create a new column called ``session_id``, which contains a 
 session. We'll define the boundary between sessions as when there has been at least one hour between clicks.
 
 
-.. literalinclude:: ../../../numba_cuda/numba/cuda/tests/doc_examples/test_sessionize.py
+.. literalinclude:: ../../../numba_cuda/tests/doc_examples/test_sessionize.py
    :language: python
-   :caption: from ``test_ex_sessionize`` in ``numba/cuda/tests/doc_examples/test_sessionize.py``
+   :caption: from ``test_ex_sessionize`` in ``tests/doc_examples/test_sessionize.py``
    :start-after: ex_sessionize.import.begin
    :end-before: ex_sessionize.import.end
    :dedent: 8
@@ -264,9 +264,9 @@ session. We'll define the boundary between sessions as when there has been at le
 
 Here is a solution using Numba:
 
-.. literalinclude:: ../../../numba_cuda/numba/cuda/tests/doc_examples/test_sessionize.py
+.. literalinclude:: ../../../numba_cuda/tests/doc_examples/test_sessionize.py
    :language: python
-   :caption: from ``test_ex_sessionize`` in ``numba/cuda/tests/doc_examples/test_sessionize.py``
+   :caption: from ``test_ex_sessionize`` in ``tests/doc_examples/test_sessionize.py``
    :start-after: ex_sessionize.kernel.begin
    :end-before: ex_sessionize.kernel.end
    :dedent: 8
@@ -274,9 +274,9 @@ Here is a solution using Numba:
 
 Let's generate some data and try out the kernel:
 
-.. literalinclude:: ../../../numba_cuda/numba/cuda/tests/doc_examples/test_sessionize.py
+.. literalinclude:: ../../../numba_cuda/tests/doc_examples/test_sessionize.py
    :language: python
-   :caption: from ``test_ex_sessionize`` in ``numba/cuda/tests/doc_examples/test_sessionize.py``
+   :caption: from ``test_ex_sessionize`` in ``tests/doc_examples/test_sessionize.py``
    :start-after: ex_sessionize.allocate.begin
    :end-before: ex_sessionize.allocate.end
    :dedent: 8
@@ -296,9 +296,9 @@ they can directly reuse potential business logic with fewer code changes.
 
 Take the following example function:
 
-.. literalinclude:: ../../../numba_cuda/numba/cuda/tests/doc_examples/test_cpu_gpu_compat.py
+.. literalinclude:: ../../../numba_cuda/tests/doc_examples/test_cpu_gpu_compat.py
    :language: python
-   :caption: from ``test_ex_cpu_gpu_compat`` in ``numba/cuda/tests/doc_examples/test_cpu_gpu_compat.py``
+   :caption: from ``test_ex_cpu_gpu_compat`` in ``tests/doc_examples/test_cpu_gpu_compat.py``
    :start-after: ex_cpu_gpu_compat.define.begin
    :end-before: ex_cpu_gpu_compat.define.end
    :dedent: 8
@@ -306,9 +306,9 @@ Take the following example function:
 
 The function ``business_logic`` can be run standalone in compiled form on the CPU:
 
-.. literalinclude:: ../../../numba_cuda/numba/cuda/tests/doc_examples/test_cpu_gpu_compat.py
+.. literalinclude:: ../../../numba_cuda/tests/doc_examples/test_cpu_gpu_compat.py
    :language: python
-   :caption: from ``test_ex_cpu_gpu_compat`` in ``numba/cuda/tests/doc_examples/test_cpu_gpu_compat.py``
+   :caption: from ``test_ex_cpu_gpu_compat`` in ``tests/doc_examples/test_cpu_gpu_compat.py``
    :start-after: ex_cpu_gpu_compat.cpurun.begin
    :end-before: ex_cpu_gpu_compat.cpurun.end
    :dedent: 8
@@ -317,9 +317,9 @@ The function ``business_logic`` can be run standalone in compiled form on the CP
 It can also be directly reused threadwise inside a GPU kernel. For example one may
 generate some vectors to represent ``x``, ``y``, and ``z``:
 
-.. literalinclude:: ../../../numba_cuda/numba/cuda/tests/doc_examples/test_cpu_gpu_compat.py
+.. literalinclude:: ../../../numba_cuda/tests/doc_examples/test_cpu_gpu_compat.py
    :language: python
-   :caption: from ``test_ex_cpu_gpu_compat`` in ``numba/cuda/tests/doc_examples/test_cpu_gpu_compat.py``
+   :caption: from ``test_ex_cpu_gpu_compat`` in ``tests/doc_examples/test_cpu_gpu_compat.py``
    :start-after: ex_cpu_gpu_compat.allocate.begin
    :end-before: ex_cpu_gpu_compat.allocate.end
    :dedent: 8
@@ -327,9 +327,9 @@ generate some vectors to represent ``x``, ``y``, and ``z``:
 
 And a numba kernel referencing the decorated function:
 
-.. literalinclude:: ../../../numba_cuda/numba/cuda/tests/doc_examples/test_cpu_gpu_compat.py
+.. literalinclude:: ../../../numba_cuda/tests/doc_examples/test_cpu_gpu_compat.py
    :language: python
-   :caption: from ``test_ex_cpu_gpu_compat`` in ``numba/cuda/tests/doc_examples/test_cpu_gpu_compat.py``
+   :caption: from ``test_ex_cpu_gpu_compat`` in ``tests/doc_examples/test_cpu_gpu_compat.py``
    :start-after: ex_cpu_gpu_compat.usegpu.begin
    :end-before: ex_cpu_gpu_compat.usegpu.end
    :dedent: 8
@@ -337,9 +337,9 @@ And a numba kernel referencing the decorated function:
 
 This kernel can be invoked in the normal way:
 
-.. literalinclude:: ../../../numba_cuda/numba/cuda/tests/doc_examples/test_cpu_gpu_compat.py
+.. literalinclude:: ../../../numba_cuda/tests/doc_examples/test_cpu_gpu_compat.py
    :language: python
-   :caption: from ``test_ex_cpu_gpu_compat`` in ``numba/cuda/tests/doc_examples/test_cpu_gpu_compat.py``
+   :caption: from ``test_ex_cpu_gpu_compat`` in ``tests/doc_examples/test_cpu_gpu_compat.py``
    :start-after: ex_cpu_gpu_compat.launch.begin
    :end-before: ex_cpu_gpu_compat.launch.end
    :dedent: 8
@@ -358,9 +358,9 @@ under the curve is approximated by taking the average of many rectangles formed 
 In addition, this example shows how to perform reductions in numba using the
 :func:`cuda.reduce() <numba.cuda.Reduce>` API.
 
-.. literalinclude:: ../../../numba_cuda/numba/cuda/tests/doc_examples/test_montecarlo.py
+.. literalinclude:: ../../../numba_cuda/tests/doc_examples/test_montecarlo.py
    :language: python
-   :caption: from ``test_ex_montecarlo`` in ``numba/cuda/tests/doc_examples/test_montecarlo.py``
+   :caption: from ``test_ex_montecarlo`` in ``tests/doc_examples/test_montecarlo.py``
    :start-after: ex_montecarlo.import.begin
    :end-before: ex_montecarlo.import.end
    :dedent: 8
@@ -368,9 +368,9 @@ In addition, this example shows how to perform reductions in numba using the
 
 Let's create a variable to control the number of samples drawn:
 
-.. literalinclude:: ../../../numba_cuda/numba/cuda/tests/doc_examples/test_montecarlo.py
+.. literalinclude:: ../../../numba_cuda/tests/doc_examples/test_montecarlo.py
    :language: python
-   :caption: from ``test_ex_montecarlo`` in ``numba/cuda/tests/doc_examples/test_montecarlo.py``
+   :caption: from ``test_ex_montecarlo`` in ``tests/doc_examples/test_montecarlo.py``
    :start-after: ex_montecarlo.define.begin
    :end-before: ex_montecarlo.define.end
    :dedent: 8
@@ -379,9 +379,9 @@ Let's create a variable to control the number of samples drawn:
 
 The following kernel implements the main integration routine:
 
-.. literalinclude:: ../../../numba_cuda/numba/cuda/tests/doc_examples/test_montecarlo.py
+.. literalinclude:: ../../../numba_cuda/tests/doc_examples/test_montecarlo.py
    :language: python
-   :caption: from ``test_ex_montecarlo`` in ``numba/cuda/tests/doc_examples/test_montecarlo.py``
+   :caption: from ``test_ex_montecarlo`` in ``tests/doc_examples/test_montecarlo.py``
    :start-after: ex_montecarlo.kernel.begin
    :end-before: ex_montecarlo.kernel.end
    :dedent: 8
@@ -391,9 +391,9 @@ This convenience function calls the kernel performs some
 preprocessing and post processing steps. Note the use of Numba's reduction API to
 take sum of the array and compute the final result:
 
-.. literalinclude:: ../../../numba_cuda/numba/cuda/tests/doc_examples/test_montecarlo.py
+.. literalinclude:: ../../../numba_cuda/tests/doc_examples/test_montecarlo.py
    :language: python
-   :caption: from ``test_ex_montecarlo`` in ``numba/cuda/tests/doc_examples/test_montecarlo.py``
+   :caption: from ``test_ex_montecarlo`` in ``tests/doc_examples/test_montecarlo.py``
    :start-after: ex_montecarlo.callfunc.begin
    :end-before: ex_montecarlo.callfunc.end
    :dedent: 8
@@ -403,9 +403,9 @@ take sum of the array and compute the final result:
 We can now use ``mc_integrate`` to compute the definite integral of this function between
 two limits:
 
-.. literalinclude:: ../../../numba_cuda/numba/cuda/tests/doc_examples/test_montecarlo.py
+.. literalinclude:: ../../../numba_cuda/tests/doc_examples/test_montecarlo.py
    :language: python
-   :caption: from ``test_ex_montecarlo`` in ``numba/cuda/tests/doc_examples/test_montecarlo.py``
+   :caption: from ``test_ex_montecarlo`` in ``tests/doc_examples/test_montecarlo.py``
    :start-after: ex_montecarlo.launch.begin
    :end-before: ex_montecarlo.launch.end
    :dedent: 8
@@ -418,9 +418,9 @@ Matrix multiplication
 =====================
 First, import the modules needed for this example:
 
-.. literalinclude:: ../../../numba_cuda/numba/cuda/tests/doc_examples/test_matmul.py
+.. literalinclude:: ../../../numba_cuda/tests/doc_examples/test_matmul.py
    :language: python
-   :caption: from ``test_ex_matmul`` in ``numba/cuda/tests/doc_examples/test_matmul.py``
+   :caption: from ``test_ex_matmul`` in ``tests/doc_examples/test_matmul.py``
    :start-after: magictoken.ex_import.begin
    :end-before: magictoken.ex_import.end
    :dedent: 8
@@ -428,9 +428,9 @@ First, import the modules needed for this example:
 
 Here is a naïve implementation of matrix multiplication using a CUDA kernel:
 
-.. literalinclude:: ../../../numba_cuda/numba/cuda/tests/doc_examples/test_matmul.py
+.. literalinclude:: ../../../numba_cuda/tests/doc_examples/test_matmul.py
    :language: python
-   :caption: from ``test_ex_matmul`` in ``numba/cuda/tests/doc_examples/test_matmul.py``
+   :caption: from ``test_ex_matmul`` in ``tests/doc_examples/test_matmul.py``
    :start-after: magictoken.ex_matmul.begin
    :end-before: magictoken.ex_matmul.end
    :dedent: 8
@@ -438,9 +438,9 @@ Here is a naïve implementation of matrix multiplication using a CUDA kernel:
 
 An example usage of this function is as follows:
 
-.. literalinclude:: ../../../numba_cuda/numba/cuda/tests/doc_examples/test_matmul.py
+.. literalinclude:: ../../../numba_cuda/tests/doc_examples/test_matmul.py
    :language: python
-   :caption: from ``test_ex_matmul`` in ``numba/cuda/tests/doc_examples/test_matmul.py``
+   :caption: from ``test_ex_matmul`` in ``tests/doc_examples/test_matmul.py``
    :start-after: magictoken.ex_run_matmul.begin
    :end-before: magictoken.ex_run_matmul.end
    :dedent: 8
@@ -457,9 +457,9 @@ for threads in a block to cooperatively compute on a task.  The following
 implements a faster version of the square matrix multiplication using shared
 memory:
 
-.. literalinclude:: ../../../numba_cuda/numba/cuda/tests/doc_examples/test_matmul.py
+.. literalinclude:: ../../../numba_cuda/tests/doc_examples/test_matmul.py
    :language: python
-   :caption: from ``test_ex_matmul`` in ``numba/cuda/tests/doc_examples/test_matmul.py``
+   :caption: from ``test_ex_matmul`` in ``tests/doc_examples/test_matmul.py``
    :start-after: magictoken.ex_fast_matmul.begin
    :end-before: magictoken.ex_fast_matmul.end
    :dedent: 8
@@ -476,9 +476,9 @@ in the next loop iteration.
 
 An example usage of the ``fast_matmul`` function is as follows:
 
-.. literalinclude:: ../../../numba_cuda/numba/cuda/tests/doc_examples/test_matmul.py
+.. literalinclude:: ../../../numba_cuda/tests/doc_examples/test_matmul.py
    :language: python
-   :caption: from ``test_ex_matmul`` in ``numba/cuda/tests/doc_examples/test_matmul.py``
+   :caption: from ``test_ex_matmul`` in ``tests/doc_examples/test_matmul.py``
    :start-after: magictoken.ex_run_fast_matmul.begin
    :end-before: magictoken.ex_run_fast_matmul.end
    :dedent: 8
@@ -507,9 +507,9 @@ follows by adjusting the ``blockspergrid`` variable:
 
 Again, here is an example usage:
 
-.. literalinclude:: ../../../numba_cuda/numba/cuda/tests/doc_examples/test_matmul.py
+.. literalinclude:: ../../../numba_cuda/tests/doc_examples/test_matmul.py
    :language: python
-   :caption: from ``test_ex_matmul`` in ``numba/cuda/tests/doc_examples/test_matmul.py``
+   :caption: from ``test_ex_matmul`` in ``tests/doc_examples/test_matmul.py``
    :start-after: magictoken.ex_run_nonsquare.begin
    :end-before: magictoken.ex_run_nonsquare.end
    :dedent: 8
@@ -542,9 +542,9 @@ called inside kernels, but the output array must be passed in as a positional
 argument. The following example demonstrates a call to :func:`np.sin` inside a
 kernel following this pattern:
 
-.. literalinclude:: ../../../numba_cuda/numba/cuda/tests/doc_examples/test_ufunc.py
+.. literalinclude:: ../../../numba_cuda/tests/doc_examples/test_ufunc.py
    :language: python
-   :caption: from ``test_ex_cuda_ufunc_call`` in ``numba/cuda/tests/doc_examples/test_ufunc.py``
+   :caption: from ``test_ex_cuda_ufunc_call`` in ``tests/doc_examples/test_ufunc.py``
    :start-after: ex_cuda_ufunc.begin
    :end-before: ex_cuda_ufunc.end
    :dedent: 8
@@ -562,9 +562,9 @@ non-Python) library.
 Using pointers requires them to be explicitly specified in the signature. We
 can create them with ``types.CPointer``:
 
-.. literalinclude:: ../../../numba_cuda/numba/cuda/tests/doc_examples/test_cpointer.py
+.. literalinclude:: ../../../numba_cuda/tests/doc_examples/test_cpointer.py
    :language: python
-   :caption: from ``test_ex_cpointer`` in ``numba/cuda/tests/doc_examples/test_cpointer.py``
+   :caption: from ``test_ex_cpointer`` in ``tests/doc_examples/test_cpointer.py``
    :start-after: ex_cpointer.sig.begin
    :end-before: ex_cpointer.sig.end
    :dedent: 8
@@ -576,9 +576,9 @@ about the shape of the array. We need to pass the length into the kernel,
 instead of being able to use ``len(x)`` or ``x.shape`` as we would with an
 array.
 
-.. literalinclude:: ../../../numba_cuda/numba/cuda/tests/doc_examples/test_cpointer.py
+.. literalinclude:: ../../../numba_cuda/tests/doc_examples/test_cpointer.py
    :language: python
-   :caption: from ``test_ex_cpointer`` in ``numba/cuda/tests/doc_examples/test_cpointer.py``
+   :caption: from ``test_ex_cpointer`` in ``tests/doc_examples/test_cpointer.py``
    :start-after: ex_cpointer.kernel.begin
    :end-before: ex_cpointer.kernel.end
    :dedent: 8
@@ -591,9 +591,9 @@ purpose of this example. However, the pointer could have been provided from
 anywhere - for example, from another library that doesn't support the CUDA Array Interface,
 or from ``cudaMalloc`` in a C / C++ program, etc..
 
-.. literalinclude:: ../../../numba_cuda/numba/cuda/tests/doc_examples/test_cpointer.py
+.. literalinclude:: ../../../numba_cuda/tests/doc_examples/test_cpointer.py
    :language: python
-   :caption: from ``test_ex_cpointer`` in ``numba/cuda/tests/doc_examples/test_cpointer.py``
+   :caption: from ``test_ex_cpointer`` in ``tests/doc_examples/test_cpointer.py``
    :start-after: ex_cpointer.launch.begin
    :end-before: ex_cpointer.launch.end
    :dedent: 8
