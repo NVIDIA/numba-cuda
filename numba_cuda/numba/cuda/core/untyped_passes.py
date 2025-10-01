@@ -17,13 +17,12 @@ from numba.core import (
     errors,
     types,
     ir,
-    config,
 )
-from numba.cuda.core import consts, rewrites
+from numba.cuda.core import consts, rewrites, config
 from numba.cuda.core.interpreter import Interpreter
 
 
-from numba.misc.special import literal_unroll
+from numba.cuda.misc.special import literal_unroll
 from numba.cuda.core.analysis import dead_branch_prune
 from numba.core.analysis import (
     rewrite_semantic_constants,

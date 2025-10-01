@@ -80,7 +80,7 @@ Searches for the CUDA driver and toolkit libraries use the NVIDIA bindings'
 In addition to the CUDA toolkit libraries, which can be installed by conda into
 an environment or installed system-wide by the `CUDA SDK installer
 <https://developer.nvidia.com/cuda-downloads>`_, the CUDA target in Numba also
-requires an up-to-date NVIDIA driver. If the ``libcuda`` library is in a
-non-standard location, users can set environment variable
-:envvar:`NUMBA_CUDA_DRIVER` to the file path (not the directory path) of the
-shared library file.
+requires an up-to-date NVIDIA driver. Updated NVIDIA drivers are also installed
+by the CUDA SDK installer, so there is no need to do both. When using the NVIDIA
+bindings (default), driver discovery is handled by their path-finding logic, and
+no Numba-specific environment variables are needed to locate ``libcuda``.
