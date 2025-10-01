@@ -13,20 +13,13 @@ package=$(realpath wheel/numba_cuda*.whl)
 echo "Package path: $package"
 python -m pip install \
     "${package}[test]" \
-    cuda-python \
+    cuda-python
 
 # FIXME: Find a way to build the tests that does not depend on the CUDA Python bindings
-#rapids-logger "Build tests"
-#PY_SCRIPT="
-#import numba_cuda
-#root = numba_cuda.__file__.rstrip('__init__.py')
-#test_dir = root + \"tests/test_binary_generation/\"
-#print(test_dir)
-#"
-#
-#pushd $NUMBA_CUDA_TEST_BIN_DIR
-#NUMBA_CUDA_USE_NVIDIA_BINDING=0 make
-#popd
+
+pushd $NUMBA_CUDA_TEST_BIN_DIR
+NUMBA_CUDA_USE_NVIDIA_BINDING=0 make
+popd
 
 
 rapids-logger "Check GPU usage"
