@@ -80,9 +80,19 @@ jobs:
           $wheelFile = Get-ChildItem -Path "wheel-artifacts" -Filter "*.whl" -Recurse | Select-Object -First 1
 
           if ($wheelFile) {
-            Copy-Item $wheelFile.FullName "llvmlite-fixed.whl"
-            Write-Host "Fixed llvmlite wheel ready: llvmlite-fixed.whl"
-            Write-Host "Wheel file: $($wheelFile.FullName)"
+            # Copy the wheel file to the current directory with its original name
+            Copy-Item $wheelFile.FullName "."
+            Write-Host "Fixed llvmlite wheel ready: $($wheelFile.Name)"
+            Write-Host "Original wheel file: $($wheelFile.FullName)"
+            Write-Host "Copied to current directory: $($wheelFile.Name)"
+
+            # Verify the file exists
+            if (Test-Path $wheelFile.Name) {
+              Write-Host "Wheel file exists: $($wheelFile.Name)"
+              Write-Host "File size: $((Get-Item $wheelFile.Name).Length) bytes"
+            } else {
+              Write-Host "ERROR: Wheel file not found after copy"
+            }
           } else {
             Write-Host "No wheel file found in artifact"
             Write-Host "Available files:"

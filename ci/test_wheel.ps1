@@ -38,15 +38,13 @@ python -m pip install "${package}[cu${CUDA_VER_MAJOR},test-cu${CUDA_VER_MAJOR}]"
 rapids-logger "Install fixed llvmlite 0.45.0 Windows wheel"
 
 # Check if the fixed wheel was downloaded by the workflow
-$fixed_wheel_path = "llvmlite-fixed.whl"
+# Look for any llvmlite wheel file in the current directory
+$fixed_wheel_path = Get-ChildItem -Path "." -Filter "llvmlite*.whl" | Select-Object -First 1
 
-if (Test-Path $fixed_wheel_path) {
-    rapids-logger "Installing fixed llvmlite wheel"
-    python -m pip install --force-reinstall --no-deps $fixed_wheel_path
+if ($fixed_wheel_path) {
+    rapids-logger "Installing fixed llvmlite wheel: $($fixed_wheel_path.Name)"
+    python -m pip install --force-reinstall --no-deps $fixed_wheel_path.FullName
     rapids-logger "Successfully installed fixed llvmlite wheel"
-
-    # Clean up the wheel file
-    Remove-Item $fixed_wheel_path -Force -ErrorAction SilentlyContinue
 } else {
     rapids-logger "Fixed wheel not found, falling back to version pinning"
     python -m pip install "llvmlite<0.45" "numba==0.61.*"
