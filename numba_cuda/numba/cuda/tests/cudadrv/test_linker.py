@@ -177,12 +177,18 @@ class TestLinker(CUDATestCase):
             def kernel(x):
                 bar(x)
 
-        nvrtc_log_warnings = [wi for wi in w if "NVRTC log messages" in str(wi.message)]
-        self.assertEqual(len(nvrtc_log_warnings), 1, "Expected warnings from NVRTC")
+        nvrtc_log_warnings = [
+            wi for wi in w if "NVRTC log messages" in str(wi.message)
+        ]
+        self.assertEqual(
+            len(nvrtc_log_warnings), 1, "Expected warnings from NVRTC"
+        )
         # Check the warning refers to the log messages
         self.assertIn("NVRTC log messages", str(nvrtc_log_warnings[0].message))
         # Check the message pertaining to the unused variable is provided
-        self.assertIn("declared but never referenced", str(nvrtc_log_warnings[0].message))
+        self.assertIn(
+            "declared but never referenced", str(nvrtc_log_warnings[0].message)
+        )
 
     def test_linking_cu_error(self):
         bar = cuda.declare_device("bar", "int32(int32)")
