@@ -6,6 +6,8 @@ set -euo pipefail
 
 . /opt/conda/etc/profile.d/conda.sh
 
+source ci/common_variables.sh
+
 rapids-logger "Install docs dependencies"
 # TODO: Replace with rapids-dependency-file-generator
 DEPENDENCIES=(

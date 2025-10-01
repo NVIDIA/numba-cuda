@@ -104,7 +104,7 @@ array arguments using C pointer types.
 
 For example, a function with the following prototype:
 
-.. literalinclude:: ../../../numba_cuda/tests/doc_examples/ffi/functions.cu
+.. literalinclude:: ../../../tests/doc_examples/ffi/functions.cu
    :language: C
    :caption: ``tests/doc_examples/ffi/functions.cu``
    :start-after: magictoken.ex_sum_reduce_proto.begin
@@ -113,7 +113,7 @@ For example, a function with the following prototype:
 
 would be declared as follows:
 
-.. literalinclude:: ../../../numba_cuda/tests/doc_examples/test_ffi.py
+.. literalinclude:: ../../../tests/doc_examples/test_ffi.py
    :language: python
    :caption: from ``test_ex_from_buffer`` in ``tests/doc_examples/test_ffi.py``
    :start-after: magictoken.ex_from_buffer_decl.begin
@@ -125,7 +125,7 @@ To obtain a pointer to array data for passing to foreign functions, use the
 ``from_buffer()`` method of a ``cffi.FFI`` instance. For example, a kernel using
 the ``sum_reduce`` function could be defined as:
 
-.. literalinclude:: ../../../numba_cuda/tests/doc_examples/test_ffi.py
+.. literalinclude:: ../../../tests/doc_examples/test_ffi.py
    :language: python
    :caption: from ``test_ex_from_buffer`` in ``tests/doc_examples/test_ffi.py``
    :start-after: magictoken.ex_from_buffer_kernel.begin
@@ -250,12 +250,12 @@ headers not in the default Numba-CUDA search paths.
 
 The definitions of the C++ template APIs are in two different locations:
 
-.. literalinclude:: ../../../numba_cuda/tests/doc_examples/ffi/include/mul.cuh
+.. literalinclude:: ../../../tests/doc_examples/ffi/include/mul.cuh
    :language: C
    :caption: ``tests/doc_examples/ffi/include/mul.cuh``
    :linenos:
 
-.. literalinclude:: ../../../numba_cuda/tests/data/include/add.cuh
+.. literalinclude:: ../../../tests/data/include/add.cuh
    :language: C
    :caption: ``tests/data/include/add.cuh``
    :linenos:
@@ -263,7 +263,7 @@ The definitions of the C++ template APIs are in two different locations:
 Neither of the headers are in the default search paths of Numba-CUDA, but the
 foreign device function ``saxpy`` depends on them:
 
-.. literalinclude:: ../../../numba_cuda/tests/doc_examples/ffi/saxpy.cu
+.. literalinclude:: ../../../tests/doc_examples/ffi/saxpy.cu
    :language: C
    :caption: ``tests/data/doc_examples/ffi/saxpy.cu``
    :linenos:
@@ -272,7 +272,7 @@ In the Python code, assume that ``mul_dir`` and ``add_dir`` are set to the
 paths that contain ``mul.cuh`` and ``add.cuh`` respectively. The paths are
 joined with ``:`` before setting ``config.CUDA_NVRTC_EXTRA_SEARCH_PATHS``:
 
-.. literalinclude:: ../../../numba_cuda/tests/doc_examples/test_ffi.py
+.. literalinclude:: ../../../tests/doc_examples/test_ffi.py
    :language: python
    :caption: from ``test_ex_extra_includes`` in ``tests/doc_examples/test_ffi.py``
    :start-after: magictoken.ex_extra_search_paths.begin
@@ -282,7 +282,7 @@ joined with ``:`` before setting ``config.CUDA_NVRTC_EXTRA_SEARCH_PATHS``:
 
 Next, use ``saxpy`` as intended:
 
-.. literalinclude:: ../../../numba_cuda/tests/doc_examples/test_ffi.py
+.. literalinclude:: ../../../tests/doc_examples/test_ffi.py
    :language: python
    :caption: from ``test_ex_extra_includes`` in ``tests/doc_examples/test_ffi.py``
    :start-after: magictoken.ex_extra_search_paths_kernel.begin
@@ -299,7 +299,7 @@ multiply pairs of numbers from two arrays.
 
 The foreign function is written as follows:
 
-.. literalinclude:: ../../../numba_cuda/tests/doc_examples/ffi/functions.cu
+.. literalinclude:: ../../../tests/doc_examples/ffi/functions.cu
    :language: C
    :caption: ``tests/doc_examples/ffi/functions.cu``
    :start-after: magictoken.ex_mul_f32_f32.begin
@@ -308,7 +308,7 @@ The foreign function is written as follows:
 
 The Python code and kernel are:
 
-.. literalinclude:: ../../../numba_cuda/tests/doc_examples/test_ffi.py
+.. literalinclude:: ../../../tests/doc_examples/test_ffi.py
    :language: python
    :caption: from ``test_ex_linking_cu`` in ``tests/doc_examples/test_ffi.py``
    :start-after: magictoken.ex_linking_cu.begin

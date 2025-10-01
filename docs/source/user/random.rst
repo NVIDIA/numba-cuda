@@ -85,7 +85,7 @@ Instead, it uses a fixed size 3D grid with a total of 2,097,152 (``(16 ** 3) *
 ``tid``, to index into the 2,097,152 RNG states.
 
 
-.. literalinclude:: ../../../numba_cuda/tests/doc_examples/test_random.py
+.. literalinclude:: ../../../tests/doc_examples/test_random.py
    :language: python
    :caption: from ``test_ex_3d_grid of ``tests/doc_example/test_random.py``
    :start-after: magictoken.ex_3d_grid.begin
