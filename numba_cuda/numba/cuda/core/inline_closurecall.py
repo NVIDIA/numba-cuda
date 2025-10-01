@@ -5,8 +5,8 @@ import types as pytypes  # avoid confusion with numba.types
 import copy
 import ctypes
 import numba.core.analysis
-from numba.core import types, typing, config, cgutils, ir, errors
-from numba.cuda import utils
+from numba.core import types, typing, config, ir, errors
+from numba.cuda import utils, cgutils
 from numba.cuda.core.ir_utils import (
     next_label,
     add_offset_to_labels,
@@ -34,14 +34,14 @@ from numba.core.analysis import (
     compute_live_variables,
 )
 from numba.core.imputils import impl_ret_untracked
-from numba.core.extending import intrinsic
+from numba.cuda.extending import intrinsic
 from numba.core.typing import signature
 
 from numba.cuda.core import postproc, rewrites
 from numba.np.unsafe.ndarray import empty_inferred as unsafe_empty_inferred
 import numpy as np
 import operator
-import numba.misc.special
+from numba.cuda.misc.special import prange
 
 """
 Variable enable_inline_arraycall is only used for testing purpose.
@@ -1060,10 +1060,7 @@ def _find_iter_range(func_ir, range_iter_var, swapped):
     debug_print("func_var = ", func_var, " func_def = ", func_def)
     require(
         isinstance(func_def, ir.Global)
-        and (
-            func_def.value is range
-            or func_def.value == numba.misc.special.prange
-        )
+        and (func_def.value is range or func_def.value == prange)
     )
     nargs = len(range_def.args)
     swapping = [('"array comprehension"', "closure of"), range_def.func.loc]
@@ -1108,7 +1105,7 @@ def length_of_iterator(typingctx, val):
         def codegen(context, builder, sig, args):
             (value,) = args
             intp_t = context.get_value_type(types.intp)
-            from numba.cpython.listobj import ListIterInstance
+            from numba.cuda.cpython.listobj import ListIterInstance
 
             iterobj = ListIterInstance(context, builder, sig.args[0], value)
             return impl_ret_untracked(context, builder, intp_t, iterobj.size)

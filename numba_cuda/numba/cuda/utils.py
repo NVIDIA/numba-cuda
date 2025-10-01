@@ -653,7 +653,7 @@ def dump_llvm(fndesc, module):
             from pygments import highlight
             from pygments.lexers import LlvmLexer as lexer
             from pygments.formatters import Terminal256Formatter
-            from numba.misc.dump_style import by_colorscheme
+            from numba.cuda.misc.dump_style import by_colorscheme
 
             print(
                 highlight(

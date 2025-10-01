@@ -10,7 +10,6 @@ import collections
 import warnings
 
 import numba
-from numba.core.extending import _Intrinsic
 from numba.core import types, ir, analysis
 from numba.cuda import typing
 from numba.cuda.core import postproc, rewrites, config
@@ -806,6 +805,7 @@ def has_no_side_effect(rhs, lives, call_table):
     """Returns True if this expression has no side effects that
     would prevent re-ordering.
     """
+    from numba.cuda.extending import _Intrinsic
 
     if isinstance(rhs, ir.Expr) and rhs.op == "call":
         func_name = rhs.func.name
@@ -1771,6 +1771,8 @@ def find_callname(
     Providing typemap can make the call matching more accurate in corner cases
     such as bounded call on an object which is inside another object.
     """
+    from numba.cuda.extending import _Intrinsic
+
     require(isinstance(expr, ir.Expr) and expr.op == "call")
     callee = expr.func
     callee_def = definition_finder(func_ir, callee)
@@ -1793,7 +1795,7 @@ def find_callname(
             def_val = callee_def.value
             # get the underlying definition of Intrinsic object to be able to
             # find the module effectively.
-            # Otherwise, it will return numba.extending
+            # Otherwise, it will return numba.cuda.extending
             if isinstance(def_val, _Intrinsic):
                 def_val = def_val._defn
             if hasattr(def_val, "__module__"):
