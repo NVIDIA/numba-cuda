@@ -26,6 +26,7 @@ function rapids-logger {
 
 $NUMBA_CUDA_TEST_DIR = $PWD + "\tests\"
 $NUMBA_CUDA_TEST_BIN_DIR = $NUMBA_CUDA_TEST_DIR + "test_binary_generation\"
+$env:PYTHONPATH = "$PWD;" + ($env:PYTHONPATH)
 
 $CUDA_VER_MAJOR_MINOR = ($env:CUDA_VER -split '\.')[0..1] -join '.'
 $CUDA_VER_MAJOR = ($env:CUDA_VER -split '\.')[0] -join '.'
