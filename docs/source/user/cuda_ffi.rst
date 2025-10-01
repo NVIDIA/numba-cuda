@@ -255,9 +255,9 @@ The definitions of the C++ template APIs are in two different locations:
    :caption: ``tests/doc_examples/ffi/include/mul.cuh``
    :linenos:
 
-.. literalinclude:: ../../../tests/data/include/add.cuh
+.. literalinclude:: ../../../numba_cuda/numba/cuda/test_data/include/add.cuh
    :language: C
-   :caption: ``tests/data/include/add.cuh``
+   :caption: ``numba_cuda/numba/cuda/test_data/include/add.cuh``
    :linenos:
 
 Neither of the headers are in the default search paths of Numba-CUDA, but the
@@ -265,7 +265,7 @@ foreign device function ``saxpy`` depends on them:
 
 .. literalinclude:: ../../../tests/doc_examples/ffi/saxpy.cu
    :language: C
-   :caption: ``tests/data/doc_examples/ffi/saxpy.cu``
+   :caption: ``tests/doc_examples/ffi/saxpy.cu``
    :linenos:
 
 In the Python code, assume that ``mul_dir`` and ``add_dir`` are set to the
