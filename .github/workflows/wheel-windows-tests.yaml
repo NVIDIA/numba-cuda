@@ -73,18 +73,22 @@ jobs:
           # Extract the wheel from the downloaded artifact
           # This addresses the llvmlite 0.45.0 Windows wheel dependency issue
           # See: https://github.com/numba/llvmlite/issues/1297
-          if (Test-Path "wheel-artifacts\llvmlite-win-64-py3.12.zip") {
-            Expand-Archive -Path "wheel-artifacts\llvmlite-win-64-py3.12.zip" -DestinationPath "wheel-artifacts\extracted" -Force
-            $wheelFile = Get-ChildItem -Path "wheel-artifacts\extracted" -Filter "*.whl" -Recurse | Select-Object -First 1
-            if ($wheelFile) {
-              Copy-Item $wheelFile.FullName "llvmlite-fixed.whl"
-              Write-Host "Fixed llvmlite wheel ready: llvmlite-fixed.whl"
-            } else {
-              Write-Host "No wheel file found in artifact"
-            }
+          Write-Host "Checking for downloaded artifacts..."
+          Get-ChildItem -Path "wheel-artifacts" -Recurse
+
+          # Look for the wheel file directly in the wheel-artifacts directory
+          $wheelFile = Get-ChildItem -Path "wheel-artifacts" -Filter "*.whl" -Recurse | Select-Object -First 1
+
+          if ($wheelFile) {
+            Copy-Item $wheelFile.FullName "llvmlite-fixed.whl"
+            Write-Host "Fixed llvmlite wheel ready: llvmlite-fixed.whl"
+            Write-Host "Wheel file: $($wheelFile.FullName)"
           } else {
-            Write-Host "Artifact download failed"
+            Write-Host "No wheel file found in artifact"
+            Write-Host "Available files:"
+            Get-ChildItem -Path "wheel-artifacts" -Recurse | ForEach-Object { Write-Host "  $($_.FullName)" }
           }
+
 
       - name: Python tests
         run: |
