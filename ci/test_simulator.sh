@@ -6,6 +6,8 @@ set -euo pipefail
 
 . /opt/conda/etc/profile.d/conda.sh
 
+source ci/common_variables.sh
+
 rapids-logger "Install testing dependencies"
 # TODO: Replace with rapids-dependency-file-generator
 DEPENDENCIES=(
@@ -46,7 +48,7 @@ set +e
 
 rapids-logger "Run Tests"
 export NUMBA_ENABLE_CUDASIM=1
-pytest tests -v
+pytest $NUMBA_CUDA_TEST_DIR -v
 
 popd
 

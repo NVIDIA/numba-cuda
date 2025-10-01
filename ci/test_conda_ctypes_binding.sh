@@ -6,6 +6,8 @@ set -euo pipefail
 
 . /opt/conda/etc/profile.d/conda.sh
 
+source ci/common_variables.sh
+
 CTK_PACKAGE_DEPENDENCIES=(
     "cuda-nvcc-impl"
     "cuda-nvrtc"
