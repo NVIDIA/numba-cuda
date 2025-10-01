@@ -29,13 +29,13 @@ from numba.core.errors import (
 from numba.cuda.core.funcdesc import default_mangler
 from numba.cuda.core.environment import Environment
 from numba.core.analysis import compute_use_defs, must_use_alloca
-from numba.misc.firstlinefinder import get_func_body_first_lineno
+from numba.cuda.misc.firstlinefinder import get_func_body_first_lineno
 from numba import version_info
 
 numba_version = version_info.short
 del version_info
 if numba_version > (0, 60):
-    from numba.misc.coverage_support import get_registered_loc_notify
+    from numba.cuda.misc.coverage_support import get_registered_loc_notify
 
 
 _VarArgItem = namedtuple("_VarArgItem", ("vararg", "index"))
