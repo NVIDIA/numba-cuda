@@ -24,9 +24,10 @@ function rapids-logger {
     Write-Host $topBottom -ForegroundColor Green
 }
 
-$NUMBA_CUDA_TEST_DIR = $PWD + "\tests\"
-$NUMBA_CUDA_TEST_BIN_DIR = $NUMBA_CUDA_TEST_DIR + "test_binary_generation\"
-$env:PYTHONPATH = "$PWD;" + ($env:PYTHONPATH)
+$repoRoot = (Get-Location).Path
+$NUMBA_CUDA_TEST_DIR = Join-Path $repoRoot 'tests'
+$NUMBA_CUDA_TEST_BIN_DIR = Join-Path $NUMBA_CUDA_TEST_DIR 'test_binary_generation'
+$env:PYTHONPATH = "$repoRoot;$($env:PYTHONPATH)"
 
 $CUDA_VER_MAJOR_MINOR = ($env:CUDA_VER -split '\.')[0..1] -join '.'
 $CUDA_VER_MAJOR = ($env:CUDA_VER -split '\.')[0] -join '.'
@@ -39,7 +40,7 @@ python -m pip install "llvmlite<0.45" "numba==0.61.*" # WAR for https://github.c
 
 
 rapids-logger "Build tests"
-$NUMBA_CUDA_TEST_BIN_DIR = $NUMBA_CUDA_TEST_DIR + "test_binary_generation\"
+$NUMBA_CUDA_TEST_BIN_DIR = Join-Path $NUMBA_CUDA_TEST_DIR 'test_binary_generation'
 echo "Test binary dir: $NUMBA_CUDA_TEST_BIN_DIR"
 pushd $NUMBA_CUDA_TEST_BIN_DIR
 Get-Location
