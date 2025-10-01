@@ -1,54 +1,7 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-2-Clause
 
-from numba.cuda.utils import threadsafe_cached_property as cached_property
-
-from numba.core import typing
-from numba.core import dispatcher
 from numba.cuda import utils
-from numba.cuda.core import cpu
-
-# -----------------------------------------------------------------------------
-# Default CPU target descriptors
-
-
-class CPUTarget:
-    options = cpu.CPUTargetOptions
-
-    def __init__(self, target_name):
-        self._target_name = target_name
-
-    @cached_property
-    def _toplevel_target_context(self):
-        # Lazily-initialized top-level target context, for all threads
-        return cpu.CPUContext(self.typing_context, self._target_name)
-
-    @cached_property
-    def _toplevel_typing_context(self):
-        # Lazily-initialized top-level typing context, for all threads
-        return typing.Context()
-
-    @property
-    def target_context(self):
-        """
-        The target context for CPU targets.
-        """
-        return self._toplevel_target_context
-
-    @property
-    def typing_context(self):
-        """
-        The typing context for CPU targets.
-        """
-        return self._toplevel_typing_context
-
-
-# The global CPU target
-cpu_target = CPUTarget("cpu")
-
-
-class CPUDispatcher(dispatcher.Dispatcher):
-    targetdescr = cpu_target
 
 
 class DelayedRegistry(utils.UniqueDict):
