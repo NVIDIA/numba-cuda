@@ -90,55 +90,57 @@ class TestCompile(unittest.TestCase):
             self.assertIn(".visible .entry", code_list[0])
             self.assertEqual(resty, void)
 
-    def test_device_function(self):
+    def _handle_compile_result(self, ret, compile_function):
+        ptx_or_code_list, resty = ret
+        if compile_function == compile_ptx:
+            ptx = ptx_or_code_list
+        else:
+            ptx = ptx_or_code_list[0]
+        return ptx, resty
+
+    def _test_device_function(self, compile_function, default_kwargs):
         def add(x, y):
             return x + y
 
         args = (float32, float32)
 
+        ret = compile_function(add, args, **default_kwargs)
+        ptx, resty = self._handle_compile_result(ret, compile_function)
+
+        # Device functions take a func_retval parameter for storing the
+        # returned value in by reference
+        self.assertIn("func_retval", ptx)
+        # .visible .func is used to denote a device function
+        self.assertIn(".visible .func", ptx)
+        # .visible .entry would denote the presence of a global function
+        self.assertNotIn(".visible .entry", ptx)
+        # Inferred return type as expected?
+        self.assertEqual(resty, float32)
+
+        # Check that function's output matches signature
+        sig_int32 = int32(int32, int32)
+        ret = compile_function(add, sig_int32, **default_kwargs)
+        ptx, resty = self._handle_compile_result(ret, compile_function)
+        self.assertEqual(resty, int32)
+
+        sig_int16 = int16(int16, int16)
+        ret = compile_function(add, sig_int16, **default_kwargs)
+        ptx, resty = self._handle_compile_result(ret, compile_function)
+        self.assertEqual(resty, int16)
+        # Using string as signature
+        sig_string = "uint32(uint32, uint32)"
+        ret = compile_function(add, sig_string, **default_kwargs)
+        ptx, resty = self._handle_compile_result(ret, compile_function)
+        self.assertEqual(resty, uint32)
+
+    def test_device_function(self):
         with self.subTest("compile_ptx"):
-            ptx, resty = compile_ptx(add, args, device=True)
-
-            # Device functions take a func_retval parameter for storing the
-            # returned value in by reference
-            self.assertIn("func_retval", ptx)
-            # .visible .func is used to denote a device function
-            self.assertIn(".visible .func", ptx)
-            # .visible .entry would denote the presence of a global function
-            self.assertNotIn(".visible .entry", ptx)
-            # Inferred return type as expected?
-            self.assertEqual(resty, float32)
-
-            # Check that function's output matches signature
-            sig_int32 = int32(int32, int32)
-            ptx, resty = compile_ptx(add, sig_int32, device=True)
-            self.assertEqual(resty, int32)
-
-            sig_int16 = int16(int16, int16)
-            ptx, resty = compile_ptx(add, sig_int16, device=True)
-            self.assertEqual(resty, int16)
-            # Using string as signature
-            sig_string = "uint32(uint32, uint32)"
-            ptx, resty = compile_ptx(add, sig_string, device=True)
-            self.assertEqual(resty, uint32)
+            self._test_device_function(compile_ptx, {"device": True})
 
         with self.subTest("compile_all"):
-            code_list, resty = compile_all(
-                add, args, device=True, abi="c", output="ptx"
+            self._test_device_function(
+                compile_all, {"device": True, "abi": "c", "output": "ptx"}
             )
-            assert len(code_list) == 1
-            self.assertIn("func_retval", code_list[0])
-            self.assertIn(".visible .func", code_list[0])
-            self.assertNotIn(".visible .entry", code_list[0])
-
-            code_list, resty = compile_all(add, sig_int32, device=True, abi="c")
-            self.assertEqual(resty, int32)
-            code_list, resty = compile_all(add, sig_int16, device=True, abi="c")
-            self.assertEqual(resty, int16)
-            code_list, resty = compile_all(
-                add, sig_string, device=True, abi="c"
-            )
-            self.assertEqual(resty, uint32)
 
     def test_fastmath(self):
         def f(x, y, z, d):
