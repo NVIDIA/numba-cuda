@@ -61,35 +61,6 @@ def f_module(x, y):
 
 @skip_on_cudasim("Compilation unsupported in the simulator")
 class TestCompile(unittest.TestCase):
-    def test_global_kernel(self):
-        def f(r, x, y):
-            i = cuda.grid(1)
-            if i < len(r):
-                r[i] = x[i] + y[i]
-
-        args = (float32[:], float32[:], float32[:])
-
-        with self.subTest("compile_ptx"):
-            ptx, resty = compile_ptx(f, args)
-            # Kernels should not have a func_retval parameter
-            self.assertNotIn("func_retval", ptx)
-            # .visible .func is used to denote a device function
-            self.assertNotIn(".visible .func", ptx)
-            # .visible .entry would denote the presence of a global function
-            self.assertIn(".visible .entry", ptx)
-            # Return type for kernels should always be void
-            self.assertEqual(resty, void)
-
-        with self.subTest("compile_all"):
-            code_list, resty = compile_all(
-                f, args, device=False, abi="numba", output="ptx"
-            )
-            assert len(code_list) == 1
-            self.assertNotIn("func_retval", code_list[0])
-            self.assertNotIn(".visible .func", code_list[0])
-            self.assertIn(".visible .entry", code_list[0])
-            self.assertEqual(resty, void)
-
     def _handle_compile_result(self, ret, compile_function):
         ptx_or_code_list, resty = ret
         if compile_function == compile_ptx:
@@ -97,6 +68,44 @@ class TestCompile(unittest.TestCase):
         else:
             ptx = ptx_or_code_list[0]
         return ptx, resty
+
+    def test_global_kernel(self):
+        with self.subTest("compile_ptx"):
+            self._test_global_kernel(compile_ptx, {})
+
+        with self.subTest("compile_all"):
+            self._test_global_kernel(
+                compile_all, {"device": False, "abi": "numba", "output": "ptx"}
+            )
+
+    def _test_global_kernel(self, compile_function, default_kwargs):
+        def f(r, x, y):
+            i = cuda.grid(1)
+            if i < len(r):
+                r[i] = x[i] + y[i]
+
+        args = (float32[:], float32[:], float32[:])
+
+        ret = compile_function(f, args, **default_kwargs)
+        ptx, resty = self._handle_compile_result(ret, compile_function)
+
+        # Kernels should not have a func_retval parameter
+        self.assertNotIn("func_retval", ptx)
+        # .visible .func is used to denote a device function
+        self.assertNotIn(".visible .func", ptx)
+        # .visible .entry would denote the presence of a global function
+        self.assertIn(".visible .entry", ptx)
+        # Return type for kernels should always be void
+        self.assertEqual(resty, void)
+
+    def test_device_function(self):
+        with self.subTest("compile_ptx"):
+            self._test_device_function(compile_ptx, {"device": True})
+
+        with self.subTest("compile_all"):
+            self._test_device_function(
+                compile_all, {"device": True, "abi": "c", "output": "ptx"}
+            )
 
     def _test_device_function(self, compile_function, default_kwargs):
         def add(x, y):
@@ -133,50 +142,33 @@ class TestCompile(unittest.TestCase):
         ptx, resty = self._handle_compile_result(ret, compile_function)
         self.assertEqual(resty, uint32)
 
-    def test_device_function(self):
+    def test_fastmath(self):
         with self.subTest("compile_ptx"):
-            self._test_device_function(compile_ptx, {"device": True})
+            self._test_fastmath(compile_ptx, {"device": True})
 
         with self.subTest("compile_all"):
-            self._test_device_function(
-                compile_all, {"device": True, "abi": "c", "output": "ptx"}
-            )
+            self._test_fastmath(compile_all, {"device": True, "output": "ptx"})
 
-    def test_fastmath(self):
+    def _test_fastmath(self, compile_function, default_kwargs):
         def f(x, y, z, d):
             return sqrt((x * y + z) / d)
 
         args = (float32, float32, float32, float32)
 
-        with self.subTest("compile_ptx"):
-            ptx, resty = compile_ptx(f, args, device=True)
+        # Without fastmath, fma contraction is enabled by default, but ftz and
+        # approximate div / sqrt are not.
+        ret = compile_function(f, args, **default_kwargs)
+        ptx, resty = self._handle_compile_result(ret, compile_function)
+        self.assertIn("fma.rn.f32", ptx)
+        self.assertIn("div.rn.f32", ptx)
+        self.assertIn("sqrt.rn.f32", ptx)
 
-            # Without fastmath, fma contraction is enabled by default, but ftz and
-            # approximate div / sqrt is not.
-            self.assertIn("fma.rn.f32", ptx)
-            self.assertIn("div.rn.f32", ptx)
-            self.assertIn("sqrt.rn.f32", ptx)
-
-            ptx, resty = compile_ptx(f, args, device=True, fastmath=True)
-
-            # With fastmath, ftz and approximate div / sqrt are enabled
-            self.assertIn("fma.rn.ftz.f32", ptx)
-            self.assertIn("div.approx.ftz.f32", ptx)
-            self.assertIn("sqrt.approx.ftz.f32", ptx)
-
-        with self.subTest("compile_all"):
-            code_list, resty = compile_all(f, args, device=True, output="ptx")
-            assert len(code_list) == 1
-            self.assertIn("fma.rn.f32", code_list[0])
-            self.assertIn("div.rn.f32", code_list[0])
-            self.assertIn("sqrt.rn.f32", code_list[0])
-            code_list, resty = compile_all(
-                f, args, device=True, fastmath=True, output="ptx"
-            )
-            assert len(code_list) == 1
-            self.assertIn("fma.rn.ftz.f32", code_list[0])
-            self.assertIn("div.approx.ftz.f32", code_list[0])
-            self.assertIn("sqrt.approx.ftz.f32", code_list[0])
+        # With fastmath, ftz and approximate div / sqrt are enabled
+        ret = compile_function(f, args, fastmath=True, **default_kwargs)
+        ptx, resty = self._handle_compile_result(ret, compile_function)
+        self.assertIn("fma.rn.ftz.f32", ptx)
+        self.assertIn("div.approx.ftz.f32", ptx)
+        self.assertIn("sqrt.approx.ftz.f32", ptx)
 
     def check_debug_info(self, ptx):
         # A debug_info section should exist in the PTX. Whitespace varies
