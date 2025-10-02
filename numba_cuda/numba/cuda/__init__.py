@@ -5,6 +5,7 @@ import importlib
 from numba.cuda.core import config
 from .utils import _readenv
 import warnings
+import sys
 
 
 # Enable pynvjitlink based on the following precedence:
@@ -96,3 +97,13 @@ numba_cuda_default_ptx_cc = (7, 5)
 
 if numba_cuda_default_ptx_cc > config_default_cc:
     config.CUDA_DEFAULT_PTX_CC = numba_cuda_default_ptx_cc
+
+
+# Warn if on Linux and RTLD_GLOBAL is enabled
+if sys.platform.startswith("linux") and (sys.getdlopenflags() & 0x100) != 0:
+    warnings.warn(
+        "RTLD_GLOBAL is enabled, which might result in symbol resolution "
+        "conflicts when importing both numba and numba.cuda. Consider using "
+        "sys.setdlopenflags() to disable RTLD_GLOBAL "
+        "if you encounter symbol conflicts."
+    )
