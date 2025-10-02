@@ -325,8 +325,14 @@ def check_reduce_func(func_ir, func_var):
                             analysis"
         )
     if isinstance(reduce_func, (ir.FreeVar, ir.Global)):
-        if not isinstance(reduce_func.value, numba.core.registry.CPUDispatcher):
-            raise ValueError("Invalid reduction function")
+        try:
+            from numba.core.registry import CPUDispatcher
+
+            if not isinstance(reduce_func.value, CPUDispatcher):
+                raise ValueError("Invalid reduction function")
+        except ImportError:
+            pass
+
         # pull out the python function for inlining
         reduce_func = reduce_func.value.py_func
     elif not (hasattr(reduce_func, "code") or hasattr(reduce_func, "__code__")):
