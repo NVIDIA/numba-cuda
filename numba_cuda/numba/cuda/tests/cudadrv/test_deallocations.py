@@ -13,7 +13,7 @@ from numba.cuda.testing import (
     CUDATestCase,
 )
 from numba.cuda.tests.support import captured_stderr
-from numba.core import config
+from numba.cuda.core import config
 
 
 @skip_on_cudasim("not supported on CUDASIM")

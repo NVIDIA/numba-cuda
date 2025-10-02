@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: BSD-2-Clause
 
 from numba import types
-from numba.core import config
+from numba.cuda.core import config
 
 
 class TestStruct:
@@ -21,8 +21,8 @@ test_struct_model_type = TestStructModelType()
 
 if not config.ENABLE_CUDASIM:
     from numba import int32
-    from numba.core.extending import (
-        models,
+    from numba.cuda.extending import (
+        core_models,
         typeof_impl,
         type_callable,
     )
@@ -38,7 +38,7 @@ if not config.ENABLE_CUDASIM:
         return test_struct_model_type
 
     @register_model(TestStructModelType)
-    class TestStructModel(models.StructModel):
+    class TestStructModel(core_models.StructModel):
         def __init__(self, dmm, fe_type):
             members = [("x", int32), ("y", int32)]
             super().__init__(dmm, fe_type, members)

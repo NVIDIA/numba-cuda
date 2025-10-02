@@ -20,7 +20,8 @@ from .cudadrv import devicearray
 from .cudadrv.devices import require_context, gpus
 from .cudadrv.devices import get_context as current_context
 from .cudadrv.runtime import runtime
-from numba.core import config
+from .cudadrv.linkable_code import LinkableCode
+from numba.cuda.core import config
 
 reduce = Reduce
 

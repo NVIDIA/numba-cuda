@@ -11,7 +11,6 @@ import operator
 from numba.cuda.testing import skip_if_nvjitlink_missing
 
 from numba import (
-    config,
     int16,
     int32,
     int64,
@@ -22,6 +21,7 @@ from numba import (
     float64,
 )
 from numba.types import float16
+from numba.cuda import config
 
 if not config.ENABLE_CUDASIM:
     from numba.cuda._internal.cuda_bf16 import (
