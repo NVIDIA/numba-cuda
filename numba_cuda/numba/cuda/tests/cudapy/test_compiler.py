@@ -186,41 +186,60 @@ class TestCompile(unittest.TestCase):
         # and NVVM assumed DBG version 1.0 if not specified, which is
         # incompatible with the 3.0 IR we use. This was specified only for
         # kernels.
+
+        with self.subTest("compile_ptx"):
+            self._test_device_function_with_debug(
+                compile_ptx, {"device": True, "debug": True, "opt": False}
+            )
+
+        with self.subTest("compile_all"):
+            self._test_device_function_with_debug(
+                compile_all,
+                {
+                    "device": True,
+                    "debug": True,
+                    "opt": False,
+                    "output": "ptx",
+                },
+            )
+
+    def _test_device_function_with_debug(
+        self, compile_function, default_kwargs
+    ):
         def f():
             pass
 
-        with self.subTest("compile_ptx"):
-            ptx, resty = compile_ptx(f, (), device=True, debug=True, opt=False)
-            self.check_debug_info(ptx)
-
-        with self.subTest("compile_all"):
-            code_list, resty = compile_all(
-                f, (), device=True, debug=True, opt=False, output="ptx"
-            )
-            assert len(code_list) == 1
-            self.check_debug_info(code_list[0])
+        ret = compile_function(f, (), **default_kwargs)
+        ptx, resty = self._handle_compile_result(ret, compile_function)
+        self.check_debug_info(ptx)
 
     def test_kernel_with_debug(self):
         # Inspired by (but not originally affected by) Issue #6719
+
+        with self.subTest("compile_ptx"):
+            self._test_kernel_with_debug(
+                compile_ptx, {"debug": True, "opt": False}
+            )
+
+        with self.subTest("compile_all"):
+            self._test_kernel_with_debug(
+                compile_all,
+                {
+                    "device": False,
+                    "abi": "numba",
+                    "debug": True,
+                    "opt": False,
+                    "output": "ptx",
+                },
+            )
+
+    def _test_kernel_with_debug(self, compile_function, default_kwargs):
         def f():
             pass
 
-        with self.subTest("compile_ptx"):
-            ptx, resty = compile_ptx(f, (), debug=True, opt=False)
-            self.check_debug_info(ptx)
-
-        with self.subTest("compile_all"):
-            code_list, resty = compile_all(
-                f,
-                (),
-                device=False,
-                abi="numba",
-                debug=True,
-                opt=False,
-                output="ptx",
-            )
-            assert len(code_list) == 1
-            self.check_debug_info(code_list[0])
+        ret = compile_function(f, (), **default_kwargs)
+        ptx, resty = self._handle_compile_result(ret, compile_function)
+        self.check_debug_info(ptx)
 
     def check_line_info(self, ptx):
         # A .file directive should be produced and include the name of the
