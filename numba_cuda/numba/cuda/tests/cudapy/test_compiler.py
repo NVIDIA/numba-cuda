@@ -63,7 +63,7 @@ def f_module(x, y):
 class TestCompile(unittest.TestCase):
     def _handle_compile_result(self, ret, compile_function):
         ptx_or_code_list, resty = ret
-        if compile_function == compile_ptx:
+        if compile_function in (compile_ptx, compile):
             ptx = ptx_or_code_list
         else:
             ptx = ptx_or_code_list[0]
@@ -354,170 +354,142 @@ class TestCompile(unittest.TestCase):
                 compile_all(f, (int32, int32), abi="fastcall", output="ptx")
 
     def test_c_abi_device_function(self):
+        with self.subTest("compile_ptx"):
+            self._test_c_abi_device_function(
+                compile_ptx, {"device": True, "abi": "c"}
+            )
+
+        with self.subTest("compile_all"):
+            self._test_c_abi_device_function(
+                compile_all, {"device": True, "abi": "c", "output": "ptx"}
+            )
+
+    def _test_c_abi_device_function(self, compile_function, default_kwargs):
         def f(x, y):
             return x + y
 
-        with self.subTest("compile_ptx"):
-            ptx, resty = compile_ptx(
-                f, int32(int32, int32), device=True, abi="c"
-            )
-            # There should be no more than two parameters
-            self.assertNotIn(ptx, "param_2")
+        # 32-bit signature
+        ret = compile_function(f, int32(int32, int32), **default_kwargs)
+        ptx, resty = self._handle_compile_result(ret, compile_function)
+        # There should be no more than two parameters
+        self.assertNotIn(ptx, "param_2")
+        # The function name should match the Python function name (not the
+        # qualname, which includes additional info), and its return value
+        # should be 32 bits
+        self.assertRegex(
+            ptx,
+            r"\.visible\s+\.func\s+\(\.param\s+\.b32\s+"
+            r"func_retval0\)\s+f\(",
+        )
 
-            # The function name should match the Python function name (not the
-            # qualname, which includes additional info), and its return value
-            # should be 32 bits
-            self.assertRegex(
-                ptx,
-                r"\.visible\s+\.func\s+\(\.param\s+\.b32\s+"
-                r"func_retval0\)\s+f\(",
-            )
-
-            # If we compile for 64-bit integers, the return type should be 64 bits
-            # wide
-            ptx, resty = compile_ptx(
-                f, int64(int64, int64), device=True, abi="c"
-            )
-            self.assertRegex(ptx, r"\.visible\s+\.func\s+\(\.param\s+\.b64")
-
-        with self.subTest("compile_all"):
-            code_list, resty = compile_all(
-                f, int32(int32, int32), device=True, abi="c", output="ptx"
-            )
-            assert len(code_list) == 1
-            self.assertRegex(
-                code_list[0],
-                r"\.visible\s+\.func\s+\(\.param\s+\.b32\s+"
-                r"func_retval0\)\s+f\(",
-            )
-
-            code_list, resty = compile_all(
-                f, int64(int64, int64), device=True, abi="c", output="ptx"
-            )
-            assert len(code_list) == 1
-            self.assertRegex(
-                code_list[0], r"\.visible\s+\.func\s+\(\.param\s+\.b64"
-            )
+        # 64-bit signature should produce 64-bit return parameter
+        ret = compile_function(f, int64(int64, int64), **default_kwargs)
+        ptx, resty = self._handle_compile_result(ret, compile_function)
+        self.assertRegex(ptx, r"\.visible\s+\.func\s+\(\.param\s+\.b64")
 
     def test_c_abi_device_function_module_scope(self):
         with self.subTest("compile_ptx"):
-            ptx, resty = compile_ptx(
-                f_module, int32(int32, int32), device=True, abi="c"
-            )
-
-            # The function name should match the Python function name, and its
-            # return value should be 32 bits
-            self.assertRegex(
-                ptx,
-                r"\.visible\s+\.func\s+\(\.param\s+\.b32\s+"
-                r"func_retval0\)\s+f_module\(",
+            self._test_c_abi_device_function_module_scope(
+                compile_ptx, {"device": True, "abi": "c"}
             )
 
         with self.subTest("compile_all"):
-            code_list, resty = compile_all(
-                f_module,
-                int32(int32, int32),
-                device=True,
-                abi="c",
-                output="ptx",
+            self._test_c_abi_device_function_module_scope(
+                compile_all,
+                {"device": True, "abi": "c", "output": "ptx"},
             )
-            assert len(code_list) == 1
-            self.assertRegex(
-                code_list[0],
-                r"\.visible\s+\.func\s+\(\.param\s+\.b32\s+"
-                r"func_retval0\)\s+f_module\(",
-            )
+
+    def _test_c_abi_device_function_module_scope(
+        self, compile_function, default_kwargs
+    ):
+        ret = compile_function(f_module, int32(int32, int32), **default_kwargs)
+        ptx, resty = self._handle_compile_result(ret, compile_function)
+
+        # The function name should match the Python function name, and its
+        # return value should be 32 bits
+        self.assertRegex(
+            ptx,
+            r"\.visible\s+\.func\s+\(\.param\s+\.b32\s+"
+            r"func_retval0\)\s+f_module\(",
+        )
 
     def test_c_abi_with_abi_name(self):
         abi_info = {"abi_name": "_Z4funcii"}
 
         with self.subTest("compile_ptx"):
-            ptx, resty = compile_ptx(
-                f_module,
-                int32(int32, int32),
-                device=True,
-                abi="c",
-                abi_info=abi_info,
-            )
-
-            # The function name should match the one given in the ABI info, and its
-            # return value should be 32 bits
-            self.assertRegex(
-                ptx,
-                r"\.visible\s+\.func\s+\(\.param\s+\.b32\s+"
-                r"func_retval0\)\s+_Z4funcii\(",
+            self._test_c_abi_with_abi_name(
+                compile_ptx,
+                {"device": True, "abi": "c", "abi_info": abi_info},
             )
 
         with self.subTest("compile_all"):
-            code_list, resty = compile_all(
-                f_module,
-                int32(int32, int32),
-                device=True,
-                abi="c",
-                abi_info=abi_info,
-                output="ptx",
+            self._test_c_abi_with_abi_name(
+                compile_all,
+                {
+                    "device": True,
+                    "abi": "c",
+                    "abi_info": abi_info,
+                    "output": "ptx",
+                },
             )
-            assert len(code_list) == 1
-            self.assertRegex(
-                code_list[0],
-                r"\.visible\s+\.func\s+\(\.param\s+\.b32\s+"
-                r"func_retval0\)\s+_Z4funcii\(",
-            )
+
+    def _test_c_abi_with_abi_name(self, compile_function, default_kwargs):
+        ret = compile_function(f_module, int32(int32, int32), **default_kwargs)
+        ptx, resty = self._handle_compile_result(ret, compile_function)
+
+        # The function name should match the one given in the ABI info, and its
+        # return value should be 32 bits
+        self.assertRegex(
+            ptx,
+            r"\.visible\s+\.func\s+\(\.param\s+\.b32\s+"
+            r"func_retval0\)\s+_Z4funcii\(",
+        )
 
     def test_compile_defaults_to_c_abi(self):
         with self.subTest("compile"):
-            ptx, resty = compile(f_module, int32(int32, int32), device=True)
-
-            # The function name should match the Python function name, and its
-            # return value should be 32 bits
-            self.assertRegex(
-                ptx,
-                r"\.visible\s+\.func\s+\(\.param\s+\.b32\s+"
-                r"func_retval0\)\s+f_module\(",
-            )
+            self._test_compile_defaults_to_c_abi(compile, {"device": True})
 
         with self.subTest("compile_all"):
-            code_list, resty = compile_all(
-                f_module,
-                int32(int32, int32),
-                device=True,
-                abi="c",
-                output="ptx",
+            self._test_compile_defaults_to_c_abi(
+                compile_all,
+                {"device": True, "output": "ptx"},
             )
-            assert len(code_list) == 1
-            self.assertRegex(
-                code_list[0],
-                r"\.visible\s+\.func\s+\(\.param\s+\.b32\s+"
-                r"func_retval0\)\s+f_module\(",
-            )
+
+    def _test_compile_defaults_to_c_abi(self, compile_function, default_kwargs):
+        ret = compile_function(f_module, int32(int32, int32), **default_kwargs)
+        ptx, resty = self._handle_compile_result(ret, compile_function)
+
+        # The function name should match the Python function name, and its
+        # return value should be 32 bits
+        self.assertRegex(
+            ptx,
+            r"\.visible\s+\.func\s+\(\.param\s+\.b32\s+"
+            r"func_retval0\)\s+f_module\(",
+        )
 
     def test_compile_to_ltoir(self):
         with self.subTest("compile"):
-            ltoir, resty = compile(
-                f_module, int32(int32, int32), device=True, output="ltoir"
+            self._test_compile_to_ltoir(
+                compile, {"device": True, "output": "ltoir"}
             )
-
-            # There are no tools to interpret the LTOIR output, but we can check
-            # that we appear to have obtained an LTOIR file. This magic number is
-            # not documented, but is expected to remain consistent.
-            LTOIR_MAGIC = 0x7F4E43ED
-            header = int.from_bytes(ltoir[:4], byteorder="little")
-            self.assertEqual(header, LTOIR_MAGIC)
-            self.assertEqual(resty, int32)
 
         with self.subTest("compile_all"):
-            code_list, resty = compile_all(
-                f_module,
-                int32(int32, int32),
-                device=True,
-                abi="c",
-                output="ltoir",
+            self._test_compile_to_ltoir(
+                compile_all,
+                {"device": True, "abi": "c", "output": "ltoir"},
             )
-            assert len(code_list) == 1
-            LTOIR_MAGIC = 0x7F4E43ED
-            header = int.from_bytes(code_list[0][:4], byteorder="little")
-            self.assertEqual(header, LTOIR_MAGIC)
-            self.assertEqual(resty, int32)
+
+    def _test_compile_to_ltoir(self, compile_function, default_kwargs):
+        ret = compile_function(f_module, int32(int32, int32), **default_kwargs)
+        code, resty = self._handle_compile_result(ret, compile_function)
+
+        # There are no tools to interpret the LTOIR output, but we can check
+        # that we appear to have obtained an LTOIR file. This magic number is
+        # not documented, but is expected to remain consistent.
+        LTOIR_MAGIC = 0x7F4E43ED
+        header = int.from_bytes(code[:4], byteorder="little")
+        self.assertEqual(header, LTOIR_MAGIC)
+        self.assertEqual(resty, int32)
 
     def test_compile_to_invalid_error(self):
         illegal_output = "illegal"
