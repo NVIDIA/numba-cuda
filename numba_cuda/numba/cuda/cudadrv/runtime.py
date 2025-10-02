@@ -8,23 +8,12 @@ The toolkit version can now be obtained from NVRTC, so we don't use a binding
 to the runtime anymore. This file is provided to maintain the existing API.
 """
 
-from numba.cuda import config
-from numba.cuda.cudadrv.nvrtc import NVRTC
+from numba.cuda.cudadrv.nvrtc import _get_nvrtc_version
 
 
 class Runtime:
     def get_version(self):
-        if config.CUDA_USE_NVIDIA_BINDING:
-            from cuda.bindings import nvrtc
-
-            retcode, *version = nvrtc.nvrtcVersion()
-            if retcode != nvrtc.nvrtcResult.NVRTC_SUCCESS:
-                raise RuntimeError(
-                    f"{retcode.name} when calling nvrtcGetVersion()"
-                )
-            return tuple(version)
-        else:
-            return NVRTC().get_version()
+        return _get_nvrtc_version()
 
 
 runtime = Runtime()

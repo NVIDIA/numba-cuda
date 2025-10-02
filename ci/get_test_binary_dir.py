@@ -3,9 +3,14 @@
 
 import numba_cuda
 import os
+import sys
 
 root = os.path.dirname(numba_cuda.__file__)
 test_dir = os.path.join(
     root, "numba", "cuda", "tests", "test_binary_generation"
 )
-print(test_dir)
+
+if os.path.isdir(test_dir):
+    print(test_dir)
+else:
+    sys.exit(f"ERROR: '{test_dir}' does NOT exist.")
