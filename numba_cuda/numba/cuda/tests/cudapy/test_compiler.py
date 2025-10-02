@@ -248,39 +248,54 @@ class TestCompile(unittest.TestCase):
         self.assertRegex(ptx, '\\.file.*test_compiler.py"')
 
     def test_device_function_with_line_info(self):
+        with self.subTest("compile_ptx"):
+            self._test_device_function_with_line_info(
+                compile_ptx, {"device": True, "lineinfo": True}
+            )
+
+        with self.subTest("compile_all"):
+            self._test_device_function_with_line_info(
+                compile_all,
+                {
+                    "device": True,
+                    "abi": "numba",
+                    "lineinfo": True,
+                    "output": "ptx",
+                },
+            )
+
+    def _test_device_function_with_line_info(
+        self, compile_function, default_kwargs
+    ):
         def f():
             pass
 
-        with self.subTest("compile_ptx"):
-            ptx, resty = compile_ptx(f, (), device=True, lineinfo=True)
-            self.check_line_info(ptx)
-
-        with self.subTest("compile_all"):
-            code_list, resty = compile_all(
-                f,
-                (),
-                device=True,
-                abi="numba",
-                lineinfo=True,
-                output="ptx",
-            )
-            assert len(code_list) == 1
-            self.check_line_info(code_list[0])
+        ret = compile_function(f, (), **default_kwargs)
+        ptx, resty = self._handle_compile_result(ret, compile_function)
+        self.check_line_info(ptx)
 
     def test_kernel_with_line_info(self):
+        with self.subTest("compile_ptx"):
+            self._test_kernel_with_line_info(compile_ptx, {"lineinfo": True})
+
+        with self.subTest("compile_all"):
+            self._test_kernel_with_line_info(
+                compile_all,
+                {
+                    "device": False,
+                    "abi": "numba",
+                    "lineinfo": True,
+                    "output": "ptx",
+                },
+            )
+
+    def _test_kernel_with_line_info(self, compile_function, default_kwargs):
         def f():
             pass
 
-        with self.subTest("compile_ptx"):
-            ptx, resty = compile_ptx(f, (), lineinfo=True)
-            self.check_line_info(ptx)
-
-        with self.subTest("compile_all"):
-            code_list, resty = compile_all(
-                f, (), device=False, abi="numba", lineinfo=True, output="ptx"
-            )
-            assert len(code_list) == 1
-            self.check_line_info(code_list[0])
+        ret = compile_function(f, (), **default_kwargs)
+        ptx, resty = self._handle_compile_result(ret, compile_function)
+        self.check_line_info(ptx)
 
     def test_non_void_return_type(self):
         def f(x, y):
