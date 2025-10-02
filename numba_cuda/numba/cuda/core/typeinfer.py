@@ -48,7 +48,7 @@ from numba.core.errors import (
     NumbaValueError,
 )
 from numba.cuda.core.funcdesc import qualifying_prefix
-from numba.core.typeconv import Conversion
+from numba.cuda.typeconv import Conversion
 
 _logger = logging.getLogger(__name__)
 
