@@ -7,10 +7,8 @@ import llvmlite.binding as ll
 from llvmlite import ir
 import warnings
 
-from numba.core import (
-    config,
-    types,
-)
+from numba.core import types
+
 from numba.core.compiler_lock import global_compiler_lock
 from numba.core.dispatcher import Dispatcher
 from numba.core.errors import NumbaWarning
@@ -31,7 +29,8 @@ from numba.cuda.debuginfo import CUDADIBuilder
 from numba.cuda.flags import CUDAFlags
 from numba.cuda.models import cuda_data_manager
 from numba.cuda.core.callconv import BaseCallConv, MinimalCallConv
-from numba.cuda.core import targetconfig
+from numba.cuda.core import config, targetconfig
+
 
 # -----------------------------------------------------------------------------
 # Typing
@@ -156,13 +155,20 @@ class CUDATargetContext(BaseContext):
     def load_additional_registries(self):
         # side effect of import needed for numba.cpython.*, numba.cuda.cpython.*, the builtins
         # registry is updated at import time.
-        from numba.cpython import tupleobj, slicing  # noqa: F401
-        from numba.cuda.cpython import numbers  # noqa: F401
-        from numba.cpython import rangeobj, iterators, enumimpl  # noqa: F401
-        from numba.cpython import unicode, charseq  # noqa: F401
-        from numba.cuda.cpython import cmathimpl, mathimpl
-        from numba.core import optional  # noqa: F401
-        from numba.misc import cffiimpl
+        from numba.cpython import tupleobj  # noqa: F401
+        from numba.cuda.cpython import (
+            numbers,
+            slicing,
+            iterators,
+            listobj,
+            unicode,
+            charseq,
+            cmathimpl,
+            mathimpl,
+        )
+        from numba.cpython import rangeobj, enumimpl  # noqa: F401
+        from numba.cuda.core import optional  # noqa: F401
+        from numba.cuda.misc import cffiimpl
         from numba.np import arrayobj  # noqa: F401
         from numba.np import npdatetime  # noqa: F401
         from . import (
@@ -185,10 +191,16 @@ class CUDATargetContext(BaseContext):
         self.install_registry(cmathimpl.registry)
         self.install_registry(mathimpl.registry)
         self.install_registry(numbers.registry)
+        self.install_registry(optional.registry)
         self.install_registry(cuda_mathimpl.registry)
         self.install_registry(vector_types.impl_registry)
         self.install_registry(fp16.target_registry)
         self.install_registry(bf16.target_registry)
+        self.install_registry(slicing.registry)
+        self.install_registry(iterators.registry)
+        self.install_registry(listobj.registry)
+        self.install_registry(unicode.registry)
+        self.install_registry(charseq.registry)
 
     def codegen(self):
         return self._internal_codegen

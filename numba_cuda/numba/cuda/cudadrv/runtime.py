@@ -8,7 +8,7 @@ The toolkit version can now be obtained from NVRTC, so we don't use a binding
 to the runtime anymore. This file is provided to maintain the existing API.
 """
 
-from numba import config
+from numba.cuda import config
 from numba.cuda.cudadrv.nvrtc import NVRTC
 
 

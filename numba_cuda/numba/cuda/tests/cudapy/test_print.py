@@ -103,7 +103,8 @@ cuda.synchronize()
 """
 
 print_bfloat16_usecase = """\
-from numba import cuda, config
+from numba import cuda
+from numba.cuda import config
 
 @cuda.jit
 def print_bfloat16():
