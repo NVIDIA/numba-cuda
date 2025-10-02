@@ -390,10 +390,6 @@ class CUDACodeLibrary(serialize.ReduceMixin, CodeLibrary):
 
         self._linking_files.add(path_or_obj)
 
-    @property
-    def linking_files_as_obj(self):
-        return self._linking_files
-
     def get_function(self, name):
         for fn in self._module.functions:
             if fn.name == name:

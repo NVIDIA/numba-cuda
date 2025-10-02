@@ -993,10 +993,12 @@ def compile_all(
     forceinline=False,
     launch_bounds=None,
 ):
-    """Return a list of PTX/LTO-IR for kernel as well as external functions depended by the kernel.
-    If external functions are cuda c/c++ source, they will be compiled with NVRTC. The output code
-    kind is the same as the `output` parameter.
-    Otherwise, they will be passed through to the return list.
+    """Similar to ``compile()``, but returns a list of PTX codes/LTO-IRs for
+    the compiled function and the external functions it depends on.
+    If external functions are CUDA C++ source, they will be compiled with
+    NVRTC. Other kinds of external function code (e.g. cubins, fatbins, etc.)
+    will be added directly to the return list. The output code kind is
+    determined by the ``output`` parameter, and defaults to ``"ltoir"``.
     """
 
     if output not in ("ptx", "ltoir"):
