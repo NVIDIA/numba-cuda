@@ -289,7 +289,7 @@ class NVRTC:
         return lto
 
 
-def compile(src, name, cc, ltoir=False, lineinfo=False, debug=False):
+def compile(src, name, cc, ltoir=False, lineinfo=False, debug=False, opt=True):
     """
     Compile a CUDA C/C++ source to PTX or LTOIR for a given compute capability.
 
@@ -305,6 +305,8 @@ def compile(src, name, cc, ltoir=False, lineinfo=False, debug=False):
     :type lineinfo: bool
     :param debug: Whether to include debug information in the compiled code
     :type debug: bool
+    :param opt: Whether to compile with optimization enabled (default: True)
+    :type opt: bool
     :return: The compiled PTX or LTOIR and compilation log
     :rtype: tuple
     """
@@ -390,6 +392,7 @@ def compile(src, name, cc, ltoir=False, lineinfo=False, debug=False):
             name=name,
             debug=debug,
             lineinfo=lineinfo,
+            device_code_optimize=opt,
         )
 
         class Logger:
@@ -428,6 +431,8 @@ def compile(src, name, cc, ltoir=False, lineinfo=False, debug=False):
             options.append("-lineinfo")
         if debug:
             options.append("-G")
+        if opt:
+            options.append("-dopt=on")
 
         # Compile the program
         compile_error = nvrtc.compile_program(program, options)

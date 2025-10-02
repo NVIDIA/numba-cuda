@@ -265,7 +265,15 @@ def jit(
                 return disp
 
 
-def declare_device(name, sig, link=None, use_cooperative=False):
+def declare_device(
+    name,
+    sig,
+    link=None,
+    use_cooperative=False,
+    debug=None,
+    lineinfo=None,
+    opt=None,
+):
     """
     Declare the signature of a foreign function. Returns a descriptor that can
     be used to call the function from a Python kernel.
@@ -288,7 +296,7 @@ def declare_device(name, sig, link=None, use_cooperative=False):
         raise TypeError(msg)
 
     template = declare_device_function(
-        name, restype, argtypes, link, use_cooperative
+        name, restype, argtypes, link, use_cooperative, debug, lineinfo, opt
     )
 
     return template.key

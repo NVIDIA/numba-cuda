@@ -84,19 +84,21 @@ class ExternalCodeLibrary(CodeLibrary):
         # There are no LLVM IR modules in an ExternalCodeLibrary
         return set()
 
-    def add_linking_file(self, path_or_obj):
+    def add_linking_file(self, linkable_code):
         # Adding new files after finalization is prohibited, in case the list
         # of libraries has already been added to another code library; the
         # newly-added files would be omitted from their linking process.
         self._raise_if_finalized()
 
-        if isinstance(path_or_obj, LinkableCode):
-            if path_or_obj.setup_callback:
-                self._setup_functions.append(path_or_obj.setup_callback)
-            if path_or_obj.teardown_callback:
-                self._teardown_functions.append(path_or_obj.teardown_callback)
+        if not isinstance(linkable_code, LinkableCode):
+            raise TypeError("Expected a LinkableCode object")
 
-        self._linking_files.add(path_or_obj)
+        if linkable_code.setup_callback:
+            self._setup_functions.append(linkable_code.setup_callback)
+        if linkable_code.teardown_callback:
+            self._teardown_functions.append(linkable_code.teardown_callback)
+
+        self._linking_files.add(linkable_code)
 
     def add_ir_module(self, module):
         raise NotImplementedError("Cannot add LLVM IR to external code")
@@ -381,14 +383,17 @@ class CUDACodeLibrary(serialize.ReduceMixin, CodeLibrary):
         self._teardown_functions.extend(library._teardown_functions)
         self.use_cooperative |= library.use_cooperative
 
-    def add_linking_file(self, path_or_obj):
-        if isinstance(path_or_obj, LinkableCode):
-            if path_or_obj.setup_callback:
-                self._setup_functions.append(path_or_obj.setup_callback)
-            if path_or_obj.teardown_callback:
-                self._teardown_functions.append(path_or_obj.teardown_callback)
+    def add_linking_file(self, linkable_code):
+        if not isinstance(linkable_code, LinkableCode):
+            raise TypeError("Expected a LinkableCode object")
 
-        self._linking_files.add(path_or_obj)
+        if linkable_code.setup_callback:
+            if linkable_code.setup_callback:
+                self._setup_functions.append(linkable_code.setup_callback)
+            if linkable_code.teardown_callback:
+                self._teardown_functions.append(linkable_code.teardown_callback)
+
+        self._linking_files.add(linkable_code)
 
     def get_function(self, name):
         for fn in self._module.functions:

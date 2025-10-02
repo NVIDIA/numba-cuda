@@ -2824,6 +2824,25 @@ class _LinkerBase(metaclass=ABCMeta):
         ptx_name = os.path.splitext(name)[0] + ".ptx"
         self.add_ptx(ptx.encode(), ptx_name)
 
+    def add_cusource_obj(self, cusource_obj):
+        ptx, log = nvrtc.compile(
+            cusource_obj.data,
+            cusource_obj.name,
+            self.cc,
+            debug=cusource_obj.debug,
+            lineinfo=cusource_obj.lineinfo,
+            opt=cusource_obj.opt,
+        )
+
+        if config.DUMP_ASSEMBLY:
+            print(("ASSEMBLY %s" % cusource_obj.name).center(80, "-"))
+            print(ptx)
+            print("=" * 80)
+
+        # Link the program's PTX using the normal linker mechanism
+        ptx_name = os.path.splitext(cusource_obj.name)[0] + ".ptx"
+        self.add_ptx(ptx.encode(), ptx_name)
+
     @abstractmethod
     def add_data(self, data, kind, name):
         """Add in-memory data to the link"""
@@ -2892,7 +2911,7 @@ class _LinkerBase(metaclass=ABCMeta):
                 )
 
             if path_or_code.kind == "cu":
-                self.add_cu(path_or_code.data, path_or_code.name)
+                self.add_cusource_obj(path_or_code)
             else:
                 if ignore_nonlto:
                     warn_and_return = False
@@ -2983,6 +3002,28 @@ class _Linker(_LinkerBase):
             print(("ASSEMBLY %s" % name).center(80, "-"))
             print(obj.code)
 
+        self._object_codes.append(obj)
+
+    def add_cusource_obj(self, cusource_obj):
+        from functools import partial
+
+        print(f"{cusource_obj.debug}")
+        compile = partial(
+            nvrtc.compile,
+            cusource_obj.data,
+            cusource_obj.name,
+            cc=self.cc,
+            debug=cusource_obj.debug,
+            lineinfo=cusource_obj.lineinfo,
+            opt=cusource_obj.opt,
+        )
+
+        if config.DUMP_ASSEMBLY:
+            obj, log = compile(ltoir=False)
+            print(("ASSEMBLY %s" % cusource_obj.name).center(80, "-"))
+            print(obj.code.decode())
+
+        obj, log = compile(ltoir=self.lto)
         self._object_codes.append(obj)
 
     def add_cubin(self, cubin, name="<cudapy-cubin>"):

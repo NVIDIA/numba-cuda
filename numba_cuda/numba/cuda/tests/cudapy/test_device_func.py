@@ -17,6 +17,7 @@ from numba import cuda, jit, float32, int32, types
 from numba.core.errors import TypingError
 from numba.cuda.tests.support import skip_unless_cffi
 from types import ModuleType
+from numba.cuda.tests.support import captured_stdout
 
 
 class TestDeviceFunc(CUDATestCase):
@@ -207,14 +208,17 @@ class TestDeviceFunc(CUDATestCase):
         self.assertEqual(0x04010203, x[0])
 
 
-times2_cu = cuda.CUSource("""
+times2_cu = cuda.CUSource(
+    """
 extern "C" __device__
 int times2(int *out, int a)
 {
   *out = a * 2;
   return 0;
 }
-""")
+""",
+    name="times2.cu",
+)
 
 times3_cu = cuda.CUSource("""
 extern "C" __device__
@@ -485,6 +489,31 @@ class TestDeclareDevice(CUDATestCase):
         kernel[1, 32](r, x)
 
         np.testing.assert_equal(r, x * 5)
+
+
+@skip_on_cudasim("cudasim doesn't support cuda import at non-top-level")
+class TestDeclareDeviceWithDebug(CUDATestCase):
+    """
+    Test calling a UFunc
+    """
+
+    def test_declare_device_with_debug(self):
+        times2 = cuda.declare_device(
+            "times2", "int32(int32)", link=times2_cu, debug=True
+        )
+
+        @cuda.jit
+        def kernel(r, x):
+            i = cuda.grid(1)
+            if i < len(r):
+                r[i] = times2(x[i])
+
+        x = np.arange(10, dtype=np.int32)
+        r = np.empty_like(x)
+
+        with captured_stdout() as out:
+            kernel[1, 32](r, x)
+            self.assertRegex(out.getvalue(), ".file.*times2")
 
 
 if __name__ == "__main__":
