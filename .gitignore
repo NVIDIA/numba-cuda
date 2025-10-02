@@ -8,3 +8,7 @@ build
 *.so
 numba_cuda/numba/cuda/tests/cudadrv/test_device_functions.*
 numba_cuda/numba/cuda/tests/cudadrv/undefined_extern.*
+# pixi environments
+.pixi/*
+!.pixi/config.toml
+*.log
