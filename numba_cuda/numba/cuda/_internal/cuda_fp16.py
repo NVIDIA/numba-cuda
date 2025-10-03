@@ -124,7 +124,7 @@ class _type_class_unnamed1362071(Type):
         self.bitwidth = 2 * 8
 
     def can_convert_from(self, typingctx, other):
-        from numba.core.typeconv import Conversion
+        from numba.cuda.typeconv import Conversion
 
         if other in []:
             return Conversion.safe
@@ -174,7 +174,7 @@ class _type_class_unnamed1362180(Type):
         self.bitwidth = 4 * 8
 
     def can_convert_from(self, typingctx, other):
-        from numba.core.typeconv import Conversion
+        from numba.cuda.typeconv import Conversion
 
         if other in []:
             return Conversion.safe
@@ -7903,9 +7903,9 @@ def _fp16_binary_operator(l_key, retty):
                 #  - Conversion.safe
 
                 if (
-                    (convertible == numba.core.typeconv.Conversion.exact)
-                    or (convertible == numba.core.typeconv.Conversion.promote)
-                    or (convertible == numba.core.typeconv.Conversion.safe)
+                    (convertible == numba.cuda.typeconv.Conversion.exact)
+                    or (convertible == numba.cuda.typeconv.Conversion.promote)
+                    or (convertible == numba.cuda.typeconv.Conversion.safe)
                 ):
                     return signature(retty, types.float16, types.float16)
 

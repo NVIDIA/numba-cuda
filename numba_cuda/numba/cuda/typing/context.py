@@ -10,7 +10,7 @@ import contextlib
 import operator
 
 from numba.core import types, errors
-from numba.core.typeconv import Conversion, rules
+from numba.cuda.typeconv import Conversion, rules
 from numba.core.typing.typeof import typeof, Purpose
 from numba.core.typing import templates
 from numba.cuda import utils
