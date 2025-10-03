@@ -609,14 +609,13 @@ class BoundLiteralArgs(
 
 
 def is_jitted(function):
-    """Returns True if a function is wrapped by one of the Numba @jit
-    decorators, for example: numba.jit, numba.njit
+    """Returns True if a function is wrapped by cuda.jit
 
     The purpose of this function is to provide a means to check if a function is
     already JIT decorated.
     """
 
     # don't want to export this so import locally
-    from numba.core.dispatcher import Dispatcher
+    from numba.cuda.dispatcher import CUDADispatcher
 
-    return isinstance(function, Dispatcher)
+    return isinstance(function, CUDADispatcher)
