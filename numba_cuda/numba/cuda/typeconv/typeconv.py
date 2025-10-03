@@ -4,7 +4,7 @@
 try:
     # This is usually the the first C extension import performed when importing
     # Numba, if it fails to import, provide some feedback
-    from numba.core.typeconv import _typeconv
+    from numba.cuda.cext import _typeconv
 except ImportError as e:
     base_url = "https://numba.readthedocs.io/en/stable"
     dev_url = f"{base_url}/developer/contributing.html"

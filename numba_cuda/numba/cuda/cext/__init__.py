@@ -90,5 +90,5 @@ def _load_cext_module(
 _devicearray = _load_cext_module("_devicearray", required=True)
 _dispatcher = _load_cext_module("_dispatcher", required=True)
 mviewbuf = _load_cext_module("mviewbuf", required=True)
-
-__all__ = ["mviewbuf", "_dispatcher", "_devicearray"]
+_typeconv = _load_cext_module("_typeconv", required=True)
+__all__ = ["mviewbuf", "_dispatcher", "_devicearray", "_typeconv"]
