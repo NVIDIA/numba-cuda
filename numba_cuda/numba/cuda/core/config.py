@@ -711,9 +711,6 @@ _env_reloader = _EnvReloader()
 def __getattr__(name):
     """Module-level __getattr__ provides dynamic behavior for _EnvVar descriptors."""
     # Fetch non-descriptor globals directly
-    if name in globals():
-        return globals()[name]
-
     if (
         hasattr(_env_reloader, "_descriptors")
         and name in _env_reloader._descriptors
