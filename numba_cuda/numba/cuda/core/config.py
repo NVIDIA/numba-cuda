@@ -140,8 +140,9 @@ class _EnvVar(object):
         try:
             from numba import config as numba_config
 
-            if hasattr(numba_config, self.name):
-                config_value = getattr(numba_config, self.name)
+            if (
+                config_value := getattr(numba_config, self.name, None)
+            ) is not None:
                 if config_value != self.value:
                     msg = (
                         f"Configuration value '{self.name}' is explicitly set "
