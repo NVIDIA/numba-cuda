@@ -1,0 +1,55 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: BSD-2-Clause
+
+name: "CI: Build wheel on Windows"
+
+on:
+  workflow_call:
+    inputs:
+      sha:
+        type: string
+      repo:
+        type: string
+      script:
+        type: string
+        default: "./ci/build_wheel.ps1"
+
+jobs:
+  build:
+    name: ${{ matrix.PY_VER }}, windows
+    strategy:
+      fail-fast: false
+      matrix:
+        PY_VER:
+          - "3.10"
+          - "3.11"
+          - "3.12"
+          - "3.13"
+    runs-on: windows-2022
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: ${{ inputs.repo }}
+          ref: ${{ inputs.sha }}
+          fetch-depth: 0
+
+      - name: Set up Python ${{ matrix.PY_VER }}
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065  # v5.6.0
+        with:
+          python-version: ${{ matrix.PY_VER }}
+
+      - name: Set up MSVC
+        uses: ilammy/msvc-dev-cmd@v1  # TODO: ask admin to allow pinning commits
+
+      - name: Python build
+        run: |
+          ${{ inputs.script }}
+        env:
+          CUDA_VER: "12.8.0"
+
+      - name: Upload wheel
+        if: "!cancelled()"
+        uses: actions/upload-artifact@v4
+        with:
+          name: wheel-py${{ matrix.PY_VER }}-windows
+          path: ${{ env.wheel_path }}

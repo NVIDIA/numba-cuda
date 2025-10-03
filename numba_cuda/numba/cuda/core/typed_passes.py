@@ -13,9 +13,8 @@ from numba.core import (
     types,
     typing,
     ir,
-    lowering,
 )
-
+from numba.cuda import lowering
 from numba.cuda.core.compiler_machinery import (
     FunctionPass,
     LoweringPass,
@@ -479,7 +478,7 @@ class NoPythonBackend(LoweringPass):
 @register_pass(mutates_CFG=True, analysis_only=False)
 class InlineOverloads(FunctionPass):
     """
-    This pass will inline a function wrapped by the numba.extending.overload
+    This pass will inline a function wrapped by the numba.cuda.extending.overload
     decorator directly into the site of its call depending on the value set in
     the 'inline' kwarg to the decorator.
 
