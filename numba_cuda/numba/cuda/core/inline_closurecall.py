@@ -688,9 +688,9 @@ def inline_closure_call(
 
     # first, get the IR of the callee
     if isinstance(callee, pytypes.FunctionType):
-        from numba.cuda.core import compiler
+        from numba.cuda.compiler import run_frontend
 
-        callee_ir = compiler.run_frontend(callee, inline_closures=True)
+        callee_ir = run_frontend(callee, inline_closures=True)
     else:
         callee_ir = get_ir_of_code(glbls, callee_code)
 
