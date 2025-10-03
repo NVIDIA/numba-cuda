@@ -5,12 +5,11 @@ import ctypes
 import os
 from functools import wraps
 import numpy as np
-
+from collections import namedtuple
 
 from numba import cuda, types
 from numba.cuda import config
 
-from numba.core.runtime.nrt import _nrt_mstats
 from numba.cuda.cudadrv.driver import (
     _Linker,
     driver,
@@ -25,6 +24,8 @@ from numba.cuda.cudadrv.linkable_code import CUSource
 from numba.cuda.typing.templates import signature
 
 from numba.core.extending import intrinsic, overload_classmethod
+
+_nrt_mstats = namedtuple("nrt_mstats", ["alloc", "free", "mi_alloc", "mi_free"])
 
 
 # Check environment variable or config for NRT statistics enablement
