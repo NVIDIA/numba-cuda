@@ -13,6 +13,9 @@ import uuid
 import re
 from warnings import warn
 
+from abc import ABC, abstractmethod
+from typing import Any
+
 from numba import cuda, _dispatcher
 
 from numba.core import types
@@ -90,6 +93,8 @@ class _Kernel(serialize.ReduceMixin):
         "NRT_incref",
     ]
 
+    _extensions = []
+
     @global_compiler_lock
     def __init__(
         self,
@@ -132,7 +137,7 @@ class _Kernel(serialize.ReduceMixin):
         self.argtypes = argtypes
         self.debug = debug
         self.lineinfo = lineinfo
-        self.extensions = extensions or []
+        self.extensions = (extensions or []) + self._extensions
         self.launch_bounds = launch_bounds
 
         nvvm_options = {"fastmath": fastmath, "opt": 3 if opt else 0}
@@ -1523,3 +1528,15 @@ class CUDADispatcher(serialize.ReduceMixin, _MemoMixin, _DispatcherBase):
         Compiled definitions are discarded.
         """
         return dict(py_func=self.py_func, targetoptions=self.targetoptions)
+
+
+class ArgHandlerBase(ABC):
+    @abstractmethod
+    def prepare_args(self, ty: Any, val: Any, **kwargs) -> Any:
+        raise NotImplementedError
+
+
+def register_arg_handler(handler):
+    if not isinstance(handler, ArgHandlerBase):
+        raise ValueError("handler must be an instance of ArgHandlerBase")
+    _Kernel._extensions.append(handler)
