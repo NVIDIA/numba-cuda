@@ -710,12 +710,8 @@ _env_reloader = _EnvReloader()
 
 def __getattr__(name):
     """Module-level __getattr__ provides dynamic behavior for _EnvVar descriptors."""
-    # Fetch non-descriptor globals directly
-    if (
-        hasattr(_env_reloader, "_descriptors")
-        and name in _env_reloader._descriptors
-    ):
-        return _env_reloader._descriptors[name].__get__()
+    if getter := getattr(_env_reloader, "_descriptors", {}).get(name):
+        return getter.__get__()
 
     raise AttributeError(f"module {__name__} has no attribute {name}")
 
