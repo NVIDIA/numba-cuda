@@ -947,14 +947,28 @@ import_devicearray(void)
     if (devicearray == NULL) {
         return -1;
     }
-    Py_DECREF(devicearray);
 
-    DeviceArray_API = (void**)PyCapsule_Import(NUMBA_DEVICEARRAY_IMPORT_NAME "._DEVICEARRAY_API", 0);
-    if (DeviceArray_API == NULL) {
-        return -1;
+    PyObject *d = PyModule_GetDict(devicearray);
+    if (d == NULL) {
+      Py_DECREF(devicearray);
+      return -1;
     }
 
-    return 0;
+    PyObject *key = PyUnicode_FromString("_DEVICEARRAY_API");
+    PyObject *c_api = PyDict_GetItemWithError(d, key);
+    int retcode = 0;
+    if (PyCapsule_IsValid(c_api, NUMBA_DEVICEARRAY_IMPORT_NAME "._DEVICEARRAY_API")) {
+      DeviceArray_API = (void**)PyCapsule_GetPointer(c_api, NUMBA_DEVICEARRAY_IMPORT_NAME "._DEVICEARRAY_API");
+      if (DeviceArray_API == NULL) {
+        retcode = -1;
+      }
+    } else {
+      retcode = -1;
+    }
+
+    Py_DECREF(key);
+    Py_DECREF(devicearray);
+    return retcode;
 }
 
 static PyMethodDef Dispatcher_methods[] = {
