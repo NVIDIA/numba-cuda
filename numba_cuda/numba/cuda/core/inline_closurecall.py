@@ -41,7 +41,7 @@ from numba.cuda.core import postproc, rewrites
 from numba.np.unsafe.ndarray import empty_inferred as unsafe_empty_inferred
 import numpy as np
 import operator
-import numba.misc.special
+from numba.cuda.misc.special import prange
 
 """
 Variable enable_inline_arraycall is only used for testing purpose.
@@ -325,8 +325,14 @@ def check_reduce_func(func_ir, func_var):
                             analysis"
         )
     if isinstance(reduce_func, (ir.FreeVar, ir.Global)):
-        if not isinstance(reduce_func.value, numba.core.registry.CPUDispatcher):
-            raise ValueError("Invalid reduction function")
+        try:
+            from numba.core.registry import CPUDispatcher
+
+            if not isinstance(reduce_func.value, CPUDispatcher):
+                raise ValueError("Invalid reduction function")
+        except ImportError:
+            pass
+
         # pull out the python function for inlining
         reduce_func = reduce_func.value.py_func
     elif not (hasattr(reduce_func, "code") or hasattr(reduce_func, "__code__")):
@@ -1054,10 +1060,7 @@ def _find_iter_range(func_ir, range_iter_var, swapped):
     debug_print("func_var = ", func_var, " func_def = ", func_def)
     require(
         isinstance(func_def, ir.Global)
-        and (
-            func_def.value is range
-            or func_def.value == numba.misc.special.prange
-        )
+        and (func_def.value is range or func_def.value == prange)
     )
     nargs = len(range_def.args)
     swapping = [('"array comprehension"', "closure of"), range_def.func.loc]

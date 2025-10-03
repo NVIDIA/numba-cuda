@@ -351,7 +351,7 @@ class BaseContext(object):
 
     @cached_property
     def nrt(self):
-        from numba.core.runtime.context import NRTContext
+        from numba.cuda.memory_management.nrt_context import NRTContext
 
         return NRTContext(self, self.enable_nrt)
 

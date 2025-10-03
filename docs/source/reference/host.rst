@@ -125,6 +125,8 @@ any of the driver API. This can be useful for:
 
 .. autofunction:: numba.cuda.compile
 
+.. autofunction:: numba.cuda.compile_all
+
 
 The environment variable ``NUMBA_CUDA_DEFAULT_PTX_CC`` can be set to control
 the default compute capability targeted by ``compile`` - see

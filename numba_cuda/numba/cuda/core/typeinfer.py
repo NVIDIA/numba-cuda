@@ -1692,7 +1692,7 @@ https://numba.readthedocs.io/en/stable/user/troubleshoot.html#my-code-has-an-unt
                 # as a global variable
                 typ = types.Dispatcher(_temporary_dispatcher_map[gvar.name])
             else:
-                from numba.misc import special
+                from numba.cuda.misc import special
 
                 nm = gvar.name
                 # check if the problem is actually a name error
