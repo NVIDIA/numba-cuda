@@ -56,7 +56,6 @@ test = [
     "filecheck",
     "ml_dtypes",
 ]
-prof = ["pyinstrument"]
 test-cu12 = [
     "nvidia-curand-cu12",
     { include-group = "test" }
