@@ -50,7 +50,7 @@ rapids-logger "Check GPU usage"
 nvidia-smi
 
 rapids-logger "Build test binaries"
-export NUMBA_CUDA_TEST_BIN_DIR=$HOME/testing
+export NUMBA_CUDA_TEST_BIN_DIR=`pwd`/testing
 pushd $NUMBA_CUDA_TEST_BIN_DIR
 make
 
@@ -62,7 +62,7 @@ trap "EXITCODE=1" ERR
 set +e
 
 rapids-logger "Run Tests"
-NUMBA_CUDA_USE_NVIDIA_BINDING=0 NUMBA_CUDA_TEST_BIN_DIR=$NUMBA_CUDA_TEST_BIN_DIR pytest --pyargs numba.cuda.tests -v
+NUMBA_CUDA_USE_NVIDIA_BINDING=0 NUMBA_CUDA_TEST_BIN_DIR=$NUMBA_CUDA_TEST_BIN_DIR pytest -v
 
 popd
 

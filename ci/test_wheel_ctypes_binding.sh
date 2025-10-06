@@ -16,7 +16,7 @@ python -m pip install \
 # FIXME: Find a way to build the tests that does not depend on the CUDA Python bindings
 #rapids-logger "Build tests"
 rapids-logger "Copy and cd into test binaries dir"
-export NUMBA_CUDA_TEST_BIN_DIR=$HOME/testing
+export NUMBA_CUDA_TEST_BIN_DIR=`pwd`/testing
 pushd $NUMBA_CUDA_TEST_BIN_DIR
 # make
 
@@ -31,6 +31,6 @@ NUMBA_CUDA_USE_NVIDIA_BINDING=0 python -m numba --sysinfo
 
 rapids-logger "Run Tests"
 # NUMBA_CUDA_USE_NVIDIA_BINDING=0 NUMBA_CUDA_TEST_BIN_DIR=$NUMBA_CUDA_TEST_BIN_DIR python -m pytest --pyargs numba.cuda.tests -v
-NUMBA_CUDA_USE_NVIDIA_BINDING=0 python -m pytest --pyargs numba.cuda.tests -v
+NUMBA_CUDA_USE_NVIDIA_BINDING=0 python -m pytest -v
 
 popd

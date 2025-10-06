@@ -38,7 +38,7 @@ rapids-print-env
 # numba-cuda code from the installed package will be tested, instead of the
 # code in the source repo.
 rapids-logger "Move to test binaries folder"
-export NUMBA_CUDA_TEST_BIN_DIR=$HOME/testing
+export NUMBA_CUDA_TEST_BIN_DIR=`pwd`/testing
 pushd $NUMBA_CUDA_TEST_BIN_DIR
 
 rapids-logger "Show Numba system info"
@@ -50,7 +50,7 @@ set +e
 
 rapids-logger "Run Tests"
 export NUMBA_ENABLE_CUDASIM=1
-pytest --pyargs numba.cuda.tests -v
+pytest -v
 
 popd
 
