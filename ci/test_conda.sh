@@ -65,7 +65,7 @@ nvidia-smi
 
 rapids-logger "Build test binaries"
 export NUMBA_CUDA_TEST_BIN_DIR=$HOME/test_binary_generation
-cp -r test_binary_generation NUMBA_CUDA_TEST_BIN_DIR
+cp -r test_binary_generation $NUMBA_CUDA_TEST_BIN_DIR
 pushd $NUMBA_CUDA_TEST_BIN_DIR
 make
 
