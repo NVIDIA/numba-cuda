@@ -63,6 +63,11 @@ rapids-print-env
 rapids-logger "Check GPU usage"
 nvidia-smi
 
+rapids-logger "Build test binaries"
+export NUMBA_CUDA_TEST_BIN_DIR=`pwd`/test_binary_generation
+pushd $NUMBA_CUDA_TEST_BIN_DIR
+make
+
 rapids-logger "Show Numba system info"
 python -m numba --sysinfo
 
@@ -72,11 +77,6 @@ set +e
 
 rapids-logger "Test importing numba.cuda"
 python -c "from numba import cuda"
-
-rapids-logger "Build test binaries"
-export NUMBA_CUDA_TEST_BIN_DIR=`pwd`/test_binary_generation
-pushd $NUMBA_CUDA_TEST_BIN_DIR
-make
 
 rapids-logger "Run Tests"
 pytest --pyargs numba.cuda.tests -v

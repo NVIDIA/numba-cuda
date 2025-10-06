@@ -23,13 +23,13 @@ fi
 
 python -m pip install "${DEPENDENCIES[@]}"
 
-rapids-logger "Test importing numba.cuda"
-python -c "from numba import cuda"
-
 rapids-logger "Build tests"
 export NUMBA_CUDA_TEST_BIN_DIR=`pwd`/test_binary_generation
 pushd $NUMBA_CUDA_TEST_BIN_DIR
 make
+
+rapids-logger "Test importing numba.cuda"
+python -c "from numba import cuda"
 
 rapids-logger "Check GPU usage"
 nvidia-smi
