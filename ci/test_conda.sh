@@ -80,7 +80,7 @@ rapids-logger "Test importing numba.cuda"
 python -c "from numba import cuda"
 
 rapids-logger "Run Tests"
-pytest -o consider_namespace_packages=True --pyargs numba.cuda.tests -v
+pytest -v
 
 popd
 
