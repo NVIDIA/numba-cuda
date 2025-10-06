@@ -535,7 +535,7 @@ class _ActiveContext(object):
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         if self._is_top:
-            delattr(self._tls_cache, "ctx_devnum")
+            del self._tls_cache.ctx_devnum
 
     def __bool__(self):
         """Returns True is there's a valid and active CUDA context."""
