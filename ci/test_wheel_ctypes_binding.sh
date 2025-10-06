@@ -16,8 +16,7 @@ python -m pip install \
 # FIXME: Find a way to build the tests that does not depend on the CUDA Python bindings
 #rapids-logger "Build tests"
 rapids-logger "Copy and cd into test binaries dir"
-export NUMBA_CUDA_TEST_BIN_DIR=$HOME/test_binary_generation
-cp -r test_binary_generation $NUMBA_CUDA_TEST_BIN_DIR
+export NUMBA_CUDA_TEST_BIN_DIR=$HOME/testing
 pushd $NUMBA_CUDA_TEST_BIN_DIR
 # make
 

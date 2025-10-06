@@ -24,7 +24,7 @@ fi
 python -m pip install "${DEPENDENCIES[@]}"
 
 rapids-logger "Build tests"
-export NUMBA_CUDA_TEST_BIN_DIR=`pwd`/test_binary_generation
+export NUMBA_CUDA_TEST_BIN_DIR=`pwd`/testing
 pushd $NUMBA_CUDA_TEST_BIN_DIR
 make
 

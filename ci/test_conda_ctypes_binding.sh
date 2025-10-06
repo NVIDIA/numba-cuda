@@ -50,8 +50,7 @@ rapids-logger "Check GPU usage"
 nvidia-smi
 
 rapids-logger "Build test binaries"
-
-export NUMBA_CUDA_TEST_BIN_DIR=`pwd`/test_binary_generation
+export NUMBA_CUDA_TEST_BIN_DIR=$HOME/testing
 pushd $NUMBA_CUDA_TEST_BIN_DIR
 make
 

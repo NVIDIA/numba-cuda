@@ -15,7 +15,7 @@ python -m pip install "${package}[cu${CUDA_VER_MAJOR},test-cu${CUDA_VER_MAJOR}]"
 
 rapids-logger "Build test binaries"
 
-export NUMBA_CUDA_TEST_BIN_DIR=`pwd`/test_binary_generation
+export NUMBA_CUDA_TEST_BIN_DIR=`pwd`/testing
 pushd $NUMBA_CUDA_TEST_BIN_DIR
 make
 
