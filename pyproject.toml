@@ -55,8 +55,8 @@ test = [
     "pytest-xdist",
     "filecheck",
     "ml_dtypes",
-    "pyinstrument",
 ]
+prof = ["pyinstrument"]
 test-cu12 = [
     "nvidia-curand-cu12",
     { include-group = "test" }
