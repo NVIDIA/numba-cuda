@@ -52,8 +52,9 @@ class _DeviceList(object):
         """Returns the active device or None if there's no active device"""
         with driver.get_active_context() as ac:
             devnum = ac.devnum
-            if devnum is not None:
-                return self[devnum]
+        if devnum is not None:
+            return self[devnum]
+        return None
 
 
 class _DeviceContextManager(object):
@@ -70,6 +71,10 @@ class _DeviceContextManager(object):
 
     def __init__(self, device):
         self._device = device
+
+    def get_primary_context(self, *args, **kwargs):
+        """This attribute is forwarded directly, to avoid the performance overhead of `__getattr__`."""
+        return self._device.get_primary_context(*args, **kwargs)
 
     def __getattr__(self, item):
         return getattr(self._device, item)
