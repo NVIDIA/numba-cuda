@@ -500,8 +500,9 @@ class _ActiveContext(object):
     def __enter__(self):
         is_top = False
         # check TLS cache
+        cache = self._tls_cache
         try:
-            hctx, devnum = self._tls_cache.ctx_devnum
+            hctx, devnum = cache.ctx_devnum
         except AttributeError:
             # Not cached. Query the driver API.
             if USE_NV_BINDING:
