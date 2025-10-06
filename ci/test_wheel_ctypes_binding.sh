@@ -21,6 +21,9 @@ cp -r test_binary_generation $NUMBA_CUDA_TEST_BIN_DIR
 pushd $NUMBA_CUDA_TEST_BIN_DIR
 # make
 
+# Prevent the testsuite trying to use the test binaries
+unset NUMBA_CUDA_TEST_BIN_DIR
+
 rapids-logger "Check GPU usage"
 nvidia-smi
 
