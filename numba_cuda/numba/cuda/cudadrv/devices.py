@@ -22,22 +22,13 @@ from .driver import driver, USE_NV_BINDING
 
 
 class _DeviceList(object):
-    def __getattr__(self, attr):
-        # First time looking at "lst" attribute.
-        if attr == "lst":
-            # Device list is not initialized.
-            # Query all CUDA devices.
-            numdev = driver.get_device_count()
-            gpus = [
-                _DeviceContextManager(driver.get_device(devid))
-                for devid in range(numdev)
-            ]
-            # Define "lst" to avoid re-initialization
-            self.lst = gpus
-            return gpus
-
-        # Other attributes
-        return super(_DeviceList, self).__getattr__(attr)
+    @property
+    @functools.cache
+    def lst(self):
+        return [
+            _DeviceContextManager(driver.get_device(devid))
+            for devid in range(driver.get_device_count())
+        ]
 
     def __getitem__(self, devnum):
         """
