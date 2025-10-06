@@ -44,10 +44,6 @@ set -u
 
 pip install filecheck
 
-RAPIDS_TESTS_DIR=${RAPIDS_TESTS_DIR:-"${PWD}/test-results"}/
-mkdir -p "${RAPIDS_TESTS_DIR}"
-pushd "${RAPIDS_TESTS_DIR}"
-
 rapids-print-env
 
 rapids-logger "Check GPU usage"
@@ -60,20 +56,11 @@ EXITCODE=0
 trap "EXITCODE=1" ERR
 set +e
 
-rapids-logger "Build tests"
+rapids-logger "Build test binaries"
 
-PY_SCRIPT="
-import numba_cuda
-root = numba_cuda.__file__.rstrip('__init__.py')
-test_dir = root + \"numba/cuda/tests/test_binary_generation/\"
-print(test_dir)
-"
-
-NUMBA_CUDA_TEST_BIN_DIR=$(python -c "$PY_SCRIPT")
+export NUMBA_CUDA_TEST_BIN_DIR=`pwd`/test_binary_generation
 pushd $NUMBA_CUDA_TEST_BIN_DIR
 make
-popd
-
 
 rapids-logger "Run Tests"
 NUMBA_CUDA_USE_NVIDIA_BINDING=0 NUMBA_CUDA_TEST_BIN_DIR=$NUMBA_CUDA_TEST_BIN_DIR pytest --pyargs numba.cuda.tests -v

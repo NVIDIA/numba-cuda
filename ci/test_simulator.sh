@@ -31,10 +31,6 @@ set -u
 
 pip install filecheck
 
-RAPIDS_TESTS_DIR=${RAPIDS_TESTS_DIR:-"${PWD}/test-results"}/
-mkdir -p "${RAPIDS_TESTS_DIR}"
-pushd "${RAPIDS_TESTS_DIR}"
-
 rapids-print-env
 
 rapids-logger "Show Numba system info"

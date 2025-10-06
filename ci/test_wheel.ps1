@@ -36,13 +36,12 @@ python -m pip install "llvmlite<0.45" "numba==0.61.*" # WAR for https://github.c
 
 
 rapids-logger "Build tests"
-$NUMBA_CUDA_TEST_BIN_DIR = (python ci\get_test_binary_dir.py)
+$NUMBA_CUDA_TEST_BIN_DIR = (Join-Path -Path (Get-Location) -ChildPath "test_binary_generation")
 echo "Test binary dir: $NUMBA_CUDA_TEST_BIN_DIR"
 pushd $NUMBA_CUDA_TEST_BIN_DIR
 Get-Location
 
 cmd.exe /c '.\build.bat'
-popd
 
 rapids-logger "Check GPU usage"
 nvidia-smi
@@ -52,3 +51,5 @@ python -m numba --sysinfo
 
 rapids-logger "Run Tests"
 python -m pytest --pyargs numba.cuda.tests -v
+
+popd

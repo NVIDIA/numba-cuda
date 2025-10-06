@@ -31,10 +31,6 @@ python -m pip install \
 rapids-logger "Check GPU usage"
 nvidia-smi
 
-RAPIDS_TESTS_DIR=${RAPIDS_TESTS_DIR:-"${PWD}/test-results"}/
-mkdir -p "${RAPIDS_TESTS_DIR}"
-pushd "${RAPIDS_TESTS_DIR}"
-
 rapids-logger "Show Numba system info"
 NUMBA_CUDA_USE_NVIDIA_BINDING=0 python -m numba --sysinfo
 
