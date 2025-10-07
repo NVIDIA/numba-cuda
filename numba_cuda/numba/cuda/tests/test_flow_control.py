@@ -14,8 +14,10 @@ from numba.cuda.core.bytecode import (
 )
 from numba.cuda.tests.support import TestCase
 from numba.cuda import utils
+from numba.cuda.core import config
 
-enable_pyobj_flags = {}
+if config.ENABLE_CUDASIM:
+    raise unittest.SkipTest("Analysis passes not done in simulator")
 
 
 def for_loop_usecase1(x, y, res1, res2):
@@ -220,11 +222,8 @@ class TestFlowControl(TestCase):
         y_operands,
         res1_operands,
         res2_operands,
-        flags=enable_pyobj_flags,
     ):
-        cfunc = jit((types.intp, types.intp, types.intp, types.intp), **flags)(
-            pyfunc
-        )
+        cfunc = jit((types.intp, types.intp, types.intp, types.intp))(pyfunc)
         for x, y, res1, res2 in itertools.product(
             x_operands, y_operands, res1_operands, res2_operands
         ):
@@ -253,148 +252,130 @@ class TestFlowControl(TestCase):
                 self.assertEqual(res1, cres1)
                 self.assertEqual(res2, cres2)
 
-    def test_for_loop1(self, flags=enable_pyobj_flags):
-        self.run_test(
-            for_loop_usecase1, [-10, 0, 10], [0], [0], [0], flags=flags
-        )
+    def test_for_loop1(self):
+        self.run_test(for_loop_usecase1, [-10, 0, 10], [0], [0], [0])
 
     def test_for_loop1_npm(self):
         self.test_for_loop1()
 
-    def test_for_loop2(self, flags=enable_pyobj_flags):
-        self.run_test(
-            for_loop_usecase2, [-10, 0, 10], [-10, 0, 10], [0], [0], flags=flags
-        )
+    def test_for_loop2(self):
+        self.run_test(for_loop_usecase2, [-10, 0, 10], [-10, 0, 10], [0], [0])
 
     def test_for_loop2_npm(self):
         self.test_for_loop2()
 
-    def test_for_loop4(self, flags=enable_pyobj_flags):
-        self.run_test(for_loop_usecase4, [10], [10], [0], [0], flags=flags)
+    def test_for_loop4(self):
+        self.run_test(for_loop_usecase4, [10], [10], [0], [0])
 
     def test_for_loop4_npm(self):
         self.test_for_loop4()
 
-    def test_for_loop5(self, flags=enable_pyobj_flags):
-        self.run_test(for_loop_usecase5, [100], [50], [0], [0], flags=flags)
+    def test_for_loop5(self):
+        self.run_test(for_loop_usecase5, [100], [50], [0], [0])
 
     def test_for_loop5_npm(self):
         self.test_for_loop5()
 
-    def test_for_loop6(self, flags=enable_pyobj_flags):
-        self.run_test(for_loop_usecase6, [100], [50], [0], [0], flags=flags)
+    def test_for_loop6(self):
+        self.run_test(for_loop_usecase6, [100], [50], [0], [0])
 
     def test_for_loop6_npm(self):
         self.test_for_loop6()
 
-    def test_for_loop7(self, flags=enable_pyobj_flags):
-        self.run_test(for_loop_usecase7, [5], [0], [0], [0], flags=flags)
+    def test_for_loop7(self):
+        self.run_test(for_loop_usecase7, [5], [0], [0], [0])
 
     def test_for_loop7_npm(self):
         self.test_for_loop7()
 
-    # TODO: this test fails with numba-cuda, we need to check if the step in range is non-zero
-    # def test_for_loop8(self, flags=enable_pyobj_flags):
-    #     self.run_test(
-    #         for_loop_usecase8, [0, 1], [0, 2, 10], [0], [0], flags=flags
-    #     )
+    @unittest.expectedFailure
+    def test_for_loop8(self):
+        self.run_test(for_loop_usecase8, [0, 1], [0, 2, 10], [0], [0])
 
-    # def test_for_loop8_npm(self):
-    #     self.test_for_loop8()
+    @unittest.expectedFailure
+    def test_for_loop8_npm(self):
+        self.test_for_loop8()
 
-    def test_for_loop9(self, flags=enable_pyobj_flags):
-        self.run_test(
-            for_loop_usecase9, [0, 1], [0, 2, 10], [0], [0], flags=flags
-        )
+    def test_for_loop9(self):
+        self.run_test(for_loop_usecase9, [0, 1], [0, 2, 10], [0], [0])
 
     def test_for_loop9_npm(self):
         self.test_for_loop9()
 
-    def test_for_loop10(self, flags=enable_pyobj_flags):
-        self.run_test(for_loop_usecase10, [5], [2, 7], [0], [0], flags=flags)
+    def test_for_loop10(self):
+        self.run_test(for_loop_usecase10, [5], [2, 7], [0], [0])
 
     def test_for_loop10_npm(self):
         self.test_for_loop10()
 
-    def test_while_loop1(self, flags=enable_pyobj_flags):
-        self.run_test(while_loop_usecase1, [10], [0], [0], [0], flags=flags)
+    def test_while_loop1(self):
+        self.run_test(while_loop_usecase1, [10], [0], [0], [0])
 
     def test_while_loop1_npm(self):
         self.test_while_loop1()
 
-    def test_while_loop2(self, flags=enable_pyobj_flags):
-        self.run_test(while_loop_usecase2, [10], [0], [0], [0], flags=flags)
+    def test_while_loop2(self):
+        self.run_test(while_loop_usecase2, [10], [0], [0], [0])
 
     def test_while_loop2_npm(self):
         self.test_while_loop2()
 
-    def test_while_loop3(self, flags=enable_pyobj_flags):
-        self.run_test(while_loop_usecase3, [10], [10], [0], [0], flags=flags)
+    def test_while_loop3(self):
+        self.run_test(while_loop_usecase3, [10], [10], [0], [0])
 
     def test_while_loop3_npm(self):
         self.test_while_loop3()
 
-    def test_while_loop4(self, flags=enable_pyobj_flags):
-        self.run_test(while_loop_usecase4, [10], [0], [0], [0], flags=flags)
+    def test_while_loop4(self):
+        self.run_test(while_loop_usecase4, [10], [0], [0], [0])
 
     def test_while_loop4_npm(self):
         self.test_while_loop4()
 
-    def test_while_loop5(self, flags=enable_pyobj_flags):
-        self.run_test(
-            while_loop_usecase5, [0, 5, 10], [0, 5, 10], [0], [0], flags=flags
-        )
+    def test_while_loop5(self):
+        self.run_test(while_loop_usecase5, [0, 5, 10], [0, 5, 10], [0], [0])
 
     def test_while_loop5_npm(self):
         self.test_while_loop5()
 
-    def test_ifelse1(self, flags=enable_pyobj_flags):
-        self.run_test(
-            ifelse_usecase1, [-1, 0, 1], [-1, 0, 1], [0], [0], flags=flags
-        )
+    def test_ifelse1(self):
+        self.run_test(ifelse_usecase1, [-1, 0, 1], [-1, 0, 1], [0], [0])
 
     def test_ifelse1_npm(self):
         self.test_ifelse1()
 
-    def test_ifelse2(self, flags=enable_pyobj_flags):
-        self.run_test(
-            ifelse_usecase2, [-1, 0, 1], [-1, 0, 1], [0], [0], flags=flags
-        )
+    def test_ifelse2(self):
+        self.run_test(ifelse_usecase2, [-1, 0, 1], [-1, 0, 1], [0], [0])
 
     def test_ifelse2_npm(self):
         self.test_ifelse2()
 
-    def test_ifelse3(self, flags=enable_pyobj_flags):
-        self.run_test(
-            ifelse_usecase3, [-1, 0, 1], [-1, 0, 1], [0], [0], flags=flags
-        )
+    def test_ifelse3(self):
+        self.run_test(ifelse_usecase3, [-1, 0, 1], [-1, 0, 1], [0], [0])
 
     def test_ifelse3_npm(self):
         self.test_ifelse3()
 
-    def test_ifelse4(self, flags=enable_pyobj_flags):
-        self.run_test(
-            ifelse_usecase4, [-1, 0, 1], [-1, 0, 1], [0], [0], flags=flags
-        )
+    def test_ifelse4(self):
+        self.run_test(ifelse_usecase4, [-1, 0, 1], [-1, 0, 1], [0], [0])
 
     def test_ifelse4_npm(self):
         self.test_ifelse4()
 
-    def test_ternary_ifelse1(self, flags=enable_pyobj_flags):
+    def test_ternary_ifelse1(self):
         self.run_test(
             ternary_ifelse_usecase1,
             [-1, 0, 1],
             [-1, 0, 1],
             [0],
             [0],
-            flags=flags,
         )
 
     def test_ternary_ifelse1_npm(self):
         self.test_ternary_ifelse1()
 
-    def test_double_infinite_loop(self, flags=enable_pyobj_flags):
-        self.run_test(double_infinite_loop, [10], [0], [0], [0], flags=flags)
+    def test_double_infinite_loop(self):
+        self.run_test(double_infinite_loop, [10], [0], [0], [0])
 
     def test_double_infinite_loop_npm(self):
         self.test_double_infinite_loop()
