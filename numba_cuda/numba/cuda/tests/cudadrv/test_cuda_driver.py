@@ -205,15 +205,16 @@ class TestCudaDriver(CUDATestCase):
             if idx < len(a):
                 a[idx] = idx
 
-        ary = cuda.to_device([0] * 100)
-
         dev = Device()
         dev.set_current()
         stream = dev.create_stream()
 
+        ary = cuda.to_device([0] * 100, stream=stream)
+        stream.sync()
+
         kernel[1, 100, stream](ary)
 
-        result = ary.copy_to_host()
+        result = ary.copy_to_host(stream=stream)
         for i, v in enumerate(result):
             self.assertEqual(i, v)
 
