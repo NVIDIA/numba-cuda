@@ -28,16 +28,16 @@ from inspect import signature as pysignature  # noqa: F401
 from inspect import Signature as pySignature  # noqa: F401
 from inspect import Parameter as pyParameter  # noqa: F401
 
-from numba.core.config import (
+from numba.cuda.core.config import (
     MACHINE_BITS,  # noqa: F401
     DEVELOPER_MODE,
 )  # noqa: F401
-from numba.core import config
+
+from numba.cuda.core import config
 
 from collections.abc import Mapping, MutableSet, MutableMapping
 
-# Python version in (major, minor) tuple
-PYVERSION = sys.version_info[:2]
+PYVERSION = config.PYVERSION
 
 
 def erase_traceback(exc_value):
@@ -653,7 +653,7 @@ def dump_llvm(fndesc, module):
             from pygments import highlight
             from pygments.lexers import LlvmLexer as lexer
             from pygments.formatters import Terminal256Formatter
-            from numba.misc.dump_style import by_colorscheme
+            from numba.cuda.misc.dump_style import by_colorscheme
 
             print(
                 highlight(

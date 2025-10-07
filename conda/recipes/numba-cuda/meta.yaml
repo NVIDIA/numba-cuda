@@ -17,7 +17,6 @@ source:
   path: ../../..
 
 build:
-  noarch: python
   script:
     - {{ PYTHON }} -m pip install . -vv
 
@@ -26,6 +25,7 @@ requirements:
     - python
     - pip
     - setuptools
+    - numpy >=2.1.0
   run:
     - python
     - numba >=0.59.1

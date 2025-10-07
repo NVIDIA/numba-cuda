@@ -14,14 +14,13 @@ import llvmlite.binding as ll
 
 from numba.core import (
     types,
-    utils,
     datamodel,
-    funcdesc,
     config,
     imputils,
 )
-from numba.cuda import cgutils, debuginfo
-from numba.core import errors, targetconfig
+from numba.cuda import cgutils, debuginfo, utils
+from numba.core import errors
+from numba.cuda.core import targetconfig, funcdesc
 from numba import _dynfunc, _helperlib
 from numba.core.compiler_lock import global_compiler_lock
 from numba.cuda.core.pythonapi import PythonAPI
@@ -352,7 +351,7 @@ class BaseContext(object):
 
     @cached_property
     def nrt(self):
-        from numba.core.runtime.context import NRTContext
+        from numba.cuda.memory_management.nrt_context import NRTContext
 
         return NRTContext(self, self.enable_nrt)
 

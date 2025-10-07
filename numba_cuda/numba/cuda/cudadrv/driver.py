@@ -39,6 +39,7 @@ from ctypes import (
     c_void_p,
     c_float,
     c_uint,
+    c_uint8,
 )
 import contextlib
 import importlib
@@ -46,8 +47,8 @@ import numpy as np
 from collections import namedtuple, deque
 
 
-from numba import mviewbuf
-from numba.core import config
+from numba.cuda.cext import mviewbuf
+from numba.cuda.core import config
 from numba.cuda import utils, serialize
 from .error import CudaSupportError, CudaDriverError
 from .drvapi import API_PROTOTYPES
@@ -3439,6 +3440,8 @@ def device_memset(dst, val, size, stream=0):
     size: number of byte to be written
     stream: a CUDA stream
     """
+    ptr = device_pointer(dst)
+
     varargs = []
 
     if stream:
@@ -3452,7 +3455,24 @@ def device_memset(dst, val, size, stream=0):
     else:
         fn = driver.cuMemsetD8
 
-    fn(device_pointer(dst), val, size, *varargs)
+    try:
+        fn(ptr, val, size, *varargs)
+    except CudaAPIError as e:
+        invalid = (
+            binding.CUresult.CUDA_ERROR_INVALID_VALUE
+            if USE_NV_BINDING
+            else enums.CUDA_ERROR_INVALID_VALUE
+        )
+        if (
+            e.code == invalid
+            and getattr(dst, "__cuda_memory__", False)
+            and getattr(dst, "is_managed", False)
+        ):
+            buf = (c_uint8 * size).from_address(host_pointer(dst))
+            byte = val & 0xFF
+            buf[:] = [byte] * size
+            return
+        raise
 
 
 def profile_start():

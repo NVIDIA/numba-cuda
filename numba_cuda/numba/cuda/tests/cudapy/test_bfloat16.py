@@ -14,9 +14,8 @@ from numba import (
     uint16,
     uint32,
     uint64,
-    config,
 )
-
+from numba.cuda import config
 
 if not config.ENABLE_CUDASIM:
     from numba.cuda.bf16 import (
@@ -558,7 +557,7 @@ class TestBfloat16HighLevelBindings(CUDATestCase):
             out[4] = bfloat16_as_int16(f4_default)
             out[5] = bfloat16_as_int16(f8_default)
 
-        out = cuda.device_array((1,), dtype="int16")
+        out = cuda.device_array((6,), dtype="int16")
         kernel[1, 1](out)
         raw = out.copy_to_host()
 

@@ -6,7 +6,8 @@ import os
 from contextlib import contextmanager
 
 from llvmlite import ir
-from numba.core import types, config
+from numba.core import types
+from numba.cuda.core import config
 from numba.cuda import cgutils
 from numba.core.datamodel.models import ComplexModel, UnionModel, UniTupleModel
 from numba.cuda.types import GridGroup

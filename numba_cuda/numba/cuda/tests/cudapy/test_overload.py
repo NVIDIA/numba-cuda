@@ -3,7 +3,7 @@
 
 from numba import cuda, njit, types, version_info
 from numba.core.errors import TypingError
-from numba.core.extending import overload, overload_attribute
+from numba.cuda.extending import overload, overload_attribute
 from numba.core.typing.typeof import typeof
 from numba.cuda.testing import CUDATestCase, skip_on_cudasim, unittest
 import numpy as np

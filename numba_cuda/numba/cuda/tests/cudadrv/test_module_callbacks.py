@@ -6,7 +6,8 @@ import threading
 
 import numpy as np
 
-from numba import cuda, config
+from numba import cuda
+from numba.cuda import config
 from numba.cuda.cudadrv.linkable_code import CUSource
 from numba.cuda.testing import (
     CUDATestCase,
