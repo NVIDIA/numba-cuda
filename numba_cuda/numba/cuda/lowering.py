@@ -10,18 +10,14 @@ from llvmlite import ir as llvm_ir
 
 from numba.core import (
     typing,
-    utils,
     types,
     ir,
-    debuginfo,
-    funcdesc,
     generators,
-    config,
-    cgutils,
     removerefctpass,
-    targetconfig,
 )
-from numba.cuda.core import ir_utils
+from numba.cuda import debuginfo, cgutils, utils
+from numba.cuda.core import ir_utils, targetconfig, funcdesc, config
+
 from numba.core.errors import (
     LoweringError,
     new_error_context,
@@ -30,16 +26,16 @@ from numba.core.errors import (
     UnsupportedError,
     NumbaDebugInfoWarning,
 )
-from numba.core.funcdesc import default_mangler
+from numba.cuda.core.funcdesc import default_mangler
 from numba.cuda.core.environment import Environment
 from numba.core.analysis import compute_use_defs, must_use_alloca
-from numba.misc.firstlinefinder import get_func_body_first_lineno
+from numba.cuda.misc.firstlinefinder import get_func_body_first_lineno
 from numba import version_info
 
 numba_version = version_info.short
 del version_info
 if numba_version > (0, 60):
-    from numba.misc.coverage_support import get_registered_loc_notify
+    from numba.cuda.misc.coverage_support import get_registered_loc_notify
 
 
 _VarArgItem = namedtuple("_VarArgItem", ("vararg", "index"))
@@ -466,7 +462,7 @@ class Lower(BaseLower):
         self._blk_local_varmap = {}
 
     def pre_block(self, block):
-        from numba.core.unsafe import eh
+        from numba.cuda.core.unsafe import eh
 
         super(Lower, self).pre_block(block)
         self._cur_ir_block = block
@@ -1029,9 +1025,6 @@ class Lower(BaseLower):
         elif isinstance(fnty, types.RecursiveCall):
             res = self._lower_call_RecursiveCall(fnty, expr, signature)
 
-        elif isinstance(fnty, types.FunctionType):
-            res = self._lower_call_FunctionType(fnty, expr, signature)
-
         else:
             res = self._lower_call_normal(fnty, expr, signature)
 
@@ -1052,7 +1045,7 @@ class Lower(BaseLower):
         )
 
     def _lower_call_ObjModeDispatcher(self, fnty, expr, signature):
-        from numba.core.pythonapi import ObjModeUtils
+        from numba.cuda.core.pythonapi import ObjModeUtils
 
         self.init_pyapi()
         # Acquire the GIL
@@ -1228,136 +1221,6 @@ class Lower(BaseLower):
                 argvals,
             )
         return res
-
-    def _lower_call_FunctionType(self, fnty, expr, signature):
-        self.debug_print("# calling first-class function type")
-        sig = types.unliteral(signature)
-        if not fnty.check_signature(signature):
-            # value dependent polymorphism?
-            raise UnsupportedError(
-                f"mismatch of function types:"
-                f" expected {fnty} but got {types.FunctionType(sig)}"
-            )
-        argvals = self.fold_call_args(
-            fnty,
-            sig,
-            expr.args,
-            expr.vararg,
-            expr.kws,
-        )
-        return self.__call_first_class_function_pointer(
-            fnty.ftype,
-            expr.func.name,
-            sig,
-            argvals,
-        )
-
-    def __call_first_class_function_pointer(self, ftype, fname, sig, argvals):
-        """
-        Calls a first-class function pointer.
-
-        This function is responsible for calling a first-class function pointer,
-        which can either be a JIT-compiled function or a Python function. It
-        determines if a JIT address is available, and if so, calls the function
-        using the JIT address. Otherwise, it calls the function using a function
-        pointer obtained from the `__get_first_class_function_pointer` method.
-
-        Args:
-            ftype: The type of the function.
-            fname: The name of the function.
-            sig: The signature of the function.
-            argvals: The argument values to pass to the function.
-
-        Returns:
-            The result of calling the function.
-        """
-        context = self.context
-        builder = self.builder
-        # Determine if jit address is available
-        fstruct = self.loadvar(fname)
-        struct = cgutils.create_struct_proxy(self.typeof(fname))(
-            context, builder, value=fstruct
-        )
-        jit_addr = struct.jit_addr
-        jit_addr.name = f"jit_addr_of_{fname}"
-
-        ctx = context
-        res_slot = cgutils.alloca_once(
-            builder, ctx.get_value_type(sig.return_type)
-        )
-
-        if_jit_addr_is_null = builder.if_else(
-            cgutils.is_null(builder, jit_addr), likely=False
-        )
-        with if_jit_addr_is_null as (then, orelse):
-            with then:
-                func_ptr = self.__get_first_class_function_pointer(
-                    ftype, fname, sig
-                )
-                res = builder.call(func_ptr, argvals)
-                builder.store(res, res_slot)
-
-            with orelse:
-                llty = ctx.call_conv.get_function_type(
-                    sig.return_type, sig.args
-                ).as_pointer()
-                func_ptr = builder.bitcast(jit_addr, llty)
-                # call
-                status, res = ctx.call_conv.call_function(
-                    builder, func_ptr, sig.return_type, sig.args, argvals
-                )
-                with cgutils.if_unlikely(builder, status.is_error):
-                    context.call_conv.return_status_propagate(builder, status)
-                builder.store(res, res_slot)
-        return builder.load(res_slot)
-
-    def __get_first_class_function_pointer(self, ftype, fname, sig):
-        from numba.experimental.function_type import lower_get_wrapper_address
-
-        llty = self.context.get_value_type(ftype)
-        fstruct = self.loadvar(fname)
-        addr = self.builder.extract_value(
-            fstruct, 0, name="addr_of_%s" % (fname)
-        )
-
-        fptr = cgutils.alloca_once(
-            self.builder, llty, name="fptr_of_%s" % (fname)
-        )
-        with self.builder.if_else(
-            cgutils.is_null(self.builder, addr), likely=False
-        ) as (then, orelse):
-            with then:
-                self.init_pyapi()
-                # Acquire the GIL
-                gil_state = self.pyapi.gil_ensure()
-                pyaddr = self.builder.extract_value(
-                    fstruct, 1, name="pyaddr_of_%s" % (fname)
-                )
-                # try to recover the function address, see
-                # test_zero_address BadToGood example in
-                # test_function_type.py
-                addr1 = lower_get_wrapper_address(
-                    self.context,
-                    self.builder,
-                    pyaddr,
-                    sig,
-                    failure_mode="ignore",
-                )
-                with self.builder.if_then(
-                    cgutils.is_null(self.builder, addr1), likely=False
-                ):
-                    self.return_exception(
-                        RuntimeError,
-                        exc_args=(f"{ftype} function address is null",),
-                        loc=self.loc,
-                    )
-                addr2 = self.pyapi.long_as_voidptr(addr1)
-                self.builder.store(self.builder.bitcast(addr2, llty), fptr)
-                self.pyapi.decref(addr1)
-                self.pyapi.gil_release(gil_state)
-            with orelse:
-                self.builder.store(self.builder.bitcast(addr, llty), fptr)
-        return self.builder.load(fptr)
 
     def _lower_call_normal(self, fnty, expr, signature):
         # Normal function resolution
@@ -1835,33 +1698,71 @@ class CUDALower(Lower):
             self.context.enable_debuginfo
             # Conditions used to elide stores in parent method
             and self.store_var_needed(name)
-            # No emission of debuginfo for internal names
-            and not name.startswith("$")
         ):
-            # Emit debug value for user variable
             fetype = self.typeof(name)
             lltype = self.context.get_value_type(fetype)
             int_type = (llvm_ir.IntType,)
             real_type = llvm_ir.FloatType, llvm_ir.DoubleType
             if isinstance(lltype, int_type + real_type):
-                src_name = name.split(".")[0]
-                if src_name in self.poly_var_typ_map:
-                    # Do not emit debug value on polymorphic type var
-                    return
-                # Emit debug value for scalar variable
                 sizeof = self.context.get_abi_sizeof(lltype)
                 datamodel = self.context.data_model_manager[fetype]
                 line = self.loc.line if argidx is None else self.defn_loc.line
-                self.debuginfo.update_variable(
-                    self.builder,
-                    value,
-                    name,
-                    lltype,
-                    sizeof,
-                    line,
-                    datamodel,
-                    argidx,
-                )
+                if not name.startswith("$"):
+                    # Emit debug value for user variable
+                    src_name = name.split(".")[0]
+                    if src_name not in self.poly_var_typ_map:
+                        # Insert the llvm.dbg.value intrinsic call
+                        self.debuginfo.update_variable(
+                            self.builder,
+                            value,
+                            src_name,
+                            lltype,
+                            sizeof,
+                            line,
+                            datamodel,
+                            argidx,
+                        )
+                elif isinstance(value, llvm_ir.LoadInstr):
+                    # Emit debug value for user variable that falls out of the
+                    # coverage of dbg.value range per basic block
+                    ld_name = value.operands[0].name
+                    if not ld_name.startswith(("$", ".")):
+                        src_name = ld_name.split(".")[0]
+                        if (
+                            src_name not in self.poly_var_typ_map
+                            # Not yet covered by the dbg.value range
+                            and src_name not in self.dbg_val_names
+                        ):
+                            for index, item in enumerate(self.fnargs):
+                                if item.name == src_name:
+                                    argidx = index + 1
+                                    break
+                            # Insert the llvm.dbg.value intrinsic call
+                            self.debuginfo.update_variable(
+                                self.builder,
+                                value,
+                                src_name,
+                                lltype,
+                                sizeof,
+                                line,
+                                datamodel,
+                                argidx,
+                            )
+
+    def pre_block(self, block):
+        super().pre_block(block)
+
+        # dbg.value range covered names
+        self.dbg_val_names = set()
+
+        if self.context.enable_debuginfo and self._disable_sroa_like_opt:
+            for x in block.find_insts(ir.Assign):
+                if x.target.name.startswith("$"):
+                    continue
+                ssa_name = x.target.name
+                src_name = ssa_name.split(".")[0]
+                if src_name not in self.dbg_val_names:
+                    self.dbg_val_names.add(src_name)
 
     def pre_lower(self):
         """

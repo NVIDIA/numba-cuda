@@ -73,7 +73,6 @@ from numba.cuda._internal.cuda_fp16 import (
     __hadd,
     __hadd_rn,
     __hadd_sat,
-    __hcmadd,
     __hdiv as hdiv,
     __hdiv,
     __heq as heq,
@@ -136,7 +135,7 @@ from numba.cuda._internal.cuda_fp16 import (
     htrunc,
 )
 
-from numba.extending import overload
+from numba.cuda.extending import overload
 import math
 
 
@@ -287,7 +286,6 @@ __all__ = [
     "__hadd",
     "__hadd_rn",
     "__hadd_sat",
-    "__hcmadd",
     "hdiv",
     "__hdiv",
     "heq",

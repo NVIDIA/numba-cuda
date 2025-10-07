@@ -1,23 +1,21 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-2-Clause
 
-from numba.cuda.testing import CUDATestCase
-import numba
-from numba.core.registry import cpu_target
-from numba.core.compiler import CompilerBase, Flags
-from numba.core.compiler_machinery import PassManager
-from numba.cuda.core import ir_utils, bytecode
-from numba.core import types, ir, compiler, registry
-from numba.core.untyped_passes import (
+from numba.cuda.testing import CUDATestCase, skip_on_cudasim
+from numba.cuda.core.compiler import CompilerBase
+from numba.cuda.flags import Flags
+from numba.cuda.core.compiler_machinery import PassManager
+from numba.cuda.core import ir_utils
+from numba.core import types, ir, bytecode
+from numba.cuda import compiler
+from numba.cuda.core.untyped_passes import (
     ExtractByteCode,
     TranslateByteCode,
     FixupArgs,
     IRProcessing,
 )
-from numba.experimental import jitclass
-from numba.core.typed_passes import (
+from numba.cuda.core.typed_passes import (
     NopythonTypeInference,
-    type_inference_stage,
     DeadCodeElimination,
 )
 
@@ -26,38 +24,11 @@ from numba.core.typed_passes import (
 GLOBAL_B = 11
 
 
-@jitclass([("val", numba.core.types.List(numba.intp))])
-class Dummy(object):
-    def __init__(self, val):
-        self.val = val
-
-
+@skip_on_cudasim("Requires CUDA target")
 class TestIrUtils(CUDATestCase):
     """
     Tests ir handling utility functions like find_callname.
     """
-
-    def test_obj_func_match(self):
-        """Test matching of an object method (other than Array see #3449)"""
-
-        def test_func():
-            d = Dummy([1])
-            d.val.append(2)
-
-        test_ir = compiler.run_frontend(test_func)
-        typingctx = cpu_target.typing_context
-        targetctx = cpu_target.target_context
-        typing_res = type_inference_stage(
-            typingctx, targetctx, test_ir, (), None
-        )
-        matched_call = ir_utils.find_callname(
-            test_ir, test_ir.blocks[0].body[7].value, typing_res.typemap
-        )
-        self.assertTrue(
-            isinstance(matched_call, tuple)
-            and len(matched_call) == 2
-            and matched_call[0] == "append"
-        )
 
     def test_dead_code_elimination(self):
         class Tester(CompilerBase):
@@ -76,11 +47,15 @@ class TestIrUtils(CUDATestCase):
                     locals = {}
                 if not flags:
                     flags = Flags()
-                flags.nrt = True
+
                 if typing_context is None:
-                    typing_context = registry.cpu_target.typing_context
+                    from numba.cuda.descriptor import cuda_target
+
+                    typing_context = cuda_target.typing_context
                 if target_context is None:
-                    target_context = registry.cpu_target.target_context
+                    from numba.cuda.descriptor import cuda_target
+
+                    target_context = cuda_target.target_context
                 return cls(
                     typing_context,
                     target_context,
@@ -177,6 +152,7 @@ class TestIrUtils(CUDATestCase):
             len(no_dce.blocks[0].body) - len(removed), len(w_dce.blocks[0].body)
         )
 
+    @skip_on_cudasim("Skipping ir utils tests on CUDA simulator")
     def test_find_const_global(self):
         """
         Test find_const() for values in globals (ir.Global) and freevars
@@ -203,6 +179,7 @@ class TestIrUtils(CUDATestCase):
         self.assertEqual(const_b, GLOBAL_B)
         self.assertEqual(const_c, FREEVAR_C)
 
+    @skip_on_cudasim("Skipping ir utils tests on CUDA simulator")
     def test_flatten_labels(self):
         """tests flatten_labels"""
 

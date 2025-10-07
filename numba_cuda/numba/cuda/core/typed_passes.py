@@ -4,39 +4,25 @@
 import abc
 from contextlib import contextmanager
 from collections import defaultdict, namedtuple
-from functools import partial
 from copy import copy
 import warnings
 
+from numba.cuda.core import typeinfer
 from numba.core import (
     errors,
     types,
     typing,
     ir,
-    funcdesc,
-    rewrites,
-    typeinfer,
-    config,
-    lowering,
 )
-
-from numba.parfors.parfor import PreParforPass as _parfor_PreParforPass
-from numba.parfors.parfor import ParforPass as _parfor_ParforPass
-from numba.parfors.parfor import ParforFusionPass as _parfor_ParforFusionPass
-from numba.parfors.parfor import (
-    ParforPreLoweringPass as _parfor_ParforPreLoweringPass,
-)
-from numba.parfors.parfor import Parfor
-from numba.parfors.parfor_lowering import ParforLower
-
+from numba.cuda import lowering
 from numba.cuda.core.compiler_machinery import (
     FunctionPass,
     LoweringPass,
     AnalysisPass,
     register_pass,
 )
-from numba.core.annotations import type_annotations
-from numba.core.ir_utils import (
+from numba.cuda.core.annotations import type_annotations
+from numba.cuda.core.ir_utils import (
     raise_on_unsupported_feature,
     warn_deprecated,
     check_and_legalize_ir,
@@ -44,14 +30,19 @@ from numba.core.ir_utils import (
     dead_code_elimination,
     simplify_CFG,
     get_definition,
-    build_definitions,
     compute_cfg_from_blocks,
     is_operator_or_getitem,
-    replace_vars,
 )
-from numba.core import postproc
-from llvmlite import binding as llvm
 
+from numba.cuda.core import postproc, rewrites, funcdesc, config
+
+
+try:
+    # llvmlite < 0.45
+    from llvmlite.binding import passmanagers
+except ImportError:
+    # llvmlite >= 0.45
+    from llvmlite.binding import newpassmanagers as passmanagers
 
 # Outputs of type inference pass
 _TypingResults = namedtuple(
@@ -304,182 +295,6 @@ class NopythonRewrites(FunctionPass):
         return True
 
 
-@register_pass(mutates_CFG=True, analysis_only=False)
-class PreParforPass(FunctionPass):
-    _name = "pre_parfor_pass"
-
-    def __init__(self):
-        FunctionPass.__init__(self)
-
-    def run_pass(self, state):
-        """
-        Preprocessing for data-parallel computations.
-        """
-        # Ensure we have an IR and type information.
-        assert state.func_ir
-        preparfor_pass = _parfor_PreParforPass(
-            state.func_ir,
-            state.typemap,
-            state.calltypes,
-            state.typingctx,
-            state.targetctx,
-            state.flags.auto_parallel,
-            state.parfor_diagnostics.replaced_fns,
-        )
-
-        preparfor_pass.run()
-        return True
-
-
-# this is here so it pickles and for no other reason
-def _reload_parfors():
-    """Reloader for cached parfors"""
-    # Re-initialize the parallel backend when load from cache.
-    from numba.np.ufunc.parallel import _launch_threads
-
-    _launch_threads()
-
-
-@register_pass(mutates_CFG=True, analysis_only=False)
-class ParforPass(FunctionPass):
-    _name = "parfor_pass"
-
-    def __init__(self):
-        FunctionPass.__init__(self)
-
-    def run_pass(self, state):
-        """
-        Convert data-parallel computations into Parfor nodes
-        """
-        # Ensure we have an IR and type information.
-        assert state.func_ir
-        parfor_pass = _parfor_ParforPass(
-            state.func_ir,
-            state.typemap,
-            state.calltypes,
-            state.return_type,
-            state.typingctx,
-            state.targetctx,
-            state.flags.auto_parallel,
-            state.flags,
-            state.metadata,
-            state.parfor_diagnostics,
-        )
-        parfor_pass.run()
-
-        # check the parfor pass worked and warn if it didn't
-        has_parfor = False
-        for blk in state.func_ir.blocks.values():
-            for stmnt in blk.body:
-                if isinstance(stmnt, Parfor):
-                    has_parfor = True
-                    break
-            else:
-                continue
-            break
-
-        if not has_parfor:
-            # parfor calls the compiler chain again with a string
-            if not (
-                config.DISABLE_PERFORMANCE_WARNINGS
-                or state.func_ir.loc.filename == "<string>"
-            ):
-                url = (
-                    "https://numba.readthedocs.io/en/stable/user/"
-                    "parallel.html#diagnostics"
-                )
-                msg = (
-                    "\nThe keyword argument 'parallel=True' was specified "
-                    "but no transformation for parallel execution was "
-                    "possible.\n\nTo find out why, try turning on parallel "
-                    "diagnostics, see %s for help." % url
-                )
-                warnings.warn(
-                    errors.NumbaPerformanceWarning(msg, state.func_ir.loc)
-                )
-
-        # Add reload function to initialize the parallel backend.
-        state.reload_init.append(_reload_parfors)
-        return True
-
-
-@register_pass(mutates_CFG=True, analysis_only=False)
-class ParforFusionPass(FunctionPass):
-    _name = "parfor_fusion_pass"
-
-    def __init__(self):
-        FunctionPass.__init__(self)
-
-    def run_pass(self, state):
-        """
-        Do fusion of parfor nodes.
-        """
-        # Ensure we have an IR and type information.
-        assert state.func_ir
-        parfor_pass = _parfor_ParforFusionPass(
-            state.func_ir,
-            state.typemap,
-            state.calltypes,
-            state.return_type,
-            state.typingctx,
-            state.targetctx,
-            state.flags.auto_parallel,
-            state.flags,
-            state.metadata,
-            state.parfor_diagnostics,
-        )
-        parfor_pass.run()
-
-        return True
-
-
-@register_pass(mutates_CFG=True, analysis_only=False)
-class ParforPreLoweringPass(FunctionPass):
-    _name = "parfor_prelowering_pass"
-
-    def __init__(self):
-        FunctionPass.__init__(self)
-
-    def run_pass(self, state):
-        """
-        Prepare parfors for lowering.
-        """
-        # Ensure we have an IR and type information.
-        assert state.func_ir
-        parfor_pass = _parfor_ParforPreLoweringPass(
-            state.func_ir,
-            state.typemap,
-            state.calltypes,
-            state.return_type,
-            state.typingctx,
-            state.targetctx,
-            state.flags.auto_parallel,
-            state.flags,
-            state.metadata,
-            state.parfor_diagnostics,
-        )
-        parfor_pass.run()
-
-        return True
-
-
-@register_pass(mutates_CFG=False, analysis_only=True)
-class DumpParforDiagnostics(AnalysisPass):
-    _name = "dump_parfor_diagnostics"
-
-    def __init__(self):
-        AnalysisPass.__init__(self)
-
-    def run_pass(self, state):
-        if state.flags.auto_parallel.enabled:
-            if config.PARALLEL_DIAGNOSTICS:
-                if state.parfor_diagnostics is not None:
-                    state.parfor_diagnostics.dump(config.PARALLEL_DIAGNOSTICS)
-                else:
-                    raise RuntimeError("Diagnostics failed.")
-        return True
-
-
 class BaseNativeLowering(abc.ABC, LoweringPass):
     """The base class for a lowering pass. The lowering functionality must be
     specified in inheriting classes by providing an appropriate lowering class
@@ -513,7 +328,7 @@ class BaseNativeLowering(abc.ABC, LoweringPass):
         calltypes = state.calltypes
         flags = state.flags
         metadata = state.metadata
-        pre_stats = llvm.passmanagers.dump_refprune_stats()
+        pre_stats = passmanagers.dump_refprune_stats()
 
         msg = "Function %s failed at nopython mode lowering" % (
             state.func_id.func_name,
@@ -576,7 +391,7 @@ class BaseNativeLowering(abc.ABC, LoweringPass):
                 )
 
             # capture pruning stats
-            post_stats = llvm.passmanagers.dump_refprune_stats()
+            post_stats = passmanagers.dump_refprune_stats()
             metadata["prune_stats"] = post_stats - pre_stats
 
             # Save the LLVM pass timings
@@ -594,18 +409,6 @@ class NativeLowering(BaseNativeLowering):
     @property
     def lowering_class(self):
         return lowering.Lower
-
-
-@register_pass(mutates_CFG=True, analysis_only=False)
-class NativeParforLowering(BaseNativeLowering):
-    """Lowering pass for a native function IR described using Numba's standard
-    `numba.core.ir` nodes and also parfor.Parfor nodes."""
-
-    _name = "native_parfor_lowering"
-
-    @property
-    def lowering_class(self):
-        return ParforLower
 
 
 @register_pass(mutates_CFG=False, analysis_only=True)
@@ -651,9 +454,9 @@ class NoPythonBackend(LoweringPass):
         lowered = state["cr"]
         signature = typing.signature(state.return_type, *state.args)
 
-        from numba.core.compiler import compile_result
+        from numba.cuda.compiler import cuda_compile_result
 
-        state.cr = compile_result(
+        state.cr = cuda_compile_result(
             typing_context=state.typingctx,
             target_context=state.targetctx,
             entry_point=lowered.cfunc,
@@ -675,7 +478,7 @@ class NoPythonBackend(LoweringPass):
 @register_pass(mutates_CFG=True, analysis_only=False)
 class InlineOverloads(FunctionPass):
     """
-    This pass will inline a function wrapped by the numba.extending.overload
+    This pass will inline a function wrapped by the numba.cuda.extending.overload
     decorator directly into the site of its call depending on the value set in
     the 'inline' kwarg to the decorator.
 
@@ -697,7 +500,7 @@ class InlineOverloads(FunctionPass):
             print(state.func_id.unique_name)
             print(state.func_ir.dump())
             print("".center(80, "-"))
-        from numba.core.inline_closurecall import (
+        from numba.cuda.core.inline_closurecall import (
             InlineWorker,
             callee_ir_validator,
         )
@@ -989,10 +792,6 @@ class PreLowerStripPhis(FunctionPass):
 
     def run_pass(self, state):
         state.func_ir = self._strip_phi_nodes(state.func_ir)
-        state.func_ir._definitions = build_definitions(state.func_ir.blocks)
-        if "flags" in state and state.flags.auto_parallel.enabled:
-            self._simplify_conditionally_defined_variable(state.func_ir)
-            state.func_ir._definitions = build_definitions(state.func_ir.blocks)
 
         # Rerun postprocessor to update metadata
         post_proc = postproc.PostProcessor(state.func_ir)
@@ -1071,78 +870,3 @@ class PreLowerStripPhis(FunctionPass):
 
         func_ir.blocks = newblocks
         return func_ir
-
-    def _simplify_conditionally_defined_variable(self, func_ir):
-        """
-        Rewrite assignments like:
-
-            ver1 = null()
-            ...
-            ver1 = ver
-            ...
-            uses(ver1)
-
-        into:
-            # delete all assignments to ver1
-            uses(ver)
-
-        This is only needed for parfors because the SSA pass will create extra
-        variable assignments that the parfor code does not expect.
-        This pass helps avoid problems by reverting the effect of SSA.
-        """
-        any_block = next(iter(func_ir.blocks.values()))
-        scope = any_block.scope
-        defs = func_ir._definitions
-
-        def unver_or_undef(unver, defn):
-            # Is the definition undefined or pointing to the unversioned name?
-            if isinstance(defn, ir.Var):
-                if defn.unversioned_name == unver:
-                    return True
-            elif isinstance(defn, ir.Expr):
-                if defn.op == "null":
-                    return True
-            return False
-
-        def legalize_all_versioned_names(var):
-            # Are all versioned names undefined or defined to the same
-            # variable chain?
-            if not var.versioned_names:
-                return False
-            for versioned in var.versioned_names:
-                vs = defs.get(versioned, ())
-                if not all(map(partial(unver_or_undef, k), vs)):
-                    return False
-            return True
-
-        # Find unversioned variables that met the conditions
-        suspects = set()
-        for k in defs:
-            try:
-                # This may fail?
-                var = scope.get_exact(k)
-            except errors.NotDefinedError:
-                continue
-            # is the var name unversioned?
-            if var.unversioned_name == k:
-                if legalize_all_versioned_names(var):
-                    suspects.add(var)
-
-        delete_set = set()
-        replace_map = {}
-        for var in suspects:
-            # rewrite Var uses to the unversioned name
-            for versioned in var.versioned_names:
-                ver_var = scope.get_exact(versioned)
-                # delete assignment to the versioned name
-                delete_set.add(ver_var)
-                # replace references to versioned name with the unversioned
-                replace_map[versioned] = var
-
-        # remove assignments to the versioned names
-        for _label, blk in func_ir.blocks.items():
-            for assign in blk.find_insts(ir.Assign):
-                if assign.target in delete_set:
-                    blk.remove(assign)
-        # do variable replacement
-        replace_vars(func_ir.blocks, replace_map)

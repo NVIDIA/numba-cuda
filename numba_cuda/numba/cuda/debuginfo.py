@@ -1,14 +1,97 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-2-Clause
 
+import abc
 import os
+from contextlib import contextmanager
 
 from llvmlite import ir
-from numba.core import types, config
+from numba.core import types
+from numba.cuda.core import config
 from numba.cuda import cgutils
 from numba.core.datamodel.models import ComplexModel, UnionModel, UniTupleModel
-from numba.core.debuginfo import AbstractDIBuilder
 from numba.cuda.types import GridGroup
+
+
+@contextmanager
+def suspend_emission(builder):
+    """Suspends the emission of debug_metadata for the duration of the context
+    managed block."""
+    ref = builder.debug_metadata
+    builder.debug_metadata = None
+    try:
+        yield
+    finally:
+        builder.debug_metadata = ref
+
+
+class AbstractDIBuilder(metaclass=abc.ABCMeta):
+    @abc.abstractmethod
+    def mark_variable(
+        self,
+        builder,
+        allocavalue,
+        name,
+        lltype,
+        size,
+        line,
+        datamodel=None,
+        argidx=None,
+    ):
+        """Emit debug info for the variable."""
+        pass
+
+    @abc.abstractmethod
+    def mark_location(self, builder, line):
+        """Emit source location information to the given IRBuilder."""
+        pass
+
+    @abc.abstractmethod
+    def mark_subprogram(self, function, qualname, argnames, argtypes, line):
+        """Emit source location information for the given function."""
+        pass
+
+    @abc.abstractmethod
+    def initialize(self):
+        """Initialize the debug info. An opportunity for the debuginfo to
+        prepare any necessary data structures.
+        """
+
+    @abc.abstractmethod
+    def finalize(self):
+        """Finalize the debuginfo by emitting all necessary metadata."""
+        pass
+
+
+class DummyDIBuilder(AbstractDIBuilder):
+    def __init__(self, module, filepath, cgctx, directives_only):
+        pass
+
+    def mark_variable(
+        self,
+        builder,
+        allocavalue,
+        name,
+        lltype,
+        size,
+        line,
+        datamodel=None,
+        argidx=None,
+    ):
+        pass
+
+    def mark_location(self, builder, line):
+        pass
+
+    def mark_subprogram(self, function, qualname, argnames, argtypes, line):
+        pass
+
+    def initialize(self):
+        pass
+
+    def finalize(self):
+        pass
+
 
 _BYTE_SIZE = 8
 

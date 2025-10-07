@@ -2,10 +2,10 @@
 # SPDX-License-Identifier: BSD-2-Clause
 
 from warnings import warn
-from numba.core import types, config
+from numba.core import types
 from numba.core.errors import DeprecationError, NumbaInvalidConfigWarning
 from numba.cuda.compiler import declare_device_function
-from numba.cuda.core import sigutils
+from numba.cuda.core import sigutils, config
 from numba.cuda.dispatcher import CUDADispatcher
 from numba.cuda.simulator.kernel import FakeCUDAKernel
 from numba.cuda.cudadrv.driver import _have_nvjitlink
@@ -199,7 +199,7 @@ def jit(
                     raise TypeError("CUDA kernel must have void return type.")
 
                 if device:
-                    from numba.core import typeinfer
+                    from numba.cuda.core import typeinfer
 
                     with typeinfer.register_dispatcher(disp):
                         disp.compile_device(argtypes, restype)

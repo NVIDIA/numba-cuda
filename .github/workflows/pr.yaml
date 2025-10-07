@@ -22,6 +22,8 @@ jobs:
       - test-conda-ctypes-binding
       - test-simulator
       - build-wheels
+      - build-wheels-windows
+      - test-wheels-windows
       - test-wheels
       - test-wheels-ctypes-binding
       - test-wheels-deps-wheels
@@ -107,6 +109,12 @@ jobs:
       build_type: pull-request
       script: "ci/build_wheel.sh"
       matrix: ${{ needs.compute-matrix.outputs.BUILD_MATRIX }}
+  build-wheels-windows:
+    uses: ./.github/workflows/wheel-windows-build.yaml
+  test-wheels-windows:
+    needs:
+      - build-wheels-windows
+    uses: ./.github/workflows/wheel-windows-tests.yaml
   test-wheels:
     needs:
       - build-wheels
@@ -163,4 +171,4 @@ jobs:
       build_type: pull-request
       script: "ci/coverage_report.sh"
       matrix: ${{ needs.compute-matrix.outputs.TEST_MATRIX }}
-      matrix_filter: 'map(select(.ARCH == "amd64" and .CUDA_VER == "12.9.1" and .PY_VER == "3.11")) | .[0:1]'
+      matrix_filter: 'map(select(.ARCH == "amd64" and .CUDA_VER == "12.9.1" and .PY_VER == "3.12")) | .[0:1]'

@@ -12,28 +12,17 @@ from numba.cuda.core.compiler_machinery import (
     SSACompliantMixin,
     register_pass,
 )
+from numba.cuda.core import postproc, bytecode, transforms, inline_closurecall
 from numba.core import (
     errors,
     types,
     ir,
-    bytecode,
-    postproc,
-    rewrites,
-    config,
-    transforms,
-    consts,
 )
+from numba.cuda.core import consts, rewrites, config
+from numba.cuda.core.interpreter import Interpreter
 
 
-from numba.core.utils import PYVERSION
-
-if PYVERSION < (3, 10):
-    from numba.core.interpreter import Interpreter
-else:
-    from numba.cuda.core.interpreter import Interpreter
-
-
-from numba.misc.special import literal_unroll
+from numba.cuda.misc.special import literal_unroll
 from numba.cuda.core.analysis import dead_branch_prune
 from numba.core.analysis import (
     rewrite_semantic_constants,
@@ -57,7 +46,7 @@ from numba.cuda.core.ir_utils import (
     transfer_scope,
     fixup_var_define_in_scope,
 )
-from numba.core.ssa import reconstruct_ssa
+from numba.cuda.core.ssa import reconstruct_ssa
 
 
 @contextmanager
@@ -243,12 +232,11 @@ class InlineClosureLikes(FunctionPass):
         # no ability to resolve certain typed function calls in the array
         # inlining code, use this variable to indicate
         typed_pass = not isinstance(state.return_type, types.misc.PyObject)
-        from numba.core.inline_closurecall import InlineClosureCallPass
 
-        inline_pass = InlineClosureCallPass(
+        inline_pass = inline_closurecall.InlineClosureCallPass(
             state.func_ir,
             state.flags.auto_parallel,
-            state.parfor_diagnostics.replaced_fns,
+            None,
             typed_pass,
         )
         inline_pass.run()
@@ -348,18 +336,13 @@ class InlineInlinables(FunctionPass):
             print(state.func_ir.dump())
             print("".center(80, "-"))
 
-        from numba.core.inline_closurecall import (
-            InlineWorker,
-            callee_ir_validator,
-        )
-
-        inline_worker = InlineWorker(
+        inline_worker = inline_closurecall.InlineWorker(
             state.typingctx,
             state.targetctx,
             state.locals,
             state.pipeline,
             state.flags,
-            validator=callee_ir_validator,
+            validator=inline_closurecall.callee_ir_validator,
         )
 
         modified = False
@@ -402,7 +385,7 @@ class InlineInlinables(FunctionPass):
 
     def _do_work(self, state, work_list, block, i, expr, inline_worker):
         from numba.cuda.compiler import run_frontend
-        from numba.core.cpu import InlineOptions
+        from numba.cuda.core.options import InlineOptions
 
         # try and get a definition for the call, this isn't always possible as
         # it might be a eval(str)/part generated awaiting update etc. (parfors)
@@ -1597,9 +1580,8 @@ class IterLoopCanonicalization(FunctionPass):
         entry_block.body[idx + 1].value.value = call_get_range_var
 
         glbls = copy(func_ir.func_id.func.__globals__)
-        from numba.core.inline_closurecall import inline_closure_call
 
-        inline_closure_call(
+        inline_closurecall.inline_closure_call(
             func_ir,
             glbls,
             entry_block,
@@ -1868,7 +1850,7 @@ class LiteralUnroll(FunctionPass):
             return False
 
         # run as subpipeline
-        from numba.cuda.compiler_machinery import PassManager
+        from numba.cuda.core.compiler_machinery import PassManager
         from numba.cuda.core.typed_passes import PartialTypeInference
 
         pm = PassManager("literal_unroll_subpipeline")

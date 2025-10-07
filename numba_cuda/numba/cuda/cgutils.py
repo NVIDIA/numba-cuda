@@ -11,8 +11,8 @@ import functools
 
 from llvmlite import ir
 
-from numba.core import types, debuginfo
-from numba.cuda import config, utils
+from numba.core import types
+from numba.cuda import config, utils, debuginfo
 import numba.core.datamodel
 
 

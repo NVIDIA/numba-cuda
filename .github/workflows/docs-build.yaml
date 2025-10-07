@@ -49,7 +49,7 @@ jobs:
     env:
       RAPIDS_ARTIFACTS_DIR: ${{ github.workspace }}/artifacts
     container:
-      image: rapidsai/ci-conda:latest
+      image: rapidsai/ci-conda:cuda13.0.0-ubuntu24.04-py3.13
       env:
         RAPIDS_BUILD_TYPE: ${{ inputs.build_type }}
     steps:
@@ -59,7 +59,9 @@ jobs:
           ref: ${{ inputs.sha }}
           fetch-depth: 0
       - uses: actions/download-artifact@v4
-        name: conda-repo
+        with:
+          name: conda-repo-py3.13-amd64
+          path: conda-repo
       - name: Display structure of downloaded files
         run: ls -R
       - name: Standardize repository information

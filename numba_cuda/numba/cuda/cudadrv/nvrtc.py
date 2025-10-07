@@ -10,7 +10,7 @@ from numba.cuda.cudadrv.error import (
     NvrtcCompilationError,
     NvrtcSupportError,
 )
-from numba import config
+from numba.cuda import config
 from numba.cuda.cuda_paths import get_cuda_paths
 from numba.cuda.utils import _readenv
 
@@ -21,8 +21,8 @@ import warnings
 
 NVRTC_EXTRA_SEARCH_PATHS = _readenv(
     "NUMBA_CUDA_NVRTC_EXTRA_SEARCH_PATHS", str, ""
-) or getattr(config, "NUMBA_CUDA_NVRTC_EXTRA_SEARCH_PATHS", "")
-if not hasattr(config, "NUMBA_CUDA_NVRTC_EXTRA_SEARCH_PATHS"):
+) or getattr(config, "CUDA_NVRTC_EXTRA_SEARCH_PATHS", "")
+if not hasattr(config, "CUDA_NVRTC_EXTRA_SEARCH_PATHS"):
     config.CUDA_NVRTC_EXTRA_SEARCH_PATHS = NVRTC_EXTRA_SEARCH_PATHS
 
 # Opaque handle for compilation unit
@@ -289,7 +289,7 @@ class NVRTC:
         return lto
 
 
-def compile(src, name, cc, ltoir=False):
+def compile(src, name, cc, ltoir=False, lineinfo=False, debug=False):
     """
     Compile a CUDA C/C++ source to PTX or LTOIR for a given compute capability.
 
@@ -301,7 +301,11 @@ def compile(src, name, cc, ltoir=False):
     :type cc: tuple
     :param ltoir: Compile into LTOIR if True, otherwise into PTX
     :type ltoir: bool
-    :return: The compiled PTX and compilation log
+    :param lineinfo: Whether to include line information in the compiled code
+    :type lineinfo: bool
+    :param debug: Whether to include debug information in the compiled code
+    :type debug: bool
+    :return: The compiled PTX or LTOIR and compilation log
     :rtype: tuple
     """
 
@@ -347,10 +351,7 @@ def compile(src, name, cc, ltoir=False):
         arch = f"--gpu-architecture=compute_{major}{minor}"
 
     cuda_include_dir = get_cuda_paths()["include_dir"].info
-    cuda_includes = [
-        f"{cuda_include_dir}",
-        f"{os.path.join(cuda_include_dir, 'cccl')}",
-    ]
+    cuda_includes = [f"{cuda_include_dir}"]
 
     cudadrv_path = os.path.dirname(os.path.abspath(__file__))
     numba_cuda_path = os.path.dirname(cudadrv_path)
@@ -358,8 +359,18 @@ def compile(src, name, cc, ltoir=False):
     nvrtc_ver_major = version[0]
     if nvrtc_ver_major == 12:
         numba_include = f"{os.path.join(numba_cuda_path, 'include', '12')}"
+        # For CUDA 12 wheels, `cuda_include_dir` is `site-packages/nvidia/cuda_runtime/include`
+        # We need to find CCCL at `site-packages/nvidia/cuda_cccl/include`
+        # For CUDA 12 conda / system install, CCCL is just in the `include` directory
+        cuda_includes.append(
+            f"{os.path.join(cuda_include_dir, '..', '..', 'cuda_cccl', 'include')}"
+        )
     elif nvrtc_ver_major == 13:
         numba_include = f"{os.path.join(numba_cuda_path, 'include', '13')}"
+        # For CUDA 13 wheels, `cuda_include_dir` is `site-packages/nvidia/cu13/include`
+        # We need to find CCCL at `site-packages/nvidia/cu13/include/cccl`
+        # For CUDA 13 conda / system install, CCCL is in the `include/cccl` directory
+        cuda_includes.append(f"{os.path.join(cuda_include_dir, 'cccl')}")
 
     if config.CUDA_NVRTC_EXTRA_SEARCH_PATHS:
         extra_includes = config.CUDA_NVRTC_EXTRA_SEARCH_PATHS.split(":")
@@ -377,6 +388,8 @@ def compile(src, name, cc, ltoir=False):
             relocatable_device_code=True,
             link_time_optimization=ltoir,
             name=name,
+            debug=debug,
+            lineinfo=lineinfo,
         )
 
         class Logger:
@@ -411,6 +424,10 @@ def compile(src, name, cc, ltoir=False):
 
         if ltoir:
             options.append("-dlto")
+        if lineinfo:
+            options.append("-lineinfo")
+        if debug:
+            options.append("-G")
 
         # Compile the program
         compile_error = nvrtc.compile_program(program, options)

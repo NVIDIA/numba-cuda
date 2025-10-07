@@ -16,11 +16,11 @@ import os
 import sys
 import ctypes
 
-from numba.misc.findlib import find_lib
+from numba.cuda.misc.findlib import find_lib
 from numba.cuda.cuda_paths import get_cuda_paths
 from numba.cuda.cudadrv.driver import locate_driver_and_loader, load_driver
 from numba.cuda.cudadrv.error import CudaSupportError
-from numba.core import config
+from numba.cuda.core import config
 
 
 if sys.platform == "win32":
@@ -54,9 +54,9 @@ def get_cudalib(lib, static=False):
     """
     if lib in {"nvrtc", "nvvm"}:
         return get_cuda_paths()[lib].info or _dllnamepattern % lib
-    else:
-        dir_type = "static_cudalib_dir" if static else "cudalib_dir"
-        libdir = get_cuda_paths()[dir_type].info
+
+    dir_type = "static_cudalib_dir" if static else "cudalib_dir"
+    libdir = get_cuda_paths()[dir_type].info
 
     candidates = find_lib(lib, libdir, static=static)
     namepattern = _staticnamepattern if static else _dllnamepattern

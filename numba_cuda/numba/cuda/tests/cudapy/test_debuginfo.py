@@ -14,7 +14,7 @@ import re
 import unittest
 import warnings
 from numba.core.errors import NumbaDebugInfoWarning
-from numba.tests.support import ignore_internal_warnings
+from numba.cuda.tests.support import ignore_internal_warnings
 import numpy as np
 import inspect
 
@@ -347,6 +347,34 @@ class TestCudaDebugInfo(CUDATestCase):
         pat2 = r'call void @"llvm.dbg.value"'
         match = re.compile(pat2).search(llvm_ir)
         self.assertIsNotNone(match, msg=llvm_ir)
+
+    def test_llvm_dbg_value_range(self):
+        sig = (types.int64,)
+
+        @cuda.jit("void(int64,)", debug=True, opt=False)
+        def foo(x):
+            """
+            CHECK: store i1 true, i1* %"second.1"
+            CHECK: call void @"llvm.dbg.value"
+            CHECK: store i1 true, i1* %"second.2"
+            CHECK: call void @"llvm.dbg.value"
+
+            CHECK: %[[VAL_1:.*]] = load i1, i1* %"second.2"
+            CHECK: %[[VAL_2:.*]] = load i1, i1* %[[VAL_3:.*]]
+            CHECK: store i1 %[[VAL_1]], i1* %[[VAL_3]]
+            CHECK: call void @"llvm.dbg.value"(metadata i1 %[[VAL_1]], metadata ![[VAL_4:[0-9]+]]
+
+            CHECK: ![[VAL_4]] = !DILocalVariable{{.+}}name: "second"
+            """
+            if x > 0:
+                second = x > 10
+            else:
+                second = True
+            if second:
+                pass
+
+        ir = foo.inspect_llvm()[sig]
+        self.assertFileCheckMatches(ir, foo.__doc__)
 
     def test_no_user_var_alias(self):
         sig = (types.int32, types.int32)

@@ -7,16 +7,17 @@ import shutil
 import pytest
 from datetime import datetime
 from numba.cuda.utils import PYVERSION
-from numba.cuda.cuda_paths import get_conda_ctk
+from numba.cuda.cuda_paths import get_conda_ctk_libdir
 from numba.cuda.cudadrv import driver, devices, libs
 from numba.cuda.dispatcher import CUDADispatcher
-from numba.core import config
+from numba.cuda import config
 from numba.cuda.tests.support import TestCase
 from pathlib import Path
 
 from typing import Iterable, Union
 from io import StringIO
 import unittest
+import numpy as np
 
 if PYVERSION >= (3, 10):
     from filecheck.matcher import Matcher
@@ -43,6 +44,8 @@ class CUDATestCase(TestCase):
     Method assertFileCheckMatches can be used to assert that a given string
     matches FileCheck checks, and is not specific to CUDADispatcher.
     """
+
+    FLOAT16_RTOL = np.finfo(np.float16).eps
 
     def setUp(self):
         self._low_occupancy_warnings = config.CUDA_LOW_OCCUPANCY_WARNINGS
@@ -211,7 +214,7 @@ def skip_unless_cudasim(reason):
 
 def skip_unless_conda_cudatoolkit(reason):
     """Skip test if the CUDA toolkit was not installed by Conda"""
-    return unittest.skipUnless(get_conda_ctk() is not None, reason)
+    return unittest.skipUnless(get_conda_ctk_libdir() is not None, reason)
 
 
 def skip_if_external_memmgr(reason):
@@ -237,6 +240,17 @@ def skip_on_arm(reason):
     cpu = platform.processor()
     is_arm = cpu.startswith("arm") or cpu.startswith("aarch")
     return unittest.skipIf(is_arm, reason)
+
+
+def skip_on_wsl2(reason):
+    """Skip test when running under WSL2.
+
+    Detection is based on the kernel release string, which typically contains
+    "microsoft-standard-WSL2" on WSL2 systems.
+    """
+    rel = platform.release().lower()
+    is_wsl2 = ("microsoft-standard-wsl2" in rel) or ("wsl2" in rel)
+    return unittest.skipIf(is_wsl2, reason)
 
 
 def skip_if_cuda_includes_missing(fn):

@@ -15,14 +15,15 @@ from collections.abc import Sequence
 from types import MethodType, FunctionType, MappingProxyType
 
 import numba
-from numba.core import types, utils, targetconfig
+from numba.core import types
 from numba.core.errors import (
     TypingError,
     InternalError,
 )
-from numba.core.cpu_options import InlineOptions
+from numba.cuda.core.options import InlineOptions
 from numba.core.typing.templates import Signature as CoreSignature
-from numba.cuda.core import ir_utils
+from numba.cuda import utils
+from numba.cuda.core import ir_utils, targetconfig
 
 # info store for inliner callback functions e.g. cost model
 _inline_info = namedtuple("inline_info", "func_ir typemap calltypes signature")
@@ -645,7 +646,7 @@ class _OverloadFunctionTemplate(AbstractTemplate):
         Type the overloaded function by compiling the appropriate
         implementation for the given args.
         """
-        from numba.core.typed_passes import PreLowerStripPhis
+        from numba.cuda.core.typed_passes import PreLowerStripPhis
 
         disp, new_args = self._get_impl(args, kws)
         if disp is None:
@@ -658,8 +659,8 @@ class _OverloadFunctionTemplate(AbstractTemplate):
         if not self._inline.is_never_inline:
             # need to run the compiler front end up to type inference to compute
             # a signature
-            from numba.core import typed_passes, compiler
-            from numba.core.inline_closurecall import InlineWorker
+            from numba.cuda.core import typed_passes, compiler
+            from numba.cuda.core.inline_closurecall import InlineWorker
 
             fcomp = disp._compiler
             flags = compiler.Flags()

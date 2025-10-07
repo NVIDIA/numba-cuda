@@ -1,8 +1,7 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-2-Clause
 
-from numba.core.descriptors import TargetDescriptor
-from numba.core.options import TargetOptions
+from numba.cuda.core.options import TargetOptions
 from .target import CUDATargetContext, CUDATypingContext
 
 
@@ -10,7 +9,7 @@ class CUDATargetOptions(TargetOptions):
     pass
 
 
-class CUDATarget(TargetDescriptor):
+class CUDATarget:
     def __init__(self, name):
         self.options = CUDATargetOptions
         # The typing and target contexts are initialized only when needed -
@@ -18,7 +17,7 @@ class CUDATarget(TargetDescriptor):
         # systems that might not have them present.
         self._typingctx = None
         self._targetctx = None
-        super().__init__(name)
+        self._target_name = name
 
     @property
     def typing_context(self):
