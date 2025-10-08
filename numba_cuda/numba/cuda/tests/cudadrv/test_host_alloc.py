@@ -8,6 +8,9 @@ from numba.cuda.testing import unittest, CUDATestCase
 
 
 class TestHostAlloc(CUDATestCase):
+    def tearDown(self):
+        cuda.current_context().reset()
+
     def test_host_alloc_driver(self):
         n = 32
         mem = cuda.current_context().memhostalloc(n, mapped=True)
