@@ -120,11 +120,6 @@ def compile(src, name, cc, ltoir=False):
 
     includes = [numba_include, *cuda_includes, nrt_include, *extra_includes]
 
-    if not _HAVE_CORE:
-        raise NvrtcError(
-            "cuda.core.experimental.Program is required for compilation; "
-            "please install a recent NVIDIA CUDA Python package."
-        )
 
     options = ProgramOptions(
         arch=arch,
