@@ -922,8 +922,8 @@ def _cast_npdatetime_int64(context, builder, fromty, toty, val):
     return val
 
 
-@overload_method(types.NPTimedelta, "__hash__")
-@overload_method(types.NPDatetime, "__hash__")
+@overload_method(types.NPTimedelta, "__hash__", target="cuda")
+@overload_method(types.NPDatetime, "__hash__", target="cuda")
 def ol_hash_npdatetime(x):
     if (
         numpy_support.numpy_version >= (2, 2)

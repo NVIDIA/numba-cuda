@@ -1014,7 +1014,7 @@ def _make_dtype_object(typingctx, desc):
         return from_nb_type(nb_type)
 
 
-@overload(np.dtype)
+@overload(np.dtype, target="cuda")
 def numpy_dtype(desc):
     """Provide an implementation so that numpy.dtype function can be lowered."""
     if isinstance(desc, (types.Literal, types.functions.NumberClass)):
