@@ -46,6 +46,7 @@ cu13 = [
     "nvidia-cuda-cccl==13.*",
 ]
 
+[dependency-groups]
 test = [
     "pre-commit",
     "psutil",
@@ -55,15 +56,14 @@ test = [
     "filecheck",
     "ml_dtypes",
 ]
+prof = ["pyinstrument"]
 test-cu12 = [
-    "numba-cuda[cu12]",
-    "numba-cuda[test]",
     "nvidia-curand-cu12",
+    { include-group = "test" }
 ]
 test-cu13 = [
-    "numba-cuda[cu13]",
-    "numba-cuda[test]",
     "nvidia-curand==10.4.*",
+    { include-group = "test" }
 ]
 
 [project.urls]
@@ -146,3 +146,23 @@ exclude = [
 "numba_cuda/numba/cuda/tests/doc_examples/test_cg.py" = ["E501"]
 "numba_cuda/numba/cuda/tests/doc_examples/test_matmul.py" = ["E501"]
 "numba_cuda/numba/tests/doc_examples/test_interval_example.py" = ["E501"]
+
+[tool.pixi.workspace]
+channels = ["conda-forge"]
+platforms = ["linux-64", "linux-aarch64", "win-64"]
+
+[tool.pixi.pypi-dependencies]
+numba-cuda = { path = ".", editable = true }
+
+[tool.pixi.feature.cu12.build-dependencies]
+gxx = "*"
+
+[tool.pixi.feature.cu13.build-dependencies]
+gxx = "*"
+
+[tool.pixi.environments]
+cu12 = { features = ["cu12", "test", "prof"], solve-group = "cu12" }
+cu13 = { features = ["cu13", "test", "prof"], solve-group = "cu13" }
+
+[tool.pixi.tasks]
+test = { cmd = ["pytest", "$PIXI_PROJECT_ROOT/numba_cuda/numba/cuda/tests"] }

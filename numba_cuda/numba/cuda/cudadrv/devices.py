@@ -22,22 +22,13 @@ from .driver import driver, USE_NV_BINDING
 
 
 class _DeviceList(object):
-    def __getattr__(self, attr):
-        # First time looking at "lst" attribute.
-        if attr == "lst":
-            # Device list is not initialized.
-            # Query all CUDA devices.
-            numdev = driver.get_device_count()
-            gpus = [
-                _DeviceContextManager(driver.get_device(devid))
-                for devid in range(numdev)
-            ]
-            # Define "lst" to avoid re-initialization
-            self.lst = gpus
-            return gpus
-
-        # Other attributes
-        return super(_DeviceList, self).__getattr__(attr)
+    @property
+    @functools.cache
+    def lst(self):
+        return [
+            _DeviceContextManager(driver.get_device(devid))
+            for devid in range(driver.get_device_count())
+        ]
 
     def __getitem__(self, devnum):
         """
@@ -61,8 +52,9 @@ class _DeviceList(object):
         """Returns the active device or None if there's no active device"""
         with driver.get_active_context() as ac:
             devnum = ac.devnum
-            if devnum is not None:
-                return self[devnum]
+        if devnum is not None:
+            return self[devnum]
+        return None
 
 
 class _DeviceContextManager(object):
@@ -80,6 +72,10 @@ class _DeviceContextManager(object):
     def __init__(self, device):
         self._device = device
 
+    def get_primary_context(self, *args, **kwargs):
+        """This attribute is forwarded directly, to avoid the performance overhead of `__getattr__`."""
+        return self._device.get_primary_context(*args, **kwargs)
+
     def __getattr__(self, item):
         return getattr(self._device, item)
 
@@ -91,7 +87,7 @@ class _DeviceContextManager(object):
         self._device.get_primary_context().pop()
 
     def __str__(self):
-        return "<Managed Device {self.id}>".format(self=self)
+        return f"<Managed Device {self.id}>"
 
 
 class _Runtime(object):
@@ -148,7 +144,9 @@ class _Runtime(object):
         else:
             if USE_NV_BINDING:
                 devnum = int(devnum)
-            return self._activate_context_for(devnum)
+
+            with self._lock:
+                return self._activate_context_for(devnum)
 
     def _get_or_create_context_uncached(self, devnum):
         """See also ``get_or_create_context(devnum)``.
@@ -167,28 +165,29 @@ class _Runtime(object):
                     ctx_handle = ctx.handle.value
                     ac_ctx_handle = ac.context_handle.value
                     if ctx_handle != ac_ctx_handle:
-                        msg = (
+                        raise RuntimeError(
                             "Numba cannot operate on non-primary"
-                            " CUDA context {:x}"
+                            f" CUDA context {ac_ctx_handle:x}"
                         )
-                        raise RuntimeError(msg.format(ac_ctx_handle))
                     # Ensure the context is ready
                     ctx.prepare_for_use()
                 return ctx
 
     def _activate_context_for(self, devnum):
-        with self._lock:
-            gpu = self.gpus[devnum]
-            newctx = gpu.get_primary_context()
-            # Detect unexpected context switch
-            cached_ctx = self._get_attached_context()
-            if cached_ctx is not None and cached_ctx is not newctx:
-                raise RuntimeError("Cannot switch CUDA-context.")
-            newctx.push()
-            return newctx
+        gpu = self.gpus[devnum]
+        newctx = gpu.get_primary_context()
+        # Detect unexpected context switch
+        cached_ctx = self._get_attached_context()
+        if cached_ctx is not None and cached_ctx is not newctx:
+            raise RuntimeError("Cannot switch CUDA-context.")
+        newctx.push()
+        return newctx
 
     def _get_attached_context(self):
-        return getattr(self._tls, "attached_context", None)
+        try:
+            return self._tls.attached_context
+        except AttributeError:
+            return None
 
     def _set_attached_context(self, ctx):
         self._tls.attached_context = ctx

@@ -140,8 +140,9 @@ class _EnvVar(object):
         try:
             from numba import config as numba_config
 
-            if hasattr(numba_config, self.name):
-                config_value = getattr(numba_config, self.name)
+            if (
+                config_value := getattr(numba_config, self.name, None)
+            ) is not None:
                 if config_value != self.value:
                     msg = (
                         f"Configuration value '{self.name}' is explicitly set "
@@ -709,15 +710,8 @@ _env_reloader = _EnvReloader()
 
 def __getattr__(name):
     """Module-level __getattr__ provides dynamic behavior for _EnvVar descriptors."""
-    # Fetch non-descriptor globals directly
-    if name in globals():
-        return globals()[name]
-
-    if (
-        hasattr(_env_reloader, "_descriptors")
-        and name in _env_reloader._descriptors
-    ):
-        return _env_reloader._descriptors[name].__get__()
+    if getter := getattr(_env_reloader, "_descriptors", {}).get(name):
+        return getter.__get__()
 
     raise AttributeError(f"module {__name__} has no attribute {name}")
 
