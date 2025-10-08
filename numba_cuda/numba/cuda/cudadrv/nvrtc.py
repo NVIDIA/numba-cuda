@@ -39,10 +39,6 @@ except Exception:  # pragma: no cover - environment dependent
 
 @functools.cache
 def _get_nvrtc_version():
-    if not _HAVE_BINDINGS:
-        raise RuntimeError(
-            "NVIDIA CUDA bindings are required to determine NVRTC version"
-        )
     retcode, major, minor = bindings_nvrtc.nvrtcVersion()
     if retcode != bindings_nvrtc.nvrtcResult.NVRTC_SUCCESS:
         raise RuntimeError(f"{retcode.name} when calling nvrtcVersion()")
