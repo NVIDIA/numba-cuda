@@ -242,6 +242,17 @@ def skip_on_arm(reason):
     return unittest.skipIf(is_arm, reason)
 
 
+def skip_on_wsl2(reason):
+    """Skip test when running under WSL2.
+
+    Detection is based on the kernel release string, which typically contains
+    "microsoft-standard-WSL2" on WSL2 systems.
+    """
+    rel = platform.release().lower()
+    is_wsl2 = ("microsoft-standard-wsl2" in rel) or ("wsl2" in rel)
+    return unittest.skipIf(is_wsl2, reason)
+
+
 def skip_if_cuda_includes_missing(fn):
     # Skip when cuda.h is not available - generally this should indicate
     # whether the CUDA includes are available or not

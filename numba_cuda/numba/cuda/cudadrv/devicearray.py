@@ -16,7 +16,7 @@ from ctypes import c_void_p
 import numpy as np
 
 import numba
-from numba import _devicearray
+from numba.cuda.cext import _devicearray
 from numba.cuda.cudadrv import devices, dummyarray
 from numba.cuda.cudadrv import driver as _driver
 from numba.core import types
@@ -105,13 +105,11 @@ class DeviceNDArrayBase(_devicearray.DeviceArray):
         self.size = int(functools.reduce(operator.mul, self.shape, 1))
         # prepare gpu memory
         if self.size > 0:
+            self.alloc_size = _driver.memory_size_from_info(
+                self.shape, self.strides, self.dtype.itemsize
+            )
             if gpu_data is None:
-                self.alloc_size = _driver.memory_size_from_info(
-                    self.shape, self.strides, self.dtype.itemsize
-                )
                 gpu_data = devices.get_context().memalloc(self.alloc_size)
-            else:
-                self.alloc_size = _driver.device_memory_size(gpu_data)
         else:
             # Make NULL pointer for empty allocation
             if _driver.USE_NV_BINDING:
