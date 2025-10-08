@@ -60,7 +60,7 @@ def isfinite_float_impl(context, builder, sig, args):
     return impl_ret_untracked(context, builder, sig.return_type, res)
 
 
-# @overload(cmath.rect, target="cuda")
+# @overload(cmath.rect)
 def impl_cmath_rect(r, phi):
     if all([isinstance(typ, types.Float) for typ in [r, phi]]):
 
@@ -179,7 +179,7 @@ def log_base_impl(context, builder, sig, args):
     return impl_ret_untracked(context, builder, sig, res)
 
 
-# @overload(cmath.log10, target="cuda")
+# @overload(cmath.log10)
 def impl_cmath_log10(z):
     if not isinstance(z, types.Complex):
         return
@@ -196,7 +196,7 @@ def impl_cmath_log10(z):
     return log10_impl
 
 
-# @overload(cmath.phase, target="cuda")
+# @overload(cmath.phase)
 def phase_impl(x):
     """cmath.phase(x + y j)"""
 
@@ -209,7 +209,7 @@ def phase_impl(x):
     return impl
 
 
-# @overload(cmath.polar, target="cuda")
+# @overload(cmath.polar)
 def polar_impl(x):
     if not isinstance(x, types.Complex):
         return
@@ -292,7 +292,7 @@ def cos_impl(context, builder, sig, args):
     return impl_ret_untracked(context, builder, sig, res)
 
 
-# @overload(cmath.cosh, target="cuda")
+# @overload(cmath.cosh)
 def impl_cmath_cosh(z):
     if not isinstance(z, types.Complex):
         return
@@ -333,7 +333,7 @@ def sin_impl(context, builder, sig, args):
     return impl_ret_untracked(context, builder, sig, res)
 
 
-# @overload(cmath.sinh, target="cuda")
+# @overload(cmath.sinh)
 def impl_cmath_sinh(z):
     if not isinstance(z, types.Complex):
         return
@@ -371,7 +371,7 @@ def tan_impl(context, builder, sig, args):
     return impl_ret_untracked(context, builder, sig, res)
 
 
-# @overload(cmath.tanh, target="cuda")
+# @overload(cmath.tanh)
 def impl_cmath_tanh(z):
     if not isinstance(z, types.Complex):
         return
@@ -426,7 +426,7 @@ def acos_impl(context, builder, sig, args):
     return impl_ret_untracked(context, builder, sig, res)
 
 
-# @overload(cmath.acosh, target="cuda")
+# @overload(cmath.acosh)
 def impl_cmath_acosh(z):
     if not isinstance(z, types.Complex):
         return

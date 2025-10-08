@@ -15,7 +15,7 @@ from numba.cuda.extending import overload
 from numba.cuda.np.numpy_support import type_can_asarray, as_dtype, from_dtype
 
 
-@overload(np.roots, target="cuda")
+@overload(np.roots)
 def roots_impl(p):
     # cast int vectors to float cf. numpy, this is a bit dicey as
     # the roots could be complex which will fail anyway
@@ -62,7 +62,7 @@ def roots_impl(p):
     return roots_impl
 
 
-@overload(pu.trimseq, target="cuda")
+@overload(pu.trimseq)
 def polyutils_trimseq(seq):
     if not type_can_asarray(seq):
         msg = 'The argument "seq" must be array-like'
@@ -88,7 +88,7 @@ def polyutils_trimseq(seq):
     return impl
 
 
-@overload(pu.as_series, target="cuda")
+@overload(pu.as_series)
 def polyutils_as_series(alist, trim=True):
     if not type_can_asarray(alist):
         msg = 'The argument "alist" must be array-like'
@@ -187,7 +187,7 @@ def _poly_result_dtype(*args):
     return from_dtype(res_dtype)
 
 
-@overload(poly.polyadd, target="cuda")
+@overload(poly.polyadd)
 def numpy_polyadd(c1, c2):
     if not type_can_asarray(c1):
         msg = 'The argument "c1" must be array-like'
@@ -212,7 +212,7 @@ def numpy_polyadd(c1, c2):
     return impl
 
 
-@overload(poly.polysub, target="cuda")
+@overload(poly.polysub)
 def numpy_polysub(c1, c2):
     if not type_can_asarray(c1):
         msg = 'The argument "c1" must be array-like'
@@ -237,7 +237,7 @@ def numpy_polysub(c1, c2):
     return impl
 
 
-@overload(poly.polymul, target="cuda")
+@overload(poly.polymul)
 def numpy_polymul(c1, c2):
     if not type_can_asarray(c1):
         msg = 'The argument "c1" must be array-like'
@@ -255,7 +255,7 @@ def numpy_polymul(c1, c2):
     return impl
 
 
-@overload(poly.polyval, prefer_literal=True, target="cuda")
+@overload(poly.polyval, prefer_literal=True)
 def poly_polyval(x, c, tensor=True):
     if not type_can_asarray(x):
         msg = 'The argument "x" must be array-like'
@@ -302,7 +302,7 @@ def poly_polyval(x, c, tensor=True):
     return impl
 
 
-@overload(poly.polyint, target="cuda")
+@overload(poly.polyint)
 def poly_polyint(c, m=1):
     if not type_can_asarray(c):
         msg = 'The argument "c" must be array-like'
@@ -343,7 +343,7 @@ def poly_polyint(c, m=1):
     return impl
 
 
-@overload(poly.polydiv, target="cuda")
+@overload(poly.polydiv)
 def numpy_polydiv(c1, c2):
     if not type_can_asarray(c1):
         msg = 'The argument "c1" must be array-like'

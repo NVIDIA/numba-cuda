@@ -389,8 +389,8 @@ def get_accumulator(dtype, value):
     return acc_init
 
 
-@overload(np.prod, target="cuda")
-@overload_method(types.Array, "prod", target="cuda")
+@overload(np.prod)
+@overload_method(types.Array, "prod")
 def array_prod(a):
     if isinstance(a, types.Array):
         dtype = as_dtype(a.dtype)
@@ -406,8 +406,8 @@ def array_prod(a):
         return array_prod_impl
 
 
-@overload(np.cumsum, target="cuda")
-@overload_method(types.Array, "cumsum", target="cuda")
+@overload(np.cumsum)
+@overload_method(types.Array, "cumsum")
 def array_cumsum(a):
     if isinstance(a, types.Array):
         is_integer = a.dtype in types.signed_domain
@@ -430,8 +430,8 @@ def array_cumsum(a):
         return array_cumsum_impl
 
 
-@overload(np.cumprod, target="cuda")
-@overload_method(types.Array, "cumprod", target="cuda")
+@overload(np.cumprod)
+@overload_method(types.Array, "cumprod")
 def array_cumprod(a):
     if isinstance(a, types.Array):
         is_integer = a.dtype in types.signed_domain
@@ -454,8 +454,8 @@ def array_cumprod(a):
         return array_cumprod_impl
 
 
-@overload(np.mean, target="cuda")
-@overload_method(types.Array, "mean", target="cuda")
+@overload(np.mean)
+@overload_method(types.Array, "mean")
 def array_mean(a):
     if isinstance(a, types.Array):
         is_number = a.dtype in types.integer_domain | frozenset([types.bool_])
@@ -477,8 +477,8 @@ def array_mean(a):
         return array_mean_impl
 
 
-@overload(np.var, target="cuda")
-@overload_method(types.Array, "var", target="cuda")
+@overload(np.var)
+@overload_method(types.Array, "var")
 def array_var(a):
     if isinstance(a, types.Array):
 
@@ -496,8 +496,8 @@ def array_var(a):
         return array_var_impl
 
 
-@overload(np.std, target="cuda")
-@overload_method(types.Array, "std", target="cuda")
+@overload(np.std)
+@overload_method(types.Array, "std")
 def array_std(a):
     if isinstance(a, types.Array):
 
@@ -522,9 +522,9 @@ def return_false(a):
     return False
 
 
-@overload(np.min, target="cuda")
-@overload(np.amin, target="cuda")
-@overload_method(types.Array, "min", target="cuda")
+@overload(np.min)
+@overload(np.amin)
+@overload_method(types.Array, "min")
 def npy_min(a):
     if not isinstance(a, types.Array):
         return
@@ -574,9 +574,9 @@ def npy_min(a):
     return impl_min
 
 
-@overload(np.max, target="cuda")
-@overload(np.amax, target="cuda")
-@overload_method(types.Array, "max", target="cuda")
+@overload(np.max)
+@overload(np.amax)
+@overload_method(types.Array, "max")
 def npy_max(a):
     if not isinstance(a, types.Array):
         return
@@ -690,8 +690,8 @@ def array_argmin_impl_generic(arry):
     return min_idx
 
 
-@overload(np.argmin, target="cuda")
-@overload_method(types.Array, "argmin", target="cuda")
+@overload(np.argmin)
+@overload_method(types.Array, "argmin")
 def array_argmin(a, axis=None):
     if isinstance(a.dtype, (types.NPDatetime, types.NPTimedelta)):
         flatten_impl = array_argmin_impl_datetime
@@ -817,8 +817,8 @@ def build_argmax_or_argmin_with_axis_impl(a, axis, flatten_impl):
     return impl
 
 
-@overload(np.argmax, target="cuda")
-@overload_method(types.Array, "argmax", target="cuda")
+@overload(np.argmax)
+@overload_method(types.Array, "argmax")
 def array_argmax(a, axis=None):
     if isinstance(a.dtype, (types.NPDatetime, types.NPTimedelta)):
         flatten_impl = array_argmax_impl_datetime
@@ -838,8 +838,8 @@ def array_argmax(a, axis=None):
     return array_argmax_impl
 
 
-@overload(np.all, target="cuda")
-@overload_method(types.Array, "all", target="cuda")
+@overload(np.all)
+@overload_method(types.Array, "all")
 def np_all(a):
     def flat_all(a):
         for v in np.nditer(a):
@@ -875,8 +875,8 @@ def _allclose_scalars(a_v, b_v, rtol=1e-05, atol=1e-08, equal_nan=False):
     return True
 
 
-@overload(np.allclose, target="cuda")
-@overload_method(types.Array, "allclose", target="cuda")
+@overload(np.allclose)
+@overload_method(types.Array, "allclose")
 def np_allclose(a, b, rtol=1e-05, atol=1e-08, equal_nan=False):
     if not type_can_asarray(a):
         raise TypingError('The first argument "a" must be array-like')
@@ -958,8 +958,8 @@ def np_allclose(a, b, rtol=1e-05, atol=1e-08, equal_nan=False):
         return np_allclose_impl_array_array
 
 
-@overload(np.any, target="cuda")
-@overload_method(types.Array, "any", target="cuda")
+@overload(np.any)
+@overload_method(types.Array, "any")
 def np_any(a):
     def flat_any(a):
         for v in np.nditer(a):
@@ -970,7 +970,7 @@ def np_any(a):
     return flat_any
 
 
-@overload(np.average, target="cuda")
+@overload(np.average)
 def np_average(a, axis=None, weights=None):
     if weights is None or isinstance(weights, types.NoneType):
 
@@ -1027,7 +1027,7 @@ def get_isnan(dtype):
         return _trivial_isnan
 
 
-@overload(np.iscomplex, target="cuda")
+@overload(np.iscomplex)
 def np_iscomplex(x):
     if type_can_asarray(x):
         # NumPy uses asanyarray here!
@@ -1035,7 +1035,7 @@ def np_iscomplex(x):
     return None
 
 
-@overload(np.isreal, target="cuda")
+@overload(np.isreal)
 def np_isreal(x):
     if type_can_asarray(x):
         # NumPy uses asanyarray here!
@@ -1043,7 +1043,7 @@ def np_isreal(x):
     return None
 
 
-@overload(np.iscomplexobj, target="cuda")
+@overload(np.iscomplexobj)
 def iscomplexobj(x):
     # Implementation based on NumPy
     # https://github.com/numpy/numpy/blob/d9b1e32cb8ef90d6b4a47853241db2a28146a57d/numpy/lib/type_check.py#L282-L320
@@ -1066,7 +1066,7 @@ def iscomplexobj(x):
     return impl
 
 
-@overload(np.isrealobj, target="cuda")
+@overload(np.isrealobj)
 def isrealobj(x):
     # Return True if x is not a complex type.
     # Implementation based on NumPy
@@ -1077,7 +1077,7 @@ def isrealobj(x):
     return impl
 
 
-@overload(np.isscalar, target="cuda")
+@overload(np.isscalar)
 def np_isscalar(element):
     res = type_is_scalar(element)
 
@@ -1101,13 +1101,13 @@ def is_np_inf_impl(x, out, fn):
     return impl
 
 
-@overload(np.isneginf, target="cuda")
+@overload(np.isneginf)
 def isneginf(x, out=None):
     fn = register_jitable(lambda x: x)
     return is_np_inf_impl(x, out, fn)
 
 
-@overload(np.isposinf, target="cuda")
+@overload(np.isposinf)
 def isposinf(x, out=None):
     fn = register_jitable(lambda x: ~x)
     return is_np_inf_impl(x, out, fn)
@@ -1191,7 +1191,7 @@ def _isclose_item(x, y, rtol, atol, equal_nan):
         return abs(x - y) <= atol + rtol * abs(y)
 
 
-@overload(np.isclose, target="cuda")
+@overload(np.isclose)
 def isclose(a, b, rtol=1e-05, atol=1e-08, equal_nan=False):
     if not type_can_asarray(a):
         raise TypingError('The first argument "a" must be array-like')
@@ -1250,7 +1250,7 @@ def isclose(a, b, rtol=1e-05, atol=1e-08, equal_nan=False):
     return isclose_impl
 
 
-@overload(np.nanmin, target="cuda")
+@overload(np.nanmin)
 def np_nanmin(a):
     dt = determine_dtype(a)
     if np.issubdtype(dt, np.complexfloating):
@@ -1259,7 +1259,7 @@ def np_nanmin(a):
         return real_nanmin
 
 
-@overload(np.nanmax, target="cuda")
+@overload(np.nanmax)
 def np_nanmax(a):
     dt = determine_dtype(a)
     if np.issubdtype(dt, np.complexfloating):
@@ -1268,7 +1268,7 @@ def np_nanmax(a):
         return real_nanmax
 
 
-@overload(np.nanmean, target="cuda")
+@overload(np.nanmean)
 def np_nanmean(a):
     if not isinstance(a, types.Array):
         return
@@ -1288,7 +1288,7 @@ def np_nanmean(a):
     return nanmean_impl
 
 
-@overload(np.nanvar, target="cuda")
+@overload(np.nanvar)
 def np_nanvar(a):
     if not isinstance(a, types.Array):
         return
@@ -1313,7 +1313,7 @@ def np_nanvar(a):
     return nanvar_impl
 
 
-@overload(np.nanstd, target="cuda")
+@overload(np.nanstd)
 def np_nanstd(a):
     if not isinstance(a, types.Array):
         return
@@ -1324,7 +1324,7 @@ def np_nanstd(a):
     return nanstd_impl
 
 
-@overload(np.nansum, target="cuda")
+@overload(np.nansum)
 def np_nansum(a):
     if not isinstance(a, types.Array):
         return
@@ -1346,7 +1346,7 @@ def np_nansum(a):
     return nansum_impl
 
 
-@overload(np.nanprod, target="cuda")
+@overload(np.nanprod)
 def np_nanprod(a):
     if not isinstance(a, types.Array):
         return
@@ -1368,7 +1368,7 @@ def np_nanprod(a):
     return nanprod_impl
 
 
-@overload(np.nancumprod, target="cuda")
+@overload(np.nancumprod)
 def np_nancumprod(a):
     if not isinstance(a, types.Array):
         return
@@ -1393,7 +1393,7 @@ def np_nancumprod(a):
         return nancumprod_impl
 
 
-@overload(np.nancumsum, target="cuda")
+@overload(np.nancumsum)
 def np_nancumsum(a):
     if not isinstance(a, types.Array):
         return
@@ -1458,12 +1458,12 @@ def _compute_a_min(current_val, val):
     pass
 
 
-@overload(_compute_a_max, target="cuda")
+@overload(_compute_a_max)
 def _compute_a_max_impl(current_val, val):
     return _compute_current_val_impl_gen(operator.gt, current_val, val)
 
 
-@overload(_compute_a_min, target="cuda")
+@overload(_compute_a_min)
 def _compute_a_min_impl(current_val, val):
     return _compute_current_val_impl_gen(operator.lt, current_val, val)
 
@@ -1472,7 +1472,7 @@ def _early_return(val):
     pass
 
 
-@overload(_early_return, target="cuda")
+@overload(_early_return)
 def _early_return_impl(val):
     UNUSED = 0
     if isinstance(val, types.Complex):
@@ -1500,7 +1500,7 @@ def _early_return_impl(val):
     return impl
 
 
-@overload(np.ptp, target="cuda")
+@overload(np.ptp)
 def np_ptp(a):
     if hasattr(a, "dtype"):
         if isinstance(a.dtype, types.Boolean):
@@ -1666,7 +1666,7 @@ def _median_inner(temp_arry, n):
         return _select(temp_arry, half, low, high)
 
 
-@overload(np.median, target="cuda")
+@overload(np.median)
 def np_median(a):
     if not isinstance(a, types.Array):
         return
@@ -1824,35 +1824,35 @@ def _percentile_quantile_inner(a, q, skip_nan, factor, check_q):
         return np_percentile_impl
 
 
-@overload(np.percentile, target="cuda")
+@overload(np.percentile)
 def np_percentile(a, q):
     return _percentile_quantile_inner(
         a, q, skip_nan=False, factor=1.0, check_q=percentile_is_valid
     )
 
 
-@overload(np.nanpercentile, target="cuda")
+@overload(np.nanpercentile)
 def np_nanpercentile(a, q):
     return _percentile_quantile_inner(
         a, q, skip_nan=True, factor=1.0, check_q=percentile_is_valid
     )
 
 
-@overload(np.quantile, target="cuda")
+@overload(np.quantile)
 def np_quantile(a, q):
     return _percentile_quantile_inner(
         a, q, skip_nan=False, factor=100.0, check_q=quantile_is_valid
     )
 
 
-@overload(np.nanquantile, target="cuda")
+@overload(np.nanquantile)
 def np_nanquantile(a, q):
     return _percentile_quantile_inner(
         a, q, skip_nan=True, factor=100.0, check_q=quantile_is_valid
     )
 
 
-@overload(np.nanmedian, target="cuda")
+@overload(np.nanmedian)
 def np_nanmedian(a):
     if not isinstance(a, types.Array):
         return
@@ -1953,7 +1953,7 @@ def valid_kths(a, kth):
     return np.unique(out)
 
 
-@overload(np.partition, target="cuda")
+@overload(np.partition)
 def np_partition(a, kth):
     if not isinstance(a, (types.Array, types.Sequence, types.Tuple)):
         raise NumbaTypeError("The first argument must be an array-like")
@@ -1978,7 +1978,7 @@ def np_partition(a, kth):
     return np_partition_impl
 
 
-@overload(np.argpartition, target="cuda")
+@overload(np.argpartition)
 def np_argpartition(a, kth):
     if not isinstance(a, (types.Array, types.Sequence, types.Tuple)):
         raise NumbaTypeError("The first argument must be an array-like")
@@ -2020,7 +2020,7 @@ def _tri_impl(N, M, k):
     return out
 
 
-@overload(np.tri, target="cuda")
+@overload(np.tri)
 def np_tri(N, M=None, k=0):
     # we require k to be integer, unlike numpy
     check_is_integer(k, "k")
@@ -2056,7 +2056,7 @@ def np_tril_impl_2d(m, k=0):
     return np.where(mask, m, np.zeros_like(m, dtype=m.dtype))
 
 
-@overload(np.tril, target="cuda")
+@overload(np.tril)
 def my_tril(m, k=0):
     # we require k to be integer, unlike numpy
     check_is_integer(k, "k")
@@ -2082,7 +2082,7 @@ def my_tril(m, k=0):
         return np_tril_impl_multi
 
 
-@overload(np.tril_indices, target="cuda")
+@overload(np.tril_indices)
 def np_tril_indices(n, k=0, m=None):
     # we require integer arguments, unlike numpy
     check_is_integer(n, "n")
@@ -2096,7 +2096,7 @@ def np_tril_indices(n, k=0, m=None):
     return np_tril_indices_impl
 
 
-@overload(np.tril_indices_from, target="cuda")
+@overload(np.tril_indices_from)
 def np_tril_indices_from(arr, k=0):
     # we require k to be integer, unlike numpy
     check_is_integer(k, "k")
@@ -2116,7 +2116,7 @@ def np_triu_impl_2d(m, k=0):
     return np.where(mask, np.zeros_like(m, dtype=m.dtype), m)
 
 
-@overload(np.triu, target="cuda")
+@overload(np.triu)
 def my_triu(m, k=0):
     # we require k to be integer, unlike numpy
     check_is_integer(k, "k")
@@ -2142,7 +2142,7 @@ def my_triu(m, k=0):
         return np_triu_impl_multi
 
 
-@overload(np.triu_indices, target="cuda")
+@overload(np.triu_indices)
 def np_triu_indices(n, k=0, m=None):
     # we require integer arguments, unlike numpy
     check_is_integer(n, "n")
@@ -2156,7 +2156,7 @@ def np_triu_indices(n, k=0, m=None):
     return np_triu_indices_impl
 
 
-@overload(np.triu_indices_from, target="cuda")
+@overload(np.triu_indices_from)
 def np_triu_indices_from(arr, k=0):
     # we require k to be integer, unlike numpy
     check_is_integer(k, "k")
@@ -2174,7 +2174,7 @@ def _prepare_array(arr):
     pass
 
 
-@overload(_prepare_array, target="cuda")
+@overload(_prepare_array)
 def _prepare_array_impl(arr):
     if arr in (None, types.none):
         return lambda arr: np.array(())
@@ -2199,7 +2199,7 @@ def _dtype_of_compound(inobj):
             return as_dtype(dt)
 
 
-@overload(np.ediff1d, target="cuda")
+@overload(np.ediff1d)
 def np_ediff1d(ary, to_end=None, to_begin=None):
     if isinstance(ary, types.Array):
         if isinstance(ary.dtype, types.Boolean):
@@ -2259,7 +2259,7 @@ def _select_element(arr):
     pass
 
 
-@overload(_select_element, target="cuda")
+@overload(_select_element)
 def _select_element_impl(arr):
     zerod = getattr(arr, "ndim", None) == 0
     if zerod:
@@ -2282,7 +2282,7 @@ def _get_d(dx, x):
     pass
 
 
-@overload(_get_d, target="cuda")
+@overload(_get_d)
 def get_d_impl(x, dx):
     if is_nonelike(x):
 
@@ -2296,7 +2296,7 @@ def get_d_impl(x, dx):
     return impl
 
 
-@overload(np.trapz, target="cuda")
+@overload(np.trapz)
 def np_trapz(y, x=None, dx=1.0):
     if isinstance(y, (types.Number, types.Boolean)):
         raise TypingError("y cannot be a scalar")
@@ -2358,7 +2358,7 @@ def _check_vander_params(x, N):
         raise ValueError("Negative dimensions are not allowed")
 
 
-@overload(np.vander, target="cuda")
+@overload(np.vander)
 def np_vander(x, N=None, increasing=False):
     if N not in (None, types.none):
         if not isinstance(N, types.Integer):
@@ -2398,7 +2398,7 @@ def np_vander(x, N=None, increasing=False):
         return np_vander_seq_impl
 
 
-@overload(np.roll, target="cuda")
+@overload(np.roll)
 def np_roll(a, shift):
     if not isinstance(shift, (types.Integer, types.Boolean)):
         raise TypingError("shift must be an integer")
@@ -2698,7 +2698,7 @@ def np_interp_impl_inner(x, xp, fp, dtype):
     return dres
 
 
-@overload(np.interp, target="cuda")
+@overload(np.interp)
 def np_interp(x, xp, fp):
     # Replicating basic interp is relatively simple, but matching the behaviour
     # of NumPy for edge cases is really quite hard. After a couple of attempts
@@ -2784,7 +2784,7 @@ def _prepare_cov_input_inner():
     pass
 
 
-@overload(_prepare_cov_input_inner, target="cuda")
+@overload(_prepare_cov_input_inner)
 def _prepare_cov_input_impl(m, y, rowvar, dtype):
     if y in (None, types.none):
 
@@ -2935,7 +2935,7 @@ def _clip_complex(x):
     return real + 1j * imag
 
 
-@overload(np.cov, target="cuda")
+@overload(np.cov)
 def np_cov(m, y=None, rowvar=True, bias=False, ddof=None):
     # reject problem if m and / or y are more than 2D
     check_dimensions(m, "m")
@@ -2997,7 +2997,7 @@ def np_cov(m, y=None, rowvar=True, bias=False, ddof=None):
         return np_cov_impl
 
 
-@overload(np.corrcoef, target="cuda")
+@overload(np.corrcoef)
 def np_corrcoef(x, y=None, rowvar=True):
     x_dt = determine_dtype(x)
     y_dt = determine_dtype(y)
@@ -3033,7 +3033,7 @@ def np_corrcoef(x, y=None, rowvar=True):
 # Element-wise computations
 
 
-@overload(np.argwhere, target="cuda")
+@overload(np.argwhere)
 def np_argwhere(a):
     # needs to be much more array-like for the array impl to work, Numba bug
     # in one of the underlying function calls?
@@ -3059,7 +3059,7 @@ def np_argwhere(a):
     return impl
 
 
-@overload(np.flatnonzero, target="cuda")
+@overload(np.flatnonzero)
 def np_flatnonzero(a):
     if type_can_asarray(a):
 
@@ -3151,7 +3151,7 @@ def _asarray(x):
     pass
 
 
-@overload(_asarray, target="cuda")
+@overload(_asarray)
 def _asarray_impl(x):
     if isinstance(x, types.Array):
         return lambda x: x
@@ -3162,7 +3162,7 @@ def _asarray_impl(x):
         return lambda x: np.array([x], dtype=ty)
 
 
-@overload(np.fill_diagonal, target="cuda")
+@overload(np.fill_diagonal)
 def np_fill_diagonal(a, val, wrap=False):
     if a.ndim > 1:
         # the following can be simplified after #3088; until then, employ
@@ -3245,8 +3245,8 @@ def round_ndigits(x, ndigits):
         return _np_round_float(y) * pow1
 
 
-@overload(np.around, target="cuda")
-@overload(np.round, target="cuda")
+@overload(np.around)
+@overload(np.round)
 def impl_np_round(a, decimals=0, out=None):
     if not type_can_asarray(a):
         raise TypingError('The argument "a" must be array-like')
@@ -3318,7 +3318,7 @@ if numpy_version < (2, 0):
     overload(np.round_)(impl_np_round)
 
 
-@overload(np.sinc, target="cuda")
+@overload(np.sinc)
 def impl_np_sinc(x):
     if isinstance(x, types.Number):
 
@@ -3342,7 +3342,7 @@ def impl_np_sinc(x):
         raise NumbaTypeError('Argument "x" must be a Number or array-like.')
 
 
-@overload(np.angle, target="cuda")
+@overload(np.angle)
 def ov_np_angle(z, deg=False):
     deg_mult = float(180 / np.pi)
 
@@ -3491,7 +3491,7 @@ def _where_generic_impl(dtype, layout):
     return impl
 
 
-@overload(np.where, target="cuda")
+@overload(np.where)
 def ov_np_where(condition):
     if not type_can_asarray(condition):
         msg = 'The argument "condition" must be array-like'
@@ -3503,7 +3503,7 @@ def ov_np_where(condition):
     return where_cond_none_none
 
 
-@overload(np.where, target="cuda")
+@overload(np.where)
 def ov_np_where_x_y(condition, x, y):
     if not type_can_asarray(condition):
         msg = 'The argument "condition" must be array-like'
@@ -3561,7 +3561,7 @@ def ov_np_where_x_y(condition, x, y):
         return impl
 
 
-@overload(np.real, target="cuda")
+@overload(np.real)
 def np_real(val):
     def np_real_impl(val):
         return val.real
@@ -3569,7 +3569,7 @@ def np_real(val):
     return np_real_impl
 
 
-@overload(np.imag, target="cuda")
+@overload(np.imag)
 def np_imag(val):
     def np_imag_impl(val):
         return val.imag
@@ -3581,7 +3581,7 @@ def np_imag(val):
 # Misc functions
 
 
-@overload(operator.contains, target="cuda")
+@overload(operator.contains)
 def np_contains(arr, key):
     if not isinstance(arr, types.Array):
         return
@@ -3595,7 +3595,7 @@ def np_contains(arr, key):
     return np_contains_impl
 
 
-@overload(np.count_nonzero, target="cuda")
+@overload(np.count_nonzero)
 def np_count_nonzero(a, axis=None):
     if not type_can_asarray(a):
         raise TypingError("The argument to np.count_nonzero must be array-like")
@@ -3620,7 +3620,7 @@ np_delete_handler_isslice = register_jitable(lambda x: x)
 np_delete_handler_isarray = register_jitable(lambda x: np.asarray(x))
 
 
-@overload(np.delete, target="cuda")
+@overload(np.delete)
 def np_delete(arr, obj):
     # Implementation based on numpy
     # https://github.com/numpy/numpy/blob/af66e487a57bfd4850f4306e3b85d1dac3c70412/numpy/lib/function_base.py#L4065-L4267    # noqa: E501
@@ -3669,7 +3669,7 @@ def np_delete(arr, obj):
         return np_delete_scalar_impl
 
 
-@overload(np.diff, target="cuda")
+@overload(np.diff)
 def np_diff_impl(a, n=1):
     if not isinstance(a, types.Array) or a.ndim == 0:
         return
@@ -3708,7 +3708,7 @@ def np_diff_impl(a, n=1):
     return diff_impl
 
 
-@overload(np.array_equal, target="cuda")
+@overload(np.array_equal)
 def np_array_equal(a1, a2):
     if not (type_can_asarray(a1) and type_can_asarray(a2)):
         raise TypingError('Both arguments to "array_equals" must be array-like')
@@ -3730,7 +3730,7 @@ def np_array_equal(a1, a2):
     return impl
 
 
-@overload(np.intersect1d, target="cuda")
+@overload(np.intersect1d)
 def jit_np_intersect1d(ar1, ar2, assume_unique=False):
     # Not implemented to support return_indices
     # https://github.com/numpy/numpy/blob/v1.19.0/numpy/lib
@@ -3774,7 +3774,7 @@ def validate_1d_array_like(func_name, seq):
         )
 
 
-@overload(np.bincount, target="cuda")
+@overload(np.bincount)
 def np_bincount(a, weights=None, minlength=0):
     validate_1d_array_like("bincount", a)
 
@@ -3955,7 +3955,7 @@ def make_searchsorted_implementation(np_dtype, side):
     return register_jitable(_impl), register_jitable(_cmp)
 
 
-@overload(np.searchsorted, target="cuda")
+@overload(np.searchsorted)
 def searchsorted(a, v, side="left"):
     side_val = getattr(side, "literal_value", side)
 
@@ -4011,7 +4011,7 @@ def searchsorted(a, v, side="left"):
     return impl
 
 
-@overload(np.digitize, target="cuda")
+@overload(np.digitize)
 def np_digitize(x, bins, right=False):
     if isinstance(x, types.Array) and x.dtype in types.complex_domain:
         raise TypingError("x may not be complex")
@@ -4080,7 +4080,7 @@ def np_digitize(x, bins, right=False):
 _range = range
 
 
-@overload(np.histogram, target="cuda")
+@overload(np.histogram)
 def np_histogram(a, bins=10, range=None):
     if isinstance(bins, (int, types.Integer)):
         # With a uniform distribution of bins, use a fast algorithm
@@ -4242,7 +4242,7 @@ def generate_xinfo_body(arg, np_func, container, attr):
     return impl
 
 
-@overload(np.finfo, target="cuda")
+@overload(np.finfo)
 def ol_np_finfo(dtype):
     fn = generate_xinfo_body(dtype, np.finfo, finfo, _finfo_supported)
 
@@ -4252,7 +4252,7 @@ def ol_np_finfo(dtype):
     return impl
 
 
-@overload(np.iinfo, target="cuda")
+@overload(np.iinfo)
 def ol_np_iinfo(int_type):
     fn = generate_xinfo_body(int_type, np.iinfo, iinfo, _iinfo_supported)
 
@@ -4303,7 +4303,7 @@ def _np_correlate_core(ap1, ap2, mode, direction):
     pass
 
 
-@overload(_np_correlate_core, target="cuda")
+@overload(_np_correlate_core)
 def _np_correlate_core_impl(ap1, ap2, mode, direction):
     a_dt = as_dtype(ap1.dtype)
     b_dt = as_dtype(ap2.dtype)
@@ -4376,7 +4376,7 @@ def _np_correlate_core_impl(ap1, ap2, mode, direction):
     return impl
 
 
-@overload(np.correlate, target="cuda")
+@overload(np.correlate)
 def _np_correlate(a, v, mode="valid"):
     _assert_1d(a, "np.correlate")
     _assert_1d(v, "np.correlate")
@@ -4421,7 +4421,7 @@ def _np_correlate(a, v, mode="valid"):
     return impl
 
 
-@overload(np.convolve, target="cuda")
+@overload(np.convolve)
 def np_convolve(a, v, mode="full"):
     _assert_1d(a, "np.convolve")
     _assert_1d(v, "np.convolve")
@@ -4443,7 +4443,7 @@ def np_convolve(a, v, mode="full"):
     return impl
 
 
-@overload(np.asarray, target="cuda")
+@overload(np.asarray)
 def np_asarray(a, dtype=None):
     # developer note... keep this function (type_can_asarray) in sync with the
     # accepted types implementations below!
@@ -4505,7 +4505,7 @@ def np_asarray(a, dtype=None):
 
 if numpy_version < (2, 0):
 
-    @overload(np.asfarray, target="cuda")
+    @overload(np.asfarray)
     def np_asfarray(a, dtype=np.float64):
         # convert numba dtype types into NumPy dtype
         if isinstance(dtype, types.Type):
@@ -4521,7 +4521,7 @@ if numpy_version < (2, 0):
         return impl
 
 
-@overload(np.extract, target="cuda")
+@overload(np.extract)
 def np_extract(condition, arr):
     def np_extract_impl(condition, arr):
         cond = np.asarray(condition).flatten()
@@ -4546,7 +4546,7 @@ def np_extract(condition, arr):
     return np_extract_impl
 
 
-@overload(np.select, target="cuda")
+@overload(np.select)
 def np_select(condlist, choicelist, default=0):
     def np_select_arr_impl(condlist, choicelist, default=0):
         if len(condlist) != len(choicelist):
@@ -4603,7 +4603,7 @@ def np_select(condlist, choicelist, default=0):
     return np_select_arr_impl
 
 
-@overload(np.union1d, target="cuda")
+@overload(np.union1d)
 def np_union1d(ar1, ar2):
     if not type_can_asarray(ar1) or not type_can_asarray(ar2):
         raise TypingError("The arguments to np.union1d must be array-like")
@@ -4620,7 +4620,7 @@ def np_union1d(ar1, ar2):
     return union_impl
 
 
-@overload(np.asarray_chkfinite, target="cuda")
+@overload(np.asarray_chkfinite)
 def np_asarray_chkfinite(a, dtype=None):
     msg = "The argument to np.asarray_chkfinite must be array-like"
     if not isinstance(a, (types.Array, types.Sequence, types.Tuple)):
@@ -4644,7 +4644,7 @@ def np_asarray_chkfinite(a, dtype=None):
     return impl
 
 
-@overload(np.unwrap, target="cuda")
+@overload(np.unwrap)
 def numpy_unwrap(p, discont=None, axis=-1, period=6.283185307179586):
     if not isinstance(axis, (int, types.Integer)):
         msg = 'The argument "axis" must be an integer'
@@ -4879,7 +4879,7 @@ def _i0n(n, alpha, beta):
     return y
 
 
-@overload(np.kaiser, target="cuda")
+@overload(np.kaiser)
 def np_kaiser(M, beta):
     if not isinstance(M, types.Integer):
         raise TypingError("M must be an integer")
@@ -4928,7 +4928,7 @@ def _cross(a, b):
     pass
 
 
-@overload(_cross, target="cuda")
+@overload(_cross)
 def _cross_impl(a, b):
     dtype = np.promote_types(as_dtype(a.dtype), as_dtype(b.dtype))
     if a.ndim == 1 and b.ndim == 1:
@@ -4948,7 +4948,7 @@ def _cross_impl(a, b):
     return impl
 
 
-@overload(np.cross, target="cuda")
+@overload(np.cross)
 def np_cross(a, b):
     if not type_can_asarray(a) or not type_can_asarray(b):
         raise TypingError("Inputs must be array-like.")
@@ -5001,7 +5001,7 @@ def cross2d(a, b):
     pass
 
 
-@overload(cross2d, target="cuda")
+@overload(cross2d)
 def cross2d_impl(a, b):
     if not type_can_asarray(a) or not type_can_asarray(b):
         raise TypingError("Inputs must be array-like.")
@@ -5021,7 +5021,7 @@ def cross2d_impl(a, b):
     return impl
 
 
-@overload(np.trim_zeros, target="cuda")
+@overload(np.trim_zeros)
 def np_trim_zeros(filt, trim="fb"):
     if not isinstance(filt, types.Array):
         raise NumbaTypeError("The first argument must be an array")
@@ -5056,7 +5056,7 @@ def np_trim_zeros(filt, trim="fb"):
     return impl
 
 
-@overload(np.setxor1d, target="cuda")
+@overload(np.setxor1d)
 def jit_np_setxor1d(ar1, ar2, assume_unique=False):
     if not (type_can_asarray(ar1) or type_can_asarray(ar2)):
         raise TypingError("setxor1d: first two args must be array-like")
@@ -5089,7 +5089,7 @@ def jit_np_setxor1d(ar1, ar2, assume_unique=False):
     return np_setxor1d_impl
 
 
-@overload(np.setdiff1d, target="cuda")
+@overload(np.setdiff1d)
 def jit_np_setdiff1d(ar1, ar2, assume_unique=False):
     if not (type_can_asarray(ar1) or type_can_asarray(ar2)):
         raise TypingError("setdiff1d: first two args must be array-like")
@@ -5111,7 +5111,7 @@ def jit_np_setdiff1d(ar1, ar2, assume_unique=False):
     return np_setdiff1d_impl
 
 
-@overload(np.in1d, target="cuda")
+@overload(np.in1d)
 def jit_np_in1d(ar1, ar2, assume_unique=False, invert=False):
     if not (type_can_asarray(ar1) or type_can_asarray(ar2)):
         raise TypingError("in1d: first two args must be array-like")
@@ -5180,7 +5180,7 @@ def jit_np_in1d(ar1, ar2, assume_unique=False, invert=False):
     return np_in1d_impl
 
 
-@overload(np.isin, target="cuda")
+@overload(np.isin)
 def jit_np_isin(element, test_elements, assume_unique=False, invert=False):
     if not (type_can_asarray(element) or type_can_asarray(test_elements)):
         raise TypingError("isin: first two args must be array-like")

@@ -607,7 +607,7 @@ def dot_2_vv(context, builder, sig, args, conjugate=False):
     return builder.load(out)
 
 
-@overload(np.dot, target="cuda")
+@overload(np.dot)
 def dot_2(left, right):
     """
     np.dot(a, b)
@@ -615,7 +615,7 @@ def dot_2(left, right):
     return dot_2_impl("np.dot()", left, right)
 
 
-@overload(operator.matmul, target="cuda")
+@overload(operator.matmul)
 def matmul_2(left, right):
     """
     a @ b
@@ -678,7 +678,7 @@ def dot_2_impl(name, left, right):
         return lambda left, right: _impl(left, right)
 
 
-@overload(np.vdot, target="cuda")
+@overload(np.vdot)
 def vdot(left, right):
     """
     np.vdot(a, b)
@@ -934,7 +934,7 @@ def dot_3_mm(context, builder, sig, args):
     return impl_ret_borrowed(context, builder, sig.return_type, out._getvalue())
 
 
-@overload(np.dot, target="cuda")
+@overload(np.dot)
 def dot_3(left, right, out):
     """
     np.dot(a, b, out)
@@ -1028,7 +1028,7 @@ def _copy_to_fortran_order():
     pass
 
 
-@overload(_copy_to_fortran_order, target="cuda")
+@overload(_copy_to_fortran_order)
 def ol_copy_to_fortran_order(a):
     # This function copies the array 'a' into a new array with fortran order.
     # This exists because the copy routines don't take order flags yet.
@@ -1076,7 +1076,7 @@ def _dummy_liveness_func(a):
     return a[0]
 
 
-@overload(np.linalg.inv, target="cuda")
+@overload(np.linalg.inv)
 def inv_impl(a):
     ensure_lapack()
 
@@ -1145,7 +1145,7 @@ def _check_linalg_1_or_2d_matrix(a, func_name, la_prefix=True):
         )
 
 
-@overload(np.linalg.cholesky, target="cuda")
+@overload(np.linalg.cholesky)
 def cho_impl(a):
     ensure_lapack()
 
@@ -1189,7 +1189,7 @@ def cho_impl(a):
     return cho_impl
 
 
-@overload(np.linalg.eig, target="cuda")
+@overload(np.linalg.eig)
 def eig_impl(a):
     ensure_lapack()
 
@@ -1308,7 +1308,7 @@ def eig_impl(a):
         return real_eig_impl
 
 
-@overload(np.linalg.eigvals, target="cuda")
+@overload(np.linalg.eigvals)
 def eigvals_impl(a):
     ensure_lapack()
 
@@ -1433,7 +1433,7 @@ def eigvals_impl(a):
         return real_eigvals_impl
 
 
-@overload(np.linalg.eigh, target="cuda")
+@overload(np.linalg.eigh)
 def eigh_impl(a):
     ensure_lapack()
 
@@ -1484,7 +1484,7 @@ def eigh_impl(a):
     return eigh_impl
 
 
-@overload(np.linalg.eigvalsh, target="cuda")
+@overload(np.linalg.eigvalsh)
 def eigvalsh_impl(a):
     ensure_lapack()
 
@@ -1535,7 +1535,7 @@ def eigvalsh_impl(a):
     return eigvalsh_impl
 
 
-@overload(np.linalg.svd, target="cuda")
+@overload(np.linalg.svd)
 def svd_impl(a, full_matrices=1):
     ensure_lapack()
 
@@ -1601,7 +1601,7 @@ def svd_impl(a, full_matrices=1):
     return svd_impl
 
 
-@overload(np.linalg.qr, target="cuda")
+@overload(np.linalg.qr)
 def qr_impl(a):
     ensure_lapack()
 
@@ -1688,7 +1688,7 @@ def _system_copy_in_b(bcpy, b, nrhs):
     raise NotImplementedError
 
 
-@overload(_system_copy_in_b, target="cuda")
+@overload(_system_copy_in_b)
 def _system_copy_in_b_impl(bcpy, b, nrhs):
     if b.ndim == 1:
 
@@ -1711,7 +1711,7 @@ def _system_compute_nrhs(b):
     raise NotImplementedError
 
 
-@overload(_system_compute_nrhs, target="cuda")
+@overload(_system_compute_nrhs)
 def _system_compute_nrhs_impl(b):
     if b.ndim == 1:
 
@@ -1734,7 +1734,7 @@ def _system_check_dimensionally_valid(a, b):
     raise NotImplementedError
 
 
-@overload(_system_check_dimensionally_valid, target="cuda")
+@overload(_system_check_dimensionally_valid)
 def _system_check_dimensionally_valid_impl(a, b):
     ndim = b.ndim
     if ndim == 1:
@@ -1768,7 +1768,7 @@ def _system_check_non_empty(a, b):
     raise NotImplementedError
 
 
-@overload(_system_check_non_empty, target="cuda")
+@overload(_system_check_non_empty)
 def _system_check_non_empty_impl(a, b):
     ndim = b.ndim
     if ndim == 1:
@@ -1801,7 +1801,7 @@ def _lstsq_residual(b, n, nrhs):
     raise NotImplementedError
 
 
-@overload(_lstsq_residual, target="cuda")
+@overload(_lstsq_residual)
 def _lstsq_residual_impl(b, n, nrhs):
     ndim = b.ndim
     dtype = b.dtype
@@ -1854,7 +1854,7 @@ def _lstsq_solution(b, bcpy, n):
     raise NotImplementedError
 
 
-@overload(_lstsq_solution, target="cuda")
+@overload(_lstsq_solution)
 def _lstsq_solution_impl(b, bcpy, n):
     if b.ndim == 1:
 
@@ -1870,7 +1870,7 @@ def _lstsq_solution_impl(b, bcpy, n):
         return twoD_impl
 
 
-@overload(np.linalg.lstsq, target="cuda")
+@overload(np.linalg.lstsq)
 def lstsq_impl(a, b, rcond=-1.0):
     ensure_lapack()
 
@@ -1973,7 +1973,7 @@ def _solve_compute_return(b, bcpy):
     raise NotImplementedError
 
 
-@overload(_solve_compute_return, target="cuda")
+@overload(_solve_compute_return)
 def _solve_compute_return_impl(b, bcpy):
     if b.ndim == 1:
 
@@ -1989,7 +1989,7 @@ def _solve_compute_return_impl(b, bcpy):
         return twoD_impl
 
 
-@overload(np.linalg.solve, target="cuda")
+@overload(np.linalg.solve)
 def solve_impl(a, b):
     ensure_lapack()
 
@@ -2050,7 +2050,7 @@ def solve_impl(a, b):
     return solve_impl
 
 
-@overload(np.linalg.pinv, target="cuda")
+@overload(np.linalg.pinv)
 def pinv_impl(a, rcond=1.0e-15):
     ensure_lapack()
 
@@ -2254,7 +2254,7 @@ def _get_slogdet_diag_walker(a):
         return real_diag_walker
 
 
-@overload(np.linalg.slogdet, target="cuda")
+@overload(np.linalg.slogdet)
 def slogdet_impl(a):
     ensure_lapack()
 
@@ -2313,7 +2313,7 @@ def slogdet_impl(a):
     return slogdet_impl
 
 
-@overload(np.linalg.det, target="cuda")
+@overload(np.linalg.det)
 def det_impl(a):
     ensure_lapack()
 
@@ -2333,7 +2333,7 @@ def _compute_singular_values(a):
     raise NotImplementedError
 
 
-@overload(_compute_singular_values, target="cuda")
+@overload(_compute_singular_values)
 def _compute_singular_values_impl(a):
     """
     Returns a function to compute singular values of `a`
@@ -2411,7 +2411,7 @@ def _oneD_norm_2(a):
     raise NotImplementedError
 
 
-@overload(_oneD_norm_2, target="cuda")
+@overload(_oneD_norm_2)
 def _oneD_norm_2_impl(a):
     nb_ret_type = getattr(a.dtype, "underlying_float", a.dtype)
     np_ret_type = np_support.as_dtype(nb_ret_type)
@@ -2651,7 +2651,7 @@ def _get_norm_impl(x, ord_flag):
         assert 0  # unreachable
 
 
-@overload(np.linalg.norm, target="cuda")
+@overload(np.linalg.norm)
 def norm_impl(x, ord=None):
     ensure_lapack()
 
@@ -2660,7 +2660,7 @@ def norm_impl(x, ord=None):
     return _get_norm_impl(x, ord)
 
 
-@overload(np.linalg.cond, target="cuda")
+@overload(np.linalg.cond)
 def cond_impl(x, p=None):
     ensure_lapack()
 
@@ -2720,7 +2720,7 @@ def _get_rank_from_singular_values(sv, t):
     return rank
 
 
-@overload(np.linalg.matrix_rank, target="cuda")
+@overload(np.linalg.matrix_rank)
 def matrix_rank_impl(A, tol=None):
     """
     Computes rank for matrices and vectors.
@@ -2789,7 +2789,7 @@ def matrix_rank_impl(A, tol=None):
     return _get_matrix_rank_impl(A, tol)
 
 
-@overload(np.linalg.matrix_power, target="cuda")
+@overload(np.linalg.matrix_power)
 def matrix_power_impl(a, n):
     """
     Computes matrix power. Only integer powers are supported in numpy.
@@ -2869,7 +2869,7 @@ def matrix_power_impl(a, n):
 # This is documented under linalg despite not being in the module
 
 
-@overload(np.trace, target="cuda")
+@overload(np.trace)
 def matrix_trace_impl(a, offset=0):
     """
     Computes the trace of an array.
@@ -2938,7 +2938,7 @@ def _get_outer_impl(a, b, out):
         return outer_impl_arr
 
 
-@overload(np.outer, target="cuda")
+@overload(np.outer)
 def outer_impl(a, b, out=None):
     _check_scalar_or_lt_2d_mat(a, "outer", la_prefix=False)
     _check_scalar_or_lt_2d_mat(b, "outer", la_prefix=False)
@@ -3032,7 +3032,7 @@ def _kron_return(a, b):
             return ret
 
 
-@overload(np.kron, target="cuda")
+@overload(np.kron)
 def kron_impl(a, b):
     _check_scalar_or_lt_2d_mat(a, "kron", la_prefix=False)
     _check_scalar_or_lt_2d_mat(b, "kron", la_prefix=False)

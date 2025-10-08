@@ -322,7 +322,7 @@ def normalize_axis(func_name, arg_name, ndim, axis):
     raise NotImplementedError()
 
 
-@overload(normalize_axis, target="cuda")
+@overload(normalize_axis)
 def normalize_axis_overloads(func_name, arg_name, ndim, axis):
     if not isinstance(func_name, StringLiteral):
         raise errors.TypingError("func_name must be a str literal.")
@@ -1638,7 +1638,7 @@ def _default_broadcast_to_impl(array, shape):
     return _numpy_broadcast_to(array, shape)
 
 
-@overload(np.broadcast_to, target="cuda")
+@overload(np.broadcast_to)
 def numpy_broadcast_to(array, shape):
     if not type_can_asarray(array):
         raise errors.TypingError(
@@ -1703,7 +1703,7 @@ def numpy_broadcast_shapes_list(r, m, shape):
             )
 
 
-@overload(np.broadcast_shapes, target="cuda")
+@overload(np.broadcast_shapes)
 def ol_numpy_broadcast_shapes(*args):
     # Based on https://github.com/numpy/numpy/blob/f702b26fff3271ba6a6ba29a021fc19051d1f007/numpy/core/src/multiarray/iterators.c#L1129-L1212  # noqa
     for idx, arg in enumerate(args):
@@ -1747,7 +1747,7 @@ def ol_numpy_broadcast_shapes(*args):
         return impl
 
 
-@overload(np.broadcast_arrays, target="cuda")
+@overload(np.broadcast_arrays)
 def numpy_broadcast_arrays(*args):
     for idx, arg in enumerate(args):
         if not type_can_asarray(arg):
@@ -1812,7 +1812,7 @@ def raise_with_shape_context(src_shapes, index_shape):
     raise NotImplementedError
 
 
-@overload(raise_with_shape_context, target="cuda")
+@overload(raise_with_shape_context)
 def ol_raise_with_shape_context_generic(src_shapes, index_shape):
     # This overload is for a "generic" target, which makes no assumption about
     # the NRT or string support, but does assume exceptions can be raised.
@@ -2119,7 +2119,7 @@ def array_transpose_vararg(context, builder, sig, args):
     return array_transpose_tuple(context, builder, new_sig, new_args)
 
 
-@overload(np.transpose, target="cuda")
+@overload(np.transpose)
 def numpy_transpose(a, axes=None):
     if isinstance(a, types.BaseTuple):
         raise errors.TypingError("np.transpose does not accept tuples")
@@ -2158,7 +2158,7 @@ def array_T(context, builder, typ, value):
     return impl_ret_borrowed(context, builder, typ, res)
 
 
-@overload(np.logspace, target="cuda")
+@overload(np.logspace)
 def numpy_logspace(start, stop, num=50):
     if not isinstance(start, types.Number):
         raise errors.TypingError('The first argument "start" must be a number')
@@ -2174,7 +2174,7 @@ def numpy_logspace(start, stop, num=50):
     return impl
 
 
-@overload(np.geomspace, target="cuda")
+@overload(np.geomspace)
 def numpy_geomspace(start, stop, num=50):
     if not isinstance(start, types.Number):
         msg = 'The argument "start" must be a number'
@@ -2253,7 +2253,7 @@ def numpy_geomspace(start, stop, num=50):
     return impl
 
 
-@overload(np.rot90, target="cuda")
+@overload(np.rot90)
 def numpy_rot90(m, k=1):
     # supporting axes argument it needs to be included in np.flip
     if not isinstance(k, (int, types.Integer)):
@@ -2449,7 +2449,7 @@ def array_reshape_vararg(context, builder, sig, args):
 
 if numpy_version < (2, 1):
 
-    @overload(np.reshape, target="cuda")
+    @overload(np.reshape)
     def np_reshape(a, newshape):
         def np_reshape_impl(a, newshape):
             return a.reshape(newshape)
@@ -2457,7 +2457,7 @@ if numpy_version < (2, 1):
         return np_reshape_impl
 else:
 
-    @overload(np.reshape, target="cuda")
+    @overload(np.reshape)
     def np_reshape(a, shape):
         def np_reshape_impl(a, shape):
             return a.reshape(shape)
@@ -2465,7 +2465,7 @@ else:
         return np_reshape_impl
 
 
-@overload(np.resize, target="cuda")
+@overload(np.resize)
 def numpy_resize(a, new_shape):
     if not type_can_asarray(a):
         msg = 'The argument "a" must be array-like'
@@ -2514,7 +2514,7 @@ def numpy_resize(a, new_shape):
     return impl
 
 
-@overload(np.append, target="cuda")
+@overload(np.append)
 def np_append(arr, values, axis=None):
     if not type_can_asarray(arr):
         raise errors.TypingError('The first argument "arr" must be array-like')
@@ -2610,7 +2610,7 @@ def _np_clip_impl_none(a, b, use_min, out):
     return out
 
 
-@overload(np.clip, target="cuda")
+@overload(np.clip)
 def np_clip(a, a_min, a_max, out=None):
     if not type_can_asarray(a):
         raise errors.TypingError('The argument "a" must be array-like')
@@ -2740,7 +2740,7 @@ def np_clip(a, a_min, a_max, out=None):
             return np_clip_aa
 
 
-@overload_method(types.Array, "clip", target="cuda")
+@overload_method(types.Array, "clip")
 def array_clip(a, a_min=None, a_max=None, out=None):
     def impl(a, a_min=None, a_max=None, out=None):
         return np.clip(a, a_min, a_max, out)
@@ -2889,7 +2889,7 @@ def _change_dtype(context, builder, oldty, newty, ary):
     return res
 
 
-@overload(np.shape, target="cuda")
+@overload(np.shape)
 def np_shape(a):
     if not type_can_asarray(a):
         raise errors.TypingError("The argument to np.shape must be array-like")
@@ -2900,7 +2900,7 @@ def np_shape(a):
     return impl
 
 
-@overload(np.size, target="cuda")
+@overload(np.size)
 def np_size(a):
     if not type_can_asarray(a):
         raise errors.TypingError("The argument to np.size must be array-like")
@@ -2914,7 +2914,7 @@ def np_size(a):
 # ------------------------------------------------------------------------------
 
 
-@overload(np.unique, target="cuda")
+@overload(np.unique)
 def np_unique(ar):
     def np_unique_impl(ar):
         b = np.sort(ar.ravel())
@@ -2925,7 +2925,7 @@ def np_unique(ar):
     return np_unique_impl
 
 
-@overload(np.repeat, target="cuda")
+@overload(np.repeat)
 def np_repeat(a, repeats):
     # Implementation for repeats being a scalar is a module global function
     # (see below) because it might be called from the implementation below.
@@ -3016,7 +3016,7 @@ def _compatible_view(a, dtype):
     pass
 
 
-@overload(_compatible_view, target="cuda")
+@overload(_compatible_view)
 def ol_compatible_view(a, dtype):
     """Determines if the array and dtype are compatible for forming a view."""
 
@@ -3385,8 +3385,8 @@ def array_complex_attr(context, builder, typ, value, attr):
     return impl_ret_borrowed(context, builder, resultty, result._getvalue())
 
 
-@overload_method(types.Array, "conj", target="cuda")
-@overload_method(types.Array, "conjugate", target="cuda")
+@overload_method(types.Array, "conj")
+@overload_method(types.Array, "conjugate")
 def array_conj(arr):
     def impl(arr):
         return np.conj(arr)
@@ -3689,7 +3689,7 @@ def array_is(context, builder, sig, args):
 # Hash
 
 
-@overload_attribute(types.Array, "__hash__", target="cuda")
+@overload_attribute(types.Array, "__hash__")
 def ol_array_hash(arr):
     return lambda arr: None
 
@@ -4828,7 +4828,7 @@ def numpy_empty_nd(tyctx, ty_shape, ty_dtype, ty_retty_ref):
     return sig, codegen
 
 
-@overload(np.empty, target="cuda")
+@overload(np.empty)
 def ol_np_empty(shape, dtype=float):
     _check_const_str_dtype("empty", dtype)
     if (
@@ -4866,7 +4866,7 @@ def numpy_empty_like_nd(tyctx, ty_prototype, ty_dtype, ty_retty_ref):
     return sig, codegen
 
 
-@overload(np.empty_like, target="cuda")
+@overload(np.empty_like)
 def ol_np_empty_like(arr, dtype=None):
     _check_const_str_dtype("empty_like", dtype)
     if not is_nonelike(dtype):
@@ -4907,7 +4907,7 @@ def _zero_fill_array_method(tyctx, self):
     return sig, codegen
 
 
-@overload_method(types.Array, "_zero_fill", target="cuda")
+@overload_method(types.Array, "_zero_fill")
 def ol_array_zero_fill(self):
     """Adds a `._zero_fill` method to zero fill an array using memset."""
 
@@ -4917,7 +4917,7 @@ def ol_array_zero_fill(self):
     return impl
 
 
-@overload(np.zeros, target="cuda")
+@overload(np.zeros)
 def ol_np_zeros(shape, dtype=float):
     _check_const_str_dtype("zeros", dtype)
 
@@ -4929,7 +4929,7 @@ def ol_np_zeros(shape, dtype=float):
     return impl
 
 
-@overload(np.zeros_like, target="cuda")
+@overload(np.zeros_like)
 def ol_np_zeros_like(a, dtype=None):
     _check_const_str_dtype("zeros_like", dtype)
 
@@ -4942,7 +4942,7 @@ def ol_np_zeros_like(a, dtype=None):
     return impl
 
 
-@overload(np.ones_like, target="cuda")
+@overload(np.ones_like)
 def ol_np_ones_like(a, dtype=None):
     _check_const_str_dtype("ones_like", dtype)
 
@@ -4957,7 +4957,7 @@ def ol_np_ones_like(a, dtype=None):
     return impl
 
 
-@overload(np.full, target="cuda")
+@overload(np.full)
 def impl_np_full(shape, fill_value, dtype=None):
     _check_const_str_dtype("full", dtype)
     if not is_nonelike(dtype):
@@ -4975,7 +4975,7 @@ def impl_np_full(shape, fill_value, dtype=None):
     return full
 
 
-@overload(np.full_like, target="cuda")
+@overload(np.full_like)
 def impl_np_full_like(a, fill_value, dtype=None):
     _check_const_str_dtype("full_like", dtype)
 
@@ -4989,7 +4989,7 @@ def impl_np_full_like(a, fill_value, dtype=None):
     return full_like
 
 
-@overload(np.ones, target="cuda")
+@overload(np.ones)
 def ol_np_ones(shape, dtype=None):
     # for some reason the NumPy default for dtype is None in the source but
     # ends up as np.float64 by definition.
@@ -5005,7 +5005,7 @@ def ol_np_ones(shape, dtype=None):
     return impl
 
 
-@overload(np.identity, target="cuda")
+@overload(np.identity)
 def impl_np_identity(n, dtype=None):
     _check_const_str_dtype("identity", dtype)
     if not is_nonelike(dtype):
@@ -5066,7 +5066,7 @@ def numpy_eye(N, M=None, k=0, dtype=float):
     return impl
 
 
-@overload(np.diag, target="cuda")
+@overload(np.diag)
 def impl_np_diag(v, k=0):
     if not type_can_asarray(v):
         raise errors.TypingError('The argument "v" must be array-like')
@@ -5106,7 +5106,7 @@ def impl_np_diag(v, k=0):
         return diag_impl
 
 
-@overload(np.indices, target="cuda")
+@overload(np.indices)
 def numpy_indices(dimensions):
     if not isinstance(dimensions, types.UniTuple):
         msg = 'The argument "dimensions" must be a tuple of integers'
@@ -5134,7 +5134,7 @@ def numpy_indices(dimensions):
     return impl
 
 
-@overload(np.diagflat, target="cuda")
+@overload(np.diagflat)
 def numpy_diagflat(v, k=0):
     if not type_can_asarray(v):
         msg = 'The argument "v" must be array-like'
@@ -5196,8 +5196,8 @@ def generate_getitem_setitem_with_axis(ndim, kind):
     return register_jitable(fn)
 
 
-@overload(np.take, target="cuda")
-@overload_method(types.Array, "take", target="cuda")
+@overload(np.take)
+@overload_method(types.Array, "take")
 def numpy_take(a, indices, axis=None):
     if cgutils.is_nonelike(axis):
         if isinstance(a, types.Array) and isinstance(indices, types.Integer):
@@ -5328,7 +5328,7 @@ def _arange_dtype(*args):
     return dtype
 
 
-@overload(np.arange, target="cuda")
+@overload(np.arange)
 def np_arange(start, /, stop=None, step=None, dtype=None):
     if isinstance(stop, types.Optional):
         stop = stop.type
@@ -5398,7 +5398,7 @@ def np_arange(start, /, stop=None, step=None, dtype=None):
     return impl
 
 
-@overload(np.linspace, target="cuda")
+@overload(np.linspace)
 def numpy_linspace(start, stop, num=50):
     if not all(isinstance(arg, types.Number) for arg in [start, stop]):
         return
@@ -5503,7 +5503,7 @@ def array_copy(context, builder, sig, args):
     return _array_copy(context, builder, sig, args)
 
 
-@overload(np.copy, target="cuda")
+@overload(np.copy)
 def impl_numpy_copy(a):
     if isinstance(a, types.Array):
 
@@ -5594,7 +5594,7 @@ def _as_layout_array_intrinsic(typingctx, a, output_layout):
     )
 
 
-@overload(np.ascontiguousarray, target="cuda")
+@overload(np.ascontiguousarray)
 def array_ascontiguousarray(a):
     if not type_can_asarray(a):
         raise errors.TypingError('The argument "a" must be array-like')
@@ -5617,7 +5617,7 @@ def array_ascontiguousarray(a):
     return impl
 
 
-@overload(np.asfortranarray, target="cuda")
+@overload(np.asfortranarray)
 def array_asfortranarray(a):
     if not type_can_asarray(a):
         raise errors.TypingError('The argument "a" must be array-like')
@@ -5732,7 +5732,7 @@ def np_frombuffer(typingctx, buffer, dtype, retty):
     return sig, codegen
 
 
-@overload(np.frombuffer, target="cuda")
+@overload(np.frombuffer)
 def impl_np_frombuffer(buffer, dtype=float):
     _check_const_str_dtype("frombuffer", dtype)
 
@@ -5766,7 +5766,7 @@ def impl_np_frombuffer(buffer, dtype=float):
     return impl
 
 
-@overload(carray, target="cuda")
+@overload(carray)
 def impl_carray(ptr, shape, dtype=None):
     if is_nonelike(dtype):
         intrinsic_cfarray = get_cfarray_intrinsic("C", None)
@@ -5784,7 +5784,7 @@ def impl_carray(ptr, shape, dtype=None):
         return impl
 
 
-@overload(farray, target="cuda")
+@overload(farray)
 def impl_farray(ptr, shape, dtype=None):
     if is_nonelike(dtype):
         intrinsic_cfarray = get_cfarray_intrinsic("F", None)
@@ -6088,7 +6088,7 @@ def np_array(typingctx, obj, dtype):
     return sig, codegen
 
 
-@overload(np.array, target="cuda")
+@overload(np.array)
 def impl_np_array(object, dtype=None):
     _check_const_str_dtype("array", dtype)
     if not type_can_asarray(object):
@@ -6226,7 +6226,7 @@ def np_expand_dims(typingctx, a, axis):
     return sig, codegen
 
 
-@overload(np.expand_dims, target="cuda")
+@overload(np.expand_dims)
 def impl_np_expand_dims(a, axis):
     if not isinstance(a, types.Array):
         msg = f'First argument "a" must be an array. Got {a}'
@@ -6298,19 +6298,19 @@ def _atleast_nd_transform(min_ndim, axes):
     return transform
 
 
-@overload(np.atleast_1d, target="cuda")
+@overload(np.atleast_1d)
 def np_atleast_1d(*args):
     if all(isinstance(arg, types.Array) for arg in args):
         return _atleast_nd(1, [0])
 
 
-@overload(np.atleast_2d, target="cuda")
+@overload(np.atleast_2d)
 def np_atleast_2d(*args):
     if all(isinstance(arg, types.Array) for arg in args):
         return _atleast_nd(2, [0, 0])
 
 
-@overload(np.atleast_3d, target="cuda")
+@overload(np.atleast_3d)
 def np_atleast_3d(*args):
     if all(isinstance(arg, types.Array) for arg in args):
         return _atleast_nd(3, [0, 0, 2])
@@ -6601,7 +6601,7 @@ def np_concatenate(typingctx, arrays, axis):
     return sig, codegen
 
 
-@overload(np.concatenate, target="cuda")
+@overload(np.concatenate)
 def impl_np_concatenate(arrays, axis=0):
     if isinstance(arrays, types.BaseTuple):
 
@@ -6659,7 +6659,7 @@ def np_column_stack(typingctx, tup):
     return sig, codegen
 
 
-@overload(np.column_stack, target="cuda")
+@overload(np.column_stack)
 def impl_column_stack(tup):
     if isinstance(tup, types.BaseTuple):
 
@@ -6698,7 +6698,7 @@ def np_stack_common(typingctx, arrays, axis):
     return sig, codegen
 
 
-@overload(np.stack, target="cuda")
+@overload(np.stack)
 def impl_np_stack(arrays, axis=0):
     if isinstance(arrays, types.BaseTuple):
 
@@ -6744,7 +6744,7 @@ def _np_hstack(typingctx, tup):
     return sig, codegen
 
 
-@overload(np.hstack, target="cuda")
+@overload(np.hstack)
 def impl_np_hstack(tup):
     if isinstance(tup, types.BaseTuple):
 
@@ -6783,7 +6783,7 @@ def _np_vstack(typingctx, tup):
     return sig, codegen
 
 
-@overload(np.vstack, target="cuda")
+@overload(np.vstack)
 def impl_np_vstack(tup):
     if isinstance(tup, types.BaseTuple):
 
@@ -6842,7 +6842,7 @@ def _np_dstack(typingctx, tup):
     return sig, codegen
 
 
-@overload(np.dstack, target="cuda")
+@overload(np.dstack)
 def impl_np_dstack(tup):
     if isinstance(tup, types.BaseTuple):
 
@@ -6869,7 +6869,7 @@ def array_dot(arr, other):
     return dot_impl
 
 
-@overload(np.fliplr, target="cuda")
+@overload(np.fliplr)
 def np_flip_lr(m):
     if not type_can_asarray(m):
         raise errors.TypingError("Cannot np.fliplr on %s type" % m)
@@ -6886,7 +6886,7 @@ def np_flip_lr(m):
     return impl
 
 
-@overload(np.flipud, target="cuda")
+@overload(np.flipud)
 def np_flip_ud(m):
     if not type_can_asarray(m):
         raise errors.TypingError("Cannot np.flipud on %s type" % m)
@@ -6933,7 +6933,7 @@ def _build_flip_slice_tuple(tyctx, sz):
     return sig, codegen
 
 
-@overload(np.flip, target="cuda")
+@overload(np.flip)
 def np_flip(m):
     # a constant value is needed for the tuple slice, types.Array.ndim can
     # provide this and so at presnet only type.Array is support
@@ -6947,7 +6947,7 @@ def np_flip(m):
     return impl
 
 
-@overload(np.array_split, target="cuda")
+@overload(np.array_split)
 def np_array_split(ary, indices_or_sections, axis=0):
     if isinstance(ary, (types.UniTuple, types.ListType, types.List)):
 
@@ -7006,7 +7006,7 @@ def np_array_split(ary, indices_or_sections, axis=0):
         return impl
 
 
-@overload(np.split, target="cuda")
+@overload(np.split)
 def np_split(ary, indices_or_sections, axis=0):
     # This is just a wrapper of array_split, but with an extra error if
     # indices is an int.
@@ -7033,7 +7033,7 @@ def np_split(ary, indices_or_sections, axis=0):
         return np_array_split(ary, indices_or_sections, axis=axis)
 
 
-@overload(np.vsplit, target="cuda")
+@overload(np.vsplit)
 def numpy_vsplit(ary, indices_or_sections):
     if not isinstance(ary, types.Array):
         msg = 'The argument "ary" must be an array'
@@ -7056,7 +7056,7 @@ def numpy_vsplit(ary, indices_or_sections):
     return impl
 
 
-@overload(np.hsplit, target="cuda")
+@overload(np.hsplit)
 def numpy_hsplit(ary, indices_or_sections):
     if not isinstance(ary, types.Array):
         msg = 'The argument "ary" must be an array'
@@ -7081,7 +7081,7 @@ def numpy_hsplit(ary, indices_or_sections):
     return impl
 
 
-@overload(np.dsplit, target="cuda")
+@overload(np.dsplit)
 def numpy_dsplit(ary, indices_or_sections):
     if not isinstance(ary, types.Array):
         msg = 'The argument "ary" must be an array'
@@ -7164,7 +7164,7 @@ def array_sort(context, builder, sig, args):
     return context.compile_internal(builder, array_sort_impl, sig, args)
 
 
-@overload(np.sort, target="cuda")
+@overload(np.sort)
 def impl_np_sort(a):
     if not type_can_asarray(a):
         raise errors.TypingError('Argument "a" must be array-like')
@@ -7420,7 +7420,7 @@ def sliding_window_view(x, window_shape, axis=None):
     return sliding_window_view_impl
 
 
-@overload(bool, target="cuda")
+@overload(bool)
 def ol_bool(arr):
     if isinstance(arr, types.Array):
 
@@ -7450,7 +7450,7 @@ def ol_bool(arr):
         return impl
 
 
-@overload(np.swapaxes, target="cuda")
+@overload(np.swapaxes)
 def numpy_swapaxes(a, axis1, axis2):
     if not isinstance(axis1, (int, types.Integer)):
         raise errors.TypingError(
@@ -7542,7 +7542,7 @@ def _take_along_axis_impl(
     return out
 
 
-@overload(np.take_along_axis, target="cuda")
+@overload(np.take_along_axis)
 def arr_take_along_axis(arr, indices, axis):
     if not isinstance(arr, types.Array):
         raise errors.TypingError('The first argument "arr" must be an array')
@@ -7591,7 +7591,7 @@ def arr_take_along_axis(arr, indices, axis):
     return take_along_axis_impl
 
 
-@overload(np.nan_to_num, target="cuda")
+@overload(np.nan_to_num)
 def nan_to_num_impl(x, copy=True, nan=0.0):
     if isinstance(x, types.Number):
         if isinstance(x, types.Integer):
