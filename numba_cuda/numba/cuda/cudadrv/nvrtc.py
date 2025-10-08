@@ -195,10 +195,6 @@ def get_lowest_supported_cc():
 
 
 def get_supported_ccs():
-    if not _HAVE_BINDINGS:
-        raise RuntimeError(
-            "NVIDIA CUDA bindings are required to query supported archs"
-        )
     retcode, archs = bindings_nvrtc.nvrtcGetSupportedArchs()
     if retcode != bindings_nvrtc.nvrtcResult.NVRTC_SUCCESS:
         raise RuntimeError(
