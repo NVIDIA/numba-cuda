@@ -472,6 +472,7 @@ class CUDACodeLibrary(serialize.ReduceMixin, CodeLibrary):
             needs_cudadevrt=self.needs_cudadevrt,
             nrt=nrt,
             use_cooperative=self.use_cooperative,
+            lto=self._lto,
         )
 
     @classmethod
@@ -489,6 +490,7 @@ class CUDACodeLibrary(serialize.ReduceMixin, CodeLibrary):
         needs_cudadevrt,
         nrt,
         use_cooperative,
+        lto,
     ):
         """
         Rebuild an instance.
@@ -509,6 +511,7 @@ class CUDACodeLibrary(serialize.ReduceMixin, CodeLibrary):
         if nrt:
             instance._linking_files = {NRT_LIBRARY}
 
+        instance._lto = lto
         return instance
 
 

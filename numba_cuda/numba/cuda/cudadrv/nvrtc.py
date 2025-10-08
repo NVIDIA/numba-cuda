@@ -45,7 +45,7 @@ def _get_nvrtc_version():
     return (major, minor)
 
 
-def compile(src, name, cc, ltoir=False):
+def compile(src, name, cc, ltoir=False, lineinfo=False, debug=False):
     """
     Compile a CUDA C/C++ source to PTX or LTOIR for a given compute capability.
 
@@ -57,7 +57,11 @@ def compile(src, name, cc, ltoir=False):
     :type cc: tuple
     :param ltoir: Compile into LTOIR if True, otherwise into PTX
     :type ltoir: bool
-    :return: The compiled PTX and compilation log
+    :param lineinfo: Whether to include line information in the compiled code
+    :type lineinfo: bool
+    :param debug: Whether to include debug information in the compiled code
+    :type debug: bool
+    :return: The compiled PTX or LTOIR and compilation log
     :rtype: tuple
     """
     version = _get_nvrtc_version()
@@ -119,7 +123,6 @@ def compile(src, name, cc, ltoir=False):
     nrt_include = os.path.join(numba_cuda_path, "memory_management")
 
     includes = [numba_include, *cuda_includes, nrt_include, *extra_includes]
-
 
     options = ProgramOptions(
         arch=arch,

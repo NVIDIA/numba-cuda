@@ -351,7 +351,7 @@ class BaseContext(object):
 
     @cached_property
     def nrt(self):
-        from numba.core.runtime.context import NRTContext
+        from numba.cuda.memory_management.nrt_context import NRTContext
 
         return NRTContext(self, self.enable_nrt)
 
@@ -1040,7 +1040,7 @@ class BaseContext(object):
         return self._make_helper(builder, typ, ref=ref, kind="data")
 
     def make_array(self, typ):
-        from numba.np import arrayobj
+        from numba.cuda.np import arrayobj
 
         return arrayobj.make_array(typ)
 
@@ -1048,7 +1048,7 @@ class BaseContext(object):
         """
         Populate array structure.
         """
-        from numba.np import arrayobj
+        from numba.cuda.np import arrayobj
 
         return arrayobj.populate_array(arr, **kwargs)
 
