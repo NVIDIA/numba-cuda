@@ -8,7 +8,7 @@
     extern "C" {
 #endif
 
-#define NUMBA_DEVICEARRAY_IMPORT_NAME "numba_cuda._devicearray"
+#define NUMBA_DEVICEARRAY_IMPORT_NAME "numba.cuda.cext._devicearray"
 /* These definitions should only be used by consumers of the Device Array API.
  * Consumers access the API through the opaque pointer stored in
  * _devicearray._DEVICEARRAY_API.  We don't want these definitions in
