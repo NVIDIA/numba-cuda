@@ -42,7 +42,7 @@ lower_constant = registry.lower_constant
 lower_getattr_generic = registry.lower_getattr_generic
 
 
-@overload(operator.truth)
+@overload(operator.truth, target="cuda")
 def ol_truth(val):
     if isinstance(val, types.Boolean):
 
@@ -165,8 +165,8 @@ def gen_non_eq(val):
     return none_equality
 
 
-overload(operator.eq)(gen_non_eq(True))
-overload(operator.ne)(gen_non_eq(False))
+overload(operator.eq, target="cuda")(gen_non_eq(True))
+overload(operator.ne, target="cuda")(gen_non_eq(False))
 
 # -------------------------------------------------------------------------------
 
@@ -496,7 +496,7 @@ def lower_tuple(context, builder, sig, args):
     return impl_ret_borrowed(context, builder, sig.return_type, val)
 
 
-@overload(bool)
+@overload(bool, target="cuda")
 def bool_sequence(x):
     valid_types = (
         types.CharSeq,
@@ -515,7 +515,7 @@ def bool_sequence(x):
         return bool_impl
 
 
-@overload(bool, inline="always")
+@overload(bool, inline="always", target="cuda")
 def bool_none(x):
     if isinstance(x, types.NoneType) or x is None:
         return lambda x: False
@@ -626,7 +626,7 @@ def impl_index_value(context, builder, sig, args):
     return index_value._getvalue()
 
 
-@overload(min)
+@overload(min, target="cuda")
 def indval_min(indval1, indval2):
     if isinstance(indval1, IndexValueType) and isinstance(
         indval2, IndexValueType
@@ -658,7 +658,7 @@ def indval_min(indval1, indval2):
         return min_impl
 
 
-@overload(min)
+@overload(min, target="cuda")
 def boolval_min(val1, val2):
     if isinstance(val1, types.Boolean) and isinstance(val2, types.Boolean):
 
@@ -668,7 +668,7 @@ def boolval_min(val1, val2):
         return bool_min_impl
 
 
-@overload(max)
+@overload(max, target="cuda")
 def indval_max(indval1, indval2):
     if isinstance(indval1, IndexValueType) and isinstance(
         indval2, IndexValueType
@@ -700,7 +700,7 @@ def indval_max(indval1, indval2):
         return max_impl
 
 
-@overload(max)
+@overload(max, target="cuda")
 def boolval_max(val1, val2):
     if isinstance(val1, types.Boolean) and isinstance(val2, types.Boolean):
 
@@ -729,12 +729,12 @@ def min_max_impl(iterable, op):
         return impl
 
 
-@overload(min)
+@overload(min, target="cuda")
 def iterable_min(iterable):
     return min_max_impl(iterable, less_than)
 
 
-@overload(max)
+@overload(max, target="cuda")
 def iterable_max(iterable):
     return min_max_impl(iterable, greater_than)
 
@@ -775,7 +775,7 @@ def redirect_type_ctor(context, builder, sig, args):
     return context.compile_internal(builder, call_ctor, sig, args)
 
 
-@overload(sum)
+@overload(sum, target="cuda")
 def ol_sum(iterable, start=0):
     # Cpython explicitly rejects strings, bytes and bytearrays
     # https://github.com/python/cpython/blob/3.9/Python/bltinmodule.c#L2310-L2329 # noqa: E501
@@ -824,7 +824,7 @@ def ol_sum(iterable, start=0):
 # map, filter, reduce
 
 
-@overload(map)
+@overload(map, target="cuda")
 def ol_map(func, iterable, *args):
     def impl(func, iterable, *args):
         for x in zip(iterable, *args):
@@ -833,7 +833,7 @@ def ol_map(func, iterable, *args):
     return impl
 
 
-@overload(filter)
+@overload(filter, target="cuda")
 def ol_filter(func, iterable):
     if (func is None) or isinstance(func, types.NoneType):
 
@@ -851,7 +851,7 @@ def ol_filter(func, iterable):
     return impl
 
 
-@overload(isinstance)
+@overload(isinstance, target="cuda")
 def ol_isinstance(var, typs):
     def true_impl(var, typs):
         return True
@@ -983,7 +983,7 @@ def _getattr_raise_attr_exc(obj, name):
     pass
 
 
-@overload(_getattr_raise_attr_exc)
+@overload(_getattr_raise_attr_exc, target="cuda")
 def ol__getattr_raise_attr_exc(obj, name):
     if not isinstance(name, types.StringLiteral):
         raise RequireLiteralValue("argument 'name' must be a literal string")
@@ -1068,7 +1068,7 @@ _getattr_default = _getattr_default_type()
 # getattr with no default arg, obj is an open type and name is forced as a
 # literal string. The _getattr_default marker is used to indicate "no default
 # was provided".
-@overload(getattr, prefer_literal=True)
+@overload(getattr, prefer_literal=True, target="cuda")
 def ol_getattr_2(obj, name):
     def impl(obj, name):
         return resolve_getattr(obj, name, _getattr_default)
@@ -1080,7 +1080,7 @@ def ol_getattr_2(obj, name):
 # literal string, the "default" is again an open type. Note that the CPython
 # definition is: `getattr(object, name[, default]) -> value`, the `default`
 # is not a kwarg.
-@overload(getattr)
+@overload(getattr, target="cuda")
 def ol_getattr_3(obj, name, default):
     def impl(obj, name, default):
         return resolve_getattr(obj, name, default)
@@ -1117,7 +1117,7 @@ def resolve_hasattr(tyctx, obj, name):
 # "Exception", so lacks the specificity required. Instead this implementation
 # tries to resolve the attribute via typing information and returns True/False
 # based on that.
-@overload(hasattr)
+@overload(hasattr, target="cuda")
 def ol_hasattr(obj, name):
     def impl(obj, name):
         return resolve_hasattr(obj, name)
@@ -1125,7 +1125,7 @@ def ol_hasattr(obj, name):
     return impl
 
 
-@overload(repr)
+@overload(repr, target="cuda")
 def ol_repr_generic(obj):
     missing_repr_format = f"<object type:{obj}>"
 
@@ -1141,7 +1141,7 @@ def ol_repr_generic(obj):
     return impl
 
 
-@overload(str)
+@overload(str, target="cuda")
 def ol_str_generic(object=""):
     def impl(object=""):
         attr = "__str__"

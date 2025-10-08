@@ -360,7 +360,7 @@ def unicode_to_unicode_charseq(context, builder, fromty, toty, val):
 #
 
 
-@overload(operator.getitem)
+@overload(operator.getitem, target="cuda")
 def charseq_getitem(s, i):
     get_value = None
     if isinstance(i, types.Integer):
@@ -380,7 +380,7 @@ def charseq_getitem(s, i):
         return getitem_impl
 
 
-@overload(len)
+@overload(len, target="cuda")
 def charseq_len(s):
     if isinstance(s, (types.CharSeq, types.UnicodeCharSeq)):
         get_code = _get_code_impl(s)
@@ -408,8 +408,8 @@ def charseq_len(s):
             return len_impl
 
 
-@overload(operator.add)
-@overload(operator.iadd)
+@overload(operator.add, target="cuda")
+@overload(operator.iadd, target="cuda")
 def charseq_concat(a, b):
     if not _same_kind(a, b):
         return
@@ -443,7 +443,7 @@ def charseq_concat(a, b):
         return impl
 
 
-@overload(operator.mul)
+@overload(operator.mul, target="cuda")
 def charseq_repeat(a, b):
     if isinstance(a, types.UnicodeCharSeq):
 
@@ -471,7 +471,7 @@ def charseq_repeat(a, b):
         return wrap
 
 
-@overload(operator.not_)
+@overload(operator.not_, target="cuda")
 def charseq_not(a):
     if isinstance(a, (types.UnicodeCharSeq, types.CharSeq, types.Bytes)):
 
@@ -481,7 +481,7 @@ def charseq_not(a):
         return impl
 
 
-@overload(operator.eq)
+@overload(operator.eq, target="cuda")
 def charseq_eq(a, b):
     if not _same_kind(a, b):
         return
@@ -501,7 +501,7 @@ def charseq_eq(a, b):
         return eq_impl
 
 
-@overload(operator.ne)
+@overload(operator.ne, target="cuda")
 def charseq_ne(a, b):
     if not _same_kind(a, b):
         return
@@ -515,7 +515,7 @@ def charseq_ne(a, b):
         return ne_impl
 
 
-@overload(operator.lt)
+@overload(operator.lt, target="cuda")
 def charseq_lt(a, b):
     if not _same_kind(a, b):
         return
@@ -536,7 +536,7 @@ def charseq_lt(a, b):
         return lt_impl
 
 
-@overload(operator.gt)
+@overload(operator.gt, target="cuda")
 def charseq_gt(a, b):
     if not _same_kind(a, b):
         return
@@ -550,7 +550,7 @@ def charseq_gt(a, b):
         return gt_impl
 
 
-@overload(operator.le)
+@overload(operator.le, target="cuda")
 def charseq_le(a, b):
     if not _same_kind(a, b):
         return
@@ -564,7 +564,7 @@ def charseq_le(a, b):
         return le_impl
 
 
-@overload(operator.ge)
+@overload(operator.ge, target="cuda")
 def charseq_ge(a, b):
     if not _same_kind(a, b):
         return
@@ -578,7 +578,7 @@ def charseq_ge(a, b):
         return ge_impl
 
 
-@overload(operator.contains)
+@overload(operator.contains, target="cuda")
 def charseq_contains(a, b):
     if not _same_kind(a, b):
         return
@@ -601,9 +601,9 @@ def charseq_contains(a, b):
         return contains_impl
 
 
-@overload_method(types.UnicodeCharSeq, "isascii")
-@overload_method(types.CharSeq, "isascii")
-@overload_method(types.Bytes, "isascii")
+@overload_method(types.UnicodeCharSeq, "isascii", target="cuda")
+@overload_method(types.CharSeq, "isascii", target="cuda")
+@overload_method(types.Bytes, "isascii", target="cuda")
 def charseq_isascii(s):
     get_code = _get_code_impl(s)
 
@@ -616,8 +616,8 @@ def charseq_isascii(s):
     return impl
 
 
-@overload_method(types.UnicodeCharSeq, "_get_kind")
-@overload_method(types.CharSeq, "_get_kind")
+@overload_method(types.UnicodeCharSeq, "_get_kind", target="cuda")
+@overload_method(types.CharSeq, "_get_kind", target="cuda")
 def charseq_get_kind(s):
     get_code = _get_code_impl(s)
 
@@ -636,7 +636,7 @@ def charseq_get_kind(s):
     return impl
 
 
-@overload_method(types.UnicodeType, "_to_bytes")
+@overload_method(types.UnicodeType, "_to_bytes", target="cuda")
 def unicode_to_bytes_mth(s):
     """Convert unicode_type object to Bytes object.
 
@@ -651,8 +651,8 @@ def unicode_to_bytes_mth(s):
     return impl
 
 
-@overload_method(types.CharSeq, "_to_str")
-@overload_method(types.Bytes, "_to_str")
+@overload_method(types.CharSeq, "_to_str", target="cuda")
+@overload_method(types.Bytes, "_to_str", target="cuda")
 def charseq_to_str_mth(s):
     """Convert bytes array item or bytes instance to UTF-8 str.
 
@@ -675,7 +675,7 @@ def charseq_to_str_mth(s):
     return tostr_impl
 
 
-@overload_method(types.UnicodeCharSeq, "__str__")
+@overload_method(types.UnicodeCharSeq, "__str__", target="cuda")
 def charseq_str(s):
     get_code = _get_code_impl(s)
 
@@ -692,13 +692,13 @@ def charseq_str(s):
     return str_impl
 
 
-@overload(bytes)
+@overload(bytes, target="cuda")
 def charseq_bytes(s):
     if isinstance(s, types.CharSeq):
         return lambda s: s
 
 
-@overload_method(types.UnicodeCharSeq, "__hash__")
+@overload_method(types.UnicodeCharSeq, "__hash__", target="cuda")
 def unicode_charseq_hash(s):
     def impl(s):
         return hash(str(s))
@@ -706,7 +706,7 @@ def unicode_charseq_hash(s):
     return impl
 
 
-@overload_method(types.CharSeq, "__hash__")
+@overload_method(types.CharSeq, "__hash__", target="cuda")
 def charseq_hash(s):
     def impl(s):
         # Ideally, `return hash(bytes(s))` would be used here but
@@ -719,7 +719,7 @@ def charseq_hash(s):
     return impl
 
 
-@overload_method(types.UnicodeCharSeq, "isupper")
+@overload_method(types.UnicodeCharSeq, "isupper", target="cuda")
 def unicode_charseq_isupper(s):
     def impl(s):
         # workaround unicode_type.isupper bug: it returns int value
@@ -728,7 +728,7 @@ def unicode_charseq_isupper(s):
     return impl
 
 
-@overload_method(types.CharSeq, "isupper")
+@overload_method(types.CharSeq, "isupper", target="cuda")
 def charseq_isupper(s):
     def impl(s):
         # return bytes(s).isupper()  # TODO: implement isupper for Bytes
@@ -737,7 +737,7 @@ def charseq_isupper(s):
     return impl
 
 
-@overload_method(types.UnicodeCharSeq, "upper")
+@overload_method(types.UnicodeCharSeq, "upper", target="cuda")
 def unicode_charseq_upper(s):
     def impl(s):
         return str(s).upper()
@@ -745,7 +745,7 @@ def unicode_charseq_upper(s):
     return impl
 
 
-@overload_method(types.CharSeq, "upper")
+@overload_method(types.CharSeq, "upper", target="cuda")
 def charseq_upper(s):
     def impl(s):
         # return bytes(s).upper()  # TODO: implement upper for Bytes
@@ -754,9 +754,9 @@ def charseq_upper(s):
     return impl
 
 
-@overload_method(types.UnicodeCharSeq, "find")
-@overload_method(types.CharSeq, "find")
-@overload_method(types.Bytes, "find")
+@overload_method(types.UnicodeCharSeq, "find", target="cuda")
+@overload_method(types.CharSeq, "find", target="cuda")
+@overload_method(types.Bytes, "find", target="cuda")
 def unicode_charseq_find(a, b):
     if isinstance(a, types.UnicodeCharSeq):
         if isinstance(b, types.UnicodeCharSeq):
@@ -794,9 +794,9 @@ def unicode_charseq_find(a, b):
             return impl
 
 
-@overload_method(types.UnicodeCharSeq, "rfind")
-@overload_method(types.CharSeq, "rfind")
-@overload_method(types.Bytes, "rfind")
+@overload_method(types.UnicodeCharSeq, "rfind", target="cuda")
+@overload_method(types.CharSeq, "rfind", target="cuda")
+@overload_method(types.Bytes, "rfind", target="cuda")
 def unicode_charseq_rfind(a, b):
     if isinstance(a, types.UnicodeCharSeq):
         if isinstance(b, types.UnicodeCharSeq):
@@ -834,9 +834,9 @@ def unicode_charseq_rfind(a, b):
             return impl
 
 
-@overload_method(types.UnicodeCharSeq, "startswith")
-@overload_method(types.CharSeq, "startswith")
-@overload_method(types.Bytes, "startswith")
+@overload_method(types.UnicodeCharSeq, "startswith", target="cuda")
+@overload_method(types.CharSeq, "startswith", target="cuda")
+@overload_method(types.Bytes, "startswith", target="cuda")
 def unicode_charseq_startswith(a, b):
     if isinstance(a, types.UnicodeCharSeq):
         if isinstance(b, types.UnicodeCharSeq):
@@ -860,9 +860,9 @@ def unicode_charseq_startswith(a, b):
             return impl
 
 
-@overload_method(types.UnicodeCharSeq, "endswith")
-@overload_method(types.CharSeq, "endswith")
-@overload_method(types.Bytes, "endswith")
+@overload_method(types.UnicodeCharSeq, "endswith", target="cuda")
+@overload_method(types.CharSeq, "endswith", target="cuda")
+@overload_method(types.Bytes, "endswith", target="cuda")
 def unicode_charseq_endswith(a, b):
     if isinstance(a, types.UnicodeCharSeq):
         if isinstance(b, types.UnicodeCharSeq):
@@ -891,9 +891,9 @@ def _map_bytes(seq):
     return [s._to_bytes() for s in seq]
 
 
-@overload_method(types.UnicodeCharSeq, "split")
-@overload_method(types.CharSeq, "split")
-@overload_method(types.Bytes, "split")
+@overload_method(types.UnicodeCharSeq, "split", target="cuda")
+@overload_method(types.CharSeq, "split", target="cuda")
+@overload_method(types.Bytes, "split", target="cuda")
 def unicode_charseq_split(a, sep=None, maxsplit=-1):
     if not (
         maxsplit == -1
@@ -951,9 +951,9 @@ def unicode_charseq_split(a, sep=None, maxsplit=-1):
 # NOT IMPLEMENTED: rsplit
 
 
-@overload_method(types.UnicodeCharSeq, "ljust")
-@overload_method(types.CharSeq, "ljust")
-@overload_method(types.Bytes, "ljust")
+@overload_method(types.UnicodeCharSeq, "ljust", target="cuda")
+@overload_method(types.CharSeq, "ljust", target="cuda")
+@overload_method(types.Bytes, "ljust", target="cuda")
 def unicode_charseq_ljust(a, width, fillchar=" "):
     if isinstance(a, types.UnicodeCharSeq):
         if is_default(fillchar, " "):
@@ -989,9 +989,9 @@ def unicode_charseq_ljust(a, width, fillchar=" "):
             return impl
 
 
-@overload_method(types.UnicodeCharSeq, "rjust")
-@overload_method(types.CharSeq, "rjust")
-@overload_method(types.Bytes, "rjust")
+@overload_method(types.UnicodeCharSeq, "rjust", target="cuda")
+@overload_method(types.CharSeq, "rjust", target="cuda")
+@overload_method(types.Bytes, "rjust", target="cuda")
 def unicode_charseq_rjust(a, width, fillchar=" "):
     if isinstance(a, types.UnicodeCharSeq):
         if is_default(fillchar, " "):
@@ -1027,9 +1027,9 @@ def unicode_charseq_rjust(a, width, fillchar=" "):
             return impl
 
 
-@overload_method(types.UnicodeCharSeq, "center")
-@overload_method(types.CharSeq, "center")
-@overload_method(types.Bytes, "center")
+@overload_method(types.UnicodeCharSeq, "center", target="cuda")
+@overload_method(types.CharSeq, "center", target="cuda")
+@overload_method(types.Bytes, "center", target="cuda")
 def unicode_charseq_center(a, width, fillchar=" "):
     if isinstance(a, types.UnicodeCharSeq):
         if is_default(fillchar, " "):
@@ -1065,9 +1065,9 @@ def unicode_charseq_center(a, width, fillchar=" "):
             return impl
 
 
-@overload_method(types.UnicodeCharSeq, "zfill")
-@overload_method(types.CharSeq, "zfill")
-@overload_method(types.Bytes, "zfill")
+@overload_method(types.UnicodeCharSeq, "zfill", target="cuda")
+@overload_method(types.CharSeq, "zfill", target="cuda")
+@overload_method(types.Bytes, "zfill", target="cuda")
 def unicode_charseq_zfill(a, width):
     if isinstance(a, types.UnicodeCharSeq):
 
@@ -1083,9 +1083,9 @@ def unicode_charseq_zfill(a, width):
         return impl
 
 
-@overload_method(types.UnicodeCharSeq, "lstrip")
-@overload_method(types.CharSeq, "lstrip")
-@overload_method(types.Bytes, "lstrip")
+@overload_method(types.UnicodeCharSeq, "lstrip", target="cuda")
+@overload_method(types.CharSeq, "lstrip", target="cuda")
+@overload_method(types.Bytes, "lstrip", target="cuda")
 def unicode_charseq_lstrip(a, chars=None):
     if isinstance(a, types.UnicodeCharSeq):
         if is_nonelike(chars):
@@ -1121,9 +1121,9 @@ def unicode_charseq_lstrip(a, chars=None):
             return impl
 
 
-@overload_method(types.UnicodeCharSeq, "rstrip")
-@overload_method(types.CharSeq, "rstrip")
-@overload_method(types.Bytes, "rstrip")
+@overload_method(types.UnicodeCharSeq, "rstrip", target="cuda")
+@overload_method(types.CharSeq, "rstrip", target="cuda")
+@overload_method(types.Bytes, "rstrip", target="cuda")
 def unicode_charseq_rstrip(a, chars=None):
     if isinstance(a, types.UnicodeCharSeq):
         if is_nonelike(chars):
@@ -1159,9 +1159,9 @@ def unicode_charseq_rstrip(a, chars=None):
             return impl
 
 
-@overload_method(types.UnicodeCharSeq, "strip")
-@overload_method(types.CharSeq, "strip")
-@overload_method(types.Bytes, "strip")
+@overload_method(types.UnicodeCharSeq, "strip", target="cuda")
+@overload_method(types.CharSeq, "strip", target="cuda")
+@overload_method(types.Bytes, "strip", target="cuda")
 def unicode_charseq_strip(a, chars=None):
     if isinstance(a, types.UnicodeCharSeq):
         if is_nonelike(chars):
@@ -1197,9 +1197,9 @@ def unicode_charseq_strip(a, chars=None):
             return impl
 
 
-@overload_method(types.UnicodeCharSeq, "join")
-@overload_method(types.CharSeq, "join")
-@overload_method(types.Bytes, "join")
+@overload_method(types.UnicodeCharSeq, "join", target="cuda")
+@overload_method(types.CharSeq, "join", target="cuda")
+@overload_method(types.Bytes, "join", target="cuda")
 def unicode_charseq_join(a, parts):
     if isinstance(a, types.UnicodeCharSeq):
         # assuming parts contains UnicodeCharSeq or UnicodeType objects

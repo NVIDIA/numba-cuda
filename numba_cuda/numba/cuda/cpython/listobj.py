@@ -731,7 +731,7 @@ def sequence_bool(context, builder, sig, args):
     return context.compile_internal(builder, sequence_bool_impl, sig, args)
 
 
-@overload(operator.truth)
+@overload(operator.truth, target="cuda")
 def sequence_truth(seq):
     if isinstance(seq, types.Sequence):
 
@@ -870,7 +870,7 @@ def all_list(*args):
     return all([isinstance(typ, types.List) for typ in args])
 
 
-@overload(operator.ne)
+@overload(operator.ne, target="cuda")
 def impl_list_ne(a, b):
     if not all_list(a, b):
         return
@@ -881,7 +881,7 @@ def impl_list_ne(a, b):
     return list_ne_impl
 
 
-@overload(operator.le)
+@overload(operator.le, target="cuda")
 def impl_list_le(a, b):
     if not all_list(a, b):
         return
@@ -899,7 +899,7 @@ def impl_list_le(a, b):
     return list_le_impl
 
 
-@overload(operator.lt)
+@overload(operator.lt, target="cuda")
 def impl_list_lt(a, b):
     if not all_list(a, b):
         return
@@ -917,7 +917,7 @@ def impl_list_lt(a, b):
     return list_lt_impl
 
 
-@overload(operator.ge)
+@overload(operator.ge, target="cuda")
 def impl_list_ge(a, b):
     if not all_list(a, b):
         return
@@ -928,7 +928,7 @@ def impl_list_ge(a, b):
     return list_ge_impl
 
 
-@overload(operator.gt)
+@overload(operator.gt, target="cuda")
 def impl_list_gt(a, b):
     if not all_list(a, b):
         return
@@ -964,7 +964,7 @@ def list_clear(context, builder, sig, args):
     return context.get_dummy_value()
 
 
-@overload_method(types.List, "copy")
+@overload_method(types.List, "copy", target="cuda")
 def list_copy(lst):
     def list_copy_impl(lst):
         return list(lst)
@@ -972,7 +972,7 @@ def list_copy(lst):
     return list_copy_impl
 
 
-@overload_method(types.List, "count")
+@overload_method(types.List, "count", target="cuda")
 def list_count(lst, value):
     def list_count_impl(lst, value):
         res = 0
@@ -1021,7 +1021,7 @@ def list_extend(context, builder, sig, args):
 intp_max = types.intp.maxval
 
 
-@overload_method(types.List, "index")
+@overload_method(types.List, "index", target="cuda")
 def list_index(lst, value, start=0, stop=intp_max):
     if not isinstance(start, (int, types.Integer, types.Omitted)):
         raise errors.TypingError(f'arg "start" must be an Integer. Got {start}')
@@ -1096,7 +1096,7 @@ def list_pop(context, builder, sig, args):  # noqa: F811
     return impl_ret_new_ref(context, builder, sig.return_type, res)
 
 
-@overload_method(types.List, "remove")
+@overload_method(types.List, "remove", target="cuda")
 def list_remove(lst, value):
     def list_remove_impl(lst, value):
         for i in range(len(lst)):
@@ -1109,7 +1109,7 @@ def list_remove(lst, value):
     return list_remove_impl
 
 
-@overload_method(types.List, "reverse")
+@overload_method(types.List, "reverse", target="cuda")
 def list_reverse(lst):
     def list_reverse_impl(lst):
         for a in range(0, len(lst) // 2):
@@ -1163,7 +1163,7 @@ def _sort_check_key(key):
         raise errors.TypingError(msg)
 
 
-@overload_method(types.List, "sort")
+@overload_method(types.List, "sort", target="cuda")
 def ol_list_sort(lst, key=None, reverse=False):
     _sort_check_key(key)
     _sort_check_reverse(reverse)
@@ -1192,7 +1192,7 @@ def ol_list_sort(lst, key=None, reverse=False):
     return impl
 
 
-@overload(sorted)
+@overload(sorted, target="cuda")
 def ol_sorted(iterable, key=None, reverse=False):
     if not isinstance(iterable, types.IterableType):
         return False
@@ -1227,42 +1227,42 @@ _banned_error = errors.TypingError("Cannot mutate a literal list")
 
 
 # Things that mutate literal lists are banned
-@overload_method(types.LiteralList, "append")
+@overload_method(types.LiteralList, "append", target="cuda")
 def literal_list_banned_append(lst, obj):
     raise _banned_error
 
 
-@overload_method(types.LiteralList, "extend")
+@overload_method(types.LiteralList, "extend", target="cuda")
 def literal_list_banned_extend(lst, iterable):
     raise _banned_error
 
 
-@overload_method(types.LiteralList, "insert")
+@overload_method(types.LiteralList, "insert", target="cuda")
 def literal_list_banned_insert(lst, index, obj):
     raise _banned_error
 
 
-@overload_method(types.LiteralList, "remove")
+@overload_method(types.LiteralList, "remove", target="cuda")
 def literal_list_banned_remove(lst, value):
     raise _banned_error
 
 
-@overload_method(types.LiteralList, "pop")
+@overload_method(types.LiteralList, "pop", target="cuda")
 def literal_list_banned_pop(lst, index=-1):
     raise _banned_error
 
 
-@overload_method(types.LiteralList, "clear")
+@overload_method(types.LiteralList, "clear", target="cuda")
 def literal_list_banned_clear(lst):
     raise _banned_error
 
 
-@overload_method(types.LiteralList, "sort")
+@overload_method(types.LiteralList, "sort", target="cuda")
 def literal_list_banned_sort(lst, key=None, reverse=False):
     raise _banned_error
 
 
-@overload_method(types.LiteralList, "reverse")
+@overload_method(types.LiteralList, "reverse", target="cuda")
 def literal_list_banned_reverse(lst):
     raise _banned_error
 
@@ -1270,7 +1270,7 @@ def literal_list_banned_reverse(lst):
 _index_end = types.intp.maxval
 
 
-@overload_method(types.LiteralList, "index")
+@overload_method(types.LiteralList, "index", target="cuda")
 def literal_list_index(lst, x, start=0, end=_index_end):
     # TODO: To make this work, need consts as slice for start/end so as to
     # be able to statically analyse the bounds, then its a just loop body
@@ -1280,7 +1280,7 @@ def literal_list_index(lst, x, start=0, end=_index_end):
         raise errors.TypingError(msg)
 
 
-@overload_method(types.LiteralList, "count")
+@overload_method(types.LiteralList, "count", target="cuda")
 def literal_list_count(lst, x):
     if isinstance(lst, types.LiteralList):
 
@@ -1294,7 +1294,7 @@ def literal_list_count(lst, x):
         return impl
 
 
-@overload_method(types.LiteralList, "copy")
+@overload_method(types.LiteralList, "copy", target="cuda")
 def literal_list_count(lst):  # noqa: F811
     if isinstance(lst, types.LiteralList):
 
@@ -1304,19 +1304,19 @@ def literal_list_count(lst):  # noqa: F811
         return impl
 
 
-@overload(operator.delitem)
+@overload(operator.delitem, target="cuda")
 def literal_list_delitem(lst, index):
     if isinstance(lst, types.LiteralList):
         raise _banned_error
 
 
-@overload(operator.setitem)
+@overload(operator.setitem, target="cuda")
 def literal_list_setitem(lst, index, value):
     if isinstance(lst, types.LiteralList):
         raise errors.TypingError("Cannot mutate a literal list")
 
 
-@overload(operator.getitem)
+@overload(operator.getitem, target="cuda")
 def literal_list_getitem(lst, *args):
     if not isinstance(lst, types.LiteralList):
         return
@@ -1327,7 +1327,7 @@ def literal_list_getitem(lst, *args):
     raise errors.TypingError(msg)
 
 
-@overload(len)
+@overload(len, target="cuda")
 def literal_list_len(lst):
     if not isinstance(lst, types.LiteralList):
         return
@@ -1335,7 +1335,7 @@ def literal_list_len(lst):
     return lambda lst: l
 
 
-@overload(operator.contains)
+@overload(operator.contains, target="cuda")
 def literal_list_contains(lst, item):
     if isinstance(lst, types.LiteralList):
 

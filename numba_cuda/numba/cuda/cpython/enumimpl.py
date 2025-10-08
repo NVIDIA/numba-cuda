@@ -94,7 +94,7 @@ def enum_class_getitem(context, builder, sig, args):
     )
 
 
-@overload_method(types.IntEnumMember, "__hash__")
+@overload_method(types.IntEnumMember, "__hash__", target="cuda")
 def intenum_hash(val):
     # uses the hash of the value, for IntEnums this will be int.__hash__
     def hash_impl(val):

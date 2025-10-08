@@ -219,7 +219,7 @@ def iternext_unituple(context, builder, sig, args, result):
         builder.store(nidx, iterval.index)
 
 
-@overload(operator.getitem)
+@overload(operator.getitem, target="cuda")
 def getitem_literal_idx(tup, idx):
     """
     Overloads BaseTuple getitem to cover cases where constant
@@ -439,7 +439,7 @@ def tuple_to_tuple(context, builder, fromty, toty, val):
 # Methods
 
 
-@overload_method(types.BaseTuple, "index")
+@overload_method(types.BaseTuple, "index", target="cuda")
 def tuple_index(tup, value):
     def tuple_index_impl(tup, value):
         for i in range(len(tup)):
@@ -450,7 +450,7 @@ def tuple_index(tup, value):
     return tuple_index_impl
 
 
-@overload(operator.contains)
+@overload(operator.contains, target="cuda")
 def in_seq_empty_tuple(x, y):
     if isinstance(x, types.Tuple) and not x.types:
         return lambda x, y: False

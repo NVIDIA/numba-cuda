@@ -521,7 +521,7 @@ def _codepoint_is_ascii(ch):
 # PUBLIC API
 
 
-@overload(len)
+@overload(len, target="cuda")
 def unicode_len(s):
     if isinstance(s, types.UnicodeType):
 
@@ -531,7 +531,7 @@ def unicode_len(s):
         return len_impl
 
 
-@overload(operator.eq)
+@overload(operator.eq, target="cuda")
 def unicode_eq(a, b):
     if not (a.is_internal and b.is_internal):
         return
@@ -573,7 +573,7 @@ def unicode_eq(a, b):
         return eq_impl
 
 
-@overload(operator.ne)
+@overload(operator.ne, target="cuda")
 def unicode_ne(a, b):
     if not (a.is_internal and b.is_internal):
         return
@@ -594,7 +594,7 @@ def unicode_ne(a, b):
         return eq_impl
 
 
-@overload(operator.lt)
+@overload(operator.lt, target="cuda")
 def unicode_lt(a, b):
     a_unicode = isinstance(a, (types.UnicodeType, types.StringLiteral))
     b_unicode = isinstance(b, (types.UnicodeType, types.StringLiteral))
@@ -612,7 +612,7 @@ def unicode_lt(a, b):
         return lt_impl
 
 
-@overload(operator.gt)
+@overload(operator.gt, target="cuda")
 def unicode_gt(a, b):
     a_unicode = isinstance(a, (types.UnicodeType, types.StringLiteral))
     b_unicode = isinstance(b, (types.UnicodeType, types.StringLiteral))
@@ -630,7 +630,7 @@ def unicode_gt(a, b):
         return gt_impl
 
 
-@overload(operator.le)
+@overload(operator.le, target="cuda")
 def unicode_le(a, b):
     a_unicode = isinstance(a, (types.UnicodeType, types.StringLiteral))
     b_unicode = isinstance(b, (types.UnicodeType, types.StringLiteral))
@@ -642,7 +642,7 @@ def unicode_le(a, b):
         return le_impl
 
 
-@overload(operator.ge)
+@overload(operator.ge, target="cuda")
 def unicode_ge(a, b):
     a_unicode = isinstance(a, (types.UnicodeType, types.StringLiteral))
     b_unicode = isinstance(b, (types.UnicodeType, types.StringLiteral))
@@ -654,7 +654,7 @@ def unicode_ge(a, b):
         return ge_impl
 
 
-@overload(operator.contains)
+@overload(operator.contains, target="cuda")
 def unicode_contains(a, b):
     if isinstance(a, types.UnicodeType) and isinstance(b, types.UnicodeType):
 
@@ -827,7 +827,7 @@ _find = register_jitable(generate_finder(_default_find))
 _rfind = register_jitable(generate_finder(_default_rfind))
 
 
-@overload_method(types.UnicodeType, "find")
+@overload_method(types.UnicodeType, "find", target="cuda")
 def unicode_find(data, substr, start=None, end=None):
     """Implements str.find()"""
     if isinstance(substr, types.UnicodeCharSeq):
@@ -844,7 +844,7 @@ def unicode_find(data, substr, start=None, end=None):
     return _find
 
 
-@overload_method(types.UnicodeType, "rfind")
+@overload_method(types.UnicodeType, "rfind", target="cuda")
 def unicode_rfind(data, substr, start=None, end=None):
     """Implements str.rfind()"""
     if isinstance(substr, types.UnicodeCharSeq):
@@ -862,7 +862,7 @@ def unicode_rfind(data, substr, start=None, end=None):
 
 
 # https://github.com/python/cpython/blob/1d4b6ba19466aba0eb91c4ba01ba509acf18c723/Objects/unicodeobject.c#L12831-L12857    # noqa: E501
-@overload_method(types.UnicodeType, "rindex")
+@overload_method(types.UnicodeType, "rindex", target="cuda")
 def unicode_rindex(s, sub, start=None, end=None):
     """Implements str.rindex()"""
     unicode_idx_check_type(start, "start")
@@ -880,7 +880,7 @@ def unicode_rindex(s, sub, start=None, end=None):
 
 
 # https://github.com/python/cpython/blob/1d4b6ba19466aba0eb91c4ba01ba509acf18c723/Objects/unicodeobject.c#L11692-L11718    # noqa: E501
-@overload_method(types.UnicodeType, "index")
+@overload_method(types.UnicodeType, "index", target="cuda")
 def unicode_index(s, sub, start=None, end=None):
     """Implements str.index()"""
     unicode_idx_check_type(start, "start")
@@ -898,7 +898,7 @@ def unicode_index(s, sub, start=None, end=None):
 
 
 # https://github.com/python/cpython/blob/1d4b6ba19466aba0eb91c4ba01ba509acf18c723/Objects/unicodeobject.c#L12922-L12976    # noqa: E501
-@overload_method(types.UnicodeType, "partition")
+@overload_method(types.UnicodeType, "partition", target="cuda")
 def unicode_partition(data, sep):
     """Implements str.partition()"""
     thety = sep
@@ -934,7 +934,7 @@ def unicode_partition(data, sep):
     return impl
 
 
-@overload_method(types.UnicodeType, "count")
+@overload_method(types.UnicodeType, "count", target="cuda")
 def unicode_count(src, sub, start=None, end=None):
     _count_args_types_check(start)
     _count_args_types_check(end)
@@ -972,7 +972,7 @@ def unicode_count(src, sub, start=None, end=None):
 
 
 # https://github.com/python/cpython/blob/1d4b6ba19466aba0eb91c4ba01ba509acf18c723/Objects/unicodeobject.c#L12979-L13033    # noqa: E501
-@overload_method(types.UnicodeType, "rpartition")
+@overload_method(types.UnicodeType, "rpartition", target="cuda")
 def unicode_rpartition(data, sep):
     """Implements str.rpartition()"""
     thety = sep
@@ -1025,7 +1025,7 @@ def _adjust_indices(length, start, end):
     return start, end
 
 
-@overload_method(types.UnicodeType, "startswith")
+@overload_method(types.UnicodeType, "startswith", target="cuda")
 def unicode_startswith(s, prefix, start=None, end=None):
     if not is_nonelike(start) and not isinstance(start, types.Integer):
         raise TypingError(
@@ -1084,7 +1084,7 @@ def unicode_startswith(s, prefix, start=None, end=None):
         )
 
 
-@overload_method(types.UnicodeType, "endswith")
+@overload_method(types.UnicodeType, "endswith", target="cuda")
 def unicode_endswith(s, substr, start=None, end=None):
     if not (
         start is None
@@ -1142,7 +1142,7 @@ def unicode_endswith(s, substr, start=None, end=None):
 
 
 # https://github.com/python/cpython/blob/1d4b6ba19466aba0eb91c4ba01ba509acf18c723/Objects/unicodeobject.c#L11519-L11595    # noqa: E501
-@overload_method(types.UnicodeType, "expandtabs")
+@overload_method(types.UnicodeType, "expandtabs", target="cuda")
 def unicode_expandtabs(data, tabsize=8):
     """Implements str.expandtabs()"""
     thety = tabsize
@@ -1208,7 +1208,7 @@ def unicode_expandtabs(data, tabsize=8):
     return expandtabs_impl
 
 
-@overload_method(types.UnicodeType, "split")
+@overload_method(types.UnicodeType, "split", target="cuda")
 def unicode_split(a, sep=None, maxsplit=-1):
     if not (
         maxsplit == -1
@@ -1359,7 +1359,7 @@ ascii_rsplit_whitespace_impl = register_jitable(
 
 
 # https://github.com/python/cpython/blob/1d4b6ba19466aba0eb91c4ba01ba509acf18c723/Objects/unicodeobject.c#L13095-L13108    # noqa: E501
-@overload_method(types.UnicodeType, "rsplit")
+@overload_method(types.UnicodeType, "rsplit", target="cuda")
 def unicode_rsplit(data, sep=None, maxsplit=-1):
     """Implements str.unicode_rsplit()"""
 
@@ -1442,7 +1442,7 @@ def unicode_rsplit(data, sep=None, maxsplit=-1):
     return rsplit_impl
 
 
-@overload_method(types.UnicodeType, "center")
+@overload_method(types.UnicodeType, "center", target="cuda")
 def unicode_center(string, width, fillchar=" "):
     if not isinstance(width, types.Integer):
         raise TypingError("The width must be an Integer")
@@ -1533,8 +1533,12 @@ def gen_unicode_Xjust(STRING_FIRST):
     return unicode_Xjust
 
 
-overload_method(types.UnicodeType, "rjust")(gen_unicode_Xjust(False))
-overload_method(types.UnicodeType, "ljust")(gen_unicode_Xjust(True))
+overload_method(types.UnicodeType, "rjust", target="cuda")(
+    gen_unicode_Xjust(False)
+)
+overload_method(types.UnicodeType, "ljust", target="cuda")(
+    gen_unicode_Xjust(True)
+)
 
 
 def generate_splitlines_func(is_line_break_func):
@@ -1580,7 +1584,7 @@ _unicode_splitlines = register_jitable(
 
 
 # https://github.com/python/cpython/blob/1d4b6ba19466aba0eb91c4ba01ba509acf18c723/Objects/unicodeobject.c#L10196-L10229    # noqa: E501
-@overload_method(types.UnicodeType, "splitlines")
+@overload_method(types.UnicodeType, "splitlines", target="cuda")
 def unicode_splitlines(data, keepends=False):
     """Implements str.splitlines()"""
     thety = keepends
@@ -1638,7 +1642,7 @@ def join_list(sep, parts):
     return result
 
 
-@overload_method(types.UnicodeType, "join")
+@overload_method(types.UnicodeType, "join", target="cuda")
 def unicode_join(sep, parts):
     if isinstance(parts, types.List):
         if isinstance(parts.dtype, types.UnicodeType):
@@ -1672,7 +1676,7 @@ def unicode_join(sep, parts):
         return join_str_impl
 
 
-@overload_method(types.UnicodeType, "zfill")
+@overload_method(types.UnicodeType, "zfill", target="cuda")
 def unicode_zfill(string, width):
     if not isinstance(width, types.Integer):
         raise TypingError("<width> must be an Integer")
@@ -1754,7 +1758,7 @@ def _count_args_types_check(arg):
         raise TypingError("The slice indices must be an Integer or None")
 
 
-@overload_method(types.UnicodeType, "lstrip")
+@overload_method(types.UnicodeType, "lstrip", target="cuda")
 def unicode_lstrip(string, chars=None):
     if isinstance(chars, types.UnicodeCharSeq):
 
@@ -1771,7 +1775,7 @@ def unicode_lstrip(string, chars=None):
     return lstrip_impl
 
 
-@overload_method(types.UnicodeType, "rstrip")
+@overload_method(types.UnicodeType, "rstrip", target="cuda")
 def unicode_rstrip(string, chars=None):
     if isinstance(chars, types.UnicodeCharSeq):
 
@@ -1788,7 +1792,7 @@ def unicode_rstrip(string, chars=None):
     return rstrip_impl
 
 
-@overload_method(types.UnicodeType, "strip")
+@overload_method(types.UnicodeType, "strip", target="cuda")
 def unicode_strip(string, chars=None):
     if isinstance(chars, types.UnicodeCharSeq):
 
@@ -1958,7 +1962,7 @@ def _get_str_slice_view(typingctx, src_t, start_t, length_t):
     return sig, codegen
 
 
-@overload(operator.getitem)
+@overload(operator.getitem, target="cuda")
 def unicode_getitem(s, idx):
     if isinstance(s, types.UnicodeType):
         if isinstance(idx, types.Integer):
@@ -2025,8 +2029,8 @@ def unicode_getitem(s, idx):
 # ------------------------------------------------------------------------------
 
 
-@overload(operator.add)
-@overload(operator.iadd)
+@overload(operator.add, target="cuda")
+@overload(operator.iadd, target="cuda")
 def unicode_concat(a, b):
     if isinstance(a, types.UnicodeType) and isinstance(b, types.UnicodeType):
 
@@ -2078,7 +2082,7 @@ def _repeat_impl(str_arg, mult_arg):
             return result
 
 
-@overload(operator.mul)
+@overload(operator.mul, target="cuda")
 def unicode_repeat(a, b):
     if isinstance(a, types.UnicodeType) and isinstance(b, types.Integer):
 
@@ -2094,7 +2098,7 @@ def unicode_repeat(a, b):
         return wrap
 
 
-@overload(operator.not_)
+@overload(operator.not_, target="cuda")
 def unicode_not(a):
     if isinstance(a, types.UnicodeType):
 
@@ -2104,7 +2108,7 @@ def unicode_not(a):
         return impl
 
 
-@overload_method(types.UnicodeType, "replace")
+@overload_method(types.UnicodeType, "replace", target="cuda")
 def unicode_replace(s, old_str, new_str, count=-1):
     thety = count
     if isinstance(count, types.Omitted):
@@ -2192,7 +2196,7 @@ def gen_isAlX(ascii_func, unicode_func):
 
 
 # https://github.com/python/cpython/blob/1d4b6ba19466aba0eb91c4ba01ba509acf18c723/Objects/unicodeobject.c#L11928-L11964    # noqa: E501
-overload_method(types.UnicodeType, "isalpha")(
+overload_method(types.UnicodeType, "isalpha", target="cuda")(
     gen_isAlX(_Py_ISALPHA, _PyUnicode_IsAlpha)
 )
 
@@ -2201,7 +2205,7 @@ _unicode_is_alnum = register_jitable(
 )
 
 # https://github.com/python/cpython/blob/1d4b6ba19466aba0eb91c4ba01ba509acf18c723/Objects/unicodeobject.c#L11975-L12006    # noqa: E501
-overload_method(types.UnicodeType, "isalnum")(
+overload_method(types.UnicodeType, "isalnum", target="cuda")(
     gen_isAlX(_Py_ISALNUM, _unicode_is_alnum)
 )
 
@@ -2240,7 +2244,7 @@ _unicode_is_upper = register_jitable(
 )
 
 
-@overload_method(types.UnicodeType, "isupper")
+@overload_method(types.UnicodeType, "isupper", target="cuda")
 def unicode_isupper(a):
     """
     Implements .isupper()
@@ -2255,7 +2259,7 @@ def unicode_isupper(a):
     return impl
 
 
-@overload_method(types.UnicodeType, "isascii")
+@overload_method(types.UnicodeType, "isascii", target="cuda")
 def unicode_isascii(data):
     """Implements UnicodeType.isascii()"""
 
@@ -2265,7 +2269,7 @@ def unicode_isascii(data):
     return impl
 
 
-@overload_method(types.UnicodeType, "istitle")
+@overload_method(types.UnicodeType, "istitle", target="cuda")
 def unicode_istitle(data):
     """
     Implements UnicodeType.istitle()
@@ -2304,7 +2308,7 @@ def unicode_istitle(data):
     return impl
 
 
-@overload_method(types.UnicodeType, "islower")
+@overload_method(types.UnicodeType, "islower", target="cuda")
 def unicode_islower(data):
     """
     impl is an approximate translation of:
@@ -2333,7 +2337,7 @@ def unicode_islower(data):
 
 
 # https://github.com/python/cpython/blob/1d4b6ba19466aba0eb91c4ba01ba509acf18c723/Objects/unicodeobject.c#L12126-L12161    # noqa: E501
-@overload_method(types.UnicodeType, "isidentifier")
+@overload_method(types.UnicodeType, "isidentifier", target="cuda")
 def unicode_isidentifier(data):
     """Implements UnicodeType.isidentifier()"""
 
@@ -2380,21 +2384,27 @@ def gen_isX(_PyUnicode_IS_func, empty_is_false=True):
 
 
 # https://github.com/python/cpython/blob/1d4b6ba19466aba0eb91c4ba01ba509acf18c723/Objects/unicodeobject.c#L11896-L11925    # noqa: E501
-overload_method(types.UnicodeType, "isspace")(gen_isX(_PyUnicode_IsSpace))
+overload_method(types.UnicodeType, "isspace", target="cuda")(
+    gen_isX(_PyUnicode_IsSpace)
+)
 
 # https://github.com/python/cpython/blob/1d4b6ba19466aba0eb91c4ba01ba509acf18c723/Objects/unicodeobject.c#L12096-L12124    # noqa: E501
-overload_method(types.UnicodeType, "isnumeric")(gen_isX(_PyUnicode_IsNumeric))
+overload_method(types.UnicodeType, "isnumeric", target="cuda")(
+    gen_isX(_PyUnicode_IsNumeric)
+)
 
 # https://github.com/python/cpython/blob/1d4b6ba19466aba0eb91c4ba01ba509acf18c723/Objects/unicodeobject.c#L12056-L12085    # noqa: E501
-overload_method(types.UnicodeType, "isdigit")(gen_isX(_PyUnicode_IsDigit))
+overload_method(types.UnicodeType, "isdigit", target="cuda")(
+    gen_isX(_PyUnicode_IsDigit)
+)
 
 # https://github.com/python/cpython/blob/1d4b6ba19466aba0eb91c4ba01ba509acf18c723/Objects/unicodeobject.c#L12017-L12045    # noqa: E501
-overload_method(types.UnicodeType, "isdecimal")(
+overload_method(types.UnicodeType, "isdecimal", target="cuda")(
     gen_isX(_PyUnicode_IsDecimalDigit)
 )
 
 # https://github.com/python/cpython/blob/1d4b6ba19466aba0eb91c4ba01ba509acf18c723/Objects/unicodeobject.c#L12188-L12213    # noqa: E501
-overload_method(types.UnicodeType, "isprintable")(
+overload_method(types.UnicodeType, "isprintable", target="cuda")(
     gen_isX(_PyUnicode_IsPrintable, False)
 )
 
@@ -2505,13 +2515,13 @@ _ascii_upper = register_jitable(_gen_ascii_upper_or_lower(_Py_TOUPPER))
 _ascii_lower = register_jitable(_gen_ascii_upper_or_lower(_Py_TOLOWER))
 
 
-@overload_method(types.UnicodeType, "lower")
+@overload_method(types.UnicodeType, "lower", target="cuda")
 def unicode_lower(data):
     """Implements .lower()"""
     return case_operation(_ascii_lower, _unicode_lower)
 
 
-@overload_method(types.UnicodeType, "upper")
+@overload_method(types.UnicodeType, "upper", target="cuda")
 def unicode_upper(data):
     """Implements .upper()"""
     return case_operation(_ascii_upper, _unicode_upper)
@@ -2542,7 +2552,7 @@ def _ascii_casefold(data, res):
         _set_code_point(res, idx, _Py_TOLOWER(code_point))
 
 
-@overload_method(types.UnicodeType, "casefold")
+@overload_method(types.UnicodeType, "casefold", target="cuda")
 def unicode_casefold(data):
     """Implements str.casefold()"""
     return case_operation(_ascii_casefold, _unicode_casefold)
@@ -2585,7 +2595,7 @@ def _ascii_capitalize(data, res):
 
 
 # https://github.com/python/cpython/blob/1d4b6ba19466aba0eb91c4ba01ba509acf18c723/Objects/unicodeobject.c#L10765-L10774    # noqa: E501
-@overload_method(types.UnicodeType, "capitalize")
+@overload_method(types.UnicodeType, "capitalize", target="cuda")
 def unicode_capitalize(data):
     return case_operation(_ascii_capitalize, _unicode_capitalize)
 
@@ -2634,7 +2644,7 @@ def _ascii_title(data, res):
 
 
 # https://github.com/python/cpython/blob/201c8f79450628241574fba940e08107178dc3a5/Objects/unicodeobject.c#L10023-L10069    # noqa: E501
-@overload_method(types.UnicodeType, "title")
+@overload_method(types.UnicodeType, "title", target="cuda")
 def unicode_title(data):
     """Implements str.title()"""
     # https://docs.python.org/3/library/stdtypes.html#str.title
@@ -2677,13 +2687,13 @@ def _unicode_swapcase(data, length, res, maxchars):
     return k
 
 
-@overload_method(types.UnicodeType, "swapcase")
+@overload_method(types.UnicodeType, "swapcase", target="cuda")
 def unicode_swapcase(data):
     return case_operation(_ascii_swapcase, _unicode_swapcase)
 
 
 # https://github.com/python/cpython/blob/1d4b6ba19466aba0eb91c4ba01ba509acf18c723/Python/bltinmodule.c#L1781-L1824    # noqa: E501
-@overload(ord)
+@overload(ord, target="cuda")
 def ol_ord(c):
     if isinstance(c, types.UnicodeType):
 
@@ -2725,7 +2735,7 @@ def _PyUnicode_FromOrdinal(ordinal):
 
 
 # https://github.com/python/cpython/blob/1d4b6ba19466aba0eb91c4ba01ba509acf18c723/Python/bltinmodule.c#L715-L720    # noqa: E501
-@overload(chr)
+@overload(chr, target="cuda")
 def ol_chr(i):
     if isinstance(i, types.Integer):
 
@@ -2735,19 +2745,19 @@ def ol_chr(i):
         return impl
 
 
-@overload_method(types.UnicodeType, "__str__")
+@overload_method(types.UnicodeType, "__str__", target="cuda")
 def unicode_str(s):
     return lambda s: s
 
 
-@overload_method(types.UnicodeType, "__repr__")
+@overload_method(types.UnicodeType, "__repr__", target="cuda")
 def unicode_repr(s):
     # Can't use f-string as the impl ends up calling str and then repr, which
     # then recurses somewhere in imports.
     return lambda s: "'" + s + "'"
 
 
-@overload_method(types.Integer, "__str__")
+@overload_method(types.Integer, "__str__", target="cuda")
 def integer_str(n):
     ten = n(10)
 
@@ -2775,13 +2785,13 @@ def integer_str(n):
     return impl
 
 
-@overload_method(types.Integer, "__repr__")
+@overload_method(types.Integer, "__repr__", target="cuda")
 def integer_repr(n):
     return lambda n: n.__str__()
 
 
-@overload_method(types.Boolean, "__repr__")
-@overload_method(types.Boolean, "__str__")
+@overload_method(types.Boolean, "__repr__", target="cuda")
+@overload_method(types.Boolean, "__str__", target="cuda")
 def boolean_str(b):
     return lambda b: "True" if b else "False"
 
