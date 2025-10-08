@@ -230,7 +230,7 @@ def make_range_attr(index, attribute):
 
             return signature(a.dtype, a), codegen
 
-    @overload_attribute(types.RangeType, attribute, target="cuda")
+    @overload_attribute(types.RangeType, attribute)
     def range_attr(rnge):
         def get(rnge):
             return rangetype_attr_getter(rnge)
@@ -248,7 +248,7 @@ def impl_contains_helper(robj, val):
     return ((val - robj.start) % robj.step) == 0
 
 
-@overload(operator.contains, target="cuda")
+@overload(operator.contains)
 def impl_contains(robj, val):
     def impl_false(robj, val):
         return False

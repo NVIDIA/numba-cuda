@@ -147,7 +147,7 @@ def _gettyperecord_impl(typingctx, codepoint):
     return sig, details
 
 
-@overload(_PyUnicode_gettyperecord, target="cuda")
+@overload(_PyUnicode_gettyperecord)
 def gettyperecord_impl(a):
     """
     Provides a _PyUnicode_gettyperecord binding, for convenience it will accept
