@@ -361,7 +361,7 @@ def overload_classmethod(typ, attr, target="cuda", **kwargs):
             return types.Array.make(n)
     """
 
-    kwargs["target"] = "cuda"
+    kwargs["target"] = target
 
     return _overload_method_common(types.TypeRef(typ), attr, **kwargs)
 
