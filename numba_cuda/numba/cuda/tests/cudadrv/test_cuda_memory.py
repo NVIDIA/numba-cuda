@@ -6,12 +6,12 @@ import ctypes
 import numpy as np
 
 from numba.cuda.cudadrv import driver, drvapi, devices
-from numba.cuda.testing import unittest, ContextResettingTestCase
+from numba.cuda.testing import unittest, CUDATestCase
 from numba.cuda.testing import skip_on_cudasim
 
 
 @skip_on_cudasim("CUDA Memory API unsupported in the simulator")
-class TestCudaMemory(ContextResettingTestCase):
+class TestCudaMemory(CUDATestCase):
     def setUp(self):
         super().setUp()
         self.context = devices.get_context()
@@ -107,7 +107,7 @@ class TestCudaMemory(ContextResettingTestCase):
         self.assertEqual(dtor_invoked[0], 2)
 
 
-class TestCudaMemoryFunctions(ContextResettingTestCase):
+class TestCudaMemoryFunctions(CUDATestCase):
     def setUp(self):
         super().setUp()
         self.context = devices.get_context()
@@ -153,7 +153,7 @@ class TestCudaMemoryFunctions(ContextResettingTestCase):
 
 
 @skip_on_cudasim("CUDA Memory API unsupported in the simulator")
-class TestMVExtent(ContextResettingTestCase):
+class TestMVExtent(CUDATestCase):
     def test_c_contiguous_array(self):
         ary = np.arange(100)
         arysz = ary.dtype.itemsize * ary.size
