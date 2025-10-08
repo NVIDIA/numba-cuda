@@ -136,6 +136,7 @@ def overload(
     strict=True,
     inline="never",
     prefer_literal=False,
+    target="cuda",
     **kwargs,
 ):
     """
@@ -205,6 +206,8 @@ def overload(
     # TODO: abort now if the kwarg 'target' relates to an unregistered target,
     # this requires sorting out the circular imports first.
 
+    kwargs["target"] = target
+
     def decorate(overload_func):
         template = make_overload_template(
             func, overload_func, opts, strict, inline, prefer_literal, **kwargs
@@ -251,7 +254,7 @@ def register_jitable(*args, **kwargs):
         return wrap(*args)
 
 
-def overload_attribute(typ, attr, **kwargs):
+def overload_attribute(typ, attr, target="cuda", **kwargs):
     """
     A decorator marking the decorated function as typing and implementing
     attribute *attr* for the given Numba type in nopython mode.
@@ -269,6 +272,8 @@ def overload_attribute(typ, attr, **kwargs):
     """
     # TODO implement setters
     from numba.core.typing.templates import make_overload_attribute_template
+
+    kwargs["target"] = target
 
     def decorate(overload_func):
         template = make_overload_attribute_template(
@@ -302,7 +307,7 @@ def _overload_method_common(typ, attr, **kwargs):
     return decorate
 
 
-def overload_method(typ, attr, **kwargs):
+def overload_method(typ, attr, target="cuda", **kwargs):
     """
     A decorator marking the decorated function as typing and implementing
     method *attr* for the given Numba type in nopython mode.
@@ -324,10 +329,13 @@ def overload_method(typ, attr, **kwargs):
 
                 return take_impl
     """
+
+    kwargs["target"] = target
+
     return _overload_method_common(typ, attr, **kwargs)
 
 
-def overload_classmethod(typ, attr, **kwargs):
+def overload_classmethod(typ, attr, target="cuda", **kwargs):
     """
     A decorator marking the decorated function as typing and implementing
     classmethod *attr* for the given Numba type in nopython mode.
@@ -352,6 +360,9 @@ def overload_classmethod(typ, attr, **kwargs):
         def foo(n):
             return types.Array.make(n)
     """
+
+    kwargs["target"] = "cuda"
+
     return _overload_method_common(types.TypeRef(typ), attr, **kwargs)
 
 
