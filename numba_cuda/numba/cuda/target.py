@@ -153,9 +153,8 @@ class CUDATargetContext(BaseContext):
         self._target_data = None
 
     def load_additional_registries(self):
-        # side effect of import needed for numba.cpython.*, numba.cuda.cpython.*, the builtins
+        # side effect of import needed for numba.cuda.cpython.*, the builtins
         # registry is updated at import time.
-        from numba.cpython import tupleobj  # noqa: F401
         from numba.cuda.cpython import (
             numbers,
             slicing,
@@ -165,8 +164,11 @@ class CUDATargetContext(BaseContext):
             charseq,
             cmathimpl,
             mathimpl,
+            tupleobj,
+            rangeobj,
+            enumimpl,
         )
-        from numba.cpython import rangeobj, enumimpl  # noqa: F401
+        from numba.cuda.cpython import builtins as cpython_builtins
         from numba.cuda.core import optional  # noqa: F401
         from numba.cuda.misc import cffiimpl
         from numba.cuda.np import (
@@ -204,6 +206,10 @@ class CUDATargetContext(BaseContext):
         self.install_registry(listobj.registry)
         self.install_registry(unicode.registry)
         self.install_registry(charseq.registry)
+        self.install_registry(tupleobj.registry)
+        self.install_registry(rangeobj.registry)
+        self.install_registry(enumimpl.registry)
+        self.install_registry(cpython_builtins.registry)
 
         # install np registries
         self.install_registry(polynomial.registry)

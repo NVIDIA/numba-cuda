@@ -24,7 +24,7 @@ from numba.cuda.utils import (
 from numba.cuda.utils import _lazy_pformat
 from numba.cuda.core.byteflow import Flow, AdaptDFA, AdaptCFA, BlockKind
 from numba.cuda.core.unsafe import eh
-from numba.cpython.unsafe.tuple import unpack_single_tuple
+from numba.cuda.cpython.unsafe.tuple import unpack_single_tuple
 
 
 if PYVERSION in ((3, 12), (3, 13)):
