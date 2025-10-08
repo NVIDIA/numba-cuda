@@ -17,6 +17,7 @@ class TestCudaMemory(CUDATestCase):
         self.context = devices.get_context()
 
     def tearDown(self):
+        self.context.reset()
         del self.context
         super(TestCudaMemory, self).tearDown()
 
