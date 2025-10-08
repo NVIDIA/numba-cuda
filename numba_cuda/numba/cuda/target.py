@@ -171,8 +171,11 @@ class CUDATargetContext(BaseContext):
         from numba.cuda.cpython import builtins as cpython_builtins
         from numba.cuda.core import optional  # noqa: F401
         from numba.cuda.misc import cffiimpl
-        from numba.np import arrayobj  # noqa: F401
-        from numba.np import npdatetime  # noqa: F401
+        from numba.cuda.np import (
+            arrayobj,
+            npdatetime,
+            polynomial,
+        )
         from . import (
             cudaimpl,
             fp16,
@@ -184,7 +187,7 @@ class CUDATargetContext(BaseContext):
         )
 
         # fix for #8940
-        from numba.np.unsafe import ndarray  # noqa F401
+        from numba.cuda.np.unsafe import ndarray  # noqa F401
 
         self.install_registry(cudaimpl.registry)
         self.install_registry(cffiimpl.registry)
@@ -207,6 +210,11 @@ class CUDATargetContext(BaseContext):
         self.install_registry(rangeobj.registry)
         self.install_registry(enumimpl.registry)
         self.install_registry(cpython_builtins.registry)
+
+        # install np registries
+        self.install_registry(polynomial.registry)
+        self.install_registry(npdatetime.registry)
+        self.install_registry(arrayobj.registry)
 
     def codegen(self):
         return self._internal_codegen

@@ -149,7 +149,7 @@ class _EnvVar(object):
                         "numba.config is deprecated for numba-cuda "
                         "and support for configuration values from it "
                         "will be removed in a future release. "
-                        "Please use numba.cuda.config."
+                        "Please use numba.cuda.core.config."
                     )
                     warnings.warn(msg, category=DeprecationWarning)
                     self.value = config_value
@@ -610,7 +610,7 @@ class _EnvReloader(object):
             "NUMBA_NUM_THREADS" in globals()
             and globals()["NUMBA_NUM_THREADS"] != _NUMBA_NUM_THREADS
         ):
-            from numba.np.ufunc import parallel
+            from numba.cuda.np.ufunc import parallel
 
             if parallel._is_initialized:
                 raise RuntimeError(
