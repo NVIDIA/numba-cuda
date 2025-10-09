@@ -37,6 +37,7 @@ from ctypes import (
     c_char_p,
     addressof,
     c_void_p,
+    c_uint8,
 )
 import contextlib
 import importlib
