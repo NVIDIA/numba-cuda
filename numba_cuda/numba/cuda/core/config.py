@@ -212,10 +212,6 @@ class _EnvReloader(object):
 
     def validate(self):
         current_module = sys.modules[__name__]
-        try:
-            CUDA_USE_NVIDIA_BINDING = current_module.CUDA_USE_NVIDIA_BINDING
-        except AttributeError:
-            CUDA_USE_NVIDIA_BINDING = 0
 
         try:
             CUDA_PER_THREAD_DEFAULT_STREAM = (
@@ -224,27 +220,24 @@ class _EnvReloader(object):
         except AttributeError:
             CUDA_PER_THREAD_DEFAULT_STREAM = 0
 
-        if CUDA_USE_NVIDIA_BINDING:  # noqa: F821
-            try:
-                import cuda  # noqa: F401
-            except ImportError as ie:
-                msg = (
-                    "CUDA Python bindings requested (the environment "
-                    "variable NUMBA_CUDA_USE_NVIDIA_BINDING is set), "
-                    f"but they are not importable: {ie.msg}."
-                )
-                warnings.warn(msg)
+        try:
+            import cuda  # noqa: F401
+        except ImportError as ie:
+            msg = (
+                "CUDA Python bindings requested (the environment "
+                "variable NUMBA_CUDA_USE_NVIDIA_BINDING is set), "
+                f"but they are not importable: {ie.msg}."
+            )
+            warnings.warn(msg)
 
-                current_module.CUDA_USE_NVIDIA_BINDING = 0
-
-            if CUDA_PER_THREAD_DEFAULT_STREAM:  # noqa: F821
-                warnings.warn(
-                    "PTDS support is handled by CUDA Python when "
-                    "using the NVIDIA binding. Please set the "
-                    "environment variable "
-                    "CUDA_PYTHON_CUDA_PER_THREAD_DEFAULT_STREAM to 1 "
-                    "instead."
-                )
+        if CUDA_PER_THREAD_DEFAULT_STREAM:  # noqa: F821
+            warnings.warn(
+                "PTDS support is handled by CUDA Python when "
+                "using the NVIDIA binding. Please set the "
+                "environment variable "
+                "CUDA_PYTHON_CUDA_PER_THREAD_DEFAULT_STREAM to 1 "
+                "instead."
+            )
 
     def process_environ(self, environ):
         def _readenv(name, ctor, default):
@@ -313,11 +306,6 @@ class _EnvReloader(object):
         # under utilize the GPU due to low occupancy. On by default.
         CUDA_LOW_OCCUPANCY_WARNINGS = _readenv(
             "NUMBA_CUDA_LOW_OCCUPANCY_WARNINGS", int, 1
-        )
-
-        # Whether to use the official CUDA Python API Bindings
-        CUDA_USE_NVIDIA_BINDING = _readenv(
-            "NUMBA_CUDA_USE_NVIDIA_BINDING", int, 0
         )
 
         # Debug flag to control compiler debug print
