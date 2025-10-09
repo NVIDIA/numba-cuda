@@ -3,7 +3,6 @@
 
 from numba.cuda.cudadrv.error import (
     CCSupportError,
-    NvrtcError,
 )
 from numba.cuda import config
 from numba.cuda.cuda_paths import get_cuda_paths
@@ -13,28 +12,14 @@ import os
 import warnings
 import functools
 
+from cuda.core.experimental import Program, ProgramOptions
+from cuda.bindings import nvrtc as bindings_nvrtc
+
 NVRTC_EXTRA_SEARCH_PATHS = _readenv(
     "NUMBA_CUDA_NVRTC_EXTRA_SEARCH_PATHS", str, ""
 ) or getattr(config, "CUDA_NVRTC_EXTRA_SEARCH_PATHS", "")
 if not hasattr(config, "CUDA_NVRTC_EXTRA_SEARCH_PATHS"):
     config.CUDA_NVRTC_EXTRA_SEARCH_PATHS = NVRTC_EXTRA_SEARCH_PATHS
-
-try:
-    # Prefer cuda.core for compilation
-    from cuda.core.experimental import Program, ProgramOptions  # type: ignore
-
-    _HAVE_CORE = True
-except Exception:  # pragma: no cover - environment dependent
-    _HAVE_CORE = False
-
-try:
-    # Use bindings for version / supported archs and as fallback for gaps
-    from cuda.bindings import nvrtc as bindings_nvrtc  # type: ignore
-
-    _HAVE_BINDINGS = True
-except Exception:  # pragma: no cover - environment dependent
-    bindings_nvrtc = None
-    _HAVE_BINDINGS = False
 
 
 @functools.cache
