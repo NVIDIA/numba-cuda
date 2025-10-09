@@ -16,32 +16,19 @@ python -m pip install \
     pytest-cov \
     coverage
 
-GET_TEST_BINARY_DIR="
-import numba_cuda
-root = numba_cuda.__file__.rstrip('__init__.py')
-test_dir = root + \"numba/cuda/tests/test_binary_generation/\"
-print(test_dir)
-"
-
-rapids-logger "Build tests"
-
-export NUMBA_CUDA_TEST_BIN_DIR=$(python -c "$GET_TEST_BINARY_DIR")
+rapids-logger "Build test binaries"
+export NUMBA_CUDA_TEST_BIN_DIR=`pwd`/testing
 pushd $NUMBA_CUDA_TEST_BIN_DIR
 make
-popd
 
 rapids-logger "Check GPU usage"
 nvidia-smi
-
-RAPIDS_TESTS_DIR=${RAPIDS_TESTS_DIR:-"${PWD}/test-results"}/
-mkdir -p "${RAPIDS_TESTS_DIR}"
-pushd "${RAPIDS_TESTS_DIR}"
 
 rapids-logger "Show Numba system info"
 python -m numba --sysinfo
 
 rapids-logger "Run Tests with Coverage"
-python -m pytest --pyargs numba.cuda.tests -v --cov
+python -m pytest -v --cov
 
 rapids-logger "Generate Markdown Coverage Report"
 python -m coverage report --format markdown >> $GITHUB_STEP_SUMMARY

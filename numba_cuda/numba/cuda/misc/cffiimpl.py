@@ -7,7 +7,7 @@ Implementation of some CFFI functions
 
 from numba.core.imputils import Registry
 from numba.core import types
-from numba.np import arrayobj
+from numba.cuda.np import arrayobj
 
 registry = Registry("cffiimpl")
 
