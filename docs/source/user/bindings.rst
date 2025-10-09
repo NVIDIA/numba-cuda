@@ -7,8 +7,11 @@ CUDA Bindings
 
 Numba-CUDA uses the official `NVIDIA CUDA Python bindings
 <https://nvidia.github.io/cuda-python/>`_ for all CUDA Driver interactions.
-The legacy internal ctypes bindings have been removed and the
-``NUMBA_CUDA_USE_NVIDIA_BINDING`` environment variable no longer has any effect.
+Numba-CUDA previously provided its own internal ctypes-based bindings; the
+public APIs exposing those bindings are kept for compatibility, but if you
+need to interact directly with the CUDA Driver or other CUDA libraries we
+recommend using the `cuda-python <https://nvidia.github.io/cuda-python/>`_
+package directly.
 
 
 Per-Thread Default Streams
