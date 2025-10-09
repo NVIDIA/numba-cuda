@@ -8,26 +8,6 @@ import warnings
 import sys
 
 
-# Enable pynvjitlink based on the following precedence:
-# 1. Config setting "CUDA_ENABLE_PYNVJITLINK" (highest priority)
-# 2. Environment variable "NUMBA_CUDA_ENABLE_PYNVJITLINK"
-# 3. Auto-detection of pynvjitlink module (lowest priority)
-
-pynvjitlink_auto_enabled = False
-
-if getattr(config, "CUDA_ENABLE_PYNVJITLINK", None) is None:
-    if (
-        _pynvjitlink_enabled_in_env := _readenv(
-            "NUMBA_CUDA_ENABLE_PYNVJITLINK", bool, None
-        )
-    ) is not None:
-        config.CUDA_ENABLE_PYNVJITLINK = _pynvjitlink_enabled_in_env
-    else:
-        pynvjitlink_auto_enabled = (
-            importlib.util.find_spec("pynvjitlink") is not None
-        )
-        config.CUDA_ENABLE_PYNVJITLINK = pynvjitlink_auto_enabled
-
 # Require NVIDIA CUDA bindings at import time
 if not (
     importlib.util.find_spec("cuda")
@@ -37,13 +17,6 @@ if not (
         "NVIDIA CUDA Python bindings not found. Install the 'cuda' package "
         "(e.g. pip install nvidia-cuda-python or numba-cuda[cuXY])."
     )
-
-if config.CUDA_ENABLE_PYNVJITLINK:
-    if not pynvjitlink_auto_enabled:
-        warnings.warn(
-            "Explicit pynvjitlink enablement is unnecessary; cuda.core will be "
-            "used where available."
-        )
 
 if config.ENABLE_CUDASIM:
     from .simulator_init import *
