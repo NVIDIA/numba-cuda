@@ -7,5 +7,5 @@ to import correctly.
 """
 
 
-def compile(src, name, cc, ltoir=False, lineinfo=False, debug=False):
+def compile(src, name, cc, ltoir=False):
     raise RuntimeError("NVRTC is not supported in the simulator")
