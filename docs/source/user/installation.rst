@@ -62,8 +62,11 @@ CUDA Bindings
 -------------
 
 Numba-CUDA uses the `NVIDIA CUDA Python bindings <https://nvidia.github.io/cuda-python/>`_
-for interacting with the CUDA Driver API. The legacy ctypes bindings and the
-``NUMBA_CUDA_USE_NVIDIA_BINDING`` environment variable have been removed.
+for interacting with the CUDA Driver API. Numba-CUDA previously provided its own
+internal ctypes-based bindings; the public APIs exposing those bindings are kept
+for compatibility, but if you need to interact directly with the CUDA Driver or
+other CUDA libraries we recommend using the `cuda-python <https://nvidia.github.io/cuda-python/>`_
+package directly.
 
 
 .. _cudatoolkit-lookup:
