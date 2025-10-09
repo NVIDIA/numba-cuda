@@ -10,7 +10,7 @@ from numba.cuda.utils import PYVERSION
 from numba.cuda.cuda_paths import get_conda_ctk_libdir
 from numba.cuda.cudadrv import driver, devices, libs
 from numba.cuda.dispatcher import CUDADispatcher
-from numba.cuda import config
+from numba.cuda import config, current_context
 from numba.cuda.tests.support import TestCase
 from pathlib import Path
 
@@ -197,9 +197,11 @@ class ContextResettingTestCase(CUDATestCase):
 
     def tearDown(self):
         super().tearDown()
-        from numba.cuda.cudadrv.devices import reset
+        #        from numba.cuda.cudadrv.devices import reset
+        current_context().reset()
 
-        reset()
+
+#        reset()
 
 
 def skip_on_cudasim(reason):
