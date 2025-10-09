@@ -29,8 +29,18 @@ If you want to manage all run-time dependencies yourself, also pass the `--no-de
 
 ## Running tests
 
+Tests must be run from the `testing` folder, which contains the pytest
+configuration and code to generate binaries used during the tests. The test
+binaries need to be built on the system on which the tests are run, so that
+they are compiled for the appropriate compute capability.
+
 ```
-pytest -n auto --pyargs numba.cuda.tests -v
+cd testing
+# Optionally, build test binaries and point to their location for the test suite
+make
+export NUMBA_CUDA_TEST_BIN_DIR=`pwd`
+# Execute tests
+pytest -n auto -v
 ```
 
 

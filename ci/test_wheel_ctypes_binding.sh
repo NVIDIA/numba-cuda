@@ -15,31 +15,22 @@ python -m pip install \
 
 # FIXME: Find a way to build the tests that does not depend on the CUDA Python bindings
 #rapids-logger "Build tests"
-#PY_SCRIPT="
-#import numba_cuda
-#root = numba_cuda.__file__.rstrip('__init__.py')
-#test_dir = root + \"numba/cuda/tests/test_binary_generation/\"
-#print(test_dir)
-#"
-#
-#NUMBA_CUDA_TEST_BIN_DIR=$(python -c "$PY_SCRIPT")
-#pushd $NUMBA_CUDA_TEST_BIN_DIR
-#NUMBA_CUDA_USE_NVIDIA_BINDING=0 make
-#popd
+rapids-logger "Copy and cd into test binaries dir"
+export NUMBA_CUDA_TEST_BIN_DIR=`pwd`/testing
+pushd $NUMBA_CUDA_TEST_BIN_DIR
+# make
 
+# Prevent the testsuite trying to use the test binaries
+unset NUMBA_CUDA_TEST_BIN_DIR
 
 rapids-logger "Check GPU usage"
 nvidia-smi
-
-RAPIDS_TESTS_DIR=${RAPIDS_TESTS_DIR:-"${PWD}/test-results"}/
-mkdir -p "${RAPIDS_TESTS_DIR}"
-pushd "${RAPIDS_TESTS_DIR}"
 
 rapids-logger "Show Numba system info"
 NUMBA_CUDA_USE_NVIDIA_BINDING=0 python -m numba --sysinfo
 
 rapids-logger "Run Tests"
 # NUMBA_CUDA_USE_NVIDIA_BINDING=0 NUMBA_CUDA_TEST_BIN_DIR=$NUMBA_CUDA_TEST_BIN_DIR python -m pytest --pyargs numba.cuda.tests -v
-NUMBA_CUDA_USE_NVIDIA_BINDING=0 python -m pytest --pyargs numba.cuda.tests -v
+NUMBA_CUDA_USE_NVIDIA_BINDING=0 python -m pytest -v
 
 popd
