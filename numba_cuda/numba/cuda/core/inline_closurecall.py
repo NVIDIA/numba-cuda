@@ -38,7 +38,7 @@ from numba.cuda.extending import intrinsic
 from numba.core.typing import signature
 
 from numba.cuda.core import postproc, rewrites
-from numba.np.unsafe.ndarray import empty_inferred as unsafe_empty_inferred
+from numba.cuda.np.unsafe.ndarray import empty_inferred as unsafe_empty_inferred
 import numpy as np
 import operator
 from numba.cuda.misc.special import prange
@@ -1088,7 +1088,7 @@ def length_of_iterator(typingctx, val):
 
         def codegen(context, builder, sig, args):
             (value,) = args
-            from numba.cpython.rangeobj import range_impl_map
+            from numba.cuda.cpython.rangeobj import range_impl_map
 
             iter_type = range_impl_map[val_type][1]
             iterobj = cgutils.create_struct_proxy(iter_type)(
@@ -1119,7 +1119,7 @@ def length_of_iterator(typingctx, val):
             intp_t = context.get_value_type(types.intp)
             iterobj = context.make_helper(builder, iterty, value=value)
             arrayty = iterty.array_type
-            from numba.np.arrayobj import make_array
+            from numba.cuda.np.arrayobj import make_array
 
             ary = make_array(arrayty)(context, builder, value=iterobj.array)
             shape = cgutils.unpack_tuple(builder, ary.shape)

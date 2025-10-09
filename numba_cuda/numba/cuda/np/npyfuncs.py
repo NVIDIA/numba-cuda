@@ -16,10 +16,10 @@ from numba.cuda.extending import overload
 from numba.core.imputils import impl_ret_untracked
 from numba.core import typing, types, errors
 from numba.cuda import cgutils
+from numba.cuda.np import npdatetime
 from numba.cuda.extending import register_jitable
-from numba.np import npdatetime
-from numba.np.math import cmathimpl, mathimpl, numbers
-from numba.np.numpy_support import numpy_version
+from numba.cuda.np.math import cmathimpl, mathimpl, numbers
+from numba.cuda.np.numpy_support import numpy_version
 
 # some NumPy constants. Note that we could generate some of them using
 # the math library, but having the values copied from npy_math seems to
@@ -398,7 +398,7 @@ def _generate_logaddexp(fnoverload, const, log1pfn, expfn):
     # Code generation for logaddexp and logaddexp2 is based on:
     # https://github.com/numpy/numpy/blob/12c2b7dd62fc0c14b81c8892ed5f4f59cc94d09c/numpy/core/src/npymath/npy_math_internal.h.src#L467-L507
 
-    @overload(fnoverload, target="cuda")
+    @overload(fnoverload)
     def ol_npy_logaddexp(x1, x2):
         if x1 != x2:
             return
@@ -452,7 +452,7 @@ def npy_log2_1p(x):
 # https://github.com/numpy/numpy/blob/12c2b7dd62fc0c14b81c8892ed5f4f59cc94d09c/numpy/core/src/npymath/npy_math_internal.h.src#L457-L460
 
 
-@overload(npy_log2_1p, target="cuda")
+@overload(npy_log2_1p)
 def ol_npy_log2_1p(x):
     LOG2E = x(_NPY_LOG2E)
 
