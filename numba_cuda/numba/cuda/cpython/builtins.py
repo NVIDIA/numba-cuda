@@ -10,7 +10,7 @@ import operator
 
 from llvmlite import ir
 
-from numba.core.imputils import (
+from numba.cuda.core.imputils import (
     call_getiter,
     call_iternext,
     impl_ret_borrowed,

@@ -33,7 +33,7 @@ from numba.core.analysis import (
     compute_use_defs,
     compute_live_variables,
 )
-from numba.core.imputils import impl_ret_untracked
+from numba.cuda.core.imputils import impl_ret_untracked
 from numba.cuda.extending import intrinsic
 from numba.core.typing import signature
 

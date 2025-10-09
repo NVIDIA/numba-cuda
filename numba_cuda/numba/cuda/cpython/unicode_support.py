@@ -16,7 +16,7 @@ import numpy as np
 
 from numba.core import types
 from numba.cuda import cgutils
-from numba.core.imputils import impl_ret_untracked
+from numba.cuda.core.imputils import impl_ret_untracked
 
 from numba.cuda.extending import overload, register_jitable
 from numba.cuda.extending import intrinsic

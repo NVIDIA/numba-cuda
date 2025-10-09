@@ -20,15 +20,15 @@ import numba
 from llvmlite import ir
 from numba import types
 from numba.cuda.cudadrv.driver import _have_nvjitlink
-from numba.core.datamodel import PrimitiveModel, StructModel
+from numba.cuda.core.datamodel import PrimitiveModel, StructModel
 from numba.core.errors import NumbaPerformanceWarning
 from numba.cuda.extending import (
     lower_cast,
     make_attribute_wrapper,
     register_model,
 )
-from numba.core.imputils import Registry as TargetRegistry
-from numba.core.imputils import lower_cast
+from numba.cuda.core.imputils import Registry as TargetRegistry
+from numba.cuda.core.imputils import lower_cast
 from numba.core.typing import signature
 from numba.cuda import CUSource, declare_device
 from numba.cuda._internal.cuda_bf16 import _type___nv_bfloat16

@@ -19,14 +19,14 @@ import operator
 import numba
 from llvmlite import ir
 from numba import types
-from numba.core.datamodel import PrimitiveModel, StructModel
+from numba.cuda.core.datamodel import PrimitiveModel, StructModel
 from numba.cuda.extending import (
     lower_cast,
     make_attribute_wrapper,
     register_model,
 )
-from numba.core.imputils import Registry as TargetRegistry
-from numba.core.imputils import lower_cast
+from numba.cuda.core.imputils import Registry as TargetRegistry
+from numba.cuda.core.imputils import lower_cast
 from numba.core.typing import signature
 from numba.core.typing.builtins import (
     BinOp,
