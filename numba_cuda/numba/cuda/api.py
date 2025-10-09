@@ -8,7 +8,6 @@ API that are reported to numba.cuda
 import contextlib
 import os
 
-from numba.cuda.cudadrv import drvapi
 import numpy as np
 
 from .cudadrv import devicearray, devices, driver
