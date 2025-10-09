@@ -26,11 +26,7 @@ def run_nvdisasm(cubin, flags):
     try:
         fd, fname = tempfile.mkstemp()
         with open(fname, "wb") as f:
-            # Support both ObjectCode (bindings/core) and raw bytes
-            if hasattr(cubin, "code"):
-                f.write(cubin.code)
-            else:
-                f.write(bytes(cubin))
+            f.write(cubin.code)
 
         try:
             cp = subprocess.run(
