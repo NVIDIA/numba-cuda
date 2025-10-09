@@ -33,6 +33,10 @@ pip install nvidia-sphinx-theme
 
 rapids-print-env
 
+# Change out of the root of the repo early so the source tree in the repo
+# doesn't confuse things
+pushd docs
+
 rapids-logger "Show Numba system info"
 python -m numba --sysinfo
 
@@ -41,7 +45,6 @@ trap "EXITCODE=1" ERR
 set +e
 
 rapids-logger "Build docs"
-pushd docs
 make html
 
 popd
