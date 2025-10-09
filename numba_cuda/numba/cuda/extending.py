@@ -29,7 +29,7 @@ from numba.cuda.core.imputils import (  # noqa: F401
 from numba.cuda.core.pythonapi import box, unbox, reflect, NativeValue  # noqa: F401
 from numba._helperlib import _import_cython_function  # noqa: F401
 from numba.cuda.serialize import ReduceMixin
-from numba.core.datamodel import models as core_models  # noqa: F401
+from numba.cuda.core.datamodel import models as core_models  # noqa: F401
 
 
 from numba.cuda.models import register_model  # noqa: F401
