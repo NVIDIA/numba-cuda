@@ -2565,9 +2565,7 @@ class _LinkerBase(metaclass=ABCMeta):
     def add_cu(self, cu, name):
         """Add CUDA source in a string to the link. The name of the source
         file should be specified in `name`."""
-        ptx, log = nvrtc.compile(
-            cu, name, self.cc, lineinfo=self.lineinfo, debug=self.debug
-        )
+        ptx, log = nvrtc.compile(cu, name, self.cc, lineinfo=self.lineinfo, debug=self.debug)
 
         if config.DUMP_ASSEMBLY:
             print(("ASSEMBLY %s" % name).center(80, "-"))
@@ -2731,12 +2729,7 @@ class _Linker(_LinkerBase):
 
     def add_cu(self, cu, name="<cudapy-cu>"):
         obj, log = nvrtc.compile(
-            cu,
-            name,
-            self.cc,
-            ltoir=self.lto,
-            lineinfo=self.lineinfo,
-            debug=self.debug,
+            cu, name, self.cc, ltoir=self.lto, lineinfo=self.lineinfo, debug=self.debug
         )
 
         if not self.lto and config.DUMP_ASSEMBLY:
