@@ -14,13 +14,11 @@ from numba import _helperlib
 from numba.core import (
     errors,
     types,
-    config,
-    lowering,
-    cgutils,
     imputils,
-    serialize,
 )
-from numba.core.utils import PYVERSION
+from numba.cuda import cgutils, lowering, config, serialize
+from numba.cuda.utils import PYVERSION
+
 
 PY_UNICODE_1BYTE_KIND = _helperlib.py_unicode_1byte_kind
 PY_UNICODE_2BYTE_KIND = _helperlib.py_unicode_2byte_kind
@@ -1540,7 +1538,7 @@ class PythonAPI(object):
         Unbox the Python object as the given Numba type.
         A NativeValue instance is returned.
         """
-        from numba.core.boxing import unbox_unsupported
+        from numba.cuda.core.boxing import unbox_unsupported
 
         impl = _unboxers.lookup(typ.__class__, unbox_unsupported)
         c = _UnboxContext(self.context, self.builder, self)
@@ -1559,7 +1557,7 @@ class PythonAPI(object):
         pointer is returned (NULL if an error occurred).
         This method steals any native (NRT) reference embedded in *val*.
         """
-        from numba.core.boxing import box_unsupported
+        from numba.cuda.core.boxing import box_unsupported
 
         impl = _boxers.lookup(typ.__class__, box_unsupported)
 

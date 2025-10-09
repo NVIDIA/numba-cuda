@@ -27,14 +27,14 @@ from numba.core.errors import (
 )
 from numba.cuda.core.funcdesc import default_mangler
 from numba.cuda.core.environment import Environment
-from numba.core.analysis import compute_use_defs, must_use_alloca
-from numba.misc.firstlinefinder import get_func_body_first_lineno
+from numba.cuda.core.analysis import compute_use_defs, must_use_alloca
+from numba.cuda.misc.firstlinefinder import get_func_body_first_lineno
 from numba import version_info
 
 numba_version = version_info.short
 del version_info
 if numba_version > (0, 60):
-    from numba.misc.coverage_support import get_registered_loc_notify
+    from numba.cuda.misc.coverage_support import get_registered_loc_notify
 
 
 _VarArgItem = namedtuple("_VarArgItem", ("vararg", "index"))
@@ -1697,33 +1697,71 @@ class CUDALower(Lower):
             self.context.enable_debuginfo
             # Conditions used to elide stores in parent method
             and self.store_var_needed(name)
-            # No emission of debuginfo for internal names
-            and not name.startswith("$")
         ):
-            # Emit debug value for user variable
             fetype = self.typeof(name)
             lltype = self.context.get_value_type(fetype)
             int_type = (llvm_ir.IntType,)
             real_type = llvm_ir.FloatType, llvm_ir.DoubleType
             if isinstance(lltype, int_type + real_type):
-                src_name = name.split(".")[0]
-                if src_name in self.poly_var_typ_map:
-                    # Do not emit debug value on polymorphic type var
-                    return
-                # Emit debug value for scalar variable
                 sizeof = self.context.get_abi_sizeof(lltype)
                 datamodel = self.context.data_model_manager[fetype]
                 line = self.loc.line if argidx is None else self.defn_loc.line
-                self.debuginfo.update_variable(
-                    self.builder,
-                    value,
-                    name,
-                    lltype,
-                    sizeof,
-                    line,
-                    datamodel,
-                    argidx,
-                )
+                if not name.startswith("$"):
+                    # Emit debug value for user variable
+                    src_name = name.split(".")[0]
+                    if src_name not in self.poly_var_typ_map:
+                        # Insert the llvm.dbg.value intrinsic call
+                        self.debuginfo.update_variable(
+                            self.builder,
+                            value,
+                            src_name,
+                            lltype,
+                            sizeof,
+                            line,
+                            datamodel,
+                            argidx,
+                        )
+                elif isinstance(value, llvm_ir.LoadInstr):
+                    # Emit debug value for user variable that falls out of the
+                    # coverage of dbg.value range per basic block
+                    ld_name = value.operands[0].name
+                    if not ld_name.startswith(("$", ".")):
+                        src_name = ld_name.split(".")[0]
+                        if (
+                            src_name not in self.poly_var_typ_map
+                            # Not yet covered by the dbg.value range
+                            and src_name not in self.dbg_val_names
+                        ):
+                            for index, item in enumerate(self.fnargs):
+                                if item.name == src_name:
+                                    argidx = index + 1
+                                    break
+                            # Insert the llvm.dbg.value intrinsic call
+                            self.debuginfo.update_variable(
+                                self.builder,
+                                value,
+                                src_name,
+                                lltype,
+                                sizeof,
+                                line,
+                                datamodel,
+                                argidx,
+                            )
+
+    def pre_block(self, block):
+        super().pre_block(block)
+
+        # dbg.value range covered names
+        self.dbg_val_names = set()
+
+        if self.context.enable_debuginfo and self._disable_sroa_like_opt:
+            for x in block.find_insts(ir.Assign):
+                if x.target.name.startswith("$"):
+                    continue
+                ssa_name = x.target.name
+                src_name = ssa_name.split(".")[0]
+                if src_name not in self.dbg_val_names:
+                    self.dbg_val_names.add(src_name)
 
     def pre_lower(self):
         """

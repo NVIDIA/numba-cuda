@@ -12,9 +12,8 @@ from numba.core import (
     errors,
     types,
     ir,
-    lowering,
 )
-from numba.cuda import typing
+from numba.cuda import typing, lowering
 from numba.cuda.core.compiler_machinery import (
     FunctionPass,
     LoweringPass,

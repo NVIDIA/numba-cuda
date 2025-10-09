@@ -10,12 +10,11 @@ import collections
 import warnings
 
 import numba
-from numba.cuda.extending import _Intrinsic
-from numba.core import types, ir, analysis
+from numba.core import types, ir
 from numba.cuda import typing
-from numba.cuda.core import postproc, rewrites, config
+from numba.cuda.core import analysis, postproc, rewrites, config
 from numba.cuda.typing.templates import signature
-from numba.core.analysis import (
+from numba.cuda.core.analysis import (
     compute_live_map,
     compute_use_defs,
     compute_cfg_from_blocks,
@@ -806,6 +805,7 @@ def has_no_side_effect(rhs, lives, call_table):
     """Returns True if this expression has no side effects that
     would prevent re-ordering.
     """
+    from numba.cuda.extending import _Intrinsic
 
     if isinstance(rhs, ir.Expr) and rhs.op == "call":
         func_name = rhs.func.name
@@ -829,13 +829,18 @@ def has_no_side_effect(rhs, lives, call_table):
             or call_list[0]._name == "unsafe_empty_inferred"
         ):
             return True
-        from numba.core.registry import CPUDispatcher
-        from numba.np.linalg import dot_3_mv_check_args
 
-        if isinstance(call_list[0], CPUDispatcher):
-            py_func = call_list[0].py_func
-            if py_func == dot_3_mv_check_args:
-                return True
+        try:
+            from numba.core.registry import CPUDispatcher
+            from numba.np.linalg import dot_3_mv_check_args
+
+            if isinstance(call_list[0], CPUDispatcher):
+                py_func = call_list[0].py_func
+                if py_func == dot_3_mv_check_args:
+                    return True
+        except ImportError:
+            pass
+
         for f in remove_call_handlers:
             if f(rhs, lives, call_list):
                 return True
@@ -1766,6 +1771,8 @@ def find_callname(
     Providing typemap can make the call matching more accurate in corner cases
     such as bounded call on an object which is inside another object.
     """
+    from numba.cuda.extending import _Intrinsic
+
     require(isinstance(expr, ir.Expr) and expr.op == "call")
     callee = expr.func
     callee_def = definition_finder(func_ir, callee)

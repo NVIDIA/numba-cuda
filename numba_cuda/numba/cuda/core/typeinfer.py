@@ -48,7 +48,7 @@ from numba.core.errors import (
     CompilerError,
     NumbaValueError,
 )
-from numba.core.funcdesc import qualifying_prefix
+from numba.cuda.core.funcdesc import qualifying_prefix
 from numba.core.typeconv import Conversion
 
 _logger = logging.getLogger(__name__)
@@ -1693,7 +1693,7 @@ https://numba.readthedocs.io/en/stable/user/troubleshoot.html#my-code-has-an-unt
                 # as a global variable
                 typ = types.Dispatcher(_temporary_dispatcher_map[gvar.name])
             else:
-                from numba.misc import special
+                from numba.cuda.misc import special
 
                 nm = gvar.name
                 # check if the problem is actually a name error
