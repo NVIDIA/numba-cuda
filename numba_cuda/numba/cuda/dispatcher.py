@@ -49,6 +49,7 @@ from numba.cuda.cudadrv.linkable_code import LinkableCode
 from numba.cuda.cudadrv.devices import get_context
 from numba.cuda.memory_management.nrt import rtsys, NRT_LIBRARY
 
+_arg_handlers = {}
 
 cuda_fp16_math_funcs = [
     "hsin",
@@ -93,8 +94,6 @@ class _Kernel(serialize.ReduceMixin):
         "NRT_incref",
     ]
 
-    _extensions = []
-
     @global_compiler_lock
     def __init__(
         self,
@@ -137,7 +136,7 @@ class _Kernel(serialize.ReduceMixin):
         self.argtypes = argtypes
         self.debug = debug
         self.lineinfo = lineinfo
-        self.extensions = (extensions or []) + self._extensions
+        self.extensions = extensions or []
         self.launch_bounds = launch_bounds
 
         nvvm_options = {"fastmath": fastmath, "opt": 3 if opt else 0}
@@ -538,8 +537,13 @@ class _Kernel(serialize.ReduceMixin):
         """
 
         # map the arguments using any extension you've registered
-        for extension in reversed(self.extensions):
-            ty, val = extension.prepare_args(ty, val, stream=stream, retr=retr)
+        if self.extensions:
+            for extension in reversed(self.extensions):
+                ty, val = extension.prepare_args(
+                    ty, val, stream=stream, retr=retr
+                )
+        elif handler := _arg_handlers.get(ty):
+            ty, val = handler.prepare_args(ty, val, stream=stream, retr=retr)
 
         if isinstance(ty, types.Array):
             devary = wrap_arg(val).to_device(retr, stream)
@@ -1536,7 +1540,9 @@ class ArgHandlerBase(ABC):
         raise NotImplementedError
 
 
-def register_arg_handler(handler):
+def register_arg_handler(handler, handled_types):
+    global _arg_handlers
     if not isinstance(handler, ArgHandlerBase):
         raise ValueError("handler must be an instance of ArgHandlerBase")
-    _Kernel._extensions.append(handler)
+    for ty in handled_types:
+        _arg_handlers[ty] = handler
