@@ -114,6 +114,8 @@ def compile(src, name, cc, ltoir=False, lineinfo=False, debug=False):
         include_path=includes,
         relocatable_device_code=True,
         link_time_optimization=ltoir,
+        lineinfo=lineinfo,
+        debug=debug,
         name=name,
     )
 

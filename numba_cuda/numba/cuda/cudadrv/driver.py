@@ -2522,13 +2522,14 @@ class _LinkerBase(metaclass=ABCMeta):
         cls,
         max_registers=0,
         lineinfo=False,
+        debug=False,
         cc=None,
         lto=None,
         additional_flags=None,
     ):
         linker = _Linker
 
-        params = (max_registers, lineinfo, cc)
+        params = (max_registers, lineinfo, debug, cc)
         if linker is _Linker:
             params = (*params, lto, additional_flags)
         else:
@@ -2538,10 +2539,14 @@ class _LinkerBase(metaclass=ABCMeta):
         return linker(*params)
 
     @abstractmethod
-    def __init__(self, max_registers, lineinfo, cc):
+    def __init__(self, max_registers, lineinfo, debug, cc):
         # LTO unsupported in Numba at present, but the pynvjitlink linker
         # (https://github.com/rapidsai/pynvjitlink) supports it,
         self.lto = False
+        self.max_registers = max_registers if max_registers else None
+        self.lineinfo = lineinfo
+        self.debug = debug
+        self.cc = cc
 
     @property
     @abstractmethod
@@ -2560,7 +2565,7 @@ class _LinkerBase(metaclass=ABCMeta):
     def add_cu(self, cu, name):
         """Add CUDA source in a string to the link. The name of the source
         file should be specified in `name`."""
-        ptx, log = nvrtc.compile(cu, name, self.cc)
+        ptx, log = nvrtc.compile(cu, name, self.cc, lineinfo=self.lineinfo, debug=self.debug)
 
         if config.DUMP_ASSEMBLY:
             print(("ASSEMBLY %s" % name).center(80, "-"))
@@ -2678,14 +2683,13 @@ class _Linker(_LinkerBase):
         self,
         max_registers=None,
         lineinfo=False,
+        debug=False,
         cc=None,
         lto=None,
         additional_flags=None,
     ):
+        super().__init__(max_registers, lineinfo, debug, cc)
         arch = f"sm_{cc[0]}{cc[1]}"
-        self.max_registers = max_registers if max_registers else None
-        self.lineinfo = lineinfo
-        self.cc = cc
         self.arch = arch
         if lto is False:
             # WAR for apparent nvjitlink issue
@@ -2724,7 +2728,9 @@ class _Linker(_LinkerBase):
         self._object_codes.append(obj)
 
     def add_cu(self, cu, name="<cudapy-cu>"):
-        obj, log = nvrtc.compile(cu, name, self.cc, ltoir=self.lto)
+        obj, log = nvrtc.compile(
+            cu, name, self.cc, ltoir=self.lto, lineinfo=self.lineinfo, debug=self.debug
+        )
 
         if not self.lto and config.DUMP_ASSEMBLY:
             print(("ASSEMBLY %s" % name).center(80, "-"))
@@ -2816,8 +2822,8 @@ class CtypesLinker(_LinkerBase):
     Links for current device if no CC given
     """
 
-    def __init__(self, max_registers=0, lineinfo=False, cc=None):
-        super().__init__(max_registers, lineinfo, cc)
+    def __init__(self, max_registers=0, lineinfo=False, debug=False, cc=None):
+        super().__init__(max_registers, lineinfo, debug, cc)
 
         logsz = config.CUDA_LOG_SIZE
         linkerinfo = (c_char * logsz)()
@@ -2834,6 +2840,8 @@ class CtypesLinker(_LinkerBase):
             options[enums.CU_JIT_MAX_REGISTERS] = c_void_p(max_registers)
         if lineinfo:
             options[enums.CU_JIT_GENERATE_LINE_INFO] = c_void_p(1)
+        if debug:
+            options[enums.CU_JIT_GENERATE_DEBUG_INFO] = c_void_p(1)
 
         self.cc = cc
         if cc is None:
