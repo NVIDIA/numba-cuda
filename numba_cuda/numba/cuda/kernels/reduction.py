@@ -5,7 +5,7 @@
 A library written in CUDA Python for generating reduction kernels
 """
 
-from numba.np.numpy_support import from_dtype
+from numba.cuda.np.numpy_support import from_dtype
 
 
 _WARPSIZE = 32

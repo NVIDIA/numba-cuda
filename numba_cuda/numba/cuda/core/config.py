@@ -545,7 +545,7 @@ class _EnvReloader(object):
             "NUMBA_NUM_THREADS" in globals()
             and globals()["NUMBA_NUM_THREADS"] != _NUMBA_NUM_THREADS
         ):
-            from numba.np.ufunc import parallel
+            from numba.cuda.np.ufunc import parallel
 
             if parallel._is_initialized:
                 raise RuntimeError(
