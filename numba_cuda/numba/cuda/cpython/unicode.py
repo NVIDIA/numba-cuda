@@ -18,7 +18,7 @@ from numba.cuda.extending import (
 from numba.cuda.core.pythonapi import box, unbox
 from numba.cuda.extending import make_attribute_wrapper, intrinsic
 from numba.cuda.models import register_model
-from numba.core.imputils import (
+from numba.cuda.core.imputils import (
     iternext_impl,
     impl_ret_new_ref,
     RefType,

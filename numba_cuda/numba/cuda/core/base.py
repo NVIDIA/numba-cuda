@@ -16,15 +16,14 @@ from numba.core import (
     types,
     datamodel,
     config,
-    imputils,
 )
 from numba.cuda import cgutils, debuginfo, utils
 from numba.core import errors
-from numba.cuda.core import targetconfig, funcdesc
+from numba.cuda.core import targetconfig, funcdesc, imputils
 from numba import _dynfunc, _helperlib
 from numba.core.compiler_lock import global_compiler_lock
 from numba.cuda.core.pythonapi import PythonAPI
-from numba.core.imputils import (
+from numba.cuda.core.imputils import (
     user_function,
     user_generator,
     builtin_registry,

@@ -18,7 +18,7 @@ from numpy.polynomial.polynomial import Polynomial
 from contextlib import ExitStack
 import numpy as np
 from llvmlite import ir
-from numba.core.imputils import Registry
+from numba.cuda.core.imputils import Registry
 
 registry = Registry("np.polynomial_core")
 lower = registry.lower
