@@ -542,7 +542,7 @@ class _Kernel(serialize.ReduceMixin):
                 ty, val = extension.prepare_args(
                     ty, val, stream=stream, retr=retr
                 )
-        elif handler := _arg_handlers.get(ty):
+        elif handler := _arg_handlers.get(type(val)):
             ty, val = handler.prepare_args(ty, val, stream=stream, retr=retr)
 
         if isinstance(ty, types.Array):
