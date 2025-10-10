@@ -108,3 +108,5 @@ if sys.platform.startswith("linux") and (sys.getdlopenflags() & 0x100) != 0:
         "sys.setdlopenflags() to disable RTLD_GLOBAL "
         "if you encounter symbol conflicts."
     )
+
+from numba.cuda.np.ufunc import vectorize, guvectorize
