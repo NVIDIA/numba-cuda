@@ -4,10 +4,10 @@
 import itertools
 
 from numba.core import errors, types, typing
-from numba.core.typeconv import Conversion
+from numba.cuda.typeconv import Conversion
 
 from numba.cuda.testing import CUDATestCase, skip_on_cudasim
-from numba.tests.test_typeconv import CompatibilityTestMixin
+from numba.cuda.tests.cudapy.test_typeconv import CompatibilityTestMixin
 from numba.cuda.core.untyped_passes import TranslateByteCode, IRProcessing
 from numba.cuda.core.typed_passes import PartialTypeInference
 from numba.cuda.core.compiler_machinery import FunctionPass, register_pass

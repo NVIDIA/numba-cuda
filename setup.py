@@ -78,6 +78,16 @@ def get_ext_modules():
         **np_compile_args,
     )
 
+    ext_typeconv = Extension(
+        name="numba_cuda.numba.cuda.cext._typeconv",
+        sources=[
+            "numba_cuda/numba/cuda/cext/typeconv.cpp",
+            "numba_cuda/numba/cuda/cext/_typeconv.cpp",
+        ],
+        depends=["numba_cuda/numba/cuda/cext/_pymodule.h"],
+        extra_compile_args=["-std=c++11"],
+    )
+
     # Append our cext dir to include_dirs
     ext_dispatcher.include_dirs.append("numba_cuda/numba/cuda/cext")
 
@@ -91,7 +101,13 @@ def get_ext_modules():
         include_dirs=["numba_cuda/numba/cuda/cext"],
     )
 
-    return [ext_dispatcher, ext_helperlib, ext_mviewbuf, ext_devicearray]
+    return [
+        ext_dispatcher,
+        ext_typeconv,
+        ext_helperlib,
+        ext_mviewbuf,
+        ext_devicearray,
+    ]
 
 
 def is_building():
