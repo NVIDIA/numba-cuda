@@ -32,10 +32,7 @@ test_data_dir = numba_cuda_dir / "tests" / "data"
 @pytest.mark.usefixtures("initialize_from_pytest_config")
 class CUDATestCase(TestCase):
     """
-    For tests that use a CUDA device. Test methods in a CUDATestCase must not
-    be run out of module order, because the ContextResettingTestCase may reset
-    the context and destroy resources used by a normal CUDATestCase if any of
-    its tests are run between tests from a CUDATestCase.
+    For tests that use a CUDA device.
 
     Methods assertFileCheckAsm and assertFileCheckLLVM will inspect a
     CUDADispatcher and assert that the compilation artifacts match the
@@ -185,21 +182,6 @@ class CUDATestCase(TestCase):
                 f"FileCheck failed:\n{matcher.stderr.getvalue()}\n\n"
                 + dump_instructions
             )
-
-
-class ContextResettingTestCase(CUDATestCase):
-    """
-    For tests where the context needs to be reset after each test. Typically
-    these inspect or modify parts of the context that would usually be expected
-    to be internal implementation details (such as the state of allocations and
-    deallocations, etc.).
-    """
-
-    def tearDown(self):
-        super().tearDown()
-        from numba.cuda.cudadrv.devices import reset
-
-        reset()
 
 
 def skip_on_cudasim(reason):

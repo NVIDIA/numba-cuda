@@ -4,10 +4,13 @@
 import numpy as np
 from numba.cuda.cudadrv import driver
 from numba import cuda
-from numba.cuda.testing import unittest, ContextResettingTestCase
+from numba.cuda.testing import unittest, CUDATestCase
 
 
-class TestHostAlloc(ContextResettingTestCase):
+class TestHostAlloc(CUDATestCase):
+    def tearDown(self):
+        cuda.current_context().reset()
+
     def test_host_alloc_driver(self):
         n = 32
         mem = cuda.current_context().memhostalloc(n, mapped=True)

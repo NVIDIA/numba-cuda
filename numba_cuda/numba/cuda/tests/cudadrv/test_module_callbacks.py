@@ -11,7 +11,6 @@ from numba.cuda import config
 from numba.cuda.cudadrv.linkable_code import CUSource
 from numba.cuda.testing import (
     CUDATestCase,
-    ContextResettingTestCase,
     skip_on_cudasim,
 )
 
@@ -42,7 +41,7 @@ def get_hashable_handle_value(handle):
 
 
 @skip_on_cudasim("Module loading not implemented in the simulator")
-class TestModuleCallbacksBasic(ContextResettingTestCase):
+class TestModuleCallbacksBasic(CUDATestCase):
     def test_basic(self):
         counter = 0
 

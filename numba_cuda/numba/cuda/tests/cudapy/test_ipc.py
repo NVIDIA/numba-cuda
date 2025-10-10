@@ -15,7 +15,7 @@ from numba.cuda.testing import (
     skip_on_cudasim,
     skip_under_cuda_memcheck,
     skip_on_wsl2,
-    ContextResettingTestCase,
+    CUDATestCase,
     ForeignArray,
 )
 from numba.cuda.tests.support import linux_only, windows_only
@@ -95,7 +95,7 @@ def ipc_array_test(ipcarr, result_queue):
 @skip_on_cudasim("Ipc not available in CUDASIM")
 @skip_on_arm("CUDA IPC not supported on ARM in Numba")
 @skip_on_wsl2("CUDA IPC unreliable on WSL2; skipping IPC tests")
-class TestIpcMemory(ContextResettingTestCase):
+class TestIpcMemory(CUDATestCase):
     def test_ipc_handle(self):
         # prepare data for IPC
         arr = np.arange(10, dtype=np.intp)
@@ -264,7 +264,7 @@ def staged_ipc_array_test(ipcarr, device_num, result_queue):
 @skip_on_cudasim("Ipc not available in CUDASIM")
 @skip_on_arm("CUDA IPC not supported on ARM in Numba")
 @skip_on_wsl2("CUDA IPC unreliable on WSL2; skipping IPC tests")
-class TestIpcStaged(ContextResettingTestCase):
+class TestIpcStaged(CUDATestCase):
     def test_staged(self):
         # prepare data for IPC
         arr = np.arange(10, dtype=np.intp)
@@ -324,7 +324,7 @@ class TestIpcStaged(ContextResettingTestCase):
 
 @windows_only
 @skip_on_cudasim("Ipc not available in CUDASIM")
-class TestIpcNotSupported(ContextResettingTestCase):
+class TestIpcNotSupported(CUDATestCase):
     def test_unsupported(self):
         arr = np.arange(10, dtype=np.intp)
         devarr = cuda.to_device(arr)
