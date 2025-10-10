@@ -91,7 +91,23 @@ def get_ext_modules():
     # Append our cext dir to include_dirs
     ext_dispatcher.include_dirs.append("numba_cuda/numba/cuda/cext")
 
-    return [ext_dispatcher, ext_typeconv, ext_mviewbuf, ext_devicearray]
+    ext_helperlib = Extension(
+        name="numba_cuda.numba.cuda.cext._helperlib",
+        sources=["numba_cuda/numba/cuda/cext/_helpermod.c"],
+        depends=[
+            "numba_cuda/numba/cuda/cext/_pymodule.h",
+            "numba_cuda/numba/cuda/cext/_helperlib.c",
+        ],
+        include_dirs=["numba_cuda/numba/cuda/cext"],
+    )
+
+    return [
+        ext_dispatcher,
+        ext_typeconv,
+        ext_helperlib,
+        ext_mviewbuf,
+        ext_devicearray,
+    ]
 
 
 def is_building():
