@@ -7,7 +7,7 @@ Implementation of various iterable and iterator types.
 
 from numba.core import types
 from numba.cuda import cgutils
-from numba.core.imputils import (
+from numba.cuda.core.imputils import (
     iternext_impl,
     call_iternext,
     call_getiter,

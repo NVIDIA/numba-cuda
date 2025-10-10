@@ -7,7 +7,7 @@ Implementation of tuple objects
 
 import operator
 
-from numba.core.imputils import (
+from numba.cuda.core.imputils import (
     Registry,
     iternext_impl,
     impl_ret_borrowed,

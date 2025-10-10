@@ -6,7 +6,7 @@ from llvmlite import ir
 from numba.core import types
 from numba.cuda import cgutils
 from numba.core.errors import NumbaWarning
-from numba.core.imputils import Registry
+from numba.cuda.core.imputils import Registry
 from numba.cuda import nvvmutils
 from numba.cuda.types import Dim3, Bfloat16
 from warnings import warn

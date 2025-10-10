@@ -6,7 +6,7 @@ import operator
 from numba.core import types, typing
 from numba.cuda import cgutils
 
-from numba.core.imputils import Registry, impl_ret_untracked
+from numba.cuda.core.imputils import Registry, impl_ret_untracked
 
 registry = Registry("optional")
 lower_builtin = registry.lower
