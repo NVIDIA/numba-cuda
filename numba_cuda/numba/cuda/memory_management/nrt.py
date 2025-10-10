@@ -23,7 +23,7 @@ from numba.cuda.utils import cached_file_read
 from numba.cuda.cudadrv.linkable_code import CUSource
 from numba.cuda.typing.templates import signature
 
-from numba.core.extending import intrinsic, overload_classmethod
+from numba.cuda.extending import intrinsic, overload_classmethod
 
 _nrt_mstats = namedtuple("nrt_mstats", ["alloc", "free", "mi_alloc", "mi_free"])
 

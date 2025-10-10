@@ -9,13 +9,12 @@ from functools import partial
 from llvmlite import ir as llvm_ir
 
 from numba.core import (
-    typing,
     types,
     ir,
     generators,
     removerefctpass,
 )
-from numba.cuda import debuginfo, cgutils, utils
+from numba.cuda import debuginfo, cgutils, utils, typing
 from numba.cuda.core import ir_utils, targetconfig, funcdesc, config
 
 from numba.core.errors import (

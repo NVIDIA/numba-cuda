@@ -21,16 +21,22 @@ from numba.core.errors import (
     InternalError,
 )
 from numba.cuda.core.options import InlineOptions
-from numba.core.typing.templates import Signature as CoreSignature
 from numba.cuda import utils
-from numba.cuda.core import ir_utils, targetconfig
+from numba.cuda.core import targetconfig
+
+try:
+    from numba.core.typing import Signature as CoreSignature
+
+    numba_sig_present = True
+except ImportError:
+    numba_sig_present = False
+
 
 # info store for inliner callback functions e.g. cost model
 _inline_info = namedtuple("inline_info", "func_ir typemap calltypes signature")
 
 
-# HACK: Remove this inheritance once all references to CoreSignature are removed
-class Signature(CoreSignature):
+class Signature(object):
     """
     The signature of a function call or operation, i.e. its argument types
     and return type.
@@ -93,7 +99,10 @@ class Signature(CoreSignature):
         return hash((self.args, self.return_type))
 
     def __eq__(self, other):
-        if isinstance(other, Signature):
+        sig_types = (Signature,)
+        if numba_sig_present:
+            sig_types = (Signature, CoreSignature)
+        if isinstance(other, sig_types):
             return (
                 self.args == other.args
                 and self.return_type == other.return_type
@@ -374,10 +383,10 @@ class AbstractTemplate(FunctionTemplate):
         sig = generic(args, kws)
         # Enforce that *generic()* must return None or Signature
         if sig is not None:
-            # HACK: Remove this inheritance once all references to CoreSignature are removed
-            if not isinstance(
-                sig, (Signature, numba.core.typing.templates.Signature)
-            ):
+            sig_types = (Signature,)
+            if numba_sig_present:
+                sig_types = (Signature, CoreSignature)
+            if not isinstance(sig, sig_types):
                 raise AssertionError(
                     "generic() must return a Signature or None. "
                     "{} returned {}".format(generic, type(sig)),
@@ -659,11 +668,12 @@ class _OverloadFunctionTemplate(AbstractTemplate):
         if not self._inline.is_never_inline:
             # need to run the compiler front end up to type inference to compute
             # a signature
-            from numba.cuda.core import typed_passes, compiler
+            from numba.cuda.core import typed_passes
+            from numba.cuda.flags import Flags
             from numba.cuda.core.inline_closurecall import InlineWorker
 
             fcomp = disp._compiler
-            flags = compiler.Flags()
+            flags = Flags()
 
             # Updating these causes problems?!
             # fcomp.targetdescr.options.parse_as_flags(flags,
@@ -711,7 +721,9 @@ class _OverloadFunctionTemplate(AbstractTemplate):
                 )
             )
             ir = PreLowerStripPhis()._strip_phi_nodes(ir)
-            ir._definitions = ir_utils.build_definitions(ir.blocks)
+            ir._definitions = numba.cuda.core.ir_utils.build_definitions(
+                ir.blocks
+            )
 
             sig = Signature(return_type, folded_args, None)
             # this stores a load of info for the cost model function if supplied
@@ -1447,3 +1459,9 @@ class RegistryLoader(BaseRegistryLoader):
     """
 
     registry_items = ("functions", "attributes", "globals")
+
+
+builtin_registry = Registry()
+infer = builtin_registry.register
+infer_getattr = builtin_registry.register_attr
+infer_global = builtin_registry.register_global

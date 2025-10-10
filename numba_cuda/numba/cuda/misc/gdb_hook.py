@@ -9,7 +9,7 @@ from llvmlite import ir
 from numba.core import types, config, errors
 from numba.cuda import cgutils, utils
 from numba.cuda.misc.special import gdb, gdb_init, gdb_breakpoint
-from numba.core.extending import overload, intrinsic
+from numba.cuda.extending import overload, intrinsic
 
 _path = os.path.dirname(__file__)
 

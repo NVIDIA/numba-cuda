@@ -11,10 +11,9 @@ from numba.cuda.core import typeinfer
 from numba.core import (
     errors,
     types,
-    typing,
     ir,
 )
-from numba.cuda import lowering
+from numba.cuda import typing, lowering
 from numba.cuda.core.compiler_machinery import (
     FunctionPass,
     LoweringPass,
@@ -717,7 +716,7 @@ class InlineOverloads(FunctionPass):
     ):
         do_inline = True
         if not inline_type.is_always_inline:
-            from numba.core.typing.templates import _inline_info
+            from numba.cuda.typing.templates import _inline_info
 
             caller_inline_info = _inline_info(
                 state.func_ir, state.typemap, state.calltypes, sig

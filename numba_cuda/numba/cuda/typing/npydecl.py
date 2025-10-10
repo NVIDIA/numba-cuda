@@ -597,6 +597,103 @@ def parse_dtype(dtype):
         return from_dtype(dt)
 
 
+def _parse_nested_sequence(context, typ):
+    """
+    Parse a (possibly 0d) nested sequence type.
+    A (ndim, dtype) tuple is returned.  Note the sequence may still be
+    heterogeneous, as long as it converts to the given dtype.
+    """
+    if isinstance(typ, (types.Buffer,)):
+        raise TypingError("%s not allowed in a homogeneous sequence" % typ)
+    elif isinstance(typ, (types.Sequence,)):
+        n, dtype = _parse_nested_sequence(context, typ.dtype)
+        return n + 1, dtype
+    elif isinstance(typ, (types.BaseTuple,)):
+        if typ.count == 0:
+            # Mimic Numpy's behaviour
+            return 1, types.float64
+        n, dtype = _parse_nested_sequence(context, typ[0])
+        dtypes = [dtype]
+        for i in range(1, typ.count):
+            _n, dtype = _parse_nested_sequence(context, typ[i])
+            if _n != n:
+                raise TypingError(
+                    "type %s does not have a regular shape" % (typ,)
+                )
+            dtypes.append(dtype)
+        dtype = context.unify_types(*dtypes)
+        if dtype is None:
+            raise TypingError("cannot convert %s to a homogeneous type" % typ)
+        return n + 1, dtype
+    else:
+        # Scalar type => check it's valid as a Numpy array dtype
+        as_dtype(typ)
+        return 0, typ
+
+
+def _homogeneous_dims(context, func_name, arrays):
+    ndim = arrays[0].ndim
+    for a in arrays:
+        if a.ndim != ndim:
+            msg = (
+                f"{func_name}(): all the input arrays must have same number "
+                "of dimensions"
+            )
+            raise NumbaTypeError(msg)
+    return ndim
+
+
+def _sequence_of_arrays(
+    context, func_name, arrays, dim_chooser=_homogeneous_dims
+):
+    if (
+        not isinstance(arrays, types.BaseTuple)
+        or not len(arrays)
+        or not all(isinstance(a, types.Array) for a in arrays)
+    ):
+        raise TypingError(
+            "%s(): expecting a non-empty tuple of arrays, "
+            "got %s" % (func_name, arrays)
+        )
+
+    ndim = dim_chooser(context, func_name, arrays)
+
+    dtype = context.unify_types(*(a.dtype for a in arrays))
+    if dtype is None:
+        raise TypingError(
+            "%s(): input arrays must have compatible dtypes" % func_name
+        )
+
+    return dtype, ndim
+
+
+def _choose_concatenation_layout(arrays):
+    # Only create a F array if all input arrays have F layout.
+    # This is a simplified version of Numpy's behaviour,
+    # while Numpy's actually processes the input strides to
+    # decide on optimal output strides
+    # (see PyArray_CreateMultiSortedStridePerm()).
+    return "F" if all(a.layout == "F" for a in arrays) else "C"
+
+
+# -----------------------------------------------------------------------------
+# Linear algebra
+
+
+def _check_linalg_matrix(a, func_name):
+    if not isinstance(a, types.Array):
+        return
+    if not a.ndim == 2:
+        raise TypingError(
+            "np.linalg.%s() only supported on 2-D arrays" % func_name
+        )
+    if not isinstance(a.dtype, (types.Float, types.Complex)):
+        raise TypingError(
+            "np.linalg.%s() only supported on "
+            "float and complex arrays" % func_name
+        )
+
+
 # -----------------------------------------------------------------------------
 # Miscellaneous functions
 

@@ -13,7 +13,7 @@ from numba.core.compiler_lock import global_compiler_lock
 from numba.core.dispatcher import Dispatcher
 from numba.core.errors import NumbaWarning
 from numba.cuda.core.base import BaseContext
-from numba.core.typing import cmathdecl
+from numba.cuda.typing import cmathdecl
 from numba.core import datamodel
 
 from .cudadrv import nvvm
@@ -46,8 +46,9 @@ class CUDATypingContext(typing.BaseContext):
             libdevicedecl,
             vector_types,
         )
-        from numba.cuda.typing import enumdecl, cffi_utils
+        from numba.cuda.typing import enumdecl, cffi_utils, collections
 
+        self.install_registry(collections.registry)
         self.install_registry(cudadecl.registry)
         self.install_registry(cffi_utils.registry)
         self.install_registry(cudamath.registry)
