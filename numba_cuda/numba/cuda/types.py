@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: BSD-2-Clause
 
 from numba.core import types
-from numba.core.typeconv import Conversion
+from numba.cuda.typeconv import Conversion
 
 
 class Dim3(types.Type):

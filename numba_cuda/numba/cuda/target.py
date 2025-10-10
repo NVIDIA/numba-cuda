@@ -94,7 +94,7 @@ class CUDATypingContext(typing.BaseContext):
     def can_convert(self, fromty, toty):
         """
         Check whether conversion is possible from *fromty* to *toty*.
-        If successful, return a numba.typeconv.Conversion instance;
+        If successful, return a numba.cuda.typeconv.Conversion instance;
         otherwise None is returned.
         """
 
