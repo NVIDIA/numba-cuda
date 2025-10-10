@@ -343,6 +343,19 @@ __device__ int foo(int x) {
         ptx = linker.get_linked_ptx().decode()
         assert "target sm_75" in ptx
 
+    @skip_if_nvjitlink_missing("nvJitLink not installed or new enough (>12.3)")
+    def test_linking_cu_lineinfo_in_linked_ptx(self):
+        # Ensure lineinfo is propagated into NVRTC when compiling CU for linking
+        linker = _Linker.new(cc=cuda.get_current_device().compute_capability, lto=True)
+        cu_path = str(test_data_dir / "jitlink.cu")
+        # Add CU with a filename so the `.file` directive is predictable
+        with open(cu_path, "r") as f:
+            cu_src = f.read()
+        linker.lineinfo = True
+        linker.add_cu(cu_src, "jitlink.cu")
+        ptx = linker.get_linked_ptx().decode()
+        self.assertRegex(ptx, r"\\.file.*jitlink\\.cu")
+
 
 if __name__ == "__main__":
     unittest.main()

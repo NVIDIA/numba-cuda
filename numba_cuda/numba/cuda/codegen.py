@@ -247,8 +247,15 @@ class CUDACodeLibrary(serialize.ReduceMixin, CodeLibrary):
 
         cc = self._ensure_cc(cc)
 
+        # Determine debug/lineinfo from the owning codegen's flags if present
+        cg_flags = getattr(self.codegen, "flags", None)
+        lineinfo = bool(getattr(cg_flags, "dbg_directives_only", False))
+        debuginfo = bool(getattr(cg_flags, "debuginfo", False)) and not lineinfo
+
         linker = driver._Linker.new(
             max_registers=self._max_registers,
+            lineinfo=lineinfo,
+            debug=debuginfo,
             cc=cc,
             additional_flags=["-ptx"],
             lto=self._lto,
@@ -308,8 +315,16 @@ class CUDACodeLibrary(serialize.ReduceMixin, CodeLibrary):
             print(ptx)
             print("=" * 80)
 
+        cg_flags = getattr(self.codegen, "flags", None)
+        lineinfo = bool(getattr(cg_flags, "dbg_directives_only", False))
+        debuginfo = bool(getattr(cg_flags, "debuginfo", False)) and not lineinfo
+
         linker = driver._Linker.new(
-            max_registers=self._max_registers, cc=cc, lto=self._lto
+            max_registers=self._max_registers,
+            lineinfo=lineinfo,
+            debug=debuginfo,
+            cc=cc,
+            lto=self._lto,
         )
         self._link_all(linker, cc, ignore_nonlto=False)
         cubin = linker.complete()
