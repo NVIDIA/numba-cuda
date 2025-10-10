@@ -6,11 +6,14 @@ import operator
 from numba.core import types, errors
 from numba.cuda.typing.templates import (
     AbstractTemplate,
-    infer_global,
+    Registry,
     signature,
 )
 from numba.cuda.np import npdatetime_helpers
 from numba.cuda.np.numpy_support import numpy_version
+
+registry = Registry()
+infer_global = registry.register_global
 
 
 # timedelta64-only operations

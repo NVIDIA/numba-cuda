@@ -10,9 +10,7 @@ from numba.cuda import utils
 from numba.cuda.typing.templates import (
     AttributeTemplate,
     AbstractTemplate,
-    infer,
-    infer_global,
-    infer_getattr,
+    Registry,
     signature,
     bound_function,
 )
@@ -31,6 +29,12 @@ from numba.core.errors import (
 from numba.cuda.cgutils import is_nonelike
 
 numpy_version = tuple(map(int, np.__version__.split(".")[:2]))
+
+
+registry = Registry()
+infer = registry.register
+infer_global = registry.register_global
+infer_getattr = registry.register_attr
 
 
 Indexing = namedtuple("Indexing", ("index", "result", "advanced"))

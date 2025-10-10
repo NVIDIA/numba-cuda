@@ -10,9 +10,9 @@ import contextlib
 import operator
 
 from numba.core import types, errors
-from numba.core.typeconv import Conversion, rules
+from numba.cuda.typeconv import Conversion, rules
 from numba.cuda.typing.typeof import typeof, Purpose
-from numba.core.typing import templates
+from numba.cuda.typing import templates
 from numba.cuda import utils
 from numba.cuda.utils import order_by_target_specificity
 
@@ -395,10 +395,13 @@ class BaseContext(object):
 
     def _load_builtins(self):
         # Initialize declarations
-        from numba.core.typing import builtins, arraydecl, npdatetime  # noqa: F401, E501
-        from numba.core.typing import ctypes_utils, bufproto  # noqa: F401, E501
-        from numba.core.unsafe import eh  # noqa: F401
+        from numba.cuda.typing import builtins, arraydecl, npdatetime
+        from numba.cuda.typing import ctypes_utils, bufproto  # noqa: F401, E501
+        from numba.cuda.core.unsafe import eh  # noqa: F401
 
+        self.install_registry(builtins.registry)
+        self.install_registry(arraydecl.registry)
+        self.install_registry(npdatetime.registry)
         self.install_registry(templates.builtin_registry)
 
     def load_additional_registries(self):

@@ -46,8 +46,9 @@ class CUDATypingContext(typing.BaseContext):
             libdevicedecl,
             vector_types,
         )
-        from numba.cuda.typing import enumdecl, cffi_utils
+        from numba.cuda.typing import enumdecl, cffi_utils, collections
 
+        self.install_registry(collections.registry)
         self.install_registry(cudadecl.registry)
         self.install_registry(cffi_utils.registry)
         self.install_registry(cudamath.registry)
@@ -88,7 +89,7 @@ class CUDATypingContext(typing.BaseContext):
     def can_convert(self, fromty, toty):
         """
         Check whether conversion is possible from *fromty* to *toty*.
-        If successful, return a numba.typeconv.Conversion instance;
+        If successful, return a numba.cuda.typeconv.Conversion instance;
         otherwise None is returned.
         """
 

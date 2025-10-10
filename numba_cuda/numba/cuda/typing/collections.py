@@ -7,12 +7,15 @@ import operator
 from .templates import (
     AttributeTemplate,
     AbstractTemplate,
-    infer_global,
-    infer_getattr,
+    Registry,
     signature,
     make_callable_template,
 )
 from .builtins import normalize_1d_index
+
+registry = Registry()
+infer_global = registry.register_global
+infer_getattr = registry.register_attr
 
 
 @infer_global(operator.contains)

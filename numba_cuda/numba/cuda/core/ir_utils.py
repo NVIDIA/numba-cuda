@@ -832,7 +832,7 @@ def has_no_side_effect(rhs, lives, call_table):
 
         try:
             from numba.core.registry import CPUDispatcher
-            from numba.np.linalg import dot_3_mv_check_args
+            from numba.cuda.np.linalg import dot_3_mv_check_args
 
             if isinstance(call_list[0], CPUDispatcher):
                 py_func = call_list[0].py_func

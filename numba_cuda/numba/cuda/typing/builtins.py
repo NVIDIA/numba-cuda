@@ -14,22 +14,24 @@ from numba.cuda.typing.templates import (
     AttributeTemplate,
     ConcreteTemplate,
     AbstractTemplate,
-    infer_global,
-    infer,
-    infer_getattr,
+    Registry,
     signature,
     bound_function,
     make_callable_template,
 )
 
-
-from numba.core.extending import (
+from numba.cuda.extending import (
     typeof_impl,
     type_callable,
-    models,
+    core_models,
     register_model,
     make_attribute_wrapper,
 )
+
+registry = Registry()
+infer = registry.register
+infer_global = registry.register_global
+infer_getattr = registry.register_attr
 
 
 @infer_global(print)
@@ -1197,13 +1199,13 @@ def type_index_value(context):
 
 
 @register_model(IndexValueType)
-class IndexValueModel(models.StructModel):
+class IndexValueModel(core_models.StructModel):
     def __init__(self, dmm, fe_type):
         members = [
             ("index", types.intp),
             ("value", fe_type.val_typ),
         ]
-        models.StructModel.__init__(self, dmm, fe_type, members)
+        core_models.StructModel.__init__(self, dmm, fe_type, members)
 
 
 make_attribute_wrapper(IndexValueType, "index", "index")

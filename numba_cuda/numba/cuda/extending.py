@@ -10,13 +10,13 @@ import weakref
 import collections
 import functools
 
-from numba.core import types, errors, config
-from numba.cuda import utils
+from numba.core import types, errors
+from numba.cuda import utils, config
 
 # # Exported symbols
-from numba.core.typing.typeof import typeof_impl  # noqa: F401
-from numba.core.typing.asnumbatype import as_numba_type  # noqa: F401
-from numba.core.typing.templates import infer, infer_getattr  # noqa: F401
+from numba.cuda.typing.typeof import typeof_impl  # noqa: F401
+from numba.cuda.typing.asnumbatype import as_numba_type  # noqa: F401
+from numba.cuda.typing.templates import infer, infer_getattr  # noqa: F401
 
 from numba.core.imputils import (  # noqa: F401
     lower_builtin,
@@ -27,7 +27,6 @@ from numba.core.imputils import (  # noqa: F401
     lower_cast,
 )  # noqa: F401
 from numba.cuda.core.pythonapi import box, unbox, reflect, NativeValue  # noqa: F401
-from numba._helperlib import _import_cython_function  # noqa: F401
 from numba.cuda.serialize import ReduceMixin
 from numba.core.datamodel import models as core_models  # noqa: F401
 
@@ -95,7 +94,7 @@ def type_callable(func):
     *func* can be a callable object (probably a global) or a string
     denoting a built-in operation (such 'getitem' or '__array_wrap__')
     """
-    from numba.core.typing.templates import (
+    from numba.cuda.typing.templates import (
         CallableTemplate,
         infer,
         infer_global,
@@ -197,7 +196,7 @@ def overload(
     template. The only accepted key at present is 'target' which is a string
     corresponding to the target that this overload should be bound against.
     """
-    from numba.core.typing.templates import make_overload_template, infer_global
+    from numba.cuda.typing.templates import make_overload_template, infer_global
 
     # set default options
     opts = _overload_default_jit_options.copy()
@@ -215,6 +214,31 @@ def overload(
         infer(template)
         if callable(func):
             infer_global(func, types.Function(template))
+
+        # For generic/CPU targets, also register in numba.core registry
+        if target in ("generic", "cpu"):
+            try:
+                from numba.core.typing.templates import (
+                    make_overload_template as core_make_overload_template,
+                    infer as core_infer,
+                    infer_global as core_infer_global,
+                )
+
+                core_template = core_make_overload_template(
+                    func,
+                    overload_func,
+                    opts,
+                    strict,
+                    inline,
+                    prefer_literal,
+                    **kwargs,
+                )
+                core_infer(core_template)
+                if callable(func):
+                    core_infer_global(func, types.Function(core_template))
+            except ImportError:
+                pass
+
         return overload_func
 
     return decorate
@@ -271,7 +295,7 @@ def overload_attribute(typ, attr, target="cuda", **kwargs):
             return get
     """
     # TODO implement setters
-    from numba.core.typing.templates import make_overload_attribute_template
+    from numba.cuda.typing.templates import make_overload_attribute_template
 
     kwargs["target"] = target
 
@@ -280,6 +304,22 @@ def overload_attribute(typ, attr, target="cuda", **kwargs):
             typ, attr, overload_func, **kwargs
         )
         infer_getattr(template)
+
+        # For generic/CPU targets, also register in numba.core registry
+        if target in ("generic", "cpu"):
+            try:
+                from numba.core.typing.templates import (
+                    make_overload_attribute_template as core_make_overload_attribute_template,
+                    infer_getattr as core_infer_getattr,
+                )
+
+                core_template = core_make_overload_attribute_template(
+                    typ, attr, overload_func, **kwargs
+                )
+                core_infer_getattr(core_template)
+            except ImportError:
+                pass
+
         overload(overload_func, **kwargs)(overload_func)
         return overload_func
 
@@ -288,7 +328,7 @@ def overload_attribute(typ, attr, target="cuda", **kwargs):
 
 def _overload_method_common(typ, attr, **kwargs):
     """Common code for overload_method and overload_classmethod"""
-    from numba.core.typing.templates import make_overload_method_template
+    from numba.cuda.typing.templates import make_overload_method_template
 
     def decorate(overload_func):
         copied_kwargs = kwargs.copy()  # avoid mutating parent dict
@@ -301,6 +341,29 @@ def _overload_method_common(typ, attr, **kwargs):
             **copied_kwargs,
         )
         infer_getattr(template)
+
+        # For generic/CPU targets, also register in numba.core registry
+        target = kwargs.get("target", "cuda")
+        if target in ("generic", "cpu"):
+            try:
+                from numba.core.typing.templates import (
+                    make_overload_method_template as core_make_overload_method_template,
+                    infer_getattr as core_infer_getattr,
+                )
+
+                copied_kwargs2 = kwargs.copy()
+                core_template = core_make_overload_method_template(
+                    typ,
+                    attr,
+                    overload_func,
+                    inline=copied_kwargs2.pop("inline", "never"),
+                    prefer_literal=copied_kwargs2.pop("prefer_literal", False),
+                    **copied_kwargs2,
+                )
+                core_infer_getattr(core_template)
+            except ImportError:
+                pass
+
         overload(overload_func, **kwargs)(overload_func)
         return overload_func
 
@@ -407,7 +470,7 @@ class _Intrinsic(ReduceMixin):
 
     def _register(self):
         # _ctor_kwargs
-        from numba.core.typing.templates import (
+        from numba.cuda.typing.templates import (
             make_intrinsic_template,
             infer_global,
         )
