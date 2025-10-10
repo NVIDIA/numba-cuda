@@ -14,10 +14,9 @@ from llvmlite.ir import Constant
 from numba.core import (
     types,
     datamodel,
-    config,
     imputils,
 )
-from numba.cuda import cgutils, debuginfo, utils
+from numba.cuda import cgutils, debuginfo, utils, config
 from numba.core import errors
 from numba.cuda.core import targetconfig, funcdesc
 from numba.core.compiler_lock import global_compiler_lock
@@ -823,14 +822,15 @@ class BaseContext(object):
         Note this context's flags are not inherited.
         """
         # Compile
-        from numba.core import compiler
+        from numba.cuda import compiler
+        from numba.cuda.flags import Flags
 
         with global_compiler_lock:
             codegen = self.codegen()
             library = codegen.create_library(impl.__name__)
             if flags is None:
                 cstk = targetconfig.ConfigStack()
-                flags = compiler.Flags()
+                flags = Flags()
                 if cstk:
                     tls_flags = cstk.top()
                     if tls_flags.is_set("nrt") and tls_flags.nrt:
