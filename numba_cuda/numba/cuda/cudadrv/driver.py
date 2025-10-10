@@ -123,6 +123,7 @@ def _have_nvjitlink():
             return False
         try:
             from cuda.bindings import nvjitlink
+
             if nvjitlink.version() < (12, 3):
                 return False
         except Exception:
