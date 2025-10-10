@@ -1,25 +1,7 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-2-Clause
 
-try:
-    # This is usually the the first C extension import performed when importing
-    # Numba, if it fails to import, provide some feedback
-    from numba.cuda.cext import _typeconv
-except ImportError as e:
-    base_url = "https://numba.readthedocs.io/en/stable"
-    dev_url = f"{base_url}/developer/contributing.html"
-    user_url = f"{base_url}/user/faq.html#numba-could-not-be-imported"
-    dashes = "-" * 80
-    msg = (
-        f"Numba could not be imported.\n{dashes}\nIf you are seeing this "
-        "message and are undertaking Numba development work, you may need "
-        "to rebuild Numba.\nPlease see the development set up guide:\n\n"
-        f"{dev_url}.\n\n{dashes}\nIf you are not working on Numba "
-        f"development, the original error was: '{str(e)}'.\nFor help, "
-        f"please visit:\n\n{user_url}\n"
-    )
-    raise ImportError(msg)
-
+from numba.cuda.cext import _typeconv
 from numba.cuda.typeconv import castgraph, Conversion
 from numba.core import types
 
