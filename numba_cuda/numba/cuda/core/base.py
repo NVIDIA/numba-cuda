@@ -10,7 +10,6 @@ from functools import cached_property
 
 from llvmlite import ir as llvmir
 from llvmlite.ir import Constant
-import llvmlite.binding as ll
 
 from numba.core import (
     types,
@@ -20,7 +19,6 @@ from numba.core import (
 from numba.cuda import cgutils, debuginfo, utils
 from numba.core import errors
 from numba.cuda.core import targetconfig, funcdesc, imputils
-from numba import _dynfunc, _helperlib
 from numba.core.compiler_lock import global_compiler_lock
 from numba.cuda.core.pythonapi import PythonAPI
 from numba.cuda.core.imputils import (
@@ -157,26 +155,6 @@ class OverloadSelector(object):
         self._cache.clear()
 
 
-@utils.runonce
-def _load_global_helpers():
-    """
-    Execute once to install special symbols into the LLVM symbol table.
-    """
-    # This is Py_None's real C name
-    ll.add_symbol("_Py_NoneStruct", id(None))
-
-    # Add Numba C helper functions
-    for c_helpers in (_helperlib.c_helpers, _dynfunc.c_helpers):
-        for py_name, c_address in c_helpers.items():
-            c_name = "numba_" + py_name
-            ll.add_symbol(c_name, c_address)
-
-    # Add all built-in exception classes
-    for obj in utils.builtins.__dict__.values():
-        if isinstance(obj, type) and issubclass(obj, BaseException):
-            ll.add_symbol("PyExc_%s" % (obj.__name__), id(obj))
-
-
 class BaseContext(object):
     """
 
@@ -237,8 +215,6 @@ class BaseContext(object):
     fndesc = None
 
     def __init__(self, typing_context, target):
-        _load_global_helpers()
-
         self.address_size = utils.MACHINE_BITS
         self.typing_context = typing_context
         from numba.core.target_extension import target_registry
