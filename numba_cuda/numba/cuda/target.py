@@ -10,7 +10,6 @@ import warnings
 from numba.core import types
 
 from numba.core.compiler_lock import global_compiler_lock
-from numba.core.dispatcher import Dispatcher
 from numba.core.errors import NumbaWarning
 from numba.cuda.core.base import BaseContext
 from numba.core.typing import cmathdecl
@@ -62,25 +61,32 @@ class CUDATypingContext(typing.BaseContext):
         # treat other dispatcher object as another device function
         from numba.cuda.dispatcher import CUDADispatcher
 
-        if isinstance(val, Dispatcher) and not isinstance(val, CUDADispatcher):
-            try:
-                # use cached device function
-                val = val.__dispatcher
-            except AttributeError:
-                if not val._can_compile:
-                    raise ValueError(
-                        "using cpu function on device "
-                        "but its compilation is disabled"
-                    )
-                targetoptions = val.targetoptions.copy()
-                targetoptions["device"] = True
-                targetoptions["debug"] = targetoptions.get("debug", False)
-                targetoptions["opt"] = targetoptions.get("opt", True)
-                disp = CUDADispatcher(val.py_func, targetoptions)
-                # cache the device function for future use and to avoid
-                # duplicated copy of the same function.
-                val.__dispatcher = disp
-                val = disp
+        try:
+            from numba.core.dispatcher import Dispatcher
+
+            if isinstance(val, Dispatcher) and not isinstance(
+                val, CUDADispatcher
+            ):
+                try:
+                    # use cached device function
+                    val = val.__dispatcher
+                except AttributeError:
+                    if not val._can_compile:
+                        raise ValueError(
+                            "using cpu function on device "
+                            "but its compilation is disabled"
+                        )
+                    targetoptions = val.targetoptions.copy()
+                    targetoptions["device"] = True
+                    targetoptions["debug"] = targetoptions.get("debug", False)
+                    targetoptions["opt"] = targetoptions.get("opt", True)
+                    disp = CUDADispatcher(val.py_func, targetoptions)
+                    # cache the device function for future use and to avoid
+                    # duplicated copy of the same function.
+                    val.__dispatcher = disp
+                    val = disp
+        except ImportError:
+            pass
 
         # continue with parent logic
         return super(CUDATypingContext, self).resolve_value_type(val)
