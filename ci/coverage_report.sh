@@ -10,11 +10,12 @@ rapids-logger "Install wheel with test dependencies and coverage tools"
 package=$(realpath wheel/numba_cuda*.whl)
 echo "Package path: ${package}"
 python -m pip install \
-    "${package}[test]" \
+    "${package}" \
     "cuda-python==${CUDA_VER_MAJOR_MINOR%.*}.*" \
     "cuda-core==0.3.*" \
     pytest-cov \
-    coverage
+    coverage \
+    --group test
 
 rapids-logger "Build test binaries"
 export NUMBA_CUDA_TEST_BIN_DIR=`pwd`/testing
