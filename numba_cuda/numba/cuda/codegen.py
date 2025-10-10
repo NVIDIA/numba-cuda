@@ -26,10 +26,7 @@ def run_nvdisasm(cubin, flags):
     try:
         fd, fname = tempfile.mkstemp()
         with open(fname, "wb") as f:
-            if config.CUDA_USE_NVIDIA_BINDING:
-                f.write(cubin.code)
-            else:
-                f.write(cubin)
+            f.write(cubin.code)
 
         try:
             cp = subprocess.run(
