@@ -20,10 +20,12 @@ rapids-logger "Install wheel with test dependencies"
 package=$(realpath wheel/numba_cuda*.whl)
 echo "Package path: ${package}"
 python -m pip install \
-    "${package}[test]" \
+    "${package}" \
     "cuda-python==${CUDA_VER_MAJOR_MINOR%.*}.*" \
     "cuda-core==0.3.*" \
     "nvidia-nvjitlink-cu12" \
+    --group test
+
 
 
 rapids-logger "Shallow clone cuDF repository"

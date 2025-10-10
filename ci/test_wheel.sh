@@ -11,9 +11,11 @@ package=$(realpath wheel/numba_cuda*.whl)
 echo "Package path: ${package}"
 
 DEPENDENCIES=(
-    "${package}[test]"
+    "${package}"
     "cuda-python==${CUDA_VER_MAJOR_MINOR%.*}.*"
     "cuda-core==0.3.*"
+    "--group"
+    "test"
 )
 
 # Constrain oldest supported dependencies for testing
