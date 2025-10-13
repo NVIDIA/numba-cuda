@@ -356,6 +356,63 @@ class BaseContext(object):
         self._insert_cast_defn(loader.new_registrations("casts"))
         self._insert_get_constant_defn(loader.new_registrations("constants"))
 
+    def install_external_registry(self, registry):
+        """
+        Install only the registrations that were defined outside
+        of the "numba." namespace (i.e., in third-party extensions).
+        This is useful for selectively installing implementations
+        from the shared builtin_registry without pulling in any CPU-specific
+        implementations from Numba.
+        """
+
+        def is_external(impl):
+            """Check if implementation is defined outside numba.* namespace."""
+            try:
+                module = impl.__module__
+                return not module.startswith("numba.")
+            except AttributeError:
+                # If we can't determine module, conservatively include registration
+                return True
+
+        try:
+            loader = self._registries[registry]
+        except KeyError:
+            loader = RegistryLoader(registry)
+            self._registries[registry] = loader
+
+        # Filter registrations
+        funcs = [
+            (impl, func, sig)
+            for impl, func, sig in loader.new_registrations("functions")
+            if is_external(impl)
+        ]
+        getattrs = [
+            (impl, attr, sig)
+            for impl, attr, sig in loader.new_registrations("getattrs")
+            if is_external(impl)
+        ]
+        setattrs = [
+            (impl, attr, sig)
+            for impl, attr, sig in loader.new_registrations("setattrs")
+            if is_external(impl)
+        ]
+        casts = [
+            (impl, sig)
+            for impl, sig in loader.new_registrations("casts")
+            if is_external(impl)
+        ]
+        constants = [
+            (impl, sig)
+            for impl, sig in loader.new_registrations("constants")
+            if is_external(impl)
+        ]
+
+        self.insert_func_defn(funcs)
+        self._insert_getattr_defn(getattrs)
+        self._insert_setattr_defn(setattrs)
+        self._insert_cast_defn(casts)
+        self._insert_get_constant_defn(constants)
+
     def insert_func_defn(self, defns):
         for impl, func, sig in defns:
             self._defns[func].append(impl, sig)
