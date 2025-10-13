@@ -3536,7 +3536,8 @@ def _stream_handle(stream):
             "Expected a Stream object or 0, got %s" % type(stream).__name__
         )
     elif hasattr(stream, "__cuda_stream__"):
-        _, ptr = stream.__cuda_stream__()
+        ver, ptr = stream.__cuda_stream__()
+        assert ver == 0
         if USE_NV_BINDING and isinstance(ptr, binding.CUstream):
             return get_cuda_native_handle(ptr)
         else:

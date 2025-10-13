@@ -213,6 +213,7 @@ class TestCudaDriver(CUDATestCase):
         stream.sync()
 
         kernel[1, 100, stream](ary)
+        stream.sync()
 
         result = ary.copy_to_host(stream=stream)
         for i, v in enumerate(result):
