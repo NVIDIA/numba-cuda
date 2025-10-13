@@ -119,6 +119,8 @@ nrt_extern: $(OUTPUT_DIR)/nrt_extern.cubin \
     $(OUTPUT_DIR)/nrt_extern.ltoir
 
 all: test_device_functions nrt_extern $(OUTPUT_DIR)/undefined_extern.cubin
+	@echo "GPU CC: $(GPU_CC)"
+	@echo "Alternative CC: $(ALT_CC)"
 
 clean:
 	rm -f *.cubin *.fatbin *.ptx *.o *.a *.ltoir
