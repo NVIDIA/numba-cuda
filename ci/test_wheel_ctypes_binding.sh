@@ -19,7 +19,7 @@ python -m pip install \
 rapids-logger "Copy and cd into test binaries dir"
 export NUMBA_CUDA_TEST_BIN_DIR=`pwd`/testing
 pushd $NUMBA_CUDA_TEST_BIN_DIR
-# make
+# make -j $(nproc)
 
 # Prevent the testsuite trying to use the test binaries
 unset NUMBA_CUDA_TEST_BIN_DIR
