@@ -218,8 +218,8 @@ class CUDATargetContext(BaseContext):
         self.install_registry(npdatetime.registry)
         self.install_registry(arrayobj.registry)
 
-        # Install only implementations that are defined outside of numba (i.e., in third-party extensions)
-        # from Numba's builtin_registry, i.e. exclude anything in "numba.*" namespace.
+        # Install only implementations that are defined outside of numba (i.e.,
+        # in third-party extensions) from Numba's builtin_registry.
         if importlib.util.find_spec("numba.core.imputils") is not None:
             from numba.core.imputils import builtin_registry
 

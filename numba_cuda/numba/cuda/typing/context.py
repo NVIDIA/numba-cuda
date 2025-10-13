@@ -8,6 +8,7 @@ import weakref
 import threading
 import contextlib
 import operator
+from importlib.util import find_spec
 
 from numba.core import types, errors
 from numba.cuda.typeconv import Conversion, rules
@@ -403,6 +404,11 @@ class BaseContext(object):
         self.install_registry(arraydecl.registry)
         self.install_registry(npdatetime.registry)
         self.install_registry(templates.builtin_registry)
+
+        if find_spec("numba.core.typing") is not None:
+            from numba.core.typing import templates as core_templates
+
+            self.install_registry(core_templates.builtin_registry)
 
     def load_additional_registries(self):
         """

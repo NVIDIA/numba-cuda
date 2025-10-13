@@ -358,8 +358,8 @@ class BaseContext(object):
 
     def install_external_registry(self, registry):
         """
-        Install only third-party registrations from a shared registry like Numba's builtin_registry. Exclude
-        Numba's own implementations in this case (i.e., anything from numba.* namespace).
+        Install only third-party registrations from a shared registry like Numba's builtin_registry.
+        Exclude Numba's own implementations in this case (i.e., anything from numba.* namespace).
 
         This is useful for selectively installing third-party implementations
         present in the shared builtin_registry from Numba without pulling in any CPU-specific
