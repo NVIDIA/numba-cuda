@@ -9,8 +9,8 @@ CUDA_VER_MAJOR_MINOR=${CUDA_VER%.*}
 rapids-logger "Install cuDF Wheel"
 
 pip install \
-    --extra-index-url=https://pypi.anaconda.org/rapidsai-wheels-nightly/simple \
-    "cudf-cu12>=25.10.0a0,<=25.10" "dask-cuda>=25.10.0a0,<=25.10"
+    --extra-index-url=https://pypi.nvidia.com \
+    "cudf-cu12==25.10.*"
 
 
 rapids-logger "Remove Extraneous numba-cuda"

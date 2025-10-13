@@ -25,7 +25,7 @@ from numba.cuda.np.numpy_support import (
     lt_floats,
     lt_complex,
 )
-from numba.core.imputils import (
+from numba.cuda.core.imputils import (
     impl_ret_borrowed,
     impl_ret_new_ref,
     impl_ret_untracked,

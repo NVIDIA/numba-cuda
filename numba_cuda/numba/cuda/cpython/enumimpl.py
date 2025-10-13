@@ -7,7 +7,7 @@ Implementation of enums.
 
 import operator
 
-from numba.core.imputils import Registry, impl_ret_untracked
+from numba.cuda.core.imputils import Registry, impl_ret_untracked
 from numba.core import types
 from numba.cuda.extending import overload_method
 
