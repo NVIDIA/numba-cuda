@@ -10,7 +10,7 @@ from numba.core import types
 from numba.core.errors import TypingError, NumbaTypeError
 from numba.cuda.extending import make_attribute_wrapper
 from numba.cuda.extending import overload
-from numba.core.imputils import Registry
+from numba.cuda.core.imputils import Registry
 from numba.cuda.testing import skip_on_cudasim
 
 import unittest

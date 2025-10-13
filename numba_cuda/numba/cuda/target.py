@@ -6,6 +6,7 @@ from functools import cached_property
 import llvmlite.binding as ll
 from llvmlite import ir
 import warnings
+import importlib.util
 
 from numba.core import types
 
@@ -88,7 +89,7 @@ class CUDATypingContext(typing.BaseContext):
     def can_convert(self, fromty, toty):
         """
         Check whether conversion is possible from *fromty* to *toty*.
-        If successful, return a numba.typeconv.Conversion instance;
+        If successful, return a numba.cuda.typeconv.Conversion instance;
         otherwise None is returned.
         """
 
@@ -215,6 +216,13 @@ class CUDATargetContext(BaseContext):
         self.install_registry(polynomial.registry)
         self.install_registry(npdatetime.registry)
         self.install_registry(arrayobj.registry)
+
+        if importlib.util.find_spec("numba.core.imputils") is not None:
+            from numba.core.imputils import (
+                builtin_registry as upstream_builtin_registry,
+            )
+
+            self.install_registry(upstream_builtin_registry)
 
     def codegen(self):
         return self._internal_codegen

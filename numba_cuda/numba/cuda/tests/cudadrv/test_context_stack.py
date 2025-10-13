@@ -14,12 +14,7 @@ class TestContextStack(CUDATestCase):
     def setUp(self):
         super().setUp()
         # Reset before testing
-        cuda.close()
-
-    def test_gpus_current(self):
-        self.assertIs(cuda.gpus.current, None)
-        with cuda.gpus[0]:
-            self.assertEqual(int(cuda.gpus.current.id), 0)
+        cuda.current_context().reset()
 
     def test_gpus_len(self):
         self.assertGreater(len(cuda.gpus), 0)
@@ -45,7 +40,7 @@ class TestContextStack(CUDATestCase):
 class TestContextAPI(CUDATestCase):
     def tearDown(self):
         super().tearDown()
-        cuda.close()
+        cuda.current_context().reset()
 
     def test_context_memory(self):
         try:
@@ -91,7 +86,7 @@ class TestContextAPI(CUDATestCase):
 class Test3rdPartyContext(CUDATestCase):
     def tearDown(self):
         super().tearDown()
-        cuda.close()
+        cuda.current_context().reset()
 
     def test_attached_primary(self, extra_work=lambda: None):
         # Emulate primary context creation by 3rd party

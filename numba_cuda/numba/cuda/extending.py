@@ -18,7 +18,7 @@ from numba.core.typing.typeof import typeof_impl  # noqa: F401
 from numba.core.typing.asnumbatype import as_numba_type  # noqa: F401
 from numba.core.typing.templates import infer, infer_getattr  # noqa: F401
 
-from numba.core.imputils import (  # noqa: F401
+from numba.cuda.core.imputils import (  # noqa: F401
     lower_builtin,
     lower_getattr,
     lower_getattr_generic,  # noqa: F401
@@ -27,7 +27,6 @@ from numba.core.imputils import (  # noqa: F401
     lower_cast,
 )  # noqa: F401
 from numba.cuda.core.pythonapi import box, unbox, reflect, NativeValue  # noqa: F401
-from numba._helperlib import _import_cython_function  # noqa: F401
 from numba.cuda.serialize import ReduceMixin
 from numba.core.datamodel import models as core_models  # noqa: F401
 
@@ -49,7 +48,7 @@ def make_attribute_wrapper(typeclass, struct_attr, python_attr):
 
     from numba.core.datamodel import default_manager
     from numba.core.datamodel.models import StructModel
-    from numba.core.imputils import impl_ret_borrowed
+    from numba.cuda.core.imputils import impl_ret_borrowed
     from numba.core import types
     from numba.cuda import cgutils
 
