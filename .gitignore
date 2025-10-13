@@ -15,3 +15,7 @@ testing/*.ltoir
 testing/*.ltoir.o
 testing/*.o
 testing/*.ptx
+# pixi environments
+.pixi/*
+!.pixi/config.toml
+*.log
