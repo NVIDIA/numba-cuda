@@ -48,33 +48,33 @@ OUTPUT_DIR := ./
 
 NRT_INCLUDE_DIR := $(shell python -c "from numba.cuda.memory_management.nrt import get_include; print(get_include())")
 
-$(OUTPUT_DIR)/undefined_extern.cubin:
-	nvcc $(NVCC_FLAGS) $(CUBIN_FLAGS) -o $@ undefined_extern.cu
+$(OUTPUT_DIR)/undefined_extern.cubin: undefined_extern.cu
+	nvcc $(NVCC_FLAGS) $(CUBIN_FLAGS) -o $@ $<
 
-$(OUTPUT_DIR)/test_device_functions.cubin:
-	nvcc $(NVCC_FLAGS) $(CUBIN_FLAGS) -o $@ test_device_functions.cu
+$(OUTPUT_DIR)/test_device_functions.cubin: test_device_functions.cu
+	nvcc $(NVCC_FLAGS) $(CUBIN_FLAGS) -o $@ $<
 
-$(OUTPUT_DIR)/test_device_functions.fatbin:
-	nvcc $(NVCC_FLAGS) $(FATBIN_FLAGS) -o $@ test_device_functions.cu
+$(OUTPUT_DIR)/test_device_functions.fatbin: test_device_functions.cu
+	nvcc $(NVCC_FLAGS) $(FATBIN_FLAGS) -o $@ $<
 
-$(OUTPUT_DIR)/test_device_functions_multi.fatbin:
-	nvcc $(NVCC_FLAGS) $(MULTI_FATBIN_FLAGS) -o $@ test_device_functions.cu
+$(OUTPUT_DIR)/test_device_functions_multi.fatbin: test_device_functions.cu
+	nvcc $(NVCC_FLAGS) $(MULTI_FATBIN_FLAGS) -o $@ $<
 
-$(OUTPUT_DIR)/test_device_functions.ptx:
-	nvcc $(NVCC_FLAGS) $(PTX_FLAGS) -o $@ test_device_functions.cu
+$(OUTPUT_DIR)/test_device_functions.ptx: test_device_functions.cu
+	nvcc $(NVCC_FLAGS) $(PTX_FLAGS) -o $@ $<
 
-$(OUTPUT_DIR)/test_device_functions.o:
-	nvcc $(NVCC_FLAGS) $(OBJECT_FLAGS) -o $@ test_device_functions.cu
+$(OUTPUT_DIR)/test_device_functions.o: test_device_functions.cu
+	nvcc $(NVCC_FLAGS) $(OBJECT_FLAGS) -o $@ $<
 
-$(OUTPUT_DIR)/test_device_functions.a:
-	nvcc $(NVCC_FLAGS) $(LIBRARY_FLAGS) -o $@ test_device_functions.cu
+$(OUTPUT_DIR)/test_device_functions.a: test_device_functions.cu
+	nvcc $(NVCC_FLAGS) $(LIBRARY_FLAGS) -o $@ $<
 
-$(OUTPUT_DIR)/test_device_functions.ltoir.o:
-	nvcc $(NVCC_FLAGS) $(LTOIR_FLAGS) -o $@ test_device_functions.cu
+$(OUTPUT_DIR)/test_device_functions.ltoir.o: test_device_functions.cu
+	nvcc $(NVCC_FLAGS) $(LTOIR_FLAGS) -o $@ $<
 
-$(OUTPUT_DIR)/test_device_functions.ltoir:
+$(OUTPUT_DIR)/test_device_functions.ltoir: test_device_functions.cu
 	# Generate LTO-IR in a "raw" LTO-IR container
-	python generate_raw_ltoir.py --arch sm_$(GPU_CC) -o $(OUTPUT_DIR)/test_device_functions.ltoir test_device_functions.cu
+	python generate_raw_ltoir.py --arch sm_$(GPU_CC) -o $(OUTPUT_DIR)/test_device_functions.ltoir $<
 
 test_device_functions: $(OUTPUT_DIR)/test_device_functions.cubin \
     $(OUTPUT_DIR)/test_device_functions.fatbin \
@@ -85,29 +85,29 @@ test_device_functions: $(OUTPUT_DIR)/test_device_functions.cubin \
     $(OUTPUT_DIR)/test_device_functions.ltoir.o \
     $(OUTPUT_DIR)/test_device_functions.ltoir
 
-$(OUTPUT_DIR)/nrt_extern.cubin:
-	nvcc $(NVCC_FLAGS) $(CUBIN_FLAGS) -o $@ nrt_extern.cu -I$(NRT_INCLUDE_DIR)
+$(OUTPUT_DIR)/nrt_extern.cubin: nrt_extern.cu
+	nvcc $(NVCC_FLAGS) $(CUBIN_FLAGS) -o $@ $< -I$(NRT_INCLUDE_DIR)
 
-$(OUTPUT_DIR)/nrt_extern.fatbin:
-	nvcc $(NVCC_FLAGS) $(FATBIN_FLAGS) -o $@ nrt_extern.cu -I$(NRT_INCLUDE_DIR)
+$(OUTPUT_DIR)/nrt_extern.fatbin: nrt_extern.cu
+	nvcc $(NVCC_FLAGS) $(FATBIN_FLAGS) -o $@ $< -I$(NRT_INCLUDE_DIR)
 
-$(OUTPUT_DIR)/nrt_extern_multi.fatbin:
-	nvcc $(NVCC_FLAGS) $(MULTI_FATBIN_FLAGS) -o $@ nrt_extern.cu -I$(NRT_INCLUDE_DIR)
+$(OUTPUT_DIR)/nrt_extern_multi.fatbin: nrt_extern.cu
+	nvcc $(NVCC_FLAGS) $(MULTI_FATBIN_FLAGS) -o $@ $< -I$(NRT_INCLUDE_DIR)
 
-$(OUTPUT_DIR)/nrt_extern.ptx:
-	nvcc $(NVCC_FLAGS) $(PTX_FLAGS) -o $@ nrt_extern.cu -I$(NRT_INCLUDE_DIR)
+$(OUTPUT_DIR)/nrt_extern.ptx: nrt_extern.cu
+	nvcc $(NVCC_FLAGS) $(PTX_FLAGS) -o $@ $< -I$(NRT_INCLUDE_DIR)
 
-$(OUTPUT_DIR)/nrt_extern.o:
-	nvcc $(NVCC_FLAGS) $(OBJECT_FLAGS) -o $@ nrt_extern.cu -I$(NRT_INCLUDE_DIR)
+$(OUTPUT_DIR)/nrt_extern.o: nrt_extern.cu
+	nvcc $(NVCC_FLAGS) $(OBJECT_FLAGS) -o $@ $< -I$(NRT_INCLUDE_DIR)
 
-$(OUTPUT_DIR)/nrt_extern.a:
-	nvcc $(NVCC_FLAGS) $(LIBRARY_FLAGS) -o $@ nrt_extern.cu -I$(NRT_INCLUDE_DIR)
+$(OUTPUT_DIR)/nrt_extern.a: nrt_extern.cu
+	nvcc $(NVCC_FLAGS) $(LIBRARY_FLAGS) -o $@ $< -I$(NRT_INCLUDE_DIR)
 
-$(OUTPUT_DIR)/nrt_extern.ltoir.o:
-	nvcc $(NVCC_FLAGS) $(LTOIR_FLAGS) -o $@ nrt_extern.cu -I$(NRT_INCLUDE_DIR)
+$(OUTPUT_DIR)/nrt_extern.ltoir.o: nrt_extern.cu
+	nvcc $(NVCC_FLAGS) $(LTOIR_FLAGS) -o $@ $< -I$(NRT_INCLUDE_DIR)
 
-$(OUTPUT_DIR)/nrt_extern.ltoir:
-	python generate_raw_ltoir.py --arch sm_$(GPU_CC) -o $@ nrt_extern.cu --nrt
+$(OUTPUT_DIR)/nrt_extern.ltoir: nrt_extern.cu
+	python generate_raw_ltoir.py --arch sm_$(GPU_CC) -o $@ $< --nrt
 
 nrt_extern: $(OUTPUT_DIR)/nrt_extern.cubin \
     $(OUTPUT_DIR)/nrt_extern.fatbin \
