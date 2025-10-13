@@ -116,7 +116,7 @@ def compile(src, name, cc, ltoir=False, lineinfo=False, debug=False):
         link_time_optimization=ltoir,
         name=name,
         debug=debug,
-        lineinfo=lineinfo
+        lineinfo=lineinfo,
     )
 
     class Logger:
