@@ -32,3 +32,4 @@ numba_cuda/numba/cuda/include/*/cuda_*.hpp
 
 # GitHub configuration files
 .github/CODEOWNERS
+pixi.lock
