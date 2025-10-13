@@ -18,7 +18,7 @@ from numba.core import types
 from numba.cuda.core import config
 from numba.cuda.extending import overload
 from numba.core.typing import signature
-from numba.cpython.unsafe.numbers import trailing_zeros
+from numba.cuda.cpython.unsafe.numbers import trailing_zeros
 from numba.cuda import cgutils
 
 registry = Registry("mathimpl")
@@ -455,7 +455,7 @@ def _unsigned(T):
     pass
 
 
-@overload(_unsigned, target="cuda")
+@overload(_unsigned)
 def _unsigned_impl(T):
     if T in types.unsigned_domain:
         return lambda T: T

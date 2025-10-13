@@ -88,7 +88,7 @@ class CUDATypingContext(typing.BaseContext):
     def can_convert(self, fromty, toty):
         """
         Check whether conversion is possible from *fromty* to *toty*.
-        If successful, return a numba.typeconv.Conversion instance;
+        If successful, return a numba.cuda.typeconv.Conversion instance;
         otherwise None is returned.
         """
 
@@ -153,9 +153,8 @@ class CUDATargetContext(BaseContext):
         self._target_data = None
 
     def load_additional_registries(self):
-        # side effect of import needed for numba.cpython.*, numba.cuda.cpython.*, the builtins
+        # side effect of import needed for numba.cuda.cpython.*, the builtins
         # registry is updated at import time.
-        from numba.cpython import tupleobj  # noqa: F401
         from numba.cuda.cpython import (
             numbers,
             slicing,
@@ -165,12 +164,18 @@ class CUDATargetContext(BaseContext):
             charseq,
             cmathimpl,
             mathimpl,
+            tupleobj,
+            rangeobj,
+            enumimpl,
         )
-        from numba.cpython import rangeobj, enumimpl  # noqa: F401
+        from numba.cuda.cpython import builtins as cpython_builtins
         from numba.cuda.core import optional  # noqa: F401
         from numba.cuda.misc import cffiimpl
-        from numba.np import arrayobj  # noqa: F401
-        from numba.np import npdatetime  # noqa: F401
+        from numba.cuda.np import (
+            arrayobj,
+            npdatetime,
+            polynomial,
+        )
         from . import (
             cudaimpl,
             fp16,
@@ -182,7 +187,7 @@ class CUDATargetContext(BaseContext):
         )
 
         # fix for #8940
-        from numba.np.unsafe import ndarray  # noqa F401
+        from numba.cuda.np.unsafe import ndarray  # noqa F401
 
         self.install_registry(cudaimpl.registry)
         self.install_registry(cffiimpl.registry)
@@ -201,6 +206,15 @@ class CUDATargetContext(BaseContext):
         self.install_registry(listobj.registry)
         self.install_registry(unicode.registry)
         self.install_registry(charseq.registry)
+        self.install_registry(tupleobj.registry)
+        self.install_registry(rangeobj.registry)
+        self.install_registry(enumimpl.registry)
+        self.install_registry(cpython_builtins.registry)
+
+        # install np registries
+        self.install_registry(polynomial.registry)
+        self.install_registry(npdatetime.registry)
+        self.install_registry(arrayobj.registry)
 
     def codegen(self):
         return self._internal_codegen
