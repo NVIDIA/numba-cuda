@@ -24,7 +24,7 @@ from numba.cuda.core.imputils import (
     RefType,
     Registry,
 )
-from numba.core.datamodel import register_default, StructModel
+from numba.cuda.core.datamodel import register_default, StructModel
 from numba.core import types
 from numba.cuda import cgutils
 from numba.cuda.utils import PYVERSION

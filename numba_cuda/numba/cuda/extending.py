@@ -28,7 +28,7 @@ from numba.cuda.core.imputils import (  # noqa: F401
 )  # noqa: F401
 from numba.cuda.core.pythonapi import box, unbox, reflect, NativeValue  # noqa: F401
 from numba.cuda.serialize import ReduceMixin
-from numba.core.datamodel import models as core_models  # noqa: F401
+from numba.cuda.core.datamodel import models as core_models  # noqa: F401
 
 
 from numba.cuda.models import register_model  # noqa: F401
@@ -46,8 +46,8 @@ def make_attribute_wrapper(typeclass, struct_attr, python_attr):
     """
     from numba.cuda.typing.templates import AttributeTemplate
 
-    from numba.core.datamodel import default_manager
-    from numba.core.datamodel.models import StructModel
+    from numba.cuda.core.datamodel import default_manager
+    from numba.cuda.core.datamodel.models import StructModel
     from numba.cuda.core.imputils import impl_ret_borrowed
     from numba.core import types
     from numba.cuda import cgutils

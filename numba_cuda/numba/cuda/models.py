@@ -5,8 +5,8 @@ import functools
 
 from llvmlite import ir
 
-from numba.core.datamodel.registry import DataModelManager, register
-from numba.core.datamodel import PrimitiveModel
+from numba.cuda.core.datamodel.registry import DataModelManager, register
+from numba.cuda.core.datamodel import PrimitiveModel
 from numba.cuda.extending import core_models
 from numba.core import types
 from numba.cuda.types import Dim3, GridGroup, CUDADispatcher, Bfloat16

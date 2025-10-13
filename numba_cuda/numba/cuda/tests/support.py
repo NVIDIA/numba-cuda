@@ -33,7 +33,7 @@ from numba.cuda.extending import (
     NativeValue,
 )
 from numba.cuda.core.pythonapi import unbox
-from numba.core.datamodel.models import OpaqueModel
+from numba.cuda.core.datamodel.models import OpaqueModel
 from numba.cuda.np import numpy_support
 
 
