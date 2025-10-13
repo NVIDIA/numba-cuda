@@ -13,7 +13,7 @@ import numpy as np
 import llvmlite.ir
 from llvmlite.ir import Constant
 
-from numba.core.imputils import impl_ret_untracked, Registry
+from numba.cuda.core.imputils import impl_ret_untracked, Registry
 from numba.core import types
 from numba.cuda.core import config
 from numba.cuda.extending import overload

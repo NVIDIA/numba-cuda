@@ -8,3 +8,10 @@ build
 *.so
 numba_cuda/numba/cuda/tests/cudadrv/test_device_functions.*
 numba_cuda/numba/cuda/tests/cudadrv/undefined_extern.*
+testing/*.a
+testing/*.cubin
+testing/*.fatbin
+testing/*.ltoir
+testing/*.ltoir.o
+testing/*.o
+testing/*.ptx
