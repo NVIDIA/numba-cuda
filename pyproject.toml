@@ -153,13 +153,28 @@ platforms = ["linux-64", "linux-aarch64", "win-64"]
 [tool.pixi.pypi-dependencies]
 numba-cuda = { path = ".", editable = true }
 
+[tool.pixi.build-dependencies]
+gxx = "*"
+cuda-compiler = "*"
+
 [tool.pixi.environments]
 cu12 = { features = ["cu12", "test"], solve-group = "cu12" }
 cu13 = { features = ["cu13", "test"], solve-group = "cu13" }
 test = { features = ["test"], solve-group = "test" }
 
 [tool.pixi.tasks]
-test = { cmd = ["pytest", "$PIXI_PROJECT_ROOT/numba_cuda/numba/cuda/tests"] }
+build-tests = { cmd = [
+    "make",
+    "-j",
+    "$(nproc)",
+    "-C",
+    "$PIXI_PROJECT_ROOT/testing",
+] }
+
+[tool.pixi.tasks.test]
+cmd = ["pytest", "$PIXI_PROJECT_ROOT/testing"]
+env = { NUMBA_CUDA_TEST_BIN_DIR = "$PIXI_PROJECT_ROOT/testing" }
+depends-on = [{ task = "build-tests" }]
 
 [tool.pyrefly]
 search-path = ["./numba_cuda"]
