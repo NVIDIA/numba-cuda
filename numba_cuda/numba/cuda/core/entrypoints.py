@@ -12,10 +12,17 @@ logger = logging.getLogger(__name__)
 
 
 def init_all():
-    """Execute all `numba_extensions` entry points with the name `init`
+    """Execute all `numba_cuda_extensions` entry points with the name `init`
 
     If extensions have already been initialized, this function does nothing.
     """
+    try:
+        from numba.core import entrypoints
+
+        entrypoints.init_all()
+    except ImportError:
+        pass
+
     global _already_initialized
     if _already_initialized:
         return
@@ -42,9 +49,11 @@ def init_all():
     # interface, versions prior to that do not. See "compatibility note" in:
     # https://docs.python.org/3.10/library/importlib.metadata.html#entry-points
     if hasattr(eps, "select"):
-        for entry_point in eps.select(group="numba_extensions", name="init"):
+        for entry_point in eps.select(
+            group="numba_cuda_extensions", name="init"
+        ):
             load_ep(entry_point)
     else:
-        for entry_point in eps.get("numba_extensions", ()):
+        for entry_point in eps.get("numba_cuda_extensions", ()):
             if entry_point.name == "init":
                 load_ep(entry_point)
