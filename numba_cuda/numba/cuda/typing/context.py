@@ -405,20 +405,34 @@ class BaseContext(object):
         self.install_registry(npdatetime.registry)
         self.install_registry(templates.builtin_registry)
 
+        # Install only third-party declarations from Numba's typing registry
+        # if it is available. Exclude Numba's own typing declarations.
         if find_spec("numba.core.typing") is not None:
             from numba.core.typing import templates as core_templates
 
-            self.install_registry(core_templates.builtin_registry)
+            self.install_registry(
+                core_templates.builtin_registry, external_defs_only=True
+            )
 
     def load_additional_registries(self):
         """
         Load target-specific registries.  Can be overridden by subclasses.
         """
 
-    def install_registry(self, registry):
+    def install_registry(self, registry, external_defs_only=False):
         """
         Install a *registry* (a templates.Registry instance) of function,
         attribute and global declarations.
+
+        Parameters
+        ----------
+        registry : Registry
+            The registry to install
+        external_defs_only : bool, optional
+            If True, only install registrations for types from outside numba.* namespace.
+            This is useful when installing third-party registrations from
+            a shared registry like Numba's typing registry (builtin_registry).
+
         """
         try:
             loader = self._registries[registry]
@@ -468,15 +482,35 @@ class BaseContext(object):
 
             return current_target.inherits_from(ft_target)
 
-        for ftcls in loader.new_registrations("functions"):
-            if not is_for_this_target(ftcls):
-                continue
-            self.insert_function(ftcls(self))
+        def is_external_type(typ):
+            """Check if a type is from outside numba.* namespace."""
+            try:
+                return not typ.__module__.startswith("numba.")
+            except AttributeError:
+                return True
+
+        # Skip functions entirely when external_defs_only=True
+        if not external_defs_only:
+            for ftcls in loader.new_registrations("functions"):
+                if not is_for_this_target(ftcls):
+                    continue
+                self.insert_function(ftcls(self))
         for ftcls in loader.new_registrations("attributes"):
             if not is_for_this_target(ftcls):
                 continue
+            # If external_defs_only, check if the type being registered is external
+            if external_defs_only:
+                key = getattr(ftcls, "key", None)
+                if key is not None and not is_external_type(key):
+                    continue
             self.insert_attributes(ftcls(self))
         for gv, gty in loader.new_registrations("globals"):
+            # If external_defs_only, check the global type's module
+            if external_defs_only:
+                if hasattr(gty, "__module__") and gty.__module__.startswith(
+                    "numba."
+                ):
+                    continue
             existing = self._lookup_global(gv)
             if existing is None:
                 self.insert_global(gv, gty)
