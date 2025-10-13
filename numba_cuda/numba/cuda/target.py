@@ -6,6 +6,7 @@ from functools import cached_property
 import llvmlite.binding as ll
 from llvmlite import ir
 import warnings
+import importlib.util
 
 from numba.core import types
 
@@ -216,6 +217,13 @@ class CUDATargetContext(BaseContext):
         self.install_registry(polynomial.registry)
         self.install_registry(npdatetime.registry)
         self.install_registry(arrayobj.registry)
+
+        if importlib.util.find_spec("numba.core.imputils") is not None:
+            from numba.core.imputils import (
+                builtin_registry as upstream_builtin_registry,
+            )
+
+            self.install_registry(upstream_builtin_registry)
 
     def codegen(self):
         return self._internal_codegen

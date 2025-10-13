@@ -10,7 +10,7 @@ import operator
 from llvmlite import ir
 from llvmlite.ir import Constant
 
-from numba.core.imputils import impl_ret_untracked, Registry
+from numba.cuda.core.imputils import impl_ret_untracked, Registry
 from numba.core import types, errors
 from numba.cuda.extending import overload_method
 from numba.cuda.cpython.unsafe.numbers import viewer

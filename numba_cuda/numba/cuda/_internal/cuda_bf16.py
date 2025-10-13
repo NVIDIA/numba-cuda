@@ -25,8 +25,8 @@ from numba.cuda.extending import (
     make_attribute_wrapper,
     register_model,
 )
-from numba.core.imputils import Registry as TargetRegistry
-from numba.core.imputils import lower_cast
+from numba.cuda.core.imputils import Registry as TargetRegistry
+from numba.cuda.core.imputils import lower_cast
 from numba.cuda.typing import signature
 from numba.cuda.typing.builtins import (
     BinOp,

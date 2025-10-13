@@ -27,8 +27,8 @@ from numba.cuda.extending import (
     make_attribute_wrapper,
     register_model,
 )
-from numba.core.imputils import Registry as TargetRegistry
-from numba.core.imputils import lower_cast
+from numba.cuda.core.imputils import Registry as TargetRegistry
+from numba.cuda.core.imputils import lower_cast
 from numba.cuda.typing import signature
 from numba.cuda import CUSource, declare_device
 from numba.cuda._internal.cuda_bf16 import _type___nv_bfloat16

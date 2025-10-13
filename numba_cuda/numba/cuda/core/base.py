@@ -14,14 +14,13 @@ from llvmlite.ir import Constant
 from numba.core import (
     types,
     datamodel,
-    imputils,
 )
 from numba.cuda import cgutils, debuginfo, utils, config
 from numba.core import errors
-from numba.cuda.core import targetconfig, funcdesc
+from numba.cuda.core import targetconfig, funcdesc, imputils
 from numba.core.compiler_lock import global_compiler_lock
 from numba.cuda.core.pythonapi import PythonAPI
-from numba.core.imputils import (
+from numba.cuda.core.imputils import (
     user_function,
     user_generator,
     builtin_registry,

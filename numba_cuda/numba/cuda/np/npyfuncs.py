@@ -13,7 +13,7 @@ import llvmlite.ir
 import numpy as np
 
 from numba.cuda.extending import overload
-from numba.core.imputils import impl_ret_untracked
+from numba.cuda.core.imputils import impl_ret_untracked
 from numba.core import types, errors
 from numba.cuda import cgutils, typing
 from numba.cuda.np import npdatetime

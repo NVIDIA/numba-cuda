@@ -37,7 +37,7 @@ from numba.cuda.np.numpy_support import (
     numpy_version,
     is_nonelike,
 )
-from numba.core.imputils import (
+from numba.cuda.core.imputils import (
     iternext_impl,
     impl_ret_borrowed,
     impl_ret_new_ref,
