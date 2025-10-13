@@ -115,6 +115,8 @@ def compile(src, name, cc, ltoir=False, lineinfo=False, debug=False):
         relocatable_device_code=True,
         link_time_optimization=ltoir,
         name=name,
+        debug=debug,
+        lineinfo=lineinfo
     )
 
     class Logger:
