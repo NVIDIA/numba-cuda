@@ -3382,7 +3382,6 @@ def host_to_device(dst, src, size, stream=0):
     args = (device_pointer(dst), host_pointer(src, readonly=True), size)
 
     if stream:
-        assert isinstance(stream, (Stream, ExperimentalStream))
         fn = driver.cuMemcpyHtoDAsync
         args += (_stream_handle(stream),)
 
@@ -3399,7 +3398,6 @@ def device_to_host(dst, src, size, stream=0):
     args = (host_pointer(dst), device_pointer(src), size)
 
     if stream:
-        assert isinstance(stream, (Stream, ExperimentalStream))
         fn = driver.cuMemcpyDtoHAsync
         args += (_stream_handle(stream),)
 
@@ -3416,7 +3414,6 @@ def device_to_device(dst, src, size, stream=0):
     args = (device_pointer(dst), device_pointer(src), size)
 
     if stream:
-        assert isinstance(stream, (Stream, ExperimentalStream))
         fn = driver.cuMemcpyDtoDAsync
         args += (_stream_handle(stream),)
 
@@ -3438,7 +3435,6 @@ def device_memset(dst, val, size, stream=0):
     args = (device_pointer(dst), val, size)
 
     if stream:
-        assert isinstance(stream, (Stream, ExperimentalStream))
         fn = driver.cuMemsetD8Async
         args += (_stream_handle(stream),)
 
@@ -3531,15 +3527,19 @@ def _stream_handle(stream):
 
     if stream == 0:
         return stream
+    if USE_NV_BINDING:
+        allowed = (Stream, ExperimentalStream)
+    else:
+        allowed = (Stream,)
+    if not isinstance(stream, allowed):
+        raise TypeError(
+            "Expected a Stream object or 0, got %s" % type(stream).__name__
+        )
     elif hasattr(stream, "__cuda_stream__"):
         _, ptr = stream.__cuda_stream__()
-        if isinstance(ptr, binding.CUstream):
+        if USE_NV_BINDING and isinstance(ptr, binding.CUstream):
             return get_cuda_native_handle(ptr)
         else:
             return ptr
     else:
-        allowed = (Stream, ExperimentalStream) if USE_NV_BINDING else Stream
-        if not isinstance(stream, allowed):
-            raise TypeError(
-                "Expected a Stream object or 0, got %s" % type(stream).__name__
-            )
+        raise TypeError("Invalid Stream")
