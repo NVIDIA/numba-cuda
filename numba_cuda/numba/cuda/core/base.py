@@ -358,20 +358,30 @@ class BaseContext(object):
 
     def install_external_registry(self, registry):
         """
-        Install only the registrations that were defined outside
-        of the "numba." namespace (i.e., in third-party extensions).
-        This is useful for selectively installing implementations
-        from the shared builtin_registry without pulling in any CPU-specific
+        Install only third-party registrations from a shared registry like Numba's builtin_registry. Exclude
+        Numba's own implementations in this case (i.e., anything from numba.* namespace).
+
+        This is useful for selectively installing third-party implementations
+        present in the shared builtin_registry from Numba without pulling in any CPU-specific
         implementations from Numba.
+
+        Note: For getattrs/setattrs, we check the TYPE's __module__ (from the signature)
+        rather than the implementation's __module__, because @lower_getattr/@lower_setattr decorators
+        always set impl.__module__ = "numba.*" regardless of where they are called from.
         """
 
-        def is_external(impl):
-            """Check if implementation is defined outside numba.* namespace."""
+        def is_external(obj):
+            """Check if object is from outside numba.* namespace."""
             try:
-                module = impl.__module__
-                return not module.startswith("numba.")
+                return not obj.__module__.startswith("numba.")
             except AttributeError:
-                # If we can't determine module, conservatively include registration
+                return True
+
+        def is_external_type_sig(sig):
+            """Check if type in signature is from outside numba.* namespace."""
+            try:
+                return sig and is_external(sig[0])
+            except (AttributeError, IndexError):
                 return True
 
         try:
@@ -389,12 +399,12 @@ class BaseContext(object):
         getattrs = [
             (impl, attr, sig)
             for impl, attr, sig in loader.new_registrations("getattrs")
-            if is_external(impl)
+            if is_external_type_sig(sig)
         ]
         setattrs = [
             (impl, attr, sig)
             for impl, attr, sig in loader.new_registrations("setattrs")
-            if is_external(impl)
+            if is_external_type_sig(sig)
         ]
         casts = [
             (impl, sig)
