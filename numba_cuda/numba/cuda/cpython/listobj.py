@@ -299,8 +299,12 @@ class ListInstance(_ListPayloadMixin):
         mod = builder.module
         # Declare dtor
         fnty = ir.FunctionType(ir.VoidType(), [cgutils.voidptr_t])
+        if isinstance(self.dtype, types.containers.List):
+            dtypestr = f"list_{self.dtype.dtype}"
+        else:
+            dtypestr = str(self.dtype)
         fn = cgutils.get_or_insert_function(
-            mod, fnty, "numba_cuda_dtor_list_{}".format(self.dtype)
+            mod, fnty, "numba_cuda_dtor_list_{}".format(dtypestr)
         )
         if not fn.is_declaration:
             # End early if the dtor is already defined

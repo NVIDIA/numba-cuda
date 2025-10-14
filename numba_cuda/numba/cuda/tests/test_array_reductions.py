@@ -286,12 +286,54 @@ class TestArrayReductions(MemoryLeakMixin, TestCase):
         arr = np.float64([1.0, 0.0, float("inf"), float("nan")])
         self.assertPreciseEqual(np.all(arr), out.copy_to_host()[0])
 
-        # arr = np.float64([1.0, 0.0, float('inf'), float('nan')])
-        # check(arr)
-        # arr[1] = -0.0
-        # check(arr)
-        # arr[1] = 1.5
-        # check(arr)
-        # arr = arr.reshape((2, 2))
-        # check(arr)
-        # check(arr[::-1])
+        @cuda.jit
+        def kernel(out):
+            gid = cuda.grid(1)
+            if gid < 1:
+                ary = np.float64([1.0, -0.0, float("inf"), float("nan")])
+                out[0] = np.all(ary)
+
+        out = cuda.to_device(np.zeros(1, dtype=np.bool_))
+        kernel[1, 1](out)
+
+        arr = np.float64([1.0, -0.0, float("inf"), float("nan")])
+        self.assertPreciseEqual(np.all(arr), out.copy_to_host()[0])
+
+        @cuda.jit
+        def kernel(out):
+            gid = cuda.grid(1)
+            if gid < 1:
+                ary = np.float64([1.0, 1.5, float("inf"), float("nan")])
+                out[0] = np.all(ary)
+
+        out = cuda.to_device(np.zeros(1, dtype=np.bool_))
+        kernel[1, 1](out)
+
+        arr = np.float64([1.0, 1.5, float("inf"), float("nan")])
+        self.assertPreciseEqual(np.all(arr), out.copy_to_host()[0])
+
+        @cuda.jit
+        def kernel(out):
+            gid = cuda.grid(1)
+            if gid < 1:
+                ary = np.float64([[1.0, 1.5], [float("inf"), float("nan")]])
+                out[0] = np.all(ary)
+
+        out = cuda.to_device(np.zeros(1, dtype=np.bool_))
+        kernel[1, 1](out)
+
+        arr = np.float64([[1.0, 1.5], [float("inf"), float("nan")]])
+        self.assertPreciseEqual(np.all(arr), out.copy_to_host()[0])
+
+        @cuda.jit
+        def kernel(out):
+            gid = cuda.grid(1)
+            if gid < 1:
+                ary = np.float64([[float("inf"), float("nan")], [1.5, 1.0]])
+                out[0] = np.all(ary)
+
+        out = cuda.to_device(np.zeros(1, dtype=np.bool_))
+        kernel[1, 1](out)
+
+        arr = np.float64([[float("inf"), float("nan")], [1.5, 1.0]])
+        self.assertPreciseEqual(np.all(arr), out.copy_to_host()[0])
