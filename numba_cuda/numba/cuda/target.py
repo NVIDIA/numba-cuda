@@ -36,7 +36,7 @@ from numba.cuda.core import config, targetconfig
 # Typing
 
 
-class CUDATypingContext(typing.BaseContext):
+class CUDATypingContext(typing.Context):
     def load_additional_registries(self):
         from . import (
             cudadecl,
@@ -57,6 +57,7 @@ class CUDATypingContext(typing.BaseContext):
         self.install_registry(vector_types.typing_registry)
         self.install_registry(fp16.typing_registry)
         self.install_registry(bf16.typing_registry)
+        super().load_additional_registries()
 
     def resolve_value_type(self, val):
         # treat other dispatcher object as another device function
@@ -171,11 +172,7 @@ class CUDATargetContext(BaseContext):
         from numba.cuda.cpython import builtins as cpython_builtins
         from numba.cuda.core import optional  # noqa: F401
         from numba.cuda.misc import cffiimpl
-        from numba.cuda.np import (
-            arrayobj,
-            npdatetime,
-            polynomial,
-        )
+        from numba.cuda.np import arrayobj, npdatetime, polynomial, arraymath
         from . import (
             cudaimpl,
             fp16,
@@ -215,6 +212,7 @@ class CUDATargetContext(BaseContext):
         self.install_registry(polynomial.registry)
         self.install_registry(npdatetime.registry)
         self.install_registry(arrayobj.registry)
+        self.install_registry(arraymath.registry)
 
     def codegen(self):
         return self._internal_codegen
@@ -224,6 +222,14 @@ class CUDATargetContext(BaseContext):
         if self._target_data is None:
             self._target_data = ll.create_target_data(nvvm.NVVM().data_layout)
         return self._target_data
+
+    def build_list(self, builder, list_type, items):
+        """
+        Build a list from the Numba *list_type* and its initial *items*.
+        """
+        from numba.cuda.cpython import listobj
+
+        return listobj.build_list(self, builder, list_type, items)
 
     @cached_property
     def nonconst_module_attrs(self):

@@ -300,7 +300,7 @@ class ListInstance(_ListPayloadMixin):
         # Declare dtor
         fnty = ir.FunctionType(ir.VoidType(), [cgutils.voidptr_t])
         fn = cgutils.get_or_insert_function(
-            mod, fnty, ".dtor.list.{}".format(self.dtype)
+            mod, fnty, "numba_cuda_dtor_list_{}".format(self.dtype)
         )
         if not fn.is_declaration:
             # End early if the dtor is already defined
