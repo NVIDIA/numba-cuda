@@ -9,8 +9,8 @@ CUDA_VER_MAJOR_MINOR=${CUDA_VER%.*}
 rapids-logger "Install cuDF Wheel"
 
 pip install \
-    --extra-index-url=https://pypi.anaconda.org/rapidsai-wheels-nightly/simple \
-    "cudf-cu12>=25.10.0a0,<=25.10" "dask-cuda>=25.10.0a0,<=25.10"
+    --extra-index-url=https://pypi.nvidia.com \
+    "cudf-cu12==25.10.*"
 
 
 rapids-logger "Remove Extraneous numba-cuda"
@@ -20,10 +20,12 @@ rapids-logger "Install wheel with test dependencies"
 package=$(realpath wheel/numba_cuda*.whl)
 echo "Package path: ${package}"
 python -m pip install \
-    "${package}[test]" \
+    "${package}" \
     "cuda-python==${CUDA_VER_MAJOR_MINOR%.*}.*" \
     "cuda-core==0.3.*" \
     "nvidia-nvjitlink-cu12" \
+    --group test
+
 
 
 rapids-logger "Shallow clone cuDF repository"

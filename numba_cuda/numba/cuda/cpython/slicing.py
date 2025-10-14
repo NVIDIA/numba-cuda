@@ -8,7 +8,7 @@ Implement slices and various slice computations.
 from llvmlite import ir
 from numba.core import types
 from numba.cuda import cgutils
-from numba.core.imputils import impl_ret_untracked, Registry
+from numba.cuda.core.imputils import impl_ret_untracked, Registry
 
 registry = Registry("slicing")
 lower = registry.lower

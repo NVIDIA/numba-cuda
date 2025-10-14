@@ -16,7 +16,7 @@ import operator
 from numba.cuda.np import arrayobj
 from numba.cuda.np import ufunc_db
 from numba.cuda.np.ufunc.sigparse import parse_signature
-from numba.core.imputils import (
+from numba.cuda.core.imputils import (
     Registry,
     impl_ret_new_ref,
     force_error_model,

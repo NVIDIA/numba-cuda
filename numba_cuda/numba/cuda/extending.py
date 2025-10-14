@@ -18,7 +18,7 @@ from numba.core.typing.typeof import typeof_impl  # noqa: F401
 from numba.core.typing.asnumbatype import as_numba_type  # noqa: F401
 from numba.core.typing.templates import infer, infer_getattr  # noqa: F401
 
-from numba.core.imputils import (  # noqa: F401
+from numba.cuda.core.imputils import (  # noqa: F401
     lower_builtin,
     lower_getattr,
     lower_getattr_generic,  # noqa: F401
@@ -48,7 +48,7 @@ def make_attribute_wrapper(typeclass, struct_attr, python_attr):
 
     from numba.core.datamodel import default_manager
     from numba.core.datamodel.models import StructModel
-    from numba.core.imputils import impl_ret_borrowed
+    from numba.cuda.core.imputils import impl_ret_borrowed
     from numba.core import types
     from numba.cuda import cgutils
 
@@ -619,14 +619,13 @@ class BoundLiteralArgs(
 
 
 def is_jitted(function):
-    """Returns True if a function is wrapped by one of the Numba @jit
-    decorators, for example: numba.jit, numba.njit
+    """Returns True if a function is wrapped by cuda.jit
 
     The purpose of this function is to provide a means to check if a function is
     already JIT decorated.
     """
 
     # don't want to export this so import locally
-    from numba.core.dispatcher import Dispatcher
+    from numba.cuda.dispatcher import CUDADispatcher
 
-    return isinstance(function, Dispatcher)
+    return isinstance(function, CUDADispatcher)
