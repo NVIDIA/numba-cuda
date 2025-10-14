@@ -8,7 +8,6 @@ API that are reported to numba.cuda
 import contextlib
 import os
 
-from numba.cuda.cudadrv import drvapi
 import numpy as np
 
 from .cudadrv import devicearray, devices, driver
@@ -48,10 +47,7 @@ def from_cuda_array_interface(desc, owner=None, sync=True):
     )
     size = driver.memory_size_from_info(shape, strides, dtype.itemsize)
 
-    if config.CUDA_USE_NVIDIA_BINDING:
-        cudevptr_class = driver.binding.CUdeviceptr
-    else:
-        cudevptr_class = drvapi.cu_device_ptr
+    cudevptr_class = driver.binding.CUdeviceptr
     devptr = cudevptr_class(desc["data"][0])
     data = driver.MemoryPointer(
         current_context(), devptr, size=size, owner=owner
