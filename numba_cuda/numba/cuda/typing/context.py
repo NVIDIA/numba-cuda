@@ -482,34 +482,33 @@ class BaseContext(object):
 
             return current_target.inherits_from(ft_target)
 
-        def is_external_type(typ):
-            """Check if a type is from outside numba.* namespace."""
+        def is_external(obj):
+            """Check if obj is from outside numba.* namespace."""
             try:
-                return not typ.__module__.startswith("numba.")
+                return not obj.__module__.startswith("numba.")
             except AttributeError:
                 return True
 
-        # Skip functions entirely when external_defs_only=True
-        if not external_defs_only:
-            for ftcls in loader.new_registrations("functions"):
-                if not is_for_this_target(ftcls):
-                    continue
-                self.insert_function(ftcls(self))
+        for ftcls in loader.new_registrations("functions"):
+            if not is_for_this_target(ftcls):
+                continue
+            # If external_defs_only, install templates only from external modules
+            if external_defs_only and not is_external(ftcls):
+                continue
+            self.insert_function(ftcls(self))
         for ftcls in loader.new_registrations("attributes"):
             if not is_for_this_target(ftcls):
                 continue
             # If external_defs_only, check if the type being registered is external
             if external_defs_only:
                 key = getattr(ftcls, "key", None)
-                if key is not None and not is_external_type(key):
+                if key is not None and not is_external(key):
                     continue
             self.insert_attributes(ftcls(self))
         for gv, gty in loader.new_registrations("globals"):
             # If external_defs_only, check the global type's module
             if external_defs_only:
-                if hasattr(gty, "__module__") and gty.__module__.startswith(
-                    "numba."
-                ):
+                if hasattr(gty, "__module__") and is_external(gty):
                     continue
             existing = self._lookup_global(gv)
             if existing is None:

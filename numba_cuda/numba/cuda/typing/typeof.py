@@ -64,14 +64,14 @@ def typeof_impl(val, c):
         if cffi_utils.is_ffi_instance(val):
             return types.ffi
 
-    # Fallback to Numba's typeof_impl for third-party registrations
-    from numba.core.typing.typeof import typeof_impl as core_typeof_impl
-
     try:
+        # Fallback to Numba's typeof_impl for third-party registrations
+        from numba.core.typing.typeof import typeof_impl as core_typeof_impl
+
         tp = core_typeof_impl(val, c)
         if tp is not None:
             return tp
-    except (ValueError, TypeError, AttributeError):
+    except Exception:
         pass
 
     return None
