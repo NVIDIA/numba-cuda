@@ -154,8 +154,11 @@ platforms = ["linux-64", "linux-aarch64", "win-64"]
 numba-cuda = { path = ".", editable = true }
 
 [tool.pixi.build-dependencies]
-gxx = "*"
 cuda-compiler = "*"
+make = "*"
+
+[tool.pixi.target.linux.build-dependencies]
+gxx = "*"
 
 [tool.pixi.environments]
 cu12 = { features = ["cu12", "test"], solve-group = "cu12" }
