@@ -14,7 +14,6 @@ from numba.cuda.cudadrv.driver import (
     _Linker,
     driver,
     launch_kernel,
-    USE_NV_BINDING,
     _have_nvjitlink,
 )
 from numba.cuda.cudadrv import devices
@@ -163,8 +162,7 @@ class _Runtime:
         memsys_size = ctypes.c_uint64()
         ptr, nbytes = self._memsys_module.get_global_symbol("memsys_size")
         device_memsys_size = ptr.device_ctypes_pointer
-        if USE_NV_BINDING:
-            device_memsys_size = device_memsys_size.value
+        device_memsys_size = device_memsys_size.value
         driver.cuMemcpyDtoH(
             ctypes.addressof(memsys_size), device_memsys_size, nbytes
         )

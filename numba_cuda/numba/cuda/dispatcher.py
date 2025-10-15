@@ -475,11 +475,7 @@ class _Kernel(serialize.ReduceMixin):
         for t, v in zip(self.argument_types, args):
             self._prepare_args(t, v, stream, retr, kernelargs)
 
-        if driver.USE_NV_BINDING:
-            stream_handle = stream and stream.handle.value or 0
-        else:
-            zero_stream = None
-            stream_handle = stream and stream.handle or zero_stream
+        stream_handle = stream and stream.handle.value or 0
 
         # Invoke kernel
         driver.launch_kernel(
@@ -553,8 +549,7 @@ class _Kernel(serialize.ReduceMixin):
 
             ptr = driver.device_pointer(devary)
 
-            if driver.USE_NV_BINDING:
-                ptr = int(ptr)
+            ptr = int(ptr)
 
             data = ctypes.c_void_p(ptr)
 

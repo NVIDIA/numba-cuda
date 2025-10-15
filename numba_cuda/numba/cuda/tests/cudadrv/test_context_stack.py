@@ -2,7 +2,6 @@
 # SPDX-License-Identifier: BSD-2-Clause
 
 import numbers
-from ctypes import byref
 import weakref
 
 from numba import cuda
@@ -31,9 +30,7 @@ class TestContextStack(CUDATestCase):
         device_ids = [device.id for device in cuda.list_devices()]
         for device_id in device_ids:
             with cuda.gpus[device_id]:
-                # Check that the device is an integer if not using the CUDA
-                # Python bindings, otherwise it's a CUdevice object
-                assert isinstance(device_id, int) != driver.USE_NV_BINDING
+                assert not isinstance(device_id, int)
                 self.assertEqual(cuda.gpus.current.id, device_id)
 
 
@@ -91,14 +88,9 @@ class Test3rdPartyContext(CUDATestCase):
     def test_attached_primary(self, extra_work=lambda: None):
         # Emulate primary context creation by 3rd party
         the_driver = driver.driver
-        if driver.USE_NV_BINDING:
-            dev = driver.binding.CUdevice(0)
-            binding_hctx = the_driver.cuDevicePrimaryCtxRetain(dev)
-            hctx = driver.drvapi.cu_context(int(binding_hctx))
-        else:
-            dev = 0
-            hctx = driver.drvapi.cu_context()
-            the_driver.cuDevicePrimaryCtxRetain(byref(hctx), dev)
+        dev = driver.binding.CUdevice(0)
+        binding_hctx = the_driver.cuDevicePrimaryCtxRetain(dev)
+        hctx = driver.drvapi.cu_context(int(binding_hctx))
         try:
             ctx = driver.Context(weakref.proxy(self), hctx)
             ctx.push()
@@ -115,33 +107,29 @@ class Test3rdPartyContext(CUDATestCase):
     def test_attached_non_primary(self):
         # Emulate non-primary context creation by 3rd party
         the_driver = driver.driver
-        if driver.USE_NV_BINDING:
-            flags = 0
-            dev = driver.binding.CUdevice(0)
+        flags = 0
+        dev = driver.binding.CUdevice(0)
 
-            result, version = driver.binding.cuDriverGetVersion()
-            self.assertEqual(
-                result,
-                driver.binding.CUresult.CUDA_SUCCESS,
-                "Error getting CUDA driver version",
-            )
+        result, version = driver.binding.cuDriverGetVersion()
+        self.assertEqual(
+            result,
+            driver.binding.CUresult.CUDA_SUCCESS,
+            "Error getting CUDA driver version",
+        )
 
-            # CUDA 13's cuCtxCreate has an optional parameter prepended. The
-            # version of cuCtxCreate in use depends on the cuda.bindings major
-            # version rather than the installed driver version on the machine
-            # we're running on.
-            from cuda import bindings
+        # CUDA 13's cuCtxCreate has an optional parameter prepended. The
+        # version of cuCtxCreate in use depends on the cuda.bindings major
+        # version rather than the installed driver version on the machine
+        # we're running on.
+        from cuda import bindings
 
-            bindings_version = int(bindings.__version__.split(".")[0])
-            if bindings_version in (11, 12):
-                args = (flags, dev)
-            else:
-                args = (None, flags, dev)
-
-            hctx = the_driver.cuCtxCreate(*args)
+        bindings_version = int(bindings.__version__.split(".")[0])
+        if bindings_version in (11, 12):
+            args = (flags, dev)
         else:
-            hctx = driver.drvapi.cu_context()
-            the_driver.cuCtxCreate(byref(hctx), 0, 0)
+            args = (None, flags, dev)
+
+        hctx = the_driver.cuCtxCreate(*args)
         try:
             cuda.current_context()
         except RuntimeError as e:
