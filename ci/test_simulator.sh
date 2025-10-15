@@ -50,7 +50,7 @@ set +e
 
 rapids-logger "Run Tests"
 export NUMBA_ENABLE_CUDASIM=1
-pytest -v
+pytest -v ..
 
 popd
 

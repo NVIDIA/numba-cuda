@@ -79,7 +79,7 @@ rapids-logger "Test importing numba.cuda"
 python -c "from numba import cuda"
 
 rapids-logger "Run Tests"
-pytest -v
+pytest -v ..
 
 popd
 

@@ -31,6 +31,6 @@ apt remove --purge `dpkg --get-selections | grep cuda-nvvm | awk '{print $1}'` -
 apt remove --purge `dpkg --get-selections | grep cuda-nvrtc | awk '{print $1}'` -y
 
 rapids-logger "Run Tests"
-NUMBA_CUDA_TEST_BIN_DIR=$NUMBA_CUDA_TEST_BIN_DIR python -m pytest -v
+NUMBA_CUDA_TEST_BIN_DIR=$NUMBA_CUDA_TEST_BIN_DIR python -m pytest -v ..
 
 popd

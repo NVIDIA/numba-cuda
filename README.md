@@ -47,7 +47,7 @@ Alternatively, you can use [pixi](https://pixi.sh/latest/installation/) to wrap 
 
 ```
 # run tests against CUDA 13
-pixi run -e cu13 test -n auto -v
+pixi run -e cu13 pytest -n auto -v
 ```
 
 
