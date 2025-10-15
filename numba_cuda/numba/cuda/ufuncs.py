@@ -17,6 +17,7 @@ from numba.cuda.mathimpl import (
     get_unary_impl_for_fn_and_ty,
     get_binary_impl_for_fn_and_ty,
 )
+from numba.cuda.np.ufunc_db import _fill_ufunc_db
 
 
 def get_ufunc_info(ufunc_key):
@@ -681,5 +682,7 @@ def ufunc_db():
         "F->F": npyfuncs.np_complex_log10_impl,
         "D->D": npyfuncs.np_complex_log10_impl,
     }
+
+    _fill_ufunc_db(db)
 
     return db
