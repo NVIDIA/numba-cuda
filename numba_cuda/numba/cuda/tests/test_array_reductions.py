@@ -4,6 +4,7 @@ import numpy as np
 
 from numba.tests.support import TestCase, MemoryLeakMixin
 from numba import cuda
+from numba.cuda import config
 
 
 class TestArrayReductions(MemoryLeakMixin, TestCase):
@@ -14,6 +15,12 @@ class TestArrayReductions(MemoryLeakMixin, TestCase):
     def setUp(self):
         super(TestArrayReductions, self).setUp()
         np.random.seed(42)
+        self.old_nrt_setting = config.CUDA_ENABLE_NRT
+        config.CUDA_ENABLE_NRT = True
+
+    def tearDown(self):
+        config.CUDA_ENABLE_NRT = self.old_nrt_setting
+        super(TestArrayReductions, self).tearDown()
 
     def test_all_basic(self):
         def check(arr):
