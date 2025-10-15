@@ -53,8 +53,10 @@ test = [
     "cffi",
     "pytest",
     "pytest-xdist",
+    "pytest-benchmark",
     "filecheck",
     "ml_dtypes",
+    "statistics",
 ]
 test-cu12 = [
     "nvidia-curand-cu12",
