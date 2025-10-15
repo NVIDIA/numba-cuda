@@ -178,6 +178,26 @@ build-tests = { cmd = [
     "-C",
     "$PIXI_PROJECT_ROOT/testing",
 ] }
+bench = { cmd = [
+    "pytest",
+    "$PIXI_PROJECT_ROOT/testing",
+    "--pyargs",
+    "numba.cuda.tests.benchmarks",
+    "--benchmark-only",
+    "--benchmark-enable",
+    "--benchmark-autosave",
+    "--benchmark-group-by=name",
+], depends-on = [{ task = "build-tests" }] }
+benchcmp = { cmd = [
+    "pytest",
+    "$PIXI_PROJECT_ROOT/testing",
+    "--pyargs",
+    "numba.cuda.tests.benchmarks",
+    "--benchmark-only",
+    "--benchmark-enable",
+    "--benchmark-group-by=name",
+    "--benchmark-compare",
+], depends-on = [{ task = "build-tests" }] }
 
 [tool.pixi.target.linux.tasks.test]
 cmd = ["pytest", "$PIXI_PROJECT_ROOT/testing"]
