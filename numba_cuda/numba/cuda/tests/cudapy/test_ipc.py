@@ -241,14 +241,15 @@ class TestIpcStaged(CUDAIpcTestCase):
         self.assertEqual(ipch_recon.size, ipch.size)
 
         # Test on every CUDA devices
+        ngpus = len(cuda.gpus)
         futures = [
             self.exe.submit(
                 staged_ipc_handle_test, ipch, device_num, parent_pid=os.getpid()
             )
-            for device_num in range(len(cuda.gpus))
+            for device_num in range(ngpus)
         ]
 
-        for fut in concurrent.futures.as_completed(futures, timeout=3.0):
+        for fut in concurrent.futures.as_completed(futures, timeout=3 * ngpus):
             np.testing.assert_equal(arr, fut.result())
 
     def test_ipc_array(self):
