@@ -1,6 +1,7 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-2-Clause
 
+import pytest
 import concurrent.futures
 import multiprocessing as mp
 import os
@@ -54,15 +55,9 @@ def ipc_array_test(ipcarr, parent_pid):
     assert pid != parent_pid
     with ipcarr as darr:
         arr = darr.copy_to_host()
-        try:
-            # should fail to reopen
+        with pytest.raises(ValueError, match="IpcHandle is already opened"):
             with ipcarr:
                 pass
-        except ValueError as e:
-            if str(e) != "IpcHandle is already opened":
-                raise AssertionError("invalid exception message")
-        else:
-            raise AssertionError("did not raise on reopen")
     return arr
 
 
@@ -199,15 +194,9 @@ def staged_ipc_array_test(ipcarr, device_num, parent_pid):
     with cuda.gpus[device_num]:
         with ipcarr as darr:
             arr = darr.copy_to_host()
-            try:
-                # should fail to reopen
+            with pytest.raises(ValueError, match="IpcHandle is already opened"):
                 with ipcarr:
                     pass
-            except ValueError as e:
-                if str(e) != "IpcHandle is already opened":
-                    raise AssertionError("invalid exception message")
-            else:
-                raise AssertionError("did not raise on reopen")
     return arr
 
 
