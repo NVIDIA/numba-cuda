@@ -10,7 +10,7 @@ import math
 
 from numba.cuda.core.imputils import impl_ret_untracked, Registry
 from numba.core import types
-from numba.core.typing import signature
+from numba.cuda.typing import signature
 from numba.cuda.cpython import mathimpl
 from numba.cuda.extending import overload
 

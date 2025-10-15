@@ -606,7 +606,7 @@ def carray(ptr, shape, dtype=None):
     given *shape*, in C order.  If *dtype* is given, it is used as the
     array's dtype, otherwise the array's dtype is inferred from *ptr*'s type.
     """
-    from numba.core.typing.ctypes_utils import from_ctypes
+    from numba.cuda.typing.ctypes_utils import from_ctypes
 
     try:
         # Use ctypes parameter protocol if available

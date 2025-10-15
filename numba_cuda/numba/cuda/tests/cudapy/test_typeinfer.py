@@ -3,7 +3,8 @@
 
 import itertools
 
-from numba.core import errors, types, typing
+from numba.core import errors, types
+from numba.cuda import typing
 from numba.cuda.typeconv import Conversion
 
 from numba.cuda.testing import CUDATestCase, skip_on_cudasim
