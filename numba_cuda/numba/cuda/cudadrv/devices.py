@@ -142,7 +142,8 @@ class _Runtime(object):
                 return attached_ctx
         else:
             devnum = int(devnum)
-            return self._activate_context_for(devnum)
+            with self._lock:
+                return self._activate_context_for(devnum)
 
     def _get_or_create_context_uncached(self, devnum):
         """See also ``get_or_create_context(devnum)``.
@@ -170,15 +171,14 @@ class _Runtime(object):
                 return ctx
 
     def _activate_context_for(self, devnum):
-        with self._lock:
-            gpu = self.gpus[devnum]
-            newctx = gpu.get_primary_context()
-            # Detect unexpected context switch
-            cached_ctx = self._get_attached_context()
-            if cached_ctx is not None and cached_ctx is not newctx:
-                raise RuntimeError("Cannot switch CUDA-context.")
-            newctx.push()
-            return newctx
+        gpu = self.gpus[devnum]
+        newctx = gpu.get_primary_context()
+        # Detect unexpected context switch
+        cached_ctx = self._get_attached_context()
+        if cached_ctx is not None and cached_ctx is not newctx:
+            raise RuntimeError("Cannot switch CUDA-context.")
+        newctx.push()
+        return newctx
 
     def _get_attached_context(self):
         try:
