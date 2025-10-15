@@ -5,18 +5,18 @@ from numba.cuda import types
 from numba.cuda.core import config
 
 
-class TestStruct:
+class MyStruct:
     def __init__(self, x, y):
         self.x = x
         self.y = y
 
 
-class TestStructModelType(types.Type):
+class StructModelType(types.Type):
     def __init__(self):
         super().__init__(name="TestStructModelType")
 
 
-test_struct_model_type = TestStructModelType()
+struct_model_type = StructModelType()
 
 
 if not config.ENABLE_CUDASIM:
@@ -33,32 +33,30 @@ if not config.ENABLE_CUDASIM:
     from numba.cuda.cudaimpl import lower
     from numba.cuda import cgutils
 
-    @typeof_impl.register(TestStruct)
+    @typeof_impl.register(MyStruct)
     def typeof_teststruct(val, c):
-        return test_struct_model_type
+        return struct_model_type
 
-    @register_model(TestStructModelType)
+    @register_model(StructModelType)
     class TestStructModel(core_models.StructModel):
         def __init__(self, dmm, fe_type):
             members = [("x", int32), ("y", int32)]
             super().__init__(dmm, fe_type, members)
 
-    make_attribute_wrapper(TestStructModelType, "x", "x")
-    make_attribute_wrapper(TestStructModelType, "y", "y")
+    make_attribute_wrapper(StructModelType, "x", "x")
+    make_attribute_wrapper(StructModelType, "y", "y")
 
-    @type_callable(TestStruct)
+    @type_callable(MyStruct)
     def type_test_struct(context):
         def typer(x, y):
             if isinstance(x, types.Integer) and isinstance(y, types.Integer):
-                return test_struct_model_type
+                return struct_model_type
 
         return typer
 
-    @lower(TestStruct, types.Integer, types.Integer)
+    @lower(MyStruct, types.Integer, types.Integer)
     def lower_test_type_ctor(context, builder, sig, args):
-        obj = cgutils.create_struct_proxy(test_struct_model_type)(
-            context, builder
-        )
+        obj = cgutils.create_struct_proxy(struct_model_type)(context, builder)
         obj.x = args[0]
         obj.y = args[1]
         return obj._getvalue()
