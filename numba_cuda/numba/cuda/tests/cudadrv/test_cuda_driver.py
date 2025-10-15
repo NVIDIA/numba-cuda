@@ -156,7 +156,6 @@ class TestCudaDriver(CUDATestCase):
         for i, v in enumerate(array):
             self.assertEqual(i, v)
 
-    @unittest.skipIf(not _driver.USE_NV_BINDING, "NV binding not enabled")
     def test_cuda_core_stream_operations(self):
         module = self.context.create_module_ptx(self.ptx)
         function = module.get_function("_Z10helloworldPi")
@@ -195,7 +194,6 @@ class TestCudaDriver(CUDATestCase):
         for i, v in enumerate(array):
             self.assertEqual(i, v)
 
-    @unittest.skipIf(not _driver.USE_NV_BINDING, "NV binding not enabled")
     def test_cuda_core_stream_launch_user_facing(self):
         @cuda.jit
         def kernel(a):
