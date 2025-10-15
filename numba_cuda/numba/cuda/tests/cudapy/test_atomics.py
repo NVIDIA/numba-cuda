@@ -789,12 +789,12 @@ class TestCudaAtomics(CUDATestCase):
         self.assertCorrectFloat64Atomics(cuda_func, shared=False)
 
     def test_atomic_sub(self):
-        ary = np.random.randint(0, 32, size=32).astype(np.uint32)
+        ary = np.random.randint(0, 32, size=32).astype(np.int32)
         orig = ary.copy()
-        cuda_atomic_sub = cuda.jit("void(uint32[:])")(atomic_sub)
+        cuda_atomic_sub = cuda.jit("void(int32[:])")(atomic_sub)
         cuda_atomic_sub[1, 32](ary)
 
-        gold = np.zeros(32, dtype=np.uint32)
+        gold = np.zeros(32, dtype=np.int32)
         for i in range(orig.size):
             gold[orig[i]] -= 1
 

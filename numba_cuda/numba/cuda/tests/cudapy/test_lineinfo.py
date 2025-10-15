@@ -3,12 +3,12 @@
 
 from numba import cuda
 from numba.cuda import float32, int32
-from numba.cuda.core.errors import NumbaInvalidConfigWarning
+from numba.cuda.errors import NumbaInvalidConfigWarning
+import pytest
+
 from numba.cuda.testing import CUDATestCase, skip_on_cudasim
-from numba.cuda.tests.support import ignore_internal_warnings
 import re
 import unittest
-import warnings
 
 
 @skip_on_cudasim("Simulator does not produce lineinfo")
@@ -187,20 +187,15 @@ class TestCudaLineInfo(CUDATestCase):
         )
 
     def test_debug_and_lineinfo_warning(self):
-        with warnings.catch_warnings(record=True) as w:
-            ignore_internal_warnings()
-
+        with pytest.warns(
+            NumbaInvalidConfigWarning,
+            match="debug and lineinfo are mutually exclusive",
+        ):
             # We pass opt=False to prevent the warning about opt and debug
             # occurring as well
             @cuda.jit(debug=True, lineinfo=True, opt=False)
             def f():
                 pass
-
-        self.assertEqual(len(w), 1)
-        self.assertEqual(w[0].category, NumbaInvalidConfigWarning)
-        self.assertIn(
-            "debug and lineinfo are mutually exclusive", str(w[0].message)
-        )
 
     def test_lineinfo_with_compile_internal(self):
         # Calling a function implemented using compile_internal should not
