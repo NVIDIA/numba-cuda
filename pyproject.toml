@@ -162,9 +162,7 @@ cuda = "13"
 [tool.pixi.build-dependencies]
 cuda-compiler = "*"
 make = "*"
-
-[tool.pixi.target.linux.build-dependencies]
-gxx = "*"
+cxx-compiler = "*"
 
 [tool.pixi.environments]
 cu12 = { features = ["cu12", "test"], solve-group = "cu12" }
