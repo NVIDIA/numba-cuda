@@ -396,11 +396,17 @@ class BaseContext(object):
 
     def _load_builtins(self):
         # Initialize declarations
-        from numba.cuda.typing import builtins, arraydecl, npdatetime
+        from numba.cuda.typing import (
+            builtins,
+            arraydecl,
+            npdatetime,
+            collections,
+        )
         from numba.cuda.typing import ctypes_utils, bufproto  # noqa: F401, E501
         from numba.cuda.core.unsafe import eh  # noqa: F401
 
         self.install_registry(builtins.registry)
+        self.install_registry(collections.registry)
         self.install_registry(arraydecl.registry)
         self.install_registry(npdatetime.registry)
         self.install_registry(templates.builtin_registry)
