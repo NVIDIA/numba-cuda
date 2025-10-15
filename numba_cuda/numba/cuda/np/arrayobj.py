@@ -17,7 +17,8 @@ from llvmlite.ir import Constant
 import numpy as np
 
 from numba import pndindex, literal_unroll
-from numba.core import types, typing, errors
+from numba.core import types, errors
+from numba.cuda import typing
 from numba.cuda import cgutils, extending
 from numba.cuda.np.numpy_support import (
     as_dtype,
@@ -36,7 +37,7 @@ from numba.cuda.np.numpy_support import (
     numpy_version,
     is_nonelike,
 )
-from numba.core.imputils import (
+from numba.cuda.core.imputils import (
     iternext_impl,
     impl_ret_borrowed,
     impl_ret_new_ref,
@@ -55,12 +56,12 @@ from numba.cuda.extending import (
 )
 from numba.misc import quicksort, mergesort
 from numba.cuda.cpython import slicing
-from numba.cpython.unsafe.tuple import (
+from numba.cuda.cpython.unsafe.tuple import (
     tuple_setitem,
     build_full_slice_tuple,
 )
 from numba.cuda.extending import overload_classmethod
-from numba.core.typing.npydecl import (
+from numba.cuda.typing.npydecl import (
     parse_dtype as ty_parse_dtype,
     parse_shape as ty_parse_shape,
     _parse_nested_sequence,

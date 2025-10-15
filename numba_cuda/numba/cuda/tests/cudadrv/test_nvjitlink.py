@@ -45,10 +45,8 @@ if TEST_BIN_DIR:
 
 
 @unittest.skipIf(
-    not config.CUDA_USE_NVIDIA_BINDING
-    or not TEST_BIN_DIR
-    or not _have_nvjitlink(),
-    "NVIDIA cuda bindings not enabled or nvJitLink not installed or new enough (>12.3)",
+    not TEST_BIN_DIR or not _have_nvjitlink(),
+    "nvJitLink not installed or new enough (>12.3)",
 )
 @skip_on_cudasim("Linking unsupported in the simulator")
 class TestLinker(CUDATestCase):

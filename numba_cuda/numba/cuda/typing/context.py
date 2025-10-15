@@ -8,11 +8,12 @@ import weakref
 import threading
 import contextlib
 import operator
+from importlib.util import find_spec
 
 from numba.core import types, errors
-from numba.core.typeconv import Conversion, rules
-from numba.core.typing.typeof import typeof, Purpose
-from numba.core.typing import templates
+from numba.cuda.typeconv import Conversion, rules
+from numba.cuda.typing.typeof import typeof, Purpose
+from numba.cuda.typing import templates
 from numba.cuda import utils
 from numba.cuda.utils import order_by_target_specificity
 
@@ -395,21 +396,49 @@ class BaseContext(object):
 
     def _load_builtins(self):
         # Initialize declarations
-        from numba.core.typing import builtins, arraydecl, npdatetime  # noqa: F401, E501
-        from numba.core.typing import ctypes_utils, bufproto  # noqa: F401, E501
-        from numba.core.unsafe import eh  # noqa: F401
+        from numba.cuda.typing import (
+            builtins,
+            arraydecl,
+            npdatetime,
+            collections,
+        )
+        from numba.cuda.typing import ctypes_utils, bufproto  # noqa: F401, E501
+        from numba.cuda.core.unsafe import eh  # noqa: F401
 
+        self.install_registry(builtins.registry)
+        self.install_registry(collections.registry)
+        self.install_registry(arraydecl.registry)
+        self.install_registry(npdatetime.registry)
         self.install_registry(templates.builtin_registry)
+
+        # Install only third-party declarations from Numba's typing registry
+        # if it is available. Exclude Numba's own typing declarations.
+        if find_spec("numba.core.typing") is not None:
+            from numba.core.typing import templates as core_templates
+
+            self.install_registry(
+                core_templates.builtin_registry, external_defs_only=True
+            )
 
     def load_additional_registries(self):
         """
         Load target-specific registries.  Can be overridden by subclasses.
         """
 
-    def install_registry(self, registry):
+    def install_registry(self, registry, external_defs_only=False):
         """
         Install a *registry* (a templates.Registry instance) of function,
         attribute and global declarations.
+
+        Parameters
+        ----------
+        registry : Registry
+            The registry to install
+        external_defs_only : bool, optional
+            If True, only install registrations for types from outside numba.* namespace.
+            This is useful when installing third-party registrations from
+            a shared registry like Numba's typing registry (builtin_registry).
+
         """
         try:
             loader = self._registries[registry]
@@ -459,15 +488,34 @@ class BaseContext(object):
 
             return current_target.inherits_from(ft_target)
 
+        def is_external(obj):
+            """Check if obj is from outside numba.* namespace."""
+            try:
+                return not obj.__module__.startswith("numba.")
+            except AttributeError:
+                return True
+
         for ftcls in loader.new_registrations("functions"):
             if not is_for_this_target(ftcls):
+                continue
+            # If external_defs_only, install templates only from external modules
+            if external_defs_only and not is_external(ftcls):
                 continue
             self.insert_function(ftcls(self))
         for ftcls in loader.new_registrations("attributes"):
             if not is_for_this_target(ftcls):
                 continue
+            # If external_defs_only, check if the type being registered is external
+            if external_defs_only:
+                key = getattr(ftcls, "key", None)
+                if key is not None and not is_external(key):
+                    continue
             self.insert_attributes(ftcls(self))
         for gv, gty in loader.new_registrations("globals"):
+            # If external_defs_only, check the global type's module
+            if external_defs_only:
+                if hasattr(gty, "__module__") and is_external(gty):
+                    continue
             existing = self._lookup_global(gv)
             if existing is None:
                 self.insert_global(gv, gty)
@@ -745,7 +793,21 @@ class Context(BaseContext):
     # that are needed for CUDA
     def load_additional_registries(self):
         from . import (
+            cffi_utils,
+            cmathdecl,
+            enumdecl,
+            listdecl,
+            mathdecl,
             npydecl,
+            setdecl,
+            dictdecl,
         )
 
+        self.install_registry(cffi_utils.registry)
+        self.install_registry(cmathdecl.registry)
+        self.install_registry(enumdecl.registry)
+        self.install_registry(listdecl.registry)
+        self.install_registry(mathdecl.registry)
         self.install_registry(npydecl.registry)
+        self.install_registry(setdecl.registry)
+        self.install_registry(dictdecl.registry)

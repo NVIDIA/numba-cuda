@@ -37,10 +37,17 @@ they are compiled for the appropriate compute capability.
 ```
 cd testing
 # Optionally, build test binaries and point to their location for the test suite
-make
+make -j $(nproc)
 export NUMBA_CUDA_TEST_BIN_DIR=`pwd`
 # Execute tests
 pytest -n auto -v
+```
+
+Alternatively, you can use [pixi](https://pixi.sh/latest/installation/) to wrap all of that up for you:
+
+```
+# run tests against CUDA 13
+pixi run -e cu13 test -n auto -v
 ```
 
 

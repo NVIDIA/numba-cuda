@@ -11,7 +11,6 @@ import re
 import textwrap
 from io import StringIO
 
-import numba.core.dispatcher
 from numba.core import ir
 
 
@@ -83,6 +82,8 @@ class TypeAnnotation(object):
         self.lifted_from = lifted_from
 
     def prepare_annotations(self):
+        from numba.cuda.dispatcher import LiftedLoop
+
         # Prepare annotations
         groupedinst = defaultdict(list)
         found_lifted_loop = False
@@ -103,7 +104,7 @@ class TypeAnnotation(object):
                     ):
                         atype = self.calltypes[inst.value]
                     elif isinstance(inst.value, ir.Const) and isinstance(
-                        inst.value.value, numba.core.dispatcher.LiftedLoop
+                        inst.value.value, LiftedLoop
                     ):
                         atype = "XXX Lifted Loop XXX"
                         found_lifted_loop = True

@@ -9,7 +9,7 @@ from typing import List, Tuple, Dict
 from numba import types
 from numba.cuda import cgutils
 from numba.core.datamodel import models
-from numba.core.imputils import Registry as ImplRegistry
+from numba.cuda.core.imputils import Registry as ImplRegistry
 from numba.cuda.typing.templates import ConcreteTemplate
 from numba.cuda.typing.templates import Registry as TypingRegistry
 from numba.cuda.typing.templates import signature

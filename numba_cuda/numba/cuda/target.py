@@ -6,14 +6,14 @@ from functools import cached_property
 import llvmlite.binding as ll
 from llvmlite import ir
 import warnings
+import importlib.util
 
 from numba.core import types
 
 from numba.core.compiler_lock import global_compiler_lock
-from numba.core.dispatcher import Dispatcher
 from numba.core.errors import NumbaWarning
 from numba.cuda.core.base import BaseContext
-from numba.core.typing import cmathdecl
+from numba.cuda.typing import cmathdecl
 from numba.core import datamodel
 
 from .cudadrv import nvvm
@@ -62,25 +62,32 @@ class CUDATypingContext(typing.BaseContext):
         # treat other dispatcher object as another device function
         from numba.cuda.dispatcher import CUDADispatcher
 
-        if isinstance(val, Dispatcher) and not isinstance(val, CUDADispatcher):
-            try:
-                # use cached device function
-                val = val.__dispatcher
-            except AttributeError:
-                if not val._can_compile:
-                    raise ValueError(
-                        "using cpu function on device "
-                        "but its compilation is disabled"
-                    )
-                targetoptions = val.targetoptions.copy()
-                targetoptions["device"] = True
-                targetoptions["debug"] = targetoptions.get("debug", False)
-                targetoptions["opt"] = targetoptions.get("opt", True)
-                disp = CUDADispatcher(val.py_func, targetoptions)
-                # cache the device function for future use and to avoid
-                # duplicated copy of the same function.
-                val.__dispatcher = disp
-                val = disp
+        try:
+            from numba.core.dispatcher import Dispatcher
+
+            if isinstance(val, Dispatcher) and not isinstance(
+                val, CUDADispatcher
+            ):
+                try:
+                    # use cached device function
+                    val = val.__dispatcher
+                except AttributeError:
+                    if not val._can_compile:
+                        raise ValueError(
+                            "using cpu function on device "
+                            "but its compilation is disabled"
+                        )
+                    targetoptions = val.targetoptions.copy()
+                    targetoptions["device"] = True
+                    targetoptions["debug"] = targetoptions.get("debug", False)
+                    targetoptions["opt"] = targetoptions.get("opt", True)
+                    disp = CUDADispatcher(val.py_func, targetoptions)
+                    # cache the device function for future use and to avoid
+                    # duplicated copy of the same function.
+                    val.__dispatcher = disp
+                    val = disp
+        except ImportError:
+            pass
 
         # continue with parent logic
         return super(CUDATypingContext, self).resolve_value_type(val)
@@ -88,7 +95,7 @@ class CUDATypingContext(typing.BaseContext):
     def can_convert(self, fromty, toty):
         """
         Check whether conversion is possible from *fromty* to *toty*.
-        If successful, return a numba.typeconv.Conversion instance;
+        If successful, return a numba.cuda.typeconv.Conversion instance;
         otherwise None is returned.
         """
 
@@ -215,6 +222,13 @@ class CUDATargetContext(BaseContext):
         self.install_registry(polynomial.registry)
         self.install_registry(npdatetime.registry)
         self.install_registry(arrayobj.registry)
+
+        # Install only implementations that are defined outside of numba (i.e.,
+        # in third-party extensions) from Numba's builtin_registry.
+        if importlib.util.find_spec("numba.core.imputils") is not None:
+            from numba.core.imputils import builtin_registry
+
+            self.install_external_registry(builtin_registry)
 
     def codegen(self):
         return self._internal_codegen

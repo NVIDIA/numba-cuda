@@ -9,13 +9,12 @@ import pickle
 import numpy as np
 
 from numba import cuda
-from numba.cuda.cudadrv import driver
 from numba.cuda.testing import (
     skip_on_arm,
     skip_on_cudasim,
     skip_under_cuda_memcheck,
     skip_on_wsl2,
-    ContextResettingTestCase,
+    CUDATestCase,
     ForeignArray,
 )
 from numba.cuda.tests.support import linux_only, windows_only
@@ -95,7 +94,7 @@ def ipc_array_test(ipcarr, result_queue):
 @skip_on_cudasim("Ipc not available in CUDASIM")
 @skip_on_arm("CUDA IPC not supported on ARM in Numba")
 @skip_on_wsl2("CUDA IPC unreliable on WSL2; skipping IPC tests")
-class TestIpcMemory(ContextResettingTestCase):
+class TestIpcMemory(CUDATestCase):
     def test_ipc_handle(self):
         # prepare data for IPC
         arr = np.arange(10, dtype=np.intp)
@@ -106,10 +105,7 @@ class TestIpcMemory(ContextResettingTestCase):
         ipch = ctx.get_ipc_handle(devarr.gpu_data)
 
         # manually prepare for serialization as bytes
-        if driver.USE_NV_BINDING:
-            handle_bytes = ipch.handle.reserved
-        else:
-            handle_bytes = bytes(ipch.handle)
+        handle_bytes = ipch.handle.reserved
         size = ipch.size
 
         # spawn new process for testing
@@ -153,12 +149,7 @@ class TestIpcMemory(ContextResettingTestCase):
         self.assertIs(ipch_recon.base, None)
         self.assertEqual(ipch_recon.size, ipch.size)
 
-        if driver.USE_NV_BINDING:
-            self.assertEqual(ipch_recon.handle.reserved, ipch.handle.reserved)
-        else:
-            self.assertEqual(
-                ipch_recon.handle.reserved[:], ipch.handle.reserved[:]
-            )
+        self.assertEqual(ipch_recon.handle.reserved, ipch.handle.reserved)
 
         # spawn new process for testing
         ctx = mp.get_context("spawn")
@@ -264,7 +255,7 @@ def staged_ipc_array_test(ipcarr, device_num, result_queue):
 @skip_on_cudasim("Ipc not available in CUDASIM")
 @skip_on_arm("CUDA IPC not supported on ARM in Numba")
 @skip_on_wsl2("CUDA IPC unreliable on WSL2; skipping IPC tests")
-class TestIpcStaged(ContextResettingTestCase):
+class TestIpcStaged(CUDATestCase):
     def test_staged(self):
         # prepare data for IPC
         arr = np.arange(10, dtype=np.intp)
@@ -281,12 +272,7 @@ class TestIpcStaged(ContextResettingTestCase):
         buf = pickle.dumps(ipch)
         ipch_recon = pickle.loads(buf)
         self.assertIs(ipch_recon.base, None)
-        if driver.USE_NV_BINDING:
-            self.assertEqual(ipch_recon.handle.reserved, ipch.handle.reserved)
-        else:
-            self.assertEqual(
-                ipch_recon.handle.reserved[:], ipch.handle.reserved[:]
-            )
+        self.assertEqual(ipch_recon.handle.reserved, ipch.handle.reserved)
         self.assertEqual(ipch_recon.size, ipch.size)
 
         # Test on every CUDA devices
@@ -324,7 +310,7 @@ class TestIpcStaged(ContextResettingTestCase):
 
 @windows_only
 @skip_on_cudasim("Ipc not available in CUDASIM")
-class TestIpcNotSupported(ContextResettingTestCase):
+class TestIpcNotSupported(CUDATestCase):
     def test_unsupported(self):
         arr = np.arange(10, dtype=np.intp)
         devarr = cuda.to_device(arr)

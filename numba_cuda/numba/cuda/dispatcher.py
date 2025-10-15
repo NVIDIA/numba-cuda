@@ -9,18 +9,20 @@ import collections
 import functools
 import types as pytypes
 import weakref
+from contextlib import ExitStack
+from abc import abstractmethod
 import uuid
 import re
 from warnings import warn
 
-from numba.core import types, errors, entrypoints
+from numba.core import types, errors
 from numba.cuda import serialize, utils
 from numba import cuda
 
 from numba.core.compiler_lock import global_compiler_lock
 from numba.core.typeconv.rules import default_type_manager
 from numba.cuda.typing.templates import fold_arguments
-from numba.core.typing.typeof import Purpose, typeof
+from numba.cuda.typing.typeof import Purpose, typeof
 
 from numba.cuda import typing
 from numba.cuda import types as cuda_types
@@ -32,8 +34,9 @@ from numba.cuda.compiler import (
     CUDACompiler,
     kernel_fixup,
     compile_extra,
+    compile_ir,
 )
-from numba.cuda.core import sigutils, config
+from numba.cuda.core import sigutils, config, entrypoints
 from numba.cuda.flags import Flags
 from numba.cuda.cudadrv import driver, nvvm
 from numba.cuda.locks import module_init_lock
@@ -46,7 +49,7 @@ from numba.cuda.errors import (
 from numba.cuda.cudadrv.linkable_code import LinkableCode
 from numba.cuda.cudadrv.devices import get_context
 from numba.cuda.memory_management.nrt import rtsys, NRT_LIBRARY
-
+import numba.cuda.core.event as ev
 from numba.cuda.cext import _dispatcher
 
 
@@ -472,11 +475,7 @@ class _Kernel(serialize.ReduceMixin):
         for t, v in zip(self.argument_types, args):
             self._prepare_args(t, v, stream, retr, kernelargs)
 
-        if driver.USE_NV_BINDING:
-            stream_handle = stream and stream.handle.value or 0
-        else:
-            zero_stream = None
-            stream_handle = stream and stream.handle or zero_stream
+        stream_handle = stream and stream.handle.value or 0
 
         # Invoke kernel
         driver.launch_kernel(
@@ -550,8 +549,7 @@ class _Kernel(serialize.ReduceMixin):
 
             ptr = driver.device_pointer(devary)
 
-            if driver.USE_NV_BINDING:
-                ptr = int(ptr)
+            ptr = int(ptr)
 
             data = ctypes.c_void_p(ptr)
 
@@ -1148,7 +1146,7 @@ class _DispatcherBase(_dispatcher.Dispatcher):
         else:
             if file is not None:
                 raise ValueError("`file` must be None if `pretty=True`")
-            from numba.core.annotations.pretty_annotate import Annotate
+            from numba.cuda.core.annotations.pretty_annotate import Annotate
 
             return Annotate(self, signature=signature, style=style)
 
@@ -2121,6 +2119,344 @@ class CUDADispatcher(serialize.ReduceMixin, _MemoMixin, _DispatcherBase):
         Compiled definitions are discarded.
         """
         return dict(py_func=self.py_func, targetoptions=self.targetoptions)
+
+
+class LiftedCode(serialize.ReduceMixin, _MemoMixin, _DispatcherBase):
+    """
+    Implementation of the hidden dispatcher objects used for lifted code
+    (a lifted loop is really compiled as a separate function).
+    """
+
+    _fold_args = False
+    can_cache = False
+
+    def __init__(self, func_ir, typingctx, targetctx, flags, locals):
+        self.func_ir = func_ir
+        self.lifted_from = None
+
+        self.typingctx = typingctx
+        self.targetctx = targetctx
+        self.flags = flags
+        self.locals = locals
+
+        _DispatcherBase.__init__(
+            self,
+            self.func_ir.arg_count,
+            self.func_ir.func_id.func,
+            self.func_ir.func_id.pysig,
+            can_fallback=True,
+            exact_match_required=False,
+        )
+
+    def _reduce_states(self):
+        """
+        Reduce the instance for pickling.  This will serialize
+        the original function as well the compilation options and
+        compiled signatures, but not the compiled code itself.
+
+        NOTE: part of ReduceMixin protocol
+        """
+        return dict(
+            uuid=self._uuid,
+            func_ir=self.func_ir,
+            flags=self.flags,
+            locals=self.locals,
+            extras=self._reduce_extras(),
+        )
+
+    def _reduce_extras(self):
+        """
+        NOTE: sub-class can override to add extra states
+        """
+        return {}
+
+    @classmethod
+    def _rebuild(cls, uuid, func_ir, flags, locals, extras):
+        """
+        Rebuild an Dispatcher instance after it was __reduce__'d.
+
+        NOTE: part of ReduceMixin protocol
+        """
+        try:
+            return cls._memo[uuid]
+        except KeyError:
+            pass
+
+        from numba.cuda.descriptor import cuda_target
+
+        typingctx = cuda_target.typing_context
+        targetctx = cuda_target.target_context
+
+        self = cls(func_ir, typingctx, targetctx, flags, locals, **extras)
+        self._set_uuid(uuid)
+        return self
+
+    def get_source_location(self):
+        """Return the starting line number of the loop."""
+        return self.func_ir.loc.line
+
+    def _pre_compile(self, args, return_type, flags):
+        """Pre-compile actions"""
+        pass
+
+    @abstractmethod
+    def compile(self, sig):
+        """Lifted code should implement a compilation method that will return
+        a CompileResult.entry_point for the given signature."""
+        pass
+
+    def _get_dispatcher_for_current_target(self):
+        # Lifted code does not honor the target switch currently.
+        # No work has been done to check if this can be allowed.
+        return self
+
+
+class LiftedLoop(LiftedCode):
+    def _pre_compile(self, args, return_type, flags):
+        assert not flags.enable_looplift, "Enable looplift flags is on"
+
+    def compile(self, sig):
+        with ExitStack() as scope:
+            cres = None
+
+            def cb_compiler(dur):
+                if cres is not None:
+                    self._callback_add_compiler_timer(dur, cres)
+
+            def cb_llvm(dur):
+                if cres is not None:
+                    self._callback_add_llvm_timer(dur, cres)
+
+            scope.enter_context(
+                ev.install_timer("numba:compiler_lock", cb_compiler)
+            )
+            scope.enter_context(ev.install_timer("numba:llvm_lock", cb_llvm))
+            scope.enter_context(global_compiler_lock)
+
+            # Use counter to track recursion compilation depth
+            with self._compiling_counter:
+                # XXX this is mostly duplicated from Dispatcher.
+                flags = self.flags
+                args, return_type = sigutils.normalize_signature(sig)
+
+                # Don't recompile if signature already exists
+                # (e.g. if another thread compiled it before we got the lock)
+                existing = self.overloads.get(tuple(args))
+                if existing is not None:
+                    return existing.entry_point
+
+                self._pre_compile(args, return_type, flags)
+
+                # copy the flags, use nopython first
+                npm_loop_flags = flags.copy()
+                npm_loop_flags.force_pyobject = False
+
+                pyobject_loop_flags = flags.copy()
+                pyobject_loop_flags.force_pyobject = True
+
+                # Clone IR to avoid (some of the) mutation in the rewrite pass
+                cloned_func_ir_npm = self.func_ir.copy()
+                cloned_func_ir_fbk = self.func_ir.copy()
+
+                ev_details = dict(
+                    dispatcher=self,
+                    args=args,
+                    return_type=return_type,
+                )
+                with ev.trigger_event("numba:compile", data=ev_details):
+                    # this emulates "object mode fall-back", try nopython, if it
+                    # fails, then try again in object mode.
+                    try:
+                        cres = compile_ir(
+                            typingctx=self.typingctx,
+                            targetctx=self.targetctx,
+                            func_ir=cloned_func_ir_npm,
+                            args=args,
+                            return_type=return_type,
+                            flags=npm_loop_flags,
+                            locals=self.locals,
+                            lifted=(),
+                            lifted_from=self.lifted_from,
+                            is_lifted_loop=True,
+                        )
+                    except errors.TypingError:
+                        cres = compile_ir(
+                            typingctx=self.typingctx,
+                            targetctx=self.targetctx,
+                            func_ir=cloned_func_ir_fbk,
+                            args=args,
+                            return_type=return_type,
+                            flags=pyobject_loop_flags,
+                            locals=self.locals,
+                            lifted=(),
+                            lifted_from=self.lifted_from,
+                            is_lifted_loop=True,
+                        )
+                    # Check typing error if object mode is used
+                    if cres.typing_error is not None:
+                        raise cres.typing_error
+                    self.add_overload(cres)
+                return cres.entry_point
+
+
+class LiftedWith(LiftedCode):
+    can_cache = True
+
+    def _reduce_extras(self):
+        return dict(output_types=self.output_types)
+
+    @property
+    def _numba_type_(self):
+        return types.Dispatcher(self)
+
+    def get_call_template(self, args, kws):
+        """
+        Get a typing.ConcreteTemplate for this dispatcher and the given
+        *args* and *kws* types.  This enables the resolving of the return type.
+
+        A (template, pysig, args, kws) tuple is returned.
+        """
+        # Ensure an overload is available
+        if self._can_compile:
+            self.compile(tuple(args))
+
+        pysig = None
+        # Create function type for typing
+        func_name = self.py_func.__name__
+        name = "CallTemplate({0})".format(func_name)
+        # The `key` isn't really used except for diagnosis here,
+        # so avoid keeping a reference to `cfunc`.
+        call_template = typing.make_concrete_template(
+            name, key=func_name, signatures=self.nopython_signatures
+        )
+        return call_template, pysig, args, kws
+
+    def compile(self, sig):
+        # this is similar to LiftedLoop's compile but does not have the
+        # "fallback" to object mode part.
+        with ExitStack() as scope:
+            cres = None
+
+            def cb_compiler(dur):
+                if cres is not None:
+                    self._callback_add_compiler_timer(dur, cres)
+
+            def cb_llvm(dur):
+                if cres is not None:
+                    self._callback_add_llvm_timer(dur, cres)
+
+            scope.enter_context(
+                ev.install_timer("numba:compiler_lock", cb_compiler)
+            )
+            scope.enter_context(ev.install_timer("numba:llvm_lock", cb_llvm))
+            scope.enter_context(global_compiler_lock)
+
+            # Use counter to track recursion compilation depth
+            with self._compiling_counter:
+                # XXX this is mostly duplicated from Dispatcher.
+                flags = self.flags
+                args, return_type = sigutils.normalize_signature(sig)
+
+                # Don't recompile if signature already exists
+                # (e.g. if another thread compiled it before we got the lock)
+                existing = self.overloads.get(tuple(args))
+                if existing is not None:
+                    return existing.entry_point
+
+                self._pre_compile(args, return_type, flags)
+
+                # Clone IR to avoid (some of the) mutation in the rewrite pass
+                cloned_func_ir = self.func_ir.copy()
+
+                ev_details = dict(
+                    dispatcher=self,
+                    args=args,
+                    return_type=return_type,
+                )
+                with ev.trigger_event("numba:compile", data=ev_details):
+                    cres = compile_ir(
+                        typingctx=self.typingctx,
+                        targetctx=self.targetctx,
+                        func_ir=cloned_func_ir,
+                        args=args,
+                        return_type=return_type,
+                        flags=flags,
+                        locals=self.locals,
+                        lifted=(),
+                        lifted_from=self.lifted_from,
+                        is_lifted_loop=True,
+                    )
+
+                    # Check typing error if object mode is used
+                    if (
+                        cres.typing_error is not None
+                        and not flags.enable_pyobject
+                    ):
+                        raise cres.typing_error
+                    self.add_overload(cres)
+                return cres.entry_point
+
+
+class ObjModeLiftedWith(LiftedWith):
+    def __init__(self, *args, **kwargs):
+        self.output_types = kwargs.pop("output_types", None)
+        super(LiftedWith, self).__init__(*args, **kwargs)
+        if not self.flags.force_pyobject:
+            raise ValueError("expecting `flags.force_pyobject`")
+        if self.output_types is None:
+            raise TypeError("`output_types` must be provided")
+        # switch off rewrites, they have no effect
+        self.flags.no_rewrites = True
+
+    @property
+    def _numba_type_(self):
+        return types.ObjModeDispatcher(self)
+
+    def get_call_template(self, args, kws):
+        """
+        Get a typing.ConcreteTemplate for this dispatcher and the given
+        *args* and *kws* types.  This enables the resolving of the return type.
+
+        A (template, pysig, args, kws) tuple is returned.
+        """
+        assert not kws
+        self._legalize_arg_types(args)
+        # Coerce to object mode
+        args = [types.ffi_forced_object] * len(args)
+
+        if self._can_compile:
+            self.compile(tuple(args))
+
+        signatures = [typing.signature(self.output_types, *args)]
+        pysig = None
+        func_name = self.py_func.__name__
+        name = "CallTemplate({0})".format(func_name)
+        call_template = typing.make_concrete_template(
+            name, key=func_name, signatures=signatures
+        )
+
+        return call_template, pysig, args, kws
+
+    def _legalize_arg_types(self, args):
+        for i, a in enumerate(args, start=1):
+            if isinstance(a, types.List):
+                msg = (
+                    "Does not support list type inputs into "
+                    "with-context for arg {}"
+                )
+                raise errors.TypingError(msg.format(i))
+            elif isinstance(a, types.Dispatcher):
+                msg = (
+                    "Does not support function type inputs into "
+                    "with-context for arg {}"
+                )
+                raise errors.TypingError(msg.format(i))
+
+    @global_compiler_lock
+    def compile(self, sig):
+        args, _ = sigutils.normalize_signature(sig)
+        sig = (types.ffi_forced_object,) * len(args)
+        return super().compile(sig)
 
 
 # Initialize typeof machinery

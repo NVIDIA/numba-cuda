@@ -11,13 +11,13 @@ rapids-logger "Install wheel with test dependencies"
 package=$(realpath wheel/numba_cuda*.whl)
 echo "Package path: ${package}"
 # TODO: control minor version pinning to honor TEST_MATRIX once the cuda-toolkit metapackage is up
-python -m pip install "${package}[cu${CUDA_VER_MAJOR},test-cu${CUDA_VER_MAJOR}]"
+python -m pip install "${package}[cu${CUDA_VER_MAJOR}]" --group "test-cu${CUDA_VER_MAJOR}"
 
 rapids-logger "Build test binaries"
 
 export NUMBA_CUDA_TEST_BIN_DIR=`pwd`/testing
 pushd $NUMBA_CUDA_TEST_BIN_DIR
-make
+make -j $(nproc)
 
 rapids-logger "Check GPU usage"
 nvidia-smi
