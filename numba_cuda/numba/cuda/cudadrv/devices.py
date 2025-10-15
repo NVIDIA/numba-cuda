@@ -86,7 +86,7 @@ class _DeviceContextManager(object):
         self._device.get_primary_context().pop()
 
     def __str__(self):
-        return "<Managed Device {self.id}>".format(self=self)
+        return f"<Managed Device {self.id}>"
 
 
 class _Runtime(object):
@@ -161,11 +161,10 @@ class _Runtime(object):
                     ctx_handle = ctx.handle.value
                     ac_ctx_handle = ac.context_handle.value
                     if ctx_handle != ac_ctx_handle:
-                        msg = (
+                        raise RuntimeError(
                             "Numba cannot operate on non-primary"
-                            " CUDA context {:x}"
+                            f" CUDA context {ac_ctx_handle:x}"
                         )
-                        raise RuntimeError(msg.format(ac_ctx_handle))
                     # Ensure the context is ready
                     ctx.prepare_for_use()
                 return ctx
