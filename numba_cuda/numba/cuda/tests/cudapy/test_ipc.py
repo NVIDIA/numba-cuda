@@ -78,15 +78,6 @@ class CUDAIpcTestCase(CUDATestCase):
         cls.exe.shutdown()
         del cls.exe
 
-    # def setUp(self) -> None:
-    #     self.exe = concurrent.futures.ProcessPoolExecutor(
-    #         mp_context=mp.get_context("spawn")
-    #     )
-    #
-    # def tearDown(self) -> None:
-    #     self.exe.shutdown(wait=True)
-    #     del self.exe
-
 
 @linux_only
 @skip_under_cuda_memcheck("Hangs cuda-memcheck")
