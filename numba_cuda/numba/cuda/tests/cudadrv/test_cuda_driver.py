@@ -16,8 +16,7 @@ from numba.cuda.testing import unittest, CUDATestCase
 from numba.cuda.testing import skip_on_cudasim
 import contextlib
 
-if _driver.USE_NV_BINDING:
-    from cuda.core.experimental import Device
+from cuda.core.experimental import Device
 
 ptx1 = """
     .version 1.4
