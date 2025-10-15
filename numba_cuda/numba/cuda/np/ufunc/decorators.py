@@ -55,8 +55,8 @@ class GUVectorize(_BaseVectorize):
         )
 
 
-def vectorize(ftylist_or_function=(), **kws):
-    """vectorize(ftylist_or_function=(), target='cpu', identity=None, **kws)
+def vectorize(ftylist_or_function=(), target="cuda", **kws):
+    """vectorize(ftylist_or_function=(), target='cuda', identity=None, **kws)
 
     A decorator that creates a NumPy ufunc object using Numba compiled
     code.  When no arguments or only keyword arguments are given,
@@ -79,7 +79,7 @@ def vectorize(ftylist_or_function=(), **kws):
     ------------
 
     target: str
-            A string for code generation target.  Default to "cpu".
+            A string for code generation target.  Default to "cuda".
 
     identity: int, str, or None
         The identity (or unit) value for the element-wise function
@@ -118,6 +118,7 @@ def vectorize(ftylist_or_function=(), **kws):
         ftylist = ftylist_or_function
 
     def wrap(func):
+        kws["target"] = target
         vec = Vectorize(func, **kws)
         for sig in ftylist:
             vec.add(sig)
@@ -129,7 +130,7 @@ def vectorize(ftylist_or_function=(), **kws):
 
 
 def guvectorize(*args, **kwargs):
-    """guvectorize(ftylist, signature, target='cpu', identity=None, **kws)
+    """guvectorize(ftylist, signature, target='cuda', identity=None, **kws)
 
     A decorator to create NumPy generalized-ufunc object from Numba compiled
     code.
@@ -157,7 +158,7 @@ def guvectorize(*args, **kwargs):
         a tuple of indices of input variables that are writable.
 
     target: str
-            A string for code generation target.  Defaults to "cpu".
+            A string for code generation target.  Defaults to "cuda".
 
     Returns
     --------
@@ -188,6 +189,8 @@ def guvectorize(*args, **kwargs):
     if isinstance(ftylist, str):
         # Common user mistake
         ftylist = [ftylist]
+
+    kwargs.setdefault("target", "cuda")
 
     def wrap(func):
         guvec = GUVectorize(func, signature, **kwargs)
