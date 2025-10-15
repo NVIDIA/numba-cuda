@@ -37,3 +37,377 @@ class TestArrayReductions(MemoryLeakMixin, TestCase):
         check(arr)
         arr = np.float64([[1.0, 1.5], [1.5, 1.0]])
         check(arr)
+
+    def test_any_basic(self):
+        def check(arr):
+            @cuda.jit
+            def kernel(out):
+                gid = cuda.grid(1)
+                if gid < 1:
+                    out[0] = np.any(arr)
+
+            out = cuda.to_device(np.zeros(1, dtype=np.bool_))
+            kernel[1, 1](out)
+            self.assertPreciseEqual(np.any(arr), out.copy_to_host()[0])
+
+        arr = np.float64([0.0, -0.0, 0.0, 0.0])
+        check(arr)
+        arr[2] = float("nan")
+        check(arr)
+        arr[2] = float("inf")
+        check(arr)
+        arr[2] = 1.5
+        check(arr)
+        arr = arr.reshape((2, 2))
+        check(arr)
+        check(arr[::-1])
+
+    def test_sum_basic(self):
+        def check(arr):
+            @cuda.jit
+            def kernel(out):
+                gid = cuda.grid(1)
+                if gid < 1:
+                    out[0] = np.sum(arr)
+
+            out = cuda.to_device(np.zeros(1, dtype=np.float64))
+            kernel[1, 1](out)
+            self.assertPreciseEqual(np.sum(arr), out.copy_to_host()[0])
+
+        arrays = [
+            np.float64([1.0, 2.0, 0.0, -0.0, 1.0, -1.5]),
+            np.float64([-0.0, -1.5]),
+            np.float64([-1.5, 2.5, float("inf")]),
+            np.float64([-1.5, 2.5, -float("inf")]),
+            np.float64([-1.5, 2.5, float("inf"), -float("inf")]),
+            np.float64([np.nan, -1.5, 2.5, np.nan, 3.0]),
+            np.float64(
+                [np.nan, -1.5, 2.5, np.nan, float("inf"), -float("inf"), 3.0]
+            ),
+            np.float64([5.0, np.nan, -1.5, np.nan]),
+            np.float64([np.nan, np.nan]),
+        ]
+        for arr in arrays:
+            check(arr)
+
+    def test_mean_basic(self):
+        def check(arr):
+            @cuda.jit
+            def kernel(out):
+                gid = cuda.grid(1)
+                if gid < 1:
+                    out[0] = np.mean(arr)
+
+            out = cuda.to_device(np.zeros(1, dtype=np.float64))
+            kernel[1, 1](out)
+            self.assertPreciseEqual(np.mean(arr), out.copy_to_host()[0])
+
+        arrays = [
+            np.float64([1.0, 2.0, 0.0, -0.0, 1.0, -1.5]),
+            np.float64([-0.0, -1.5]),
+            np.float64([-1.5, 2.5, float("inf")]),
+            np.float64([-1.5, 2.5, -float("inf")]),
+            np.float64([-1.5, 2.5, float("inf"), -float("inf")]),
+            np.float64([np.nan, -1.5, 2.5, np.nan, 3.0]),
+            np.float64(
+                [np.nan, -1.5, 2.5, np.nan, float("inf"), -float("inf"), 3.0]
+            ),
+            np.float64([5.0, np.nan, -1.5, np.nan]),
+            np.float64([np.nan, np.nan]),
+        ]
+        for arr in arrays:
+            check(arr)
+
+    def test_var_basic(self):
+        def check(arr):
+            @cuda.jit
+            def kernel(out):
+                gid = cuda.grid(1)
+                if gid < 1:
+                    out[0] = np.var(arr)
+
+            out = cuda.to_device(np.zeros(1, dtype=np.float64))
+            kernel[1, 1](out)
+            self.assertPreciseEqual(np.var(arr), out.copy_to_host()[0])
+
+        arrays = [
+            np.float64([1.0, 2.0, 0.0, -0.0, 1.0, -1.5]),
+            np.float64([-0.0, -1.5]),
+            np.float64([-1.5, 2.5, float("inf")]),
+            np.float64([-1.5, 2.5, -float("inf")]),
+            np.float64([-1.5, 2.5, float("inf"), -float("inf")]),
+            np.float64([np.nan, -1.5, 2.5, np.nan, 3.0]),
+            np.float64(
+                [np.nan, -1.5, 2.5, np.nan, float("inf"), -float("inf"), 3.0]
+            ),
+            np.float64([5.0, np.nan, -1.5, np.nan]),
+            np.float64([np.nan, np.nan]),
+        ]
+        for arr in arrays:
+            check(arr)
+
+    def test_std_basic(self):
+        def check(arr):
+            @cuda.jit
+            def kernel(out):
+                gid = cuda.grid(1)
+                if gid < 1:
+                    out[0] = np.std(arr)
+
+            out = cuda.to_device(np.zeros(1, dtype=np.float64))
+            kernel[1, 1](out)
+            self.assertPreciseEqual(np.std(arr), out.copy_to_host()[0])
+
+        arrays = [
+            np.float64([1.0, 2.0, 0.0, -0.0, 1.0, -1.5]),
+            np.float64([-0.0, -1.5]),
+            np.float64([-1.5, 2.5, float("inf")]),
+            np.float64([-1.5, 2.5, -float("inf")]),
+            np.float64([-1.5, 2.5, float("inf"), -float("inf")]),
+            np.float64([np.nan, -1.5, 2.5, np.nan, 3.0]),
+            np.float64(
+                [np.nan, -1.5, 2.5, np.nan, float("inf"), -float("inf"), 3.0]
+            ),
+            np.float64([5.0, np.nan, -1.5, np.nan]),
+            np.float64([np.nan, np.nan]),
+        ]
+        for arr in arrays:
+            check(arr)
+
+    def test_min_basic(self):
+        def check(arr):
+            @cuda.jit
+            def kernel(out):
+                gid = cuda.grid(1)
+                if gid < 1:
+                    out[0] = np.min(arr)
+
+            out = cuda.to_device(np.zeros(1, dtype=np.float64))
+            kernel[1, 1](out)
+            self.assertPreciseEqual(np.min(arr), out.copy_to_host()[0])
+
+        arrays = [
+            np.float64([1.0, 2.0, 0.0, -0.0, 1.0, -1.5]),
+            np.float64([-0.0, -1.5]),
+            np.float64([-1.5, 2.5, float("inf")]),
+            np.float64([-1.5, 2.5, -float("inf")]),
+            np.float64([-1.5, 2.5, float("inf"), -float("inf")]),
+            np.float64([np.nan, -1.5, 2.5, np.nan, 3.0]),
+            np.float64(
+                [np.nan, -1.5, 2.5, np.nan, float("inf"), -float("inf"), 3.0]
+            ),
+            np.float64([5.0, np.nan, -1.5, np.nan]),
+            np.float64([np.nan, np.nan]),
+        ]
+        for arr in arrays:
+            check(arr)
+
+    def test_max_basic(self):
+        def check(arr):
+            @cuda.jit
+            def kernel(out):
+                gid = cuda.grid(1)
+                if gid < 1:
+                    out[0] = np.max(arr)
+
+            out = cuda.to_device(np.zeros(1, dtype=np.float64))
+            kernel[1, 1](out)
+            self.assertPreciseEqual(np.max(arr), out.copy_to_host()[0])
+
+        arrays = [
+            np.float64([1.0, 2.0, 0.0, -0.0, 1.0, -1.5]),
+            np.float64([-0.0, -1.5]),
+            np.float64([-1.5, 2.5, float("inf")]),
+            np.float64([-1.5, 2.5, -float("inf")]),
+            np.float64([-1.5, 2.5, float("inf"), -float("inf")]),
+            np.float64([np.nan, -1.5, 2.5, np.nan, 3.0]),
+            np.float64(
+                [np.nan, -1.5, 2.5, np.nan, float("inf"), -float("inf"), 3.0]
+            ),
+            np.float64([5.0, np.nan, -1.5, np.nan]),
+            np.float64([np.nan, np.nan]),
+        ]
+        for arr in arrays:
+            check(arr)
+
+    def test_nanmin_basic(self):
+        def check(arr):
+            @cuda.jit
+            def kernel(out):
+                gid = cuda.grid(1)
+                if gid < 1:
+                    out[0] = np.nanmin(arr)
+
+            out = cuda.to_device(np.zeros(1, dtype=np.float64))
+            kernel[1, 1](out)
+            self.assertPreciseEqual(np.nanmin(arr), out.copy_to_host()[0])
+
+        arrays = [
+            np.float64([1.0, 2.0, 0.0, -0.0, 1.0, -1.5]),
+            np.float64([-0.0, -1.5]),
+            np.float64([-1.5, 2.5, np.nan]),
+            np.float64([-1.5, 2.5, float("inf")]),
+            np.float64([-1.5, 2.5, -float("inf")]),
+            np.float64([-1.5, 2.5, float("inf"), -float("inf")]),
+            np.float64([np.nan, -1.5, 2.5, np.nan, 3.0]),
+            np.float64([5.0, np.nan, -1.5, np.nan]),
+            np.float64([np.nan, np.nan]),
+        ]
+        for arr in arrays:
+            check(arr)
+
+    def test_nanmax_basic(self):
+        def check(arr):
+            @cuda.jit
+            def kernel(out):
+                gid = cuda.grid(1)
+                if gid < 1:
+                    out[0] = np.nanmax(arr)
+
+            out = cuda.to_device(np.zeros(1, dtype=np.float64))
+            kernel[1, 1](out)
+            self.assertPreciseEqual(np.nanmax(arr), out.copy_to_host()[0])
+
+        arrays = [
+            np.float64([1.0, 2.0, 0.0, -0.0, 1.0, -1.5]),
+            np.float64([-0.0, -1.5]),
+            np.float64([-1.5, 2.5, np.nan]),
+            np.float64([-1.5, 2.5, float("inf")]),
+            np.float64([-1.5, 2.5, -float("inf")]),
+            np.float64([-1.5, 2.5, float("inf"), -float("inf")]),
+            np.float64([np.nan, -1.5, 2.5, np.nan, 3.0]),
+            np.float64([5.0, np.nan, -1.5, np.nan]),
+            np.float64([np.nan, np.nan]),
+        ]
+        for arr in arrays:
+            check(arr)
+
+    def test_nanmean_basic(self):
+        def check(arr):
+            @cuda.jit
+            def kernel(out):
+                gid = cuda.grid(1)
+                if gid < 1:
+                    out[0] = np.nanmean(arr)
+
+            out = cuda.to_device(np.zeros(1, dtype=np.float64))
+            kernel[1, 1](out)
+            self.assertPreciseEqual(np.nanmean(arr), out.copy_to_host()[0])
+
+        arrays = [
+            np.float64([1.0, 2.0, 0.0, -0.0, 1.0, -1.5]),
+            np.float64([-0.0, -1.5]),
+            np.float64([-1.5, 2.5, np.nan]),
+            np.float64([np.nan, -1.5, 2.5, np.nan, 3.0]),
+            np.float64(
+                [np.nan, -1.5, 2.5, np.nan, float("inf"), -float("inf"), 3.0]
+            ),
+            np.float64([5.0, np.nan, -1.5, np.nan]),
+            np.float64([np.nan, np.nan]),
+        ]
+        for arr in arrays:
+            check(arr)
+
+    def test_nansum_basic(self):
+        def check(arr):
+            @cuda.jit
+            def kernel(out):
+                gid = cuda.grid(1)
+                if gid < 1:
+                    out[0] = np.nansum(arr)
+
+            out = cuda.to_device(np.zeros(1, dtype=np.float64))
+            kernel[1, 1](out)
+            self.assertPreciseEqual(np.nansum(arr), out.copy_to_host()[0])
+
+        arrays = [
+            np.float64([1.0, 2.0, 0.0, -0.0, 1.0, -1.5]),
+            np.float64([-0.0, -1.5]),
+            np.float64([-1.5, 2.5, np.nan]),
+            np.float64([-1.5, 2.5, float("inf")]),
+            np.float64([-1.5, 2.5, -float("inf")]),
+            np.float64([-1.5, 2.5, float("inf"), -float("inf")]),
+            np.float64([np.nan, -1.5, 2.5, np.nan, 3.0]),
+            np.float64([5.0, np.nan, -1.5, np.nan]),
+            np.float64([np.nan, np.nan]),
+        ]
+        for arr in arrays:
+            check(arr)
+
+    def test_nanprod_basic(self):
+        def check(arr):
+            @cuda.jit
+            def kernel(out):
+                gid = cuda.grid(1)
+                if gid < 1:
+                    out[0] = np.nanprod(arr)
+
+            out = cuda.to_device(np.zeros(1, dtype=np.float64))
+            kernel[1, 1](out)
+            self.assertPreciseEqual(np.nanprod(arr), out.copy_to_host()[0])
+
+        arrays = [
+            np.float64([1.0, 2.0, 0.0, -0.0, 1.0, -1.5]),
+            np.float64([-0.0, -1.5]),
+            np.float64([-1.5, 2.5, np.nan]),
+            np.float64([-1.5, 2.5, float("inf")]),
+            np.float64([-1.5, 2.5, -float("inf")]),
+            np.float64([-1.5, 2.5, float("inf"), -float("inf")]),
+            np.float64([np.nan, -1.5, 2.5, np.nan, 3.0]),
+            np.float64([5.0, np.nan, -1.5, np.nan]),
+            np.float64([np.nan, np.nan]),
+        ]
+        for arr in arrays:
+            check(arr)
+
+    def test_nanstd_basic(self):
+        def check(arr):
+            @cuda.jit
+            def kernel(out):
+                gid = cuda.grid(1)
+                if gid < 1:
+                    out[0] = np.nanstd(arr)
+
+            out = cuda.to_device(np.zeros(1, dtype=np.float64))
+            kernel[1, 1](out)
+            self.assertPreciseEqual(np.nanstd(arr), out.copy_to_host()[0])
+
+        arrays = [
+            np.float64([1.0, 2.0, 0.0, -0.0, 1.0, -1.5]),
+            np.float64([-0.0, -1.5]),
+            np.float64([-1.5, 2.5, np.nan]),
+            np.float64([-1.5, 2.5, float("inf")]),
+            np.float64([-1.5, 2.5, -float("inf")]),
+            np.float64([-1.5, 2.5, float("inf"), -float("inf")]),
+            np.float64([np.nan, -1.5, 2.5, np.nan, 3.0]),
+            np.float64([5.0, np.nan, -1.5, np.nan]),
+            np.float64([np.nan, np.nan]),
+        ]
+        for arr in arrays:
+            check(arr)
+
+    def test_nanvar_basic(self):
+        def check(arr):
+            @cuda.jit
+            def kernel(out):
+                gid = cuda.grid(1)
+                if gid < 1:
+                    out[0] = np.nanvar(arr)
+
+            out = cuda.to_device(np.zeros(1, dtype=np.float64))
+            kernel[1, 1](out)
+            self.assertPreciseEqual(np.nanvar(arr), out.copy_to_host()[0])
+
+        arrays = [
+            np.float64([1.0, 2.0, 0.0, -0.0, 1.0, -1.5]),
+            np.float64([-0.0, -1.5]),
+            np.float64([-1.5, 2.5, np.nan]),
+            np.float64([-1.5, 2.5, float("inf")]),
+            np.float64([-1.5, 2.5, -float("inf")]),
+            np.float64([-1.5, 2.5, float("inf"), -float("inf")]),
+            np.float64([np.nan, -1.5, 2.5, np.nan, 3.0]),
+            np.float64([5.0, np.nan, -1.5, np.nan]),
+            np.float64([np.nan, np.nan]),
+        ]
+        for arr in arrays:
+            check(arr)
