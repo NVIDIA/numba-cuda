@@ -3331,7 +3331,7 @@ packages:
 - pypi: ./
   name: numba-cuda
   version: 0.20.0
-  sha256: f590dca9c878e79debb45b0f7c19097d465e178ed5b627d350bee7c5fba6c550
+  sha256: 24ddb74e9d235d2fffe8e459e21659ad380321d1c966a89a391e5a230db1a504
   requires_dist:
   - numba>=0.60.0
   - cuda-bindings>=12.9.1,<14.0.0
