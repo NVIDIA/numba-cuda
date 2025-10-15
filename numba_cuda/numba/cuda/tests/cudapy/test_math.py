@@ -648,21 +648,16 @@ class TestCudaMath(CUDATestCase):
         # match the overflow to inf of math.pow and libdevice.powi for large
         # values of float32, so we compute the reference result with math.pow.
         Cref = np.empty_like(A)
-        with pytest.warns(RuntimeWarning, match="overflow encountered in cast"):
-            for i in range(len(A)):
-                res = math.pow(A[i], B[i])
-                Cref[i] = res
+        for i in range(len(A)):
+            Cref[i] = math.pow(A[i], B[i])
 
-        expected = np.power(A, B)
-        with pytest.warns(RuntimeWarning, match="overflow encountered in cast"):
-            expected = expected.astype(npdtype)
-
-        np.testing.assert_allclose(expected, C, rtol=1e-6)
+        np.testing.assert_allclose(np.power(A, B).astype(npdtype), C, rtol=1e-6)
 
     def test_math_pow(self):
         self.binary_template_float32(math_pow, np.power)
         self.binary_template_float64(math_pow, np.power)
-        self.pow_template_int32(np.float32)
+        with pytest.warns(RuntimeWarning, match="overflow encountered in cast"):
+            self.pow_template_int32(np.float32)
         self.pow_template_int32(np.float64)
 
     # ---------------------------------------------------------------------------
