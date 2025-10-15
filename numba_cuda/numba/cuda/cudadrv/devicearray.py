@@ -199,10 +199,11 @@ class DeviceNDArrayBase(_devicearray.DeviceArray):
     @property
     def device_ctypes_pointer(self):
         """Returns the ctypes pointer to the GPU data buffer"""
-        if self.gpu_data is None:
-            return c_void_p(0)
-        else:
+        try:
+            # apparently faster in the non-exceptional case
             return self.gpu_data.device_ctypes_pointer
+        except AttributeError:
+            return c_void_p(0)
 
     @devices.require_context
     def copy_to_device(self, ary, stream=0):

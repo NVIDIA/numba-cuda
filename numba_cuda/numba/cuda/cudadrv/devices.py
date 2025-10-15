@@ -80,6 +80,10 @@ class _DeviceContextManager(object):
     def __init__(self, device):
         self._device = device
 
+    def get_primary_context(self, *args, **kwargs):
+        """This attribute is forwarded directly, to avoid the performance overhead of `__getattr__`."""
+        return self._device.get_primary_context(*args, **kwargs)
+
     def __getattr__(self, item):
         return getattr(self._device, item)
 
@@ -187,7 +191,10 @@ class _Runtime(object):
             return newctx
 
     def _get_attached_context(self):
-        return getattr(self._tls, "attached_context", None)
+        try:
+            return self._tls.attached_context
+        except AttributeError:
+            return None
 
     def _set_attached_context(self, ctx):
         self._tls.attached_context = ctx
