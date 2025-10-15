@@ -30,7 +30,6 @@ class TestContextStack(CUDATestCase):
         device_ids = [device.id for device in cuda.list_devices()]
         for device_id in device_ids:
             with cuda.gpus[device_id]:
-                assert not isinstance(device_id, int)
                 self.assertEqual(cuda.gpus.current.id, device_id)
 
 
