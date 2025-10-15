@@ -1,8 +1,11 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: BSD-2-Clause
+
 """
 A library written in CUDA Python for generating reduction kernels
 """
 
-from numba.np.numpy_support import from_dtype
+from numba.cuda.np.numpy_support import from_dtype
 
 
 _WARPSIZE = 32

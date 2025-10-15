@@ -1,5 +1,5 @@
 # SPDX-FileCopyrightText: Copyright (c) 2024 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-# SPDX-License-Identifier: Apache-2.0
+# SPDX-License-Identifier: BSD-2-Clause
 
 name: pr
 
@@ -19,13 +19,15 @@ jobs:
       - compute-matrix
       - build-conda
       - test-conda
-      - test-conda-pynvjitlink
       - test-simulator
       - build-wheels
+      - build-wheels-windows
+      - test-wheels-windows
       - test-wheels
-      - test-wheels-pynvjitlink
       - test-wheels-deps-wheels
+      - test-thirdparty
       - build-docs
+      - coverage-report
     secrets: inherit
     uses: rapidsai/shared-workflows/.github/workflows/pr-builder.yaml@branch-25.04
   checks:
@@ -76,18 +78,6 @@ jobs:
       script: "ci/test_conda.sh"
       run_codecov: false
       matrix: ${{ needs.compute-matrix.outputs.TEST_MATRIX }}
-  test-conda-pynvjitlink:
-    needs:
-      - build-conda
-      - compute-matrix
-    uses: ./.github/workflows/conda-python-tests.yaml
-    with:
-      build_type: pull-request
-      script: "ci/test_conda_pynvjitlink.sh"
-      run_codecov: false
-      # This selects "ARCH=amd64 and CUDA >=12, with the latest supported Python for each CUDA major version".
-      matrix: ${{ needs.compute-matrix.outputs.TEST_MATRIX }}
-      matrix_filter: map(select(.ARCH == "amd64" and (.CUDA_VER | split(".") | .[0] | tonumber >= 12))) | group_by(.CUDA_VER|split(".")|map(tonumber)|.[0]) | map(max_by([(.PY_VER|split(".")|map(tonumber)), (.CUDA_VER|split(".")|map(tonumber))]))
   test-simulator:
     needs:
       - build-conda
@@ -105,6 +95,12 @@ jobs:
       build_type: pull-request
       script: "ci/build_wheel.sh"
       matrix: ${{ needs.compute-matrix.outputs.BUILD_MATRIX }}
+  build-wheels-windows:
+    uses: ./.github/workflows/wheel-windows-build.yaml
+  test-wheels-windows:
+    needs:
+      - build-wheels-windows
+    uses: ./.github/workflows/wheel-windows-tests.yaml
   test-wheels:
     needs:
       - build-wheels
@@ -114,17 +110,6 @@ jobs:
       build_type: pull-request
       script: "ci/test_wheel.sh false"
       matrix: ${{ needs.compute-matrix.outputs.TEST_MATRIX }}
-  test-wheels-pynvjitlink:
-    needs:
-      - build-wheels
-      - compute-matrix
-    uses: ./.github/workflows/wheels-test.yaml
-    with:
-      build_type: pull-request
-      script: "ci/test_wheel_pynvjitlink.sh"
-      # This selects "ARCH=amd64 and CUDA >=12, with the latest supported Python for each CUDA major version".
-      matrix: ${{ needs.compute-matrix.outputs.TEST_MATRIX }}
-      matrix_filter: map(select(.ARCH == "amd64" and (.CUDA_VER | split(".") | .[0] | tonumber >= 12))) | group_by(.CUDA_VER|split(".")|map(tonumber)|.[0]) | map(max_by([(.PY_VER|split(".")|map(tonumber)), (.CUDA_VER|split(".")|map(tonumber))]))
   test-wheels-deps-wheels:
     needs:
       - build-wheels
@@ -135,9 +120,30 @@ jobs:
       script: "ci/test_wheel_deps_wheels.sh"
       matrix: ${{ needs.compute-matrix.outputs.TEST_MATRIX }}
       matrix_filter: map(select(.ARCH == "amd64" and (.CUDA_VER | split(".") | .[0] | tonumber >= 12))) | group_by(.CUDA_VER|split(".")|map(tonumber)|.[0]) | map(max_by([(.PY_VER|split(".")|map(tonumber)), (.CUDA_VER|split(".")|map(tonumber))]))
+  test-thirdparty:
+    needs:
+      - build-wheels
+      - compute-matrix
+    uses: ./.github/workflows/wheels-test.yaml
+    with:
+      build_type: pull-request
+      script: "ci/test_thirdparty.sh"
+      matrix: ${{ needs.compute-matrix.outputs.TEST_MATRIX }}
+      # TODO: Enable for CUDA 13 when a supporting version of cuDF is available
+      matrix_filter: map(select(.ARCH == "amd64" and (.CUDA_VER | split(".") | .[0] | tonumber == 12))) | group_by(.CUDA_VER|split(".")|map(tonumber)|.[0]) | map(max_by([(.PY_VER|split(".")|map(tonumber)), (.CUDA_VER|split(".")|map(tonumber))]))
   build-docs:
     needs:
       - build-conda
     uses: ./.github/workflows/docs-build.yaml
     with:
       build_type: pull-request
+  coverage-report:
+    needs:
+      - build-wheels
+      - compute-matrix
+    uses: ./.github/workflows/wheels-test.yaml
+    with:
+      build_type: pull-request
+      script: "ci/coverage_report.sh"
+      matrix: ${{ needs.compute-matrix.outputs.TEST_MATRIX }}
+      matrix_filter: 'map(select(.ARCH == "amd64" and .CUDA_VER == "12.9.1" and .PY_VER == "3.12")) | .[0:1]'

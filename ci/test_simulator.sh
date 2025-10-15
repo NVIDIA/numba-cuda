@@ -1,5 +1,6 @@
 #!/bin/bash
-# Copyright (c) 2024, NVIDIA CORPORATION
+# SPDX-FileCopyrightText: Copyright (c) 2024 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: BSD-2-Clause
 
 set -euo pipefail
 
@@ -7,24 +8,38 @@ set -euo pipefail
 
 rapids-logger "Install testing dependencies"
 # TODO: Replace with rapids-dependency-file-generator
-rapids-mamba-retry create -n test \
-    psutil \
-    pytest \
-    cffi \
-    python=${RAPIDS_PY_VERSION}
+DEPENDENCIES=(
+    "psutil"
+    "pytest"
+    "pytest-xdist"
+    "cffi"
+    "ml_dtypes"
+    "python=${RAPIDS_PY_VERSION}"
+    "numba-cuda"
+)
+rapids-mamba-retry create \
+    -n test \
+    --strict-channel-priority \
+    --channel "`pwd`/conda-repo" \
+    --channel conda-forge \
+    "${DEPENDENCIES[@]}"
 
 # Temporarily allow unbound variables for conda activation.
 set +u
 conda activate test
 set -u
 
-rapids-mamba-retry install -c `pwd`/conda-repo numba-cuda
-
-RAPIDS_TESTS_DIR=${RAPIDS_TESTS_DIR:-"${PWD}/test-results"}/
-mkdir -p "${RAPIDS_TESTS_DIR}"
-pushd "${RAPIDS_TESTS_DIR}"
+pip install filecheck
 
 rapids-print-env
+
+# The simulator doesn't actually use the test binaries, but we move into the
+# test binaries folder so that we're not in the root of the repo, and therefore
+# numba-cuda code from the installed package will be tested, instead of the
+# code in the source repo.
+rapids-logger "Move to test binaries folder"
+export NUMBA_CUDA_TEST_BIN_DIR=`pwd`/testing
+pushd $NUMBA_CUDA_TEST_BIN_DIR
 
 rapids-logger "Show Numba system info"
 python -m numba --sysinfo
@@ -35,7 +50,7 @@ set +e
 
 rapids-logger "Run Tests"
 export NUMBA_ENABLE_CUDASIM=1
-python -m numba.runtests numba.cuda.tests -v
+pytest -v
 
 popd
 

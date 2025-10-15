@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: BSD-2-Clause
+
 import numpy as np
 import ctypes
 from numba.cuda.cudadrv.devicearray import (
@@ -7,7 +10,7 @@ from numba.cuda.cudadrv.devicearray import (
 )
 from numba.cuda.testing import unittest, CUDATestCase
 from numba.cuda.testing import skip_on_cudasim
-from numba.np import numpy_support
+from numba.cuda.np import numpy_support
 from numba import cuda
 
 N_CHARS = 5

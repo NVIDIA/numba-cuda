@@ -1,10 +1,15 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: BSD-2-Clause
+
 from numba.cuda.testing import skip_on_cudasim, unittest, CUDATestCase
+from numba.cuda.cudadrv.driver import _have_nvjitlink
 from llvmlite import ir
 
 import numpy as np
 import os
-from numba import config, cuda, njit, types
-from numba.extending import overload
+from numba import cuda, njit, types
+from numba.cuda import config
+from numba.cuda.extending import overload
 
 
 class Interval:
@@ -35,14 +40,14 @@ def sum_intervals(i, j):
 
 
 if not config.ENABLE_CUDASIM:
-    from numba.core import cgutils
-    from numba.core.extending import (
+    from numba.cuda import cgutils
+    from numba.cuda.extending import (
         lower_builtin,
-        models,
+        core_models,
         type_callable,
         typeof_impl,
     )
-    from numba.core.typing.templates import AttributeTemplate
+    from numba.cuda.typing.templates import AttributeTemplate
     from numba.cuda.cudadecl import registry as cuda_registry
     from numba.cuda.cudaimpl import lower_attr as cuda_lower_attr
     from numba.cuda.extending import (
@@ -69,13 +74,13 @@ if not config.ENABLE_CUDASIM:
         return typer
 
     @register_model(IntervalType)
-    class IntervalModel(models.StructModel):
+    class IntervalModel(core_models.StructModel):
         def __init__(self, dmm, fe_type):
             members = [
                 ("lo", types.float64),
                 ("hi", types.float64),
             ]
-            models.StructModel.__init__(self, dmm, fe_type, members)
+            core_models.StructModel.__init__(self, dmm, fe_type, members)
 
     make_attribute_wrapper(IntervalType, "lo", "lo")
     make_attribute_wrapper(IntervalType, "hi", "hi")
@@ -195,11 +200,6 @@ if TEST_BIN_DIR:
 class TestExtendingLinkage(CUDATestCase):
     @unittest.skipUnless(TEST_BIN_DIR, "Necessary binaries are not available")
     def test_extension_adds_linkable_code(self):
-        cuda_major_version = cuda.runtime.get_version()[0]
-
-        if cuda_major_version < 12:
-            self.skipTest("CUDA 12 required for linking in-memory data")
-
         files = (
             (test_device_functions_a, cuda.Archive),
             (test_device_functions_cubin, cuda.Cubin),
@@ -210,7 +210,7 @@ class TestExtendingLinkage(CUDATestCase):
             (test_device_functions_ltoir, cuda.LTOIR),
         )
 
-        lto = config.CUDA_ENABLE_PYNVJITLINK
+        lto = _have_nvjitlink()
 
         for path, ctor in files:
             if ctor == cuda.LTOIR and not lto:

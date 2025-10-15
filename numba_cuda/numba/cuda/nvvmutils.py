@@ -1,6 +1,10 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: BSD-2-Clause
+
 import itertools
 from llvmlite import ir
-from numba.core import cgutils, targetconfig
+from numba.cuda.core import targetconfig
+from numba.cuda import cgutils
 from .cudadrv import nvvm
 
 

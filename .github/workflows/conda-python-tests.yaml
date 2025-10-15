@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: BSD-2-Clause
+
 on:
   workflow_call:
     inputs:
@@ -70,7 +73,7 @@ jobs:
 
           echo "MATRIX=${MATRIX}" | tee --append "${GITHUB_OUTPUT}"
   tests:
-    name: ${{ matrix.CUDA_VER }}, ${{ matrix.PY_VER }}, ${{ matrix.ARCH }}, ${{ matrix.LINUX_VER }}, ${{ matrix.GPU }}
+    name: ${{ matrix.CUDA_VER }}, ${{ matrix.PY_VER }}, ${{ matrix.ARCH }}, ${{ matrix.LINUX_VER }}, ${{ matrix.GPU }}, ${{ matrix.DRIVER }}-driver, ${{ matrix.DEPENDENCIES }}-deps
     needs: compute-matrix
     strategy:
       fail-fast: false
@@ -79,6 +82,7 @@ jobs:
     env:
       RAPIDS_ARTIFACTS_DIR: ${{ github.workspace }}/artifacts
       RAPIDS_COVERAGE_DIR: ${{ github.workspace }}/coverage-results
+      RAPIDS_DEPENDENCIES: ${{ matrix.DEPENDENCIES }}
       RAPIDS_TESTS_DIR: ${{ github.workspace }}/test-results
     container:
       image: rapidsai/ci-conda:cuda${{ matrix.CUDA_VER }}-${{ matrix.LINUX_VER }}-py${{ matrix.PY_VER }}
@@ -93,7 +97,9 @@ jobs:
           ref: ${{ inputs.sha }}
           fetch-depth: 0
       - uses: actions/download-artifact@v4
-        name: conda-repo
+        with:
+          name: conda-repo-py${{ matrix.PY_VER }}-${{ matrix.ARCH }}
+          path: conda-repo
       - name: Display structure of downloaded files
         run: ls -R
       - name: Standardize repository information

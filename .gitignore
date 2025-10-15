@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: BSD-2-Clause
+.vscode
 __pycache__
 *.egg-info
 build
@@ -5,3 +8,14 @@ build
 *.so
 numba_cuda/numba/cuda/tests/cudadrv/test_device_functions.*
 numba_cuda/numba/cuda/tests/cudadrv/undefined_extern.*
+testing/*.a
+testing/*.cubin
+testing/*.fatbin
+testing/*.ltoir
+testing/*.ltoir.o
+testing/*.o
+testing/*.ptx
+# pixi environments
+.pixi/*
+!.pixi/config.toml
+*.log

@@ -1,11 +1,14 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: BSD-2-Clause
+
 import numpy as np
 import platform
 
 from numba import cuda
-from numba.cuda.testing import unittest, ContextResettingTestCase
+from numba.cuda.testing import unittest, CUDATestCase
 
 
-class TestPinned(ContextResettingTestCase):
+class TestPinned(CUDATestCase):
     def _run_copies(self, A):
         A0 = np.copy(A)
 

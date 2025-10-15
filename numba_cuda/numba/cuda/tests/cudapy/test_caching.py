@@ -1,8 +1,14 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: BSD-2-Clause
+
 import multiprocessing
 import os
 import shutil
 import unittest
 import warnings
+import sys
+import stat
+import subprocess
 
 from numba import cuda
 from numba.core.errors import NumbaWarning
@@ -11,18 +17,156 @@ from numba.cuda.testing import (
     skip_on_cudasim,
     skip_unless_cc_60,
     skip_if_cudadevrt_missing,
-    skip_if_mvc_enabled,
     test_data_dir,
 )
-from numba.tests.support import SerialMixin
-from numba.tests.test_caching import (
-    DispatcherCacheUsecasesTest,
-    skip_bad_access,
+from numba.cuda.tests.support import (
+    TestCase,
+    temp_directory,
+    import_dynamic,
 )
+
+
+class BaseCacheTest(TestCase):
+    # The source file that will be copied
+    usecases_file = None
+    # Make sure this doesn't conflict with another module
+    modname = None
+
+    def setUp(self):
+        self.tempdir = temp_directory("test_cache")
+        sys.path.insert(0, self.tempdir)
+        self.modfile = os.path.join(self.tempdir, self.modname + ".py")
+        self.cache_dir = os.path.join(self.tempdir, "__pycache__")
+        shutil.copy(self.usecases_file, self.modfile)
+        os.chmod(self.modfile, stat.S_IREAD | stat.S_IWRITE)
+        self.maxDiff = None
+
+    def tearDown(self):
+        sys.modules.pop(self.modname, None)
+        sys.path.remove(self.tempdir)
+
+    def import_module(self):
+        # Import a fresh version of the test module.  All jitted functions
+        # in the test module will start anew and load overloads from
+        # the on-disk cache if possible.
+        old = sys.modules.pop(self.modname, None)
+        if old is not None:
+            # Make sure cached bytecode is removed
+            cached = [old.__cached__]
+            for fn in cached:
+                try:
+                    os.unlink(fn)
+                except FileNotFoundError:
+                    pass
+        mod = import_dynamic(self.modname)
+        self.assertEqual(mod.__file__.rstrip("co"), self.modfile)
+        return mod
+
+    def cache_contents(self):
+        try:
+            return [
+                fn
+                for fn in os.listdir(self.cache_dir)
+                if not fn.endswith((".pyc", ".pyo"))
+            ]
+        except FileNotFoundError:
+            return []
+
+    def get_cache_mtimes(self):
+        return dict(
+            (fn, os.path.getmtime(os.path.join(self.cache_dir, fn)))
+            for fn in sorted(self.cache_contents())
+        )
+
+    def check_pycache(self, n):
+        c = self.cache_contents()
+        self.assertEqual(len(c), n, c)
+
+    def dummy_test(self):
+        pass
+
+
+class DispatcherCacheUsecasesTest(BaseCacheTest):
+    here = os.path.dirname(__file__)
+    usecases_file = os.path.join(here, "cache_usecases.py")
+    modname = "dispatcher_caching_test_fodder"
+
+    def run_in_separate_process(self, *, envvars={}):
+        # Cached functions can be run from a distinct process.
+        # Also stresses issue #1603: uncached function calling cached function
+        # shouldn't fail compiling.
+        code = """if 1:
+            import sys
+
+            sys.path.insert(0, %(tempdir)r)
+            mod = __import__(%(modname)r)
+            mod.self_test()
+            """ % dict(tempdir=self.tempdir, modname=self.modname)
+
+        subp_env = os.environ.copy()
+        subp_env.update(envvars)
+        popen = subprocess.Popen(
+            [sys.executable, "-c", code],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            env=subp_env,
+        )
+        out, err = popen.communicate()
+        if popen.returncode != 0:
+            raise AssertionError(
+                "process failed with code %s: \n"
+                "stdout follows\n%s\n"
+                "stderr follows\n%s\n"
+                % (popen.returncode, out.decode(), err.decode()),
+            )
+
+    def check_hits(self, func, hits, misses=None):
+        st = func.stats
+        self.assertEqual(sum(st.cache_hits.values()), hits, st.cache_hits)
+        if misses is not None:
+            self.assertEqual(
+                sum(st.cache_misses.values()), misses, st.cache_misses
+            )
+
+
+def check_access_is_preventable():
+    # This exists to check whether it is possible to prevent access to
+    # a file/directory through the use of `chmod 500`. If a user has
+    # elevated rights (e.g. root) then writes are likely to be possible
+    # anyway. Tests that require functioning access prevention are
+    # therefore skipped based on the result of this check.
+    tempdir = temp_directory("test_cache")
+    test_dir = os.path.join(tempdir, "writable_test")
+    os.mkdir(test_dir)
+    # check a write is possible
+    with open(os.path.join(test_dir, "write_ok"), "wt") as f:
+        f.write("check1")
+    # now forbid access
+    os.chmod(test_dir, 0o500)
+    try:
+        with open(os.path.join(test_dir, "write_forbidden"), "wt") as f:
+            f.write("check2")
+        # access prevention is not possible
+        return False
+    except PermissionError:
+        # Check that the cause of the exception is due to access/permission
+        # as per
+        # https://github.com/conda/conda/blob/4.5.0/conda/gateways/disk/permissions.py#L35-L37  # noqa: E501
+        # errno reports access/perm fail so access prevention via
+        # `chmod 500` works for this user.
+        return True
+    finally:
+        os.chmod(test_dir, 0o775)
+        shutil.rmtree(test_dir)
+
+
+_access_preventable = check_access_is_preventable()
+_access_msg = "Cannot create a directory to which writes are preventable"
+skip_bad_access = unittest.skipUnless(_access_preventable, _access_msg)
 
 
 @skip_on_cudasim("Simulator does not implement caching")
-class CUDACachingTest(SerialMixin, DispatcherCacheUsecasesTest):
+class CUDACachingTest(DispatcherCacheUsecasesTest):
     here = os.path.dirname(__file__)
     usecases_file = os.path.join(here, "cache_usecases.py")
     modname = "cuda_caching_test_fodder"
@@ -225,7 +369,7 @@ class CUDACachingTest(SerialMixin, DispatcherCacheUsecasesTest):
 
 
 @skip_on_cudasim("Simulator does not implement caching")
-class CUDACooperativeGroupTest(SerialMixin, DispatcherCacheUsecasesTest):
+class CUDACooperativeGroupTest(DispatcherCacheUsecasesTest):
     # See Issue #9432: https://github.com/numba/numba/issues/9432
     # If a cached function using CG sync was the first thing to compile,
     # the compile would fail.
@@ -243,7 +387,6 @@ class CUDACooperativeGroupTest(SerialMixin, DispatcherCacheUsecasesTest):
 
     @skip_unless_cc_60
     @skip_if_cudadevrt_missing
-    @skip_if_mvc_enabled("CG not supported with MVC")
     def test_cache_cg(self):
         # Functions using cooperative groups should be cacheable. See Issue
         # #8888: https://github.com/numba/numba/issues/8888
@@ -259,7 +402,7 @@ class CUDACooperativeGroupTest(SerialMixin, DispatcherCacheUsecasesTest):
 
 
 @skip_on_cudasim("Simulator does not implement caching")
-class CUDAAndCPUCachingTest(SerialMixin, DispatcherCacheUsecasesTest):
+class CUDAAndCPUCachingTest(DispatcherCacheUsecasesTest):
     here = os.path.dirname(__file__)
     usecases_file = os.path.join(here, "cache_with_cpu_usecases.py")
     modname = "cuda_and_cpu_caching_test_fodder"
@@ -350,7 +493,7 @@ def get_different_cc_gpus():
 
 
 @skip_on_cudasim("Simulator does not implement caching")
-class TestMultiCCCaching(SerialMixin, DispatcherCacheUsecasesTest):
+class TestMultiCCCaching(DispatcherCacheUsecasesTest):
     here = os.path.dirname(__file__)
     usecases_file = os.path.join(here, "cache_usecases.py")
     modname = "cuda_multi_cc_caching_test_fodder"
@@ -477,18 +620,14 @@ class TestMultiCCCaching(SerialMixin, DispatcherCacheUsecasesTest):
 def child_initializer():
     # Disable occupancy and implicit copy warnings in processes in a
     # multiprocessing pool.
-    from numba.core import config
+    from numba.cuda.core import config
 
     config.CUDA_LOW_OCCUPANCY_WARNINGS = 0
     config.CUDA_WARN_ON_IMPLICIT_COPY = 0
 
 
 @skip_on_cudasim("Simulator does not implement caching")
-class TestMultiprocessCache(SerialMixin, DispatcherCacheUsecasesTest):
-    # Nested multiprocessing.Pool raises AssertionError:
-    # "daemonic processes are not allowed to have children"
-    _numba_parallel_test_ = False
-
+class TestMultiprocessCache(DispatcherCacheUsecasesTest):
     here = os.path.dirname(__file__)
     usecases_file = os.path.join(here, "cache_usecases.py")
     modname = "cuda_mp_caching_test_fodder"

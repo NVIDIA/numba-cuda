@@ -1,4 +1,10 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: BSD-2-Clause
+
 import io
+import os
+from typing import Union, Type
+
 from .mappings import FILE_EXTENSION_MAP
 
 
@@ -49,6 +55,66 @@ class LinkableCode:
             return self._data.getvalue()
         return self._data
 
+    @staticmethod
+    def from_path(path: str):
+        """
+        Load a linkable code object from a file.
+
+        Parameters
+        ----------
+        path : str
+            The path to the file to load.
+
+        Returns
+        -------
+        LinkableCode
+            The linkable code object.
+
+        Raises
+        ------
+        ValueError
+            If the file extension is not supported.
+        """
+        root, extension = os.path.splitext(path)
+        basename = os.path.basename(root)
+        if extension in (".cu", ".ptx"):
+            mode = "r"
+        else:
+            mode = "rb"
+
+        with open(path, mode) as f:
+            data = f.read()
+
+        cls = _extension_to_linkable_code_kind(extension)
+        return cls(data, name=basename)
+
+    @classmethod
+    def from_path_or_obj(cls, path_or_obj: Union[str, "LinkableCode"]):
+        """
+        Load a linkable code object from a file or a LinkableCode object.
+
+        If a path is provided, the file is loaded and the LinkableCode object
+        is returned. If a LinkableCode object is provided, it is returned as is.
+
+        Parameters
+        ----------
+        path_or_obj : str or LinkableCode
+            The path to the file or the LinkableCode object to load.
+
+        Returns
+        -------
+        LinkableCode
+            The linkable code object.
+
+        Raises
+        ------
+        ValueError
+            If the file extension is not supported.
+        """
+        if isinstance(path_or_obj, str):
+            return cls.from_path(path_or_obj)
+        return path_or_obj
+
 
 class PTXSource(LinkableCode):
     """PTX source code in memory."""
@@ -97,3 +163,22 @@ class LTOIR(LinkableCode):
 
     kind = FILE_EXTENSION_MAP["ltoir"]
     default_name = "<unnamed-ltoir>"
+
+
+def _extension_to_linkable_code_kind(extension: str) -> Type[LinkableCode]:
+    if extension == ".cu":
+        return CUSource
+    elif extension == ".ptx":
+        return PTXSource
+    elif extension == ".fatbin":
+        return Fatbin
+    elif extension == ".cubin":
+        return Cubin
+    elif extension == ".a":
+        return Archive
+    elif extension == ".o":
+        return Object
+    elif extension == ".ltoir":
+        return LTOIR
+    else:
+        raise ValueError(f"Unknown extension: {extension}")

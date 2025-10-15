@@ -1,8 +1,17 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: BSD-2-Clause
+
 import numpy as np
 
 
 def prepare_shape_strides_dtype(shape, strides, dtype, order):
     dtype = np.dtype(dtype)
+    if isinstance(shape, (float, np.floating)):
+        raise TypeError("shape must be an integer or tuple of integers")
+    if isinstance(shape, np.ndarray) and np.issubdtype(
+        shape.dtype, np.floating
+    ):
+        raise TypeError("shape must be an integer or tuple of integers")
     if isinstance(shape, int):
         shape = (shape,)
     if isinstance(strides, int):

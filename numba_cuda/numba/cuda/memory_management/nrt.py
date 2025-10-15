@@ -1,20 +1,30 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: BSD-2-Clause
+
 import ctypes
 import os
 from functools import wraps
 import numpy as np
+from collections import namedtuple
 
-from numba import cuda, config
-from numba.core.runtime.nrt import _nrt_mstats
+from numba import cuda, types
+from numba.cuda import config
+
 from numba.cuda.cudadrv.driver import (
-    Linker,
+    _Linker,
     driver,
     launch_kernel,
-    USE_NV_BINDING,
+    _have_nvjitlink,
 )
 from numba.cuda.cudadrv import devices
 from numba.cuda.api import get_current_device
 from numba.cuda.utils import _readenv, cached_file_read
 from numba.cuda.cudadrv.linkable_code import CUSource
+from numba.cuda.typing.templates import signature
+
+from numba.cuda.extending import intrinsic, overload_classmethod
+
+_nrt_mstats = namedtuple("nrt_mstats", ["alloc", "free", "mi_alloc", "mi_free"])
 
 
 # Check environment variable or config for NRT statistics enablement
@@ -36,6 +46,34 @@ if not hasattr(config, "NUMBA_CUDA_ENABLE_NRT"):
 def get_include():
     """Return the include path for the NRT header"""
     return os.path.dirname(os.path.abspath(__file__))
+
+
+# Provide an implementation of Array._allocate() for the CUDA target (used
+# internally by Numba when generating the allocation of an array)
+
+
+@intrinsic
+def intrin_alloc(typingctx, allocsize, align):
+    """Intrinsic to call into the allocator for Array"""
+
+    def codegen(context, builder, signature, args):
+        allocsize, align = args
+        meminfo = context.nrt.meminfo_alloc_aligned(builder, allocsize, align)
+        return meminfo
+
+    mip = types.MemInfoPointer(types.voidptr)  # return untyped pointer
+    sig = signature(mip, allocsize, align)
+    return sig, codegen
+
+
+@overload_classmethod(types.Array, "_allocate", target="CUDA")
+def _ol_array_allocate(cls, allocsize, align):
+    """Implements a Numba-only CUDA-target classmethod on the array type."""
+
+    def impl(cls, allocsize, align):
+        return intrin_alloc(allocsize, align)
+
+    return impl
 
 
 # Protect method to ensure NRT memory allocation and initialization
@@ -65,9 +103,17 @@ class _Runtime:
 
     def __init__(self):
         """Initialize memsys module and variable"""
+        self._reset()
+
+    def _reset(self):
+        """Reset to the uninitialized state"""
         self._memsys_module = None
         self._memsys = None
         self._initialized = False
+
+    def close(self):
+        """Close and reset"""
+        self._reset()
 
     def _compile_memsys_module(self):
         """
@@ -80,7 +126,7 @@ class _Runtime:
         cc = get_current_device().compute_capability
 
         # Create a new linker instance and add the cu file
-        linker = Linker.new(cc=cc)
+        linker = _Linker.new(cc=cc, lto=_have_nvjitlink())
         linker.add_cu_file(memsys_mod)
 
         # Complete the linker and create a module from it
@@ -113,10 +159,12 @@ class _Runtime:
             self._compile_memsys_module()
 
         # Allocate space for NRT_MemSys
-        ptr, nbytes = self._memsys_module.get_global_symbol("memsys_size")
         memsys_size = ctypes.c_uint64()
+        ptr, nbytes = self._memsys_module.get_global_symbol("memsys_size")
+        device_memsys_size = ptr.device_ctypes_pointer
+        device_memsys_size = device_memsys_size.value
         driver.cuMemcpyDtoH(
-            ctypes.addressof(memsys_size), ptr.device_ctypes_pointer, nbytes
+            ctypes.addressof(memsys_size), device_memsys_size, nbytes
         )
         self._memsys = device_array(
             (memsys_size.value,), dtype="i1", stream=stream
@@ -140,22 +188,10 @@ class _Runtime:
             1,
             1,
             0,
-            stream.handle,
+            stream.handle.value,
             params,
             cooperative=False,
         )
-
-    def _ctypes_pointer(self, array):
-        """
-        Given an array, return a ctypes pointer to the data suitable for
-        passing to ``launch_kernel``.
-        """
-        ptr = array.device_ctypes_pointer
-
-        if USE_NV_BINDING:
-            ptr = ctypes.c_void_p(int(ptr))
-
-        return ptr
 
     def ensure_initialized(self, stream=None):
         """
@@ -206,7 +242,7 @@ class _Runtime:
         context
         """
         enabled_ar = cuda.managed_array(1, np.uint8)
-        enabled_ptr = self._ctypes_pointer(enabled_ar)
+        enabled_ptr = enabled_ar.device_ctypes_pointer
 
         self._single_thread_launch(
             self._memsys_module,
@@ -233,7 +269,7 @@ class _Runtime:
         )
 
         stats_for_read = cuda.managed_array(1, dt)
-        stats_ptr = self._ctypes_pointer(stats_for_read)
+        stats_ptr = stats_for_read.device_ctypes_pointer
 
         self._single_thread_launch(
             self._memsys_module, stream, "NRT_MemSys_read", [stats_ptr]
@@ -264,7 +300,7 @@ class _Runtime:
         Get a single stat from the memsys
         """
         got = cuda.managed_array(1, np.uint64)
-        got_ptr = self._ctypes_pointer(got)
+        got_ptr = got.device_ctypes_pointer
 
         self._single_thread_launch(
             self._memsys_module, stream, f"NRT_MemSys_read_{stat}", [got_ptr]
@@ -327,7 +363,7 @@ class _Runtime:
                 "Please allocate NRT Memsys first before setting to module."
             )
 
-        memsys_ptr = self._ctypes_pointer(self._memsys)
+        memsys_ptr = self._memsys.device_ctypes_pointer
 
         self._single_thread_launch(
             module, stream, "NRT_MemSys_set", [memsys_ptr]

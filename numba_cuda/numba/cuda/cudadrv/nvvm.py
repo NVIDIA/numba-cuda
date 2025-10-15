@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: BSD-2-Clause
+
 """
 This is a direct translation of nvvm.h
 """
@@ -14,7 +17,7 @@ from llvmlite import ir
 
 from .error import NvvmError, NvvmSupportError, NvvmWarning
 from .libs import get_libdevice, open_libdevice, open_cudalib
-from numba.core import cgutils, config
+from numba.cuda import cgutils
 
 
 logger = logging.getLogger(__name__)
@@ -47,14 +50,7 @@ NVVM_ERROR_COMPILATION
 for i, k in enumerate(RESULT_CODE_NAMES):
     setattr(sys.modules[__name__], k, i)
 
-# Data layouts. NVVM IR 1.8 (CUDA 11.6) introduced 128-bit integer support.
-
-_datalayout_original = (
-    "e-p:64:64:64-i1:8:8-i8:8:8-i16:16:16-i32:32:32-"
-    "i64:64:64-f32:32:32-f64:64:64-v16:16:16-v32:32:32-"
-    "v64:64:64-v128:128:128-n16:32:64"
-)
-_datalayout_i128 = (
+_datalayout = (
     "e-p:64:64:64-i1:8:8-i8:8:8-i16:16:16-i32:32:32-i64:64:64-"
     "i128:128:128-f32:32:32-f64:64:64-v16:16:16-v32:32:32-"
     "v64:64:64-v128:128:128-n16:32:64"
@@ -158,10 +154,7 @@ class NVVM(object):
                     inst.driver = open_cudalib("nvvm")
                 except OSError as e:
                     cls.__INSTANCE = None
-                    errmsg = (
-                        "libNVVM cannot be found. Do `conda install "
-                        "cudatoolkit`:\n%s"
-                    )
+                    errmsg = "libNVVM cannot be found. Please install the cuda-toolkit conda package:\n%s"
                     raise NvvmSupportError(errmsg % e)
 
                 # Find & populate functions
@@ -179,18 +172,10 @@ class NVVM(object):
         self._minorIR = ir_versions[1]
         self._majorDbg = ir_versions[2]
         self._minorDbg = ir_versions[3]
-        self._supported_ccs = get_supported_ccs()
 
     @property
     def data_layout(self):
-        if (self._majorIR, self._minorIR) < (1, 8):
-            return _datalayout_original
-        else:
-            return _datalayout_i128
-
-    @property
-    def supported_ccs(self):
-        return self._supported_ccs
+        return _datalayout
 
     def get_version(self):
         major = c_int()
@@ -350,206 +335,10 @@ class CompilationUnit(object):
         return ""
 
 
-COMPUTE_CAPABILITIES = (
-    (3, 5),
-    (3, 7),
-    (5, 0),
-    (5, 2),
-    (5, 3),
-    (6, 0),
-    (6, 1),
-    (6, 2),
-    (7, 0),
-    (7, 2),
-    (7, 5),
-    (8, 0),
-    (8, 6),
-    (8, 7),
-    (8, 9),
-    (9, 0),
-    (10, 0),
-    (10, 1),
-    (10, 3),
-    (12, 0),
-    (12, 1),
-)
-
-
-# Maps CTK version -> (min supported cc, max supported cc) ranges, bounds inclusive
-_CUDA_CC_MIN_MAX_SUPPORT = {
-    (11, 2): [
-        ((3, 5), (8, 6)),
-    ],
-    (11, 3): [
-        ((3, 5), (8, 6)),
-    ],
-    (11, 4): [
-        ((3, 5), (8, 7)),
-    ],
-    (11, 5): [
-        ((3, 5), (8, 7)),
-    ],
-    (11, 6): [
-        ((3, 5), (8, 7)),
-    ],
-    (11, 7): [
-        ((3, 5), (8, 7)),
-    ],
-    (11, 8): [
-        ((3, 5), (9, 0)),
-    ],
-    (12, 0): [
-        ((5, 0), (9, 0)),
-    ],
-    (12, 1): [
-        ((5, 0), (9, 0)),
-    ],
-    (12, 2): [
-        ((5, 0), (9, 0)),
-    ],
-    (12, 3): [
-        ((5, 0), (9, 0)),
-    ],
-    (12, 4): [
-        ((5, 0), (9, 0)),
-    ],
-    (12, 5): [
-        ((5, 0), (9, 0)),
-    ],
-    (12, 6): [
-        ((5, 0), (9, 0)),
-    ],
-    (12, 8): [
-        ((5, 0), (10, 1)),
-        ((12, 0), (12, 0)),
-    ],
-    (12, 9): [
-        ((5, 0), (12, 1)),
-    ],
-}
-
-# From CUDA 12.9 Release notes, Section 1.5.4, "Deprecated Architectures"
-# https://docs.nvidia.com/cuda/archive/12.9.0/cuda-toolkit-release-notes/index.html#deprecated-architectures
-#
-#   "Maxwell, Pascal, and Volta architectures are now feature-complete with no
-#   further enhancements planned. While CUDA Toolkit 12.x series will continue
-#   to support building applications for these architectures, offline
-#   compilation and library support will be removed in the next major CUDA
-#   Toolkit version release. Users should plan migration to newer
-#   architectures, as future toolkits will be unable to target Maxwell, Pascal,
-#   and Volta GPUs."
-#
-# In order to maintain compatibility with future toolkits, we use Turing (7.5)
-# as the default CC if it is not otherwise specified.
-LOWEST_CURRENT_CC = (7, 5)
-
-
-def ccs_supported_by_ctk(ctk_version):
-    try:
-        # For supported versions, we look up the range of supported CCs
-        return tuple(
-            [
-                cc
-                for min_cc, max_cc in _CUDA_CC_MIN_MAX_SUPPORT[ctk_version]
-                for cc in COMPUTE_CAPABILITIES
-                if min_cc <= cc <= max_cc
-            ]
-        )
-    except KeyError:
-        # For unsupported CUDA toolkit versions, all we can do is assume all
-        # non-deprecated versions we are aware of are supported.
-        #
-        # If the user has specified a non-default CC that is greater than the
-        # lowest non-deprecated one, then we should assume that instead.
-        MIN_CC = max(config.CUDA_DEFAULT_PTX_CC, LOWEST_CURRENT_CC)
-
-        return tuple([cc for cc in COMPUTE_CAPABILITIES if cc >= MIN_CC])
-
-
-def get_supported_ccs():
-    try:
-        from numba.cuda.cudadrv.runtime import runtime
-
-        cudart_version = runtime.get_version()
-    except:  # noqa: E722
-        # We can't support anything if there's an error getting the runtime
-        # version (e.g. if it's not present or there's another issue)
-        _supported_cc = ()
-        return _supported_cc
-
-    # Ensure the minimum CTK version requirement is met
-    min_cudart = min(_CUDA_CC_MIN_MAX_SUPPORT)
-    if cudart_version < min_cudart:
-        _supported_cc = ()
-        ctk_ver = f"{cudart_version[0]}.{cudart_version[1]}"
-        unsupported_ver = (
-            f"CUDA Toolkit {ctk_ver} is unsupported by Numba - "
-            f"{min_cudart[0]}.{min_cudart[1]} is the minimum "
-            "required version."
-        )
-        warnings.warn(unsupported_ver)
-        return _supported_cc
-
-    _supported_cc = ccs_supported_by_ctk(cudart_version)
-    return _supported_cc
-
-
-def find_closest_arch(mycc):
-    """
-    Given a compute capability, return the closest compute capability supported
-    by the CUDA toolkit.
-
-    :param mycc: Compute capability as a tuple ``(MAJOR, MINOR)``
-    :return: Closest supported CC as a tuple ``(MAJOR, MINOR)``
-    """
-    supported_ccs = NVVM().supported_ccs
-
-    if not supported_ccs:
-        msg = (
-            "No supported GPU compute capabilities found. "
-            "Please check your cudatoolkit version matches your CUDA version."
-        )
-        raise NvvmSupportError(msg)
-
-    for i, cc in enumerate(supported_ccs):
-        if cc == mycc:
-            # Matches
-            return cc
-        elif cc > mycc:
-            # Exceeded
-            if i == 0:
-                # CC lower than supported
-                msg = (
-                    "GPU compute capability %d.%d is not supported"
-                    "(requires >=%d.%d)" % (mycc + cc)
-                )
-                raise NvvmSupportError(msg)
-            else:
-                # return the previous CC
-                return supported_ccs[i - 1]
-
-    # CC higher than supported
-    return supported_ccs[-1]  # Choose the highest
-
-
-def get_arch_option(major, minor):
-    """Matches with the closest architecture option"""
-    if config.FORCE_CUDA_CC:
-        arch = config.FORCE_CUDA_CC
-    else:
-        arch = find_closest_arch((major, minor))
-    return "compute_%d%d" % arch
-
-
 MISSING_LIBDEVICE_FILE_MSG = """Missing libdevice file.
-Please ensure you have a CUDA Toolkit 11.2 or higher.
-For CUDA 12, ``cuda-nvcc`` and ``cuda-nvrtc`` are required:
+``cuda-nvcc`` and ``cuda-nvrtc`` are required:
 
     $ conda install -c conda-forge cuda-nvcc cuda-nvrtc "cuda-version>=12.0"
-
-For CUDA 11, ``cudatoolkit`` is required:
-
-    $ conda install -c conda-forge cudatoolkit "cuda-version>=11.2,<12.0"
 """
 
 

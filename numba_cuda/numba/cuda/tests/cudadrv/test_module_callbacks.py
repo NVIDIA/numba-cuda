@@ -1,23 +1,23 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: BSD-2-Clause
+
 import unittest
 import threading
 
 import numpy as np
 
-from numba import cuda, config
+from numba import cuda
+from numba.cuda import config
 from numba.cuda.cudadrv.linkable_code import CUSource
 from numba.cuda.testing import (
     CUDATestCase,
-    ContextResettingTestCase,
     skip_on_cudasim,
 )
 
 if not config.ENABLE_CUDASIM:
     from cuda.bindings.driver import cuModuleGetGlobal, cuMemcpyHtoD
 
-    if config.CUDA_USE_NVIDIA_BINDING:
-        from cuda.bindings.driver import CUmodule as cu_module_type
-    else:
-        from numba.cuda.cudadrv.drvapi import cu_module as cu_module_type
+    from cuda.bindings.driver import CUmodule as cu_module_type
 
 
 def wipe_all_modules_in_context():
@@ -32,13 +32,11 @@ def wipe_all_modules_in_context():
 
 
 def get_hashable_handle_value(handle):
-    if not config.CUDA_USE_NVIDIA_BINDING:
-        handle = handle.value
     return handle
 
 
 @skip_on_cudasim("Module loading not implemented in the simulator")
-class TestModuleCallbacksBasic(ContextResettingTestCase):
+class TestModuleCallbacksBasic(CUDATestCase):
     def test_basic(self):
         counter = 0
 

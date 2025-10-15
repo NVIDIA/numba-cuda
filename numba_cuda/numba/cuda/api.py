@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: BSD-2-Clause
+
 """
 API that are reported to numba.cuda
 """
@@ -8,9 +11,8 @@ import os
 import numpy as np
 
 from .cudadrv import devicearray, devices, driver
-from numba.core import config
+from numba.cuda.core import config
 from numba.cuda.api_util import prepare_shape_strides_dtype
-from numba.cuda.cudadrv.runtime import get_version
 
 # NDarray device helper
 
@@ -45,7 +47,8 @@ def from_cuda_array_interface(desc, owner=None, sync=True):
     )
     size = driver.memory_size_from_info(shape, strides, dtype.itemsize)
 
-    devptr = driver.get_devptr_for_active_ctx(desc["data"][0])
+    cudevptr_class = driver.binding.CUdeviceptr
+    devptr = cudevptr_class(desc["data"][0])
     data = driver.MemoryPointer(
         current_context(), devptr, size=size, owner=owner
     )
@@ -99,13 +102,9 @@ def is_float16_supported():
 def is_bfloat16_supported():
     """Whether bfloat16 are supported.
 
-    bfloat16 are only supported on devices with compute capability >= 8.0 and cuda version >= 12.0
+    bfloat16 is only supported on devices with compute capability >= 8.0
     """
-    cuda_version = get_version()
-    return current_context().device.supports_bfloat16 and cuda_version >= (
-        12,
-        0,
-    )
+    return current_context().device.supports_bfloat16
 
 
 @require_context
@@ -272,12 +271,8 @@ def open_ipc_array(handle, shape, dtype, strides=None, offset=0):
     # compute size
     size = np.prod(shape) * dtype.itemsize
     # manually recreate the IPC mem handle
-    if driver.USE_NV_BINDING:
-        driver_handle = driver.binding.CUipcMemHandle()
-        driver_handle.reserved = handle
-    else:
-        driver_handle = driver.drvapi.cu_ipc_mem_handle()
-        driver_handle.reserved[:] = handle
+    driver_handle = driver.binding.CUipcMemHandle()
+    driver_handle.reserved = handle
     # use *IpcHandle* to open the IPC memory
     ipchandle = driver.IpcHandle(None, driver_handle, size, offset=offset)
     yield ipchandle.open_array(
@@ -510,6 +505,11 @@ def close():
     Explicitly clears all contexts in the current thread, and destroys all
     contexts if the current thread is the main thread.
     """
+    # Must clear memsys object in case it has been used already
+    from .memory_management import rtsys
+
+    rtsys.close()
+
     devices.reset()
 
 

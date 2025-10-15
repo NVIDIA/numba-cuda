@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: BSD-2-Clause
+
 """
 A CUDA ND Array is recognized by checking the __cuda_memory__ attribute
 on the object.  If it exists and evaluate to True, it must define shape,
@@ -13,13 +16,14 @@ from ctypes import c_void_p
 import numpy as np
 
 import numba
-from numba import _devicearray
+from numba.cuda.cext import _devicearray
 from numba.cuda.cudadrv import devices, dummyarray
 from numba.cuda.cudadrv import driver as _driver
-from numba.core import types, config
-from numba.np.unsafe.ndarray import to_fixed_tuple
-from numba.np.numpy_support import numpy_version
-from numba.np import numpy_support
+from numba.core import types
+from numba.cuda.core import config
+from numba.cuda.np.unsafe.ndarray import to_fixed_tuple
+from numba.cuda.np.numpy_support import numpy_version
+from numba.cuda.np import numpy_support
 from numba.cuda.api_util import prepare_shape_strides_dtype
 from numba.core.errors import NumbaPerformanceWarning
 from warnings import warn
@@ -92,25 +96,23 @@ class DeviceNDArrayBase(_devicearray.DeviceArray):
         self._dummy = dummyarray.Array.from_desc(
             0, shape, strides, dtype.itemsize
         )
+        # confirm that all elements of shape are ints
+        if not all(isinstance(dim, (int, np.integer)) for dim in shape):
+            raise TypeError("all elements of shape must be ints")
         self.shape = tuple(shape)
         self.strides = tuple(strides)
         self.dtype = dtype
         self.size = int(functools.reduce(operator.mul, self.shape, 1))
         # prepare gpu memory
         if self.size > 0:
+            self.alloc_size = _driver.memory_size_from_info(
+                self.shape, self.strides, self.dtype.itemsize
+            )
             if gpu_data is None:
-                self.alloc_size = _driver.memory_size_from_info(
-                    self.shape, self.strides, self.dtype.itemsize
-                )
                 gpu_data = devices.get_context().memalloc(self.alloc_size)
-            else:
-                self.alloc_size = _driver.device_memory_size(gpu_data)
         else:
             # Make NULL pointer for empty allocation
-            if _driver.USE_NV_BINDING:
-                null = _driver.binding.CUdeviceptr(0)
-            else:
-                null = c_void_p(0)
+            null = _driver.binding.CUdeviceptr(0)
             gpu_data = _driver.MemoryPointer(
                 context=devices.get_context(), pointer=null, size=0
             )
@@ -121,16 +123,10 @@ class DeviceNDArrayBase(_devicearray.DeviceArray):
 
     @property
     def __cuda_array_interface__(self):
-        if _driver.USE_NV_BINDING:
-            if self.device_ctypes_pointer is not None:
-                ptr = int(self.device_ctypes_pointer)
-            else:
-                ptr = 0
+        if self.device_ctypes_pointer.value is not None:
+            ptr = self.device_ctypes_pointer.value
         else:
-            if self.device_ctypes_pointer.value is not None:
-                ptr = self.device_ctypes_pointer.value
-            else:
-                ptr = 0
+            ptr = 0
 
         return {
             "shape": tuple(self.shape),
@@ -204,10 +200,7 @@ class DeviceNDArrayBase(_devicearray.DeviceArray):
     def device_ctypes_pointer(self):
         """Returns the ctypes pointer to the GPU data buffer"""
         if self.gpu_data is None:
-            if _driver.USE_NV_BINDING:
-                return _driver.binding.CUdeviceptr(0)
-            else:
-                return c_void_p(0)
+            return c_void_p(0)
         else:
             return self.gpu_data.device_ctypes_pointer
 

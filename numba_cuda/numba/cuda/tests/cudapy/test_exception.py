@@ -1,17 +1,14 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: BSD-2-Clause
+
 import numpy as np
 
 from numba import cuda
 from numba.cuda.testing import unittest, xfail_unless_cudasim, CUDATestCase
-from numba.core import config
+from numba.cuda.core import config
 
 
 class TestException(CUDATestCase):
-    def setUp(self):
-        super().setUp()
-        # LTO optimizes away the exception status due to an oversight
-        # in the way we generate it (it is not added to the used list).
-        self.skip_if_lto("Exceptions not supported with LTO")
-
     def test_exception(self):
         def foo(ary):
             x = cuda.threadIdx.x

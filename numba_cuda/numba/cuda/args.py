@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: BSD-2-Clause
+
 """
 Hints to wrap Kernel arguments to indicate how to manage host-device
 memory transfers before & after the kernel call.
@@ -5,7 +8,7 @@ memory transfers before & after the kernel call.
 
 import abc
 
-from numba.core.typing.typeof import typeof, Purpose
+from numba.cuda.typing.typeof import typeof, Purpose
 
 
 class ArgHint(metaclass=abc.ABCMeta):

@@ -1,10 +1,13 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: BSD-2-Clause
+
 import itertools
 import numpy as np
 from numba.cuda.cudadrv import devicearray
 from numba import cuda
 from numba.cuda.testing import unittest, CUDATestCase
 from numba.cuda.testing import skip_on_cudasim
-from numba.tests.support import IS_NUMPY_2
+from numba.cuda.tests.support import IS_NUMPY_2
 
 
 class TestCudaNDArray(CUDATestCase):
@@ -44,6 +47,39 @@ class TestCudaNDArray(CUDATestCase):
         dary = cuda.to_device(ary)
         self.assertEqual(ary.shape, dary.shape)
         self.assertEqual(ary.shape[1:], dary.shape[1:])
+
+    def test_device_array_float(self):
+        # Ensure that a float shape raises an TypeError
+        with self.assertRaises(TypeError):
+            cuda.device_array(shape=1.23)
+        with self.assertRaises(TypeError):
+            cuda.device_array(shape=np.float64(1.23))
+        with self.assertRaises(TypeError):
+            cuda.device_array(shape=np.array(1.23))
+
+    def test_device_array_float_vectors(self):
+        # Ensure that np.array, list or tuple inputs with
+        # non-ints raise an TypeError
+        with self.assertRaises(TypeError):
+            cuda.device_array(shape=np.array([1.1]))
+        with self.assertRaises(TypeError):
+            cuda.device_array(shape=[1.1])
+        with self.assertRaises(TypeError):
+            cuda.device_array(shape=(1.1,))
+        with self.assertRaises(TypeError):
+            cuda.device_array(shape=np.array([1.1, 2.2]))
+        with self.assertRaises(TypeError):
+            cuda.device_array(shape=[1.1, 2.2])
+        with self.assertRaises(TypeError):
+            cuda.device_array(shape=(1.1, 2.2))
+
+    def test_device_array_vectors(self):
+        # Ensure that np.array or list of inputs with
+        # ints still work
+        dary = cuda.device_array(shape=np.array([10, 10]), dtype=np.bool)
+        self.assertEqual(dary.shape, (10, 10))
+        dary = cuda.device_array(shape=[10, 10], dtype=np.bool)
+        self.assertEqual(dary.shape, (10, 10))
 
     def test_devicearray(self):
         array = np.arange(100, dtype=np.int32)

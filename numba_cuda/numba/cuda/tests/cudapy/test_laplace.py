@@ -1,7 +1,10 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: BSD-2-Clause
+
 import numpy as np
 from numba import cuda, float64, void
 from numba.cuda.testing import unittest, CUDATestCase
-from numba.core import config
+from numba.cuda.core import config
 
 # NOTE: CUDA kernel does not return any value
 

@@ -1,8 +1,11 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: BSD-2-Clause
+
 import numpy as np
 
 from numba import cuda, complex64, int32, float64
 from numba.cuda.testing import unittest, CUDATestCase
-from numba.core.config import ENABLE_CUDASIM
+from numba.cuda.core.config import ENABLE_CUDASIM
 
 CONST_EMPTY = np.array([])
 CONST1D = np.arange(10, dtype=np.float64) / 2.0

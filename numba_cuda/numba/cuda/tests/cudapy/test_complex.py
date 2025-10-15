@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: BSD-2-Clause
+
 import math
 import itertools
 
@@ -6,7 +9,7 @@ import numpy as np
 from numba.cuda.testing import unittest, CUDATestCase
 from numba.core import types
 from numba import cuda
-from numba.tests.complex_usecases import (
+from numba.cuda.tests.complex_usecases import (
     real_usecase,
     imag_usecase,
     conjugate_usecase,
@@ -34,7 +37,7 @@ from numba.tests.complex_usecases import (
     sinh_usecase,
     tanh_usecase,
 )
-from numba.np import numpy_support
+from numba.cuda.np import numpy_support
 
 
 def compile_scalar_func(pyfunc, argtypes, restype):

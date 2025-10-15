@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: BSD-2-Clause
+
 from typing import List
 from dataclasses import dataclass, field
 from numba import cuda, float32
@@ -188,10 +191,6 @@ class TestFastMathOption(CUDATestCase):
         )
 
     def test_divf_exception(self):
-        # LTO optimizes away the exception status due to an oversight
-        # in the way we generate it (it is not added to the used list).
-        self.skip_if_lto("Exceptions not supported with LTO")
-
         def f10(r, x, y):
             r[0] = x / y
 

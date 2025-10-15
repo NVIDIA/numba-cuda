@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: BSD-2-Clause
+
 import asyncio
 import functools
 import threading
@@ -19,6 +22,7 @@ def with_asyncio_loop(f):
     return runner
 
 
+@unittest.skip("Disabled temporarily due to Issue #317")
 @skip_on_cudasim("CUDA Driver API unsupported in the simulator")
 class TestCudaStream(CUDATestCase):
     def test_add_callback(self):

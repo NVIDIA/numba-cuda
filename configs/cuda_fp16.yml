@@ -1,0 +1,21 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: BSD-2-Clause
+Name: Numba float16
+Version: 0.0.1
+Entry Point: ./numba_cuda/numba/cuda/include/12/cuda_fp16.h
+File List:
+    - ./numba_cuda/numba/cuda/include/12/cuda_fp16.h
+Exclude:
+    Struct:
+        - __half2
+Types:
+    __half: Number
+    __half2: Type
+Data Models:
+    __half: PrimitiveModel
+    __half2: StructModel
+Shim Include Override: "\"cuda_fp16.h\""
+Require Pynvjitlink: False
+Use Separate Registry: True
+GPU Arch:
+    - sm_86

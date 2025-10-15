@@ -1,10 +1,13 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: BSD-2-Clause
+
 from llvmlite import ir
 
 from numba import cuda, types
-from numba.core import cgutils
+from numba.cuda import cgutils
 from numba.core.errors import RequireLiteralValue, TypingError
-from numba.core.typing import signature
-from numba.core.extending import overload_attribute, overload_method
+from numba.cuda.typing import signature
+from numba.cuda.extending import overload_attribute, overload_method
 from numba.cuda import nvvmutils
 from numba.cuda.extending import intrinsic
 

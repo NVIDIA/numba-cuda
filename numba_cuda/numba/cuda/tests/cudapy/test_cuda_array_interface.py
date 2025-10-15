@@ -1,21 +1,22 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: BSD-2-Clause
+
 import numpy as np
 
 from numba import vectorize, guvectorize
 from numba import cuda
-from numba.cuda.cudadrv import driver
-from numba.cuda.testing import unittest, ContextResettingTestCase, ForeignArray
+from numba.cuda.testing import unittest, CUDATestCase, ForeignArray
 from numba.cuda.testing import skip_on_cudasim, skip_if_external_memmgr
-from numba.tests.support import linux_only, override_config
+from numba.cuda.tests.support import linux_only, override_config
 from unittest.mock import call, patch
 
 
 @skip_on_cudasim("CUDA Array Interface is not supported in the simulator")
-class TestCudaArrayInterface(ContextResettingTestCase):
+class TestCudaArrayInterface(CUDATestCase):
     def assertPointersEqual(self, a, b):
-        if driver.USE_NV_BINDING:
-            self.assertEqual(
-                int(a.device_ctypes_pointer), int(b.device_ctypes_pointer)
-            )
+        self.assertEqual(
+            a.device_ctypes_pointer.value, b.device_ctypes_pointer.value
+        )
 
     def test_as_cuda_array(self):
         h_arr = np.arange(10)
@@ -33,10 +34,7 @@ class TestCudaArrayInterface(ContextResettingTestCase):
         self.assertPointersEqual(wrapped, d_arr)
 
     def get_stream_value(self, stream):
-        if driver.USE_NV_BINDING:
-            return int(stream.handle)
-        else:
-            return stream.handle.value
+        return stream.handle.value
 
     @skip_if_external_memmgr("Ownership not relevant with external memmgr")
     def test_ownership(self):

@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: BSD-2-Clause
+
 import sys
 
 from .api import *
@@ -17,7 +20,8 @@ from .cudadrv import devicearray
 from .cudadrv.devices import require_context, gpus
 from .cudadrv.devices import get_context as current_context
 from .cudadrv.runtime import runtime
-from numba.core import config
+from .cudadrv.linkable_code import LinkableCode
+from numba.cuda.core import config
 
 reduce = Reduce
 
@@ -33,6 +37,7 @@ del vector_types, name, svty, alias
 if config.ENABLE_CUDASIM:
     import sys
     from numba.cuda.simulator import cudadrv
+    from . import dispatcher
 
     sys.modules["numba.cuda.cudadrv"] = cudadrv
     sys.modules["numba.cuda.cudadrv.devicearray"] = cudadrv.devicearray
@@ -43,6 +48,7 @@ if config.ENABLE_CUDASIM:
     sys.modules["numba.cuda.cudadrv.drvapi"] = cudadrv.drvapi
     sys.modules["numba.cuda.cudadrv.error"] = cudadrv.error
     sys.modules["numba.cuda.cudadrv.nvvm"] = cudadrv.nvvm
+    sys.modules["numba.cuda.dispatcher"] = dispatcher
 
     from . import bf16, compiler, _internal
 

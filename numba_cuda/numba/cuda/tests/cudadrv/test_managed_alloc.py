@@ -1,28 +1,28 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: BSD-2-Clause
+
 import numpy as np
-from ctypes import byref, c_size_t
-from numba.cuda.cudadrv.driver import device_memset, driver, USE_NV_BINDING
+from numba.cuda.cudadrv.driver import device_memset, driver
 from numba import cuda
-from numba.cuda.testing import unittest, ContextResettingTestCase
+from numba.cuda.testing import unittest, CUDATestCase
 from numba.cuda.testing import skip_on_cudasim, skip_on_arm
-from numba.tests.support import linux_only
+from numba.cuda.tests.support import linux_only
 
 
 @skip_on_cudasim("CUDA Driver API unsupported in the simulator")
 @linux_only
 @skip_on_arm("Managed Alloc support is experimental/untested on ARM")
-class TestManagedAlloc(ContextResettingTestCase):
+class TestManagedAlloc(CUDATestCase):
+    def tearDown(self):
+        super().tearDown()
+        cuda.current_context().reset()
+
     def get_total_gpu_memory(self):
         # We use a driver function to directly get the total GPU memory because
         # an EMM plugin may report something different (or not implement
         # get_memory_info at all).
-        if USE_NV_BINDING:
-            free, total = driver.cuMemGetInfo()
-            return total
-        else:
-            free = c_size_t()
-            total = c_size_t()
-            driver.cuMemGetInfo(byref(free), byref(total))
-            return total.value
+        free, total = driver.cuMemGetInfo()
+        return total
 
     def skip_if_cc_major_lt(self, min_required, reason):
         """
