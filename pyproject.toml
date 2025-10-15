@@ -169,7 +169,6 @@ gxx = "*"
 [tool.pixi.environments]
 cu12 = { features = ["cu12", "test"], solve-group = "cu12" }
 cu13 = { features = ["cu13", "test"], solve-group = "cu13" }
-test = { features = ["test"], solve-group = "test" }
 
 [tool.pixi.tasks]
 build-tests = { cmd = [
