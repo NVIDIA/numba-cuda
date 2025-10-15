@@ -1,6 +1,7 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-2-Clause
 
+import pytest
 from numba.cuda.testing import unittest
 from numba.cuda.testing import skip_on_cudasim
 from numba.cuda.testing import CUDATestCase
@@ -13,7 +14,6 @@ from numba.cuda import config
 import os
 import io
 import contextlib
-import warnings
 
 
 TEST_BIN_DIR = os.getenv("NUMBA_CUDA_TEST_BIN_DIR")
@@ -140,27 +140,21 @@ class TestLinker(CUDATestCase):
 
         for file in files:
             with self.subTest(file=file):
-                with warnings.catch_warnings(record=True) as w:
-                    with contextlib.redirect_stdout(None):  # suppress other PTX
-                        sig = "uint32(uint32, uint32)"
-                        add_from_numba = cuda.declare_device(
-                            "add_from_numba", sig
-                        )
+                sig = "uint32(uint32, uint32)"
+                add_from_numba = cuda.declare_device("add_from_numba", sig)
 
-                        @cuda.jit(link=[file], lto=True)
-                        def kernel(result):
-                            result[0] = add_from_numba(1, 2)
+                @cuda.jit(link=[file], lto=True)
+                def kernel(result):
+                    result[0] = add_from_numba(1, 2)
 
-                        result = cuda.device_array(1)
-                        kernel[1, 1](result)
-                        assert result[0] == 3
-
-                assert len(w) == 1
-                self.assertIn(
-                    "it is not optimizable at link time, and "
-                    "`ignore_nonlto == True`",
-                    str(w[0].message),
-                )
+                result = cuda.device_array(1)
+                func = kernel[1, 1]
+                with pytest.warns(
+                    UserWarning,
+                    match="it is not optimizable at link time, and `ignore_nonlto == True`",
+                ):
+                    func(result)
+                assert result[0] == 3
 
         config.DUMP_ASSEMBLY = False
 

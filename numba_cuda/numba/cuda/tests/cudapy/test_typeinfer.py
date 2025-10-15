@@ -511,7 +511,7 @@ def get_func_typing_errs(func, arg_types):
     return pipeline.state.typing_errors
 
 
-@skip_on_cudasim
+@skip_on_cudasim("not available on sim")
 class TestPartialTypingErrors(CUDATestCase):
     """
     Make sure partial typing stores type errors in compiler state properly
