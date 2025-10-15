@@ -15,7 +15,7 @@ from numba.cuda.extending import (
     register_jitable,
     intrinsic,
 )
-from numba.core.imputils import Registry
+from numba.cuda.core.imputils import Registry
 from numba.cuda.cgutils import is_nonelike
 from numba.cuda.cpython import unicode
 

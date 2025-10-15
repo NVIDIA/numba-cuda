@@ -54,10 +54,7 @@ class TestCudaMemory(CUDATestCase):
         # Use MemoryPointer.view to create derived pointer
 
         def handle_val(mem):
-            if driver.USE_NV_BINDING:
-                return int(mem.handle)
-            else:
-                return mem.handle.value
+            return int(mem.handle)
 
         def check(m, offset):
             # create view

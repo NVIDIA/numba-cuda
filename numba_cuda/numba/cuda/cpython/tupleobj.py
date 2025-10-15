@@ -7,15 +7,15 @@ Implementation of tuple objects
 
 import operator
 
-from numba.core.imputils import (
+from numba.cuda.core.imputils import (
     Registry,
     iternext_impl,
     impl_ret_borrowed,
     impl_ret_untracked,
     RefType,
 )
-from numba.core import typing, types
-from numba.cuda import cgutils
+from numba.core import types
+from numba.cuda import cgutils, typing
 from numba.cuda.extending import overload_method, overload
 
 registry = Registry("tupleobj")

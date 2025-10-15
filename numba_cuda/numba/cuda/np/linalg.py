@@ -12,7 +12,7 @@ from llvmlite import ir
 import numpy as np
 import operator
 
-from numba.core.imputils import impl_ret_borrowed, impl_ret_new_ref
+from numba.cuda.core.imputils import impl_ret_borrowed, impl_ret_new_ref
 from numba.cuda.typing import signature
 from numba.cuda.extending import intrinsic, overload, register_jitable
 from numba.core import types

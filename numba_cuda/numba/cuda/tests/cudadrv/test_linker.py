@@ -3,7 +3,6 @@
 
 import numpy as np
 import warnings
-from numba.cuda import config
 from numba.cuda.testing import unittest
 from numba.cuda.testing import (
     skip_on_cudasim,
@@ -15,7 +14,6 @@ from numba.cuda.cudadrv.driver import CudaAPIError, _Linker, LinkerError
 from numba.cuda import require_context
 from numba.cuda.tests.support import ignore_internal_warnings
 from numba import cuda, void, float64, int64, int32, typeof, float32
-from numba.cuda.cudadrv.error import NvrtcError
 
 CONST1D = np.arange(10, dtype=np.float64)
 
@@ -179,23 +177,27 @@ class TestLinker(CUDATestCase):
             def kernel(x):
                 bar(x)
 
-        self.assertEqual(len(w), 1, "Expected warnings from NVRTC")
+        nvrtc_log_warnings = [
+            wi for wi in w if "NVRTC log messages" in str(wi.message)
+        ]
+        self.assertEqual(
+            len(nvrtc_log_warnings), 1, "Expected warnings from NVRTC"
+        )
         # Check the warning refers to the log messages
-        self.assertIn("NVRTC log messages", str(w[0].message))
+        self.assertIn("NVRTC log messages", str(nvrtc_log_warnings[0].message))
         # Check the message pertaining to the unused variable is provided
-        self.assertIn("declared but never referenced", str(w[0].message))
+        self.assertIn(
+            "declared but never referenced", str(nvrtc_log_warnings[0].message)
+        )
 
     def test_linking_cu_error(self):
         bar = cuda.declare_device("bar", "int32(int32)")
 
         link = str(test_data_dir / "error.cu")
 
-        if config.CUDA_USE_NVIDIA_BINDING:
-            from cuda.core.experimental._utils.cuda_utils import NVRTCError
+        from cuda.core.experimental._utils.cuda_utils import NVRTCError
 
-            errty = NVRTCError
-        else:
-            errty = NvrtcError
+        errty = NVRTCError
         with self.assertRaises(errty) as e:
 
             @cuda.jit("void(int32)", link=[link])
@@ -204,11 +206,7 @@ class TestLinker(CUDATestCase):
 
         msg = e.exception.args[0]
         # Check the error message refers to the NVRTC compile
-        nvrtc_err_str = (
-            "NVRTC_ERROR_COMPILATION"
-            if config.CUDA_USE_NVIDIA_BINDING
-            else "NVRTC Compilation failure"
-        )
+        nvrtc_err_str = "NVRTC_ERROR_COMPILATION"
         self.assertIn(nvrtc_err_str, msg)
         # Check the expected error in the CUDA source is reported
         self.assertIn('identifier "SYNTAX" is undefined', msg)

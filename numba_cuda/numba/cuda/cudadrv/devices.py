@@ -18,7 +18,7 @@ import functools
 import threading
 from contextlib import contextmanager
 
-from .driver import driver, USE_NV_BINDING
+from .driver import driver
 
 
 class _DeviceList(object):
@@ -43,7 +43,7 @@ class _DeviceList(object):
         """
         Returns the context manager for device *devnum*.
         """
-        if not isinstance(devnum, (int, slice)) and USE_NV_BINDING:
+        if not isinstance(devnum, (int, slice)):
             devnum = int(devnum)
         return self.lst[devnum]
 
@@ -146,8 +146,7 @@ class _Runtime(object):
             else:
                 return attached_ctx
         else:
-            if USE_NV_BINDING:
-                devnum = int(devnum)
+            devnum = int(devnum)
             return self._activate_context_for(devnum)
 
     def _get_or_create_context_uncached(self, devnum):

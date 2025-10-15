@@ -16,13 +16,14 @@ import operator
 from numba.cuda.np import arrayobj
 from numba.cuda.np import ufunc_db
 from numba.cuda.np.ufunc.sigparse import parse_signature
-from numba.core.imputils import (
+from numba.cuda.core.imputils import (
     Registry,
     impl_ret_new_ref,
     force_error_model,
     impl_ret_borrowed,
 )
-from numba.core import typing, types
+from numba.core import types
+from numba.cuda import typing
 from numba.cuda import cgutils
 from numba.cuda.np.numpy_support import (
     ufunc_find_matching_loop,
@@ -31,7 +32,7 @@ from numba.cuda.np.numpy_support import (
     _ufunc_loop_sig,
 )
 from numba.cuda.np.arrayobj import _getitem_array_generic
-from numba.core.typing import npydecl
+from numba.cuda.typing import npydecl
 from numba.cuda.extending import overload, intrinsic
 
 from numba.core import errors

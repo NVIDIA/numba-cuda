@@ -25,7 +25,7 @@ from numba.cuda.np.numpy_support import (
     lt_floats,
     lt_complex,
 )
-from numba.core.imputils import (
+from numba.cuda.core.imputils import (
     impl_ret_borrowed,
     impl_ret_new_ref,
     impl_ret_untracked,
@@ -47,7 +47,7 @@ from numba.core.errors import (
     NumbaNotImplementedError,
     NumbaTypeError,
 )
-from numba.cpython.unsafe.tuple import tuple_setitem
+from numba.cuda.cpython.unsafe.tuple import tuple_setitem
 
 registry = Registry("np.arraymath")
 lower = registry.lower

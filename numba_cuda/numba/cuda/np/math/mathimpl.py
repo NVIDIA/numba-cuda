@@ -13,12 +13,12 @@ import numpy as np
 import llvmlite.ir
 from llvmlite.ir import Constant
 
-from numba.core.imputils import impl_ret_untracked
+from numba.cuda.core.imputils import impl_ret_untracked
 from numba.core import types
 from numba.cuda import cgutils, config
 from numba.cuda.extending import overload
 from numba.cuda.typing import signature
-from numba.cpython.unsafe.numbers import trailing_zeros
+from numba.cuda.cpython.unsafe.numbers import trailing_zeros
 
 
 # registry = Registry('mathimpl')
