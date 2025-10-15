@@ -160,3 +160,6 @@ test = { features = ["test"], solve-group = "test" }
 
 [tool.pixi.tasks]
 test = { cmd = ["pytest", "$PIXI_PROJECT_ROOT/numba_cuda/numba/cuda/tests"] }
+
+[tool.pyrefly]
+search-path = ["./numba_cuda"]
