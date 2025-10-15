@@ -63,10 +63,6 @@ from cuda.core.experimental import (
     ObjectCode,
 )
 
-# For backwards compatibility: indicate that the NVIDIA CUDA Python bindings are
-# in use. Older code checks this flag to branch on binding-specific behavior.
-USE_NV_BINDING = True
-
 # There is no definition of the default stream in the Nvidia bindings (nor
 # is there at the C/C++ level), so we define it here so we don't need to
 # use a magic number 0 in places where we want the default stream.
@@ -3176,11 +3172,7 @@ def device_memset(dst, val, size, stream=0):
     try:
         fn(ptr, val, size, *varargs)
     except CudaAPIError as e:
-        invalid = (
-            binding.CUresult.CUDA_ERROR_INVALID_VALUE
-            if USE_NV_BINDING
-            else enums.CUDA_ERROR_INVALID_VALUE
-        )
+        invalid = binding.CUresult.CUDA_ERROR_INVALID_VALUE
         if (
             e.code == invalid
             and getattr(dst, "__cuda_memory__", False)

@@ -2,8 +2,7 @@
 # SPDX-License-Identifier: BSD-2-Clause
 
 import numpy as np
-from ctypes import byref, c_size_t
-from numba.cuda.cudadrv.driver import device_memset, driver, USE_NV_BINDING
+from numba.cuda.cudadrv.driver import device_memset, driver
 from numba import cuda
 from numba.cuda.testing import unittest, CUDATestCase
 from numba.cuda.testing import skip_on_cudasim, skip_on_arm
@@ -22,14 +21,8 @@ class TestManagedAlloc(CUDATestCase):
         # We use a driver function to directly get the total GPU memory because
         # an EMM plugin may report something different (or not implement
         # get_memory_info at all).
-        if USE_NV_BINDING:
-            free, total = driver.cuMemGetInfo()
-            return total
-        else:
-            free = c_size_t()
-            total = c_size_t()
-            driver.cuMemGetInfo(byref(free), byref(total))
-            return total.value
+        free, total = driver.cuMemGetInfo()
+        return total
 
     def skip_if_cc_major_lt(self, min_required, reason):
         """
