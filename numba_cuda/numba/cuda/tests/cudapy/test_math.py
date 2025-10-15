@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: BSD-2-Clause
 
 import numpy as np
+import pytest
 from numba.cuda.testing import (
     skip_unless_cc_53,
     unittest,
@@ -628,9 +629,16 @@ class TestCudaMath(CUDATestCase):
         # match the overflow to inf of math.pow and libdevice.powi for large
         # values of float32, so we compute the reference result with math.pow.
         Cref = np.empty_like(A)
-        for i in range(len(A)):
-            Cref[i] = math.pow(A[i], B[i])
-        np.testing.assert_allclose(np.power(A, B).astype(npdtype), C, rtol=1e-6)
+        with pytest.warns(RuntimeWarning, match="overflow encountered in cast"):
+            for i in range(len(A)):
+                res = math.pow(A[i], B[i])
+                Cref[i] = res
+
+        expected = np.power(A, B)
+        with pytest.warns(RuntimeWarning, match="overflow encountered in cast"):
+            expected = expected.astype(npdtype)
+
+        np.testing.assert_allclose(expected, C, rtol=1e-6)
 
     def test_math_pow(self):
         self.binary_template_float32(math_pow, np.power)
