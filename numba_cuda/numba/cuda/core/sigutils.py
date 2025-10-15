@@ -1,7 +1,15 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-2-Clause
 
-from numba.core import types, typing
+from numba.core import types
+from numba.cuda import typing
+
+try:
+    from numba.core.typing import Signature as CoreSignature
+
+    numba_sig_present = True
+except ImportError:
+    numba_sig_present = False
 
 
 def is_signature(sig):
@@ -9,7 +17,10 @@ def is_signature(sig):
     Return whether *sig* is a potentially valid signature
     specification (for user-facing APIs).
     """
-    return isinstance(sig, (str, tuple, typing.Signature))
+    sig_types = (str, tuple, typing.Signature)
+    if numba_sig_present:
+        sig_types = (str, tuple, typing.Signature, CoreSignature)
+    return isinstance(sig, sig_types)
 
 
 def _parse_signature_string(signature_str):
@@ -34,14 +45,18 @@ def normalize_signature(sig):
         parsed = sig
     if isinstance(parsed, tuple):
         args, return_type = parsed, None
-    elif isinstance(parsed, typing.Signature):
-        args, return_type = parsed.args, parsed.return_type
     else:
-        raise TypeError(
-            "invalid signature: %r (type: %r) evaluates to %r "
-            "instead of tuple or Signature"
-            % (sig, sig.__class__.__name__, parsed.__class__.__name__)
-        )
+        sig_types = (typing.Signature,)
+        if numba_sig_present:
+            sig_types = (typing.Signature, CoreSignature)
+        if isinstance(parsed, sig_types):
+            args, return_type = parsed.args, parsed.return_type
+        else:
+            raise TypeError(
+                "invalid signature: %r (type: %r) evaluates to %r "
+                "instead of tuple or Signature"
+                % (sig, sig.__class__.__name__, parsed.__class__.__name__)
+            )
 
     def check_type(ty):
         if not isinstance(ty, types.Type):

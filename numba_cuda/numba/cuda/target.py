@@ -13,7 +13,7 @@ from numba.core import types
 from numba.core.compiler_lock import global_compiler_lock
 from numba.core.errors import NumbaWarning
 from numba.cuda.core.base import BaseContext
-from numba.core.typing import cmathdecl
+from numba.cuda.typing import cmathdecl
 from numba.core import datamodel
 
 from .cudadrv import nvvm
@@ -223,12 +223,12 @@ class CUDATargetContext(BaseContext):
         self.install_registry(npdatetime.registry)
         self.install_registry(arrayobj.registry)
 
+        # Install only implementations that are defined outside of numba (i.e.,
+        # in third-party extensions) from Numba's builtin_registry.
         if importlib.util.find_spec("numba.core.imputils") is not None:
-            from numba.core.imputils import (
-                builtin_registry as upstream_builtin_registry,
-            )
+            from numba.core.imputils import builtin_registry
 
-            self.install_registry(upstream_builtin_registry)
+            self.install_external_registry(builtin_registry)
 
     def codegen(self):
         return self._internal_codegen

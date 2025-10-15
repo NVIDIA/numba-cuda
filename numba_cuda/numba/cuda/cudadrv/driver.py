@@ -3174,11 +3174,7 @@ def device_memset(dst, val, size, stream=0):
     try:
         fn(*args)
     except CudaAPIError as e:
-        invalid = (
-            binding.CUresult.CUDA_ERROR_INVALID_VALUE
-            if USE_NV_BINDING
-            else enums.CUDA_ERROR_INVALID_VALUE
-        )
+        invalid = binding.CUresult.CUDA_ERROR_INVALID_VALUE
         if (
             e.code == invalid
             and getattr(dst, "__cuda_memory__", False)

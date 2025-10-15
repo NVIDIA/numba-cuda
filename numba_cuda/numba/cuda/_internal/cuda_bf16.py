@@ -27,8 +27,8 @@ from numba.cuda.extending import (
 )
 from numba.cuda.core.imputils import Registry as TargetRegistry
 from numba.cuda.core.imputils import lower_cast
-from numba.core.typing import signature
-from numba.core.typing.builtins import (
+from numba.cuda.typing import signature
+from numba.cuda.typing.builtins import (
     BinOp,
     BinOpTrueDiv,
     UnaryNegate,

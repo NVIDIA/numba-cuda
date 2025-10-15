@@ -11,10 +11,10 @@ from llvmlite import ir
 from llvmlite.ir import Constant
 
 from numba.cuda.core.imputils import impl_ret_untracked, Registry
-from numba.core import typing, types, errors
+from numba.core import types, errors
 from numba.cuda.extending import overload_method
 from numba.cuda.cpython.unsafe.numbers import viewer
-from numba.cuda import cgutils
+from numba.cuda import cgutils, typing
 
 registry = Registry("numbers")
 lower_builtin = registry.lower
