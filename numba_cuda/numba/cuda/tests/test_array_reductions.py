@@ -135,7 +135,9 @@ class TestArrayReductions(MemoryLeakMixin, TestCase):
 
             out = cuda.to_device(np.zeros(1, dtype=np.float64))
             kernel[1, 1](out)
-            self.assertPreciseEqual(np.var(arr), out.copy_to_host()[0])
+            self.assertPreciseEqual(
+                np.var(arr), out.copy_to_host()[0], prec="double"
+            )
 
         arrays = [
             np.float64([1.0, 2.0, 0.0, -0.0, 1.0, -1.5]),
@@ -403,7 +405,9 @@ class TestArrayReductions(MemoryLeakMixin, TestCase):
 
             out = cuda.to_device(np.zeros(1, dtype=np.float64))
             kernel[1, 1](out)
-            self.assertPreciseEqual(np.nanvar(arr), out.copy_to_host()[0])
+            self.assertPreciseEqual(
+                np.nanvar(arr), out.copy_to_host()[0], prec="double"
+            )
 
         arrays = [
             np.float64([1.0, 2.0, 0.0, -0.0, 1.0, -1.5]),
