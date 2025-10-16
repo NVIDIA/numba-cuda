@@ -130,7 +130,7 @@ class TestCudaLocalMem(CUDATestCase):
 
         self.check_dtype(f, struct_model_type)
 
-    def struct_model_type_arr(self):
+    def test_struct_model_type_arr(self):
         @cuda.jit(void(int32[::1], int32[::1]))
         def f(outx, outy):
             # Test creation
