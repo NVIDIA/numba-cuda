@@ -531,7 +531,7 @@ class TestCudaMath(CUDATestCase):
         self.unary_template_float32(math_fabs, np.fabs, start=-1)
         self.unary_template_float64(math_fabs, np.fabs, start=-1)
         self.unary_template_int64(math_fabs, np.fabs, start=-1)
-        self.unary_template_uint64(math_fabs, np.fabs, start=-1)
+        self.unary_template_uint64(math_fabs, np.fabs, start=0)
 
     # ---------------------------------------------------------------------------
     # test_math_gamma
