@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-2-Clause
 
-from numba import vectorize
+from numba.cuda import vectorize
 from numba import cuda
 from numba.cuda import float32
 import numpy as np
