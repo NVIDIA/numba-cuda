@@ -23,27 +23,41 @@ class TestArrayReductions(MemoryLeakMixin, TestCase):
         super(TestArrayReductions, self).tearDown()
 
     def test_all_basic(self):
-        def check(arr):
-            @cuda.jit
-            def kernel(out):
-                gid = cuda.grid(1)
-                if gid < 1:
-                    out[0] = np.all(arr)
+        cases = [
+            np.float64([1.0, 0.0, float("inf"), float("nan")]),
+            np.float64([1.0, -0.0, float("inf"), float("nan")]),
+            np.float64([1.0, 1.5, float("inf"), float("nan")]),
+            np.float64([[1.0, 1.5], [float("inf"), float("nan")]]),
+            np.float64([[1.0, 1.5], [1.5, 1.0]]),
+        ]
 
-            out = cuda.to_device(np.zeros(1, dtype=np.bool_))
-            kernel[1, 1](out)
-            self.assertPreciseEqual(np.all(arr), out.copy_to_host()[0])
+        case_0 = cases[0]
+        case_1 = cases[1]
+        case_2 = cases[2]
+        case_3 = cases[3]
+        case_4 = cases[4]
 
-        arr = np.float64([1.0, 0.0, float("inf"), float("nan")])
-        check(arr)
-        arr = np.float64([1.0, -0.0, float("inf"), float("nan")])
-        check(arr)
-        arr = np.float64([1.0, 1.5, float("inf"), float("nan")])
-        check(arr)
-        arr = np.float64([[1.0, 1.5], [float("inf"), float("nan")]])
-        check(arr)
-        arr = np.float64([[1.0, 1.5], [1.5, 1.0]])
-        check(arr)
+        @cuda.jit
+        def kernel(out):
+            gid = cuda.grid(1)
+            if gid == 0:
+                ans = np.all(case_0)
+            if gid == 1:
+                ans = np.all(case_1)
+            if gid == 2:
+                ans = np.all(case_2)
+            if gid == 3:
+                ans = np.all(case_3)
+            if gid == 4:
+                ans = np.all(case_4)
+            out[gid] = ans
+
+        expected = np.array([np.all(a) for a in cases], dtype=np.bool_)
+        out = cuda.to_device(np.zeros(len(cases), dtype=np.bool_))
+        kernel[1, len(cases)](out)
+        got = out.copy_to_host()
+
+        self.assertPreciseEqual(expected, got)
 
     def test_any_basic(self):
         def check(arr):
