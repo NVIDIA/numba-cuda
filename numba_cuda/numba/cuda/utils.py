@@ -347,7 +347,7 @@ def order_by_target_specificity(target, templates, fnkey=""):
             f"Function resolution cannot find any matches for function "
             f"'{fnkey}' for the current target: '{target}'."
         )
-        from numba.core.errors import UnsupportedError
+        from numba.cuda.errors import UnsupportedError
 
         raise UnsupportedError(msg)
 

@@ -7,8 +7,8 @@ import operator
 import re
 from numba import cuda
 from numba.cuda import int64
-from numba.core.errors import TypingError
 from numba.cuda.types import f2
+from numba.cuda.errors import TypingError
 from numba.cuda.testing import (
     unittest,
     CUDATestCase,

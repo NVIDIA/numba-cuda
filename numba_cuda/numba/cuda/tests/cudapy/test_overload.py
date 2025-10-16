@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: BSD-2-Clause
 
 from numba import cuda, njit, types, version_info
-from numba.core.errors import TypingError
+from numba.cuda.errors import TypingError
 from numba.cuda.extending import overload, overload_attribute
 from numba.cuda.typing.typeof import typeof
 from numba.core.typing.typeof import typeof as cpu_typeof

@@ -15,7 +15,7 @@ from numba.core import errors
 from numba.cuda.tests.support import (
     TestCase,
 )
-from numba.core.errors import LoweringError
+from numba.cuda.errors import LoweringError
 import unittest
 
 from numba.cuda.extending import (

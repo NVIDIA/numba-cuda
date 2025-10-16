@@ -3,8 +3,8 @@
 
 from numba import cuda
 from numba.cuda import int32, float64, void
-from numba.core.errors import TypingError
 from numba.cuda import types
+from numba.cuda.errors import TypingError
 from numba.cuda.testing import unittest, CUDATestCase, skip_on_cudasim
 
 import numpy as np

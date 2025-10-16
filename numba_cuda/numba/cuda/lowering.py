@@ -19,7 +19,7 @@ from numba.cuda.core import (
     removerefctpass,
 )
 
-from numba.core.errors import (
+from numba.cuda.errors import (
     LoweringError,
     new_error_context,
     TypingError,

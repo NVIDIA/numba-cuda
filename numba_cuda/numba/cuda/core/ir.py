@@ -16,7 +16,7 @@ from io import StringIO
 
 from numba.core import errors, config
 from numba.cuda.utils import UNARY_BUILTINS_TO_OPERATORS, OPERATORS_TO_BUILTINS
-from numba.core.errors import (
+from numba.cuda.errors import (
     NotDefinedError,
     RedefinedError,
     VerificationError,

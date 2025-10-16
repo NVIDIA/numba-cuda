@@ -16,7 +16,7 @@ from numba.cuda.types import (
 )
 from numba import cuda
 from numba.cuda import config, types
-from numba.core.errors import TypingError
+from numba.cuda.errors import TypingError
 from numba.cuda.testing import (
     cc_X_or_above,
     skip_on_cudasim,

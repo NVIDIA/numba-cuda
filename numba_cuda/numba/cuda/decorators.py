@@ -3,7 +3,7 @@
 
 from warnings import warn
 from numba.cuda import types
-from numba.core.errors import DeprecationError, NumbaInvalidConfigWarning
+from numba.cuda.errors import DeprecationError, NumbaInvalidConfigWarning
 from numba.cuda.compiler import declare_device_function
 from numba.cuda.core import sigutils, config
 from numba.cuda.dispatcher import CUDADispatcher

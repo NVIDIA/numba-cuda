@@ -11,7 +11,7 @@ import textwrap
 from numba.core import errors, ir
 from numba.cuda.core import config
 from numba.cuda.errors import UnsupportedBytecodeError
-from numba.core.errors import (
+from numba.cuda.errors import (
     NotDefinedError,
     error_extras,
 )
