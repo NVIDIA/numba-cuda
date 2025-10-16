@@ -244,7 +244,7 @@ class TestCudaMath(CUDATestCase):
 
     def unary_template(self, func, npfunc, npdtype, nprestype, start, stop):
         nelem = 50
-        A = np.linspace(start, stop, nelem).astype(npdtype)
+        A = np.linspace(start, stop, nelem, dtype=npdtype)
         B = np.empty_like(A).astype(nprestype)
         arytype = numpy_support.from_dtype(npdtype)[::1]
         restype = numpy_support.from_dtype(nprestype)[::1]
