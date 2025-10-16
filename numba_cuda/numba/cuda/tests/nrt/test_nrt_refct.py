@@ -86,7 +86,8 @@ class TestNrtRefCt(EnableNRTStatsMixin, CUDATestCase):
         arr = np.random.random((5, 5))  # the values are not consumed
 
         init_stats = rtsys.get_allocation_stats()
-        if_with_allocation_and_initialization[1, 1](arr, False)
+        with override_config("DISABLE_PERFORMANCE_WARNINGS", 1):
+            if_with_allocation_and_initialization[1, 1](arr, False)
         cur_stats = rtsys.get_allocation_stats()
         self.assertEqual(
             cur_stats.alloc - init_stats.alloc, cur_stats.free - init_stats.free
@@ -111,7 +112,8 @@ class TestNrtRefCt(EnableNRTStatsMixin, CUDATestCase):
         arr = np.ones((2, 2))
 
         init_stats = rtsys.get_allocation_stats()
-        f[1, 1](arr)
+        with override_config("DISABLE_PERFORMANCE_WARNINGS", 1):
+            f[1, 1](arr)
         cur_stats = rtsys.get_allocation_stats()
         self.assertEqual(
             cur_stats.alloc - init_stats.alloc, cur_stats.free - init_stats.free
