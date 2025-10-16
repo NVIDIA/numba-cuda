@@ -70,10 +70,9 @@ class _DeviceContextManager(object):
 
     def __init__(self, device):
         self._device = device
-
-    def get_primary_context(self, *args, **kwargs):
-        """This attribute is forwarded directly, to avoid the performance overhead of `__getattr__`."""
-        return self._device.get_primary_context(*args, **kwargs)
+        # Forwarded directly, to avoid the performance overhead of
+        # `__getattr__` and method lookup for a commonly accessed method
+        self.get_primary_context = self._device.get_primary_context
 
     def __getattr__(self, item):
         return getattr(self._device, item)
@@ -83,7 +82,7 @@ class _DeviceContextManager(object):
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         # this will verify that we are popping the right device context.
-        self._device.get_primary_context().pop()
+        self.get_primary_context().pop()
 
     def __str__(self):
         return f"<Managed Device {self.id}>"
