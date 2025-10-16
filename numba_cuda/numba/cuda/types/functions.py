@@ -11,8 +11,7 @@ from shutil import get_terminal_size
 from .abstract import Callable, DTypeSpec, Dummy, Literal, Type, weakref
 from .common import Opaque
 from .misc import unliteral
-from numba.core import errors
-from numba.cuda import utils, types, config
+from numba.cuda import utils, types, config, errors
 from numba.cuda.typeconv import Conversion
 
 _logger = logging.getLogger(__name__)

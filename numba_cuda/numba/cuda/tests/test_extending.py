@@ -9,9 +9,7 @@ import pickle
 import numpy as np
 
 import numba
-from numba.cuda import jit
-from numba.cuda import types
-from numba.core import errors
+from numba.cuda import jit, types, errors
 from numba.cuda.tests.support import (
     TestCase,
 )

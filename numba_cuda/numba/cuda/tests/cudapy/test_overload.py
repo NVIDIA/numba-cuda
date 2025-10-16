@@ -1,8 +1,10 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-2-Clause
 
-from numba import cuda, njit, types, version_info
-from numba.cuda.errors import TypingError
+from numba import cuda, njit, version_info
+from numba.cuda import types
+from numba.core import types as core_types
+from numba.core.errors import TypingError as CoreTypingError
 from numba.cuda.extending import overload, overload_attribute
 from numba.cuda.typing.typeof import typeof
 from numba.core.typing.typeof import typeof as cpu_typeof
@@ -351,9 +353,9 @@ class TestOverload(CUDATestCase):
         else:
             msg = "Unknown attribute 'cuda_only'"
 
-        with self.assertRaisesRegex(TypingError, msg):
+        with self.assertRaisesRegex(CoreTypingError, msg):
 
-            @njit(types.int64(mydummy_type_cpu))
+            @njit(core_types.int64(mydummy_type_cpu))
             def illegal_target_attr_use(x):
                 return x.cuda_only
 

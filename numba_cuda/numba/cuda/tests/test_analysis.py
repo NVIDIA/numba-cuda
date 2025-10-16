@@ -9,11 +9,9 @@ import numpy as np
 from numba.cuda.compiler import run_frontend
 from numba.cuda.flags import Flags
 from numba.cuda.core.compiler import StateDict
-from numba.cuda import jit
-from numba.cuda import types
-from numba.core import errors, ir
+from numba.cuda import jit, types, errors
 from numba.cuda.utils import PYVERSION
-from numba.cuda.core import postproc, rewrites, ir_utils
+from numba.cuda.core import postproc, rewrites, ir_utils, ir, config
 from numba.cuda.core.options import ParallelOptions
 from numba.cuda.core.inline_closurecall import InlineClosureCallPass
 from numba.cuda.tests.support import TestCase
@@ -25,7 +23,6 @@ from numba.cuda.core.untyped_passes import (
     ReconstructSSA,
 )
 import unittest
-from numba.cuda.core import config
 
 _GLOBAL = 123
 

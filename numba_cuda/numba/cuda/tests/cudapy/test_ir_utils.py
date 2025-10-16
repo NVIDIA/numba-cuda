@@ -5,10 +5,8 @@ from numba.cuda.testing import CUDATestCase, skip_on_cudasim
 from numba.cuda.core.compiler import CompilerBase
 from numba.cuda.flags import Flags
 from numba.cuda.core.compiler_machinery import PassManager
-from numba.cuda.core import ir_utils
-from numba.cuda import types
-from numba.core import ir, bytecode
-from numba.cuda import compiler
+from numba.cuda.core import ir_utils, ir, bytecode
+from numba.cuda import types, compiler
 from numba.cuda.core.untyped_passes import (
     ExtractByteCode,
     TranslateByteCode,

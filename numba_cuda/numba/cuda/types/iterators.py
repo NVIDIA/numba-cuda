@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: BSD-2-Clause
 
 from .common import SimpleIterableType, SimpleIteratorType
-from numba.core.errors import TypingError
+from numba.cuda.errors import TypingError
 
 
 class RangeType(SimpleIterableType):

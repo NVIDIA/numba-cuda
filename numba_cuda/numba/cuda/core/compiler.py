@@ -3,7 +3,7 @@
 
 from numba.cuda.core.tracing import event
 
-from numba.core import errors
+from numba.cuda import errors
 from numba.cuda.errors import CompilerError
 
 from numba.cuda.core import callconv, config, bytecode

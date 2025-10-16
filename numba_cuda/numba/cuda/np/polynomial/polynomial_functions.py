@@ -10,8 +10,7 @@ from numpy.polynomial import polynomial as poly
 from numpy.polynomial import polyutils as pu
 
 from numba import literal_unroll
-from numba.cuda import types
-from numba.core import errors
+from numba.cuda import types, errors
 from numba.cuda.extending import overload
 from numba.cuda.np.numpy_support import type_can_asarray, as_dtype, from_dtype
 

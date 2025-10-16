@@ -17,9 +17,7 @@ from llvmlite.ir import Constant
 import numpy as np
 
 from numba import pndindex, literal_unroll
-from numba.cuda import types, typing
-from numba.core import errors
-from numba.cuda import cgutils, extending
+from numba.cuda import types, typing, errors, cgutils, extending
 from numba.cuda.np.numpy_support import (
     as_dtype,
     from_dtype,

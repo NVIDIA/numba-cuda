@@ -6,8 +6,7 @@ import itertools
 import numpy as np
 import operator
 
-from numba.cuda import types
-from numba.core import errors
+from numba.cuda import types, errors
 from numba import prange
 from numba.parfors.parfor import internal_prange
 

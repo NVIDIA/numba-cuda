@@ -8,7 +8,6 @@ from functools import partial
 
 from llvmlite import ir as llvm_ir
 
-from numba.core import ir
 from numba.cuda import debuginfo, cgutils, utils, typing, types
 from numba.cuda.core import (
     ir_utils,
@@ -17,6 +16,7 @@ from numba.cuda.core import (
     config,
     generators,
     removerefctpass,
+    ir,
 )
 
 from numba.cuda.errors import (

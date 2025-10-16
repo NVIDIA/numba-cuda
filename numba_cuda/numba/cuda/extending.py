@@ -10,8 +10,7 @@ import weakref
 import collections
 import functools
 
-from numba.core import errors
-from numba.cuda import types, utils, config
+from numba.cuda import types, utils, config, errors
 
 # # Exported symbols
 from numba.cuda.typing.typeof import typeof_impl  # noqa: F401
@@ -578,7 +577,7 @@ def _intrinsic(*args, **kwargs):
         return wrapper
 
 
-intrinsic = _intrinsic(target="cuda")
+intrinsic = _intrinsic(target="cuda", prefer_literal=True)
 
 
 def sentry_literal_args(pysig, literal_args, args, kwargs):

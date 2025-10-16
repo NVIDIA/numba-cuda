@@ -35,9 +35,8 @@ from pprint import pprint
 from collections import OrderedDict, defaultdict
 from functools import reduce
 
-from numba.cuda import types, utils, config
-from numba.core import ir
-from numba.cuda import typing
+from numba.cuda import types, utils, config, typing
+from numba.cuda.core import ir
 from numba.cuda.typing.templates import Signature
 from numba.cuda.errors import (
     TypingError,

@@ -10,8 +10,7 @@ from llvmlite import ir
 from llvmlite.ir import Constant
 
 from numba.cuda.core.imputils import impl_ret_untracked
-from numba.cuda import typing, types, cgutils
-from numba.core import errors
+from numba.cuda import typing, types, cgutils, errors
 from numba.cuda.cpython.unsafe.numbers import viewer
 
 

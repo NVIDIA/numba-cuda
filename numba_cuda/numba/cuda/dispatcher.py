@@ -15,8 +15,7 @@ import uuid
 import re
 from warnings import warn
 
-from numba.core import errors
-from numba.cuda import serialize, utils
+from numba.cuda import serialize, utils, errors, typing, types
 from numba import cuda
 
 from numba.core.compiler_lock import global_compiler_lock
@@ -24,10 +23,9 @@ from numba.cuda.typeconv.rules import default_type_manager
 from numba.cuda.typing.templates import fold_arguments
 from numba.cuda.typing.typeof import Purpose, typeof
 
-from numba.cuda import typing, types
 from numba.cuda.api import get_current_device
 from numba.cuda.args import wrap_arg
-from numba.core.bytecode import get_code_object
+from numba.cuda.core.bytecode import get_code_object
 from numba.cuda.compiler import (
     compile_cuda,
     CUDACompiler,

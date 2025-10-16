@@ -8,20 +8,19 @@ import operator
 import logging
 import textwrap
 
-from numba.core import errors, ir
-from numba.cuda.core import config
-from numba.cuda.errors import UnsupportedBytecodeError
+from numba.cuda import errors
+from numba.cuda.core import ir, config, ir_utils
 from numba.cuda.errors import (
+    UnsupportedBytecodeError,
     NotDefinedError,
     error_extras,
 )
-from numba.cuda.core import ir_utils
 from numba.cuda.utils import (
     PYVERSION,
     BINOPS_TO_OPERATORS,
     INPLACE_BINOPS_TO_OPERATORS,
+    _lazy_pformat,
 )
-from numba.cuda.utils import _lazy_pformat
 from numba.cuda.core.byteflow import Flow, AdaptDFA, AdaptCFA, BlockKind
 from numba.cuda.core.unsafe import eh
 from numba.cuda.cpython.unsafe.tuple import unpack_single_tuple

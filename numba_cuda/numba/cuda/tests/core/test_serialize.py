@@ -11,7 +11,6 @@ import unittest
 from multiprocessing import get_context
 
 import numba
-from numba.cuda.errors import TypingError
 from numba.cuda.tests.support import TestCase
 from numba.cuda.core.target_extension import resolve_dispatcher_from_str
 from numba.cuda.cloudpickle import dumps, loads
@@ -77,7 +76,10 @@ class TestDispatcherPickling(TestCase):
         self.run_with_protocols(self.check_call, add_nopython, 5.5, (1.2, 4.3))
         # Object mode is disabled
         self.run_with_protocols(
-            self.check_call, add_nopython, TypingError, (object(), object())
+            self.check_call,
+            add_nopython,
+            numba.core.errors.TypingError,
+            (object(), object()),
         )
 
     def test_call_nopython_fail(self):
@@ -85,7 +87,10 @@ class TestDispatcherPickling(TestCase):
 
         # Compilation fails
         self.run_with_protocols(
-            self.check_call, add_nopython_fail, TypingError, (1, 2)
+            self.check_call,
+            add_nopython_fail,
+            numba.core.errors.TypingError,
+            (1, 2),
         )
 
     def test_call_objmode_with_global(self):

@@ -14,7 +14,7 @@ from types import FunctionType, BuiltinFunctionType
 from functools import total_ordering
 from io import StringIO
 
-from numba.core import errors, config
+from numba.cuda import errors, config
 from numba.cuda.utils import UNARY_BUILTINS_TO_OPERATORS, OPERATORS_TO_BUILTINS
 from numba.cuda.errors import (
     NotDefinedError,
@@ -1706,8 +1706,8 @@ class FunctionIR(object):
                     raise ValueError(msg)
                 else:
                     from pygments import highlight
-                    from numba.misc.dump_style import NumbaIRLexer as lexer
-                    from numba.misc.dump_style import by_colorscheme
+                    from numba.cuda.misc.dump_style import NumbaIRLexer as lexer
+                    from numba.cuda.misc.dump_style import by_colorscheme
                     from pygments.formatters import Terminal256Formatter
 
                     print(

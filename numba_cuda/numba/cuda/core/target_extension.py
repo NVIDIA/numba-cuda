@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: BSD-2-Clause
 
 from abc import ABC, abstractmethod
-from numba.core.errors import (
+from numba.cuda.errors import (
     InternalTargetMismatchError,
     NonexistentTargetError,
 )

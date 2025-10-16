@@ -5,7 +5,7 @@ from types import ModuleType
 import weakref
 
 from numba.cuda.errors import ConstantInferenceError, NumbaError
-from numba.core import ir
+from numba.cuda.core import ir
 
 
 class ConstantInference(object):

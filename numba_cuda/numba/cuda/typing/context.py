@@ -10,11 +10,10 @@ import contextlib
 import operator
 from importlib.util import find_spec
 
-from numba.core import errors
 from numba.cuda.typeconv import Conversion, rules
 from numba.cuda.typing.typeof import typeof, Purpose
 from numba.cuda.typing import templates
-from numba.cuda import types, utils
+from numba.cuda import types, utils, errors
 from numba.cuda.utils import order_by_target_specificity
 
 

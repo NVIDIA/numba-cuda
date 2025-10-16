@@ -600,7 +600,7 @@ def unified_function_type(numba_types, require_precise=True):
     when the precise Numba function cannot be determined on the first
     occurrence that is not a call expression.
     """
-    from numba.core.errors import NumbaExperimentalFeatureWarning
+    from numba.cuda.errors import NumbaExperimentalFeatureWarning
     from numba.cuda import types
 
     if not (

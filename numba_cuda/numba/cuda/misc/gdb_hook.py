@@ -6,9 +6,7 @@ import sys
 
 from llvmlite import ir
 
-from numba.cuda import types, config
-from numba.core import errors
-from numba.cuda import cgutils, utils
+from numba.cuda import types, config, errors, cgutils, utils
 from numba.cuda.misc.special import gdb, gdb_init, gdb_breakpoint
 from numba.cuda.extending import overload, intrinsic
 
