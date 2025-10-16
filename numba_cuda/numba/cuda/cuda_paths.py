@@ -10,6 +10,8 @@ from numba.cuda.core.config import IS_WIN32
 from numba.cuda.misc.findlib import find_lib
 from numba.cuda import config
 import warnings
+from cuda import pathfinder
+import pathlib
 
 _env_path_tuple = namedtuple("_env_path_tuple", ["by", "info"])
 
@@ -516,3 +518,25 @@ def _get_include_dir():
     ]
     by, include_dir = _find_valid_path(options)
     return _env_path_tuple(by, include_dir)
+
+
+def _get_nvvm():
+    try:
+        nvvm = pathfinder.load_nvidia_dynamic_lib("nvvm")
+        return nvvm
+    except pathfinder.DynamicLibNotFoundError:
+        nvrtc = _get_nvrtc()
+        path = pathlib.Path(nvrtc.abs_path)
+        nvvm = path.parents[1] / "nvvm" / "lib64" / "libnvvm.so"
+
+        if nvvm.exists():
+            dl = pathfinder._dynamic_libs.load_nvidia_dynamic_lib.load_with_abs_path(
+                "nvvm", path, "system-search"
+            )
+            return dl
+        else:
+            raise pathfinder.DynamicLibNotFoundError("nvvm not found")
+
+
+def _get_nvrtc():
+    return pathfinder.load_nvidia_dynamic_lib("nvrtc")

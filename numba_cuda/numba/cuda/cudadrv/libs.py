@@ -17,7 +17,7 @@ import sys
 import ctypes
 
 from numba.cuda.misc.findlib import find_lib
-from numba.cuda.cuda_paths import get_cuda_paths
+from numba.cuda.cuda_paths import get_cuda_paths, _get_nvvm, _get_nvrtc
 from numba.cuda.cudadrv.driver import locate_driver_and_loader, load_driver
 from numba.cuda.cudadrv.error import CudaSupportError
 from numba.core import config
@@ -54,8 +54,10 @@ def get_cudalib(lib, static=False):
     'libnvvm.so' for 'nvvm') so that we may attempt to load it using the system
     loader's search mechanism.
     """
-    if lib in {"nvrtc", "nvvm"}:
-        return pathfinder.load_nvidia_dynamic_lib(lib).abs_path
+    if lib == "nvrtc":
+        return _get_nvrtc().abs_path
+    elif lib == "nvvm":
+        return _get_nvvm().abs_path
     else:
         # cudart, cudadevrt
         dir_type = "static_cudalib_dir" if static else "cudalib_dir"
