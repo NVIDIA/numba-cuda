@@ -18,8 +18,8 @@ import operator
 
 import numba
 from llvmlite import ir
-from numba import types
-from numba.core.datamodel import PrimitiveModel, StructModel
+from numba.cuda import types
+from numba.cuda.datamodel import PrimitiveModel, StructModel
 from numba.cuda.extending import (
     lower_cast,
     make_attribute_wrapper,
@@ -41,7 +41,7 @@ from numba.cuda.typing.templates import Registry as TypingRegistry
 from numba.cuda import CUSource, declare_device
 from numba.cuda.vector_types import vector_types
 from numba.cuda.extending import as_numba_type
-from numba.types import (
+from numba.cuda.types import (
     CPointer,
     Function,
     Number,

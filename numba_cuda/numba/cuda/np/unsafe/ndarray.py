@@ -6,7 +6,7 @@ This file provides internal compiler utilities that support certain special
 operations with numpy.
 """
 
-from numba.core import types
+from numba.cuda import types
 from numba.cuda.cgutils import unpack_tuple
 from numba.cuda.extending import intrinsic
 from numba.cuda import typing

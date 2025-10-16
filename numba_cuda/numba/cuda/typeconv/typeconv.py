@@ -3,7 +3,7 @@
 
 from numba.cuda.cext import _typeconv
 from numba.cuda.typeconv import castgraph, Conversion
-from numba.core import types
+from numba.cuda import types
 
 
 class TypeManager(object):

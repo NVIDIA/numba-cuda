@@ -6,7 +6,8 @@ import itertools
 import numpy as np
 import operator
 
-from numba.core import types, errors
+from numba.cuda import types
+from numba.core import errors
 from numba import prange
 from numba.parfors.parfor import internal_prange
 
@@ -23,10 +24,16 @@ from numba.cuda.typing.templates import (
 from numba.cuda.extending import (
     typeof_impl,
     type_callable,
-    core_models,
+    models,
     register_model,
     make_attribute_wrapper,
 )
+
+registry = Registry()
+infer = registry.register
+infer_global = registry.register_global
+infer_getattr = registry.register_attr
+
 
 registry = Registry()
 infer = registry.register
@@ -1199,13 +1206,13 @@ def type_index_value(context):
 
 
 @register_model(IndexValueType)
-class IndexValueModel(core_models.StructModel):
+class IndexValueModel(models.StructModel):
     def __init__(self, dmm, fe_type):
         members = [
             ("index", types.intp),
             ("value", fe_type.val_typ),
         ]
-        core_models.StructModel.__init__(self, dmm, fe_type, members)
+        models.StructModel.__init__(self, dmm, fe_type, members)
 
 
 make_attribute_wrapper(IndexValueType, "index", "index")

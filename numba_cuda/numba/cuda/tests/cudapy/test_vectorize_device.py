@@ -2,7 +2,8 @@
 # SPDX-License-Identifier: BSD-2-Clause
 
 from numba import vectorize
-from numba import cuda, float32
+from numba import cuda
+from numba.cuda import float32
 import numpy as np
 from numba.cuda.testing import skip_on_cudasim, CUDATestCase
 import unittest

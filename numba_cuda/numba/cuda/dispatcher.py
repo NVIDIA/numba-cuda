@@ -15,17 +15,16 @@ import uuid
 import re
 from warnings import warn
 
-from numba.core import types, errors
+from numba.core import errors
 from numba.cuda import serialize, utils
 from numba import cuda
 
 from numba.core.compiler_lock import global_compiler_lock
-from numba.core.typeconv.rules import default_type_manager
+from numba.cuda.typeconv.rules import default_type_manager
 from numba.cuda.typing.templates import fold_arguments
 from numba.cuda.typing.typeof import Purpose, typeof
 
-from numba.cuda import typing
-from numba.cuda import types as cuda_types
+from numba.cuda import typing, types
 from numba.cuda.api import get_current_device
 from numba.cuda.args import wrap_arg
 from numba.core.bytecode import get_code_object
@@ -732,7 +731,7 @@ class CUDACache(Cache):
         # Loading an overload refreshes the context to ensure it is
         # initialized. To initialize the correct (i.e. CUDA) target, we need to
         # enforce that the current target is the CUDA target.
-        from numba.core.target_extension import target_override
+        from numba.cuda.core.target_extension import target_override
 
         with target_override("cuda"):
             return super().load_overload(sig, target_context)
@@ -1539,7 +1538,7 @@ class CUDADispatcher(serialize.ReduceMixin, _MemoMixin, _DispatcherBase):
 
     @property
     def _numba_type_(self):
-        return cuda_types.CUDADispatcher(self)
+        return types.CUDADispatcher(self)
 
     def enable_caching(self):
         self._cache = CUDACache(self.py_func)

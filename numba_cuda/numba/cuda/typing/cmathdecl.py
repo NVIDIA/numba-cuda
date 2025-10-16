@@ -3,7 +3,7 @@
 
 import cmath
 
-from numba.core import types
+from numba.cuda import types
 from numba.cuda.typing.templates import ConcreteTemplate, signature, Registry
 
 registry = Registry()

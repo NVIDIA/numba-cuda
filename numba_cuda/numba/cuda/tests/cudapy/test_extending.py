@@ -7,7 +7,8 @@ from llvmlite import ir
 
 import numpy as np
 import os
-from numba import cuda, njit, types
+from numba import cuda, njit
+from numba.cuda import types
 from numba.cuda import config
 from numba.cuda.extending import overload
 
@@ -43,7 +44,7 @@ if not config.ENABLE_CUDASIM:
     from numba.cuda import cgutils
     from numba.cuda.extending import (
         lower_builtin,
-        core_models,
+        models,
         type_callable,
         typeof_impl,
     )
@@ -74,13 +75,13 @@ if not config.ENABLE_CUDASIM:
         return typer
 
     @register_model(IntervalType)
-    class IntervalModel(core_models.StructModel):
+    class IntervalModel(models.StructModel):
         def __init__(self, dmm, fe_type):
             members = [
                 ("lo", types.float64),
                 ("hi", types.float64),
             ]
-            core_models.StructModel.__init__(self, dmm, fe_type, members)
+            models.StructModel.__init__(self, dmm, fe_type, members)
 
     make_attribute_wrapper(IntervalType, "lo", "lo")
     make_attribute_wrapper(IntervalType, "hi", "hi")

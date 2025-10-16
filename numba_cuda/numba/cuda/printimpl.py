@@ -3,7 +3,7 @@
 
 from functools import singledispatch
 from llvmlite import ir
-from numba.core import types
+from numba.cuda import types
 from numba.cuda import cgutils
 from numba.core.errors import NumbaWarning
 from numba.cuda.core.imputils import Registry
@@ -11,7 +11,7 @@ from numba.cuda import nvvmutils
 from numba.cuda.types import Dim3, Bfloat16
 from warnings import warn
 
-registry = Registry()
+registry = Registry("printimpl")
 lower = registry.lower
 
 voidptr = ir.PointerType(ir.IntType(8))
