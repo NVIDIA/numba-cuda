@@ -35,6 +35,7 @@ DEPENDENCIES=(
     "psutil"
     "pytest"
     "pytest-xdist"
+    "pytest-benchmark"
     "cffi"
     "ml_dtypes"
     "python=${RAPIDS_PY_VERSION}"

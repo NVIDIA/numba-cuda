@@ -53,8 +53,10 @@ test = [
     "cffi",
     "pytest",
     "pytest-xdist",
+    "pytest-benchmark",
     "filecheck",
     "ml_dtypes",
+    "statistics",
 ]
 test-cu12 = [
     "nvidia-curand-cu12",
@@ -175,6 +177,26 @@ build-tests = { cmd = [
     "$(nproc)",
     "-C",
     "$PIXI_PROJECT_ROOT/testing",
+] }
+bench = { cmd = [
+    "pytest",
+    "$PIXI_PROJECT_ROOT/testing",
+    "--pyargs",
+    "numba.cuda.tests.benchmarks",
+    "--benchmark-only",
+    "--benchmark-enable",
+    "--benchmark-autosave",
+    "--benchmark-group-by=name",
+] }
+benchcmp = { cmd = [
+    "pytest",
+    "$PIXI_PROJECT_ROOT/testing",
+    "--pyargs",
+    "numba.cuda.tests.benchmarks",
+    "--benchmark-only",
+    "--benchmark-enable",
+    "--benchmark-group-by=name",
+    "--benchmark-compare",
 ] }
 
 [tool.pixi.target.linux.tasks.test]
