@@ -9,7 +9,6 @@ import importlib.metadata
 from numba.cuda.core.config import IS_WIN32
 from numba.cuda.misc.findlib import find_lib
 from numba.cuda import config
-import warnings
 from cuda import pathfinder
 import pathlib
 
@@ -398,17 +397,14 @@ def get_cuda_paths():
 
     Note: The result of the function is cached.
     """
-    warnings.warn(
-        "get_cuda_paths() is deprecated, use `cuda.bindings.path_finder`.",
-        DeprecationWarning,
-        stacklevel=2,
-    )
     # Check cache
     if hasattr(get_cuda_paths, "_cached_result"):
         return get_cuda_paths._cached_result
     else:
         # Not in cache
         d = {
+            "nvrtc": _get_nvrtc_path(),
+            "nvvm": _get_nvvm_path(),
             "libdevice": _get_libdevice_path(),
             "cudalib_dir": _get_cudalib_dir(),
             "static_cudalib_dir": _get_static_cudalib_dir(),
@@ -540,3 +536,13 @@ def _get_nvvm():
 
 def _get_nvrtc():
     return pathfinder.load_nvidia_dynamic_lib("nvrtc")
+
+
+def _get_nvrtc_path():
+    nvrtc = _get_nvrtc()
+    return _env_path_tuple(nvrtc.found_via, nvrtc.abs_path)
+
+
+def _get_nvvm_path():
+    nvvm = _get_nvvm()
+    return _env_path_tuple(nvvm.found_via, nvvm.abs_path)
