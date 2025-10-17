@@ -51,6 +51,11 @@ def convert_to_cuda_type(ty):
     if not isinstance(ty, core_types.Type):
         return ty
 
+    # External types (from third-party libraries) should be returned as-is
+    # They have their own typing registrations and shouldn't be converted
+    if hasattr(ty, "__module__") and not ty.__module__.startswith("numba."):
+        return ty
+
     if isinstance(ty, core_types.NumberClass):
         cuda_inner = convert_to_cuda_type(ty.instance_type)
         return types.NumberClass(cuda_inner)
@@ -60,7 +65,21 @@ def convert_to_cuda_type(ty):
         return types.TypeRef(cuda_inner)
 
     if isinstance(ty, core_types.Literal):
-        return ty
+        return types.literal(ty.literal_value)
+
+    if isinstance(ty, core_types.Record):
+        # Convert field types to CUDA types
+        cuda_fields = []
+        for field_name, field_info in ty.fields.items():
+            cuda_field_type = convert_to_cuda_type(field_info.type)
+            cuda_fields.append(
+                (
+                    field_name,
+                    {"type": cuda_field_type, "offset": field_info.offset},
+                )
+            )
+        # Create a cuda.types Record with converted field types
+        return types.Record(cuda_fields, ty.size, ty.aligned)
 
     if isinstance(ty, core_types.Array):
         cuda_dtype = convert_to_cuda_type(ty.dtype)
