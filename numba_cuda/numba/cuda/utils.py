@@ -17,7 +17,6 @@ import weakref
 import threading
 import contextlib
 import json
-import typing as _tp
 from pprint import pformat
 
 from types import ModuleType
@@ -35,7 +34,6 @@ from numba.cuda.core.config import (
 
 from numba.cuda.core import config
 
-from collections.abc import Mapping, MutableSet, MutableMapping
 
 PYVERSION = config.PYVERSION
 
@@ -352,102 +350,6 @@ def order_by_target_specificity(target, templates, fnkey=""):
         raise UnsupportedError(msg)
 
     return order
-
-
-T = _tp.TypeVar("T")
-
-
-class OrderedSet(MutableSet[T]):
-    def __init__(self, iterable: _tp.Iterable[T] = ()):
-        # Just uses a dictionary under-the-hood to maintain insertion order.
-        self._data = dict.fromkeys(iterable, None)
-
-    def __contains__(self, key):
-        return key in self._data
-
-    def __iter__(self):
-        return iter(self._data)
-
-    def __len__(self):
-        return len(self._data)
-
-    def add(self, item):
-        self._data[item] = None
-
-    def discard(self, item):
-        self._data.pop(item, None)
-
-
-class MutableSortedSet(MutableSet[T], _tp.Generic[T]):
-    """Mutable Sorted Set"""
-
-    def __init__(self, values: _tp.Iterable[T] = ()):
-        self._values = set(values)
-
-    def __len__(self):
-        return len(self._values)
-
-    def __iter__(self):
-        return iter(k for k in sorted(self._values))
-
-    def __contains__(self, x: T) -> bool:
-        return self._values.__contains__(x)
-
-    def add(self, x: T):
-        return self._values.add(x)
-
-    def discard(self, value: T):
-        self._values.discard(value)
-
-    def update(self, values):
-        self._values.update(values)
-
-
-Tk = _tp.TypeVar("Tk")
-Tv = _tp.TypeVar("Tv")
-
-
-class SortedMap(Mapping[Tk, Tv], _tp.Generic[Tk, Tv]):
-    """Immutable"""
-
-    def __init__(self, seq):
-        self._values = []
-        self._index = {}
-        for i, (k, v) in enumerate(sorted(seq)):
-            self._index[k] = i
-            self._values.append((k, v))
-
-    def __getitem__(self, k):
-        i = self._index[k]
-        return self._values[i][1]
-
-    def __len__(self):
-        return len(self._values)
-
-    def __iter__(self):
-        return iter(k for k, v in self._values)
-
-
-class MutableSortedMap(MutableMapping[Tk, Tv], _tp.Generic[Tk, Tv]):
-    def __init__(self, dct=None):
-        if dct is None:
-            dct = {}
-        self._dct: dict[Tk, Tv] = dct
-
-    def __getitem__(self, k: Tk) -> Tv:
-        return self._dct[k]
-
-    def __setitem__(self, k: Tk, v: Tv):
-        self._dct[k] = v
-
-    def __delitem__(self, k: Tk):
-        del self._dct[k]
-
-    def __len__(self) -> int:
-        return len(self._dct)
-
-    def __iter__(self) -> int:
-        return iter(k for k in sorted(self._dct))
 
 
 class UniqueDict(dict):

@@ -48,7 +48,7 @@ class BaseLower(object):
     def __init__(self, context, library, fndesc, func_ir, metadata=None):
         self.library = library
         self.fndesc = fndesc
-        self.blocks = utils.SortedMap(func_ir.blocks.items())
+        self.blocks = dict(sorted(func_ir.blocks.items()))
         self.func_ir = func_ir
         self.generator_info = func_ir.generator_info
         self.metadata = metadata
@@ -292,7 +292,7 @@ class BaseLower(object):
         )
 
         # Lower all blocks
-        for offset, block in sorted(self.blocks.items()):
+        for offset, block in self.blocks.items():
             bb = self.blkmap[offset]
             self.builder.position_at_end(bb)
             self.debug_print(f"# lower block: {offset}")
