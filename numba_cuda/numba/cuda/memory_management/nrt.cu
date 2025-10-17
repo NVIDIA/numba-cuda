@@ -78,6 +78,39 @@ extern "C" __device__ void NRT_MemInfo_call_dtor(NRT_MemInfo* mi)
   NRT_MemInfo_destroy(mi);
 }
 
+static void __device__
+nrt_varsize_dtor(void *ptr, size_t size, void *info) {
+    if (info) {
+        /* call element dtor */
+        typedef void dtor_fn_t(void *ptr);
+        dtor_fn_t *dtor = (dtor_fn_t *)info;
+        dtor(ptr);
+    }
+    NRT_Free(ptr);
+}
+
+__device__ NRT_MemInfo* NRT_MemInfo_new_varsize(size_t size)
+{
+    NRT_MemInfo *mi = NULL;
+    void *data = NRT_Allocate(size);
+    if (data == NULL) {
+        return NULL; /* return early as allocation failed */
+    }
+
+    mi = NRT_MemInfo_new(data, size, nrt_varsize_dtor, NULL);
+
+    return mi;
+}
+
+extern "C"
+__device__ NRT_MemInfo* NRT_MemInfo_new_varsize_dtor(size_t size, NRT_dtor_function dtor) {
+    NRT_MemInfo *mi = NRT_MemInfo_new_varsize(size);
+    if (mi) {
+        mi->dtor_info = (void*)dtor;
+    }
+    return mi;
+}
+
 extern "C" __device__ void* NRT_MemInfo_data_fast(NRT_MemInfo *mi)
 {
   return mi->data;
@@ -167,7 +200,7 @@ extern "C" __device__ void NRT_decref(NRT_MemInfo* mi)
 }
 
 
-#endif
+
 
 extern "C" __device__ void NRT_incref(NRT_MemInfo* mi)
 {
@@ -175,3 +208,5 @@ extern "C" __device__ void NRT_incref(NRT_MemInfo* mi)
     mi->refct++;
   }
 }
+
+#endif
