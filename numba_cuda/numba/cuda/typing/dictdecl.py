@@ -5,7 +5,7 @@
 This implements the typing template for `dict()`.
 """
 
-from numba.core import types, errors
+from numba.cuda import types, errors
 from .templates import (
     AbstractTemplate,
     Registry,

@@ -4,13 +4,12 @@
 import collections
 import ctypes
 import re
-
 import numpy as np
 
-from numba.core import errors, types
+from numba.cuda import types
 from numba.cuda.typing.templates import signature
 from numba.cuda.np import npdatetime_helpers
-from numba.core.errors import TypingError
+from numba.cuda.errors import TypingError, NumbaNotImplementedError
 
 # re-export
 from numba.cuda.cgutils import is_nonelike  # noqa: F401
@@ -44,13 +43,13 @@ sizeof_unicode_char = np.dtype("U1").itemsize
 def _from_str_dtype(dtype):
     m = re_typestr.match(dtype.str)
     if not m:
-        raise errors.NumbaNotImplementedError(dtype)
+        raise NumbaNotImplementedError(dtype)
     groups = m.groups()
     typecode = groups[0]
     if typecode == "U":
         # unicode
         if dtype.byteorder not in "=|":
-            raise errors.NumbaNotImplementedError(
+            raise NumbaNotImplementedError(
                 "Does not support non-native byteorder"
             )
         count = dtype.itemsize // sizeof_unicode_char
@@ -64,13 +63,13 @@ def _from_str_dtype(dtype):
         return types.CharSeq(count)
 
     else:
-        raise errors.NumbaNotImplementedError(dtype)
+        raise NumbaNotImplementedError(dtype)
 
 
 def _from_datetime_dtype(dtype):
     m = re_datetimestr.match(dtype.str)
     if not m:
-        raise errors.NumbaNotImplementedError(dtype)
+        raise NumbaNotImplementedError(dtype)
     groups = m.groups()
     typecode = groups[0]
     unit = groups[2] or ""
@@ -79,7 +78,7 @@ def _from_datetime_dtype(dtype):
     elif typecode == "M":
         return types.NPDatetime(unit)
     else:
-        raise errors.NumbaNotImplementedError(dtype)
+        raise NumbaNotImplementedError(dtype)
 
 
 def from_dtype(dtype):
@@ -110,7 +109,7 @@ def from_dtype(dtype):
             subtype = from_dtype(dtype.subdtype[0])
             return types.NestedArray(subtype, dtype.shape)
 
-    raise errors.NumbaNotImplementedError(dtype)
+    raise NumbaNotImplementedError(dtype)
 
 
 _as_dtype_letters = {
@@ -155,7 +154,7 @@ def as_dtype(nbtype):
         return np.dtype(object)
 
     msg = f"{nbtype} cannot be represented as a NumPy dtype"
-    raise errors.NumbaNotImplementedError(msg)
+    raise NumbaNotImplementedError(msg)
 
 
 def as_struct_dtype(rec):
@@ -208,7 +207,7 @@ def map_arrayscalar_type(val):
         try:
             dtype = np.dtype(type(val))
         except TypeError:
-            raise errors.NumbaNotImplementedError(
+            raise NumbaNotImplementedError(
                 "no corresponding numpy dtype for %r" % type(val)
             )
     return from_dtype(dtype)
@@ -270,7 +269,7 @@ def resolve_output_type(context, inputs, formal_output):
             # (we can't define __array_wrap__ explicitly for types.Buffer,
             #  as that would be inherited by most array-compatible objects)
             return formal_output
-        raise errors.TypingError("__array_wrap__ failed for %s" % (args,))
+        raise TypingError("__array_wrap__ failed for %s" % (args,))
     return sig.return_type
 
 
@@ -375,11 +374,11 @@ def ufunc_find_matching_loop(ufunc, arg_types):
 
     try:
         np_input_types = [as_dtype(x) for x in input_types]
-    except errors.NumbaNotImplementedError:
+    except NumbaNotImplementedError:
         return None
     try:
         np_output_types = [as_dtype(x) for x in output_types]
-    except errors.NumbaNotImplementedError:
+    except NumbaNotImplementedError:
         return None
 
     # Whether the inputs are mixed integer / floating-point
@@ -543,7 +542,7 @@ def ufunc_find_matching_loop(ufunc, arg_types):
                         inputs, outputs, ufunc_inputs, ufunc.__name__
                     )
 
-            except errors.NumbaNotImplementedError:
+            except NumbaNotImplementedError:
                 # One of the selected dtypes isn't supported by Numba
                 # (e.g. float16), try other candidates
                 continue
@@ -561,7 +560,7 @@ def from_struct_dtype(dtype):
     """Convert a NumPy structured dtype to Numba Record type"""
     if dtype.hasobject:
         msg = "dtypes that contain object are not supported."
-        raise errors.NumbaNotImplementedError(msg)
+        raise NumbaNotImplementedError(msg)
 
     fields = []
     for name, info in dtype.fields.items():

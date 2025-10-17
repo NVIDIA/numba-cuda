@@ -4,7 +4,8 @@
 import numpy as np
 from textwrap import dedent
 
-from numba import cuda, uint32, uint64, float32, float64
+from numba import cuda
+from numba.cuda import uint32, uint64, float32, float64
 from numba.cuda.testing import unittest, CUDATestCase, cc_X_or_above
 from numba.cuda.core import config
 

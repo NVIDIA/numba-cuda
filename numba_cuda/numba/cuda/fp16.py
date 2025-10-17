@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-2-Clause
 
-import numba.core.types as types
+import numba.cuda.types as types
 from numba.cuda._internal.cuda_fp16 import (
     typing_registry,
     target_registry,

@@ -1,8 +1,7 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-2-Clause
 
-from numba.core import types, errors
-from numba.cuda import utils
+from numba.cuda import types, utils, errors
 import operator
 from .templates import (
     AttributeTemplate,
@@ -14,6 +13,12 @@ from .templates import (
 from .builtins import normalize_1d_index
 
 registry = Registry()
+infer_global = registry.register_global
+infer_getattr = registry.register_attr
+
+
+registry = Registry()
+infer = registry.register
 infer_global = registry.register_global
 infer_getattr = registry.register_attr
 

@@ -8,7 +8,7 @@ def initialize_all():
 
     from numba.cuda.decorators import jit
     from numba.cuda.dispatcher import CUDADispatcher
-    from numba.core.target_extension import (
+    from numba.cuda.core.target_extension import (
         target_registry,
         dispatcher_registry,
         jit_registry,

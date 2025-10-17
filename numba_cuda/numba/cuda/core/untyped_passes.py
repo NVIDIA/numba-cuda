@@ -12,23 +12,27 @@ from numba.cuda.core.compiler_machinery import (
     SSACompliantMixin,
     register_pass,
 )
-from numba.cuda.core import postproc, bytecode, transforms, inline_closurecall
-from numba.core import (
-    errors,
-    types,
+from numba.cuda.core import (
+    postproc,
+    bytecode,
+    transforms,
+    inline_closurecall,
     ir,
+    consts,
+    rewrites,
+    config,
 )
-from numba.cuda.core import consts, rewrites, config
+from numba.cuda import types, errors
 from numba.cuda.core.interpreter import Interpreter
 
 
 from numba.cuda.misc.special import literal_unroll
-from numba.cuda.core.analysis import dead_branch_prune
 from numba.cuda.core.analysis import (
     rewrite_semantic_constants,
     find_literally_calls,
     compute_cfg_from_blocks,
     compute_use_defs,
+    dead_branch_prune,
 )
 from numba.cuda.core.ir_utils import (
     guard,

@@ -17,7 +17,7 @@ from numba.cuda.utils import (
     _lazy_pformat,
 )
 from numba.cuda.core.controlflow import NEW_BLOCKERS, CFGraph
-from numba.core.ir import Loc
+from numba.cuda.core.ir import Loc
 from numba.cuda.errors import UnsupportedBytecodeError
 
 

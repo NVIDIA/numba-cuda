@@ -8,7 +8,7 @@ import threading
 from functools import wraps
 from itertools import chain
 
-from numba.core import config
+from numba.cuda.core import config
 
 
 class TLS(threading.local):

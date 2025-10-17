@@ -7,7 +7,7 @@ Implementation of the range object for fixed-size integers.
 
 import operator
 
-from numba.core import types
+from numba.cuda import types
 from numba.cuda import cgutils
 from numba.cuda.core.imputils import (
     Registry,

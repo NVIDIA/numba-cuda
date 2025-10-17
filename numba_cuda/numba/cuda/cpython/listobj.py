@@ -8,8 +8,7 @@ Support for native homogeneous lists.
 import operator
 
 from llvmlite import ir
-from numba.core import types, errors
-from numba.cuda import cgutils
+from numba.cuda import types, errors, cgutils
 from numba.cuda.core.imputils import (
     Registry,
     iternext_impl,

@@ -3,7 +3,7 @@
 
 import operator
 
-from numba.core import types, errors
+from numba.cuda import types, errors
 from numba.cuda.typing.templates import (
     AbstractTemplate,
     Registry,
@@ -17,6 +17,9 @@ infer_global = registry.register_global
 
 
 # timedelta64-only operations
+
+registry = Registry()
+infer_global = registry.register_global
 
 
 class TimedeltaUnaryOp(AbstractTemplate):
