@@ -1,12 +1,12 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-2-Clause
 
-import warnings
+import pytest
 
 from llvmlite import ir
 from numba.cuda.cudadrv import nvrtc, nvvm, runtime
 from numba.cuda.testing import unittest
-from numba.cuda.cudadrv.nvvm import LibDevice, NvvmError, NVVM
+from numba.cuda.cudadrv.nvvm import LibDevice, NvvmError, NVVM, NvvmWarning
 from numba.cuda.testing import skip_on_cudasim
 
 
@@ -127,11 +127,9 @@ class TestNvvmDriver(unittest.TestCase):
         # Add the noinline attribute to trigger NVVM to generate a warning
         kernel.attributes.add("noinline")
 
-        with warnings.catch_warnings(record=True) as w:
-            nvvm.compile_ir(str(m))
-
-        self.assertEqual(len(w), 1)
-        self.assertIn("overriding noinline attribute", str(w[0]))
+        code = str(m)
+        with pytest.warns(NvvmWarning, match="overriding noinline attribute"):
+            nvvm.compile_ir(code)
 
 
 @skip_on_cudasim("NVVM Driver unsupported in the simulator")
