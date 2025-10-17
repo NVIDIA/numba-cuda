@@ -523,11 +523,11 @@ def _get_nvvm():
     except pathfinder.DynamicLibNotFoundError:
         nvrtc = _get_nvrtc()
         path = pathlib.Path(nvrtc.abs_path)
-        nvvm = path.parents[1] / "nvvm" / "lib64" / "libnvvm.so"
+        nvvm = path.parents[3] / "nvvm" / "lib64" / "libnvvm.so"
 
         if nvvm.exists():
             dl = pathfinder._dynamic_libs.load_nvidia_dynamic_lib.load_with_abs_path(
-                "nvvm", path, "system-search"
+                "nvvm", nvvm, "system-search"
             )
             return dl
         else:
