@@ -19,7 +19,7 @@ from collections import defaultdict
 
 from numba.cuda import errors, config
 from numba.cuda.core import ir_utils, ir
-from numba.cuda.utils import OrderedSet, _lazy_pformat
+from numba.cuda.utils import _lazy_pformat
 from numba.cuda.core.analysis import compute_cfg_from_blocks
 
 
@@ -159,7 +159,7 @@ def _find_defs_violators(blocks, cfg):
     # Gather violators by number of definitions.
     # The violators are added by the order that they are seen and the algorithm
     # scan from the first to the last basic-block as they occur in bytecode.
-    violators = OrderedSet([k for k, vs in defs.items() if len(vs) > 1])
+    violators = {k: None for k, vs in defs.items() if len(vs) > 1}
     # Gather violators by uses not dominated by the one def
     doms = cfg.dominators()
     for k, use_blocks in uses.items():
@@ -168,9 +168,9 @@ def _find_defs_violators(blocks, cfg):
                 dom = doms[label]
                 def_labels = {label for _assign, label in defs[k]}
                 if not def_labels.intersection(dom):
-                    violators.add(k)
+                    violators[k] = None
                     break
-    _logger.debug("SSA violators %s", _lazy_pformat(violators))
+    _logger.debug("SSA violators %s", _lazy_pformat(list(violators)))
     return violators
 
 
