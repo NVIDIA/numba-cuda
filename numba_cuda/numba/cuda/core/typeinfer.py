@@ -35,7 +35,8 @@ from pprint import pprint
 from collections import OrderedDict, defaultdict
 from functools import reduce
 
-from numba.core import types, utils, config, ir
+from numba.cuda import types, utils, config
+from numba.core import ir
 from numba.cuda import typing
 from numba.cuda.typing.templates import Signature
 from numba.core.errors import (
@@ -50,6 +51,7 @@ from numba.core.errors import (
 )
 from numba.cuda.core.funcdesc import qualifying_prefix
 from numba.cuda.typeconv import Conversion
+from numba.cuda.core.sigutils import is_numba_type, convert_to_cuda_type
 
 _logger = logging.getLogger(__name__)
 
@@ -73,8 +75,19 @@ class TypeVar(object):
         # Qualifiers
         self.literal_value = NOTSET
 
+    def _ensure_cuda_type(self, tp):
+        """
+        Convert numba.core types to numba.cuda types if necessary.
+        This ensures cross-compatibility.
+        """
+
+        if is_numba_type(tp):
+            tp = convert_to_cuda_type(tp)
+        return tp
+
     def add_type(self, tp, loc):
-        assert isinstance(tp, types.Type), type(tp)
+        tp = self._ensure_cuda_type(tp)
+        assert isinstance(tp, types.Type) or is_numba_type(tp), type(tp)
         # Special case for _undef_var.
         # If the typevar is the _undef_var, use the incoming type directly.
         if self.type is types._undef_var:
@@ -108,7 +121,8 @@ class TypeVar(object):
         return self.type
 
     def lock(self, tp, loc, literal_value=NOTSET):
-        assert isinstance(tp, types.Type), type(tp)
+        tp = self._ensure_cuda_type(tp)
+        assert isinstance(tp, types.Type) or is_numba_type(tp), type(tp)
 
         if self.locked:
             msg = (

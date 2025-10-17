@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-2-Clause
 
-from numba.core import types
+from numba.cuda import types
 from numba.cuda.extending import overload, overload_method
 from numba.cuda.typing import signature
 from numba.cuda import nvvmutils

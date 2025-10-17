@@ -8,7 +8,7 @@ operations with bytes and workarounds for limitations enforced in userland.
 
 from numba.cuda.extending import intrinsic
 from llvmlite import ir
-from numba.core import types
+from numba.cuda import types
 from numba.cuda import cgutils
 
 

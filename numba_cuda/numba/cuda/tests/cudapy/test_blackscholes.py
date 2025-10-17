@@ -3,7 +3,8 @@
 
 import numpy as np
 import math
-from numba import cuda, double, void
+from numba import cuda
+from numba.cuda import double, void
 from numba.cuda.testing import unittest, CUDATestCase
 
 

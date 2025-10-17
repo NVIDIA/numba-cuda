@@ -1,9 +1,10 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-2-Clause
 
-from numba import cuda, int32, float64, void
+from numba import cuda
+from numba.cuda import int32, float64, void
 from numba.core.errors import TypingError
-from numba.core import types
+from numba.cuda import types
 from numba.cuda.testing import unittest, CUDATestCase, skip_on_cudasim
 
 import numpy as np

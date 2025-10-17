@@ -10,11 +10,11 @@ import contextlib
 import operator
 from importlib.util import find_spec
 
-from numba.core import types, errors
+from numba.core import errors
 from numba.cuda.typeconv import Conversion, rules
 from numba.cuda.typing.typeof import typeof, Purpose
 from numba.cuda.typing import templates
-from numba.cuda import utils
+from numba.cuda import types, utils
 from numba.cuda.utils import order_by_target_specificity
 
 
@@ -291,7 +291,7 @@ class BaseContext(object):
         templates = list(self._get_attribute_templates(typ))
 
         # get the order in which to try templates
-        from numba.core.target_extension import get_local_target  # circular
+        from numba.cuda.core.target_extension import get_local_target
 
         target_hw = get_local_target(self)
         order = order_by_target_specificity(target_hw, templates, fnkey=attr)
@@ -446,7 +446,7 @@ class BaseContext(object):
             loader = templates.RegistryLoader(registry)
             self._registries[registry] = loader
 
-        from numba.core.target_extension import (
+        from numba.cuda.core.target_extension import (
             get_local_target,
             resolve_target_str,
         )
@@ -514,7 +514,7 @@ class BaseContext(object):
         for gv, gty in loader.new_registrations("globals"):
             # If external_defs_only, check the global type's module
             if external_defs_only:
-                if hasattr(gty, "__module__") and is_external(gty):
+                if hasattr(gty, "__module__") and not is_external(gty):
                     continue
             existing = self._lookup_global(gv)
             if existing is None:

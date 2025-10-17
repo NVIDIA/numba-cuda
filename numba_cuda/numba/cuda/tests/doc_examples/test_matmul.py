@@ -36,7 +36,8 @@ class TestMatMul(CUDATestCase):
     def test_ex_matmul(self):
         """Test of matrix multiplication on various cases."""
         # magictoken.ex_import.begin
-        from numba import cuda, float32
+        from numba import cuda
+        from numba.cuda import float32
         import numpy as np
         import math
         # magictoken.ex_import.end

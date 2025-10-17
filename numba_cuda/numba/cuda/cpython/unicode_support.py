@@ -14,7 +14,7 @@ from enum import IntEnum
 import llvmlite.ir
 import numpy as np
 
-from numba.core import types
+from numba.cuda import types
 from numba.cuda import cgutils
 from numba.cuda.core.imputils import impl_ret_untracked
 

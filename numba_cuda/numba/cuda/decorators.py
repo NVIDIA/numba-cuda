@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: BSD-2-Clause
 
 from warnings import warn
-from numba.core import types
+from numba.cuda import types
 from numba.core.errors import DeprecationError, NumbaInvalidConfigWarning
 from numba.cuda.compiler import declare_device_function
 from numba.cuda.core import sigutils, config

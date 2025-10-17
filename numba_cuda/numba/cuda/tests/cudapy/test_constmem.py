@@ -3,7 +3,8 @@
 
 import numpy as np
 
-from numba import cuda, complex64, int32, float64
+from numba import cuda
+from numba.cuda import complex64, int32, float64
 from numba.cuda.testing import unittest, CUDATestCase
 from numba.cuda.core.config import ENABLE_CUDASIM
 

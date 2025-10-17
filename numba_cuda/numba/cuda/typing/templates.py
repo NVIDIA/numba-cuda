@@ -15,21 +15,15 @@ from collections.abc import Sequence
 from types import MethodType, FunctionType, MappingProxyType
 
 import numba
-from numba.core import types
+from numba.cuda import types
 from numba.core.errors import (
     TypingError,
     InternalError,
 )
 from numba.cuda.core.options import InlineOptions
+
 from numba.cuda import utils
 from numba.cuda.core import targetconfig
-
-try:
-    from numba.core.typing import Signature as CoreSignature
-
-    numba_sig_present = True
-except ImportError:
-    numba_sig_present = False
 
 
 # info store for inliner callback functions e.g. cost model
@@ -99,10 +93,7 @@ class Signature(object):
         return hash((self.args, self.return_type))
 
     def __eq__(self, other):
-        sig_types = (Signature,)
-        if numba_sig_present:
-            sig_types = (Signature, CoreSignature)
-        if isinstance(other, sig_types):
+        if isinstance(other, Signature):
             return (
                 self.args == other.args
                 and self.return_type == other.return_type
@@ -383,10 +374,7 @@ class AbstractTemplate(FunctionTemplate):
         sig = generic(args, kws)
         # Enforce that *generic()* must return None or Signature
         if sig is not None:
-            sig_types = (Signature,)
-            if numba_sig_present:
-                sig_types = (Signature, CoreSignature)
-            if not isinstance(sig, sig_types):
+            if not isinstance(sig, Signature):
                 raise AssertionError(
                     "generic() must return a Signature or None. "
                     "{} returned {}".format(generic, type(sig)),
@@ -779,7 +767,7 @@ class _OverloadFunctionTemplate(AbstractTemplate):
     def _get_jit_decorator(self):
         """Gets a jit decorator suitable for the current target"""
 
-        from numba.core.target_extension import (
+        from numba.cuda.core.target_extension import (
             target_registry,
             get_local_target,
             jit_registry,
@@ -988,7 +976,7 @@ class _TemplateTargetHelperMixin(object):
         -------
         reg : a registry suitable for the current target.
         """
-        from numba.core.target_extension import (
+        from numba.cuda.core.target_extension import (
             _get_local_target_checked,
             dispatcher_registry,
         )

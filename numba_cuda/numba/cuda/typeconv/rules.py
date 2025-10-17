@@ -3,7 +3,7 @@
 
 import itertools
 from .typeconv import TypeManager, TypeCastingRules
-from numba.core import types
+from numba.cuda import types
 
 
 default_type_manager = TypeManager()

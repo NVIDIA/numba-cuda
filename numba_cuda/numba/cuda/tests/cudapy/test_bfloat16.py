@@ -3,9 +3,8 @@
 
 import numpy as np
 from ml_dtypes import bfloat16 as mldtypes_bf16
-
-from numba import (
-    cuda,
+from numba import cuda
+from numba.cuda import (
     float32,
     float64,
     int16,

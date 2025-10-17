@@ -6,7 +6,7 @@ Test extending types via the numba.extending.* API.
 """
 
 from numba.cuda import jit
-from numba.core import types
+from numba.cuda import types
 from numba.core.errors import TypingError, NumbaTypeError
 from numba.cuda.extending import make_attribute_wrapper
 from numba.cuda.extending import overload
