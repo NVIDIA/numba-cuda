@@ -19,12 +19,6 @@ infer_global = registry.register_global
 infer_getattr = registry.register_attr
 
 
-registry = Registry()
-infer = registry.register
-infer_global = registry.register_global
-infer_getattr = registry.register_attr
-
-
 @infer_global(operator.contains)
 class InContainer(AbstractTemplate):
     key = operator.contains

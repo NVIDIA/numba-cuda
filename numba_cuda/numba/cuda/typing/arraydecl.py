@@ -35,11 +35,6 @@ infer = registry.register
 infer_global = registry.register_global
 infer_getattr = registry.register_attr
 
-registry = Registry()
-infer = registry.register
-infer_global = registry.register_global
-infer_getattr = registry.register_attr
-
 
 Indexing = namedtuple("Indexing", ("index", "result", "advanced"))
 

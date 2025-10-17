@@ -19,9 +19,6 @@ infer_global = registry.register_global
 
 # timedelta64-only operations
 
-registry = Registry()
-infer_global = registry.register_global
-
 
 class TimedeltaUnaryOp(AbstractTemplate):
     def generic(self, args, kws):
