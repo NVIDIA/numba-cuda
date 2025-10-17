@@ -34,6 +34,8 @@ from numba.cuda.core.config import (
 
 from numba.cuda.core import config
 
+from collections.abc import Sequence
+
 PYVERSION = config.PYVERSION
 
 
