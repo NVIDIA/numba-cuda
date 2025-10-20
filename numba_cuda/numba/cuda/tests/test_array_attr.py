@@ -12,6 +12,10 @@ from numba.cuda.tests.support import MemoryLeakMixin
 from numba.cuda.testing import CUDATestCase
 from numba.core.errors import TypingError
 from numba.cuda.tests.support import override_config
+from numba.cuda import config
+
+if config.ENABLE_CUDASIM:
+    raise unittest.SkipTest("Array attribute tests not done in simulator")
 
 
 def array_itemsize(a, res):

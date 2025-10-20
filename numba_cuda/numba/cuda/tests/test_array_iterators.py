@@ -11,6 +11,10 @@ from numba.cuda.tests.support import MemoryLeakMixin, override_config
 from numba.cuda.testing import CUDATestCase
 import unittest
 import itertools
+from numba.cuda import config
+
+if config.ENABLE_CUDASIM:
+    raise unittest.SkipTest("Array iterator tests not done in simulator")
 
 
 def array_iter(arr, out):
