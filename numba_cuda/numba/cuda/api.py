@@ -21,7 +21,6 @@ current_context = devices.get_context
 gpus = devices.gpus
 
 
-@require_context
 def from_cuda_array_interface(desc, owner=None, sync=True):
     """Create a DeviceNDArray from a cuda-array-interface description.
     The ``owner`` is the owner of the underlying memory.
