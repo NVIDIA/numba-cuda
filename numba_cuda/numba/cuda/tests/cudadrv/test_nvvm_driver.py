@@ -5,7 +5,6 @@ import pytest
 
 from llvmlite import ir
 from numba.cuda.cudadrv import nvrtc, nvvm, runtime
-from numba.cuda.cudadrv.error import NvvmWarning
 from numba.cuda.testing import unittest
 from numba.cuda.cudadrv.nvvm import LibDevice, NvvmError, NVVM
 from numba.cuda.testing import skip_on_cudasim
@@ -129,7 +128,7 @@ class TestNvvmDriver(unittest.TestCase):
         kernel.attributes.add("noinline")
 
         code = str(m)
-        with pytest.warns(NvvmWarning, match="overriding noinline attribute"):
+        with pytest.warns(Warning, match="overriding noinline attribute"):
             nvvm.compile_ir(code)
 
 
