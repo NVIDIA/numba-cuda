@@ -470,10 +470,11 @@ class _ActiveContext(object):
     def __enter__(self):
         is_top = False
         # check TLS cache
-        if hasattr(self._tls_cache, "ctx_devnum"):
-            hctx, devnum = self._tls_cache.ctx_devnum
-        # Not cached. Query the driver API.
-        else:
+        cache = self._tls_cache
+        try:
+            hctx, devnum = cache.ctx_devnum
+        except AttributeError:
+            # Not cached. Query the driver API.
             hctx = driver.cuCtxGetCurrent()
             if int(hctx) == 0:
                 hctx = None
@@ -495,7 +496,7 @@ class _ActiveContext(object):
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         if self._is_top:
-            delattr(self._tls_cache, "ctx_devnum")
+            del self._tls_cache.ctx_devnum
 
     def __bool__(self):
         """Returns True is there's a valid and active CUDA context."""
@@ -2045,6 +2046,10 @@ class OwnedPointer(object):
         self._mem.refct += 1
         weakref.finalize(self, deref)
 
+        # pull this attribute out for speed, because it's used often and
+        # there's overhead to going through `__getattr__`
+        self.device_ctypes_pointer = self._view.device_ctypes_pointer
+
     def __getattr__(self, fname):
         """Proxy MemoryPointer methods"""
         return getattr(self._view, fname)
@@ -3056,7 +3061,11 @@ def is_device_memory(obj):
     "device_pointer" which value is an int object carrying the pointer
     value of the device memory address.  This is not tested in this method.
     """
-    return getattr(obj, "__cuda_memory__", False)
+    try:
+        # This is cheaper than getattr in the non-exceptional case
+        return obj.__cuda_memory__
+    except AttributeError:
+        return False
 
 
 def require_device_memory(obj):
