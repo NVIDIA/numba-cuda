@@ -167,7 +167,7 @@ make = "*"
 cxx-compiler = "*"
 
 [tool.pixi.feature.bench.dependencies]
-pytorch = "*"
+pytorch = "2.*"
 
 [tool.pixi.environments]
 cu12 = { features = ["cu12", "test"], solve-group = "cu12" }
