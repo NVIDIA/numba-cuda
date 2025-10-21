@@ -49,9 +49,7 @@ def from_cuda_array_interface(desc, owner=None, sync=True):
 
     cudevptr_class = driver.binding.CUdeviceptr
     devptr = cudevptr_class(desc["data"][0])
-    data = driver.MemoryPointer(
-        current_context(), devptr, size=size, owner=owner
-    )
+    data = driver.MemoryPointer(devptr, size=size, owner=owner)
     stream_ptr = desc.get("stream", None)
     if stream_ptr is not None:
         stream = external_stream(stream_ptr)
