@@ -742,7 +742,7 @@ def compile_cuda(
     flags.lto = lto
 
     # Run compilation pipeline
-    from numba.cuda.core.target_extension import target_override
+    from numba.core.target_extension import target_override
 
     with target_override("cuda"):
         cres = compile_extra(

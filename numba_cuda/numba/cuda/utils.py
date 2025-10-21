@@ -320,7 +320,7 @@ def order_by_target_specificity(target, templates, fnkey=""):
     if templates == []:
         return []
 
-    from numba.cuda.core.target_extension import target_registry
+    from numba.core.target_extension import target_registry
 
     # fish out templates that are specific to the target if a target is
     # specified

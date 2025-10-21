@@ -212,7 +212,7 @@ class BaseContext(object):
     def __init__(self, typing_context, target):
         self.address_size = utils.MACHINE_BITS
         self.typing_context = typing_context
-        from numba.cuda.core.target_extension import target_registry
+        from numba.core.target_extension import target_registry
 
         self.target_name = target
         self.target = target_registry[target]

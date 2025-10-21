@@ -1239,7 +1239,7 @@ class Lower(BaseLower):
             )
         tname = expr.target
         if tname is not None:
-            from numba.cuda.core.target_extension import (
+            from numba.core.target_extension import (
                 resolve_dispatcher_from_str,
             )
 

@@ -767,7 +767,7 @@ class _OverloadFunctionTemplate(AbstractTemplate):
     def _get_jit_decorator(self):
         """Gets a jit decorator suitable for the current target"""
 
-        from numba.cuda.core.target_extension import (
+        from numba.core.target_extension import (
             target_registry,
             get_local_target,
             jit_registry,
@@ -976,7 +976,7 @@ class _TemplateTargetHelperMixin(object):
         -------
         reg : a registry suitable for the current target.
         """
-        from numba.cuda.core.target_extension import (
+        from numba.core.target_extension import (
             _get_local_target_checked,
             dispatcher_registry,
         )

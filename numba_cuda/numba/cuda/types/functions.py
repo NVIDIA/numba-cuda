@@ -315,7 +315,7 @@ class BaseFunction(Callable):
         )
 
         # get the order in which to try templates
-        from numba.cuda.core.target_extension import (
+        from numba.core.target_extension import (
             get_local_target,
         )  # circular
 

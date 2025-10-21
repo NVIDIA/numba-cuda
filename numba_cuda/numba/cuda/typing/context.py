@@ -291,7 +291,7 @@ class BaseContext(object):
         templates = list(self._get_attribute_templates(typ))
 
         # get the order in which to try templates
-        from numba.cuda.core.target_extension import get_local_target
+        from numba.core.target_extension import get_local_target
 
         target_hw = get_local_target(self)
         order = order_by_target_specificity(target_hw, templates, fnkey=attr)
@@ -446,7 +446,7 @@ class BaseContext(object):
             loader = templates.RegistryLoader(registry)
             self._registries[registry] = loader
 
-        from numba.cuda.core.target_extension import (
+        from numba.core.target_extension import (
             get_local_target,
             resolve_target_str,
         )
