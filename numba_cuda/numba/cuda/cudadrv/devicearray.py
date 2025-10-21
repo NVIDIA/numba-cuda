@@ -15,7 +15,6 @@ from ctypes import c_void_p
 
 import numpy as np
 
-import numba
 from numba.cuda.cext import _devicearray
 from numba.cuda.cudadrv import devices, dummyarray
 from numba.cuda.cudadrv import driver as _driver
@@ -901,8 +900,12 @@ def auto_device(obj, stream=0, copy=True, user_explicit=False):
     """
     if _driver.is_device_memory(obj):
         return obj, False
-    elif hasattr(obj, "__cuda_array_interface__"):
-        return numba.cuda.as_cuda_array(obj), False
+    elif (
+        interface := getattr(obj, "__cuda_array_interface__", None)
+    ) is not None:
+        from numba.cuda.api import from_cuda_array_interface
+
+        return from_cuda_array_interface(interface, owner=obj), False
     else:
         if isinstance(obj, np.void):
             devobj = from_record_like(obj, stream=stream)
