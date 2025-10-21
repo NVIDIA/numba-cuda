@@ -166,9 +166,12 @@ cuda-compiler = "*"
 make = "*"
 cxx-compiler = "*"
 
+[tool.pixi.feature.bench.dependencies]
+pytorch = "2.*"
+
 [tool.pixi.environments]
-cu12 = { features = ["cu12", "test"], solve-group = "cu12" }
-cu13 = { features = ["cu13", "test"], solve-group = "cu13" }
+cu12 = { features = ["cu12", "test", "bench"], solve-group = "cu12" }
+cu13 = { features = ["cu13", "test", "bench"], solve-group = "cu13" }
 
 [tool.pixi.target.linux.tasks]
 build-tests = { cmd = [
@@ -186,7 +189,7 @@ bench = { cmd = [
     "--benchmark-only",
     "--benchmark-enable",
     "--benchmark-autosave",
-    "--benchmark-group-by=name",
+    "--benchmark-group-by=func",
 ] }
 benchcmp = { cmd = [
     "pytest",
@@ -195,7 +198,7 @@ benchcmp = { cmd = [
     "numba.cuda.tests.benchmarks",
     "--benchmark-only",
     "--benchmark-enable",
-    "--benchmark-group-by=name",
+    "--benchmark-group-by=func",
     "--benchmark-compare",
 ] }
 

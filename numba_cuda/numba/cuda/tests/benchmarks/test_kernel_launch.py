@@ -5,30 +5,64 @@ import string
 from numba import cuda
 import numpy as np
 import pytest
+from pytest import param
 
 
-@pytest.fixture
-def many_arrs():
-    return [
-        cuda.device_array(10000, dtype=np.float32)
-        for _ in range(len(string.ascii_lowercase))
-    ]
-
-
-@pytest.fixture
-def one_arr():
-    return cuda.device_array(10000, dtype=np.float32)
-
-
-def test_one_arg(benchmark, one_arr):
+@pytest.mark.parametrize(
+    "array_func",
+    [
+        param(
+            lambda: cuda.device_array(128, dtype=np.float32),
+            id="device_array",
+        ),
+        param(
+            lambda: pytest.importorskip("torch").empty(
+                (128,),
+                dtype=pytest.importorskip("torch").float32,
+                device="cuda:0",
+            ),
+            id="torch",
+        ),
+    ],
+)
+def test_one_arg(benchmark, array_func):
     @cuda.jit("void(float32[:])")
     def one_arg(arr1):
         return
 
-    benchmark(one_arg[1, 1], one_arr)
+    def bench(func, arr):
+        for _ in range(100):
+            func(arr)
+
+    benchmark(bench, one_arg[128, 128], array_func())
 
 
-def test_many_args(benchmark, many_arrs):
+@pytest.mark.parametrize(
+    "array_func",
+    [
+        param(
+            lambda: [
+                cuda.device_array(128, dtype=np.float32)
+                for _ in range(len(string.ascii_lowercase))
+            ],
+            id="device_array",
+        ),
+        param(
+            lambda: [
+                pytest.importorskip("torch").empty(
+                    (128,),
+                    dtype=pytest.importorskip("torch").float32,
+                    device="cuda:0",
+                )
+                for _ in range(len(string.ascii_lowercase))
+            ],
+            id="torch",
+        ),
+    ],
+)
+def test_many_args(benchmark, array_func):
+    many_arrs = array_func()
+
     @cuda.jit("void({})".format(", ".join(["float32[:]"] * len(many_arrs))))
     def many_args(
         a,
@@ -60,4 +94,8 @@ def test_many_args(benchmark, many_arrs):
     ):
         return
 
-    benchmark(many_args[1, 1], *many_arrs)
+    def bench(func, *arrs):
+        for _ in range(100):
+            func(*arrs)
+
+    benchmark(bench, many_args[128, 128], *many_arrs)
