@@ -89,26 +89,27 @@ class DeviceNDArrayBase(_devicearray.DeviceArray):
         if isinstance(strides, int):
             strides = (strides,)
         dtype = np.dtype(dtype)
-        self.ndim = len(shape)
-        if len(strides) != self.ndim:
+        itemsize = dtype.itemsize
+        self.ndim = ndim = len(shape)
+        if len(strides) != ndim:
             raise ValueError("strides not match ndim")
-        self._dummy = dummyarray.Array.from_desc(
-            0, shape, strides, dtype.itemsize
+        self._dummy = dummy = dummyarray.Array.from_desc(
+            0, shape, strides, itemsize
         )
         # confirm that all elements of shape are ints
         if not all(isinstance(dim, (int, np.integer)) for dim in shape):
             raise TypeError("all elements of shape must be ints")
-        self.shape = tuple(shape)
-        self.strides = tuple(strides)
+        self.shape = shape = dummy.shape
+        self.strides = strides = dummy.strides
         self.dtype = dtype
-        self.size = int(functools.reduce(operator.mul, self.shape, 1))
+        self.size = size = dummy.size
         # prepare gpu memory
-        if self.size > 0:
-            self.alloc_size = _driver.memory_size_from_info(
-                self.shape, self.strides, self.dtype.itemsize
+        if size:
+            self.alloc_size = alloc_size = _driver.memory_size_from_info(
+                shape, strides, itemsize
             )
             if gpu_data is None:
-                gpu_data = devices.get_context().memalloc(self.alloc_size)
+                gpu_data = devices.get_context().memalloc(alloc_size)
         else:
             # Make NULL pointer for empty allocation
             null = _driver.binding.CUdeviceptr(0)
