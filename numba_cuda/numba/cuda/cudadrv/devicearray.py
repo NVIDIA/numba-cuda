@@ -99,10 +99,10 @@ class DeviceNDArrayBase(_devicearray.DeviceArray):
         # confirm that all elements of shape are ints
         if not all(isinstance(dim, (int, np.integer)) for dim in shape):
             raise TypeError("all elements of shape must be ints")
-        self.shape = tuple(shape)
-        self.strides = tuple(strides)
+        self.shape = self._dummy.shape
+        self.strides = self._dummy.strides
         self.dtype = dtype
-        self.size = int(functools.reduce(operator.mul, self.shape, 1))
+        self.size = self._dummy.size
         # prepare gpu memory
         if self.size > 0:
             self.alloc_size = _driver.memory_size_from_info(
