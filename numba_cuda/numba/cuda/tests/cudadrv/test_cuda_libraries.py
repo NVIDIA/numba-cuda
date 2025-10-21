@@ -16,9 +16,8 @@ class TestLibraryDetection(unittest.TestCase):
         PyCulib (and potentially others) rely on Numba's library finding
         capacity to find and subsequently load these libraries.
         """
-        core_libs = ["nvvm"]
-        for l in core_libs:
-            self.assertNotEqual(find_lib(l), [])
+        found_libs = find_lib("nvvm")
+        self.assertNotEqual(found_libs, [])
 
 
 if __name__ == "__main__":
