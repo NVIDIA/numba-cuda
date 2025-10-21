@@ -112,9 +112,7 @@ class DeviceNDArrayBase(_devicearray.DeviceArray):
         else:
             # Make NULL pointer for empty allocation
             null = _driver.binding.CUdeviceptr(0)
-            gpu_data = _driver.MemoryPointer(
-                context=devices.get_context(), pointer=null, size=0
-            )
+            gpu_data = _driver.MemoryPointer(pointer=null, size=0)
             self.alloc_size = 0
 
         self.gpu_data = gpu_data
