@@ -170,7 +170,7 @@ cxx-compiler = "*"
 pytorch = "2.*"
 
 [tool.pixi.environments]
-cu12 = { features = ["cu12", "test"], solve-group = "cu12" }
+cu12 = { features = ["cu12", "test", "bench"], solve-group = "cu12" }
 cu13 = { features = ["cu13", "test", "bench"], solve-group = "cu13" }
 
 [tool.pixi.target.linux.tasks]
