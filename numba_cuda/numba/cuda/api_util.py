@@ -3,6 +3,8 @@
 
 import numpy as np
 
+import functools
+
 
 def prepare_shape_strides_dtype(shape, strides, dtype, order):
     dtype = np.dtype(dtype)
@@ -14,13 +16,19 @@ def prepare_shape_strides_dtype(shape, strides, dtype, order):
         raise TypeError("shape must be an integer or tuple of integers")
     if isinstance(shape, int):
         shape = (shape,)
+    else:
+        shape = tuple(shape)
     if isinstance(strides, int):
         strides = (strides,)
     else:
-        strides = strides or _fill_stride_by_order(shape, dtype, order)
+        if not strides:
+            strides = _fill_stride_by_order(tuple(shape), dtype, order)
+        else:
+            strides = tuple(strides)
     return shape, strides, dtype
 
 
+@functools.cache
 def _fill_stride_by_order(shape, dtype, order):
     nd = len(shape)
     if nd == 0:
