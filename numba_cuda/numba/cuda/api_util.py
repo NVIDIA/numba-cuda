@@ -22,7 +22,7 @@ def prepare_shape_strides_dtype(shape, strides, dtype, order):
         strides = (strides,)
     else:
         if not strides:
-            strides = _fill_stride_by_order(tuple(shape), dtype, order)
+            strides = _fill_stride_by_order(shape, dtype, order)
         else:
             strides = tuple(strides)
     return shape, strides, dtype
