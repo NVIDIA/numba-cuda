@@ -193,9 +193,11 @@ def exp_ol(a):
 
 
 if sys.version_info >= (3, 11):
+
     @overload(math.exp2, target="cuda")
     def exp2_ol(a):
         return _make_unary(a, hexp2)
+
 
 ## Public aliases using Numba/Numpy-style type names
 # Floating-point

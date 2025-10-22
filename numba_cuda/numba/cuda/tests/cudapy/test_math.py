@@ -502,6 +502,7 @@ class TestCudaMath(CUDATestCase):
         self.unary_template_float64(math_exp, np.exp)
         self.unary_template_int64(math_exp, np.exp)
         self.unary_template_uint64(math_exp, np.exp)
+
     # ---------------------------------------------------------------------------
     # test_math_exp2
 
@@ -510,7 +511,7 @@ class TestCudaMath(CUDATestCase):
         self.unary_template_float32(math_exp2, np.exp2)
         self.unary_template_float64(math_exp2, np.exp2)
         self.unary_template_int64(math_exp2, np.exp2)
-        self.unary_template_uint64(math_exp2, np.exp2)    
+        self.unary_template_uint64(math_exp2, np.exp2)
 
     # ---------------------------------------------------------------------------
     # test_math_expm1

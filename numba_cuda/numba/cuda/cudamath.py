@@ -58,6 +58,7 @@ class Math_unary_with_fp16(ConcreteTemplate):
         signature(types.float16, types.float16),
     ]
 
+
 if sys.version_info >= (3, 11):
     Math_unary_with_fp16 = infer_global(math.exp2)(Math_unary_with_fp16)
 

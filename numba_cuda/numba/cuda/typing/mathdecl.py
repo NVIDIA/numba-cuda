@@ -44,8 +44,10 @@ class Math_unary(ConcreteTemplate):
         signature(types.float64, types.float64),
     ]
 
+
 if sys.version_info >= (3, 11):
     Math_unary = infer_global(math.exp2)(Math_unary)
+
 
 @infer_global(math.atan2)
 class Math_atan2(ConcreteTemplate):
