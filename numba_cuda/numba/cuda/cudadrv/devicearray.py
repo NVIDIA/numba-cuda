@@ -96,9 +96,6 @@ class DeviceNDArrayBase(_devicearray.DeviceArray):
         self._dummy = dummy = dummyarray.Array.from_desc(
             0, shape, strides, itemsize
         )
-        # confirm that all elements of shape are ints
-        if not all(isinstance(dim, (int, np.integer)) for dim in shape):
-            raise TypeError("all elements of shape must be ints")
         self.shape = shape = dummy.shape
         self.strides = strides = dummy.strides
         self.dtype = dtype
