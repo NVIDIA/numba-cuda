@@ -138,6 +138,11 @@ def math_remainder(A, B, C):
     C[i] = math.remainder(A[i], B[i])
 
 
+def math_nextafter(A, B, C):
+    i = cuda.grid(1)
+    C[i] = math.nextafter(A[i], B[i])
+
+
 def math_sqrt(A, B):
     i = cuda.grid(1)
     B[i] = math.sqrt(A[i])
@@ -593,6 +598,15 @@ class TestCudaMath(CUDATestCase):
         r = np.zeros(1, np.float64)
         test_0_0[1, 1](r, 0, 0)
         self.assertTrue(np.isnan(r[0]))
+
+    # ---------------------------------------------------------------------------
+    # test_math_nextafter
+
+    def test_math_nextafter(self):
+        self.binary_template_float32(math_nextafter, np.nextafter, start=1e-11)
+        self.binary_template_float64(math_remainder, np.remainder, start=1e-11)
+        self.binary_template_int64(math_remainder, np.remainder, start=1)
+        self.binary_template_uint64(math_remainder, np.remainder, start=1)
 
     # ---------------------------------------------------------------------------
     # test_math_sqrt
