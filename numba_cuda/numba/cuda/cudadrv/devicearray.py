@@ -86,8 +86,13 @@ class DeviceNDArrayBase(_devicearray.DeviceArray):
         """
         if isinstance(shape, int):
             shape = (shape,)
+        else:
+            shape = tuple(shape)
         if isinstance(strides, int):
             strides = (strides,)
+        else:
+            if strides:
+                strides = tuple(strides)
         dtype = np.dtype(dtype)
         itemsize = dtype.itemsize
         self.ndim = ndim = len(shape)

@@ -446,8 +446,8 @@ class Array(object):
 
         ret = self.from_desc(
             self.extent.begin,
-            shape=newdims,
-            strides=newstrides,
+            shape=tuple(newdims),
+            strides=tuple(newstrides),
             itemsize=self.itemsize,
         )
 
@@ -475,8 +475,8 @@ class Array(object):
                     newstrides.append(stride)
         newarr = self.from_desc(
             self.extent.begin,
-            shape=newshape,
-            strides=newstrides,
+            shape=tuple(newshape),
+            strides=tuple(newstrides),
             itemsize=self.itemsize,
         )
         return newarr, list(self.iter_contiguous_extent())
