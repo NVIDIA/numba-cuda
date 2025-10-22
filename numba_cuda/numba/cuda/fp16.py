@@ -185,9 +185,14 @@ def log10_ol(a):
     return _make_unary(a, hlog10)
 
 
-@overload(, target="cuda")
+@overload(math.exp, target="cuda")
 def exp_ol(a):
     return _make_unary(a, hexp)
+
+
+@overload(math.exp2, target="cuda")
+def exp2_ol(a):
+    return _make_unary(a, hexp2)
 
 
 @overload(math.tanh, target="cuda")
