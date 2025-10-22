@@ -544,6 +544,8 @@ class _Kernel(serialize.ReduceMixin):
                 ty, val = extension.prepare_args(
                     ty, val, stream=stream, retr=retr
                 )
+        elif handler := _arg_handlers.get(type(val)):
+            ty, val = handler.prepare_args(ty, val, stream=stream, retr=retr)
 
         if isinstance(ty, types.Array):
             devary = wrap_arg(val).to_device(retr, stream)
@@ -620,8 +622,6 @@ class _Kernel(serialize.ReduceMixin):
                 )
             except NotImplementedError:
                 raise NotImplementedError(ty, val)
-        elif handler := _arg_handlers.get(type(val)):
-            ty, val = handler.prepare_args(ty, val, stream=stream, retr=retr)
         else:
             raise NotImplementedError(ty, val)
 
