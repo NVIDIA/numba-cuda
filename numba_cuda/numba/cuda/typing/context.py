@@ -512,9 +512,9 @@ class BaseContext(object):
                     continue
             self.insert_attributes(ftcls(self))
         for gv, gty in loader.new_registrations("globals"):
-            # If external_defs_only, check the global type's module
+            # If external_defs_only, check the global value's module
             if external_defs_only:
-                if hasattr(gty, "__module__") and not is_external(gty):
+                if hasattr(gv, "__module__") and not is_external(gv):
                     continue
             existing = self._lookup_global(gv)
             if existing is None:
