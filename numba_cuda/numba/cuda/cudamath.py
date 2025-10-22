@@ -1,6 +1,7 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-2-Clause
 
+import sys
 import math
 from numba.core import types
 from numba.cuda.typing.templates import ConcreteTemplate, signature, Registry
@@ -56,6 +57,9 @@ class Math_unary_with_fp16(ConcreteTemplate):
         signature(types.float64, types.float64),
         signature(types.float16, types.float16),
     ]
+
+if sys.version_info >= (3, 11):
+    Math_unary_with_fp16 = infer_global(math.exp2)(Math_unary_with_fp16)
 
 
 @infer_global(math.atan2)

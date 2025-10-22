@@ -1,6 +1,7 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-2-Clause
 
+import sys
 import math
 import operator
 from llvmlite import ir
@@ -25,6 +26,8 @@ unarys += [("ceil", "ceilf", math.ceil)]
 unarys += [("floor", "floorf", math.floor)]
 unarys += [("fabs", "fabsf", math.fabs)]
 unarys += [("exp", "expf", math.exp)]
+if sys.version_info >= (3, 11):
+    unarys += [("exp2", "exp2f", math.exp2)]
 unarys += [("expm1", "expm1f", math.expm1)]
 unarys += [("erf", "erff", math.erf)]
 unarys += [("erfc", "erfcf", math.erfc)]

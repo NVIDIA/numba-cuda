@@ -1,6 +1,7 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-2-Clause
 
+import sys
 import numpy as np
 from numba.cuda.testing import (
     skip_unless_cc_53,
@@ -81,6 +82,11 @@ def math_atan2(A, B, C):
 def math_exp(A, B):
     i = cuda.grid(1)
     B[i] = math.exp(A[i])
+
+
+def math_exp2(A, B):
+    i = cuda.grid(1)
+    B[i] = math.exp2(A[i])
 
 
 def math_erf(A, B):
@@ -400,6 +406,8 @@ class TestCudaMath(CUDATestCase):
         self.unary_template_float16(math_sqrt, np.sqrt)
         self.unary_template_float16(math_ceil, np.ceil)
         self.unary_template_float16(math_floor, np.floor)
+        if sys.version_info >= (3, 11):
+            self.unary_template_float16(math_exp2, np.exp2)
 
     @skip_on_cudasim("numpy does not support trunc for float16")
     @skip_unless_cc_53
@@ -494,6 +502,15 @@ class TestCudaMath(CUDATestCase):
         self.unary_template_float64(math_exp, np.exp)
         self.unary_template_int64(math_exp, np.exp)
         self.unary_template_uint64(math_exp, np.exp)
+    # ---------------------------------------------------------------------------
+    # test_math_exp2
+
+    @unittest.skipUnless(sys.version_info >= (3, 11), "Python 3.11+ required")
+    def test_math_exp2(self):
+        self.unary_template_float32(math_exp2, np.exp2)
+        self.unary_template_float64(math_exp2, np.exp2)
+        self.unary_template_int64(math_exp2, np.exp2)
+        self.unary_template_uint64(math_exp2, np.exp2)    
 
     # ---------------------------------------------------------------------------
     # test_math_expm1
