@@ -89,6 +89,7 @@ nrt_varsize_dtor(void *ptr, size_t size, void *info) {
     NRT_Free(ptr);
 }
 
+extern "C"
 __device__ NRT_MemInfo* NRT_MemInfo_new_varsize(size_t size)
 {
     void *data = NRT_Allocate(size);
