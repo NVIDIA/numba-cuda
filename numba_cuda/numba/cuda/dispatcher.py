@@ -558,10 +558,8 @@ class _Kernel(serialize.ReduceMixin):
             kernelargs.append(nitems)
             kernelargs.append(itemsize)
             kernelargs.append(data)
-            for ax in range(devary.ndim):
-                kernelargs.append(c_intp(devary.shape[ax]))
-            for ax in range(devary.ndim):
-                kernelargs.append(c_intp(devary.strides[ax]))
+            kernelargs.extend(map(c_intp, devary.shape))
+            kernelargs.extend(map(c_intp, devary.strides))
 
         elif isinstance(ty, types.CPointer):
             # Pointer arguments should be a pointer-sized integer
