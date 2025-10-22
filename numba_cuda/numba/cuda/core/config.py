@@ -124,49 +124,6 @@ def _process_opt_level(opt_level):
         return _OptLevel(opt_level)
 
 
-class _EnvVar(object):
-    """Descriptor for configuration values that checks numba.config on access."""
-
-    def __init__(self, value, name):
-        self.name = name
-        if isinstance(value, _EnvVar):
-            self.value = value.__get__()
-        else:
-            self.value = value
-        self.check_numba_config()
-
-    def check_numba_config(self):
-        """Check for conflicting value in numba.config and emit deprecation warning."""
-        try:
-            from numba import config as numba_config
-
-            if hasattr(numba_config, self.name):
-                config_value = getattr(numba_config, self.name)
-                if config_value != self.value:
-                    msg = (
-                        f"Configuration value '{self.name}' is explicitly set "
-                        f"to `{config_value}` in numba.config. "
-                        "numba.config is deprecated for numba-cuda "
-                        "and support for configuration values from it "
-                        "will be removed in a future release. "
-                        "Please use numba.cuda.config."
-                    )
-                    warnings.warn(msg, category=DeprecationWarning)
-                    self.value = config_value
-            else:
-                # Initialize any missing variables in numba.config
-                setattr(numba_config, self.name, self.value)
-        except ImportError:
-            pass
-
-    def __get__(self):
-        self.check_numba_config()
-        return self.value
-
-    def __set__(self, value):
-        self.value = value
-
-
 class _EnvReloader(object):
     def __init__(self):
         self.reset()
@@ -211,18 +168,7 @@ class _EnvReloader(object):
         self.validate()
 
     def validate(self):
-        current_module = sys.modules[__name__]
-        try:
-            CUDA_USE_NVIDIA_BINDING = current_module.CUDA_USE_NVIDIA_BINDING
-        except AttributeError:
-            CUDA_USE_NVIDIA_BINDING = 0
-
-        try:
-            CUDA_PER_THREAD_DEFAULT_STREAM = (
-                current_module.CUDA_PER_THREAD_DEFAULT_STREAM
-            )
-        except AttributeError:
-            CUDA_PER_THREAD_DEFAULT_STREAM = 0
+        global CUDA_USE_NVIDIA_BINDING
 
         if CUDA_USE_NVIDIA_BINDING:  # noqa: F821
             try:
@@ -235,7 +181,7 @@ class _EnvReloader(object):
                 )
                 warnings.warn(msg)
 
-                current_module.CUDA_USE_NVIDIA_BINDING = 0
+                CUDA_USE_NVIDIA_BINDING = False
 
             if CUDA_PER_THREAD_DEFAULT_STREAM:  # noqa: F821
                 warnings.warn(
@@ -250,23 +196,18 @@ class _EnvReloader(object):
         def _readenv(name, ctor, default):
             value = environ.get(name)
             if value is None:
-                result = default() if callable(default) else default
-            else:
-                try:
-                    result = ctor(value)
-                except Exception:
-                    warnings.warn(
-                        f"Environment variable '{name}' is defined but "
-                        f"its associated value '{value}' could not be "
-                        "parsed.\nThe parse failed with exception:\n"
-                        f"{traceback.format_exc()}",
-                        RuntimeWarning,
-                    )
-                    result = default() if callable(default) else default
-            var_name = name
-            if name.startswith("NUMBA_"):
-                var_name = name[6:]
-            return _EnvVar(result, var_name)
+                return default() if callable(default) else default
+            try:
+                return ctor(value)
+            except Exception:
+                warnings.warn(
+                    f"Environment variable '{name}' is defined but "
+                    f"its associated value '{value}' could not be "
+                    "parsed.\nThe parse failed with exception:\n"
+                    f"{traceback.format_exc()}",
+                    RuntimeWarning,
+                )
+                return default
 
         def optional_str(x):
             return str(x) if x is not None else None
@@ -347,12 +288,6 @@ class _EnvReloader(object):
 
         # Enable NRT statistics counters
         NRT_STATS = _readenv("NUMBA_NRT_STATS", int, 0)
-
-        # Enable NRT statistics
-        CUDA_NRT_STATS = _readenv("NUMBA_CUDA_NRT_STATS", int, 0)
-
-        # Enable NRT
-        CUDA_ENABLE_NRT = _readenv("NUMBA_CUDA_ENABLE_NRT", int, 0)
 
         # How many recently deserialized functions to retain regardless
         # of external references
@@ -610,7 +545,7 @@ class _EnvReloader(object):
             "NUMBA_NUM_THREADS" in globals()
             and globals()["NUMBA_NUM_THREADS"] != _NUMBA_NUM_THREADS
         ):
-            from numba.np.ufunc import parallel
+            from numba.cuda.np.ufunc import parallel
 
             if parallel._is_initialized:
                 raise RuntimeError(
@@ -695,49 +630,13 @@ class _EnvReloader(object):
             0,
         )
 
-        # Inject the configuration values into _descriptors
-        if not hasattr(self, "_descriptors"):
-            self._descriptors = {}
-
+        # Inject the configuration values into the module globals
         for name, value in locals().copy().items():
             if name.isupper():
-                self._descriptors[name] = value
+                globals()[name] = value
 
 
 _env_reloader = _EnvReloader()
-
-
-def __getattr__(name):
-    """Module-level __getattr__ provides dynamic behavior for _EnvVar descriptors."""
-    # Fetch non-descriptor globals directly
-    if name in globals():
-        return globals()[name]
-
-    if (
-        hasattr(_env_reloader, "_descriptors")
-        and name in _env_reloader._descriptors
-    ):
-        return _env_reloader._descriptors[name].__get__()
-
-    raise AttributeError(f"module {__name__} has no attribute {name}")
-
-
-def __setattr__(name, value):
-    """Module-level __setattr__ provides dynamic behavior for _EnvVar descriptors."""
-    # Update non-descriptor globals
-    if name in globals():
-        globals()[name] = value
-        return
-
-    if (
-        hasattr(_env_reloader, "_descriptors")
-        and name in _env_reloader._descriptors
-    ):
-        _env_reloader._descriptors[name].__set__(value)
-    else:
-        if not hasattr(_env_reloader, "_descriptors"):
-            _env_reloader._descriptors = {}
-        _env_reloader._descriptors[name] = _EnvVar(value, name)
 
 
 def reload_config():
@@ -745,3 +644,12 @@ def reload_config():
     Reload the configuration from environment variables, if necessary.
     """
     _env_reloader.update()
+
+
+# use numba.core.config if available, otherwise use numba.cuda.core.config
+try:
+    import numba.core.config as _config
+
+    sys.modules[__name__] = _config
+except ImportError:
+    pass

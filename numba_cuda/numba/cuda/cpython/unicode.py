@@ -8,17 +8,17 @@ import numpy as np
 from llvmlite.ir import IntType, Constant
 
 from numba.cuda.cgutils import is_nonelike
-from numba.core.extending import (
+from numba.cuda.extending import (
     NativeValue,
     overload,
     overload_method,
     register_jitable,
-    models,
+    core_models,
 )
 from numba.cuda.core.pythonapi import box, unbox
 from numba.cuda.extending import make_attribute_wrapper, intrinsic
 from numba.cuda.models import register_model
-from numba.core.imputils import (
+from numba.cuda.core.imputils import (
     iternext_impl,
     impl_ret_new_ref,
     RefType,
@@ -33,8 +33,7 @@ from numba.cuda.core.pythonapi import (
     PY_UNICODE_2BYTE_KIND,
     PY_UNICODE_4BYTE_KIND,
 )
-from numba._helperlib import c_helpers
-from numba.cpython.hashing import _Py_hash_t
+from numba.cuda.cext._helperlib import c_helpers
 from numba.cuda.core.unsafe.bytes import memcpy_region
 from numba.core.errors import TypingError
 from numba.cuda.cpython.unicode_support import (
@@ -74,6 +73,9 @@ from numba.cuda.cpython.unicode_support import (
 )
 from numba.cuda.cpython import slicing
 
+_hash_width = sys.hash_info.width
+_Py_hash_t = getattr(types, "int%s" % _hash_width)
+
 registry = Registry("unicode")
 lower = registry.lower
 lower_cast = registry.lower_cast
@@ -93,7 +95,7 @@ _BLOOM_WIDTH = types.intp.bitwidth
 
 
 @register_model(types.UnicodeType)
-class UnicodeModel(models.StructModel):
+class UnicodeModel(core_models.StructModel):
     def __init__(self, dmm, fe_type):
         members = [
             ("data", types.voidptr),
@@ -105,7 +107,7 @@ class UnicodeModel(models.StructModel):
             # A pointer to the owner python str/unicode object
             ("parent", types.pyobject),
         ]
-        models.StructModel.__init__(self, dmm, fe_type, members)
+        core_models.StructModel.__init__(self, dmm, fe_type, members)
 
 
 make_attribute_wrapper(types.UnicodeType, "data", "_data")

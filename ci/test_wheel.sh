@@ -11,9 +11,11 @@ package=$(realpath wheel/numba_cuda*.whl)
 echo "Package path: ${package}"
 
 DEPENDENCIES=(
-    "${package}[test]"
+    "${package}"
     "cuda-python==${CUDA_VER_MAJOR_MINOR%.*}.*"
     "cuda-core==0.3.*"
+    "--group"
+    "test"
 )
 
 # Constrain oldest supported dependencies for testing
@@ -23,33 +25,21 @@ fi
 
 python -m pip install "${DEPENDENCIES[@]}"
 
+rapids-logger "Build tests"
+export NUMBA_CUDA_TEST_BIN_DIR=`pwd`/testing
+pushd $NUMBA_CUDA_TEST_BIN_DIR
+make -j $(nproc)
+
 rapids-logger "Test importing numba.cuda"
 python -c "from numba import cuda"
 
-GET_TEST_BINARY_DIR="
-import numba_cuda
-root = numba_cuda.__file__.rstrip('__init__.py')
-test_dir = root + \"numba/cuda/tests/test_binary_generation/\"
-print(test_dir)
-"
-
-rapids-logger "Build tests"
-export NUMBA_CUDA_TEST_BIN_DIR=$(python -c "$GET_TEST_BINARY_DIR")
-pushd $NUMBA_CUDA_TEST_BIN_DIR
-make
-popd
-
 rapids-logger "Check GPU usage"
 nvidia-smi
-
-RAPIDS_TESTS_DIR=${RAPIDS_TESTS_DIR:-"${PWD}/test-results"}/
-mkdir -p "${RAPIDS_TESTS_DIR}"
-pushd "${RAPIDS_TESTS_DIR}"
 
 rapids-logger "Show Numba system info"
 python -m numba --sysinfo
 
 rapids-logger "Run Tests"
-python -m pytest --pyargs numba.cuda.tests -v
+python -m pytest -v
 
 popd

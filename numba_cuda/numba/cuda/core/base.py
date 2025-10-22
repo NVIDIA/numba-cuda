@@ -10,21 +10,17 @@ from functools import cached_property
 
 from llvmlite import ir as llvmir
 from llvmlite.ir import Constant
-import llvmlite.binding as ll
 
 from numba.core import (
     types,
     datamodel,
-    config,
-    imputils,
 )
-from numba.cuda import cgutils, debuginfo, utils
+from numba.cuda import cgutils, debuginfo, utils, config
 from numba.core import errors
-from numba.cuda.core import targetconfig, funcdesc
-from numba import _dynfunc, _helperlib
+from numba.cuda.core import targetconfig, funcdesc, imputils
 from numba.core.compiler_lock import global_compiler_lock
 from numba.cuda.core.pythonapi import PythonAPI
-from numba.core.imputils import (
+from numba.cuda.core.imputils import (
     user_function,
     user_generator,
     builtin_registry,
@@ -158,26 +154,6 @@ class OverloadSelector(object):
         self._cache.clear()
 
 
-@utils.runonce
-def _load_global_helpers():
-    """
-    Execute once to install special symbols into the LLVM symbol table.
-    """
-    # This is Py_None's real C name
-    ll.add_symbol("_Py_NoneStruct", id(None))
-
-    # Add Numba C helper functions
-    for c_helpers in (_helperlib.c_helpers, _dynfunc.c_helpers):
-        for py_name, c_address in c_helpers.items():
-            c_name = "numba_" + py_name
-            ll.add_symbol(c_name, c_address)
-
-    # Add all built-in exception classes
-    for obj in utils.builtins.__dict__.values():
-        if isinstance(obj, type) and issubclass(obj, BaseException):
-            ll.add_symbol("PyExc_%s" % (obj.__name__), id(obj))
-
-
 class BaseContext(object):
     """
 
@@ -238,8 +214,6 @@ class BaseContext(object):
     fndesc = None
 
     def __init__(self, typing_context, target):
-        _load_global_helpers()
-
         self.address_size = utils.MACHINE_BITS
         self.typing_context = typing_context
         from numba.core.target_extension import target_registry
@@ -351,7 +325,7 @@ class BaseContext(object):
 
     @cached_property
     def nrt(self):
-        from numba.core.runtime.context import NRTContext
+        from numba.cuda.memory_management.nrt_context import NRTContext
 
         return NRTContext(self, self.enable_nrt)
 
@@ -381,6 +355,73 @@ class BaseContext(object):
         self._insert_setattr_defn(loader.new_registrations("setattrs"))
         self._insert_cast_defn(loader.new_registrations("casts"))
         self._insert_get_constant_defn(loader.new_registrations("constants"))
+
+    def install_external_registry(self, registry):
+        """
+        Install only third-party registrations from a shared registry like Numba's builtin_registry.
+        Exclude Numba's own implementations in this case (i.e., anything from numba.* namespace).
+
+        This is useful for selectively installing third-party implementations
+        present in the shared builtin_registry from Numba without pulling in any CPU-specific
+        implementations from Numba.
+
+        Note: For getattrs/setattrs, we check the TYPE's __module__ (from the signature)
+        rather than the implementation's __module__, because @lower_getattr/@lower_setattr decorators
+        always set impl.__module__ = "numba.*" regardless of where they are called from.
+        """
+
+        def is_external(obj):
+            """Check if object is from outside numba.* namespace."""
+            try:
+                return not obj.__module__.startswith("numba.")
+            except AttributeError:
+                return True
+
+        def is_external_type_sig(sig):
+            """Check if type in signature is from outside numba.* namespace."""
+            try:
+                return sig and is_external(sig[0])
+            except (AttributeError, IndexError):
+                return True
+
+        try:
+            loader = self._registries[registry]
+        except KeyError:
+            loader = RegistryLoader(registry)
+            self._registries[registry] = loader
+
+        # Filter registrations
+        funcs = [
+            (impl, func, sig)
+            for impl, func, sig in loader.new_registrations("functions")
+            if is_external(impl)
+        ]
+        getattrs = [
+            (impl, attr, sig)
+            for impl, attr, sig in loader.new_registrations("getattrs")
+            if is_external_type_sig(sig)
+        ]
+        setattrs = [
+            (impl, attr, sig)
+            for impl, attr, sig in loader.new_registrations("setattrs")
+            if is_external_type_sig(sig)
+        ]
+        casts = [
+            (impl, sig)
+            for impl, sig in loader.new_registrations("casts")
+            if is_external(impl)
+        ]
+        constants = [
+            (impl, sig)
+            for impl, sig in loader.new_registrations("constants")
+            if is_external(impl)
+        ]
+
+        self.insert_func_defn(funcs)
+        self._insert_getattr_defn(getattrs)
+        self._insert_setattr_defn(setattrs)
+        self._insert_cast_defn(casts)
+        self._insert_get_constant_defn(constants)
 
     def insert_func_defn(self, defns):
         for impl, func, sig in defns:
@@ -847,14 +888,15 @@ class BaseContext(object):
         Note this context's flags are not inherited.
         """
         # Compile
-        from numba.core import compiler
+        from numba.cuda import compiler
+        from numba.cuda.flags import Flags
 
         with global_compiler_lock:
             codegen = self.codegen()
             library = codegen.create_library(impl.__name__)
             if flags is None:
                 cstk = targetconfig.ConfigStack()
-                flags = compiler.Flags()
+                flags = Flags()
                 if cstk:
                     tls_flags = cstk.top()
                     if tls_flags.is_set("nrt") and tls_flags.nrt:
@@ -1040,7 +1082,7 @@ class BaseContext(object):
         return self._make_helper(builder, typ, ref=ref, kind="data")
 
     def make_array(self, typ):
-        from numba.np import arrayobj
+        from numba.cuda.np import arrayobj
 
         return arrayobj.make_array(typ)
 
@@ -1048,7 +1090,7 @@ class BaseContext(object):
         """
         Populate array structure.
         """
-        from numba.np import arrayobj
+        from numba.cuda.np import arrayobj
 
         return arrayobj.populate_array(arr, **kwargs)
 

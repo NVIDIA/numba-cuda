@@ -15,15 +15,14 @@ from ctypes import c_void_p
 
 import numpy as np
 
-import numba
-from numba import _devicearray
+from numba.cuda.cext import _devicearray
 from numba.cuda.cudadrv import devices, dummyarray
 from numba.cuda.cudadrv import driver as _driver
 from numba.core import types
 from numba.cuda.core import config
-from numba.np.unsafe.ndarray import to_fixed_tuple
-from numba.np.numpy_support import numpy_version
-from numba.np import numpy_support
+from numba.cuda.np.unsafe.ndarray import to_fixed_tuple
+from numba.cuda.np.numpy_support import numpy_version
+from numba.cuda.np import numpy_support
 from numba.cuda.api_util import prepare_shape_strides_dtype
 from numba.core.errors import NumbaPerformanceWarning
 from warnings import warn
@@ -90,37 +89,31 @@ class DeviceNDArrayBase(_devicearray.DeviceArray):
         if isinstance(strides, int):
             strides = (strides,)
         dtype = np.dtype(dtype)
-        self.ndim = len(shape)
-        if len(strides) != self.ndim:
+        itemsize = dtype.itemsize
+        self.ndim = ndim = len(shape)
+        if len(strides) != ndim:
             raise ValueError("strides not match ndim")
-        self._dummy = dummyarray.Array.from_desc(
-            0, shape, strides, dtype.itemsize
+        self._dummy = dummy = dummyarray.Array.from_desc(
+            0, shape, strides, itemsize
         )
         # confirm that all elements of shape are ints
         if not all(isinstance(dim, (int, np.integer)) for dim in shape):
             raise TypeError("all elements of shape must be ints")
-        self.shape = tuple(shape)
-        self.strides = tuple(strides)
+        self.shape = shape = dummy.shape
+        self.strides = strides = dummy.strides
         self.dtype = dtype
-        self.size = int(functools.reduce(operator.mul, self.shape, 1))
+        self.size = size = dummy.size
         # prepare gpu memory
-        if self.size > 0:
+        if size:
+            self.alloc_size = alloc_size = _driver.memory_size_from_info(
+                shape, strides, itemsize
+            )
             if gpu_data is None:
-                self.alloc_size = _driver.memory_size_from_info(
-                    self.shape, self.strides, self.dtype.itemsize
-                )
-                gpu_data = devices.get_context().memalloc(self.alloc_size)
-            else:
-                self.alloc_size = _driver.device_memory_size(gpu_data)
+                gpu_data = devices.get_context().memalloc(alloc_size)
         else:
             # Make NULL pointer for empty allocation
-            if _driver.USE_NV_BINDING:
-                null = _driver.binding.CUdeviceptr(0)
-            else:
-                null = c_void_p(0)
-            gpu_data = _driver.MemoryPointer(
-                context=devices.get_context(), pointer=null, size=0
-            )
+            null = _driver.binding.CUdeviceptr(0)
+            gpu_data = _driver.MemoryPointer(pointer=null, size=0)
             self.alloc_size = 0
 
         self.gpu_data = gpu_data
@@ -204,10 +197,11 @@ class DeviceNDArrayBase(_devicearray.DeviceArray):
     @property
     def device_ctypes_pointer(self):
         """Returns the ctypes pointer to the GPU data buffer"""
-        if self.gpu_data is None:
-            return c_void_p(0)
-        else:
+        try:
+            # apparently faster in the non-exceptional case
             return self.gpu_data.device_ctypes_pointer
+        except AttributeError:
+            return c_void_p(0)
 
     @devices.require_context
     def copy_to_device(self, ary, stream=0):
@@ -906,8 +900,12 @@ def auto_device(obj, stream=0, copy=True, user_explicit=False):
     """
     if _driver.is_device_memory(obj):
         return obj, False
-    elif hasattr(obj, "__cuda_array_interface__"):
-        return numba.cuda.as_cuda_array(obj), False
+    elif (
+        interface := getattr(obj, "__cuda_array_interface__", None)
+    ) is not None:
+        from numba.cuda.api import from_cuda_array_interface
+
+        return from_cuda_array_interface(interface, owner=obj), False
     else:
         if isinstance(obj, np.void):
             devobj = from_record_like(obj, stream=stream)

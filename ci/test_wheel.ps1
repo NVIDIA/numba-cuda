@@ -31,18 +31,17 @@ $CUDA_VER_MAJOR = ($env:CUDA_VER -split '\.')[0] -join '.'
 rapids-logger "Install wheel with test dependencies"
 $package = Resolve-Path wheel\numba_cuda*.whl | Select-Object -ExpandProperty Path
 echo "Package path: $package"
-python -m pip install "${package}[cu${CUDA_VER_MAJOR},test-cu${CUDA_VER_MAJOR}]"
+python -m pip install "${package}[cu${CUDA_VER_MAJOR}]" --group "test-cu${CUDA_VER_MAJOR}"
 python -m pip install "llvmlite<0.45" "numba==0.61.*" # WAR for https://github.com/numba/llvmlite/issues/1297
 
 
 rapids-logger "Build tests"
-$NUMBA_CUDA_TEST_BIN_DIR = (python ci\get_test_binary_dir.py)
+$NUMBA_CUDA_TEST_BIN_DIR = (Join-Path -Path (Get-Location) -ChildPath "testing")
 echo "Test binary dir: $NUMBA_CUDA_TEST_BIN_DIR"
 pushd $NUMBA_CUDA_TEST_BIN_DIR
 Get-Location
 
 cmd.exe /c '.\build.bat'
-popd
 
 rapids-logger "Check GPU usage"
 nvidia-smi
@@ -51,4 +50,6 @@ rapids-logger "Show Numba system info"
 python -m numba --sysinfo
 
 rapids-logger "Run Tests"
-python -m pytest --pyargs numba.cuda.tests -v
+python -m pytest -v
+
+popd

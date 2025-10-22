@@ -19,7 +19,7 @@ from numba.cuda.testing import (
     skip_unless_cc_60,
     skip_if_cudadevrt_missing,
 )
-from numba.core.typing import signature
+from numba.cuda.typing import signature
 
 ffi = cffi.FFI()
 

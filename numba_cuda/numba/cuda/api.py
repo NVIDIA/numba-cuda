@@ -21,7 +21,6 @@ current_context = devices.get_context
 gpus = devices.gpus
 
 
-@require_context
 def from_cuda_array_interface(desc, owner=None, sync=True):
     """Create a DeviceNDArray from a cuda-array-interface description.
     The ``owner`` is the owner of the underlying memory.
@@ -47,10 +46,9 @@ def from_cuda_array_interface(desc, owner=None, sync=True):
     )
     size = driver.memory_size_from_info(shape, strides, dtype.itemsize)
 
-    devptr = driver.get_devptr_for_active_ctx(desc["data"][0])
-    data = driver.MemoryPointer(
-        current_context(), devptr, size=size, owner=owner
-    )
+    cudevptr_class = driver.binding.CUdeviceptr
+    devptr = cudevptr_class(desc["data"][0])
+    data = driver.MemoryPointer(devptr, size=size, owner=owner)
     stream_ptr = desc.get("stream", None)
     if stream_ptr is not None:
         stream = external_stream(stream_ptr)
@@ -74,12 +72,11 @@ def as_cuda_array(obj, sync=True):
     If ``sync`` is ``True``, then the imported stream (if present) will be
     synchronized.
     """
-    if not is_cuda_array(obj):
-        raise TypeError("*obj* doesn't implement the cuda array interface.")
-    else:
-        return from_cuda_array_interface(
-            obj.__cuda_array_interface__, owner=obj, sync=sync
-        )
+    if (
+        interface := getattr(obj, "__cuda_array_interface__", None)
+    ) is not None:
+        return from_cuda_array_interface(interface, owner=obj, sync=sync)
+    raise TypeError("*obj* doesn't implement the cuda array interface.")
 
 
 def is_cuda_array(obj):
@@ -270,12 +267,8 @@ def open_ipc_array(handle, shape, dtype, strides=None, offset=0):
     # compute size
     size = np.prod(shape) * dtype.itemsize
     # manually recreate the IPC mem handle
-    if driver.USE_NV_BINDING:
-        driver_handle = driver.binding.CUipcMemHandle()
-        driver_handle.reserved = handle
-    else:
-        driver_handle = driver.drvapi.cu_ipc_mem_handle()
-        driver_handle.reserved[:] = handle
+    driver_handle = driver.binding.CUipcMemHandle()
+    driver_handle.reserved = handle
     # use *IpcHandle* to open the IPC memory
     ipchandle = driver.IpcHandle(None, driver_handle, size, offset=offset)
     yield ipchandle.open_array(

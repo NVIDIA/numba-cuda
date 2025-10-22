@@ -2,15 +2,20 @@
 # SPDX-License-Identifier: BSD-2-Clause
 
 import collections
-import numpy as np
+import ctypes
 import re
 
-from numba.core import types, errors
+import numpy as np
+
+from numba.core import errors, types
 from numba.cuda.typing.templates import signature
 from numba.cuda.np import npdatetime_helpers
+from numba.core.errors import TypingError
+
+# re-export
+from numba.cuda.cgutils import is_nonelike  # noqa: F401
 
 numpy_version = tuple(map(int, np.__version__.split(".")[:2]))
-
 
 FROM_DTYPE = {
     np.dtype("bool"): types.boolean,
@@ -29,7 +34,6 @@ FROM_DTYPE = {
     np.dtype("complex128"): types.complex128,
     np.dtype(object): types.pyobject,
 }
-
 
 re_typestr = re.compile(r"[<>=\|]([a-z])(\d+)?$", re.I)
 re_datetimestr = re.compile(r"[<>=\|]([mM])8?(\[([a-z]+)\])?$", re.I)
@@ -117,6 +121,43 @@ _as_dtype_letters = {
 }
 
 
+def as_dtype(nbtype):
+    """
+    Return a numpy dtype instance corresponding to the given Numba type.
+    NotImplementedError is if no correspondence is known.
+    """
+    nbtype = types.unliteral(nbtype)
+    if isinstance(nbtype, (types.Complex, types.Integer, types.Float)):
+        return np.dtype(str(nbtype))
+    if isinstance(nbtype, (types.Boolean)):
+        return np.dtype("?")
+    if isinstance(nbtype, (types.NPDatetime, types.NPTimedelta)):
+        letter = _as_dtype_letters[type(nbtype)]
+        if nbtype.unit:
+            return np.dtype("%s[%s]" % (letter, nbtype.unit))
+        else:
+            return np.dtype(letter)
+    if isinstance(nbtype, (types.CharSeq, types.UnicodeCharSeq)):
+        letter = _as_dtype_letters[type(nbtype)]
+        return np.dtype("%s%d" % (letter, nbtype.count))
+    if isinstance(nbtype, types.Record):
+        return as_struct_dtype(nbtype)
+    if isinstance(nbtype, types.EnumMember):
+        return as_dtype(nbtype.dtype)
+    if isinstance(nbtype, types.npytypes.DType):
+        return as_dtype(nbtype.dtype)
+    if isinstance(nbtype, types.NumberClass):
+        return as_dtype(nbtype.dtype)
+    if isinstance(nbtype, types.NestedArray):
+        spec = (as_dtype(nbtype.dtype), tuple(nbtype.shape))
+        return np.dtype(spec)
+    if isinstance(nbtype, types.PyObject):
+        return np.dtype(object)
+
+    msg = f"{nbtype} cannot be represented as a NumPy dtype"
+    raise errors.NumbaNotImplementedError(msg)
+
+
 def as_struct_dtype(rec):
     """Convert Numba Record type to NumPy structured dtype"""
     assert isinstance(rec, types.Record)
@@ -158,41 +199,33 @@ def _check_struct_alignment(rec, fields):
                 raise ValueError(msg.format(npy_align, llvm_align, dt))
 
 
-def as_dtype(nbtype):
-    """
-    Return a numpy dtype instance corresponding to the given Numba type.
-    NotImplementedError is if no correspondence is known.
-    """
-    nbtype = types.unliteral(nbtype)
-    if isinstance(nbtype, (types.Complex, types.Integer, types.Float)):
-        return np.dtype(str(nbtype))
-    if isinstance(nbtype, (types.Boolean)):
-        return np.dtype("?")
-    if isinstance(nbtype, (types.NPDatetime, types.NPTimedelta)):
-        letter = _as_dtype_letters[type(nbtype)]
-        if nbtype.unit:
-            return np.dtype("%s[%s]" % (letter, nbtype.unit))
-        else:
-            return np.dtype(letter)
-    if isinstance(nbtype, (types.CharSeq, types.UnicodeCharSeq)):
-        letter = _as_dtype_letters[type(nbtype)]
-        return np.dtype("%s%d" % (letter, nbtype.count))
-    if isinstance(nbtype, types.Record):
-        return as_struct_dtype(nbtype)
-    if isinstance(nbtype, types.EnumMember):
-        return as_dtype(nbtype.dtype)
-    if isinstance(nbtype, types.npytypes.DType):
-        return as_dtype(nbtype.dtype)
-    if isinstance(nbtype, types.NumberClass):
-        return as_dtype(nbtype.dtype)
-    if isinstance(nbtype, types.NestedArray):
-        spec = (as_dtype(nbtype.dtype), tuple(nbtype.shape))
-        return np.dtype(spec)
-    if isinstance(nbtype, types.PyObject):
-        return np.dtype(object)
+def map_arrayscalar_type(val):
+    if isinstance(val, np.generic):
+        # We can't blindly call np.dtype() as it loses information
+        # on some types, e.g. datetime64 and timedelta64.
+        dtype = val.dtype
+    else:
+        try:
+            dtype = np.dtype(type(val))
+        except TypeError:
+            raise errors.NumbaNotImplementedError(
+                "no corresponding numpy dtype for %r" % type(val)
+            )
+    return from_dtype(dtype)
 
-    msg = f"{nbtype} cannot be represented as a NumPy dtype"
-    raise errors.NumbaNotImplementedError(msg)
+
+def is_array(val):
+    return isinstance(val, np.ndarray)
+
+
+def map_layout(val):
+    if val.flags["C_CONTIGUOUS"]:
+        layout = "C"
+    elif val.flags["F_CONTIGUOUS"]:
+        layout = "F"
+    else:
+        layout = "A"
+    return layout
 
 
 def select_array_wrapper(inputs):
@@ -255,7 +288,7 @@ def supported_ufunc_loop(ufunc, loop):
     as it allows for a more fine-grained incremental support.
     """
     # NOTE: Assuming ufunc for the CPUContext
-    from numba.np import ufunc_db
+    from numba.cuda.np import ufunc_db
 
     loop_sig = loop.ufunc_sig
     try:
@@ -415,7 +448,7 @@ def ufunc_find_matching_loop(ufunc, arg_types):
                         dt_unit, td_unit
                     )
                     if unit is None:
-                        raise errors.TypingError(
+                        raise TypingError(
                             f"ufunc '{ufunc_name}' is not "
                             + "supported between "
                             + f"datetime64[{dt_unit}] "
@@ -551,3 +584,215 @@ def from_struct_dtype(dtype):
     aligned = _is_aligned_struct(dtype)
 
     return types.Record(fields, size, aligned)
+
+
+def _get_bytes_buffer(ptr, nbytes):
+    """
+    Get a ctypes array of *nbytes* starting at *ptr*.
+    """
+    if isinstance(ptr, ctypes.c_void_p):
+        ptr = ptr.value
+    arrty = ctypes.c_byte * nbytes
+    return arrty.from_address(ptr)
+
+
+def _get_array_from_ptr(ptr, nbytes, dtype):
+    return np.frombuffer(_get_bytes_buffer(ptr, nbytes), dtype)
+
+
+def carray(ptr, shape, dtype=None):
+    """
+    Return a Numpy array view over the data pointed to by *ptr* with the
+    given *shape*, in C order.  If *dtype* is given, it is used as the
+    array's dtype, otherwise the array's dtype is inferred from *ptr*'s type.
+    """
+    from numba.cuda.typing.ctypes_utils import from_ctypes
+
+    try:
+        # Use ctypes parameter protocol if available
+        ptr = ptr._as_parameter_
+    except AttributeError:
+        pass
+
+    # Normalize dtype, to accept e.g. "int64" or np.int64
+    if dtype is not None:
+        dtype = np.dtype(dtype)
+
+    if isinstance(ptr, ctypes.c_void_p):
+        if dtype is None:
+            raise TypeError("explicit dtype required for void* argument")
+        p = ptr
+    elif isinstance(ptr, ctypes._Pointer):
+        ptrty = from_ctypes(ptr.__class__)
+        assert isinstance(ptrty, types.CPointer)
+        ptr_dtype = as_dtype(ptrty.dtype)
+        if dtype is not None and dtype != ptr_dtype:
+            raise TypeError(
+                "mismatching dtype '%s' for pointer %s" % (dtype, ptr)
+            )
+        dtype = ptr_dtype
+        p = ctypes.cast(ptr, ctypes.c_void_p)
+    else:
+        raise TypeError("expected a ctypes pointer, got %r" % (ptr,))
+
+    nbytes = dtype.itemsize * np.prod(shape, dtype=np.intp)
+    return _get_array_from_ptr(p, nbytes, dtype).reshape(shape)
+
+
+def farray(ptr, shape, dtype=None):
+    """
+    Return a Numpy array view over the data pointed to by *ptr* with the
+    given *shape*, in Fortran order.  If *dtype* is given, it is used as the
+    array's dtype, otherwise the array's dtype is inferred from *ptr*'s type.
+    """
+    if not isinstance(shape, int):
+        shape = shape[::-1]
+    return carray(ptr, shape, dtype).T
+
+
+def is_contiguous(dims, strides, itemsize):
+    """Is the given shape, strides, and itemsize of C layout?
+
+    Note: The code is usable as a numba-compiled function
+    """
+    nd = len(dims)
+    # Check and skip 1s or 0s in inner dims
+    innerax = nd - 1
+    while innerax > -1 and dims[innerax] <= 1:
+        innerax -= 1
+
+    # Early exit if all axis are 1s or 0s
+    if innerax < 0:
+        return True
+
+    # Check itemsize matches innermost stride
+    if itemsize != strides[innerax]:
+        return False
+
+    # Check and skip 1s or 0s in outer dims
+    outerax = 0
+    while outerax < innerax and dims[outerax] <= 1:
+        outerax += 1
+
+    # Check remaining strides to be contiguous
+    ax = innerax
+    while ax > outerax:
+        if strides[ax] * dims[ax] != strides[ax - 1]:
+            return False
+        ax -= 1
+    return True
+
+
+def is_fortran(dims, strides, itemsize):
+    """Is the given shape, strides, and itemsize of F layout?
+
+    Note: The code is usable as a numba-compiled function
+    """
+    nd = len(dims)
+    # Check and skip 1s or 0s in inner dims
+    firstax = 0
+    while firstax < nd and dims[firstax] <= 1:
+        firstax += 1
+
+    # Early exit if all axis are 1s or 0s
+    if firstax >= nd:
+        return True
+
+    # Check itemsize matches innermost stride
+    if itemsize != strides[firstax]:
+        return False
+
+    # Check and skip 1s or 0s in outer dims
+    lastax = nd - 1
+    while lastax > firstax and dims[lastax] <= 1:
+        lastax -= 1
+
+    # Check remaining strides to be contiguous
+    ax = firstax
+    while ax < lastax:
+        if strides[ax] * dims[ax] != strides[ax + 1]:
+            return False
+        ax += 1
+    return True
+
+
+def type_can_asarray(arr):
+    """Returns True if the type of 'arr' is supported by the Numba `np.asarray`
+    implementation, False otherwise.
+    """
+
+    ok = (
+        types.Array,
+        types.Sequence,
+        types.Tuple,
+        types.StringLiteral,
+        types.Number,
+        types.Boolean,
+        types.containers.ListType,
+    )
+
+    return isinstance(arr, ok)
+
+
+def type_is_scalar(typ):
+    """Returns True if the type of 'typ' is a scalar type, according to
+    NumPy rules. False otherwise.
+    https://numpy.org/doc/stable/reference/arrays.scalars.html#built-in-scalar-types
+    """
+
+    ok = (
+        types.Boolean,
+        types.Number,
+        types.UnicodeType,
+        types.StringLiteral,
+        types.NPTimedelta,
+        types.NPDatetime,
+    )
+    return isinstance(typ, ok)
+
+
+def check_is_integer(v, name):
+    """Raises TypingError if the value is not an integer."""
+    if not isinstance(v, (int, types.Integer)):
+        raise TypingError("{} must be an integer".format(name))
+
+
+def lt_floats(a, b):
+    # Adapted from NumPy commit 717c7acf which introduced the behavior of
+    # putting NaNs at the end.
+    # The code is later moved to numpy/core/src/npysort/npysort_common.h
+    # This info is gathered as of NumPy commit d8c09c50
+    return a < b or (np.isnan(b) and not np.isnan(a))
+
+
+def lt_complex(a, b):
+    if np.isnan(a.real):
+        if np.isnan(b.real):
+            if np.isnan(a.imag):
+                return False
+            else:
+                if np.isnan(b.imag):
+                    return True
+                else:
+                    return a.imag < b.imag
+        else:
+            return False
+
+    else:
+        if np.isnan(b.real):
+            return True
+        else:
+            if np.isnan(a.imag):
+                if np.isnan(b.imag):
+                    return a.real < b.real
+                else:
+                    return False
+            else:
+                if np.isnan(b.imag):
+                    return True
+                else:
+                    if a.real < b.real:
+                        return True
+                    elif a.real == b.real:
+                        return a.imag < b.imag
+                    return False

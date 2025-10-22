@@ -5,8 +5,8 @@ import types as pytypes  # avoid confusion with numba.types
 import copy
 import ctypes
 import numba.core.analysis
-from numba.core import types, typing, config, ir, errors
-from numba.cuda import utils, cgutils
+from numba.core import types, ir, errors
+from numba.cuda import utils, cgutils, typing, config
 from numba.cuda.core.ir_utils import (
     next_label,
     add_offset_to_labels,
@@ -33,12 +33,12 @@ from numba.core.analysis import (
     compute_use_defs,
     compute_live_variables,
 )
-from numba.core.imputils import impl_ret_untracked
+from numba.cuda.core.imputils import impl_ret_untracked
 from numba.cuda.extending import intrinsic
-from numba.core.typing import signature
+from numba.cuda.typing import signature
 
 from numba.cuda.core import postproc, rewrites
-from numba.np.unsafe.ndarray import empty_inferred as unsafe_empty_inferred
+from numba.cuda.np.unsafe.ndarray import empty_inferred as unsafe_empty_inferred
 import numpy as np
 import operator
 from numba.cuda.misc.special import prange
@@ -688,9 +688,9 @@ def inline_closure_call(
 
     # first, get the IR of the callee
     if isinstance(callee, pytypes.FunctionType):
-        from numba.cuda.core import compiler
+        from numba.cuda.compiler import run_frontend
 
-        callee_ir = compiler.run_frontend(callee, inline_closures=True)
+        callee_ir = run_frontend(callee, inline_closures=True)
     else:
         callee_ir = get_ir_of_code(glbls, callee_code)
 
@@ -861,7 +861,7 @@ def _get_callee_args(call_expr, callee, loc, func_ir):
             kws = dict(call_expr.kws)
         else:
             kws = {}
-        return numba.core.typing.fold_arguments(
+        return numba.cuda.typing.fold_arguments(
             pysig, args, kws, normal_handler, default_handler, stararg_handler
         )
     else:
@@ -1088,7 +1088,7 @@ def length_of_iterator(typingctx, val):
 
         def codegen(context, builder, sig, args):
             (value,) = args
-            from numba.cpython.rangeobj import range_impl_map
+            from numba.cuda.cpython.rangeobj import range_impl_map
 
             iter_type = range_impl_map[val_type][1]
             iterobj = cgutils.create_struct_proxy(iter_type)(
@@ -1119,7 +1119,7 @@ def length_of_iterator(typingctx, val):
             intp_t = context.get_value_type(types.intp)
             iterobj = context.make_helper(builder, iterty, value=value)
             arrayty = iterty.array_type
-            from numba.np.arrayobj import make_array
+            from numba.cuda.np.arrayobj import make_array
 
             ary = make_array(arrayty)(context, builder, value=iterobj.array)
             shape = cgutils.unpack_tuple(builder, ary.shape)

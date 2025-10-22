@@ -13,12 +13,12 @@ import numpy as np
 import llvmlite.ir
 from llvmlite.ir import Constant
 
-from numba.core.imputils import impl_ret_untracked, Registry
+from numba.cuda.core.imputils import impl_ret_untracked, Registry
 from numba.core import types
 from numba.cuda.core import config
 from numba.cuda.extending import overload
-from numba.core.typing import signature
-from numba.cpython.unsafe.numbers import trailing_zeros
+from numba.cuda.typing import signature
+from numba.cuda.cpython.unsafe.numbers import trailing_zeros
 from numba.cuda import cgutils
 
 registry = Registry("mathimpl")
@@ -455,7 +455,7 @@ def _unsigned(T):
     pass
 
 
-@overload(_unsigned, target="cuda")
+@overload(_unsigned)
 def _unsigned_impl(T):
     if T in types.unsigned_domain:
         return lambda T: T

@@ -6,6 +6,7 @@ build-backend = "setuptools.build_meta"
 requires = [
     "setuptools",
     "wheel",
+    "numpy",
 ]
 
 [project]
@@ -20,7 +21,7 @@ authors = [
 license = "BSD-2-clause"
 license-files = ["LICENSE", "LICENSE.numba"]
 requires-python = ">=3.9"
-dependencies = ["numba>=0.60.0"]
+dependencies = ["numba>=0.60.0", "cuda-bindings>=12.9.1,<14.0.0", "cuda-core>=0.3.2,<0.4.0dev0"]
 
 [project.optional-dependencies]
 cu12 = [
@@ -45,24 +46,25 @@ cu13 = [
     "nvidia-cuda-cccl==13.*",
 ]
 
+[dependency-groups]
 test = [
     "pre-commit",
     "psutil",
     "cffi",
     "pytest",
     "pytest-xdist",
+    "pytest-benchmark",
     "filecheck",
     "ml_dtypes",
+    "statistics",
 ]
 test-cu12 = [
-    "numba-cuda[cu12]",
-    "numba-cuda[test]",
     "nvidia-curand-cu12",
+    { include-group = "test" }
 ]
 test-cu13 = [
-    "numba-cuda[cu13]",
-    "numba-cuda[test]",
     "nvidia-curand==10.4.*",
+    { include-group = "test" }
 ]
 
 [project.urls]
@@ -80,13 +82,6 @@ include = ["numba_cuda*"]
 
 [tool.setuptools.package-data]
 "*" = ["*.cu", "*.h", "*.hpp", "*.ptx", "*.cuh", "VERSION", "Makefile"]
-
-[tool.pytest.ini_options]
-minversion = "8.0"
-testpaths = ["numba_cuda/numba/cuda/tests"]
-consider_namespace_packages = true
-# loadscope ensures the grouping required by CUDATestCase
-addopts = "--dist loadscope"
 
 [tool.ruff]
 line-length = 80
@@ -152,3 +147,65 @@ exclude = [
 "numba_cuda/numba/cuda/tests/doc_examples/test_cg.py" = ["E501"]
 "numba_cuda/numba/cuda/tests/doc_examples/test_matmul.py" = ["E501"]
 "numba_cuda/numba/tests/doc_examples/test_interval_example.py" = ["E501"]
+
+[tool.pixi.workspace]
+channels = ["conda-forge"]
+platforms = ["linux-64", "linux-aarch64", "win-64"]
+
+[tool.pixi.pypi-dependencies]
+numba-cuda = { path = ".", editable = true }
+
+[tool.pixi.feature.cu12.system-requirements]
+cuda = "12"
+
+[tool.pixi.feature.cu13.system-requirements]
+cuda = "13"
+
+[tool.pixi.build-dependencies]
+cuda-compiler = "*"
+make = "*"
+cxx-compiler = "*"
+
+[tool.pixi.feature.bench.dependencies]
+pytorch = "2.*"
+
+[tool.pixi.environments]
+cu12 = { features = ["cu12", "test", "bench"], solve-group = "cu12" }
+cu13 = { features = ["cu13", "test", "bench"], solve-group = "cu13" }
+
+[tool.pixi.target.linux.tasks]
+build-tests = { cmd = [
+    "make",
+    "-j",
+    "$(nproc)",
+    "-C",
+    "$PIXI_PROJECT_ROOT/testing",
+] }
+bench = { cmd = [
+    "pytest",
+    "$PIXI_PROJECT_ROOT/testing",
+    "--pyargs",
+    "numba.cuda.tests.benchmarks",
+    "--benchmark-only",
+    "--benchmark-enable",
+    "--benchmark-autosave",
+    "--benchmark-group-by=func",
+] }
+benchcmp = { cmd = [
+    "pytest",
+    "$PIXI_PROJECT_ROOT/testing",
+    "--pyargs",
+    "numba.cuda.tests.benchmarks",
+    "--benchmark-only",
+    "--benchmark-enable",
+    "--benchmark-group-by=func",
+    "--benchmark-compare",
+] }
+
+[tool.pixi.target.linux.tasks.test]
+cmd = ["pytest", "$PIXI_PROJECT_ROOT/testing"]
+env = { NUMBA_CUDA_TEST_BIN_DIR = "$PIXI_PROJECT_ROOT/testing" }
+depends-on = [{ task = "build-tests" }]
+
+[tool.pyrefly]
+search-path = ["./numba_cuda"]

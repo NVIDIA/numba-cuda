@@ -27,9 +27,9 @@ from numba.cuda.extending import (
     make_attribute_wrapper,
     register_model,
 )
-from numba.core.imputils import Registry as TargetRegistry
-from numba.core.imputils import lower_cast
-from numba.core.typing import signature
+from numba.cuda.core.imputils import Registry as TargetRegistry
+from numba.cuda.core.imputils import lower_cast
+from numba.cuda.typing import signature
 from numba.cuda import CUSource, declare_device
 from numba.cuda._internal.cuda_bf16 import _type___nv_bfloat16
 from numba.cuda.typing.templates import (
@@ -124,7 +124,7 @@ class _type_class_unnamed1362071(Type):
         self.bitwidth = 2 * 8
 
     def can_convert_from(self, typingctx, other):
-        from numba.core.typeconv import Conversion
+        from numba.cuda.typeconv import Conversion
 
         if other in []:
             return Conversion.safe
@@ -174,7 +174,7 @@ class _type_class_unnamed1362180(Type):
         self.bitwidth = 4 * 8
 
     def can_convert_from(self, typingctx, other):
-        from numba.core.typeconv import Conversion
+        from numba.cuda.typeconv import Conversion
 
         if other in []:
             return Conversion.safe
@@ -7903,9 +7903,9 @@ def _fp16_binary_operator(l_key, retty):
                 #  - Conversion.safe
 
                 if (
-                    (convertible == numba.core.typeconv.Conversion.exact)
-                    or (convertible == numba.core.typeconv.Conversion.promote)
-                    or (convertible == numba.core.typeconv.Conversion.safe)
+                    (convertible == numba.cuda.typeconv.Conversion.exact)
+                    or (convertible == numba.cuda.typeconv.Conversion.promote)
+                    or (convertible == numba.cuda.typeconv.Conversion.safe)
                 ):
                     return signature(retty, types.float16, types.float16)
 

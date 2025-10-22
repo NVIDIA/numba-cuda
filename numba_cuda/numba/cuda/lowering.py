@@ -9,13 +9,12 @@ from functools import partial
 from llvmlite import ir as llvm_ir
 
 from numba.core import (
-    typing,
     types,
     ir,
     generators,
     removerefctpass,
 )
-from numba.cuda import debuginfo, cgutils, utils
+from numba.cuda import debuginfo, cgutils, utils, typing
 from numba.cuda.core import ir_utils, targetconfig, funcdesc, config
 
 from numba.core.errors import (
@@ -28,7 +27,7 @@ from numba.core.errors import (
 )
 from numba.cuda.core.funcdesc import default_mangler
 from numba.cuda.core.environment import Environment
-from numba.core.analysis import compute_use_defs, must_use_alloca
+from numba.cuda.core.analysis import compute_use_defs, must_use_alloca
 from numba.cuda.misc.firstlinefinder import get_func_body_first_lineno
 from numba import version_info
 
@@ -49,7 +48,7 @@ class BaseLower(object):
     def __init__(self, context, library, fndesc, func_ir, metadata=None):
         self.library = library
         self.fndesc = fndesc
-        self.blocks = utils.SortedMap(func_ir.blocks.items())
+        self.blocks = dict(sorted(func_ir.blocks.items()))
         self.func_ir = func_ir
         self.generator_info = func_ir.generator_info
         self.metadata = metadata
@@ -293,7 +292,7 @@ class BaseLower(object):
         )
 
         # Lower all blocks
-        for offset, block in sorted(self.blocks.items()):
+        for offset, block in self.blocks.items():
             bb = self.blkmap[offset]
             self.builder.position_at_end(bb)
             self.debug_print(f"# lower block: {offset}")

@@ -10,16 +10,16 @@ import operator
 from llvmlite import ir
 from numba.core import types, errors
 from numba.cuda import cgutils
-from numba.core.imputils import (
+from numba.cuda.core.imputils import (
     Registry,
     iternext_impl,
     impl_ret_borrowed,
     impl_ret_new_ref,
     RefType,
 )
-from numba.core.extending import overload_method, overload
+from numba.cuda.extending import overload_method, overload
 from numba.misc import quicksort
-from numba.cpython import slicing
+from numba.cuda.cpython import slicing
 from numba import literal_unroll
 
 registry = Registry("listobj")
