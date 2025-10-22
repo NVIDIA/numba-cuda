@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: BSD-2-Clause
 
 from numba.cuda.extending import (
-    models,
+    core_models,
     register_model,
     type_callable,
     unbox,
@@ -25,7 +25,7 @@ lower = registry.lower
 
 
 @register_model(types.PolynomialType)
-class PolynomialModel(models.StructModel):
+class PolynomialModel(core_models.StructModel):
     def __init__(self, dmm, fe_type):
         members = [
             ("coef", fe_type.coef),

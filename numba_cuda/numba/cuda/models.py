@@ -8,9 +8,9 @@ from llvmlite import ir
 from numba.cuda.datamodel.registry import DataModelManager, register
 from numba.cuda.datamodel import PrimitiveModel
 from numba.cuda.datamodel.models import StructModel
-from numba.cuda.extending import models
+from numba.cuda.extending import core_models as models
 from numba.cuda import types
-from numba.cuda.types import Dim3, GridGroup, CUDADispatcher, Bfloat16
+from numba.cuda.ext_types import Dim3, GridGroup, CUDADispatcher, Bfloat16
 
 
 cuda_data_manager = DataModelManager()

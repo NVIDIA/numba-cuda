@@ -22,7 +22,7 @@ test_struct_model_type = TestStructModelType()
 if not config.ENABLE_CUDASIM:
     from numba.cuda import int32
     from numba.cuda.extending import (
-        models,
+        core_models,
         typeof_impl,
         type_callable,
     )
@@ -38,7 +38,7 @@ if not config.ENABLE_CUDASIM:
         return test_struct_model_type
 
     @register_model(TestStructModelType)
-    class TestStructModel(models.StructModel):
+    class TestStructModel(core_models.StructModel):
         def __init__(self, dmm, fe_type):
             members = [("x", int32), ("y", int32)]
             super().__init__(dmm, fe_type, members)

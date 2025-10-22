@@ -24,7 +24,7 @@ from numba.cuda.typeconv.rules import default_type_manager
 from numba.cuda.typing.templates import fold_arguments
 from numba.cuda.typing.typeof import Purpose, typeof
 
-from numba.cuda import typing, types
+from numba.cuda import typing, types, ext_types
 from numba.cuda.api import get_current_device
 from numba.cuda.args import wrap_arg
 from numba.core.bytecode import get_code_object
@@ -1538,7 +1538,7 @@ class CUDADispatcher(serialize.ReduceMixin, _MemoMixin, _DispatcherBase):
 
     @property
     def _numba_type_(self):
-        return types.CUDADispatcher(self)
+        return ext_types.CUDADispatcher(self)
 
     def enable_caching(self):
         self._cache = CUDACache(self.py_func)

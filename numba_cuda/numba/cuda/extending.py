@@ -28,12 +28,11 @@ from numba.cuda.core.imputils import (  # noqa: F401
 )  # noqa: F401
 from numba.cuda.core.pythonapi import box, unbox, reflect, NativeValue  # noqa: F401
 from numba.cuda.serialize import ReduceMixin
-from numba.cuda.datamodel import models  # noqa: F401
-from numba.cuda.datamodel import register_default as register_model  # noqa: F401, E501
+from numba.cuda.datamodel import models as core_models  # noqa: F401
 
 
-# from numba.cuda.models import register_model  # noqa: F401
-# from numba.cuda import models  # noqa: F401
+from numba.cuda.models import register_model  # noqa: F401
+from numba.cuda import models  # noqa: F401
 
 
 def make_attribute_wrapper(typeclass, struct_attr, python_attr):
@@ -51,8 +50,11 @@ def make_attribute_wrapper(typeclass, struct_attr, python_attr):
     from numba.cuda.core.imputils import impl_ret_borrowed
     from numba.cuda import cgutils
 
+    from numba.cuda.models import cuda_data_manager
     from numba.cuda.cudadecl import registry as cuda_registry
     from numba.cuda.cudaimpl import registry as cuda_impl_registry
+
+    data_model_manager = cuda_data_manager.chain(default_manager)
 
     if not isinstance(typeclass, type) or not issubclass(typeclass, types.Type):
         raise TypeError(
@@ -63,7 +65,7 @@ def make_attribute_wrapper(typeclass, struct_attr, python_attr):
         """
         Get the Numba type of member *struct_attr* in *typ*.
         """
-        model = default_manager.lookup(typ)
+        model = data_model_manager.lookup(typ)
         if not isinstance(model, StructModel):
             raise TypeError(
                 "make_struct_attribute_wrapper() needs a type "

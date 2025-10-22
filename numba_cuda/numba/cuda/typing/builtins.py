@@ -24,7 +24,7 @@ from numba.cuda.typing.templates import (
 from numba.cuda.extending import (
     typeof_impl,
     type_callable,
-    models,
+    core_models,
     register_model,
     make_attribute_wrapper,
 )
@@ -1200,13 +1200,13 @@ def type_index_value(context):
 
 
 @register_model(IndexValueType)
-class IndexValueModel(models.StructModel):
+class IndexValueModel(core_models.StructModel):
     def __init__(self, dmm, fe_type):
         members = [
             ("index", types.intp),
             ("value", fe_type.val_typ),
         ]
-        models.StructModel.__init__(self, dmm, fe_type, members)
+        core_models.StructModel.__init__(self, dmm, fe_type, members)
 
 
 make_attribute_wrapper(IndexValueType, "index", "index")

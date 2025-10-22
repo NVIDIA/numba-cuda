@@ -21,7 +21,7 @@ from numba.cuda.typing.templates import (
     signature,
     Registry,
 )
-from numba.cuda.types import dim3
+from numba.cuda.ext_types import dim3
 from numba import cuda
 
 registry = Registry()
