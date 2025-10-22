@@ -22,7 +22,7 @@ class ArgHint(metaclass=abc.ABCMeta):
         :param retr:
             a list of clean-up work to do after the kernel's been run.
             Append 0-arg lambdas to it!
-        :return: a value (usually an `DeviceNDArray`) to be passed to
+        :return: a value (usually an `_DeviceNDArray`) to be passed to
             the kernel
         """
         pass

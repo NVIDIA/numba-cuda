@@ -11,6 +11,10 @@ Memory management
 Data transfer
 =============
 
+.. note::
+  DeviceNDArray is deprecated. Prefer CuPy for array operations including
+  memory transfers.
+
 Even though Numba can automatically transfer NumPy arrays to the device,
 it can only do so conservatively by always transferring device memory back to
 the host when a kernel finishes. To avoid the unnecessary transfer for
@@ -38,6 +42,9 @@ buffer using the following APIs:
 Device arrays
 -------------
 
+.. note::
+  DeviceNDArray is deprecated. Prefer CuPy for array operations.
+
 Device array references have the following methods.  These methods are to be
 called in host code, not within CUDA-jitted functions.
 
@@ -52,6 +59,11 @@ called in host code, not within CUDA-jitted functions.
 Pinned memory
 =============
 
+.. note::
+  DeviceNDArray is deprecated. Prefer CuPy for array operations including
+  allocating pinned memory
+
+
 .. autofunction:: numba.cuda.pinned
    :noindex:
 .. autofunction:: numba.cuda.pinned_array
@@ -62,6 +74,10 @@ Pinned memory
 
 Mapped memory
 =============
+
+.. note::
+  DeviceNDArray is deprecated. Prefer CuPy for array operations including
+  allocating mapped memory
 
 .. autofunction:: numba.cuda.mapped
    :noindex:
@@ -75,6 +91,10 @@ Mapped memory
 
 Managed memory
 ==============
+
+.. note::
+  DeviceNDArray is deprecated. Prefer CuPy for array operations including
+  allocating managed memory
 
 .. autofunction:: numba.cuda.managed_array
    :noindex:
