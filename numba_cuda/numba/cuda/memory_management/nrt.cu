@@ -91,13 +91,12 @@ nrt_varsize_dtor(void *ptr, size_t size, void *info) {
 
 __device__ NRT_MemInfo* NRT_MemInfo_new_varsize(size_t size)
 {
-    NRT_MemInfo *mi = NULL;
     void *data = NRT_Allocate(size);
     if (data == NULL) {
         return NULL; /* return early as allocation failed */
     }
 
-    mi = NRT_MemInfo_new(data, size, nrt_varsize_dtor, NULL);
+    NRT_MemInfo *mi = NRT_MemInfo_new(data, size, nrt_varsize_dtor, NULL);
 
     return mi;
 }

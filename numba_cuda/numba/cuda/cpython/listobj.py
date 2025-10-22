@@ -304,7 +304,7 @@ class ListInstance(_ListPayloadMixin):
         else:
             dtypestr = str(self.dtype)
         fn = cgutils.get_or_insert_function(
-            mod, fnty, "numba_cuda_dtor_list_{}".format(dtypestr)
+            mod, fnty, f"numba_cuda_dtor_list_{dtypestr}"
         )
         if not fn.is_declaration:
             # End early if the dtor is already defined
