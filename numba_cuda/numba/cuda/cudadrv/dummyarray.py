@@ -245,6 +245,7 @@ class Array(object):
     is_array = True
 
     @classmethod
+    @functools.cache
     def from_desc(cls, offset, shape, strides, itemsize):
         dims = []
         for ashape, astride in zip(shape, strides):
