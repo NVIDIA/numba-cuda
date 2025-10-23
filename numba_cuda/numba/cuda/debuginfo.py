@@ -18,14 +18,16 @@ def _get_llvmlite_version():
     """Get llvmlite version as tuple (major, minor, patch)."""
     try:
         import llvmlite
+
         version_str = llvmlite.__version__
         # Parse version string like "0.46.0" or "0.46.0dev"
-        parts = version_str.split('.')
+        parts = version_str.split(".")
         major = int(parts[0])
         minor = int(parts[1])
         return (major, minor)
     except Exception:
         return (0, 0)
+
 
 def _check_polymorphic_debug_info_support():
     """Check if CTK and llvmlite support polymorphic debug info.
@@ -38,6 +40,7 @@ def _check_polymorphic_debug_info_support():
     """
     try:
         from numba.cuda.cudadrv import runtime
+
         ctk_version = runtime.get_version()
         llvmlite_version = _get_llvmlite_version()
 
@@ -53,17 +56,18 @@ def _check_polymorphic_debug_info_support():
     except Exception:
         return (False, False)
 
+
 # Check support and determine mode
-(DEBUG_POLY_SUPPORTED,
- DEBUG_POLY_USE_TYPED_CONST) = _check_polymorphic_debug_info_support()
+(DEBUG_POLY_SUPPORTED, DEBUG_POLY_USE_TYPED_CONST) = (
+    _check_polymorphic_debug_info_support()
+)
 
 # Set config based on polymorphic debug info support
 if not hasattr(config, "CUDA_DEBUG_POLY"):
     config.CUDA_DEBUG_POLY = DEBUG_POLY_SUPPORTED
 if not hasattr(config, "CUDA_DEBUG_POLY_USE_TYPED_CONST"):
-    config.CUDA_DEBUG_POLY_USE_TYPED_CONST = (
-        DEBUG_POLY_USE_TYPED_CONST
-    )
+    config.CUDA_DEBUG_POLY_USE_TYPED_CONST = DEBUG_POLY_USE_TYPED_CONST
+
 
 @contextmanager
 def suspend_emission(builder):
@@ -699,13 +703,13 @@ class CUDADIBuilder(DIBuilder):
                             # Polymorphic debug info with DW_TAG_variant
                             # extraData depends on llvmlite version
                             if config.CUDA_DEBUG_POLY_USE_TYPED_CONST:
-                                metadata_dict["extraData"] = (
-                                    ir.IntType(8)(index)
+                                metadata_dict["extraData"] = ir.IntType(8)(
+                                    index
                                 )
                             else:
                                 # Use metadata node reference
-                                metadata_dict["extraData"] = (
-                                    m.add_metadata([ir.IntType(8)(index)])
+                                metadata_dict["extraData"] = m.add_metadata(
+                                    [ir.IntType(8)(index)]
                                 )
                             # Add offset to each variant member
                             # Offset equals the element's own width
@@ -729,11 +733,14 @@ class CUDADIBuilder(DIBuilder):
                     {
                         "tag": ir.DIToken("DW_TAG_member"),
                         "name": "discriminator",
-                        "baseType": m.add_debug_info("DIBasicType", {
-                            "name": "int",
-                            "size": _BYTE_SIZE,
-                            "encoding": ir.DIToken("DW_ATE_unsigned")
-                        }),
+                        "baseType": m.add_debug_info(
+                            "DIBasicType",
+                            {
+                                "name": "int",
+                                "size": _BYTE_SIZE,
+                                "encoding": ir.DIToken("DW_ATE_unsigned"),
+                            },
+                        ),
                         "size": _BYTE_SIZE,
                         "flags": ir.DIToken("DIFlagArtificial"),
                     },
@@ -782,7 +789,7 @@ class CUDADIBuilder(DIBuilder):
                         "elements": m.add_metadata(meta),
                         "size": maxwidth,
                     },
-                    is_distinct = True,
+                    is_distinct=True,
                 )
         # For other cases, use upstream Numba implementation
         return super()._var_type(lltype, size, datamodel=datamodel)
