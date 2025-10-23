@@ -7,6 +7,10 @@ from numba import cuda
 from numba.cuda import config
 
 
+def array_median_global(arr):
+    return np.median(arr)
+
+
 class TestArrayReductions(MemoryLeakMixin, TestCase):
     """
     Test array reduction methods and functions such as .sum(), .max(), etc.
@@ -436,3 +440,59 @@ class TestArrayReductions(MemoryLeakMixin, TestCase):
         ]
         for arr in arrays:
             check(arr)
+
+    def test_median_basic(self):
+        def variations(a):
+            # Sorted, reversed, random, many duplicates
+            yield a
+            a = a[::-1].copy()
+            yield a
+            np.random.shuffle(a)
+            yield a
+            a[a % 4 >= 1] = 3.5
+            yield a
+
+        self.check_median_basic(array_median_global, variations)
+
+    def check_median_basic(self, pyfunc, array_variations):
+        # cfunc = jit(nopython=True)(pyfunc)
+
+        def check(arr):
+            @cuda.jit
+            def kernel(out):
+                gid = cuda.grid(1)
+                if gid < 1:
+                    print(np.median(arr))
+                    print(arr[2])
+                    out[0] = np.median(arr)
+
+            expected = pyfunc(arr)
+            out = cuda.to_device(np.zeros(1, dtype=np.float64))
+            kernel[1, 1](out)
+
+            got = out.copy_to_host()[0]
+
+            self.assertPreciseEqual(expected, got)
+
+        # Empty array case
+        # check(np.array([]))
+
+        # Odd sizes
+        def check_odd(a):
+            check(a)
+            a = a.reshape((9, 7))
+            check(a)
+            check(a.T)
+
+        for a in array_variations(np.arange(63) + 10.5):
+            check_odd(a)
+
+        # Even sizes
+        def check_even(a):
+            check(a)
+            a = a.reshape((4, 16))
+            check(a)
+            check(a.T)
+
+        for a in array_variations(np.arange(64) + 10.5):
+            check_even(a)
