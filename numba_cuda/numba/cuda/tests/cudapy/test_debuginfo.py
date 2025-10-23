@@ -404,8 +404,9 @@ class TestCudaDebugInfo(CUDATestCase):
         match = re.compile(pat).search(llvm_ir)
         self.assertIsNone(match, msg=llvm_ir)
 
-    @unittest.skipIf(config.CUDA_DEBUG_POLY,
-                     "Uses old union format, not variant_part")
+    @unittest.skipIf(
+        config.CUDA_DEBUG_POLY, "Uses old union format, not variant_part"
+    )
     def test_union_poly_types(self):
         sig = (types.int32, types.int32)
 
@@ -463,8 +464,7 @@ class TestCudaDebugInfo(CUDATestCase):
         expected = "[1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0]"
         self.assertIn(expected, out.getvalue())
 
-    @unittest.skipUnless(config.CUDA_DEBUG_POLY,
-                         "CUDA_DEBUG_POLY not enabled")
+    @unittest.skipUnless(config.CUDA_DEBUG_POLY, "CUDA_DEBUG_POLY not enabled")
     def test_poly_variant_part(self):
         """Test polymorphic variables with DW_TAG_variant_part.
 
