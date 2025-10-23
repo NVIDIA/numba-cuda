@@ -36,7 +36,9 @@ def _fill_stride_by_order(shape, dtype, order):
     strides = [0] * ndims
     if order == "C":
         strides[-1] = dtype.itemsize
-        for d in reversed(range(ndims - 1)):
+        # -2 because we subtract one for zero-based indexing and another one
+        # for skipping the already-filled-in last element
+        for d in range(ndims - 2, -1, -1):
             strides[d] = strides[d + 1] * shape[d + 1]
     elif order == "F":
         strides[0] = dtype.itemsize
