@@ -1713,12 +1713,10 @@ class CUDALower(Lower):
                 # Bitcast union pointer directly to i8* and write
                 # discriminant at offset 0
                 discriminant_ptr = self.builder.bitcast(
-                    ptr,
-                    llvm_ir.PointerType(llvm_ir.IntType(8))
+                    ptr, llvm_ir.PointerType(llvm_ir.IntType(8))
                 )
                 discriminant_i8 = llvm_ir.Constant(
-                    llvm_ir.IntType(8),
-                    discriminant_val
+                    llvm_ir.IntType(8), discriminant_val
                 )
                 self.builder.store(discriminant_i8, discriminant_ptr)
                 # Secondly write data at offset = sizeof(fetype) in bytes
@@ -1726,18 +1724,15 @@ class CUDALower(Lower):
                 sizeof_bytes = self.context.get_abi_sizeof(lltype)
                 # Bitcast to i8* and use byte-level GEP
                 byte_ptr = self.builder.bitcast(
-                    ptr,
-                    llvm_ir.PointerType(llvm_ir.IntType(8))
+                    ptr, llvm_ir.PointerType(llvm_ir.IntType(8))
                 )
                 data_byte_ptr = self.builder.gep(
                     byte_ptr,
-                    [llvm_ir.Constant(llvm_ir.IntType(32),
-                                      sizeof_bytes)],
+                    [llvm_ir.Constant(llvm_ir.IntType(32), sizeof_bytes)],
                 )
                 # Cast to the correct type pointer
                 castptr = self.builder.bitcast(
-                    data_byte_ptr,
-                    llvm_ir.PointerType(lltype)
+                    data_byte_ptr, llvm_ir.PointerType(lltype)
                 )
                 self.builder.store(value, castptr)
                 return
@@ -1932,13 +1927,11 @@ class CUDALower(Lower):
                 sizeof_bytes = self.context.get_abi_sizeof(lltype)
                 # Bitcast to i8* and use byte-level GEP
                 byte_ptr = self.builder.bitcast(
-                    ptr,
-                    llvm_ir.PointerType(llvm_ir.IntType(8))
+                    ptr, llvm_ir.PointerType(llvm_ir.IntType(8))
                 )
                 value_byte_ptr = self.builder.gep(
                     byte_ptr,
-                    [llvm_ir.Constant(llvm_ir.IntType(32),
-                                      sizeof_bytes)],
+                    [llvm_ir.Constant(llvm_ir.IntType(32), sizeof_bytes)],
                 )
                 # Cast to the correct type pointer
                 castptr = self.builder.bitcast(
@@ -1946,9 +1939,7 @@ class CUDALower(Lower):
                 )
             else:
                 # Otherwise, just bitcast to the correct type
-                castptr = self.builder.bitcast(
-                    ptr, llvm_ir.PointerType(lltype)
-                )
+                castptr = self.builder.bitcast(ptr, llvm_ir.PointerType(lltype))
             return castptr
         else:
             return super().getvar(name)
