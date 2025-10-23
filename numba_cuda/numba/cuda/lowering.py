@@ -1693,6 +1693,56 @@ class CUDALower(Lower):
         """
         Store the value into the given variable.
         """
+        # Handle polymorphic variables with CUDA_DEBUG_POLY enabled
+        if config.CUDA_DEBUG_POLY:
+            src_name = name.split(".")[0]
+            if src_name in self.poly_var_typ_map:
+                # Ensure allocation happens first (if needed)
+                fetype = self.typeof(name)
+                self._alloca_var(name, fetype)
+                # Discriminant and data are located in the same union
+                ptr = self.poly_var_loc_map[src_name]
+                # Firstly write discriminant to the beginning of union as i8
+                dtype = types.UnionType(self.poly_var_typ_map[src_name])
+                # Compute discriminant = index of type in sorted union
+                if isinstance(fetype, types.Literal):
+                    lookup_type = fetype.literal_type
+                else:
+                    lookup_type = fetype
+                discriminant_val = list(dtype.types).index(lookup_type)
+                # Bitcast union pointer directly to i8* and write
+                # discriminant at offset 0
+                discriminant_ptr = self.builder.bitcast(
+                    ptr,
+                    llvm_ir.PointerType(llvm_ir.IntType(8))
+                )
+                discriminant_i8 = llvm_ir.Constant(
+                    llvm_ir.IntType(8),
+                    discriminant_val
+                )
+                self.builder.store(discriminant_i8, discriminant_ptr)
+                # Secondly write data at offset = sizeof(fetype) in bytes
+                lltype = self.context.get_value_type(fetype)
+                sizeof_bytes = self.context.get_abi_sizeof(lltype)
+                # Bitcast to i8* and use byte-level GEP
+                byte_ptr = self.builder.bitcast(
+                    ptr,
+                    llvm_ir.PointerType(llvm_ir.IntType(8))
+                )
+                data_byte_ptr = self.builder.gep(
+                    byte_ptr,
+                    [llvm_ir.Constant(llvm_ir.IntType(32),
+                                      sizeof_bytes)],
+                )
+                # Cast to the correct type pointer
+                castptr = self.builder.bitcast(
+                    data_byte_ptr,
+                    llvm_ir.PointerType(lltype)
+                )
+                self.builder.store(value, castptr)
+                return
+
+        # For non-polymorphic variables, use parent implementation
         super().storevar(value, name, argidx)
 
         # Emit llvm.dbg.value instead of llvm.dbg.declare for local scalar
@@ -1818,8 +1868,12 @@ class CUDALower(Lower):
                     datamodel = self.context.data_model_manager[dtype]
                     # UnionType has sorted set of types, max at last index
                     maxsizetype = dtype.types[-1]
-                    # Create a single element aggregate type
-                    aggr_type = types.UniTuple(maxsizetype, 1)
+                    if config.CUDA_DEBUG_POLY:
+                        # allocate double the size for (discriminant, data)
+                        aggr_type = types.UniTuple(maxsizetype, 2)
+                    else:
+                        # allocate single element for data only
+                        aggr_type = types.UniTuple(maxsizetype, 1)
                     lltype = self.context.get_value_type(aggr_type)
                     ptr = self.alloca_lltype(src_name, lltype, datamodel)
                     # save the location of the union type for polymorphic var
@@ -1870,9 +1924,31 @@ class CUDALower(Lower):
             src_name = name.split(".")[0]
             fetype = self.typeof(name)
             lltype = self.context.get_value_type(fetype)
-            castptr = self.builder.bitcast(
-                self.poly_var_loc_map[src_name], llvm_ir.PointerType(lltype)
-            )
+            ptr = self.poly_var_loc_map[src_name]
+
+            if config.CUDA_DEBUG_POLY:
+                # With CUDA_DEBUG_POLY enabled, read value at
+                # offset = sizeof(fetype) in bytes
+                sizeof_bytes = self.context.get_abi_sizeof(lltype)
+                # Bitcast to i8* and use byte-level GEP
+                byte_ptr = self.builder.bitcast(
+                    ptr,
+                    llvm_ir.PointerType(llvm_ir.IntType(8))
+                )
+                value_byte_ptr = self.builder.gep(
+                    byte_ptr,
+                    [llvm_ir.Constant(llvm_ir.IntType(32),
+                                      sizeof_bytes)],
+                )
+                # Cast to the correct type pointer
+                castptr = self.builder.bitcast(
+                    value_byte_ptr, llvm_ir.PointerType(lltype)
+                )
+            else:
+                # Otherwise, just bitcast to the correct type
+                castptr = self.builder.bitcast(
+                    ptr, llvm_ir.PointerType(lltype)
+                )
             return castptr
         else:
             return super().getvar(name)
