@@ -320,8 +320,6 @@ def order_by_target_specificity(target, templates, fnkey=""):
     if templates == []:
         return []
 
-    from numba.core.target_extension import target_registry
-
     # fish out templates that are specific to the target if a target is
     # specified
     DEFAULT_TARGET = "generic"
@@ -331,13 +329,15 @@ def order_by_target_specificity(target, templates, fnkey=""):
         md = getattr(temp_cls, "metadata", {})
         hw = md.get("target", DEFAULT_TARGET)
         if hw is not None:
-            hw_clazz = target_registry[hw]
-            if target.inherits_from(hw_clazz):
-                usable.append((temp_cls, hw_clazz, ix))
+            if hw in ("generic", "cuda"):
+                usable.append((temp_cls, ix))
 
     # sort templates based on target specificity
+    # cuda-specific templates get priority before generic ones
     def key(x):
-        return target.__mro__.index(x[1])
+        md = getattr(x[0], "metadata", {})
+        hw = md.get("target", DEFAULT_TARGET)
+        return (0 if hw == "cuda" else 1, x[1])
 
     order = [x[0] for x in sorted(usable, key=key)]
 
