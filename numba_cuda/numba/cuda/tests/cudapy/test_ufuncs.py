@@ -10,12 +10,10 @@ from numba import cuda, types, njit, typeof
 from numba.cuda import config
 from numba.cuda.np import numpy_support
 from numba.cuda.tests.support import TestCase
-from numba.cuda.tests.support import MemoryLeakMixin
 
 
-class BaseUFuncTest(MemoryLeakMixin):
+class BaseUFuncTest:
     def setUp(self):
-        super(BaseUFuncTest, self).setUp()
         self.inputs = [
             (np.uint32(0), types.uint32),
             (np.uint32(1), types.uint32),

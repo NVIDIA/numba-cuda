@@ -193,7 +193,7 @@ def _loop_lift_modify_blocks(
     Modify the block inplace to call to the lifted-loop.
     Returns a dictionary of blocks of the lifted-loop.
     """
-    from numba.core.dispatcher import LiftedLoop
+    from numba.cuda.dispatcher import LiftedLoop
 
     # Copy loop blocks
     loop = loopinfo.loop
@@ -402,7 +402,7 @@ def with_lifting(func_ir, typingctx, targetctx, flags, locals):
     from numba.cuda.core import postproc
 
     def dispatcher_factory(func_ir, objectmode=False, **kwargs):
-        from numba.core.dispatcher import LiftedWith, ObjModeLiftedWith
+        from numba.cuda.dispatcher import LiftedWith, ObjModeLiftedWith
 
         myflags = flags.copy()
         if objectmode:

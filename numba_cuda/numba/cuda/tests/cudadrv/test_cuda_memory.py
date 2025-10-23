@@ -6,17 +6,18 @@ import ctypes
 import numpy as np
 
 from numba.cuda.cudadrv import driver, drvapi, devices
-from numba.cuda.testing import unittest, ContextResettingTestCase
+from numba.cuda.testing import unittest, CUDATestCase
 from numba.cuda.testing import skip_on_cudasim
 
 
 @skip_on_cudasim("CUDA Memory API unsupported in the simulator")
-class TestCudaMemory(ContextResettingTestCase):
+class TestCudaMemory(CUDATestCase):
     def setUp(self):
         super().setUp()
         self.context = devices.get_context()
 
     def tearDown(self):
+        self.context.reset()
         del self.context
         super(TestCudaMemory, self).tearDown()
 
@@ -53,10 +54,7 @@ class TestCudaMemory(ContextResettingTestCase):
         # Use MemoryPointer.view to create derived pointer
 
         def handle_val(mem):
-            if driver.USE_NV_BINDING:
-                return int(mem.handle)
-            else:
-                return mem.handle.value
+            return int(mem.handle)
 
         def check(m, offset):
             # create view
@@ -89,17 +87,13 @@ class TestCudaMemory(ContextResettingTestCase):
             dtor_invoked[0] += 1
 
         # Ensure finalizer is called when pointer is deleted
-        ptr = driver.MemoryPointer(
-            context=self.context, pointer=fake_ptr, size=40, finalizer=dtor
-        )
+        ptr = driver.MemoryPointer(pointer=fake_ptr, size=40, finalizer=dtor)
         self.assertEqual(dtor_invoked[0], 0)
         del ptr
         self.assertEqual(dtor_invoked[0], 1)
 
         # Ensure removing derived pointer doesn't call finalizer
-        ptr = driver.MemoryPointer(
-            context=self.context, pointer=fake_ptr, size=40, finalizer=dtor
-        )
+        ptr = driver.MemoryPointer(pointer=fake_ptr, size=40, finalizer=dtor)
         owned = ptr.own()
         del owned
         self.assertEqual(dtor_invoked[0], 1)
@@ -107,7 +101,7 @@ class TestCudaMemory(ContextResettingTestCase):
         self.assertEqual(dtor_invoked[0], 2)
 
 
-class TestCudaMemoryFunctions(ContextResettingTestCase):
+class TestCudaMemoryFunctions(CUDATestCase):
     def setUp(self):
         super().setUp()
         self.context = devices.get_context()
@@ -153,7 +147,7 @@ class TestCudaMemoryFunctions(ContextResettingTestCase):
 
 
 @skip_on_cudasim("CUDA Memory API unsupported in the simulator")
-class TestMVExtent(ContextResettingTestCase):
+class TestMVExtent(CUDATestCase):
     def test_c_contiguous_array(self):
         ary = np.arange(100)
         arysz = ary.dtype.itemsize * ary.size

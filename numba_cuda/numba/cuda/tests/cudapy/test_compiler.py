@@ -557,12 +557,9 @@ class TestCompile(unittest.TestCase):
                 link_obj = LinkableCode.from_path(link)
                 if link_obj.kind == "cu":
                     # if link is a cu file, result contains a compiled object code
-                    if cuda.config.CUDA_USE_NVIDIA_BINDING:
-                        from cuda.core.experimental import ObjectCode
+                    from cuda.core.experimental import ObjectCode
 
-                        assert isinstance(code_list[1], ObjectCode)
-                    else:
-                        assert isinstance(code_list[1], bytes)
+                    assert isinstance(code_list[1], ObjectCode)
                 else:
                     assert code_list[1].kind == link_obj.kind
 
@@ -581,13 +578,10 @@ class TestCompile(unittest.TestCase):
         )
         assert len(code_list) == 2
 
-        if cuda.config.CUDA_USE_NVIDIA_BINDING:
-            self.assertRegex(
-                str(code_list[1].code.decode()),
-                r"\.file.*test_device_functions",
-            )
-        else:
-            self.assertRegex(code_list[1], r"\.file.*test_device_functions")
+        self.assertRegex(
+            str(code_list[1].code.decode()),
+            r"\.file.*test_device_functions",
+        )
 
     @unittest.skipIf(not TEST_BIN_DIR, "necessary binaries not generated.")
     def test_compile_all_debug(self):
@@ -604,12 +598,9 @@ class TestCompile(unittest.TestCase):
         )
         assert len(code_list) == 2
 
-        if cuda.config.CUDA_USE_NVIDIA_BINDING:
-            self.assertRegex(
-                str(code_list[1].code.decode()), r"\.section\s+\.debug_info"
-            )
-        else:
-            self.assertRegex(code_list[1], r"\.section\s+\.debug_info")
+        self.assertRegex(
+            str(code_list[1].code.decode()), r"\.section\s+\.debug_info"
+        )
 
 
 @skip_on_cudasim("Compilation unsupported in the simulator")

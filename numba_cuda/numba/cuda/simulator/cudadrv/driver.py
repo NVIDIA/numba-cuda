@@ -62,8 +62,5 @@ def launch_kernel(*args, **kwargs):
     raise RuntimeError(msg)
 
 
-USE_NV_BINDING = False
-
-
 def _have_nvjitlink():
     return False

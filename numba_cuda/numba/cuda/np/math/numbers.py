@@ -9,10 +9,10 @@ import numpy as np
 from llvmlite import ir
 from llvmlite.ir import Constant
 
-from numba.core.imputils import impl_ret_untracked
-from numba.core import typing, types, errors
-from numba.cuda import cgutils
-from numba.cpython.unsafe.numbers import viewer
+from numba.cuda.core.imputils import impl_ret_untracked
+from numba.core import types, errors
+from numba.cuda import cgutils, typing
+from numba.cuda.cpython.unsafe.numbers import viewer
 
 
 def _int_arith_flags(rettype):

@@ -11,9 +11,11 @@ package=$(realpath wheel/numba_cuda*.whl)
 echo "Package path: ${package}"
 
 DEPENDENCIES=(
-    "${package}[test]"
+    "${package}"
     "cuda-python==${CUDA_VER_MAJOR_MINOR%.*}.*"
     "cuda-core==0.3.*"
+    "--group"
+    "test"
 )
 
 # Constrain oldest supported dependencies for testing
@@ -26,7 +28,7 @@ python -m pip install "${DEPENDENCIES[@]}"
 rapids-logger "Build tests"
 export NUMBA_CUDA_TEST_BIN_DIR=`pwd`/testing
 pushd $NUMBA_CUDA_TEST_BIN_DIR
-make
+make -j $(nproc)
 
 rapids-logger "Test importing numba.cuda"
 python -c "from numba import cuda"

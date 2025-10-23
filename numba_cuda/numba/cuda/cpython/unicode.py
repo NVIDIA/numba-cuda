@@ -18,7 +18,7 @@ from numba.cuda.extending import (
 from numba.cuda.core.pythonapi import box, unbox
 from numba.cuda.extending import make_attribute_wrapper, intrinsic
 from numba.cuda.models import register_model
-from numba.core.imputils import (
+from numba.cuda.core.imputils import (
     iternext_impl,
     impl_ret_new_ref,
     RefType,
@@ -33,7 +33,7 @@ from numba.cuda.core.pythonapi import (
     PY_UNICODE_2BYTE_KIND,
     PY_UNICODE_4BYTE_KIND,
 )
-from numba._helperlib import c_helpers
+from numba.cuda.cext._helperlib import c_helpers
 from numba.cuda.core.unsafe.bytes import memcpy_region
 from numba.core.errors import TypingError
 from numba.cuda.cpython.unicode_support import (

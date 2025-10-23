@@ -35,6 +35,7 @@ DEPENDENCIES=(
     "psutil"
     "pytest"
     "pytest-xdist"
+    "pytest-benchmark"
     "cffi"
     "ml_dtypes"
     "python=${RAPIDS_PY_VERSION}"
@@ -66,7 +67,7 @@ nvidia-smi
 rapids-logger "Build test binaries"
 export NUMBA_CUDA_TEST_BIN_DIR=`pwd`/testing
 pushd $NUMBA_CUDA_TEST_BIN_DIR
-make
+make -j $(nproc)
 
 rapids-logger "Show Numba system info"
 python -m numba --sysinfo

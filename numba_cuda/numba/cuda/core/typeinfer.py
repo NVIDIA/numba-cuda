@@ -35,8 +35,9 @@ from pprint import pprint
 from collections import OrderedDict, defaultdict
 from functools import reduce
 
-from numba.core import types, utils, typing, config, ir
-from numba.core.typing.templates import Signature
+from numba.core import types, utils, config, ir
+from numba.cuda import typing
+from numba.cuda.typing.templates import Signature
 from numba.core.errors import (
     TypingError,
     UntypedAttributeError,
@@ -48,7 +49,7 @@ from numba.core.errors import (
     NumbaValueError,
 )
 from numba.cuda.core.funcdesc import qualifying_prefix
-from numba.core.typeconv import Conversion
+from numba.cuda.typeconv import Conversion
 
 _logger = logging.getLogger(__name__)
 

@@ -9,8 +9,8 @@ CUDA_VER_MAJOR_MINOR=${CUDA_VER%.*}
 rapids-logger "Install cuDF Wheel"
 
 pip install \
-    --extra-index-url=https://pypi.anaconda.org/rapidsai-wheels-nightly/simple \
-    "cudf-cu12>=25.10.0a0,<=25.10" "dask-cuda>=25.10.0a0,<=25.10"
+    --extra-index-url=https://pypi.nvidia.com \
+    "cudf-cu12==25.10.*"
 
 
 rapids-logger "Remove Extraneous numba-cuda"
@@ -20,10 +20,12 @@ rapids-logger "Install wheel with test dependencies"
 package=$(realpath wheel/numba_cuda*.whl)
 echo "Package path: ${package}"
 python -m pip install \
-    "${package}[test]" \
+    "${package}" \
     "cuda-python==${CUDA_VER_MAJOR_MINOR%.*}.*" \
     "cuda-core==0.3.*" \
     "nvidia-nvjitlink-cu12" \
+    --group test
+
 
 
 rapids-logger "Shallow clone cuDF repository"
@@ -39,13 +41,13 @@ rapids-logger "Show Numba system info"
 python -m numba --sysinfo
 
 rapids-logger "Run Scalar UDF tests"
-python -m pytest python/cudf/cudf/tests/dataframe/methods/test_apply.py -W ignore::UserWarning -W ignore::DeprecationWarning:numba.cuda.core.config
+python -m pytest python/cudf/cudf/tests/dataframe/methods/test_apply.py -W ignore::UserWarning
 
 rapids-logger "Run GroupBy UDF tests"
-python -m pytest python/cudf/cudf/tests/groupby/test_apply.py -k test_groupby_apply_jit -W ignore::UserWarning -W ignore::DeprecationWarning:numba.cuda.core.config
+python -m pytest python/cudf/cudf/tests/groupby/test_apply.py -k test_groupby_apply_jit -W ignore::UserWarning
 
 rapids-logger "Run NRT Stats Counting tests"
-python -m pytest python/cudf/cudf/tests/private_objects/test_nrt_stats.py  -W ignore::UserWarning -W ignore::DeprecationWarning:numba.cuda.core.config
+python -m pytest python/cudf/cudf/tests/private_objects/test_nrt_stats.py  -W ignore::UserWarning
 
 
 popd

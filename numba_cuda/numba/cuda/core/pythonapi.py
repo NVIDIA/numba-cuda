@@ -10,13 +10,13 @@ from llvmlite import ir
 from llvmlite.ir import Constant
 
 import ctypes
-from numba import _helperlib
+from numba.cuda.cext import _helperlib
 from numba.core import (
     errors,
     types,
-    imputils,
 )
 from numba.cuda import cgutils, lowering, config, serialize
+from numba.cuda.core import imputils
 from numba.cuda.utils import PYVERSION
 
 

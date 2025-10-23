@@ -14,18 +14,33 @@ from numba.cuda.cudadrv.driver import (
     _Linker,
     driver,
     launch_kernel,
-    USE_NV_BINDING,
     _have_nvjitlink,
 )
 from numba.cuda.cudadrv import devices
 from numba.cuda.api import get_current_device
-from numba.cuda.utils import cached_file_read
+from numba.cuda.utils import _readenv, cached_file_read
 from numba.cuda.cudadrv.linkable_code import CUSource
 from numba.cuda.typing.templates import signature
 
-from numba.core.extending import intrinsic, overload_classmethod
+from numba.cuda.extending import intrinsic, overload_classmethod
 
 _nrt_mstats = namedtuple("nrt_mstats", ["alloc", "free", "mi_alloc", "mi_free"])
+
+
+# Check environment variable or config for NRT statistics enablement
+NRT_STATS = _readenv("NUMBA_CUDA_NRT_STATS", bool, False) or getattr(
+    config, "NUMBA_CUDA_NRT_STATS", False
+)
+if not hasattr(config, "NUMBA_CUDA_NRT_STATS"):
+    config.CUDA_NRT_STATS = NRT_STATS
+
+
+# Check environment variable or config for NRT enablement
+ENABLE_NRT = _readenv("NUMBA_CUDA_ENABLE_NRT", bool, False) or getattr(
+    config, "NUMBA_CUDA_ENABLE_NRT", False
+)
+if not hasattr(config, "NUMBA_CUDA_ENABLE_NRT"):
+    config.CUDA_ENABLE_NRT = ENABLE_NRT
 
 
 def get_include():
@@ -147,8 +162,7 @@ class _Runtime:
         memsys_size = ctypes.c_uint64()
         ptr, nbytes = self._memsys_module.get_global_symbol("memsys_size")
         device_memsys_size = ptr.device_ctypes_pointer
-        if USE_NV_BINDING:
-            device_memsys_size = device_memsys_size.value
+        device_memsys_size = device_memsys_size.value
         driver.cuMemcpyDtoH(
             ctypes.addressof(memsys_size), device_memsys_size, nbytes
         )

@@ -13,7 +13,7 @@ import numba
 from numba.core import types, ir
 from numba.cuda import typing
 from numba.cuda.core import analysis, postproc, rewrites, config
-from numba.core.typing.templates import signature
+from numba.cuda.typing.templates import signature
 from numba.cuda.core.analysis import (
     compute_live_map,
     compute_use_defs,
@@ -832,7 +832,7 @@ def has_no_side_effect(rhs, lives, call_table):
 
         try:
             from numba.core.registry import CPUDispatcher
-            from numba.np.linalg import dot_3_mv_check_args
+            from numba.cuda.np.linalg import dot_3_mv_check_args
 
             if isinstance(call_list[0], CPUDispatcher):
                 py_func = call_list[0].py_func

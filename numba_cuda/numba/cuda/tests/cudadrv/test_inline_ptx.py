@@ -4,12 +4,12 @@
 from llvmlite import ir
 
 from numba.cuda.cudadrv import nvvm
-from numba.cuda.testing import unittest, ContextResettingTestCase
+from numba.cuda.testing import unittest, CUDATestCase
 from numba.cuda.testing import skip_on_cudasim
 
 
 @skip_on_cudasim("Inline PTX cannot be used in the simulator")
-class TestCudaInlineAsm(ContextResettingTestCase):
+class TestCudaInlineAsm(CUDATestCase):
     def test_inline_rsqrt(self):
         mod = ir.Module(__name__)
         mod.triple = "nvptx64-nvidia-cuda"

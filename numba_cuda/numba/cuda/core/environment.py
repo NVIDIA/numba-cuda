@@ -4,10 +4,8 @@
 import weakref
 import importlib
 
-from numba import _dynfunc
 
-
-class Environment(_dynfunc.Environment):
+class Environment:
     """Stores globals and constant pyobjects for runtime.
 
     It is often needed to convert b/w nopython objects and pyobjects.
@@ -24,7 +22,7 @@ class Environment(_dynfunc.Environment):
             # Avoid creating new Env
             return cls._memo[fndesc.env_name]
         except KeyError:
-            inst = cls(fndesc.lookup_globals())
+            inst = cls()
             inst.env_name = fndesc.env_name
             cls._memo[fndesc.env_name] = inst
             return inst

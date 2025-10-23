@@ -3,7 +3,6 @@
 
 import ctypes
 import numpy as np
-import weakref
 
 from numba import cuda
 from numba.cuda.core import config
@@ -58,10 +57,9 @@ if not config.ENABLE_CUDASIM:
 
             # We use an AutoFreePointer so that the finalizer will be run when
             # the reference count drops to zero.
-            ctx = weakref.proxy(self.context)
             ptr = ctypes.c_void_p(alloc_count)
             return cuda.cudadrv.driver.AutoFreePointer(
-                ctx, ptr, size, finalizer=finalizer
+                ptr, size, finalizer=finalizer
             )
 
         def initialize(self):
@@ -112,14 +110,16 @@ class TestDeviceOnlyEMMPlugin(CUDATestCase):
     def setUp(self):
         super().setUp()
         # Always start afresh with a new context and memory manager
-        cuda.close()
-        cuda.set_memory_manager(DeviceOnlyEMMPlugin)
+        ctx = cuda.current_context()
+        ctx.reset()
+        self._initial_memory_manager = ctx.memory_manager
+        ctx.memory_manager = DeviceOnlyEMMPlugin(context=ctx)
 
     def tearDown(self):
         super().tearDown()
-        # Unset the memory manager for subsequent tests
-        cuda.close()
-        cuda.cudadrv.driver._memory_manager = None
+        ctx = cuda.current_context()
+        ctx.reset()
+        ctx.memory_manager = self._initial_memory_manager
 
     def test_memalloc(self):
         mgr = cuda.current_context().memory_manager
@@ -129,6 +129,7 @@ class TestDeviceOnlyEMMPlugin(CUDATestCase):
         arr_1 = np.arange(10)
         d_arr_1 = cuda.device_array_like(arr_1)
         self.assertTrue(mgr.memalloc_called)
+
         self.assertEqual(mgr.count, 1)
         self.assertEqual(mgr.allocations[1], arr_1.nbytes)
 

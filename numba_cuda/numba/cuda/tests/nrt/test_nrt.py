@@ -11,7 +11,7 @@ from numba.cuda.tests.support import run_in_subprocess, override_config
 from numba.cuda import get_current_device
 from numba.cuda.cudadrv.nvrtc import compile
 from numba import types
-from numba.core.typing import signature
+from numba.cuda.typing import signature
 from numba import cuda
 from numba.cuda import config
 from numba.cuda.typing.templates import AbstractTemplate
@@ -173,16 +173,7 @@ class TestNrtLinking(CUDATestCase):
         cc = get_current_device().compute_capability
         ptx, _ = compile(src, "external_nrt.cu", cc)
 
-        @cuda.jit(
-            link=[
-                PTXSource(
-                    ptx.code
-                    if config.CUDA_USE_NVIDIA_BINDING
-                    else ptx.encode(),
-                    nrt=True,
-                )
-            ]
-        )
+        @cuda.jit(link=[PTXSource(ptx.code, nrt=True)])
         def kernel():
             allocate_deallocate_handle()
 
