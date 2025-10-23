@@ -31,7 +31,7 @@ def prepare_shape_strides_dtype(shape, strides, dtype, order):
 @functools.cache
 def _fill_stride_by_order(shape, dtype, order):
     ndims = len(shape)
-    if ndims == 0:
+    if not ndims:
         return ()
     strides = [0] * ndims
     if order == "C":
