@@ -2,6 +2,9 @@
 # SPDX-License-Identifier: BSD-2-Clause
 
 from numba.cuda import config
+from collections import namedtuple
+
+_nrt_mstats = namedtuple("nrt_mstats", ["alloc", "free", "mi_alloc", "mi_free"])
 
 
 class RTSys:
@@ -11,8 +14,11 @@ class RTSys:
     def memsys_enable_stats(self):
         pass
 
-    def get_allocation_stats(self):
+    def memsys_disable_stats(self):
         pass
+
+    def get_allocation_stats(self):
+        return _nrt_mstats(alloc=0, free=0, mi_alloc=0, mi_free=0)
 
 
 rtsys = RTSys()
