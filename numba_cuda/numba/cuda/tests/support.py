@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: BSD-2-Clause
 
 import cmath
+import concurrent.futures
 import contextlib
 import enum
 import gc
@@ -206,18 +207,6 @@ def run_in_subprocess(code, flags=None, env=None, timeout=30):
     return out, err
 
 
-@contextlib.contextmanager
-def captured_output(stream_name):
-    """Return a context manager used by captured_stdout/stdin/stderr
-    that temporarily replaces the sys stream *stream_name* with a StringIO."""
-    orig_stdout = getattr(sys, stream_name)
-    setattr(sys, stream_name, io.StringIO())
-    try:
-        yield getattr(sys, stream_name)
-    finally:
-        setattr(sys, stream_name, orig_stdout)
-
-
 def captured_stdout():
     """Capture the output of sys.stdout:
 
@@ -225,7 +214,7 @@ def captured_stdout():
         print("hello")
     self.assertEqual(stdout.getvalue(), "hello\n")
     """
-    return captured_output("stdout")
+    return contextlib.redirect_stdout(io.StringIO())
 
 
 def captured_stderr():
@@ -235,7 +224,7 @@ def captured_stderr():
         print("hello", file=sys.stderr)
     self.assertEqual(stderr.getvalue(), "hello\n")
     """
-    return captured_output("stderr")
+    return contextlib.redirect_stderr(io.StringIO())
 
 
 class TestCase(unittest.TestCase):
@@ -878,40 +867,33 @@ def run_in_new_process_in_cache_dir(func, cache_dir, verbose=True):
         stdout: str
         stderr: str
     """
-    ctx = mp.get_context("spawn")
-    qout = ctx.Queue()
     with override_env_config("NUMBA_CACHE_DIR", cache_dir):
-        proc = ctx.Process(target=_remote_runner, args=[func, qout])
-        proc.start()
-        proc.join()
-        stdout = qout.get_nowait()
-        stderr = qout.get_nowait()
-        if verbose and stdout.strip():
-            print()
-            print("STDOUT".center(80, "-"))
-            print(stdout)
-        if verbose and stderr.strip():
-            print(file=sys.stderr)
-            print("STDERR".center(80, "-"), file=sys.stderr)
-            print(stderr, file=sys.stderr)
-    return {
-        "exitcode": proc.exitcode,
-        "stdout": stdout,
-        "stderr": stderr,
-    }
+        with concurrent.futures.ProcessPoolExecutor(
+            mp_context=mp.get_context("spawn")
+        ) as exe:
+            future = exe.submit(_remote_runner, func)
+
+        stdout, stderr, exitcode = future.result()
+        if verbose:
+            if stdout:
+                print()
+                print("STDOUT".center(80, "-"))
+                print(stdout)
+            if stderr:
+                print(file=sys.stderr)
+                print("STDERR".center(80, "-"), file=sys.stderr)
+                print(stderr, file=sys.stderr)
+    return {"exitcode": exitcode, "stdout": stdout, "stderr": stderr}
 
 
 def _remote_runner(fn, qout):
     """Used by `run_in_new_process_caching()`"""
-    with captured_stderr() as stderr:
-        with captured_stdout() as stdout:
-            try:
-                fn()
-            except Exception:
-                traceback.print_exc()
-                exitcode = 1
-            else:
-                exitcode = 0
-        qout.put(stdout.getvalue())
-    qout.put(stderr.getvalue())
-    sys.exit(exitcode)
+    with captured_stderr() as stderr, captured_stdout() as stdout:
+        try:
+            fn()
+        except Exception:
+            traceback.print_exc(file=sys.stderr)
+            exitcode = 1
+        else:
+            exitcode = 0
+        return stdout.getvalue().strip(), stderr.getvalue().strip(), exitcode
