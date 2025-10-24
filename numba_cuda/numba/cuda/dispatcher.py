@@ -1623,11 +1623,15 @@ class CUDADispatcher(serialize.ReduceMixin, _MemoMixin, _DispatcherBase):
         try:
             return typeof(val, Purpose.argument)
         except ValueError:
-            if cuda.is_cuda_array(val):
+            if (
+                interface := getattr(val, "__cuda_array_interface__")
+            ) is not None:
                 # When typing, we don't need to synchronize on the array's
                 # stream - this is done when the kernel is launched.
+
                 return typeof(
-                    cuda.as_cuda_array(val, sync=False), Purpose.argument
+                    cuda.from_cuda_array_interface(interface, sync=False),
+                    Purpose.argument,
                 )
             else:
                 raise

@@ -3023,6 +3023,7 @@ def host_memory_extents(obj):
     return mviewbuf.memoryview_get_extents(obj)
 
 
+@functools.cache
 def memory_size_from_info(shape, strides, itemsize):
     """Get the byte size of a contiguous memory buffer given the shape, strides
     and itemsize.
