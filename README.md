@@ -40,14 +40,14 @@ cd testing
 make -j $(nproc)
 export NUMBA_CUDA_TEST_BIN_DIR=`pwd`
 # Execute tests
-pytest -n auto -v
+pytest -n auto -v --dist loadscope
 ```
 
 Alternatively, you can use [pixi](https://pixi.sh/latest/installation/) to wrap all of that up for you:
 
 ```
 # run tests against CUDA 13
-pixi run -e cu13 test -n auto -v
+pixi run -e cu13 test -n auto -v --dist loadscope
 ```
 
 
