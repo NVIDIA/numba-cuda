@@ -39,10 +39,9 @@ def from_cuda_array_interface(desc, owner=None, sync=True):
 
     shape = desc["shape"]
     strides = desc.get("strides")
-    dtype = np.dtype(desc["typestr"])
 
     shape, strides, dtype = prepare_shape_strides_dtype(
-        shape, strides, dtype, order="C"
+        shape, strides, desc["typestr"], order="C"
     )
     size = driver.memory_size_from_info(shape, strides, dtype.itemsize)
 

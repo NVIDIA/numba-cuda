@@ -204,7 +204,7 @@ benchcmp = { cmd = [
     "numba.cuda.tests.benchmarks",
     "--benchmark-only",
     "--benchmark-enable",
-    "--benchmark-group-by=func",
+    "--benchmark-group-by=name",
     "--benchmark-compare",
 ] }
 
