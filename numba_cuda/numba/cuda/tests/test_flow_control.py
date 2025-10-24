@@ -6,7 +6,7 @@ import itertools
 import unittest
 from numba.cuda import jit
 from numba.cuda.core.controlflow import CFGraph, ControlFlowAnalysis
-from numba.core import types
+from numba.cuda import types
 from numba.cuda.core.bytecode import (
     FunctionIdentity,
     ByteCode,

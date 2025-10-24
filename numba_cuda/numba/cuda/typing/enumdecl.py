@@ -6,7 +6,7 @@ Typing for enums.
 """
 
 import operator
-from numba.core import types
+from numba.cuda import types
 from numba.cuda.typing.templates import (
     AbstractTemplate,
     AttributeTemplate,

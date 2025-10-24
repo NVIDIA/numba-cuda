@@ -5,8 +5,7 @@ import functools
 from collections import namedtuple
 
 from llvmlite import ir
-from numba.core import types, errors
-from numba.cuda import cgutils, config
+from numba.cuda import types, errors, cgutils, config
 from numba.cuda.utils import PYVERSION
 
 

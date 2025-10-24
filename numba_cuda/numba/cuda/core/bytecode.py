@@ -8,8 +8,7 @@ import itertools
 
 from types import CodeType, ModuleType
 
-from numba.core import errors, serialize
-from numba.cuda import utils
+from numba.cuda import errors, serialize, utils
 from numba.cuda.utils import PYVERSION
 
 

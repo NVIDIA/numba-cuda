@@ -9,12 +9,11 @@ import pickle
 import numpy as np
 
 import numba
-from numba.cuda import jit
-from numba.core import types, errors
+from numba.cuda import jit, types, errors
 from numba.cuda.tests.support import (
     TestCase,
 )
-from numba.core.errors import LoweringError
+from numba.cuda.errors import LoweringError
 import unittest
 
 from numba.cuda.extending import (

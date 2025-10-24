@@ -10,16 +10,15 @@ import collections
 import warnings
 
 import numba
-from numba.core import types, ir
-from numba.cuda import typing
-from numba.cuda.core import analysis, postproc, rewrites, config
+from numba.cuda import typing, types
+from numba.cuda.core import analysis, postproc, rewrites, config, ir
 from numba.cuda.typing.templates import signature
 from numba.cuda.core.analysis import (
     compute_live_map,
     compute_use_defs,
     compute_cfg_from_blocks,
 )
-from numba.core.errors import (
+from numba.cuda.errors import (
     TypingError,
     UnsupportedError,
     NumbaPendingDeprecationWarning,
@@ -2490,7 +2489,7 @@ def legalize_single_scope(blocks):
     return len({blk.scope for blk in blocks.values()}) == 1
 
 
-def check_and_legalize_ir(func_ir, flags: "numba.core.flags.Flags"):
+def check_and_legalize_ir(func_ir, flags: "numba.cuda.flags.Flags"):
     """
     This checks that the IR presented is legal
     """

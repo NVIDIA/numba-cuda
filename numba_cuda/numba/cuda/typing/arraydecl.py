@@ -5,7 +5,7 @@ import numpy as np
 import operator
 from collections import namedtuple
 
-from numba.core import types
+from numba.cuda import types
 from numba.cuda import utils
 from numba.cuda.typing.templates import (
     AttributeTemplate,
@@ -17,7 +17,7 @@ from numba.cuda.typing.templates import (
 
 # import time side effect: array operations requires typing support of sequence
 # defined in collections: e.g. array.shape[i]
-from numba.core.errors import (
+from numba.cuda.errors import (
     TypingError,
     RequireLiteralValue,
     NumbaTypeError,
@@ -30,6 +30,10 @@ from numba.cuda.cgutils import is_nonelike
 
 numpy_version = tuple(map(int, np.__version__.split(".")[:2]))
 
+registry = Registry()
+infer = registry.register
+infer_global = registry.register_global
+infer_getattr = registry.register_attr
 
 registry = Registry()
 infer = registry.register

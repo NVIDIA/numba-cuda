@@ -28,7 +28,7 @@ class TestReduction(CUDATestCase):
         # ex_reduction.import.begin
         import numpy as np
         from numba import cuda
-        from numba.types import int32
+        from numba.cuda.types import int32
         # ex_reduction.import.end
 
         # ex_reduction.allocate.begin

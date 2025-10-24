@@ -6,17 +6,12 @@ from collections import namedtuple
 from warnings import warn, catch_warnings, simplefilter
 import copy
 
-from numba.core import ir as numba_ir
-from numba.core import (
-    types,
-    bytecode,
-)
 from numba.cuda.core.options import ParallelOptions
 from numba.core.compiler_lock import global_compiler_lock
-from numba.core.errors import NumbaWarning, NumbaInvalidConfigWarning
+from numba.cuda.errors import NumbaWarning, NumbaInvalidConfigWarning
 from numba.cuda.core.interpreter import Interpreter
 
-from numba.cuda import cgutils, typing, lowering, nvvmutils, utils
+from numba.cuda import cgutils, typing, lowering, nvvmutils, utils, types
 from numba.cuda.api import get_current_device
 from numba.cuda.codegen import ExternalCodeLibrary
 
@@ -26,6 +21,8 @@ from numba.cuda.core import (
     postproc,
     config,
     funcdesc,
+    bytecode,
+    ir as numba_ir,
 )
 from numba.cuda.cudadrv import nvvm, nvrtc
 from numba.cuda.cudadrv.linkable_code import LinkableCode
@@ -744,7 +741,7 @@ def compile_cuda(
     flags.lto = lto
 
     # Run compilation pipeline
-    from numba.core.target_extension import target_override
+    from numba.cuda.core.target_extension import target_override
 
     with target_override("cuda"):
         cres = compile_extra(

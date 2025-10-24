@@ -9,9 +9,10 @@ import cffi
 
 import numpy as np
 
-from numba import cuda, int32
+from numba import cuda
+from numba.cuda import int32
 from numba.cuda import config
-from numba.types import CPointer
+from numba.cuda.types import CPointer
 from numba.cuda.testing import (
     unittest,
     CUDATestCase,

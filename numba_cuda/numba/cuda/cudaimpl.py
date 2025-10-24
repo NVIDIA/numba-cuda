@@ -11,8 +11,8 @@ import llvmlite.binding as ll
 
 from numba.cuda.core.imputils import Registry
 from numba.cuda.typing.npydecl import parse_dtype
-from numba.core.datamodel import models
-from numba.core import types
+from numba.cuda.datamodel import models
+from numba.cuda import types
 from numba.cuda import cgutils
 from numba.cuda.np import ufunc_db
 from numba.cuda.np.npyimpl import register_ufuncs
@@ -21,7 +21,7 @@ from numba import cuda
 from numba.cuda import nvvmutils, stubs
 from numba.cuda.types import dim3, CUDADispatcher
 
-registry = Registry()
+registry = Registry("cudaimpl")
 lower = registry.lower
 lower_attr = registry.lower_getattr
 lower_constant = registry.lower_constant

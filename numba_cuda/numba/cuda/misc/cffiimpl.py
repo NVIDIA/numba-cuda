@@ -6,8 +6,7 @@ Implementation of some CFFI functions
 """
 
 from numba.cuda.core.imputils import Registry
-from numba.core import types
-from numba.cuda.np import arrayobj
+from numba.cuda import types
 
 registry = Registry("cffiimpl")
 
@@ -21,5 +20,5 @@ def from_buffer(context, builder, sig, args):
     # Type inference should have prevented passing a buffer from an
     # array to a pointer of the wrong type
     assert fromty.dtype == sig.return_type.dtype
-    ary = arrayobj.make_array(fromty)(context, builder, val)
+    ary = context.make_array(fromty)(context, builder, val)
     return ary.data

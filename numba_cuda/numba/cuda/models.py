@@ -5,10 +5,11 @@ import functools
 
 from llvmlite import ir
 
-from numba.core.datamodel.registry import DataModelManager, register
-from numba.core.datamodel import PrimitiveModel
-from numba.cuda.extending import core_models
-from numba.core import types
+from numba.cuda.datamodel.registry import DataModelManager, register
+from numba.cuda.datamodel import PrimitiveModel
+from numba.cuda.datamodel.models import StructModel
+from numba.cuda.extending import models
+from numba.cuda import types
 from numba.cuda.types import Dim3, GridGroup, CUDADispatcher, Bfloat16
 
 
@@ -18,21 +19,21 @@ register_model = functools.partial(register, cuda_data_manager)
 
 
 @register_model(Dim3)
-class Dim3Model(core_models.StructModel):
+class Dim3Model(StructModel):
     def __init__(self, dmm, fe_type):
         members = [("x", types.int32), ("y", types.int32), ("z", types.int32)]
         super().__init__(dmm, fe_type, members)
 
 
 @register_model(GridGroup)
-class GridGroupModel(core_models.PrimitiveModel):
+class GridGroupModel(models.PrimitiveModel):
     def __init__(self, dmm, fe_type):
         be_type = ir.IntType(64)
         super().__init__(dmm, fe_type, be_type)
 
 
 @register_model(types.Float)
-class FloatModel(core_models.PrimitiveModel):
+class FloatModel(models.PrimitiveModel):
     def __init__(self, dmm, fe_type):
         if fe_type == types.float16:
             be_type = ir.IntType(16)
@@ -45,7 +46,7 @@ class FloatModel(core_models.PrimitiveModel):
         super(FloatModel, self).__init__(dmm, fe_type, be_type)
 
 
-register_model(CUDADispatcher)(core_models.OpaqueModel)
+register_model(CUDADispatcher)(models.OpaqueModel)
 
 
 @register_model(Bfloat16)
