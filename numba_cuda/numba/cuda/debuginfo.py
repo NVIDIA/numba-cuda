@@ -34,7 +34,6 @@ def _check_polymorphic_debug_info_support():
         - use_typed_const: True for typed constant,
                            False for node reference
     """
-    #return (True, True) # JL_debugging
     ctk_version = runtime.getLocalRuntimeVersion()
     llvmlite_version = _get_llvmlite_version()
 
