@@ -204,8 +204,7 @@ class CUDACodeLibrary(serialize.ReduceMixin, CodeLibrary):
 
         device = devices.get_context().device
         cc = device.compute_capability
-        if cc >= (9, 0):
-            cc = (cc[0], cc[1], "a")
+        cc = (cc[0], cc[1], "a" if cc >= (9, 0) else "")
         return cc
 
     def get_asm_str(self, cc=None):
