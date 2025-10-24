@@ -123,17 +123,17 @@ class DeviceNDArrayBase(_devicearray.DeviceArray):
 
     @property
     def __cuda_array_interface__(self):
-        if self.device_ctypes_pointer.value is not None:
-            ptr = self.device_ctypes_pointer.value
+        if (value := self.device_ctypes_pointer.value) is not None:
+            ptr = value
         else:
             ptr = 0
 
         return {
-            "shape": tuple(self.shape),
+            "shape": self.shape,
             "strides": None if is_contiguous(self) else tuple(self.strides),
             "data": (ptr, False),
             "typestr": self.dtype.str,
-            "stream": int(self.stream) if self.stream != 0 else None,
+            "stream": int(stream) if (stream := self.stream) != 0 else None,
             "version": 3,
         }
 
