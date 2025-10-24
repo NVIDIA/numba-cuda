@@ -21,6 +21,7 @@ from pprint import pformat
 
 from types import ModuleType
 from importlib import import_module
+from importlib.util import find_spec
 import numpy as np
 
 from inspect import signature as pysignature  # noqa: F401
@@ -611,6 +612,13 @@ class _RedirectSubpackage(ModuleType):
     def __reduce__(self):
         args = (self.__old_module_states, self.__new_module)
         return _RedirectSubpackage, args
+
+
+def redirect_numba_module(old_module_locals, numba_module, numba_cuda_module):
+    if find_spec("numba"):
+        return _RedirectSubpackage(old_module_locals, numba_module)
+    else:
+        return _RedirectSubpackage(old_module_locals, numba_cuda_module)
 
 
 def get_hashable_key(value):
