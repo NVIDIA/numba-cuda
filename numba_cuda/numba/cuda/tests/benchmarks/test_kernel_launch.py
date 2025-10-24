@@ -23,6 +23,10 @@ from pytest import param
             ),
             id="torch",
         ),
+        param(
+            lambda: pytest.importorskip("cupy").empty(128, dtype=np.float32),
+            id="cupy",
+        ),
     ],
 )
 def test_one_arg(benchmark, array_func):
@@ -57,6 +61,13 @@ def test_one_arg(benchmark, array_func):
                 for _ in range(len(string.ascii_lowercase))
             ],
             id="torch",
+        ),
+        param(
+            lambda: [
+                pytest.importorskip("cupy").empty(128, dtype=np.float32)
+                for _ in range(len(string.ascii_lowercase))
+            ],
+            id="cupy",
         ),
     ],
 )
