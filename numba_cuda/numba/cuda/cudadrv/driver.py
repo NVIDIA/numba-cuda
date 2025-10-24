@@ -2667,7 +2667,7 @@ class _Linker(_LinkerBase):
         lto=None,
         additional_flags=None,
     ):
-        arch = f"sm_{cc[0]}{cc[1]}"
+        arch = f"sm_{cc[0]}{cc[1]}{cc[2]}"
         self.max_registers = max_registers if max_registers else None
         self.lineinfo = lineinfo
         self.cc = cc

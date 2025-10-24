@@ -203,7 +203,10 @@ class CUDACodeLibrary(serialize.ReduceMixin, CodeLibrary):
             return cc
 
         device = devices.get_context().device
-        return device.compute_capability
+        cc = device.compute_capability
+        if cc >= (9, 0):
+            cc = (cc[0], cc[1], "a")
+        return cc
 
     def get_asm_str(self, cc=None):
         cc = self._ensure_cc(cc)
@@ -333,7 +336,7 @@ class CUDACodeLibrary(serialize.ReduceMixin, CodeLibrary):
         cufunc = self._cufunc_cache.get(device.id, None)
         if cufunc:
             return cufunc
-        cubin = self.get_cubin(cc=device.compute_capability)
+        cubin = self.get_cubin()
         module = ctx.create_module_image(
             cubin, self._setup_functions, self._teardown_functions
         )
