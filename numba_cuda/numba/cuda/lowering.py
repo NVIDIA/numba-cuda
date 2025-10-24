@@ -1728,7 +1728,7 @@ class CUDALower(Lower):
                 )
                 data_byte_ptr = self.builder.gep(
                     byte_ptr,
-                    [llvm_ir.Constant(llvm_ir.IntType(32), sizeof_bytes)],
+                    [llvm_ir.Constant(llvm_ir.IntType(64), sizeof_bytes)],
                 )
                 # Cast to the correct type pointer
                 castptr = self.builder.bitcast(
@@ -1864,7 +1864,8 @@ class CUDALower(Lower):
                     # UnionType has sorted set of types, max at last index
                     maxsizetype = dtype.types[-1]
                     if config.CUDA_DEBUG_POLY:
-                        # allocate double the size for (discriminant, data)
+                        # allocate double the max element size to house
+                        # [discriminant + data]
                         aggr_type = types.UniTuple(maxsizetype, 2)
                     else:
                         # allocate single element for data only
@@ -1931,7 +1932,7 @@ class CUDALower(Lower):
                 )
                 value_byte_ptr = self.builder.gep(
                     byte_ptr,
-                    [llvm_ir.Constant(llvm_ir.IntType(32), sizeof_bytes)],
+                    [llvm_ir.Constant(llvm_ir.IntType(64), sizeof_bytes)],
                 )
                 # Cast to the correct type pointer
                 castptr = self.builder.bitcast(

@@ -3,6 +3,7 @@
 
 import abc
 import os
+import llvmlite
 from contextlib import contextmanager
 
 from llvmlite import ir
@@ -11,22 +12,17 @@ from numba.cuda.core import config
 from numba.cuda import cgutils
 from numba.cuda.datamodel.models import ComplexModel, UnionModel, UniTupleModel
 from numba.cuda.ext_types import GridGroup
+from cuda.bindings import runtime
 
 
 # Check if CUDA Toolkit and llvmlite support polymorphic debug info
 def _get_llvmlite_version():
-    """Get llvmlite version as tuple (major, minor, patch)."""
-    try:
-        import llvmlite
-
-        version_str = llvmlite.__version__
-        # Parse version string like "0.46.0" or "0.46.0dev"
-        parts = version_str.split(".")
-        major = int(parts[0])
-        minor = int(parts[1])
-        return (major, minor)
-    except Exception:
-        return (0, 0)
+    """Get llvmlite version as tuple (major, minor)."""
+    # Parse version string like "0.46.0" or "0.46.0dev"
+    parts = llvmlite.__version__.split(".")
+    major = int(parts[0])
+    minor = int(parts[1])
+    return (major, minor)
 
 
 def _check_polymorphic_debug_info_support():
@@ -38,23 +34,18 @@ def _check_polymorphic_debug_info_support():
         - use_typed_const: True for typed constant,
                            False for node reference
     """
-    try:
-        from numba.cuda.cudadrv import runtime
+    #return (True, True) # JL_debugging
+    ctk_version = runtime.getLocalRuntimeVersion()
+    llvmlite_version = _get_llvmlite_version()
 
-        ctk_version = runtime.get_version()
-        llvmlite_version = _get_llvmlite_version()
-
-        # Support should be available with CTK newer than 13.1
-        if ctk_version <= (13, 1):
-            return (False, False)
-
-        # llvmlite > 0.45: use typed constant
-        # llvmlite <= 0.45: use node reference
-        use_typed_const = llvmlite_version > (0, 45)
-        return (True, use_typed_const)
-
-    except Exception:
+    # Support not available with CTK 13.1 or older
+    if ctk_version <= (13, 1):
         return (False, False)
+
+    # llvmlite > 0.45: use typed constant
+    # llvmlite <= 0.45: use node reference
+    use_typed_const = llvmlite_version > (0, 45)
+    return (True, use_typed_const)
 
 
 # Check support and determine mode
