@@ -9,7 +9,7 @@ import cmath
 import math
 
 from numba.cuda.core.imputils import impl_ret_untracked
-from numba.core import types
+from numba.cuda import types
 from numba.cuda.typing import signature
 from numba.cuda.cpython import mathimpl
 

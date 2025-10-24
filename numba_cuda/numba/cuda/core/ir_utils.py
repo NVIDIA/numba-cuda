@@ -10,7 +10,8 @@ import collections
 import warnings
 
 import numba
-from numba.core import types, ir
+from numba.cuda import types
+from numba.core import ir
 from numba.cuda import typing
 from numba.cuda.core import analysis, postproc, rewrites, config
 from numba.cuda.typing.templates import signature

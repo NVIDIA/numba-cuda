@@ -15,9 +15,9 @@ from numba.cuda.core.compiler_machinery import (
 from numba.cuda.core import postproc, bytecode, transforms, inline_closurecall
 from numba.core import (
     errors,
-    types,
     ir,
 )
+from numba.cuda import types
 from numba.cuda.core import consts, rewrites, config
 from numba.cuda.core.interpreter import Interpreter
 

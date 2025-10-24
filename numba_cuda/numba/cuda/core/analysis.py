@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: BSD-2-Clause
 
 from collections import namedtuple, defaultdict
-from numba import types
+from numba.cuda import types
 from numba.core import ir, errors
 from numba.cuda.core import consts
 import operator

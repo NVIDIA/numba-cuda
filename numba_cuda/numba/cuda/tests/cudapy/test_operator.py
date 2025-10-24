@@ -10,8 +10,8 @@ from numba.cuda.testing import (
     skip_if_nvjitlink_missing,
 )
 from numba import cuda
-from numba.core import types
-from numba.core.types import f2, b1
+from numba.cuda import types
+from numba.cuda.types import f2, b1
 from numba.cuda.typing import signature
 import operator
 import itertools

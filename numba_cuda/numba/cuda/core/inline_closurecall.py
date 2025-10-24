@@ -5,8 +5,9 @@ import types as pytypes  # avoid confusion with numba.types
 import copy
 import ctypes
 import numba.core.analysis
-from numba.core import types, ir, errors
-from numba.cuda import utils, cgutils, typing, config
+from numba.cuda import types, config, cgutils
+from numba.core import ir, errors
+from numba.cuda import typing, utils
 from numba.cuda.core.ir_utils import (
     next_label,
     add_offset_to_labels,

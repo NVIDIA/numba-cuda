@@ -15,12 +15,13 @@ from collections.abc import Sequence
 from types import MethodType, FunctionType, MappingProxyType
 
 import numba
-from numba.core import types
+from numba.cuda import types
 from numba.core.errors import (
     TypingError,
     InternalError,
 )
 from numba.cuda.core.options import InlineOptions
+
 from numba.cuda import utils
 from numba.cuda.core import targetconfig
 
@@ -30,7 +31,6 @@ try:
     numba_sig_present = True
 except ImportError:
     numba_sig_present = False
-
 
 # info store for inliner callback functions e.g. cost model
 _inline_info = namedtuple("inline_info", "func_ir typemap calltypes signature")

@@ -8,13 +8,13 @@ from llvmlite import ir
 import warnings
 import importlib.util
 
-from numba.core import types
+from numba.cuda import types
 
 from numba.core.compiler_lock import global_compiler_lock
 from numba.core.errors import NumbaWarning
 from numba.cuda.core.base import BaseContext
 from numba.cuda.typing import cmathdecl
-from numba.core import datamodel
+from numba.cuda import datamodel
 
 from .cudadrv import nvvm
 from numba.cuda import (
@@ -61,6 +61,7 @@ class CUDATypingContext(typing.BaseContext):
     def resolve_value_type(self, val):
         # treat other dispatcher object as another device function
         from numba.cuda.dispatcher import CUDADispatcher
+        from numba.core.dispatcher import Dispatcher
 
         try:
             from numba.core.dispatcher import Dispatcher

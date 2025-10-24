@@ -10,7 +10,7 @@ from numba.cuda.testing import CUDATestCase, skip_on_cudasim
 from numba.cuda.tests.support import run_in_subprocess, override_config
 from numba.cuda import get_current_device
 from numba.cuda.cudadrv.nvrtc import compile
-from numba import types
+from numba.cuda import types
 from numba.cuda.typing import signature
 from numba import cuda
 from numba.cuda import config

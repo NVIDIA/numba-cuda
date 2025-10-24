@@ -4,7 +4,7 @@
 import numpy as np
 
 from collections import namedtuple
-from numba import void, int32, float32, float64
+from numba.cuda import void, int32, float32, float64
 from numba import guvectorize
 from numba import cuda
 from numba.cuda.testing import skip_on_cudasim, CUDATestCase

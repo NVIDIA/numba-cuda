@@ -1,8 +1,7 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-2-Clause
 
-from numba.core import types
-from numba.cuda import typing
+from numba.cuda import types, typing
 
 try:
     from numba.core.typing import Signature as CoreSignature

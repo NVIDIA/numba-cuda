@@ -10,7 +10,8 @@ from numba.cuda.compiler import run_frontend
 from numba.cuda.flags import Flags
 from numba.cuda.core.compiler import StateDict
 from numba.cuda import jit
-from numba.core import types, errors, ir
+from numba.cuda import types
+from numba.core import errors, ir
 from numba.cuda.utils import PYVERSION
 from numba.cuda.core import postproc, rewrites, ir_utils
 from numba.cuda.core.options import ParallelOptions
