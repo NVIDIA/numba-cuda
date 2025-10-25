@@ -302,5 +302,35 @@ class TestExtendingLinkage(CUDATestCase):
         np.testing.assert_equal(r, x * 2)
 
 
+@skip_on_cudasim("Extensions not supported in the simulator")
+class TestArgHandlerRegistration(CUDATestCase):
+    def test_register_arg_handler(self):
+        from numba.cuda.dispatcher import register_arg_handler, ArgHandlerBase
+
+        class NumpyArrayWrapper:
+            def __init__(self, arr):
+                self.arr = arr
+
+        class NumpyArrayWrapperArgHandler(ArgHandlerBase):
+            def prepare_args(self, ty, val, **kwargs):
+                return types.int32[::1], val.arr
+
+        register_arg_handler(
+            NumpyArrayWrapperArgHandler(), (NumpyArrayWrapper,)
+        )
+
+        @cuda.jit("void(int32[::1])")
+        def kernel(arr):
+            i = cuda.grid(1)
+            if i < arr.size:
+                arr[i] += 1
+
+        arr = np.zeros(10, dtype=np.int32)
+        wrapped_arr = NumpyArrayWrapper(arr)
+
+        kernel.forall(len(arr))(wrapped_arr)
+        np.testing.assert_equal(arr, np.ones(10, dtype=np.int32))
+
+
 if __name__ == "__main__":
     unittest.main()
