@@ -1,7 +1,8 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-2-Clause
 
-from numba.core import types, errors
+from numba.cuda import types
+from numba.core import errors
 from numba.cuda import utils
 import operator
 from .templates import (

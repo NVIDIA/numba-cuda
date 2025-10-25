@@ -7,7 +7,7 @@ except ImportError:
     msg = "Please install pygments to see highlighted dumps"
     raise ImportError(msg)
 
-import numba.core.config
+import numba.cuda.config
 from pygments.styles.manni import ManniStyle
 from pygments.styles.monokai import MonokaiStyle
 from pygments.styles.native import NativeStyle
@@ -38,4 +38,4 @@ def by_colorscheme():
         "jupyter_nb": DefaultStyle,
     }
 
-    return style_map[numba.core.config.COLOR_SCHEME]
+    return style_map[numba.cuda.config.COLOR_SCHEME]

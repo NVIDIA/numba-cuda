@@ -9,7 +9,7 @@ obtaining the pointer and numba signature.
 from functools import partial
 import numpy as np
 
-from numba.core import types
+from numba.cuda import types
 from numba.core.errors import TypingError
 from numba.cuda.typing import templates
 from numba.cuda.np import numpy_support

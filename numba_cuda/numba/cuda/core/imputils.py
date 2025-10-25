@@ -10,7 +10,7 @@ import contextlib
 from enum import Enum
 
 from numba.cuda import typing, cgutils
-from numba.core import types
+from numba.cuda import types
 from numba.cuda.typing.templates import BaseRegistryLoader
 
 

@@ -8,7 +8,7 @@ Support for typing ctypes function pointers.
 import ctypes
 import sys
 
-from numba.core import types
+from numba.cuda import types
 from numba.cuda.typing import templates
 
 _FROM_CTYPES = {

@@ -3,7 +3,7 @@
 
 from collections import defaultdict
 
-from numba.core import config
+from numba.cuda import config
 
 
 class Rewrite(object):
