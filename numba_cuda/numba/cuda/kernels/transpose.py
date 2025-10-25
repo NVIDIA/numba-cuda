@@ -26,7 +26,7 @@ def transpose(a, b=None):
     if not b:
         cols, rows = a.shape
         strides = a.dtype.itemsize * cols, a.dtype.itemsize
-        b = cuda.cudadrv.devicearray.DeviceNDArray(
+        b = cuda.cudadrv.devicearray._DeviceNDArray(
             (rows, cols), strides, dtype=a.dtype, stream=stream
         )
 
