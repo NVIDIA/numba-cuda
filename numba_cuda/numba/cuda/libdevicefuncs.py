@@ -254,7 +254,6 @@ functions = {
     "__nv_fast_cosf": (float32, [arg(name="x", ty=float32, is_ptr=False)]),
     "__nv_fast_exp10f": (float32, [arg(name="x", ty=float32, is_ptr=False)]),
     "__nv_fast_expf": (float32, [arg(name="x", ty=float32, is_ptr=False)]),
-    "__nv_fast_exp2f": (float32, [arg(name="x", ty=float32, is_ptr=False)]),
     "__nv_fast_fdividef": (
         float32,
         [
