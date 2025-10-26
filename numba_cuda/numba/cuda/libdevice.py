@@ -1066,6 +1066,16 @@ def fast_expf(x):
     """
 
 
+def fast_exp2f(x):
+    """
+    See https://docs.nvidia.com/cuda/libdevice-users-guide/__nv_fast_exp2f.html
+
+    :param x: Argument.
+    :type x: float32
+    :rtype: float32
+    """
+
+
 def fast_fdividef(x, y):
     """
     See https://docs.nvidia.com/cuda/libdevice-users-guide/__nv_fast_fdividef.html
