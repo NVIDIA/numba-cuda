@@ -1,6 +1,7 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-2-Clause
 
+import sys
 from typing import List
 from dataclasses import dataclass, field
 from numba import cuda, float32
@@ -117,6 +118,7 @@ class TestFastMathOption(CUDATestCase):
             ),
         )
 
+    @unittest.skipUnless(sys.version_info >= (3, 11), "Python 3.11+ required")
     def test_tanhf_compile_ptx(self):
         def tanh_kernel(r, x):
             r[0] = tanh(x)
