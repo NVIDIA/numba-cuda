@@ -183,8 +183,8 @@ class TestFastMathOption(CUDATestCase):
         self._test_fast_math_binary(
             nextafter,
             FastMathCriterion(
-                fast_expected=["lg2.approx.ftz.f32 "],  # FIX
-                prec_unexpected=["lg2.approx.ftz.f32 "],  # FIX
+                fast_expected=[".ftz.f32 "],
+                prec_unexpected=[".ftz.f32 "],
             ),
         )
 
