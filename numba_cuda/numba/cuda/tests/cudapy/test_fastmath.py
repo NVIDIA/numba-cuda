@@ -118,7 +118,6 @@ class TestFastMathOption(CUDATestCase):
             ),
         )
 
-    @unittest.skipUnless(sys.version_info >= (3, 11), "Python 3.11+ required")
     def test_tanhf_compile_ptx(self):
         def tanh_kernel(r, x):
             r[0] = tanh(x)
@@ -143,6 +142,7 @@ class TestFastMathOption(CUDATestCase):
             ),
         )
 
+    @unittest.skipUnless(sys.version_info >= (3, 11), "Python 3.11+ required")
     def test_exp2f(self):
         self._test_fast_math_unary(
             exp2,
