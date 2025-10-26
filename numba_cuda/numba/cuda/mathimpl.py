@@ -339,9 +339,9 @@ def impl_exp2(ty, libfunc):
         def exp2_impl_inline_asm():
             fnty = ir.FunctionType(ir.FloatType(), [ir.FloatType()])
             if context.fastmath:
-                asm = ir.InlineAsm(fnty, "exp2.approx.ftz.f32 $0, $1;", "=f,f")
+                asm = ir.InlineAsm(fnty, "ex2.approx.ftz.f32 $0, $1;", "=f,f")
             else:
-                asm = ir.InlineAsm(fnty, "exp2.approx.f32, $0 $1;", "=f, f")
+                asm = ir.InlineAsm(fnty, "ex2.approx.f32 $0, $1;", "=f,f")
             return builder.call(asm, args)
 
         if ty == float32:

@@ -147,9 +147,9 @@ class TestFastMathOption(CUDATestCase):
         self._test_fast_math_unary(
             exp2,
             FastMathCriterion(
-                fast_expected=["exp2.approx.ftz.f32 "], 
-                prec_expected=["exp2.approx.f32 "],
-                prec_unexpected=["exp2.approx.ftz.f32 "]
+                fast_expected=["ex2.approx.ftz.f32 "], 
+                prec_expected=["ex2.approx.f32 "],
+                prec_unexpected=["ex2.approx.ftz.f32 "]
             ),
         )
 
