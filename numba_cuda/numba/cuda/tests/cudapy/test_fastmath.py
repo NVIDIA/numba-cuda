@@ -5,7 +5,7 @@ from typing import List
 from dataclasses import dataclass, field
 from numba import cuda, float32
 from numba.cuda.compiler import compile_ptx_for_current_device, compile_ptx
-from math import cos, sin, tan, exp, log, log10, log2, pow, tanh
+from math import cos, sin, tan, exp, exp2, log, log10, log2, pow, tanh
 from operator import truediv
 import numpy as np
 from numba.cuda.testing import CUDATestCase, skip_on_cudasim, skip_unless_cc_75
@@ -138,6 +138,16 @@ class TestFastMathOption(CUDATestCase):
             exp,
             FastMathCriterion(
                 fast_unexpected=["fma.rn.f32 "], prec_expected=["fma.rn.f32 "]
+            ),
+        )
+
+    def test_exp2f(self):
+        self._test_fast_math_unary(
+            exp2,
+            FastMathCriterion(
+                fast_expected=["exp2.approx.ftz.f32 "], 
+                prec_expected=["exp2.approx.f32 "],
+                prec_unexpected=["exp2.approx.ftz.f32 "]
             ),
         )
 
