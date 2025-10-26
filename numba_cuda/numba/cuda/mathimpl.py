@@ -26,6 +26,8 @@ unarys += [("ceil", "ceilf", math.ceil)]
 unarys += [("floor", "floorf", math.floor)]
 unarys += [("fabs", "fabsf", math.fabs)]
 unarys += [("exp", "expf", math.exp)]
+if sys.version_info >= (3, 11):
+    unarys += [("exp2", "exp2f", math.exp2)]
 unarys += [("expm1", "expm1f", math.expm1)]
 unarys += [("erf", "erff", math.erf)]
 unarys += [("erfc", "erfcf", math.erfc)]
@@ -330,33 +332,6 @@ impl_tanh(types.float64, libdevice.tanh)
 
 impl_unary_int(math.tanh, int64, libdevice.tanh)
 impl_unary_int(math.tanh, uint64, libdevice.tanh)
-
-
-if sys.version_info >= (3, 11):
-    def impl_exp2(ty, libfunc):
-        def lower_exp2_impl(context, builder, sig, args):
-            def exp2_impl_inline_asm():
-                fnty = ir.FunctionType(ir.FloatType(), [ir.FloatType()])
-                if context.fastmath:
-                    asm = ir.InlineAsm(fnty, "ex2.approx.ftz.f32 $0, $1;", "=f,f")
-                else:
-                    asm = ir.InlineAsm(fnty, "ex2.approx.f32 $0, $1;", "=f,f")
-                return builder.call(asm, args)
-
-            if ty == float32:
-                return exp2_impl_inline_asm()
-            else:
-                exp2_sig = typing.signature(ty, ty)
-                libfunc_impl = context.get_function(libfunc, exp2_sig)
-                return libfunc_impl(builder, args)
-
-        lower(math.exp2, ty)(lower_exp2_impl)
-
-    impl_exp2(types.float32, libdevice.exp2f)
-    impl_exp2(types.float64, libdevice.exp2)
-
-    impl_unary_int(math.exp2, int64, libdevice.exp2)
-    impl_unary_int(math.exp2, uint64, libdevice.exp2)
 
 
 # Complex power implementations - translations of _Py_c_pow from CPython
