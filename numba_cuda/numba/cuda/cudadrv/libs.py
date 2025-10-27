@@ -1,9 +1,11 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: BSD-2-Clause
+
 """CUDA Toolkit libraries lookup utilities.
 
 CUDA Toolkit libraries can be available via either:
 
-- the `cuda-nvcc` and `cuda-nvrtc` conda packages for CUDA 12,
-- the `cudatoolkit` conda package for CUDA 11,
+- the `cuda-nvcc` and `cuda-nvrtc` conda packages,
 - a user supplied location from CUDA_HOME,
 - a system wide location,
 - package-specific locations (e.g. the Debian NVIDIA packages),
@@ -14,11 +16,11 @@ import os
 import sys
 import ctypes
 
-from numba.misc.findlib import find_lib
+from numba.cuda.misc.findlib import find_lib
 from numba.cuda.cuda_paths import get_cuda_paths
 from numba.cuda.cudadrv.driver import locate_driver_and_loader, load_driver
 from numba.cuda.cudadrv.error import CudaSupportError
-from numba.core import config
+from numba.cuda.core import config
 
 
 if sys.platform == "win32":
@@ -52,9 +54,9 @@ def get_cudalib(lib, static=False):
     """
     if lib in {"nvrtc", "nvvm"}:
         return get_cuda_paths()[lib].info or _dllnamepattern % lib
-    else:
-        dir_type = "static_cudalib_dir" if static else "cudalib_dir"
-        libdir = get_cuda_paths()[dir_type].info
+
+    dir_type = "static_cudalib_dir" if static else "cudalib_dir"
+    libdir = get_cuda_paths()[dir_type].info
 
     candidates = find_lib(lib, libdir, static=static)
     namepattern = _staticnamepattern if static else _dllnamepattern
@@ -154,7 +156,7 @@ def test():
                 print(f"\t\t{location}")
 
     # Checks for dynamic libraries
-    libs = "nvvm nvrtc cudart".split()
+    libs = "nvvm nvrtc".split()
     for lib in libs:
         path = get_cudalib(lib)
         print("Finding {} from {}".format(lib, _get_source_variable(lib)))

@@ -1,10 +1,13 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: BSD-2-Clause
+
 import pickle
 import numpy as np
 from numba import cuda, vectorize
-from numba.core import types
+from numba.cuda import types
 from numba.cuda.testing import skip_on_cudasim, CUDATestCase
 import unittest
-from numba.np import numpy_support
+from numba.cuda.np import numpy_support
 
 
 @skip_on_cudasim("pickling not supported in CUDASIM")

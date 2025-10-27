@@ -1,9 +1,14 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: BSD-2-Clause
+
 import numpy as np
 
 from collections import namedtuple
+from functools import partial
 from itertools import product
-from numba import vectorize
-from numba import cuda, int32, float32, float64
+from numba.cuda import vectorize as cuda_vectorize
+from numba import cuda, vectorize as numba_vectorize
+from numba.cuda.types import int32, float32, float64
 from numba.cuda.cudadrv.driver import CudaAPIError, driver
 from numba.cuda.testing import skip_on_cudasim
 from numba.cuda.testing import CUDATestCase
@@ -35,6 +40,10 @@ orders = ("C", "F")
 # - Greater than one block (i.e. many blocks)
 input_sizes = (8, 100, 2**10 + 1)
 
+# Vectorize functions to test
+# cuda.vectorize doesn't need target parameter, numba.vectorize needs target="cuda"
+vectorize_funcs = [cuda_vectorize, partial(numba_vectorize, target="cuda")]
+
 
 @skip_on_cudasim("ufunc API unsupported in the simulator")
 class TestCUDAVectorize(CUDATestCase):
@@ -44,146 +53,166 @@ class TestCUDAVectorize(CUDATestCase):
     N = 1000001
 
     def test_scalar(self):
-        @vectorize(signatures, target="cuda")
-        def vector_add(a, b):
-            return a + b
+        for vectorize in vectorize_funcs:
 
-        a = 1.2
-        b = 2.3
-        c = vector_add(a, b)
-        self.assertEqual(c, a + b)
+            @vectorize(signatures)
+            def vector_add(a, b):
+                return a + b
+
+            a = 1.2
+            b = 2.3
+            c = vector_add(a, b)
+            self.assertEqual(c, a + b)
 
     def test_1d(self):
-        @vectorize(signatures, target="cuda")
-        def vector_add(a, b):
-            return a + b
+        for vectorize in vectorize_funcs:
 
-        for ty in dtypes:
-            data = np.array(np.random.random(self.N), dtype=ty)
-            expected = np.add(data, data)
-            actual = vector_add(data, data)
-            np.testing.assert_allclose(expected, actual)
-            self.assertEqual(actual.dtype, ty)
+            @vectorize(signatures)
+            def vector_add(a, b):
+                return a + b
+
+            for ty in dtypes:
+                data = np.array(np.random.random(self.N), dtype=ty)
+                expected = np.add(data, data)
+                actual = vector_add(data, data)
+                np.testing.assert_allclose(expected, actual)
+                self.assertEqual(actual.dtype, ty)
 
     def test_1d_async(self):
-        @vectorize(signatures, target="cuda")
-        def vector_add(a, b):
-            return a + b
+        for vectorize in vectorize_funcs:
 
-        stream = cuda.stream()
+            @vectorize(signatures)
+            def vector_add(a, b):
+                return a + b
 
-        for ty in dtypes:
-            data = np.array(np.random.random(self.N), dtype=ty)
-            device_data = cuda.to_device(data, stream)
+            stream = cuda.stream()
 
-            dresult = vector_add(device_data, device_data, stream=stream)
-            actual = dresult.copy_to_host()
+            for ty in dtypes:
+                data = np.array(np.random.random(self.N), dtype=ty)
+                device_data = cuda.to_device(data, stream)
 
-            expected = np.add(data, data)
+                dresult = vector_add(device_data, device_data, stream=stream)
+                actual = dresult.copy_to_host()
 
-            np.testing.assert_allclose(expected, actual)
-            self.assertEqual(actual.dtype, ty)
+                expected = np.add(data, data)
+
+                np.testing.assert_allclose(expected, actual)
+                self.assertEqual(actual.dtype, ty)
 
     def test_nd(self):
-        @vectorize(signatures, target="cuda")
-        def vector_add(a, b):
-            return a + b
+        for vectorize in vectorize_funcs:
 
-        for nd, dtype, order in product(range(1, 8), dtypes, orders):
-            shape = (4,) * nd
-            data = np.random.random(shape).astype(dtype)
-            data2 = np.array(data.T, order=order)
+            @vectorize(signatures)
+            def vector_add(a, b):
+                return a + b
 
-            expected = data + data2
-            actual = vector_add(data, data2)
-            np.testing.assert_allclose(expected, actual)
-            self.assertEqual(actual.dtype, dtype)
+            for nd, dtype, order in product(range(1, 8), dtypes, orders):
+                shape = (4,) * nd
+                data = np.random.random(shape).astype(dtype)
+                data2 = np.array(data.T, order=order)
+
+                expected = data + data2
+                actual = vector_add(data, data2)
+                np.testing.assert_allclose(expected, actual)
+                self.assertEqual(actual.dtype, dtype)
 
     def test_output_arg(self):
-        @vectorize(signatures, target="cuda")
-        def vector_add(a, b):
-            return a + b
+        for vectorize in vectorize_funcs:
 
-        A = np.arange(10, dtype=np.float32)
-        B = np.arange(10, dtype=np.float32)
+            @vectorize(signatures)
+            def vector_add(a, b):
+                return a + b
 
-        expected = A + B
-        actual = np.empty_like(A)
-        vector_add(A, B, out=actual)
+            A = np.arange(10, dtype=np.float32)
+            B = np.arange(10, dtype=np.float32)
 
-        np.testing.assert_allclose(expected, actual)
-        self.assertEqual(expected.dtype, actual.dtype)
+            expected = A + B
+            actual = np.empty_like(A)
+            vector_add(A, B, out=actual)
+
+            np.testing.assert_allclose(expected, actual)
+            self.assertEqual(expected.dtype, actual.dtype)
 
     def test_reduce(self):
-        @vectorize(signatures, target="cuda")
-        def vector_add(a, b):
-            return a + b
+        for vectorize in vectorize_funcs:
 
-        dtype = np.int32
+            @vectorize(signatures)
+            def vector_add(a, b):
+                return a + b
 
-        for n in input_sizes:
-            x = np.arange(n, dtype=dtype)
-            expected = np.add.reduce(x)
-            actual = vector_add.reduce(x)
-            np.testing.assert_allclose(expected, actual)
-            # np.add.reduce is special-cased to return an int64 for any int
-            # arguments, so we can't compare against its returned dtype when
-            # we're checking the general reduce machinery (which just happens
-            # to be using addition). Instead, compare against the input dtype.
-            self.assertEqual(dtype, actual.dtype)
+            dtype = np.int32
+
+            for n in input_sizes:
+                x = np.arange(n, dtype=dtype)
+                expected = np.add.reduce(x)
+                actual = vector_add.reduce(x)
+                np.testing.assert_allclose(expected, actual)
+                # np.add.reduce is special-cased to return an int64 for any int
+                # arguments, so we can't compare against its returned dtype when
+                # we're checking the general reduce machinery (which just happens
+                # to be using addition). Instead, compare against the input dtype.
+                self.assertEqual(dtype, actual.dtype)
 
     def test_reduce_async(self):
-        @vectorize(signatures, target="cuda")
-        def vector_add(a, b):
-            return a + b
+        for vectorize in vectorize_funcs:
 
-        stream = cuda.stream()
-        dtype = np.int32
+            @vectorize(signatures)
+            def vector_add(a, b):
+                return a + b
 
-        for n in input_sizes:
-            x = np.arange(n, dtype=dtype)
-            expected = np.add.reduce(x)
-            dx = cuda.to_device(x, stream)
-            actual = vector_add.reduce(dx, stream=stream)
-            np.testing.assert_allclose(expected, actual)
-            # Compare against the input dtype as in test_reduce().
-            self.assertEqual(dtype, actual.dtype)
+            stream = cuda.stream()
+            dtype = np.int32
+
+            for n in input_sizes:
+                x = np.arange(n, dtype=dtype)
+                expected = np.add.reduce(x)
+                dx = cuda.to_device(x, stream)
+                actual = vector_add.reduce(dx, stream=stream)
+                np.testing.assert_allclose(expected, actual)
+                # Compare against the input dtype as in test_reduce().
+                self.assertEqual(dtype, actual.dtype)
 
     def test_manual_transfer(self):
-        @vectorize(signatures, target="cuda")
-        def vector_add(a, b):
-            return a + b
+        for vectorize in vectorize_funcs:
 
-        n = 10
-        x = np.arange(n, dtype=np.int32)
-        dx = cuda.to_device(x)
-        expected = x + x
-        actual = vector_add(x, dx).copy_to_host()
-        np.testing.assert_equal(expected, actual)
-        self.assertEqual(expected.dtype, actual.dtype)
+            @vectorize(signatures)
+            def vector_add(a, b):
+                return a + b
+
+            n = 10
+            x = np.arange(n, dtype=np.int32)
+            dx = cuda.to_device(x)
+            expected = x + x
+            actual = vector_add(x, dx).copy_to_host()
+            np.testing.assert_equal(expected, actual)
+            self.assertEqual(expected.dtype, actual.dtype)
 
     def test_ufunc_output_2d(self):
-        @vectorize(signatures, target="cuda")
-        def vector_add(a, b):
-            return a + b
+        for vectorize in vectorize_funcs:
 
-        n = 10
-        x = np.arange(n, dtype=np.int32).reshape(2, 5)
-        dx = cuda.to_device(x)
-        vector_add(dx, dx, out=dx)
+            @vectorize(signatures)
+            def vector_add(a, b):
+                return a + b
 
-        expected = x + x
-        actual = dx.copy_to_host()
-        np.testing.assert_equal(expected, actual)
-        self.assertEqual(expected.dtype, actual.dtype)
+            n = 10
+            x = np.arange(n, dtype=np.int32).reshape(2, 5)
+            dx = cuda.to_device(x)
+            vector_add(dx, dx, out=dx)
+
+            expected = x + x
+            actual = dx.copy_to_host()
+            np.testing.assert_equal(expected, actual)
+            self.assertEqual(expected.dtype, actual.dtype)
 
     def check_tuple_arg(self, a, b):
-        @vectorize(signatures, target="cuda")
-        def vector_add(a, b):
-            return a + b
+        for vectorize in vectorize_funcs:
 
-        r = vector_add(a, b)
-        np.testing.assert_equal(np.asarray(a) + np.asarray(b), r)
+            @vectorize(signatures)
+            def vector_add(a, b):
+                return a + b
+
+            r = vector_add(a, b)
+            np.testing.assert_equal(np.asarray(a) + np.asarray(b), r)
 
     def test_tuple_arg(self):
         a = (1.0, 2.0, 3.0)
@@ -219,61 +248,64 @@ class TestCUDAVectorize(CUDATestCase):
         self.check_tuple_arg(a, b)
 
     def test_name_attribute(self):
-        @vectorize("f8(f8)", target="cuda")
-        def bar(x):
-            return x**2
+        for vectorize in vectorize_funcs:
 
-        self.assertEqual(bar.__name__, "bar")
+            @vectorize("f8(f8)")
+            def bar(x):
+                return x**2
+
+            self.assertEqual(bar.__name__, "bar")
 
     def test_no_transfer_for_device_data(self):
-        # Initialize test data on the device prior to banning host <-> device
-        # transfer
+        for vectorize in vectorize_funcs:
+            # Initialize test data on the device prior to banning host <-> device
+            # transfer
 
-        noise = np.random.randn(1, 3, 64, 64).astype(np.float32)
-        noise = cuda.to_device(noise)
+            noise = np.random.randn(1, 3, 64, 64).astype(np.float32)
+            noise = cuda.to_device(noise)
 
-        # A mock of a CUDA function that always raises a CudaAPIError
+            # A mock of a CUDA function that always raises a CudaAPIError
 
-        def raising_transfer(*args, **kwargs):
-            raise CudaAPIError(999, "Transfer not allowed")
+            def raising_transfer(*args, **kwargs):
+                raise CudaAPIError(999, "Transfer not allowed")
 
-        # Use the mock for transfers between the host and device
+            # Use the mock for transfers between the host and device
 
-        old_HtoD = getattr(driver, "cuMemcpyHtoD", None)
-        old_DtoH = getattr(driver, "cuMemcpyDtoH", None)
+            old_HtoD = getattr(driver, "cuMemcpyHtoD", None)
+            old_DtoH = getattr(driver, "cuMemcpyDtoH", None)
 
-        setattr(driver, "cuMemcpyHtoD", raising_transfer)
-        setattr(driver, "cuMemcpyDtoH", raising_transfer)
+            setattr(driver, "cuMemcpyHtoD", raising_transfer)
+            setattr(driver, "cuMemcpyDtoH", raising_transfer)
 
-        # Ensure that the mock functions are working as expected
+            # Ensure that the mock functions are working as expected
 
-        with self.assertRaisesRegex(CudaAPIError, "Transfer not allowed"):
-            noise.copy_to_host()
+            with self.assertRaisesRegex(CudaAPIError, "Transfer not allowed"):
+                noise.copy_to_host()
 
-        with self.assertRaisesRegex(CudaAPIError, "Transfer not allowed"):
-            cuda.to_device([1])
+            with self.assertRaisesRegex(CudaAPIError, "Transfer not allowed"):
+                cuda.to_device([1])
 
-        try:
-            # Check that defining and calling a ufunc with data on the device
-            # induces no transfers
+            try:
+                # Check that defining and calling a ufunc with data on the device
+                # induces no transfers
 
-            @vectorize(["float32(float32)"], target="cuda")
-            def func(noise):
-                return noise + 1.0
+                @vectorize(["float32(float32)"])
+                def func(noise):
+                    return noise + 1.0
 
-            func(noise)
-        finally:
-            # Replace our mocks with the original implementations. If there was
-            # no original implementation, simply remove ours.
+                func(noise)
+            finally:
+                # Replace our mocks with the original implementations. If there was
+                # no original implementation, simply remove ours.
 
-            if old_HtoD is not None:
-                setattr(driver, "cuMemcpyHtoD", old_HtoD)
-            else:
-                del driver.cuMemcpyHtoD
-            if old_DtoH is not None:
-                setattr(driver, "cuMemcpyDtoH", old_DtoH)
-            else:
-                del driver.cuMemcpyDtoH
+                if old_HtoD is not None:
+                    setattr(driver, "cuMemcpyHtoD", old_HtoD)
+                else:
+                    del driver.cuMemcpyHtoD
+                if old_DtoH is not None:
+                    setattr(driver, "cuMemcpyDtoH", old_DtoH)
+                else:
+                    del driver.cuMemcpyDtoH
 
 
 if __name__ == "__main__":

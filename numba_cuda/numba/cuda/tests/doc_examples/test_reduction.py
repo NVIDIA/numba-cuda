@@ -1,7 +1,10 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: BSD-2-Clause
+
 import unittest
 
 from numba.cuda.testing import CUDATestCase, skip_on_cudasim
-from numba.tests.support import captured_stdout
+from numba.cuda.tests.support import captured_stdout
 
 
 @skip_on_cudasim("cudasim doesn't support cuda import at non-top-level")
@@ -25,7 +28,7 @@ class TestReduction(CUDATestCase):
         # ex_reduction.import.begin
         import numpy as np
         from numba import cuda
-        from numba.types import int32
+        from numba.cuda.types import int32
         # ex_reduction.import.end
 
         # ex_reduction.allocate.begin

@@ -1,6 +1,11 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: BSD-2-Clause
+
+import sys
 from typing import List
 from dataclasses import dataclass, field
-from numba import cuda, float32
+from numba import cuda
+from numba.cuda import float32
 from numba.cuda.compiler import compile_ptx_for_current_device, compile_ptx
 from math import cos, sin, tan, exp, log, log10, log2, pow, tanh
 from operator import truediv
@@ -138,6 +143,19 @@ class TestFastMathOption(CUDATestCase):
             ),
         )
 
+    @unittest.skipUnless(sys.version_info >= (3, 11), "Python 3.11+ required")
+    def test_exp2f(self):
+        from math import exp2
+
+        self._test_fast_math_unary(
+            exp2,
+            FastMathCriterion(
+                fast_expected=["ex2.approx.ftz.f32 "],
+                prec_expected=["ex2.approx.f32 "],
+                prec_unexpected=["ex2.approx.ftz.f32 "],
+            ),
+        )
+
     def test_logf(self):
         # Look for constant used to convert from log base 2 to log base e
         self._test_fast_math_unary(
@@ -188,10 +206,6 @@ class TestFastMathOption(CUDATestCase):
         )
 
     def test_divf_exception(self):
-        # LTO optimizes away the exception status due to an oversight
-        # in the way we generate it (it is not added to the used list).
-        self.skip_if_lto("Exceptions not supported with LTO")
-
         def f10(r, x, y):
             r[0] = x / y
 

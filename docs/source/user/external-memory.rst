@@ -1,3 +1,7 @@
+..
+   SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+   SPDX-License-Identifier: BSD-2-Clause
+
 .. _cuda-emm-plugin:
 
 =================================================
@@ -278,7 +282,7 @@ Numba test suite with an EMM Plugin, e.g.:
 
 .. code::
 
-   $ NUMBA_CUDA_MEMORY_MANAGER=rmm python -m numba.runtests numba.cuda.tests
+   $ NUMBA_CUDA_MEMORY_MANAGER=rmm pytest --pyargs numba.cuda.tests -v
 
 
 Function

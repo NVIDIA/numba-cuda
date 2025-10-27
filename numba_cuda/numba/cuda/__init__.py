@@ -1,36 +1,28 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: BSD-2-Clause
+
 import importlib
-from numba import runtests
-from numba.core import config
+from numba.cuda.core import config
 from .utils import _readenv
+import warnings
+import sys
 
-# Enable pynvjitlink if the environment variables NUMBA_CUDA_ENABLE_PYNVJITLINK
-# or CUDA_ENABLE_PYNVJITLINK are set, or if the pynvjitlink module is found. If
-# explicitly disabled, do not use pynvjitlink, even if present in the env.
-_pynvjitlink_enabled_in_env = _readenv(
-    "NUMBA_CUDA_ENABLE_PYNVJITLINK", bool, None
-)
-_pynvjitlink_enabled_in_cfg = getattr(config, "CUDA_ENABLE_PYNVJITLINK", None)
+# Re-export types itself
+import numba.cuda.types as types
 
-if _pynvjitlink_enabled_in_env is not None:
-    ENABLE_PYNVJITLINK = _pynvjitlink_enabled_in_env
-elif _pynvjitlink_enabled_in_cfg is not None:
-    ENABLE_PYNVJITLINK = _pynvjitlink_enabled_in_cfg
-else:
-    ENABLE_PYNVJITLINK = importlib.util.find_spec("pynvjitlink") is not None
+# Re-export all type names
+from numba.cuda.types import *
 
-if not hasattr(config, "CUDA_ENABLE_PYNVJITLINK"):
-    config.CUDA_ENABLE_PYNVJITLINK = ENABLE_PYNVJITLINK
 
-# Upstream numba sets CUDA_USE_NVIDIA_BINDING to 0 by default, so it always
-# exists. Override, but not if explicitly set to 0 in the envioronment.
-_nvidia_binding_enabled_in_env = _readenv(
-    "NUMBA_CUDA_USE_NVIDIA_BINDING", bool, None
-)
-if _nvidia_binding_enabled_in_env is False:
-    USE_NV_BINDING = False
-else:
-    USE_NV_BINDING = True
-    config.CUDA_USE_NVIDIA_BINDING = USE_NV_BINDING
+# Require NVIDIA CUDA bindings at import time
+if not (
+    importlib.util.find_spec("cuda")
+    and importlib.util.find_spec("cuda.bindings")
+):
+    raise ImportError(
+        "NVIDIA CUDA Python bindings not found. Install the 'cuda' package "
+        "(e.g. pip install nvidia-cuda-python or numba-cuda[cuXY])."
+    )
 
 if config.ENABLE_CUDASIM:
     from .simulator_init import *
@@ -43,6 +35,7 @@ from numba.cuda.compiler import (
     compile_for_current_device,
     compile_ptx,
     compile_ptx_for_current_device,
+    compile_all,
 )
 
 # This is the out-of-tree NVIDIA-maintained target. This is reported in Numba
@@ -50,8 +43,26 @@ from numba.cuda.compiler import (
 implementation = "NVIDIA"
 
 
-def test(*args, **kwargs):
-    if not is_available():
-        raise cuda_error()
+# The default compute capability as set by the upstream Numba implementation.
+config_default_cc = config.CUDA_DEFAULT_PTX_CC
 
-    return runtests.main("numba.cuda.tests", *args, **kwargs)
+# The default compute capability for Numba-CUDA. This will usually override the
+# upstream Numba built-in default of 5.0, unless the user has set it even
+# higher, in which case we should use the user-specified value. This default is
+# aligned with recent toolkit versions.
+numba_cuda_default_ptx_cc = (7, 5)
+
+if numba_cuda_default_ptx_cc > config_default_cc:
+    config.CUDA_DEFAULT_PTX_CC = numba_cuda_default_ptx_cc
+
+
+# Warn if on Linux and RTLD_GLOBAL is enabled
+if sys.platform.startswith("linux") and (sys.getdlopenflags() & 0x100) != 0:
+    warnings.warn(
+        "RTLD_GLOBAL is enabled, which might result in symbol resolution "
+        "conflicts when importing both numba and numba.cuda. Consider using "
+        "sys.setdlopenflags() to disable RTLD_GLOBAL "
+        "if you encounter symbol conflicts."
+    )
+
+from numba.cuda.np.ufunc import vectorize, guvectorize

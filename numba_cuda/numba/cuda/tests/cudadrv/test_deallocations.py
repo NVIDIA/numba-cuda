@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: BSD-2-Clause
+
 from contextlib import contextmanager
 
 import numpy as np
@@ -9,8 +12,8 @@ from numba.cuda.testing import (
     skip_if_external_memmgr,
     CUDATestCase,
 )
-from numba.tests.support import captured_stderr
-from numba.core import config
+from numba.cuda.tests.support import captured_stderr
+from numba.cuda.core import config
 
 
 @skip_on_cudasim("not supported on CUDASIM")

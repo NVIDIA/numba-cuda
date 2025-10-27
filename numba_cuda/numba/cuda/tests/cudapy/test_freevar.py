@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: BSD-2-Clause
+
 import numpy as np
 
 from numba import cuda
@@ -9,7 +12,7 @@ class TestFreeVar(CUDATestCase):
         """Make sure we can compile the following kernel with freevar reference
         in arguments to shared.array
         """
-        from numba import float32
+        from numba.cuda import float32
 
         size = 1024
         nbtype = float32

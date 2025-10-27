@@ -1,11 +1,14 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: BSD-2-Clause
+
 import threading
 from numba import cuda
 from numba.cuda.cudadrv.driver import driver
-from numba.cuda.testing import unittest, ContextResettingTestCase
+from numba.cuda.testing import unittest, CUDATestCase
 from queue import Queue
 
 
-class TestResetDevice(ContextResettingTestCase):
+class TestResetDevice(CUDATestCase):
     def test_reset_device(self):
         def newthread(exception_queue):
             try:

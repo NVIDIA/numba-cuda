@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: BSD-2-Clause
+
 # Configuration file for the Sphinx documentation builder.
 #
 # For the full list of built-in configuration values, see the documentation:
@@ -33,13 +36,7 @@ autodoc_typehints = "none"
 # -- Options for HTML output -------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
 
-try:
-    import nvidia_sphinx_theme  # noqa: F401
-
-    html_theme = "nvidia_sphinx_theme"
-except ImportError:
-    html_theme = "sphinx_rtd_theme"
-
+html_theme = "nvidia_sphinx_theme"
 html_static_path = ["_static"]
 html_favicon = "_static/numba-green-icon-rgb.svg"
 html_show_sphinx = False

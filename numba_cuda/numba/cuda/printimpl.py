@@ -1,13 +1,17 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: BSD-2-Clause
+
 from functools import singledispatch
 from llvmlite import ir
-from numba.core import types, cgutils
+from numba.cuda import types
+from numba.cuda import cgutils
 from numba.core.errors import NumbaWarning
-from numba.core.imputils import Registry
+from numba.cuda.core.imputils import Registry
 from numba.cuda import nvvmutils
-from numba.cuda.types import Dim3
+from numba.cuda.ext_types import Dim3, Bfloat16
 from warnings import warn
 
-registry = Registry()
+registry = Registry("printimpl")
 lower = registry.lower
 
 voidptr = ir.PointerType(ir.IntType(8))
@@ -45,6 +49,17 @@ def int_print_impl(ty, context, builder, val):
 def real_print_impl(ty, context, builder, val):
     lld = context.cast(builder, val, ty, types.float64)
     return "%f", [lld]
+
+
+@print_item.register(Bfloat16)
+def bfloat16_print_impl(ty, context, builder, val):
+    # Hand rolled bfloat16 -> float32 -> double conversion with zero-ext
+    bits32 = builder.zext(val, ir.IntType(32))
+    shift = builder.shl(bits32, ir.Constant(ir.IntType(32), 16))
+    f32 = builder.bitcast(shift, ir.FloatType())
+    # printf("%f") expects a double; promote to f64 to match vararg expectation
+    f64 = builder.fpext(f32, ir.DoubleType())
+    return "%f", [f64]
 
 
 @print_item.register(types.StringLiteral)

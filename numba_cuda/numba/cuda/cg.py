@@ -1,9 +1,12 @@
-from numba.core import types
-from numba.core.extending import overload, overload_method
-from numba.core.typing import signature
+# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: BSD-2-Clause
+
+from numba.cuda import types
+from numba.cuda.extending import overload, overload_method
+from numba.cuda.typing import signature
 from numba.cuda import nvvmutils
 from numba.cuda.extending import intrinsic
-from numba.cuda.types import grid_group, GridGroup as GridGroupClass
+from numba.cuda.ext_types import grid_group, GridGroup as GridGroupClass
 
 
 class GridGroup:

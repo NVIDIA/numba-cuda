@@ -1,15 +1,18 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: BSD-2-Clause
+
 # CUDA built-in Vector Types
 # https://docs.nvidia.com/cuda/cuda-c-programming-guide/index.html#built-in-vector-types
 
 from typing import List, Tuple, Dict
 
-from numba import types
-from numba.core import cgutils
-from numba.core.extending import models
-from numba.core.imputils import Registry as ImplRegistry
-from numba.core.typing.templates import ConcreteTemplate
-from numba.core.typing.templates import Registry as TypingRegistry
-from numba.core.typing.templates import signature
+from numba.cuda import types
+from numba.cuda import cgutils
+from numba.cuda.datamodel import models
+from numba.cuda.core.imputils import Registry as ImplRegistry
+from numba.cuda.typing.templates import ConcreteTemplate
+from numba.cuda.typing.templates import Registry as TypingRegistry
+from numba.cuda.typing.templates import signature
 from numba.cuda import stubs
 from numba.cuda.errors import CudaLoweringError
 from numba.cuda.extending import make_attribute_wrapper, register_model
@@ -60,7 +63,7 @@ def make_vector_type(
     ----------
     name: str
         The name of the type.
-    base_type: numba.types.Type
+    base_type: numba.cuda.types.Type
         The primitive type for each element in the vector.
     attr_names: tuple of str
         Name for each attribute.

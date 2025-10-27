@@ -1,7 +1,10 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: BSD-2-Clause
+
 import unittest
 
 from numba.cuda.testing import CUDATestCase, skip_on_cudasim
-from numba.tests.support import captured_stdout
+from numba.cuda.tests.support import captured_stdout
 import numpy as np
 
 

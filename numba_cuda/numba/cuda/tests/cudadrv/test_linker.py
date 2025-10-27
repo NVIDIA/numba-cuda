@@ -1,14 +1,21 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: BSD-2-Clause
+
 import numpy as np
 import warnings
 from numba.cuda.testing import unittest
-from numba.cuda.testing import skip_on_cudasim, skip_if_cuda_includes_missing
+from numba.cuda.testing import (
+    skip_on_cudasim,
+    skip_if_cuda_includes_missing,
+    skip_if_nvjitlink_missing,
+)
 from numba.cuda.testing import CUDATestCase, test_data_dir
-from numba.cuda.cudadrv.driver import CudaAPIError, Linker, LinkerError
-from numba.cuda.cudadrv.error import NvrtcError
+from numba.cuda.cudadrv.driver import CudaAPIError, _Linker, LinkerError
 from numba.cuda import require_context
-from numba.tests.support import ignore_internal_warnings
-from numba import cuda, void, float64, int64, int32, typeof, float32
-
+from numba.cuda.tests.support import ignore_internal_warnings
+from numba import cuda
+from numba.cuda import void, float64, int64, int32, float32
+from numba.cuda.typing.typeof import typeof
 
 CONST1D = np.arange(10, dtype=np.float64)
 
@@ -107,7 +114,7 @@ class TestLinker(CUDATestCase):
     @require_context
     def test_linker_basic(self):
         """Simply go through the constructor and destructor"""
-        linker = Linker.new(cc=(5, 3))
+        linker = _Linker.new(cc=(7, 5))
         del linker
 
     def _test_linking(self, eager):
@@ -172,18 +179,28 @@ class TestLinker(CUDATestCase):
             def kernel(x):
                 bar(x)
 
-        self.assertEqual(len(w), 1, "Expected warnings from NVRTC")
+        nvrtc_log_warnings = [
+            wi for wi in w if "NVRTC log messages" in str(wi.message)
+        ]
+        self.assertEqual(
+            len(nvrtc_log_warnings), 1, "Expected warnings from NVRTC"
+        )
         # Check the warning refers to the log messages
-        self.assertIn("NVRTC log messages", str(w[0].message))
+        self.assertIn("NVRTC log messages", str(nvrtc_log_warnings[0].message))
         # Check the message pertaining to the unused variable is provided
-        self.assertIn("declared but never referenced", str(w[0].message))
+        self.assertIn(
+            "declared but never referenced", str(nvrtc_log_warnings[0].message)
+        )
 
     def test_linking_cu_error(self):
         bar = cuda.declare_device("bar", "int32(int32)")
 
         link = str(test_data_dir / "error.cu")
 
-        with self.assertRaises(NvrtcError) as e:
+        from cuda.core.experimental._utils.cuda_utils import NVRTCError
+
+        errty = NVRTCError
+        with self.assertRaises(errty) as e:
 
             @cuda.jit("void(int32)", link=[link])
             def kernel(x):
@@ -191,7 +208,8 @@ class TestLinker(CUDATestCase):
 
         msg = e.exception.args[0]
         # Check the error message refers to the NVRTC compile
-        self.assertIn("NVRTC Compilation failure", msg)
+        nvrtc_err_str = "NVRTC_ERROR_COMPILATION"
+        self.assertIn(nvrtc_err_str, msg)
         # Check the expected error in the CUDA source is reported
         self.assertIn('identifier "SYNTAX" is undefined', msg)
         # Check the filename is reported correctly
@@ -314,6 +332,18 @@ class TestLinker(CUDATestCase):
         local_mem_size = compiled_specialized.get_local_mem_per_thread()
         calc_size = np.dtype(np.float64).itemsize * LMEM_SIZE
         self.assertGreaterEqual(local_mem_size, calc_size)
+
+    @skip_if_nvjitlink_missing("nvJitLink not installed or new enough (>12.3)")
+    def test_link_for_different_cc(self):
+        linker = _Linker.new(cc=(7, 5), lto=True)
+        code = """
+__device__ int foo(int x) {
+    return x + 1;
+}
+"""
+        linker.add_cu(code, "foo")
+        ptx = linker.get_linked_ptx().decode()
+        assert "target sm_75" in ptx
 
 
 if __name__ == "__main__":

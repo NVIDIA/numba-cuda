@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: BSD-2-Clause
+
 on:
   workflow_call:
     inputs:
@@ -83,7 +86,9 @@ jobs:
           ref: ${{ inputs.sha }}
           fetch-depth: 0
       - uses: actions/download-artifact@v4
-        name: conda-repo
+        with:
+          name: conda-repo-py${{ matrix.PY_VER }}-${{ matrix.ARCH }}
+          path: conda-repo
       - name: Display structure of downloaded files
         run: ls -R
       - name: Standardize repository information

@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: BSD-2-Clause
+
 # Re export
 import sys
 from numba.cuda import cg
@@ -29,7 +32,6 @@ from .stubs import (
     activemask,
     lanemask_lt,
     nanosleep,
-    fp16,
     _vector_type_stubs,
 )
 from .intrinsics import (

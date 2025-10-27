@@ -1,4 +1,7 @@
-from ctypes import byref, c_int, c_void_p, sizeof
+# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: BSD-2-Clause
+
+from ctypes import c_int, sizeof
 
 from numba.cuda.cudadrv.driver import (
     host_to_device,
@@ -6,7 +9,7 @@ from numba.cuda.cudadrv.driver import (
     driver,
     launch_kernel,
 )
-from numba.cuda.cudadrv import devices, drvapi, driver as _driver
+from numba.cuda.cudadrv import devices, driver as _driver
 from numba.cuda.testing import unittest, CUDATestCase
 from numba.cuda.testing import skip_on_cudasim
 
@@ -93,9 +96,7 @@ class TestCudaDriver(CUDATestCase):
         ptr = memory.device_ctypes_pointer
         stream = 0
 
-        if _driver.USE_NV_BINDING:
-            ptr = c_void_p(int(ptr))
-            stream = _driver.binding.CUstream(stream)
+        stream = _driver.binding.CUstream(stream)
 
         launch_kernel(
             function.handle,  # Kernel
@@ -129,8 +130,9 @@ class TestCudaDriver(CUDATestCase):
             host_to_device(memory, array, sizeof(array), stream=stream)
 
             ptr = memory.device_ctypes_pointer
-            if _driver.USE_NV_BINDING:
-                ptr = c_void_p(int(ptr))
+
+            stream_handle = stream.handle
+            stream_handle = stream_handle.value
 
             launch_kernel(
                 function.handle,  # Kernel
@@ -141,7 +143,7 @@ class TestCudaDriver(CUDATestCase):
                 1,
                 1,  # bx, by, bz
                 0,  # dynamic shared mem
-                stream.handle,  # stream
+                stream_handle,  # stream
                 [ptr],
             )  # arguments
 
@@ -191,13 +193,8 @@ class TestCudaDriver(CUDATestCase):
         # Test properties of a stream created from an external stream object.
         # We use the driver API directly to create a stream, to emulate an
         # external library creating a stream
-        if _driver.USE_NV_BINDING:
-            handle = driver.cuStreamCreate(0)
-            ptr = int(handle)
-        else:
-            handle = drvapi.cu_stream()
-            driver.cuStreamCreate(byref(handle), 0)
-            ptr = handle.value
+        handle = driver.cuStreamCreate(0)
+        ptr = int(handle)
         s = self.context.create_external_stream(ptr)
 
         self.assertIn("External CUDA stream", repr(s))

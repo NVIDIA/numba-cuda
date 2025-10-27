@@ -1,5 +1,8 @@
-from numba import types
-from numba.core import config
+# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: BSD-2-Clause
+
+from numba.cuda import types
+from numba.cuda.core import config
 
 
 class TestStruct:
@@ -17,9 +20,9 @@ test_struct_model_type = TestStructModelType()
 
 
 if not config.ENABLE_CUDASIM:
-    from numba import int32
-    from numba.core.extending import (
-        models,
+    from numba.cuda import int32
+    from numba.cuda.extending import (
+        core_models,
         typeof_impl,
         type_callable,
     )
@@ -28,14 +31,14 @@ if not config.ENABLE_CUDASIM:
         make_attribute_wrapper,
     )
     from numba.cuda.cudaimpl import lower
-    from numba.core import cgutils
+    from numba.cuda import cgutils
 
     @typeof_impl.register(TestStruct)
     def typeof_teststruct(val, c):
         return test_struct_model_type
 
     @register_model(TestStructModelType)
-    class TestStructModel(models.StructModel):
+    class TestStructModel(core_models.StructModel):
         def __init__(self, dmm, fe_type):
             members = [("x", int32), ("y", int32)]
             super().__init__(dmm, fe_type, members)

@@ -1,26 +1,48 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: BSD-2-Clause
+
 import os
 import platform
 import shutil
-
-from numba.tests.support import SerialMixin
-from numba.cuda.cuda_paths import get_conda_ctk
+import pytest
+from datetime import datetime
+from numba.cuda.utils import PYVERSION
+from numba.cuda.cuda_paths import get_conda_ctk_libdir
 from numba.cuda.cudadrv import driver, devices, libs
-from numba.core import config
-from numba.tests.support import TestCase
+from numba.cuda.dispatcher import CUDADispatcher
+from numba.cuda import config
+from numba.cuda.tests.support import TestCase
 from pathlib import Path
+
+from typing import Iterable, Union
+from io import StringIO
 import unittest
+import numpy as np
+
+if PYVERSION >= (3, 10):
+    from filecheck.matcher import Matcher
+    from filecheck.options import Options
+    from filecheck.parser import Parser, pattern_for_opts
+    from filecheck.finput import FInput
 
 numba_cuda_dir = Path(__file__).parent
 test_data_dir = numba_cuda_dir / "tests" / "data"
 
 
-class CUDATestCase(SerialMixin, TestCase):
+@pytest.mark.usefixtures("initialize_from_pytest_config")
+class CUDATestCase(TestCase):
     """
-    For tests that use a CUDA device. Test methods in a CUDATestCase must not
-    be run out of module order, because the ContextResettingTestCase may reset
-    the context and destroy resources used by a normal CUDATestCase if any of
-    its tests are run between tests from a CUDATestCase.
+    For tests that use a CUDA device.
+
+    Methods assertFileCheckAsm and assertFileCheckLLVM will inspect a
+    CUDADispatcher and assert that the compilation artifacts match the
+    FileCheck checks given in the kernel's docstring.
+
+    Method assertFileCheckMatches can be used to assert that a given string
+    matches FileCheck checks, and is not specific to CUDADispatcher.
     """
+
+    FLOAT16_RTOL = np.finfo(np.float16).eps
 
     def setUp(self):
         self._low_occupancy_warnings = config.CUDA_LOW_OCCUPANCY_WARNINGS
@@ -35,42 +57,131 @@ class CUDATestCase(SerialMixin, TestCase):
         config.CUDA_LOW_OCCUPANCY_WARNINGS = self._low_occupancy_warnings
         config.CUDA_WARN_ON_IMPLICIT_COPY = self._warn_on_implicit_copy
 
-    def skip_if_lto(self, reason):
-        # Some linkers need the compute capability to be specified, so we
-        # always specify it here.
-        cc = devices.get_context().device.compute_capability
-        linker = driver.Linker.new(cc=cc)
-        if linker.lto:
-            self.skipTest(reason)
+    Signature = Union[tuple[type, ...], None]
 
+    def _getIRContents(
+        self,
+        ir_result: Union[dict[Signature, str], str],
+        signature: Union[Signature, None] = None,
+    ) -> Iterable[str]:
+        if isinstance(ir_result, str):
+            assert signature is None, (
+                "Cannot use signature because the kernel was only compiled for one signature"
+            )
+            return [ir_result]
 
-class ContextResettingTestCase(CUDATestCase):
-    """
-    For tests where the context needs to be reset after each test. Typically
-    these inspect or modify parts of the context that would usually be expected
-    to be internal implementation details (such as the state of allocations and
-    deallocations, etc.).
-    """
+        if signature is None:
+            return list(ir_result.values())
 
-    def tearDown(self):
-        super().tearDown()
-        from numba.cuda.cudadrv.devices import reset
+        return [ir_result[signature]]
 
-        reset()
+    def assertFileCheckAsm(
+        self,
+        ir_producer: CUDADispatcher,
+        signature: Union[tuple[type, ...], None] = None,
+        check_prefixes: tuple[str] = ("ASM",),
+        **extra_filecheck_options,
+    ) -> None:
+        """
+        Assert that the assembly output of the given CUDADispatcher matches
+        the FileCheck checks given in the kernel's docstring.
+        """
+        ir_contents = self._getIRContents(ir_producer.inspect_asm(), signature)
+        assert ir_contents, "No assembly output found for the given signature."
+        assert ir_producer.__doc__ is not None, (
+            "Kernel docstring is required. To pass checks explicitly, use assertFileCheckMatches."
+        )
+        check_patterns = ir_producer.__doc__
+        for ir_content in ir_contents:
+            self.assertFileCheckMatches(
+                ir_content,
+                check_patterns=check_patterns,
+                check_prefixes=check_prefixes,
+                **extra_filecheck_options,
+            )
 
+    def assertFileCheckLLVM(
+        self,
+        ir_producer: CUDADispatcher,
+        signature: Union[tuple[type, ...], None] = None,
+        check_prefixes: tuple[str] = ("LLVM",),
+        **extra_filecheck_options,
+    ) -> None:
+        """
+        Assert that the LLVM IR output of the given CUDADispatcher matches
+        the FileCheck checks given in the kernel's docstring.
+        """
+        ir_contents = self._getIRContents(ir_producer.inspect_llvm(), signature)
+        assert ir_contents, "No LLVM IR output found for the given signature."
+        assert ir_producer.__doc__ is not None, (
+            "Kernel docstring is required. To pass checks explicitly, use assertFileCheckMatches."
+        )
+        check_patterns = ir_producer.__doc__
+        for ir_content in ir_contents:
+            assert ir_content, (
+                "LLVM IR content is empty for the given signature."
+            )
+            self.assertFileCheckMatches(
+                ir_content,
+                check_patterns=check_patterns,
+                check_prefixes=check_prefixes,
+                **extra_filecheck_options,
+            )
 
-def ensure_supported_ccs_initialized():
-    from numba.cuda import is_available as cuda_is_available
-    from numba.cuda.cudadrv import nvvm
+    def assertFileCheckMatches(
+        self,
+        ir_content: str,
+        check_patterns: str,
+        check_prefixes: tuple[str] = ("CHECK",),
+        **extra_filecheck_options,
+    ) -> None:
+        """
+        Assert that the given string matches the passed FileCheck checks.
 
-    if cuda_is_available():
-        # Ensure that cudart.so is loaded and the list of supported compute
-        # capabilities in the nvvm module is populated before a fork. This is
-        # needed because some compilation tests don't require a CUDA context,
-        # but do use NVVM, and it is required that libcudart.so should be
-        # loaded before a fork (note that the requirement is not explicitly
-        # documented).
-        nvvm.get_supported_ccs()
+        Args:
+            ir_content: The string to check against.
+            check_patterns: The FileCheck checks to use.
+            check_prefixes: The prefixes to use for the FileCheck checks.
+            extra_filecheck_options: Extra options to pass to FileCheck.
+        """
+        if PYVERSION < (3, 10):
+            self.skipTest("FileCheck requires Python 3.10 or later")
+        opts = Options(
+            match_filename="-",
+            check_prefixes=list(check_prefixes),
+            **extra_filecheck_options,
+        )
+        input_file = FInput(fname="-", content=ir_content)
+        parser = Parser(opts, StringIO(check_patterns), *pattern_for_opts(opts))
+        matcher = Matcher(opts, input_file, parser)
+        matcher.stderr = StringIO()
+        result = matcher.run()
+        if result != 0:
+            if self._dump_failed_filechecks:
+                dump_directory = Path(
+                    datetime.now().strftime("numba-ir-%Y_%m_%d_%H_%M_%S")
+                )
+                if not dump_directory.exists():
+                    dump_directory.mkdir(parents=True, exist_ok=True)
+                base_path = self.id().replace(".", "_")
+                ir_dump = dump_directory / Path(base_path).with_suffix(".ll")
+                checks_dump = dump_directory / Path(base_path).with_suffix(
+                    ".checks"
+                )
+                with (
+                    open(ir_dump, "w") as ir_file,
+                    open(checks_dump, "w") as checks_file,
+                ):
+                    _ = ir_file.write(ir_content + "\n")
+                    _ = checks_file.write(check_patterns)
+                    dump_instructions = f"Reproduce with:\n\nfilecheck --check-prefixes={','.join(check_prefixes)} {checks_dump} --input-file {ir_dump}"
+            else:
+                dump_instructions = "Rerun with --dump-failed-filechecks to generate a reproducer."
+
+            self.fail(
+                f"FileCheck failed:\n{matcher.stderr.getvalue()}\n\n"
+                + dump_instructions
+            )
 
 
 def skip_on_cudasim(reason):
@@ -85,7 +196,7 @@ def skip_unless_cudasim(reason):
 
 def skip_unless_conda_cudatoolkit(reason):
     """Skip test if the CUDA toolkit was not installed by Conda"""
-    return unittest.skipUnless(get_conda_ctk() is not None, reason)
+    return unittest.skipUnless(get_conda_ctk_libdir() is not None, reason)
 
 
 def skip_if_external_memmgr(reason):
@@ -111,6 +222,17 @@ def skip_on_arm(reason):
     cpu = platform.processor()
     is_arm = cpu.startswith("arm") or cpu.startswith("aarch")
     return unittest.skipIf(is_arm, reason)
+
+
+def skip_on_wsl2(reason):
+    """Skip test when running under WSL2.
+
+    Detection is based on the kernel release string, which typically contains
+    "microsoft-standard-WSL2" on WSL2 systems.
+    """
+    rel = platform.release().lower()
+    is_wsl2 = ("microsoft-standard-wsl2" in rel) or ("wsl2" in rel)
+    return unittest.skipIf(is_wsl2, reason)
 
 
 def skip_if_cuda_includes_missing(fn):
@@ -146,21 +268,6 @@ def skip_if_mvc_enabled(reason):
     )
 
 
-def skip_if_mvc_libraries_unavailable(fn):
-    libs_available = False
-    try:
-        import cubinlinker  # noqa: F401
-        import ptxcompiler  # noqa: F401
-
-        libs_available = True
-    except ImportError:
-        pass
-
-    return unittest.skipUnless(
-        libs_available, "Requires cubinlinker and ptxcompiler"
-    )(fn)
-
-
 def cc_X_or_above(major, minor):
     if not config.ENABLE_CUDASIM:
         cc = devices.get_context().device.compute_capability
@@ -192,10 +299,6 @@ def xfail_unless_cudasim(fn):
         return unittest.expectedFailure(fn)
 
 
-def skip_with_cuda_python(reason):
-    return unittest.skipIf(driver.USE_NV_BINDING, reason)
-
-
 def cudadevrt_missing():
     if config.ENABLE_CUDASIM:
         return False
@@ -209,6 +312,10 @@ def cudadevrt_missing():
 
 def skip_if_cudadevrt_missing(fn):
     return unittest.skipIf(cudadevrt_missing(), "cudadevrt missing")(fn)
+
+
+def skip_if_nvjitlink_missing(reason):
+    return unittest.skipIf(not driver._have_nvjitlink(), reason)
 
 
 class ForeignArray(object):

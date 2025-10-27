@@ -1,5 +1,7 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: BSD-2-Clause
+
 import numbers
-from ctypes import byref
 import weakref
 
 from numba import cuda
@@ -11,12 +13,7 @@ class TestContextStack(CUDATestCase):
     def setUp(self):
         super().setUp()
         # Reset before testing
-        cuda.close()
-
-    def test_gpus_current(self):
-        self.assertIs(cuda.gpus.current, None)
-        with cuda.gpus[0]:
-            self.assertEqual(int(cuda.gpus.current.id), 0)
+        cuda.current_context().reset()
 
     def test_gpus_len(self):
         self.assertGreater(len(cuda.gpus), 0)
@@ -25,11 +22,21 @@ class TestContextStack(CUDATestCase):
         gpulist = list(cuda.gpus)
         self.assertGreater(len(gpulist), 0)
 
+    def test_gpus_cudevice_indexing(self):
+        """Test that CUdevice objects can be used to index into cuda.gpus"""
+        # When using the CUDA Python bindings, the device ids are CUdevice
+        # objects, otherwise they are integers. We test that the device id is
+        # usable as an index into cuda.gpus.
+        device_ids = [device.id for device in cuda.list_devices()]
+        for device_id in device_ids:
+            with cuda.gpus[device_id]:
+                self.assertEqual(cuda.gpus.current.id, device_id)
+
 
 class TestContextAPI(CUDATestCase):
     def tearDown(self):
         super().tearDown()
-        cuda.close()
+        cuda.current_context().reset()
 
     def test_context_memory(self):
         try:
@@ -75,28 +82,21 @@ class TestContextAPI(CUDATestCase):
 class Test3rdPartyContext(CUDATestCase):
     def tearDown(self):
         super().tearDown()
-        cuda.close()
+        cuda.current_context().reset()
 
     def test_attached_primary(self, extra_work=lambda: None):
         # Emulate primary context creation by 3rd party
         the_driver = driver.driver
-        if driver.USE_NV_BINDING:
-            dev = driver.binding.CUdevice(0)
-            hctx = the_driver.cuDevicePrimaryCtxRetain(dev)
-        else:
-            dev = 0
-            hctx = driver.drvapi.cu_context()
-            the_driver.cuDevicePrimaryCtxRetain(byref(hctx), dev)
+        dev = driver.binding.CUdevice(0)
+        binding_hctx = the_driver.cuDevicePrimaryCtxRetain(dev)
+        hctx = driver.drvapi.cu_context(int(binding_hctx))
         try:
             ctx = driver.Context(weakref.proxy(self), hctx)
             ctx.push()
             # Check that the context from numba matches the created primary
             # context.
             my_ctx = cuda.current_context()
-            if driver.USE_NV_BINDING:
-                self.assertEqual(int(my_ctx.handle), int(ctx.handle))
-            else:
-                self.assertEqual(my_ctx.handle.value, ctx.handle.value)
+            self.assertEqual(my_ctx.handle.value, ctx.handle.value)
 
             extra_work()
         finally:
@@ -106,13 +106,29 @@ class Test3rdPartyContext(CUDATestCase):
     def test_attached_non_primary(self):
         # Emulate non-primary context creation by 3rd party
         the_driver = driver.driver
-        if driver.USE_NV_BINDING:
-            flags = 0
-            dev = driver.binding.CUdevice(0)
-            hctx = the_driver.cuCtxCreate(flags, dev)
+        flags = 0
+        dev = driver.binding.CUdevice(0)
+
+        result, version = driver.binding.cuDriverGetVersion()
+        self.assertEqual(
+            result,
+            driver.binding.CUresult.CUDA_SUCCESS,
+            "Error getting CUDA driver version",
+        )
+
+        # CUDA 13's cuCtxCreate has an optional parameter prepended. The
+        # version of cuCtxCreate in use depends on the cuda.bindings major
+        # version rather than the installed driver version on the machine
+        # we're running on.
+        from cuda import bindings
+
+        bindings_version = int(bindings.__version__.split(".")[0])
+        if bindings_version in (11, 12):
+            args = (flags, dev)
         else:
-            hctx = driver.drvapi.cu_context()
-            the_driver.cuCtxCreate(byref(hctx), 0, 0)
+            args = (None, flags, dev)
+
+        hctx = the_driver.cuCtxCreate(*args)
         try:
             cuda.current_context()
         except RuntimeError as e:

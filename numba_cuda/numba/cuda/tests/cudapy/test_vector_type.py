@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: BSD-2-Clause
+
 """
 CUDA vector type tests. Note that this test file imports
 `cuda.vector_type` module to programmatically test all the
@@ -8,7 +11,7 @@ corresponding vector type from `cuda` module in kernel to use them.
 
 import numpy as np
 
-from numba.core import config
+from numba.cuda.core import config
 from numba.cuda.testing import CUDATestCase
 
 from numba import cuda

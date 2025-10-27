@@ -1,9 +1,12 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: BSD-2-Clause
+
 # Contents in this file are referenced from the sphinx-generated docs.
 # "magictoken" is used for markers as beginning and ending of example text.
 
 import unittest
 from numba.cuda.testing import CUDATestCase, skip_on_cudasim
-from numba.tests.support import skip_unless_cffi, override_config
+from numba.cuda.tests.support import skip_unless_cffi, override_config
 
 
 @skip_unless_cffi
@@ -87,7 +90,8 @@ class TestFFI(CUDATestCase):
 
     def test_ex_extra_includes(self):
         import numpy as np
-        from numba import cuda, config
+        from numba import cuda
+        from numba.cuda import config
         import os
 
         basedir = os.path.dirname(os.path.abspath(__file__))
@@ -100,7 +104,7 @@ class TestFFI(CUDATestCase):
         includedir = ":".join([mul_dir, add_dir])
         with override_config("CUDA_NVRTC_EXTRA_SEARCH_PATHS", includedir):
             # magictoken.ex_extra_search_paths.begin
-            from numba import config
+            from numba.cuda import config
 
             includedir = ":".join([mul_dir, add_dir])
             config.CUDA_NVRTC_EXTRA_SEARCH_PATHS = includedir

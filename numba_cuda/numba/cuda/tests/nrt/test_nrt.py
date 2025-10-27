@@ -1,16 +1,20 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: BSD-2-Clause
+
 import re
 import os
 
 import numpy as np
 import unittest
 from numba.cuda.testing import CUDATestCase, skip_on_cudasim
-from numba.tests.support import run_in_subprocess, override_config
+from numba.cuda.tests.support import run_in_subprocess, override_config
 from numba.cuda import get_current_device
 from numba.cuda.cudadrv.nvrtc import compile
-from numba import config, types
-from numba.core.typing import signature
+from numba.cuda import types
+from numba.cuda.typing import signature
 from numba import cuda
-from numba.core.typing.templates import AbstractTemplate
+from numba.cuda import config
+from numba.cuda.typing.templates import AbstractTemplate
 from numba.cuda.cudadrv.linkable_code import (
     CUSource,
     PTXSource,
@@ -169,7 +173,7 @@ class TestNrtLinking(CUDATestCase):
         cc = get_current_device().compute_capability
         ptx, _ = compile(src, "external_nrt.cu", cc)
 
-        @cuda.jit(link=[PTXSource(ptx.encode(), nrt=True)])
+        @cuda.jit(link=[PTXSource(ptx.code, nrt=True)])
         def kernel():
             allocate_deallocate_handle()
 

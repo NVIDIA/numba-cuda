@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: BSD-2-Clause
+
 """
 Expose each GPU devices directly.
 
@@ -15,31 +18,24 @@ import functools
 import threading
 from contextlib import contextmanager
 
-from .driver import driver, USE_NV_BINDING
+from .driver import driver
 
 
-class _DeviceList(object):
-    def __getattr__(self, attr):
-        # First time looking at "lst" attribute.
-        if attr == "lst":
-            # Device list is not initialized.
-            # Query all CUDA devices.
-            numdev = driver.get_device_count()
-            gpus = [
-                _DeviceContextManager(driver.get_device(devid))
-                for devid in range(numdev)
-            ]
-            # Define "lst" to avoid re-initialization
-            self.lst = gpus
-            return gpus
-
-        # Other attributes
-        return super(_DeviceList, self).__getattr__(attr)
+class _DeviceList:
+    @property
+    @functools.cache
+    def lst(self):
+        return [
+            _DeviceContextManager(driver.get_device(devid))
+            for devid in range(driver.get_device_count())
+        ]
 
     def __getitem__(self, devnum):
         """
         Returns the context manager for device *devnum*.
         """
+        if not isinstance(devnum, (int, slice)):
+            devnum = int(devnum)
         return self.lst[devnum]
 
     def __str__(self):
@@ -74,6 +70,9 @@ class _DeviceContextManager(object):
 
     def __init__(self, device):
         self._device = device
+        # Forwarded directly, to avoid the performance overhead of
+        # `__getattr__` and method lookup for a commonly accessed method
+        self.get_primary_context = self._device.get_primary_context
 
     def __getattr__(self, item):
         return getattr(self._device, item)
@@ -83,10 +82,10 @@ class _DeviceContextManager(object):
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         # this will verify that we are popping the right device context.
-        self._device.get_primary_context().pop()
+        self.get_primary_context().pop()
 
     def __str__(self):
-        return "<Managed Device {self.id}>".format(self=self)
+        return f"<Managed Device {self.id}>"
 
 
 class _Runtime(object):
@@ -141,9 +140,9 @@ class _Runtime(object):
             else:
                 return attached_ctx
         else:
-            if USE_NV_BINDING:
-                devnum = int(devnum)
-            return self._activate_context_for(devnum)
+            devnum = int(devnum)
+            with self._lock:
+                return self._activate_context_for(devnum)
 
     def _get_or_create_context_uncached(self, devnum):
         """See also ``get_or_create_context(devnum)``.
@@ -159,35 +158,32 @@ class _Runtime(object):
                     # Get primary context for the active device
                     ctx = self.gpus[ac.devnum].get_primary_context()
                     # Is active context the primary context?
-                    if USE_NV_BINDING:
-                        ctx_handle = int(ctx.handle)
-                        ac_ctx_handle = int(ac.context_handle)
-                    else:
-                        ctx_handle = ctx.handle.value
-                        ac_ctx_handle = ac.context_handle.value
+                    ctx_handle = ctx.handle.value
+                    ac_ctx_handle = ac.context_handle.value
                     if ctx_handle != ac_ctx_handle:
-                        msg = (
+                        raise RuntimeError(
                             "Numba cannot operate on non-primary"
-                            " CUDA context {:x}"
+                            f" CUDA context {ac_ctx_handle:x}"
                         )
-                        raise RuntimeError(msg.format(ac_ctx_handle))
                     # Ensure the context is ready
                     ctx.prepare_for_use()
                 return ctx
 
     def _activate_context_for(self, devnum):
-        with self._lock:
-            gpu = self.gpus[devnum]
-            newctx = gpu.get_primary_context()
-            # Detect unexpected context switch
-            cached_ctx = self._get_attached_context()
-            if cached_ctx is not None and cached_ctx is not newctx:
-                raise RuntimeError("Cannot switch CUDA-context.")
-            newctx.push()
-            return newctx
+        gpu = self.gpus[devnum]
+        newctx = gpu.get_primary_context()
+        # Detect unexpected context switch
+        cached_ctx = self._get_attached_context()
+        if cached_ctx is not None and cached_ctx is not newctx:
+            raise RuntimeError("Cannot switch CUDA-context.")
+        newctx.push()
+        return newctx
 
     def _get_attached_context(self):
-        return getattr(self._tls, "attached_context", None)
+        try:
+            return self._tls.attached_context
+        except AttributeError:
+            return None
 
     def _set_attached_context(self, ctx):
         self._tls.attached_context = ctx

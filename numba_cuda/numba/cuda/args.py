@@ -1,18 +1,18 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: BSD-2-Clause
+
 """
 Hints to wrap Kernel arguments to indicate how to manage host-device
 memory transfers before & after the kernel call.
 """
 
-import abc
-
-from numba.core.typing.typeof import typeof, Purpose
+from numba.cuda.typing.typeof import typeof, Purpose
 
 
-class ArgHint(metaclass=abc.ABCMeta):
+class ArgHint:
     def __init__(self, value):
         self.value = value
 
-    @abc.abstractmethod
     def to_device(self, retr, stream=0):
         """
         :param stream: a stream to use when copying data
@@ -22,7 +22,6 @@ class ArgHint(metaclass=abc.ABCMeta):
         :return: a value (usually an `DeviceNDArray`) to be passed to
             the kernel
         """
-        pass
 
     @property
     def _numba_type_(self):

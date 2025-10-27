@@ -1,9 +1,9 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: BSD-2-Clause
+
 import multiprocessing
 import os
-from numba.core import config
-from numba.cuda.cudadrv.runtime import runtime
-from numba.cuda.testing import unittest, SerialMixin, skip_on_cudasim
-from unittest.mock import patch
+from numba.cuda.testing import unittest
 
 
 def set_visible_devices_and_check(q):
@@ -18,40 +18,7 @@ def set_visible_devices_and_check(q):
         q.put(-1)
 
 
-if config.ENABLE_CUDASIM:
-    SUPPORTED_VERSIONS = ((-1, -1),)
-else:
-    SUPPORTED_VERSIONS = (
-        (11, 0),
-        (11, 1),
-        (11, 2),
-        (11, 3),
-        (11, 4),
-        (11, 5),
-        (11, 6),
-        (11, 7),
-    )
-
-
-class TestRuntime(unittest.TestCase):
-    def test_is_supported_version_true(self):
-        for v in SUPPORTED_VERSIONS:
-            with patch.object(runtime, "get_version", return_value=v):
-                self.assertTrue(runtime.is_supported_version())
-
-    @skip_on_cudasim("The simulator always simulates a supported runtime")
-    def test_is_supported_version_false(self):
-        # Check with an old unsupported version and some potential future
-        # versions
-        for v in ((10, 2), (11, 8), (12, 0)):
-            with patch.object(runtime, "get_version", return_value=v):
-                self.assertFalse(runtime.is_supported_version())
-
-    def test_supported_versions(self):
-        self.assertEqual(SUPPORTED_VERSIONS, runtime.supported_versions)
-
-
-class TestVisibleDevices(unittest.TestCase, SerialMixin):
+class TestVisibleDevices(unittest.TestCase):
     def test_visible_devices_set_after_import(self):
         # See Issue #6149. This test checks that we can set
         # CUDA_VISIBLE_DEVICES after importing Numba and have the value

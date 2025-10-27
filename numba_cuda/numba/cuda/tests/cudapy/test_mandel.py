@@ -1,4 +1,7 @@
-from numba import float64, uint32
+# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: BSD-2-Clause
+
+from numba.cuda import float64, uint32
 from numba.cuda.compiler import compile_ptx
 from numba.cuda.testing import skip_on_cudasim, unittest
 

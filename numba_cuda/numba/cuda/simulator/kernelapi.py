@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: BSD-2-Clause
+
 """
 Implements the cuda module as called from within an executing kernel
 (@cuda.jit-decorated function).
@@ -7,10 +10,10 @@ from contextlib import contextmanager
 import sys
 import threading
 import traceback
-from numba.core import types
+from numba.cuda import types
 import numpy as np
 
-from numba.np import numpy_support
+from numba.cuda.np import numpy_support
 
 from .vector_types import vector_types
 

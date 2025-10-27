@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: BSD-2-Clause
+
 import numbers
 from numba.core.errors import LoweringError
 
@@ -10,6 +13,13 @@ class KernelRuntimeError(RuntimeError):
         t = "An exception was raised in thread=%s block=%s\n\t%s"
         msg = t % (self.tid, self.ctaid, self.msg)
         super(KernelRuntimeError, self).__init__(msg)
+
+
+class UnsupportedBytecodeError(Exception):
+    """Unsupported bytecode is non-recoverable"""
+
+    def __init__(self, msg, loc=None):
+        super().__init__(f"{msg}. Raised from {loc}")
 
 
 class CudaLoweringError(LoweringError):

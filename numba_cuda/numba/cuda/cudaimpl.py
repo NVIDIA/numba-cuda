@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: BSD-2-Clause
+
 from functools import reduce
 import operator
 import math
@@ -6,21 +9,26 @@ import struct
 from llvmlite import ir
 import llvmlite.binding as ll
 
-from numba.core.imputils import Registry, lower_cast
-from numba.core.typing.npydecl import parse_dtype
-from numba.core.datamodel import models
-from numba.core import types, cgutils
-from numba.np import ufunc_db
-from numba.np.npyimpl import register_ufuncs
+from numba.cuda.core.imputils import Registry
+from numba.cuda.typing.npydecl import parse_dtype
+from numba.cuda.datamodel import models
+from numba.cuda import types
+from numba.cuda import cgutils
+from numba.cuda.np import ufunc_db
+from numba.cuda.np.npyimpl import register_ufuncs
 from .cudadrv import nvvm
 from numba import cuda
-from numba.cuda import nvvmutils, stubs, errors
-from numba.cuda.types import dim3, CUDADispatcher
+from numba.cuda import nvvmutils, stubs
+from numba.cuda.ext_types import dim3, CUDADispatcher
 
-registry = Registry()
+registry = Registry("cudaimpl")
 lower = registry.lower
 lower_attr = registry.lower_getattr
 lower_constant = registry.lower_constant
+lower_getattr_generic = registry.lower_getattr_generic
+lower_setattr = registry.lower_setattr
+lower_setattr_generic = registry.lower_setattr_generic
+lower_cast = registry.lower_cast
 
 
 def initialize_dim3(builder, prefix):
@@ -345,181 +353,6 @@ def ptx_popc(context, builder, sig, args):
 def ptx_fma(context, builder, sig, args):
     return builder.fma(*args)
 
-
-def float16_float_ty_constraint(bitwidth):
-    typemap = {32: ("f32", "f"), 64: ("f64", "d")}
-
-    try:
-        return typemap[bitwidth]
-    except KeyError:
-        msg = f"Conversion between float16 and float{bitwidth} unsupported"
-        raise errors.CudaLoweringError(msg)
-
-
-@lower_cast(types.float16, types.Float)
-def float16_to_float_cast(context, builder, fromty, toty, val):
-    if fromty.bitwidth == toty.bitwidth:
-        return val
-
-    ty, constraint = float16_float_ty_constraint(toty.bitwidth)
-
-    fnty = ir.FunctionType(context.get_value_type(toty), [ir.IntType(16)])
-    asm = ir.InlineAsm(fnty, f"cvt.{ty}.f16 $0, $1;", f"={constraint},h")
-    return builder.call(asm, [val])
-
-
-@lower_cast(types.Float, types.float16)
-def float_to_float16_cast(context, builder, fromty, toty, val):
-    if fromty.bitwidth == toty.bitwidth:
-        return val
-
-    ty, constraint = float16_float_ty_constraint(fromty.bitwidth)
-
-    fnty = ir.FunctionType(ir.IntType(16), [context.get_value_type(fromty)])
-    asm = ir.InlineAsm(fnty, f"cvt.rn.f16.{ty} $0, $1;", f"=h,{constraint}")
-    return builder.call(asm, [val])
-
-
-def float16_int_constraint(bitwidth):
-    typemap = {8: "c", 16: "h", 32: "r", 64: "l"}
-
-    try:
-        return typemap[bitwidth]
-    except KeyError:
-        msg = f"Conversion between float16 and int{bitwidth} unsupported"
-        raise errors.CudaLoweringError(msg)
-
-
-@lower_cast(types.float16, types.Integer)
-def float16_to_integer_cast(context, builder, fromty, toty, val):
-    bitwidth = toty.bitwidth
-    constraint = float16_int_constraint(bitwidth)
-    signedness = "s" if toty.signed else "u"
-
-    fnty = ir.FunctionType(context.get_value_type(toty), [ir.IntType(16)])
-    asm = ir.InlineAsm(
-        fnty, f"cvt.rni.{signedness}{bitwidth}.f16 $0, $1;", f"={constraint},h"
-    )
-    return builder.call(asm, [val])
-
-
-@lower_cast(types.Integer, types.float16)
-@lower_cast(types.IntegerLiteral, types.float16)
-def integer_to_float16_cast(context, builder, fromty, toty, val):
-    bitwidth = fromty.bitwidth
-    constraint = float16_int_constraint(bitwidth)
-    signedness = "s" if fromty.signed else "u"
-
-    fnty = ir.FunctionType(ir.IntType(16), [context.get_value_type(fromty)])
-    asm = ir.InlineAsm(
-        fnty, f"cvt.rn.f16.{signedness}{bitwidth} $0, $1;", f"=h,{constraint}"
-    )
-    return builder.call(asm, [val])
-
-
-def lower_fp16_binary(fn, op):
-    @lower(fn, types.float16, types.float16)
-    def ptx_fp16_binary(context, builder, sig, args):
-        fnty = ir.FunctionType(ir.IntType(16), [ir.IntType(16), ir.IntType(16)])
-        asm = ir.InlineAsm(fnty, f"{op}.f16 $0,$1,$2;", "=h,h,h")
-        return builder.call(asm, args)
-
-
-lower_fp16_binary(stubs.fp16.hadd, "add")
-lower_fp16_binary(operator.add, "add")
-lower_fp16_binary(operator.iadd, "add")
-lower_fp16_binary(stubs.fp16.hsub, "sub")
-lower_fp16_binary(operator.sub, "sub")
-lower_fp16_binary(operator.isub, "sub")
-lower_fp16_binary(stubs.fp16.hmul, "mul")
-lower_fp16_binary(operator.mul, "mul")
-lower_fp16_binary(operator.imul, "mul")
-
-
-@lower(stubs.fp16.hneg, types.float16)
-def ptx_fp16_hneg(context, builder, sig, args):
-    fnty = ir.FunctionType(ir.IntType(16), [ir.IntType(16)])
-    asm = ir.InlineAsm(fnty, "neg.f16 $0, $1;", "=h,h")
-    return builder.call(asm, args)
-
-
-@lower(operator.neg, types.float16)
-def operator_hneg(context, builder, sig, args):
-    return ptx_fp16_hneg(context, builder, sig, args)
-
-
-@lower(stubs.fp16.habs, types.float16)
-def ptx_fp16_habs(context, builder, sig, args):
-    fnty = ir.FunctionType(ir.IntType(16), [ir.IntType(16)])
-    asm = ir.InlineAsm(fnty, "abs.f16 $0, $1;", "=h,h")
-    return builder.call(asm, args)
-
-
-@lower(abs, types.float16)
-def operator_habs(context, builder, sig, args):
-    return ptx_fp16_habs(context, builder, sig, args)
-
-
-@lower(stubs.fp16.hfma, types.float16, types.float16, types.float16)
-def ptx_hfma(context, builder, sig, args):
-    argtys = [ir.IntType(16), ir.IntType(16), ir.IntType(16)]
-    fnty = ir.FunctionType(ir.IntType(16), argtys)
-    asm = ir.InlineAsm(fnty, "fma.rn.f16 $0,$1,$2,$3;", "=h,h,h,h")
-    return builder.call(asm, args)
-
-
-@lower(operator.truediv, types.float16, types.float16)
-@lower(operator.itruediv, types.float16, types.float16)
-def fp16_div_impl(context, builder, sig, args):
-    def fp16_div(x, y):
-        return cuda.fp16.hdiv(x, y)
-
-    return context.compile_internal(builder, fp16_div, sig, args)
-
-
-_fp16_cmp = """{{
-          .reg .pred __$$f16_cmp_tmp;
-          setp.{op}.f16 __$$f16_cmp_tmp, $1, $2;
-          selp.u16 $0, 1, 0, __$$f16_cmp_tmp;
-        }}"""
-
-
-def _gen_fp16_cmp(op):
-    def ptx_fp16_comparison(context, builder, sig, args):
-        fnty = ir.FunctionType(ir.IntType(16), [ir.IntType(16), ir.IntType(16)])
-        asm = ir.InlineAsm(fnty, _fp16_cmp.format(op=op), "=h,h,h")
-        result = builder.call(asm, args)
-
-        zero = context.get_constant(types.int16, 0)
-        int_result = builder.bitcast(result, ir.IntType(16))
-        return builder.icmp_unsigned("!=", int_result, zero)
-
-    return ptx_fp16_comparison
-
-
-lower(stubs.fp16.heq, types.float16, types.float16)(_gen_fp16_cmp("eq"))
-lower(operator.eq, types.float16, types.float16)(_gen_fp16_cmp("eq"))
-lower(stubs.fp16.hne, types.float16, types.float16)(_gen_fp16_cmp("ne"))
-lower(operator.ne, types.float16, types.float16)(_gen_fp16_cmp("ne"))
-lower(stubs.fp16.hge, types.float16, types.float16)(_gen_fp16_cmp("ge"))
-lower(operator.ge, types.float16, types.float16)(_gen_fp16_cmp("ge"))
-lower(stubs.fp16.hgt, types.float16, types.float16)(_gen_fp16_cmp("gt"))
-lower(operator.gt, types.float16, types.float16)(_gen_fp16_cmp("gt"))
-lower(stubs.fp16.hle, types.float16, types.float16)(_gen_fp16_cmp("le"))
-lower(operator.le, types.float16, types.float16)(_gen_fp16_cmp("le"))
-lower(stubs.fp16.hlt, types.float16, types.float16)(_gen_fp16_cmp("lt"))
-lower(operator.lt, types.float16, types.float16)(_gen_fp16_cmp("lt"))
-
-
-def lower_fp16_minmax(fn, fname, op):
-    @lower(fn, types.float16, types.float16)
-    def ptx_fp16_minmax(context, builder, sig, args):
-        choice = _gen_fp16_cmp(op)(context, builder, sig, args)
-        return builder.select(choice, args[0], args[1])
-
-
-lower_fp16_minmax(stubs.fp16.hmax, "max", "gt")
-lower_fp16_minmax(stubs.fp16.hmin, "min", "lt")
 
 # See:
 # https://docs.nvidia.com/cuda/libdevice-users-guide/__nv_cbrt.html#__nv_cbrt

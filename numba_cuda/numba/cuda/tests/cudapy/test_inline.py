@@ -1,6 +1,10 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: BSD-2-Clause
+
 import re
 import numpy as np
-from numba import cuda, types
+from numba import cuda
+from numba.cuda import types
 from numba.cuda.testing import (
     unittest,
     CUDATestCase,
@@ -10,7 +14,7 @@ from numba.cuda.testing import (
 
 @skip_on_cudasim("Cudasim does not support inline and forceinline")
 class TestCudaInline(CUDATestCase):
-    def _test_call_inline(self, inline):
+    def _test_call_inline(self, inline, inline_expected):
         """Test @cuda.jit(inline=...)"""
         a = np.ones(2, dtype=np.int32)
 
@@ -33,12 +37,10 @@ class TestCudaInline(CUDATestCase):
         pat = r"call [a-zA-Z0-9]* @"
         match = re.compile(pat).search(llvm_ir)
 
-        if inline == "always" or inline is True:
+        if inline_expected:
             # check that call was inlined
             self.assertIsNone(match, msg=llvm_ir)
         else:
-            assert inline == "never" or inline is False
-
             # check that call was not inlined
             self.assertIsNotNone(match, msg=llvm_ir)
 
@@ -46,16 +48,28 @@ class TestCudaInline(CUDATestCase):
         self.assertNotIn("alwaysinline", llvm_ir)
 
     def test_call_inline_always(self):
-        self._test_call_inline("always")
+        self._test_call_inline("always", True)
 
     def test_call_inline_never(self):
-        self._test_call_inline("never")
+        self._test_call_inline("never", False)
 
     def test_call_inline_true(self):
-        self._test_call_inline(True)
+        self._test_call_inline(True, True)
 
     def test_call_inline_false(self):
-        self._test_call_inline(False)
+        self._test_call_inline(False, False)
+
+    def test_call_inline_costmodel_false(self):
+        def cost_model(expr, caller_info, callee_info):
+            return False
+
+        self._test_call_inline(cost_model, False)
+
+    def test_call_inline_costmodel_true(self):
+        def cost_model(expr, caller_info, callee_info):
+            return True
+
+        self._test_call_inline(cost_model, True)
 
     def _test_call_forceinline(self, forceinline):
         """Test @cuda.jit(forceinline=...)"""

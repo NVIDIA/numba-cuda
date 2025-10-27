@@ -1,14 +1,17 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: BSD-2-Clause
+
 import numpy as np
 
 from collections import namedtuple
-from numba import void, int32, float32, float64
+from numba.cuda import void, int32, float32, float64
 from numba import guvectorize
 from numba import cuda
 from numba.cuda.testing import skip_on_cudasim, CUDATestCase
 import unittest
 import warnings
 from numba.core.errors import NumbaPerformanceWarning, TypingError
-from numba.tests.support import override_config
+from numba.cuda.tests.support import override_config
 
 
 def _get_matmulcore_gufunc(dtype=float32):
