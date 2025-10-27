@@ -25,8 +25,6 @@ EXITCODE=0
 trap "EXITCODE=1" ERR
 set +e
 
-PIXI_ENV="cu-$(cut -d. -f1-2 <<< "${CUDA_VER}" | tr . -)"
-
 rapids-logger "Show dependencies"
 pixi list -e "${PIXI_ENV}"
 
