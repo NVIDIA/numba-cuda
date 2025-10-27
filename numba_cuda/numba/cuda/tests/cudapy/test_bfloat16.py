@@ -1,6 +1,7 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-2-Clause
 
+import sys
 import numpy as np
 from ml_dtypes import bfloat16 as mldtypes_bf16
 from numba import cuda
@@ -134,12 +135,8 @@ class TestBfloat16HighLevelBindings(CUDATestCase):
         self.skip_unsupported()
 
         exp_functions = [math.exp]
-        try:
-            from math import exp2
-
-            exp_functions += [exp2]
-        except ImportError:
-            pass
+        if sys.version_info >= (3, 11):
+            exp_functions += [math.exp2]
 
         functions = [
             math.trunc,

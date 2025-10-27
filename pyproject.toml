@@ -167,13 +167,14 @@ cuda = "12"
 [tool.pixi.feature.cu13.system-requirements]
 cuda = "13"
 
-[tool.pixi.build-dependencies]
+[tool.pixi.dependencies]
 cuda-compiler = "*"
 make = "*"
 cxx-compiler = "*"
 
 [tool.pixi.feature.bench.dependencies]
 pytorch = "2.*"
+cupy = "*"
 
 [tool.pixi.environments]
 cu12 = { features = ["cu12", "test", "bench"], solve-group = "cu12" }
