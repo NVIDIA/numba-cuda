@@ -36,7 +36,7 @@ from collections import OrderedDict, defaultdict
 from functools import reduce
 
 from numba.cuda import types, utils, config
-from numba.core import ir
+from numba.cuda.core import ir
 from numba.cuda import typing
 from numba.cuda.typing.templates import Signature
 from numba.core.errors import (
@@ -49,6 +49,8 @@ from numba.core.errors import (
     CompilerError,
     NumbaValueError,
 )
+
+# from numba.core import errors as cudaErrors
 from numba.cuda.core.funcdesc import qualifying_prefix
 from numba.cuda.typeconv import Conversion
 

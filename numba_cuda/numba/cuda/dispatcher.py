@@ -27,7 +27,7 @@ from numba.cuda.typing.typeof import Purpose, typeof
 from numba.cuda import typing, types, ext_types
 from numba.cuda.api import get_current_device
 from numba.cuda.args import wrap_arg
-from numba.core.bytecode import get_code_object
+from numba.cuda.core.bytecode import get_code_object
 from numba.cuda.compiler import (
     compile_cuda,
     CUDACompiler,
