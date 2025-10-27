@@ -529,7 +529,7 @@ def add_offset_to_labels(blocks, offset):
             for inst in b.body:
                 for T, f in add_offset_to_labels_extensions.items():
                     if isinstance(inst, T):
-                        f(inst, offset)
+                        f_max = f(inst, offset)  # noqa: F841
         if isinstance(term, ir.Jump):
             b.body[-1] = ir.Jump(term.target + offset, term.loc)
         if isinstance(term, ir.Branch):
@@ -546,7 +546,9 @@ find_max_label_extensions = {}
 def find_max_label(blocks):
     max_label = 0
     for l, b in blocks.items():
+        term = None
         if b.body:
+            term = b.body[-1]  # noqa: F841
             for inst in b.body:
                 for T, f in find_max_label_extensions.items():
                     if isinstance(inst, T):
@@ -1590,6 +1592,7 @@ def get_array_accesses(blocks, accesses=None):
             if isinstance(inst, ir.StaticSetItem):
                 accesses.add((inst.target.name, inst.index_var.name))
             if isinstance(inst, ir.Assign):
+                lhs = inst.target.name  # noqa: F841
                 rhs = inst.value
                 if isinstance(rhs, ir.Expr) and rhs.op == "getitem":
                     accesses.add((rhs.value.name, rhs.index.name))
@@ -1796,7 +1799,7 @@ def find_callname(
             def_val = callee_def.value
             # get the underlying definition of Intrinsic object to be able to
             # find the module effectively.
-            # Otherwise, it will return numba.cuda.extending
+            # Otherwise, it will return numba.extending
             if isinstance(def_val, _Intrinsic):
                 def_val = def_val._defn
             if hasattr(def_val, "__module__"):
@@ -2162,7 +2165,7 @@ def is_namedtuple_class(c):
         return False
     # should have only tuple as superclass
     bases = c.__bases__
-    if len(bases) != 1 or bases[0] is not tuple:
+    if len(bases) != 1 or isinstance(bases[0], tuple):
         return False
     # should have _make method
     if not hasattr(c, "_make"):
@@ -2491,7 +2494,7 @@ def legalize_single_scope(blocks):
     return len({blk.scope for blk in blocks.values()}) == 1
 
 
-def check_and_legalize_ir(func_ir, flags: "numba.core.flags.Flags"):
+def check_and_legalize_ir(func_ir, flags: "numba.core.compiler.Flags"):
     """
     This checks that the IR presented is legal
     """
