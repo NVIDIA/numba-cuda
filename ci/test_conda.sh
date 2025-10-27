@@ -41,7 +41,5 @@ pixi run -e "${PIXI_ENV}" python -c "from numba import cuda"
 rapids-logger "Run Tests"
 pixi run -e "${PIXI_ENV}" test -n auto --dist loadscope --benchmark-disable -v
 
-popd
-
 rapids-logger "Test script exiting with value: $EXITCODE"
 exit ${EXITCODE}
