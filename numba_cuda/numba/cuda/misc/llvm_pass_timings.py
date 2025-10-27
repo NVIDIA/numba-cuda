@@ -9,7 +9,7 @@ from collections.abc import Sequence
 from contextlib import contextmanager
 from functools import cached_property
 
-from numba.core import config
+from numba.cuda import config
 
 import llvmlite.binding as llvm
 

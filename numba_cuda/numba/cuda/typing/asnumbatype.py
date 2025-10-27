@@ -6,7 +6,7 @@ import typing as py_typing
 
 from numba.cuda.typing.typeof import typeof
 from numba.core import errors
-from numba.core import types
+from numba.cuda import types
 
 
 class AsNumbaTypeRegistry:

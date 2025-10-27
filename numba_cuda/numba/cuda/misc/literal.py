@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: BSD-2-Clause
 
 from numba.cuda.extending import overload
-from numba.core import types
+from numba.cuda import types
 from numba.cuda.misc.special import literally, literal_unroll
 from numba.core.errors import TypingError
 

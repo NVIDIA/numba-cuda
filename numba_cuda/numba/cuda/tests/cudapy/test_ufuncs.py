@@ -6,8 +6,9 @@ import warnings
 import numpy as np
 import unittest
 
-from numba import cuda, types, njit, typeof
-from numba.cuda import config
+from numba import cuda, njit
+from numba.cuda import config, types
+from numba.cuda.typing.typeof import typeof
 from numba.cuda.np import numpy_support
 from numba.cuda.tests.support import TestCase
 

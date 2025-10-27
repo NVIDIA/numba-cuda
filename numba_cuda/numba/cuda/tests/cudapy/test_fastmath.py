@@ -1,9 +1,11 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-2-Clause
 
+import sys
 from typing import List
 from dataclasses import dataclass, field
-from numba import cuda, float32
+from numba import cuda
+from numba.cuda import float32
 from numba.cuda.compiler import compile_ptx_for_current_device, compile_ptx
 from math import cos, sin, tan, exp, log, log10, log2, pow, tanh
 from operator import truediv
@@ -138,6 +140,19 @@ class TestFastMathOption(CUDATestCase):
             exp,
             FastMathCriterion(
                 fast_unexpected=["fma.rn.f32 "], prec_expected=["fma.rn.f32 "]
+            ),
+        )
+
+    @unittest.skipUnless(sys.version_info >= (3, 11), "Python 3.11+ required")
+    def test_exp2f(self):
+        from math import exp2
+
+        self._test_fast_math_unary(
+            exp2,
+            FastMathCriterion(
+                fast_expected=["ex2.approx.ftz.f32 "],
+                prec_expected=["ex2.approx.f32 "],
+                prec_unexpected=["ex2.approx.ftz.f32 "],
             ),
         )
 

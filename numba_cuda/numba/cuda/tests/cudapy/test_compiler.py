@@ -3,18 +3,8 @@
 
 import os
 from math import sqrt
-
-
-from numba import (
-    cuda,
-    float32,
-    int16,
-    int32,
-    int64,
-    types,
-    uint32,
-    void,
-)
+from numba import cuda
+from numba.cuda import float32, int16, int32, int64, types, uint32, void
 from numba.cuda import (
     compile,
     compile_for_current_device,
