@@ -3,7 +3,6 @@
 
 import abc
 import os
-import llvmlite
 from contextlib import contextmanager
 
 from llvmlite import ir
@@ -18,12 +17,16 @@ from cuda.bindings import runtime
 # Check if CUDA Toolkit and llvmlite support polymorphic debug info
 def _get_llvmlite_version():
     """Get llvmlite version as tuple (major, minor)."""
-    # Parse version string like "0.46.0" or "0.46.0dev"
-    parts = llvmlite.__version__.split(".")
-    major = int(parts[0])
-    minor = int(parts[1])
-    return (major, minor)
-
+    try:
+        import llvmlite
+        version_str = llvmlite.__version__
+        # Parse version string like "0.46.0" or "0.46.0dev"
+        parts = version_str.split(".")
+        major = int(parts[0])
+        minor = int(parts[1])
+        return (major, minor)
+    except:
+        return (0, 0)
 
 def _check_polymorphic_debug_info_support():
     """Check if CTK and llvmlite support polymorphic debug info.
