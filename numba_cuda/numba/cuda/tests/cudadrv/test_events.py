@@ -4,6 +4,7 @@
 import numpy as np
 from numba import cuda
 from numba.cuda.testing import unittest, CUDATestCase
+from cuda.core.experimental import Device
 
 
 class TestCudaEvent(CUDATestCase):
@@ -22,8 +23,17 @@ class TestCudaEvent(CUDATestCase):
         evtstart.elapsed_time(evtend)
 
     def test_event_elapsed_stream(self):
-        N = 32
         stream = cuda.stream()
+        self.event_elapsed_inner(stream)
+
+    def test_event_elapsed_cuda_core_stream(self):
+        dev = Device()
+        dev.set_current()
+        stream = dev.create_stream()
+        self.event_elapsed_inner(stream)
+
+    def event_elapsed_inner(self, stream):
+        N = 32
         dary = cuda.device_array(N, dtype=np.double)
         evtstart = cuda.event()
         evtend = cuda.event()

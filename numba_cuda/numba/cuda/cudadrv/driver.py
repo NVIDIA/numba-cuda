@@ -2221,7 +2221,7 @@ class Event(object):
         queued in the stream at the time of the call to ``record()`` has been
         completed.
         """
-        hstream = stream.handle.value if stream else binding.CUstream(0)
+        hstream = _stream_handle(stream)
         handle = self.handle.value
         driver.cuEventRecord(handle, hstream)
 
@@ -2236,7 +2236,7 @@ class Event(object):
         """
         All future works submitted to stream will wait util the event completes.
         """
-        hstream = stream.handle.value if stream else binding.CUstream(0)
+        hstream = _stream_handle(stream)
         handle = self.handle.value
         flags = 0
         driver.cuStreamWaitEvent(hstream, handle, flags)
