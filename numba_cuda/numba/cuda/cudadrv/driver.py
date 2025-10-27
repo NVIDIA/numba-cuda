@@ -69,9 +69,6 @@ from cuda.core.experimental import (
     Stream as ExperimentalStream,
 )
 
-# For backwards compatibility: indicate that the NVIDIA CUDA Python bindings are
-# in use. Older code checks this flag to branch on binding-specific behavior.
-USE_NV_BINDING = True
 
 # There is no definition of the default stream in the Nvidia bindings (nor
 # is there at the C/C++ level), so we define it here so we don't need to
@@ -2076,7 +2073,7 @@ class Stream(object):
     def __cuda_stream__(self):
         if not self.handle.value:
             return (0, drvapi.CU_STREAM_DEFAULT)
-        return (0, self.handle.value if USE_NV_BINDING else self.handle)
+        return (0, self.handle.value)
 
     def __repr__(self):
         default_streams = {
