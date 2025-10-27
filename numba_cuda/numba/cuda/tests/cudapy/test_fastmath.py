@@ -146,6 +146,7 @@ class TestFastMathOption(CUDATestCase):
     @unittest.skipUnless(sys.version_info >= (3, 11), "Python 3.11+ required")
     def test_exp2f(self):
         from math import exp2
+
         self._test_fast_math_unary(
             exp2,
             FastMathCriterion(
