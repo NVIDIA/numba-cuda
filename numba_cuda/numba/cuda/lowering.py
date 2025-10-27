@@ -8,14 +8,16 @@ from functools import partial
 
 from llvmlite import ir as llvm_ir
 
-from numba.core import (
-    types,
-    ir,
+from numba.core import ir
+from numba.cuda import debuginfo, cgutils, utils, typing, types
+from numba.cuda.core import (
+    ir_utils,
+    targetconfig,
+    funcdesc,
+    config,
     generators,
     removerefctpass,
 )
-from numba.cuda import debuginfo, cgutils, utils, typing
-from numba.cuda.core import ir_utils, targetconfig, funcdesc, config
 
 from numba.core.errors import (
     LoweringError,
@@ -1237,7 +1239,9 @@ class Lower(BaseLower):
             )
         tname = expr.target
         if tname is not None:
-            from numba.core.target_extension import resolve_dispatcher_from_str
+            from numba.core.target_extension import (
+                resolve_dispatcher_from_str,
+            )
 
             disp = resolve_dispatcher_from_str(tname)
             hw_ctx = disp.targetdescr.target_context

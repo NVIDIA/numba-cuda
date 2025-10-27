@@ -8,7 +8,7 @@ Function descriptors.
 from collections import defaultdict
 import importlib
 
-from numba.core import types
+from numba.cuda import types
 from numba.cuda import itanium_mangler
 from numba.cuda.utils import _dynamic_modname, _dynamic_module
 
