@@ -4,6 +4,7 @@ import numpy as np
 
 from numba.tests.support import TestCase, MemoryLeakMixin
 from numba import cuda
+from numba.cuda import literal_unroll
 from numba.cuda import config
 
 
@@ -23,38 +24,24 @@ class TestArrayReductions(MemoryLeakMixin, TestCase):
         super(TestArrayReductions, self).tearDown()
 
     def test_all_basic(self):
-        cases = [
+        cases = (
             np.float64([1.0, 0.0, float("inf"), float("nan")]),
             np.float64([1.0, -0.0, float("inf"), float("nan")]),
             np.float64([1.0, 1.5, float("inf"), float("nan")]),
             np.float64([[1.0, 1.5], [float("inf"), float("nan")]]),
             np.float64([[1.0, 1.5], [1.5, 1.0]]),
-        ]
-
-        case_0 = cases[0]
-        case_1 = cases[1]
-        case_2 = cases[2]
-        case_3 = cases[3]
-        case_4 = cases[4]
+        )
 
         @cuda.jit
         def kernel(out):
-            gid = cuda.grid(1)
-            if gid == 0:
-                ans = np.all(case_0)
-            if gid == 1:
-                ans = np.all(case_1)
-            if gid == 2:
-                ans = np.all(case_2)
-            if gid == 3:
-                ans = np.all(case_3)
-            if gid == 4:
-                ans = np.all(case_4)
-            out[gid] = ans
+            i = 0
+            for case in literal_unroll(cases):
+                out[i] = np.all(case)
+                i += 1
 
         expected = np.array([np.all(a) for a in cases], dtype=np.bool_)
         out = cuda.to_device(np.zeros(len(cases), dtype=np.bool_))
-        kernel[1, len(cases)](out)
+        kernel[1, 1](out)
         got = out.copy_to_host()
 
         self.assertPreciseEqual(expected, got)
