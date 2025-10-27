@@ -3,21 +3,14 @@
 
 [build-system]
 build-backend = "setuptools.build_meta"
-requires = [
-    "setuptools",
-    "wheel",
-    "numpy",
-]
+requires = ["setuptools", "wheel", "numpy"]
 
 [project]
 name = "numba-cuda"
 dynamic = ["version"]
 description = "CUDA target for Numba"
 readme = { file = "README.md", content-type = "text/markdown" }
-authors = [
-    { name = "Anaconda Inc." },
-    { name = "NVIDIA Corporation" }
-]
+authors = [{ name = "Anaconda Inc." }, { name = "NVIDIA Corporation" }]
 license = "BSD-2-clause"
 license-files = ["LICENSE", "LICENSE.numba"]
 requires-python = ">=3.9"
@@ -58,14 +51,8 @@ test = [
     "ml_dtypes",
     "statistics",
 ]
-test-cu12 = [
-    "nvidia-curand-cu12",
-    { include-group = "test" }
-]
-test-cu13 = [
-    "nvidia-curand==10.4.*",
-    { include-group = "test" }
-]
+test-cu12 = ["nvidia-curand-cu12", { include-group = "test" }]
+test-cu13 = ["nvidia-curand==10.4.*", { include-group = "test" }]
 
 [project.urls]
 Homepage = "https://nvidia.github.io/numba-cuda/"
@@ -75,7 +62,7 @@ License = "https://github.com/NVIDIA/numba-cuda/blob/main/LICENSE"
 Issues = "https://github.com/NVIDIA/numba-cuda/issues"
 
 [tool.setuptools.dynamic]
-version = {attr = "numba_cuda.__version__"}
+version = { attr = "numba_cuda.__version__" }
 
 [tool.setuptools.packages.find]
 include = ["numba_cuda*"]
