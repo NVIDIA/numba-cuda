@@ -101,6 +101,15 @@ jobs:
           echo "RAPIDS_NIGHTLY_DATE=${{ inputs.date }}" >> "${GITHUB_ENV}"
       - name: Setup proxy cache
         uses: nv-gha-runners/setup-proxy-cache@main
+      - name: Compute pixi environment name
+        run: |
+          set -euo pipefail
+          PIXI_ENV="cu-$(cut -d. -f1-2 <<< "${{ matrix.CUDA_VER }}" | tr . -)"
+          echo "PIXI_ENV=${PIXI_ENV}" >> "${GITHUB_ENV}"
+      - name: Setup pixi
+        uses: prefix-dev/setup-pixi@fef5c9568ca6c4ff7707bf840ab0692ba3f08293
+        with:
+          environments: ${{ env.PIXI_ENV }}
       - name: Python tests
         run: ${{ inputs.script }}
         env:
