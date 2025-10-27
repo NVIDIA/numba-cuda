@@ -23,12 +23,13 @@ cuda-python = ">=12.9,<14"
 cuda = "12"
 
 [feature.cu-12.dependencies]
-cuda-nvcc = "12.*"
+cuda-version = "12.*"
+cuda-nvcc = "*"
 cuda-nvcc-impl = "*"
 cuda-cuobjdump = "*"
 cuda-nvrtc = "*"
-libnvjitlink = "12.*"
-cuda-cccl = "12.*"
+libnvjitlink = "*"
+cuda-cccl = "*"
 libcurand = "*"
 
 [feature.cu-12-0.dependencies]
@@ -37,29 +38,30 @@ cuda-version = "12.0.*"
 
 [feature.cu-12-2.dependencies]
 cuda-version = "12.2.*"
-cuda-nvvm = "12.2.*"
+cuda-nvvm = "*"
 # cuda-runtime fails to solve because of nvjitlink
 
 [feature.cu-12-8.dependencies]
 cuda-version = "12.8.*"
-cuda-nvvm = "12.8.*"
-cuda-runtime = "12.8.*"
+cuda-nvvm = "*"
+cuda-runtime = "*"
 
 [feature.cu-12-9.dependencies]
 cuda-version = "12.9.*"
-cuda-nvvm = "12.9.*"
-cuda-runtime = "12.9.*"
+cuda-nvvm = "*"
+cuda-runtime = "*"
 
 [feature.cu-13.system-requirements]
 cuda = "13"
 
 [feature.cu-13.dependencies]
-cuda-nvvm = "13.*"
+cuda-version = "13.*"
+cuda-nvvm = "*"
 cuda-nvrtc = "*"
-libnvjitlink = "13.*"
-cuda-cccl = "13.*"
-libcurand = "10.4.*"
-cuda-runtime = "13.*"
+libnvjitlink = "*"
+cuda-cccl = "*"
+libcurand = "*"
+cuda-runtime = "*"
 cuda-nvcc-impl = "*"
 cuda-cuobjdump = "*"
 
