@@ -6,16 +6,13 @@ Hints to wrap Kernel arguments to indicate how to manage host-device
 memory transfers before & after the kernel call.
 """
 
-import abc
-
 from numba.cuda.typing.typeof import typeof, Purpose
 
 
-class ArgHint(metaclass=abc.ABCMeta):
+class ArgHint:
     def __init__(self, value):
         self.value = value
 
-    @abc.abstractmethod
     def to_device(self, retr, stream=0):
         """
         :param stream: a stream to use when copying data
@@ -25,7 +22,6 @@ class ArgHint(metaclass=abc.ABCMeta):
         :return: a value (usually an `_DeviceNDArray`) to be passed to
             the kernel
         """
-        pass
 
     @property
     def _numba_type_(self):

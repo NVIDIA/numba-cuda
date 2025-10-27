@@ -3,8 +3,8 @@
 
 import operator
 
-from numba.core import types
-from numba.cuda import cgutils, typing
+from numba.cuda import types, typing
+from numba.cuda import cgutils
 
 from numba.cuda.core.imputils import Registry, impl_ret_untracked
 

@@ -17,8 +17,8 @@ from llvmlite.ir import Constant
 import numpy as np
 
 from numba import pndindex, literal_unroll
-from numba.core import types, errors
-from numba.cuda import typing
+from numba.cuda import types, typing
+from numba.core import errors
 from numba.cuda import cgutils, extending
 from numba.cuda.np.numpy_support import (
     as_dtype,
@@ -46,7 +46,7 @@ from numba.cuda.core.imputils import (
     Registry,
 )
 from numba.cuda.typing import signature
-from numba.core.types import StringLiteral
+from numba.cuda.types import StringLiteral
 from numba.cuda.extending import (
     register_jitable,
     overload,
