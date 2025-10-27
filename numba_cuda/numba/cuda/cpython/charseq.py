@@ -7,7 +7,7 @@ import operator
 import numpy as np
 from llvmlite import ir
 
-from numba.core import types
+from numba.cuda import types
 from numba.cuda import cgutils
 from numba.cuda.extending import (
     overload,

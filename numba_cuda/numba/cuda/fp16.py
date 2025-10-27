@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: BSD-2-Clause
 
 import sys
-import numba.core.types as types
+import numba.cuda.types as types
 from numba.cuda._internal.cuda_fp16 import (
     typing_registry,
     target_registry,

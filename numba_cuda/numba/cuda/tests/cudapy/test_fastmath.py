@@ -4,7 +4,8 @@
 import sys
 from typing import List
 from dataclasses import dataclass, field
-from numba import cuda, float32
+from numba import cuda
+from numba.cuda import float32
 from numba.cuda.compiler import compile_ptx_for_current_device, compile_ptx
 from math import cos, sin, tan, exp, exp2, log, log10, log2, pow, tanh
 from operator import truediv
@@ -147,9 +148,9 @@ class TestFastMathOption(CUDATestCase):
         self._test_fast_math_unary(
             exp2,
             FastMathCriterion(
-                fast_expected=["ex2.approx.ftz.f32 "], 
+                fast_expected=["ex2.approx.ftz.f32 "],
                 prec_expected=["ex2.approx.f32 "],
-                prec_unexpected=["ex2.approx.ftz.f32 "]
+                prec_unexpected=["ex2.approx.ftz.f32 "],
             ),
         )
 

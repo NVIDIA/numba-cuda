@@ -4,7 +4,7 @@
 import numba.cuda as cuda
 from numba.cuda.testing import CUDATestCase, skip_on_cudasim
 import llvmlite
-from numba import types
+from numba.cuda import types
 
 """
 llvmlite pre 45 left redundant metadata nodes for debug info

@@ -4,7 +4,8 @@
 # SPDX-License-Identifier: BSD-2-Clause
 #
 
-from numba.core import types, ir, config
+from numba.cuda import types, config
+from numba.core import ir
 from numba.cuda import compiler
 from numba.cuda.core.annotations import type_annotations
 from numba.cuda.core.ir_utils import (
