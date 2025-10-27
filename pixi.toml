@@ -8,38 +8,62 @@ platforms = ["linux-64", "linux-aarch64", "win-64"]
 numba-cuda = { path = ".", editable = true }
 
 [dependencies]
+# build deps
 cuda-compiler = "*"
 make = "*"
 cxx-compiler = "*"
+# core deps
+python = ">=3.9"
 numba = ">=0.60.0"
-cuda-bindings = ">=12.9.1,<14"
 cuda-core = ">=0.3,<0.4.0dev0"
-python = ">=3.9,<3.14"
+cuda-bindings = ">=12.9,<14"
+cuda-python = ">=12.9,<14"
 
-[feature.cu12.system-requirements]
+[feature.cu-12.system-requirements]
 cuda = "12"
 
-[feature.cu12.dependencies]
-cuda-python = "12.9.*"
+[feature.cu-12.dependencies]
 cuda-nvcc = "12.*"
-cuda-nvvm = "12.*"
-cuda-runtime = "12.*"
+cuda-nvcc-impl = "*"
+cuda-cuobjdump = "*"
 cuda-nvrtc = "*"
 libnvjitlink = "12.*"
 cuda-cccl = "12.*"
 libcurand = "*"
 
-[feature.cu13.system-requirements]
+[feature.cu-12-0.dependencies]
+cuda-version = "12.0.*"
+# cuda-runtime fails to solve because of nvjitlink
+
+[feature.cu-12-2.dependencies]
+cuda-version = "12.2.*"
+cuda-nvvm = "12.2.*"
+# cuda-runtime fails to solve because of nvjitlink
+
+[feature.cu-12-8.dependencies]
+cuda-version = "12.8.*"
+cuda-nvvm = "12.8.*"
+cuda-runtime = "12.8.*"
+
+[feature.cu-12-9.dependencies]
+cuda-version = "12.9.*"
+cuda-nvvm = "12.9.*"
+cuda-runtime = "12.9.*"
+
+[feature.cu-13.system-requirements]
 cuda = "13"
 
-[feature.cu13.dependencies]
-cuda-python = "13.*"
+[feature.cu-13.dependencies]
 cuda-nvvm = "13.*"
-cuda-runtime = "13.*"
 cuda-nvrtc = "*"
 libnvjitlink = "13.*"
 cuda-cccl = "13.*"
 libcurand = "10.4.*"
+cuda-runtime = "13.*"
+cuda-nvcc-impl = "*"
+cuda-cuobjdump = "*"
+
+[feature.cu-13-0.dependencies]
 
 [feature.bench.dependencies]
 pytorch = ">=2.8"
@@ -60,8 +84,13 @@ ml_dtypes = "*"
 filecheck = "*"
 
 [environments]
-cu12 = { features = ["cu12", "test", "bench"], solve-group = "cu12" }
-cu13 = { features = ["cu13", "test"], solve-group = "cu13" }
+# CUDA 12
+cu-12-0 = { features = ["cu-12-0", "test", "cu-12"], solve-group = "cu-12-0" }
+cu-12-2 = { features = ["cu-12-2", "test", "cu-12"], solve-group = "cu-12-2" }
+cu-12-8 = { features = ["cu-12-8", "test", "cu-12"], solve-group = "cu-12-8" }
+cu-12-9 = { features = ["cu-12-9", "test", "bench", "cu-12"], solve-group = "cu-12-9" }
+# CUDA 13
+cu-13-0 = { features = ["cu-13-0", "test", "cu-13"], solve-group = "cu-13-0" }
 
 [target.linux.tasks]
 build-tests = { cmd = [
