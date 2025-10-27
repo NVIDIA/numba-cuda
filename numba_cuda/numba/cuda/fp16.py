@@ -1,6 +1,7 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-2-Clause
 
+import sys
 import numba.cuda.types as types
 from numba.cuda._internal.cuda_fp16 import (
     typing_registry,
@@ -188,6 +189,13 @@ def log10_ol(a):
 @overload(math.exp, target="cuda")
 def exp_ol(a):
     return _make_unary(a, hexp)
+
+
+if sys.version_info >= (3, 11):
+
+    @overload(math.exp2, target="cuda")
+    def exp2_ol(a):
+        return _make_unary(a, hexp2)
 
 
 @overload(math.tanh, target="cuda")
