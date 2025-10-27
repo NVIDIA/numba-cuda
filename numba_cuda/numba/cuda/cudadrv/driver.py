@@ -64,6 +64,12 @@ from cuda.core.experimental import (
     ObjectCode,
 )
 
+from cuda.bindings.utils import get_cuda_native_handle
+from cuda.core.experimental import (
+    Stream as ExperimentalStream,
+)
+
+
 # There is no definition of the default stream in the Nvidia bindings (nor
 # is there at the C/C++ level), so we define it here so we don't need to
 # use a magic number 0 in places where we want the default stream.
@@ -2064,6 +2070,11 @@ class Stream(object):
         # The default stream's handle.value is 0, which gives `None`
         return self.handle.value or drvapi.CU_STREAM_DEFAULT
 
+    def __cuda_stream__(self):
+        if not self.handle.value:
+            return (0, drvapi.CU_STREAM_DEFAULT)
+        return (0, self.handle.value)
+
     def __repr__(self):
         default_streams = {
             drvapi.CU_STREAM_DEFAULT: "<Default CUDA stream on %s>",
@@ -2210,7 +2221,7 @@ class Event(object):
         queued in the stream at the time of the call to ``record()`` has been
         completed.
         """
-        hstream = stream.handle.value if stream else binding.CUstream(0)
+        hstream = _stream_handle(stream)
         handle = self.handle.value
         driver.cuEventRecord(handle, hstream)
 
@@ -2225,7 +2236,7 @@ class Event(object):
         """
         All future works submitted to stream will wait util the event completes.
         """
-        hstream = stream.handle.value if stream else binding.CUstream(0)
+        hstream = _stream_handle(stream)
         handle = self.handle.value
         flags = 0
         driver.cuStreamWaitEvent(hstream, handle, flags)
@@ -3080,17 +3091,14 @@ def host_to_device(dst, src, size, stream=0):
     it should not be changed until the operation which can be asynchronous
     completes.
     """
-    varargs = []
+    fn = driver.cuMemcpyHtoD
+    args = (device_pointer(dst), host_pointer(src, readonly=True), size)
 
     if stream:
-        assert isinstance(stream, Stream)
         fn = driver.cuMemcpyHtoDAsync
-        handle = stream.handle.value
-        varargs.append(handle)
-    else:
-        fn = driver.cuMemcpyHtoD
+        args += (_stream_handle(stream),)
 
-    fn(device_pointer(dst), host_pointer(src, readonly=True), size, *varargs)
+    fn(*args)
 
 
 def device_to_host(dst, src, size, stream=0):
@@ -3099,61 +3107,52 @@ def device_to_host(dst, src, size, stream=0):
     it should not be changed until the operation which can be asynchronous
     completes.
     """
-    varargs = []
+    fn = driver.cuMemcpyDtoH
+    args = (host_pointer(dst), device_pointer(src), size)
 
     if stream:
-        assert isinstance(stream, Stream)
         fn = driver.cuMemcpyDtoHAsync
-        handle = stream.handle.value
-        varargs.append(handle)
-    else:
-        fn = driver.cuMemcpyDtoH
+        args += (_stream_handle(stream),)
 
-    fn(host_pointer(dst), device_pointer(src), size, *varargs)
+    fn(*args)
 
 
 def device_to_device(dst, src, size, stream=0):
     """
-    NOTE: The underlying data pointer from the host data buffer is used and
+    NOTE: The underlying data pointer from the device buffer is used and
     it should not be changed until the operation which can be asynchronous
     completes.
     """
-    varargs = []
+    fn = driver.cuMemcpyDtoD
+    args = (device_pointer(dst), device_pointer(src), size)
 
     if stream:
-        assert isinstance(stream, Stream)
         fn = driver.cuMemcpyDtoDAsync
-        handle = stream.handle.value
-        varargs.append(handle)
-    else:
-        fn = driver.cuMemcpyDtoD
+        args += (_stream_handle(stream),)
 
-    fn(device_pointer(dst), device_pointer(src), size, *varargs)
+    fn(*args)
 
 
 def device_memset(dst, val, size, stream=0):
-    """Memset on the device.
-    If stream is not zero, asynchronous mode is used.
+    """
+    Memset on the device.
+    If stream is 0, the call is synchronous.
+    If stream is a Stream object, asynchronous mode is used.
 
     dst: device memory
     val: byte value to be written
-    size: number of byte to be written
-    stream: a CUDA stream
+    size: number of bytes to be written
+    stream: 0 (synchronous) or a CUDA stream
     """
-    ptr = device_pointer(dst)
-
-    varargs = []
+    fn = driver.cuMemsetD8
+    args = (device_pointer(dst), val, size)
 
     if stream:
-        assert isinstance(stream, Stream)
         fn = driver.cuMemsetD8Async
-        handle = stream.handle.value
-        varargs.append(handle)
-    else:
-        fn = driver.cuMemsetD8
+        args += (_stream_handle(stream),)
 
     try:
-        fn(ptr, val, size, *varargs)
+        fn(*args)
     except CudaAPIError as e:
         invalid = binding.CUresult.CUDA_ERROR_INVALID_VALUE
         if (
@@ -3226,3 +3225,28 @@ def inspect_obj_content(objpath: str):
             code_types.add(match.group(1))
 
     return code_types
+
+
+def _stream_handle(stream):
+    """
+    Obtain the appropriate handle for various types of
+    acceptable stream objects. Acceptable types are
+    int (0 for default stream), Stream, ExperimentalStream
+    """
+
+    if stream == 0:
+        return stream
+    allowed = (Stream, ExperimentalStream)
+    if not isinstance(stream, allowed):
+        raise TypeError(
+            "Expected a Stream object or 0, got %s" % type(stream).__name__
+        )
+    elif hasattr(stream, "__cuda_stream__"):
+        ver, ptr = stream.__cuda_stream__()
+        assert ver == 0
+        if isinstance(ptr, binding.CUstream):
+            return get_cuda_native_handle(ptr)
+        else:
+            return ptr
+    else:
+        raise TypeError("Invalid Stream")

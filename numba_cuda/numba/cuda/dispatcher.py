@@ -474,7 +474,7 @@ class _Kernel(serialize.ReduceMixin):
         for t, v in zip(self.argument_types, args):
             self._prepare_args(t, v, stream, retr, kernelargs)
 
-        stream_handle = stream and stream.handle.value or 0
+        stream_handle = driver._stream_handle(stream)
 
         # Invoke kernel
         driver.launch_kernel(
