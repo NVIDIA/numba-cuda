@@ -52,6 +52,7 @@ jobs:
       image: rapidsai/ci-conda:cuda13.0.0-ubuntu24.04-py3.13
       env:
         RAPIDS_BUILD_TYPE: ${{ inputs.build_type }}
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
         with:

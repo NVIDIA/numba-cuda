@@ -26,6 +26,7 @@ jobs:
           - "3.12"
           - "3.13"
     runs-on: "cuda-python-windows-gpu-github"
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
         with:
