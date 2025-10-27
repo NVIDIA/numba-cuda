@@ -7,7 +7,7 @@ from dataclasses import dataclass, field
 from numba import cuda
 from numba.cuda import float32
 from numba.cuda.compiler import compile_ptx_for_current_device, compile_ptx
-from math import cos, sin, tan, exp, exp2, log, log10, log2, pow, tanh
+from math import cos, sin, tan, exp, log, log10, log2, pow, tanh
 from operator import truediv
 import numpy as np
 from numba.cuda.testing import CUDATestCase, skip_on_cudasim, skip_unless_cc_75
@@ -145,6 +145,7 @@ class TestFastMathOption(CUDATestCase):
 
     @unittest.skipUnless(sys.version_info >= (3, 11), "Python 3.11+ required")
     def test_exp2f(self):
+        from math import exp2
         self._test_fast_math_unary(
             exp2,
             FastMathCriterion(
