@@ -13,7 +13,7 @@ import itertools
 import re
 import unittest
 import warnings
-from numba.core.errors import NumbaDebugInfoWarning
+from numba.cuda.core.errors import NumbaDebugInfoWarning
 from numba.cuda.tests.support import ignore_internal_warnings
 import numpy as np
 import inspect

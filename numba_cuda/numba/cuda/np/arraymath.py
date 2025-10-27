@@ -40,7 +40,7 @@ from numba.cuda.np.arrayobj import (
 from numba.cuda.np.linalg import ensure_blas
 
 from numba.cuda.extending import intrinsic
-from numba.core.errors import (
+from numba.cuda.core.errors import (
     RequireLiteralValue,
     TypingError,
     NumbaValueError,

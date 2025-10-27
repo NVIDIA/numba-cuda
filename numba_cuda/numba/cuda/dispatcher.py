@@ -15,7 +15,7 @@ import uuid
 import re
 from warnings import warn
 
-from numba.core import errors
+from numba.cuda.core import errors
 from numba.cuda import serialize, utils
 from numba import cuda
 

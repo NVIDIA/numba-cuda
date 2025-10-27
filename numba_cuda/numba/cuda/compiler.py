@@ -11,7 +11,7 @@ from numba.cuda.core import bytecode
 from numba.cuda import types
 from numba.cuda.core.options import ParallelOptions
 from numba.core.compiler_lock import global_compiler_lock
-from numba.core.errors import NumbaWarning, NumbaInvalidConfigWarning
+from numba.cuda.core.errors import NumbaWarning, NumbaInvalidConfigWarning
 from numba.cuda.core.interpreter import Interpreter
 
 from numba.cuda import cgutils, typing, lowering, nvvmutils, utils

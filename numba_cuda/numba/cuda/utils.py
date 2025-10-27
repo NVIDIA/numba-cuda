@@ -347,7 +347,7 @@ def order_by_target_specificity(target, templates, fnkey=""):
             f"Function resolution cannot find any matches for function "
             f"'{fnkey}' for the current target: '{target}'."
         )
-        from numba.core.errors import UnsupportedError
+        from numba.cuda.core.errors import UnsupportedError
 
         raise UnsupportedError(msg)
 
@@ -504,7 +504,7 @@ def unified_function_type(numba_types, require_precise=True):
     when the precise Numba function cannot be determined on the first
     occurrence that is not a call expression.
     """
-    from numba.core.errors import NumbaExperimentalFeatureWarning
+    from numba.cuda.core.errors import NumbaExperimentalFeatureWarning
     from numba.cuda import types
 
     if not (

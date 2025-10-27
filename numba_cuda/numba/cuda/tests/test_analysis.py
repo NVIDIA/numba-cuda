@@ -11,7 +11,7 @@ from numba.cuda.flags import Flags
 from numba.cuda.core.compiler import StateDict
 from numba.cuda import jit
 from numba.cuda import types
-from numba.core import errors
+from numba.cuda.core import errors
 from numba.cuda.core import ir
 from numba.cuda.utils import PYVERSION
 from numba.cuda.core import postproc, rewrites, ir_utils

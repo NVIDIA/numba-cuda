@@ -558,7 +558,7 @@ class WarningsFixer(object):
         self.flush()
 
 
-class NumbaError(Exception):
+class NumbaError(numba.core.errors.NumbaError):
     def __init__(self, msg, loc=None, highlighting=True):
         self.msg = msg
         self.loc = loc

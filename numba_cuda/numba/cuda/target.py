@@ -11,7 +11,7 @@ import importlib.util
 from numba.cuda import types
 
 from numba.core.compiler_lock import global_compiler_lock
-from numba.core.errors import NumbaWarning
+from numba.cuda.core.errors import NumbaWarning
 from numba.cuda.core.base import BaseContext
 from numba.cuda.typing import cmathdecl
 from numba.cuda import datamodel

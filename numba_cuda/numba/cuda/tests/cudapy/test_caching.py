@@ -11,7 +11,7 @@ import stat
 import subprocess
 
 from numba import cuda
-from numba.core.errors import NumbaWarning
+from numba.cuda.core.errors import NumbaWarning
 from numba.cuda.testing import (
     CUDATestCase,
     skip_on_cudasim,

@@ -20,7 +20,7 @@ from numba.cuda.core.analysis import (
     compute_use_defs,
     compute_cfg_from_blocks,
 )
-from numba.core.errors import (
+from numba.cuda.core.errors import (
     TypingError,
     UnsupportedError,
     NumbaPendingDeprecationWarning,

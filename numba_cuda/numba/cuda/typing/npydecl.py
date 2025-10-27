@@ -7,7 +7,7 @@ import operator
 from numba.cuda.typing.templates import AbstractTemplate, Registry, signature
 from numba.cuda import types
 from numba.cuda import utils
-from numba.core.errors import TypingError, NumbaTypeError
+from numba.cuda.core.errors import TypingError, NumbaTypeError
 from numba.cuda.np.numpy_support import (
     ufunc_find_matching_loop,
     supported_ufunc_loop,

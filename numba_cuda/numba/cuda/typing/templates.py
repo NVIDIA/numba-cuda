@@ -16,7 +16,7 @@ from types import MethodType, FunctionType, MappingProxyType
 
 import numba
 from numba.cuda import types
-from numba.core.errors import (
+from numba.cuda.core.errors import (
     TypingError,
     InternalError,
 )
