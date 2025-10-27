@@ -11,7 +11,7 @@ import operator
 import llvmlite.ir
 from llvmlite.ir import Constant
 
-from numba.core import types
+from numba.cuda import types
 from numba.cuda import cgutils
 from numba.cuda.cgutils import create_constant_array
 from numba.cuda.core.imputils import (

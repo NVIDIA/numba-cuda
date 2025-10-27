@@ -3,7 +3,7 @@
 
 import operator
 
-from numba.core import types
+from numba.cuda import types
 from .templates import (
     AbstractTemplate,
     AttributeTemplate,

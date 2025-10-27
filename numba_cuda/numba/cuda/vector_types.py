@@ -6,9 +6,9 @@
 
 from typing import List, Tuple, Dict
 
-from numba import types
+from numba.cuda import types
 from numba.cuda import cgutils
-from numba.core.datamodel import models
+from numba.cuda.datamodel import models
 from numba.cuda.core.imputils import Registry as ImplRegistry
 from numba.cuda.typing.templates import ConcreteTemplate
 from numba.cuda.typing.templates import Registry as TypingRegistry
@@ -63,7 +63,7 @@ def make_vector_type(
     ----------
     name: str
         The name of the type.
-    base_type: numba.types.Type
+    base_type: numba.cuda.types.Type
         The primitive type for each element in the vector.
     attr_names: tuple of str
         Name for each attribute.

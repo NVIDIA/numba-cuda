@@ -10,7 +10,7 @@ import numpy as np
 import operator
 from numba.cuda.testing import skip_if_nvjitlink_missing
 
-from numba import (
+from numba.cuda import (
     int16,
     int32,
     int64,
@@ -20,7 +20,7 @@ from numba import (
     float32,
     float64,
 )
-from numba.types import float16
+from numba.cuda.types import float16
 from numba.cuda import config
 
 if not config.ENABLE_CUDASIM:
