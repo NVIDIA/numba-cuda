@@ -460,11 +460,7 @@ class TestArrayReductions(MemoryLeakMixin, TestCase):
         def check(arr):
             @cuda.jit
             def kernel(out):
-                gid = cuda.grid(1)
-                if gid < 1:
-                    print(np.median(arr))
-                    print(arr[2])
-                    out[0] = np.median(arr)
+                out[0] = np.median(arr)
 
             expected = pyfunc(arr)
             out = cuda.to_device(np.zeros(1, dtype=np.float64))
