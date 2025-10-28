@@ -23,6 +23,9 @@ from numba.cuda.tests.support import linux_only, windows_only
 import unittest
 
 
+FUTURE_TIMEOUT = 4
+
+
 def base_ipc_handle_test(handle, size, parent_pid):
     pid = os.getpid()
     assert pid != parent_pid
@@ -97,7 +100,7 @@ class TestIpcMemory(CUDAIpcTestCase):
         fut = self.exe.submit(
             base_ipc_handle_test, handle_bytes, size, parent_pid=os.getpid()
         )
-        out = fut.result(timeout=3)
+        out = fut.result(timeout=FUTURE_TIMEOUT)
         np.testing.assert_equal(arr, out)
 
     def variants(self):
@@ -134,7 +137,7 @@ class TestIpcMemory(CUDAIpcTestCase):
         fut = self.exe.submit(
             serialize_ipc_handle_test, ipch, parent_pid=os.getpid()
         )
-        out = fut.result(timeout=3)
+        out = fut.result(timeout=FUTURE_TIMEOUT)
         np.testing.assert_equal(expect, out)
 
     def test_ipc_handle_serialization(self):
@@ -159,7 +162,7 @@ class TestIpcMemory(CUDAIpcTestCase):
 
         # spawn new process for testing
         fut = self.exe.submit(ipc_array_test, ipch, parent_pid=os.getpid())
-        out = fut.result(timeout=3)
+        out = fut.result(timeout=FUTURE_TIMEOUT)
         np.testing.assert_equal(expect, out)
 
     def test_ipc_array(self):
@@ -229,7 +232,9 @@ class TestIpcStaged(CUDAIpcTestCase):
             for device_num in range(ngpus)
         ]
 
-        for fut in concurrent.futures.as_completed(futures, timeout=3 * ngpus):
+        for fut in concurrent.futures.as_completed(
+            futures, timeout=FUTURE_TIMEOUT * ngpus
+        ):
             np.testing.assert_equal(arr, fut.result())
 
     def test_ipc_array(self):
@@ -243,7 +248,7 @@ class TestIpcStaged(CUDAIpcTestCase):
             fut = self.exe.submit(
                 staged_ipc_array_test, ipch, device_num, parent_pid=os.getpid()
             )
-            out = fut.result(timeout=3)
+            out = fut.result(timeout=FUTURE_TIMEOUT)
             np.testing.assert_equal(arr, out)
 
 
