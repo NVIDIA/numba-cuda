@@ -675,7 +675,7 @@ class TestNumbaInternalOverloads(TestCase):
                 msg.append(f"    -      got: {ol_sig}")
                 lineno = inspect.getsourcelines(overload_func)[1]
                 tmpsrcfile = inspect.getfile(overload_func)
-                srcfile = tmpsrcfile.replace(numba.__path__[0], "")
+                srcfile = tmpsrcfile.replace(numba.cuda.__path__[0], "")
                 msg.append(f"from {srcfile}:{lineno}")
                 msgstr = "\n" + "\n".join(msg)
                 return msgstr

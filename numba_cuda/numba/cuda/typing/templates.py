@@ -409,7 +409,7 @@ class AbstractTemplate(FunctionTemplate):
 
     def get_template_info(self):
         impl = getattr(self, "generic")
-        basepath = os.path.dirname(os.path.dirname(numba.__file__))
+        basepath = os.path.dirname(os.path.dirname(numba.cuda.__file__))
 
         code, firstlineno, path = self.get_source_code_info(impl)
         sig = str(utils.pysignature(impl))
@@ -496,7 +496,7 @@ class CallableTemplate(FunctionTemplate):
 
     def get_template_info(self):
         impl = getattr(self, "generic")
-        basepath = os.path.dirname(os.path.dirname(numba.__file__))
+        basepath = os.path.dirname(os.path.dirname(numba.cuda.__file__))
         code, firstlineno, path = self.get_source_code_info(impl)
         sig = str(utils.pysignature(impl))
         info = {
@@ -885,7 +885,7 @@ class _OverloadFunctionTemplate(AbstractTemplate):
             - "docstring": str
                 The docstring of the definition.
         """
-        basepath = os.path.dirname(os.path.dirname(numba.__file__))
+        basepath = os.path.dirname(os.path.dirname(numba.cuda.__file__))
         impl = cls._overload_func
         code, firstlineno, path = cls.get_source_code_info(impl)
         sig = str(utils.pysignature(impl))
@@ -900,7 +900,7 @@ class _OverloadFunctionTemplate(AbstractTemplate):
         return info
 
     def get_template_info(self):
-        basepath = os.path.dirname(os.path.dirname(numba.__file__))
+        basepath = os.path.dirname(os.path.dirname(numba.cuda.__file__))
         impl = self._overload_func
         code, firstlineno, path = self.get_source_code_info(impl)
         sig = str(utils.pysignature(impl))
@@ -1057,7 +1057,7 @@ class _IntrinsicTemplate(_TemplateTargetHelperMixin, AbstractTemplate):
         return self._overload_cache[sig.args]
 
     def get_template_info(self):
-        basepath = os.path.dirname(os.path.dirname(numba.__file__))
+        basepath = os.path.dirname(os.path.dirname(numba.cuda.__file__))
         impl = self._definition_func
         code, firstlineno, path = self.get_source_code_info(impl)
         sig = str(utils.pysignature(impl))
@@ -1219,7 +1219,7 @@ class _OverloadMethodTemplate(_OverloadAttributeTemplate):
                     return sig.as_method()
 
             def get_template_info(self):
-                basepath = os.path.dirname(os.path.dirname(numba.__file__))
+                basepath = os.path.dirname(os.path.dirname(numba.cuda.__file__))
                 impl = self._overload_func
                 code, firstlineno, path = self.get_source_code_info(impl)
                 sig = str(utils.pysignature(impl))
