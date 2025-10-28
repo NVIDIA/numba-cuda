@@ -36,7 +36,7 @@ from numba.cuda.core import config, targetconfig
 # Typing
 
 
-class CUDATypingContext(typing.Context):
+class CUDATypingContext(typing.BaseContext):
     def load_additional_registries(self):
         from . import (
             cudadecl,
@@ -46,18 +46,18 @@ class CUDATypingContext(typing.Context):
             libdevicedecl,
             vector_types,
         )
-        from numba.cuda.typing import enumdecl, cffi_utils
+        from numba.cuda.typing import enumdecl, cffi_utils, npydecl
 
         self.install_registry(cudadecl.registry)
         self.install_registry(cffi_utils.registry)
         self.install_registry(cudamath.registry)
         self.install_registry(cmathdecl.registry)
         self.install_registry(libdevicedecl.registry)
+        self.install_registry(npydecl.registry)
         self.install_registry(enumdecl.registry)
         self.install_registry(vector_types.typing_registry)
         self.install_registry(fp16.typing_registry)
         self.install_registry(bf16.typing_registry)
-        super().load_additional_registries()
 
     def resolve_value_type(self, val):
         # treat other dispatcher object as another device function

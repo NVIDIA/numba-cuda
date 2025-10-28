@@ -522,7 +522,7 @@ class BaseContext(object):
             else:
                 # A type was already inserted, see if we can add to it
                 newty = existing.augment(gty)
-                if newty is None and existing != gty:
+                if newty is None:
                     raise TypeError(
                         "cannot augment %s with %s" % (existing, gty)
                     )
