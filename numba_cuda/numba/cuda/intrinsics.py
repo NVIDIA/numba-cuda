@@ -3,7 +3,8 @@
 
 from llvmlite import ir
 
-from numba import cuda, types
+from numba import cuda
+from numba.cuda import types
 from numba.cuda import cgutils
 from numba.core.errors import RequireLiteralValue, TypingError
 from numba.cuda.typing import signature

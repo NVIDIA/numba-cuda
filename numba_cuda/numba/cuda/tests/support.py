@@ -22,7 +22,7 @@ import traceback
 
 import numpy as np
 
-from numba import types
+from numba.cuda import types
 from numba.core import errors
 from numba.cuda.core import config
 from numba.cuda.typing import cffi_utils
@@ -33,8 +33,15 @@ from numba.cuda.extending import (
     NativeValue,
 )
 from numba.cuda.core.pythonapi import unbox
-from numba.core.datamodel.models import OpaqueModel
+from numba.cuda.datamodel.models import OpaqueModel
 from numba.cuda.np import numpy_support
+
+try:
+    from numba.core.extending import typeof_impl as upstream_typeof_impl
+    from numba.core import types as upstream_types
+except ImportError:
+    upstream_typeof_impl = None
+    upstream_types = None
 
 
 class EnableNRTStatsMixin(object):
@@ -760,6 +767,17 @@ class TestCase(unittest.TestCase):
         @typeof_impl.register(Dummy)
         def typeof_dummy(val, c):
             return dummy_type
+
+        # Dual registration for cross-target tests
+        if upstream_typeof_impl is not None and upstream_types is not None:
+            UpstreamDummyType = type(
+                "DummyTypeFor{}".format(test_id), (upstream_types.Opaque,), {}
+            )
+            upstream_dummy_type = UpstreamDummyType("my_dummy")
+
+            @upstream_typeof_impl.register(Dummy)
+            def typeof_dummy_core(val, c):
+                return upstream_dummy_type
 
         @unbox(DummyType)
         def unbox_dummy(typ, obj, c):

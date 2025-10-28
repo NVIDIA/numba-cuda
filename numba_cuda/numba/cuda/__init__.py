@@ -7,6 +7,12 @@ from .utils import _readenv
 import warnings
 import sys
 
+# Re-export types itself
+import numba.cuda.types as types
+
+# Re-export all type names
+from numba.cuda.types import *
+
 
 # Require NVIDIA CUDA bindings at import time
 if not (

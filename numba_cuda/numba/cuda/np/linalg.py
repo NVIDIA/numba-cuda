@@ -15,7 +15,7 @@ import operator
 from numba.cuda.core.imputils import impl_ret_borrowed, impl_ret_new_ref
 from numba.cuda.typing import signature
 from numba.cuda.extending import intrinsic, overload, register_jitable
-from numba.core import types
+from numba.cuda import types
 from numba.cuda import cgutils
 from numba.core.errors import (
     TypingError,

@@ -11,9 +11,9 @@ import functools
 
 from llvmlite import ir
 
-from numba.core import types
+from numba.cuda import types
 from numba.cuda import config, utils, debuginfo
-import numba.core.datamodel
+import numba.cuda.datamodel
 
 
 bool_t = ir.IntType(1)
@@ -104,7 +104,7 @@ class _StructProxy(object):
     def __init__(self, context, builder, value=None, ref=None):
         self._context = context
         self._datamodel = self._context.data_model_manager[self._fe_type]
-        if not isinstance(self._datamodel, numba.core.datamodel.StructModel):
+        if not isinstance(self._datamodel, numba.cuda.datamodel.StructModel):
             raise TypeError(
                 "Not a structure model: {0}".format(self._datamodel)
             )

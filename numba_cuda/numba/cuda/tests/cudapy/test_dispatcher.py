@@ -5,18 +5,17 @@ from numba.cuda.cudadrv.driver import CudaAPIError
 import numpy as np
 import threading
 
-from numba import (
+from numba.cuda.types import (
     boolean,
-    cuda,
     float32,
     float64,
     int32,
     int64,
-    types,
     uint32,
     void,
 )
-from numba.cuda import config
+from numba import cuda
+from numba.cuda import config, types
 from numba.core.errors import TypingError
 from numba.cuda.testing import (
     cc_X_or_above,

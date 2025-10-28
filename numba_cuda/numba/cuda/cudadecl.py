@@ -1,7 +1,8 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-2-Clause
 
-from numba.core import errors, types
+from numba.core import errors
+from numba.cuda import types
 from numba.cuda.typing.npydecl import (
     parse_dtype,
     parse_shape,
@@ -20,7 +21,7 @@ from numba.cuda.typing.templates import (
     signature,
     Registry,
 )
-from numba.cuda.types import dim3
+from numba.cuda.ext_types import dim3
 from numba import cuda
 
 registry = Registry()

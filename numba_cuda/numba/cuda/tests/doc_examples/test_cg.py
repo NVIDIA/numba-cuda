@@ -19,7 +19,8 @@ from numba.cuda.testing import (
 class TestCooperativeGroups(CUDATestCase):
     def test_ex_grid_sync(self):
         # magictoken.ex_grid_sync_kernel.begin
-        from numba import cuda, int32
+        from numba import cuda
+        from numba.cuda import int32
         import numpy as np
 
         sig = (int32[:, ::1],)

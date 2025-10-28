@@ -10,7 +10,8 @@ import logging
 
 import numpy as np
 
-from numba import types, cuda
+from numba.cuda import types
+from numba import cuda
 from numba.cuda import jit
 from numba.core import errors
 
