@@ -30,7 +30,7 @@ requirements:
     - python
     - numba >=0.59.1
     - cuda-bindings >=12.9.1
-    - cuda-core ==0.3.*
+    - cuda-core ==0.4.*
 
 about:
   home: {{ project_urls["Homepage"] }}
