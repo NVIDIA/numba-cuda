@@ -1,12 +1,25 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-2-Clause
 
-from numba import cuda, njit, types, version_info
-from numba.core.errors import TypingError
+import numba.cuda as cuda
+import numba.cuda.types as types
+from numba.cuda import _HAS_NUMBA
+
+if _HAS_NUMBA:
+    from numba.core.errors import TypingError  # compat-ignore
+    from numba import njit  # compat-ignore
+else:
+    from numba.cuda.core.errors import TypingError
+from numba.cuda import version_info
 from numba.cuda.extending import overload, overload_attribute
 from numba.cuda.typing.typeof import typeof
 from numba.core.typing.typeof import typeof as cpu_typeof
-from numba.cuda.testing import CUDATestCase, skip_on_cudasim, unittest
+from numba.cuda.testing import (
+    CUDATestCase,
+    skip_on_cudasim,
+    unittest,
+    skip_on_standalone_numba_cuda,
+)
 import numpy as np
 
 
@@ -224,6 +237,9 @@ class TestOverload(CUDATestCase):
         cuda.jit(kernel)[1, 1](x)
         self.assertEqual(x[0], expected)
 
+    @skip_on_standalone_numba_cuda(
+        "Test not supported in standalone numba_cuda"
+    )
     def check_overload_cpu(self, kernel, expected):
         x = np.ones(1, dtype=np.int32)
         njit(kernel)(x)
@@ -328,6 +344,9 @@ class TestOverload(CUDATestCase):
         expected = GENERIC_TARGET_OL_CALLS_TARGET_OL * GENERIC_TARGET_OL
         self.check_overload_cpu(kernel, expected)
 
+    @skip_on_standalone_numba_cuda(
+        "Test not supported in standalone numba_cuda"
+    )
     def test_overload_attribute_target(self):
         MyDummy, MyDummyType = self.make_dummy_type()
         mydummy_type_cpu = cpu_typeof(MyDummy())  # For @njit (cpu)

@@ -3,17 +3,17 @@
 
 import math
 
-from numba import (
-    cuda,
+import numba.cuda as cuda
+from numba.cuda import (
     float32,
     float64,
     uint32,
     int64,
     uint64,
     from_dtype,
-    jit,
 )
 from numba.cuda import config
+from numba import jit  # compat-ignore
 
 import numpy as np
 

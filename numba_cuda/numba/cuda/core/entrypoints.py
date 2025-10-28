@@ -17,7 +17,7 @@ def init_all():
     If extensions have already been initialized, this function does nothing.
     """
     if _HAS_NUMBA:
-        from numba.core import entrypoints
+        from numba.core import entrypoints  # compat-ignore
 
         entrypoints.init_all()
 

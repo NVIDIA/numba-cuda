@@ -25,12 +25,10 @@ from numba.cuda.core.options import InlineOptions
 from numba.cuda import utils
 from numba.cuda.core import targetconfig
 
-try:
-    from numba.core.typing import Signature as CoreSignature
+from numba.cuda import _HAS_NUMBA
 
-    numba_sig_present = True
-except ImportError:
-    numba_sig_present = False
+if _HAS_NUMBA:
+    from numba.core.typing import Signature as CoreSignature  # compat-ignore
 
 # info store for inliner callback functions e.g. cost model
 _inline_info = namedtuple("inline_info", "func_ir typemap calltypes signature")
@@ -100,7 +98,7 @@ class Signature(object):
 
     def __eq__(self, other):
         sig_types = (Signature,)
-        if numba_sig_present:
+        if _HAS_NUMBA:
             sig_types = (Signature, CoreSignature)
         if isinstance(other, sig_types):
             return (
@@ -384,7 +382,7 @@ class AbstractTemplate(FunctionTemplate):
         # Enforce that *generic()* must return None or Signature
         if sig is not None:
             sig_types = (Signature,)
-            if numba_sig_present:
+            if _HAS_NUMBA:
                 sig_types = (Signature, CoreSignature)
             if not isinstance(sig, sig_types):
                 raise AssertionError(

@@ -3,8 +3,13 @@
 
 from numba import cuda
 from numba.cuda import int32, float64, void
-from numba.cuda.core.errors import TypingError
-import numba.core.errors as numbaError
+from numba.cuda import _HAS_NUMBA
+
+if _HAS_NUMBA:
+    from numba.core.errors import TypingError  # compat-ignore
+    from numba.cuda.core.errors import TypingError as cudaTypingError
+else:
+    from numba.cuda.core.errors import TypingError as cudaTypingError
 from numba.cuda import types
 from numba.cuda.testing import unittest, CUDATestCase, skip_on_cudasim
 
@@ -402,7 +407,7 @@ class TestSharedMemory(CUDATestCase):
         def unsupported_type():
             arr = cuda.shared.array(10, dtype=np.dtype("O"))  # noqa: F841
 
-        with self.assertRaisesRegex(TypingError, rgx):
+        with self.assertRaisesRegex(cudaTypingError, rgx):
             cuda.jit(void())(unsupported_type)
 
         rgx = ".*Invalid NumPy dtype specified: 'int33'.*"
@@ -410,7 +415,7 @@ class TestSharedMemory(CUDATestCase):
         def invalid_string_type():
             arr = cuda.shared.array(10, dtype="int33")  # noqa: F841
 
-        with self.assertRaisesRegex(numbaError.TypingError, rgx):
+        with self.assertRaisesRegex(TypingError, rgx):
             cuda.jit(void())(invalid_string_type)
 
     @skip_on_cudasim("Struct model array unsupported in simulator")

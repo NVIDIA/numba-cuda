@@ -36,10 +36,14 @@ from numba.cuda.core.pythonapi import unbox
 from numba.cuda.datamodel.models import OpaqueModel
 from numba.cuda.np import numpy_support
 
-try:
-    from numba.core.extending import typeof_impl as upstream_typeof_impl
-    from numba.core import types as upstream_types
-except ImportError:
+from numba.cuda import _HAS_NUMBA
+
+if _HAS_NUMBA:
+    from numba.core.extending import (
+        typeof_impl as upstream_typeof_impl,
+    )  # compat-ignore
+    from numba.core import types as upstream_types  # compat-ignore
+else:
     upstream_typeof_impl = None
     upstream_types = None
 

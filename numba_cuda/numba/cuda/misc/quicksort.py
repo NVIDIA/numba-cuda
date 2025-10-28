@@ -268,6 +268,6 @@ def make_py_quicksort(*args, **kwargs):
 
 
 def make_jit_quicksort(*args, **kwargs):
-    from numba.core.extending import register_jitable
+    from numba.cuda.extending import register_jitable
 
     return make_quicksort_impl((lambda f: register_jitable(f)), *args, **kwargs)

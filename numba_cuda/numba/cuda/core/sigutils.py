@@ -1,14 +1,10 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-2-Clause
 
-from numba.cuda import types, typing
+from numba.cuda import types, typing, _HAS_NUMBA
 
-try:
-    from numba.core.typing import Signature as CoreSignature
-
-    numba_sig_present = True
-except ImportError:
-    numba_sig_present = False
+if _HAS_NUMBA:
+    from numba.core.typing import Signature as CoreSignature  # compat-ignore
 
 
 def is_signature(sig):
@@ -17,7 +13,7 @@ def is_signature(sig):
     specification (for user-facing APIs).
     """
     sig_types = (str, tuple, typing.Signature)
-    if numba_sig_present:
+    if _HAS_NUMBA:
         sig_types = (str, tuple, typing.Signature, CoreSignature)
     return isinstance(sig, sig_types)
 
@@ -46,7 +42,7 @@ def normalize_signature(sig):
         args, return_type = parsed, None
     else:
         sig_types = (typing.Signature,)
-        if numba_sig_present:
+        if _HAS_NUMBA:
             sig_types = (typing.Signature, CoreSignature)
         if isinstance(parsed, sig_types):
             args, return_type = parsed.args, parsed.return_type

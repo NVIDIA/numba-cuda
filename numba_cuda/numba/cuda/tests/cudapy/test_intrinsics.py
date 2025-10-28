@@ -7,7 +7,12 @@ import operator
 import re
 from numba import cuda
 from numba.cuda import int64
-from numba.core.errors import TypingError
+from numba.cuda import _HAS_NUMBA
+
+if _HAS_NUMBA:
+    from numba.core.errors import TypingError  # compat-ignore
+else:
+    from numba.cuda.core.errors import TypingError
 from numba.cuda.types import f2
 from numba.cuda.testing import (
     unittest,

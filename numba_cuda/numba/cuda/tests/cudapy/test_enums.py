@@ -8,9 +8,19 @@ Test cases adapted from numba/tests/test_enums.py
 import numpy as np
 
 from numba.cuda import int16, int32
-from numba import cuda, vectorize, njit
+from numba.cuda import vectorize
+from numba.cuda import _HAS_NUMBA
+
+if _HAS_NUMBA:
+    from numba import njit  # compat-ignore
+import numba.cuda as cuda
 from numba.cuda import types
-from numba.cuda.testing import unittest, CUDATestCase, skip_on_cudasim
+from numba.cuda.testing import (
+    unittest,
+    CUDATestCase,
+    skip_on_cudasim,
+    skip_on_standalone_numba_cuda,
+)
 from numba.cuda.tests.enum_usecases import (
     Color,
     Shape,
@@ -57,6 +67,9 @@ class EnumTest(CUDATestCase):
         f(expected)
         self.assertPreciseEqual(expected, got)
 
+    @skip_on_standalone_numba_cuda(
+        "Test not supported in standalone numba_cuda"
+    )
     def test_return_from_device_func(self):
         @njit
         def inner(pred):

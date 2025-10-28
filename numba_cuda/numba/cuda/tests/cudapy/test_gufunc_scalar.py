@@ -8,7 +8,8 @@ See Numpy documentation for detail about gufunc:
 """
 
 import numpy as np
-from numba import guvectorize, cuda
+from numba.cuda import guvectorize
+import numba.cuda as cuda
 from numba.cuda.testing import skip_on_cudasim, CUDATestCase
 import unittest
 

@@ -226,7 +226,7 @@ class CUDATargetContext(BaseContext):
         # Install only implementations that are defined outside of numba (i.e.,
         # in third-party extensions) from Numba's builtin_registry.
         if importlib.util.find_spec("numba.core.imputils") is not None:
-            from numba.core.imputils import builtin_registry
+            from numba.core.imputils import builtin_registry  # compat-ignore
 
             self.install_external_registry(builtin_registry)
 

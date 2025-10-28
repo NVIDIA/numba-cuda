@@ -9,7 +9,7 @@ import itertools
 from types import CodeType, ModuleType
 
 from numba.cuda.core import errors
-from numba.core import serialize
+from numba.cuda import serialize
 from numba.cuda import utils
 from numba.cuda.utils import PYVERSION
 

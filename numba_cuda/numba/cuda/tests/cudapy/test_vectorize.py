@@ -7,7 +7,7 @@ from collections import namedtuple
 from functools import partial
 from itertools import product
 from numba.cuda import vectorize as cuda_vectorize
-from numba import cuda, vectorize as numba_vectorize
+from numba import cuda, vectorize as numba_vectorize  # compat-ignore
 from numba.cuda.types import int32, float32, float64
 from numba.cuda.cudadrv.driver import CudaAPIError, driver
 from numba.cuda.testing import skip_on_cudasim

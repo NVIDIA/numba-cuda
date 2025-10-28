@@ -10,10 +10,16 @@ import sys
 import unittest
 from multiprocessing import get_context
 
-import numba
-from numba.core.errors import TypingError
+from numba.cuda import _HAS_NUMBA
+
+if _HAS_NUMBA:
+    from numba.core.errors import TypingError  # compat-ignore
+    import numba  # compat-ignore
+else:
+    from numba.cuda.core.errors import TypingError
 from numba.cuda.tests.support import TestCase
 from numba.cuda.cloudpickle import dumps, loads
+from numba.cuda.testing import skip_on_standalone_numba_cuda
 
 try:
     from numba.core.target_extension import resolve_dispatcher_from_str
@@ -304,7 +310,10 @@ class TestCloudPickleIssues(TestCase):
         proc.join(timeout=60)
         self.assertEqual(proc.exitcode, 0)
 
+    @skip_on_standalone_numba_cuda
     def test_dynamic_class_issue_7356(self):
+        import numba  # compat-ignore
+
         cfunc = numba.njit(issue_7356)
         self.assertEqual(cfunc(), (100, 100))
 

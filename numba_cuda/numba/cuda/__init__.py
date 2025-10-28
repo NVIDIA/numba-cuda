@@ -10,6 +10,12 @@ import sys
 # Import version from the parent package
 from numba_cuda._version import __version__
 
+# Generate version_info early to avoid circular import issues
+from numba_cuda._version import generate_version_info
+
+version_info = generate_version_info(__version__)
+del generate_version_info
+
 # Re-export types itself
 import numba.cuda.types as types
 
@@ -79,3 +85,4 @@ if sys.platform.startswith("linux") and (sys.getdlopenflags() & 0x100) != 0:
 from numba.cuda.np.ufunc import vectorize, guvectorize
 from numba.cuda.misc import quicksort, mergesort
 from numba.cuda.misc.special import literal_unroll
+from numba.cuda.np.numpy_support import *
