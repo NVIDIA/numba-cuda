@@ -7,6 +7,9 @@ from .utils import _readenv
 import warnings
 import sys
 
+# Import version from the parent package
+from numba_cuda._version import __version__
+
 # Re-export types itself
 import numba.cuda.types as types
 
