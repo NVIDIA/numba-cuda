@@ -37,7 +37,13 @@ def _check_polymorphic_debug_info_support():
         - use_typed_const: True for typed constant,
                            False for node reference
     """
-    ctk_version = runtime.getLocalRuntimeVersion()
+    # runtime.getLocalRuntimeVersion() returns (cudaError_t, version_int)
+    # Example: 13010 = CTK 13.1, 13020 = CTK 13.2
+    _, ctk_version_number = runtime.getLocalRuntimeVersion()
+    ctk_major = ctk_version_number // 1000
+    ctk_minor = (ctk_version_number % 1000) // 10
+    ctk_version = (ctk_major, ctk_minor)
+
     llvmlite_version = _get_llvmlite_version()
 
     # Support not available with CTK 13.1 or older
