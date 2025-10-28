@@ -727,11 +727,15 @@ class CUDADIBuilder(DIBuilder):
             if config.CUDA_DEBUG_POLY:
                 # Polymorphic variable debug info generation
                 wrapper_struct_size = 2 * maxwidth
+                # Generate unique discriminator name based on composite type
+                variant_elements_metadata = m.add_metadata(meta)
+                discriminator_unique_id = str(id(variant_elements_metadata))
+                discriminator_name = f"discriminator-{discriminator_unique_id}"
                 discriminator = m.add_debug_info(
                     "DIDerivedType",
                     {
                         "tag": ir.DIToken("DW_TAG_member"),
-                        "name": "discriminator",
+                        "name": discriminator_name,
                         "baseType": m.add_debug_info(
                             "DIBasicType",
                             {
@@ -745,8 +749,7 @@ class CUDADIBuilder(DIBuilder):
                     },
                 )
                 # Create the final variant_part with actual members
-                variant_elements_metadata = m.add_metadata(meta)
-                variant_unique_identifier = str(id(variant_elements_metadata))
+                variant_unique_identifier = discriminator_unique_id
                 variant_part_type = m.add_debug_info(
                     "DICompositeType",
                     {
