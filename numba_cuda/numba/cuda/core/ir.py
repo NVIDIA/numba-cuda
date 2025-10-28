@@ -1708,8 +1708,8 @@ class FunctionIR(object):
                     raise ValueError(msg)
                 else:
                     from pygments import highlight
-                    from numba.misc.dump_style import NumbaIRLexer as lexer
-                    from numba.misc.dump_style import by_colorscheme
+                    from numba.cuda.misc.dump_style import NumbaIRLexer as lexer
+                    from numba.cuda.misc.dump_style import by_colorscheme
                     from pygments.formatters import Terminal256Formatter
 
                     print(

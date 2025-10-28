@@ -10,7 +10,7 @@ import operator
 from functools import reduce
 
 from .controlflow import CFGraph
-from numba.misc import special
+from numba.cuda.misc import special
 
 #
 # Analysis related to variable lifetime
