@@ -44,3 +44,5 @@ extern "C" __device__ void NRT_MemInfo_init(NRT_MemInfo* mi,
                                             size_t size,
                                             NRT_dtor_function dtor,
                                             void* dtor_info);
+extern "C" __device__ NRT_MemInfo* NRT_MemInfo_new_varsize(size_t size);
+extern "C" __device__ NRT_MemInfo* NRT_MemInfo_new_varsize_dtor(size_t size, NRT_dtor_function dtor);
