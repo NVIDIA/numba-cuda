@@ -85,7 +85,6 @@ class InlineClosureCallPass(object):
         self.func_ir = func_ir
         self.parallel_options = parallel_options
         self.swapped = swapped
-        self._processed_stencils = []
         self.typed = typed
 
     def run(self):
@@ -125,11 +124,6 @@ class InlineClosureCallPass(object):
                         ):
                             modified = True
                             break  # because block structure changed
-
-                        if guard(
-                            self._inline_stencil, instr, call_name, func_def
-                        ):
-                            modified = True
 
         if enable_inline_arraycall:
             # Identify loop structure
@@ -214,91 +208,6 @@ class InlineClosureCallPass(object):
             work_list=work_list,
             callee_validator=callee_ir_validator,
         )
-        return True
-
-    def _inline_stencil(self, instr, call_name, func_def):
-        from numba.stencils.stencil import StencilFunc
-
-        lhs = instr.target
-        expr = instr.value
-        # We keep the escaping variables of the stencil kernel
-        # alive by adding them to the actual kernel call as extra
-        # keyword arguments, which is ignored anyway.
-        if (
-            isinstance(func_def, ir.Global)
-            and func_def.name == "stencil"
-            and isinstance(func_def.value, StencilFunc)
-        ):
-            if expr.kws:
-                expr.kws += func_def.value.kws
-            else:
-                expr.kws = func_def.value.kws
-            return True
-        # Otherwise we proceed to check if it is a call to numba.stencil
-        require(
-            call_name == ("stencil", "numba.stencils.stencil")
-            or call_name == ("stencil", "numba")
-        )
-        require(expr not in self._processed_stencils)
-        self._processed_stencils.append(expr)
-        if not len(expr.args) == 1:
-            raise ValueError(
-                "As a minimum Stencil requires a kernel as an argument"
-            )
-        stencil_def = guard(get_definition, self.func_ir, expr.args[0])
-        require(
-            isinstance(stencil_def, ir.Expr)
-            and stencil_def.op == "make_function"
-        )
-        kernel_ir = get_ir_of_code(
-            self.func_ir.func_id.func.__globals__, stencil_def.code
-        )
-        options = dict(expr.kws)
-        if "neighborhood" in options:
-            fixed = guard(self._fix_stencil_neighborhood, options)
-            if not fixed:
-                raise ValueError(
-                    "stencil neighborhood option should be a tuple"
-                    " with constant structure such as ((-w, w),)"
-                )
-        if "index_offsets" in options:
-            fixed = guard(self._fix_stencil_index_offsets, options)
-            if not fixed:
-                raise ValueError(
-                    "stencil index_offsets option should be a tuple"
-                    " with constant structure such as (offset, )"
-                )
-        sf = StencilFunc(kernel_ir, "constant", options)
-        sf.kws = expr.kws  # hack to keep variables live
-        sf_global = ir.Global("stencil", sf, expr.loc)
-        self.func_ir._definitions[lhs.name] = [sf_global]
-        instr.value = sf_global
-        return True
-
-    def _fix_stencil_neighborhood(self, options):
-        """
-        Extract the two-level tuple representing the stencil neighborhood
-        from the program IR to provide a tuple to StencilFunc.
-        """
-        # build_tuple node with neighborhood for each dimension
-        dims_build_tuple = get_definition(self.func_ir, options["neighborhood"])
-        require(hasattr(dims_build_tuple, "items"))
-        res = []
-        for window_var in dims_build_tuple.items:
-            win_build_tuple = get_definition(self.func_ir, window_var)
-            require(hasattr(win_build_tuple, "items"))
-            res.append(tuple(win_build_tuple.items))
-        options["neighborhood"] = tuple(res)
-        return True
-
-    def _fix_stencil_index_offsets(self, options):
-        """
-        Extract the tuple representing the stencil index offsets
-        from the program IR to provide to StencilFunc.
-        """
-        offset_tuple = get_definition(self.func_ir, options["index_offsets"])
-        require(hasattr(offset_tuple, "items"))
-        options["index_offsets"] = tuple(offset_tuple.items)
         return True
 
     def _inline_closure(self, work_list, block, i, func_def):

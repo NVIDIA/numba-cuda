@@ -66,3 +66,4 @@ if sys.platform.startswith("linux") and (sys.getdlopenflags() & 0x100) != 0:
     )
 
 from numba.cuda.np.ufunc import vectorize, guvectorize
+from numba.cuda.misc.special import literal_unroll
