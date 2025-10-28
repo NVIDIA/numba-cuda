@@ -8,7 +8,6 @@ import operator
 
 from numba.cuda import types
 from numba.core import errors
-from numba import prange
 
 from numba.cuda.typing.templates import (
     AttributeTemplate,
@@ -87,7 +86,6 @@ class Slice(ConcreteTemplate):
 
 
 @infer_global(range, typing_key=range)
-@infer_global(prange, typing_key=prange)
 class Range(ConcreteTemplate):
     cases = [
         signature(types.range_state32_type, types.int32),
