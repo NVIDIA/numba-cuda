@@ -19,7 +19,7 @@ from numba.cuda.core.imputils import (
     RefType,
 )
 from numba.cuda.extending import overload_method, overload
-from numba.misc import quicksort
+from numba.cuda.misc import quicksort
 from numba.cuda.cpython import slicing
 from numba import literal_unroll
 

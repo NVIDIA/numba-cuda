@@ -54,7 +54,7 @@ from numba.cuda.extending import (
     intrinsic,
     overload_attribute,
 )
-from numba.misc import quicksort, mergesort
+from numba.cuda.misc import quicksort, mergesort
 from numba.cuda.cpython import slicing
 from numba.cuda.cpython.unsafe.tuple import (
     tuple_setitem,
