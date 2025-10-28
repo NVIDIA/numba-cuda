@@ -23,10 +23,12 @@ def _get_llvmlite_version():
         version_str = llvmlite.__version__
         # Parse version string like "0.46.0" or "0.46.0dev"
         parts = version_str.split(".")
+        if len(parts) < 2:
+            return (0, 0)
         major = int(parts[0])
         minor = int(parts[1])
         return (major, minor)
-    except:
+    except (ImportError, AttributeError, ValueError):
         return (0, 0)
 
 
