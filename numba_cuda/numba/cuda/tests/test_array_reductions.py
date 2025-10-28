@@ -4,7 +4,7 @@ import numpy as np
 
 from numba.tests.support import TestCase, MemoryLeakMixin
 from numba import cuda
-from numba.cuda import literal_unroll
+from numba.cuda.misc.special import literal_unroll
 from numba.cuda import config
 
 

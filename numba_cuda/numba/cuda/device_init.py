@@ -87,9 +87,6 @@ from numba.cuda.cudadrv.linkable_code import (
     PTXSource,
 )
 
-from numba.cuda.misc.special import literal_unroll
-from numba.cuda.misc import literal
-
 reduce = Reduce = reduction.Reduce
 
 # Expose vector type constructors and aliases as module level attributes.

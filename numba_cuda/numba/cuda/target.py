@@ -181,6 +181,7 @@ class CUDATargetContext(BaseContext):
         from numba.cuda.core import optional  # noqa: F401
         from numba.cuda.misc import cffiimpl
         from numba.cuda.np import arrayobj, npdatetime, polynomial, arraymath
+
         from . import (
             cudaimpl,
             fp16,

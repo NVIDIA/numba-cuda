@@ -66,3 +66,33 @@ if sys.platform.startswith("linux") and (sys.getdlopenflags() & 0x100) != 0:
     )
 
 from numba.cuda.np.ufunc import vectorize, guvectorize
+
+
+_lazy_exports = {
+    "literal_unroll": ("numba.cuda.misc.special", "literal_unroll"),
+    "literal": ("numba.cuda.misc", "literal"),
+}
+
+__all__ = list(globals().get("__all__", [])) + list(_lazy_exports.keys())
+
+
+def __getattr__(name):
+    """
+    Lazily import a few attrs that might import lowering
+    """
+    if name in _lazy_exports:
+        mod_name, attr_name = _lazy_exports[name]
+        try:
+            module = importlib.import_module(mod_name)
+            value = getattr(module, attr_name)
+        except Exception as exc:
+            raise ImportError(
+                f"could not import name {attr_name!r} from {mod_name!r}"
+            ) from exc
+        globals()[name] = value
+        return value
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+
+
+def __dir__():
+    return sorted(set(list(globals().keys()) + list(_lazy_exports.keys())))
