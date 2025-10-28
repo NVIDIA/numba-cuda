@@ -25,6 +25,7 @@ from numba.cuda.core.errors import (
     ConstantInferenceError,
 )
 from numba.cuda.core import consts
+from numba.cuda import _HAS_NUMBA
 
 # terminal color markup
 _termcolor = errors.termcolor()
@@ -776,7 +777,10 @@ class StoreMap(Stmt):
 class Del(Stmt):
     def __init__(self, value, loc):
         assert isinstance(value, str)
-        assert isinstance(loc, (Loc, numba.core.ir.Loc))
+        if _HAS_NUMBA:
+            assert isinstance(loc, (Loc, numba.core.ir.Loc))
+        else:
+            assert isinstance(loc)
         self.value = value
         self.loc = loc
 
@@ -1342,8 +1346,12 @@ class Block(EqualityCheckMixin):
     """A code block"""
 
     def __init__(self, scope, loc):
-        assert isinstance(scope, (Scope, numba.core.ir.Scope))
-        assert isinstance(loc, (Loc, numba.core.ir.Loc))
+        if _HAS_NUMBA:
+            assert isinstance(scope, (Scope, numba.core.ir.Scope))
+            assert isinstance(loc, (Loc, numba.core.ir.Loc))
+        else:
+            assert isinstance(scope, Scope)
+            assert isinstance(loc, Loc)
         self.scope = scope
         self.body = []
         self.loc = loc

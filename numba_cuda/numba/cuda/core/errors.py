@@ -815,7 +815,7 @@ class ForceLiteralArg(NumbaError):
     def bind_fold_arguments(self, fold_arguments):
         """Bind the fold_arguments function"""
         # to avoid circular import
-        from numba.core.utils import chain_exception
+        from numba.cuda.core.utils import chain_exception
 
         e = ForceLiteralArg(self.requested_args, fold_arguments, loc=self.loc)
         return chain_exception(e, self)

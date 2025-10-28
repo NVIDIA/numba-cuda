@@ -32,7 +32,7 @@ def get_registered_loc_notify() -> Sequence["NotifyLocBase"]:
 
 
 class NotifyLocBase(ABC):
-    """Interface for notifying visiting of a ``numba.core.ir.Loc``."""
+    """Interface for notifying visiting of a ``numba.cuda.core.ir.Loc``."""
 
     @abstractmethod
     def notify(self, loc: ir.Loc) -> None:

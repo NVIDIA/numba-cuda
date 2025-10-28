@@ -21,7 +21,7 @@ from numba.cuda.core.imputils import (
 from numba.cuda.extending import overload_method, overload
 from numba.cuda.misc import quicksort
 from numba.cuda.cpython import slicing
-from numba import literal_unroll
+from numba.cuda import literal_unroll
 
 registry = Registry("listobj")
 lower = registry.lower

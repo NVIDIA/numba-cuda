@@ -16,6 +16,14 @@ import numba.cuda.types as types
 # Re-export all type names
 from numba.cuda.types import *
 
+# Check if upstream numba is available - needs to be defined early to avoid circular imports
+try:
+    import numba
+
+    _HAS_NUMBA = True
+except ImportError:
+    _HAS_NUMBA = False
+
 
 # Require NVIDIA CUDA bindings at import time
 if not (
@@ -71,10 +79,3 @@ if sys.platform.startswith("linux") and (sys.getdlopenflags() & 0x100) != 0:
 from numba.cuda.np.ufunc import vectorize, guvectorize
 from numba.cuda.misc import quicksort, mergesort
 from numba.cuda.misc.special import literal_unroll
-
-try:
-    import numba
-
-    _HAS_NUMBA = True
-except ImportError:
-    _HAS_NUMBA = False

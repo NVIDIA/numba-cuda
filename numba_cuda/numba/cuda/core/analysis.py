@@ -354,7 +354,7 @@ def rewrite_semantic_constants(func_ir, called_args):
                     if isinstance(argty, types.BaseTuple):
                         rewrite_statement(func_ir, stmt, argty.count)
 
-    from numba.core.ir_utils import get_definition, guard
+    from numba.cuda.core.ir_utils import get_definition, guard
 
     for blk in func_ir.blocks.values():
         for stmt in blk.body:
