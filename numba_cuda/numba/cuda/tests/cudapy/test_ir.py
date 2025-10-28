@@ -9,7 +9,7 @@ import numpy as np
 from numba import objmode
 from numba.cuda.core import ir
 from numba.cuda import compiler
-from numba.core import errors
+from numba.cuda.core import errors
 from numba.cuda.core.compiler import (
     CompilerBase,
 )

@@ -12,7 +12,7 @@ from llvmlite.ir import Constant
 
 from numba.cuda.core.imputils import impl_ret_untracked, Registry
 from numba.cuda import types
-from numba.core import errors
+from numba.cuda.core import errors
 from numba.cuda.extending import overload_method
 from numba.cuda.cpython.unsafe.numbers import viewer
 from numba.cuda import cgutils, typing

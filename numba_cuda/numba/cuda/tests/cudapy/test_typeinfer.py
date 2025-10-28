@@ -3,7 +3,7 @@
 
 import itertools
 
-from numba.core import errors
+from numba.cuda.core import errors
 from numba.cuda import types, typing
 from numba.cuda.typeconv import Conversion
 

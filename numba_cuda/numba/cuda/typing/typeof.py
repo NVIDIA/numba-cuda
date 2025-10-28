@@ -10,7 +10,7 @@ import numpy as np
 from numpy.random.bit_generator import BitGenerator
 
 from numba.cuda import types
-from numba.core import errors
+from numba.cuda.core import errors
 from numba.cuda import utils
 from numba.cuda.np import numpy_support
 

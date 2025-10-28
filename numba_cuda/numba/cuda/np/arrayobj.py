@@ -18,7 +18,7 @@ import numpy as np
 
 from numba.cuda import literal_unroll
 from numba.cuda import types, typing
-from numba.core import errors
+from numba.cuda.core import errors
 from numba.cuda import cgutils, extending
 from numba.cuda.np.numpy_support import (
     as_dtype,

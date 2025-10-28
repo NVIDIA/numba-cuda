@@ -4,7 +4,7 @@
 from collections import namedtuple, defaultdict
 from numba.cuda import types
 from numba.cuda.core import ir
-from numba.core import errors
+from numba.cuda.core import errors
 from numba.cuda.core import consts
 import operator
 from functools import reduce

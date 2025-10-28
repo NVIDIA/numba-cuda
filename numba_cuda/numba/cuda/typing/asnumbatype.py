@@ -5,7 +5,7 @@ import inspect
 import typing as py_typing
 
 from numba.cuda.typing.typeof import typeof
-from numba.core import errors
+from numba.cuda.core import errors
 from numba.cuda import types
 
 

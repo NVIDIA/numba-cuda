@@ -11,7 +11,13 @@ import numpy as np
 import numba
 from numba.cuda import jit
 from numba.cuda import types
-from numba.core import errors
+from numba.cuda import _HAS_NUMBA
+
+if _HAS_NUMBA:
+    from numba.core import errors
+else:
+    from numba.cuda.core import errors
+
 from numba.cuda.tests.support import (
     TestCase,
 )

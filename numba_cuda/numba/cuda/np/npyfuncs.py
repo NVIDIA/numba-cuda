@@ -15,7 +15,7 @@ import numpy as np
 from numba.cuda.extending import overload
 from numba.cuda.core.imputils import impl_ret_untracked
 from numba.cuda import types
-from numba.core import errors
+from numba.cuda.core import errors
 from numba.cuda import cgutils, typing
 from numba.cuda.np import npdatetime
 from numba.cuda.extending import register_jitable

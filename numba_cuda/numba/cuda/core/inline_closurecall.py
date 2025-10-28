@@ -7,7 +7,7 @@ import ctypes
 import numba.cuda.core.analysis
 from numba.cuda import types, config, cgutils
 from numba.cuda.core import ir
-from numba.core import errors
+from numba.cuda.core import errors
 from numba.cuda import typing, utils
 from numba.cuda.core.ir_utils import (
     next_label,

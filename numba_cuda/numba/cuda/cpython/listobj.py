@@ -9,7 +9,7 @@ import operator
 
 from llvmlite import ir
 from numba.cuda import types
-from numba.core import errors
+from numba.cuda.core import errors
 from numba.cuda import cgutils
 from numba.cuda.core.imputils import (
     Registry,

@@ -7,7 +7,7 @@ import numpy as np
 import operator
 
 from numba.cuda import types
-from numba.core import errors
+from numba.cuda.core import errors
 
 from numba.cuda.typing.templates import (
     AttributeTemplate,
