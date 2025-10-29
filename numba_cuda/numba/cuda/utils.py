@@ -8,6 +8,7 @@ import functools
 
 import atexit
 import builtins
+import importlib
 import inspect
 import operator
 import timeit
@@ -710,3 +711,14 @@ def _readenv(name, ctor, default):
 def cached_file_read(filepath, how="r"):
     with open(filepath, how) as f:
         return f.read()
+
+
+@contextlib.contextmanager
+def numba_target_override():
+    if importlib.util.find_spec("numba"):
+        from numba.core.target_extension import target_override
+
+        with target_override("cuda"):
+            yield
+    else:
+        yield
