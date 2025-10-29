@@ -314,10 +314,8 @@ class BaseFunction(Callable):
             context, self, args, kws, depth=self._depth
         )
 
-        from numba.cuda.descriptor import cuda_target
-
         order = utils.order_by_target_specificity(
-            cuda_target, self.templates, fnkey=self.key[0]
+            self.templates, fnkey=self.key[0]
         )
 
         self._depth += 1

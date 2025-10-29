@@ -312,7 +312,7 @@ class ConfigOptions(object):
         return hash(tuple(sorted(self._values.items())))
 
 
-def order_by_target_specificity(target, templates, fnkey=""):
+def order_by_target_specificity(templates, fnkey=""):
     """This orders the given templates from most to least specific against the
     current "target". "fnkey" is an indicative typing key for use in the
     exception message in the case that there's no usable templates for the
@@ -346,7 +346,7 @@ def order_by_target_specificity(target, templates, fnkey=""):
     if not order:
         msg = (
             f"Function resolution cannot find any matches for function "
-            f"'{fnkey}' for the current target: '{target}'."
+            f"'{fnkey}'."
         )
         from numba.core.errors import UnsupportedError
 

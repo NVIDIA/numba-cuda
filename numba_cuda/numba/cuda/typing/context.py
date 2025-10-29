@@ -290,9 +290,7 @@ class BaseContext(object):
     def find_matching_getattr_template(self, typ, attr):
         templates = list(self._get_attribute_templates(typ))
 
-        from numba.cuda.descriptor import cuda_target
-
-        order = order_by_target_specificity(cuda_target, templates, fnkey=attr)
+        order = order_by_target_specificity(templates, fnkey=attr)
 
         for template in order:
             return_type = template.resolve(typ, attr)
