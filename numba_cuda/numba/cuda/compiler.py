@@ -48,7 +48,6 @@ from numba.cuda.core.untyped_passes import (
     WithLifting,
     InlineInlinables,
     FindLiterallyCalls,
-    MakeFunctionToJitFunction,
     LiteralUnroll,
     ReconstructSSA,
     RewriteDynamicRaises,
@@ -225,11 +224,6 @@ class DefaultPassBuilder(object):
 
         pm.add_pass(RewriteDynamicRaises, "rewrite dynamic raises")
 
-        # convert any remaining closures into functions
-        pm.add_pass(
-            MakeFunctionToJitFunction,
-            "convert make_function into JIT functions",
-        )
         # inline functions that have been determined as inlinable and rerun
         # branch pruning, this needs to be run after closures are inlined as
         # the IR repr of a closure masks call sites if an inlinable is called
