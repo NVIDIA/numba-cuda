@@ -11,7 +11,10 @@ from math import sqrt
 import numpy as np
 import numpy.random as nprand
 
-from numba import jit
+from numba.cuda import _HAS_NUMBA
+
+if _HAS_NUMBA:
+    from numba import jit
 
 
 @jit("int32(int32, int32)")

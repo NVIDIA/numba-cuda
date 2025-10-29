@@ -219,12 +219,12 @@ def overload(
         # For generic/CPU targets, also register in numba.core registry
         if target in ("generic", "cpu"):
             try:
-                from numba.core.typing.templates import (  # compat-ignore
-                    make_overload_template as core_make_overload_template,  # compat-ignore
-                    infer as core_infer,  # compat-ignore
-                    infer_global as core_infer_global,  # compat-ignore
-                )  # compat-ignore
-                from numba.core import types as core_types  # compat-ignore
+                from numba.core.typing.templates import (
+                    make_overload_template as core_make_overload_template,
+                    infer as core_infer,
+                    infer_global as core_infer_global,
+                )
+                from numba.core import types as core_types
 
                 core_template = core_make_overload_template(
                     func,
@@ -310,10 +310,10 @@ def overload_attribute(typ, attr, target="cuda", **kwargs):
         # For generic/CPU targets, also register in numba.core registry
         if target in ("generic", "cpu"):
             try:
-                from numba.core.typing.templates import (  # compat-ignore
-                    make_overload_attribute_template as core_make_overload_attribute_template,  # compat-ignore
-                    infer_getattr as core_infer_getattr,  # compat-ignore
-                )  # compat-ignore
+                from numba.core.typing.templates import (
+                    make_overload_attribute_template as core_make_overload_attribute_template,
+                    infer_getattr as core_infer_getattr,
+                )
 
                 core_template = core_make_overload_attribute_template(
                     typ, attr, overload_func, **kwargs
@@ -348,10 +348,10 @@ def _overload_method_common(typ, attr, **kwargs):
         target = kwargs.get("target", "cuda")
         if target in ("generic", "cpu"):
             try:
-                from numba.core.typing.templates import (  # compat-ignore
-                    make_overload_method_template as core_make_overload_method_template,  # compat-ignore
-                    infer_getattr as core_infer_getattr,  # compat-ignore
-                )  # compat-ignore
+                from numba.core.typing.templates import (
+                    make_overload_method_template as core_make_overload_method_template,
+                    infer_getattr as core_infer_getattr,
+                )
 
                 copied_kwargs2 = kwargs.copy()
                 core_template = core_make_overload_method_template(

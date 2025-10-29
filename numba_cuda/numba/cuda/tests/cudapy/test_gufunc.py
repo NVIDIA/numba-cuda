@@ -6,7 +6,7 @@ import numpy as np
 from collections import namedtuple
 from numba.cuda import void, int32, float32, float64
 from numba.cuda import guvectorize
-import numba.cuda as cuda
+from numba import cuda
 from numba.cuda.testing import skip_on_cudasim, CUDATestCase
 import unittest
 import warnings

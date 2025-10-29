@@ -5,6 +5,7 @@ import types as pytypes  # avoid confusion with numba.types
 import copy
 import ctypes
 import numba.cuda.core.analysis
+from numba.cuda import _HAS_NUMBA
 from numba.cuda import types, config, cgutils
 from numba.cuda.core import ir
 from numba.cuda.core import errors
@@ -235,13 +236,11 @@ def check_reduce_func(func_ir, func_var):
                             analysis"
         )
     if isinstance(reduce_func, (ir.FreeVar, ir.Global)):
-        try:
+        if _HAS_NUMBA:
             from numba.core.registry import CPUDispatcher
 
             if not isinstance(reduce_func.value, CPUDispatcher):
                 raise ValueError("Invalid reduction function")
-        except ImportError:
-            pass
 
         # pull out the python function for inlining
         reduce_func = reduce_func.value.py_func
@@ -1042,17 +1041,6 @@ def length_of_iterator(typingctx, val):
             intp_t = context.get_value_type(types.intp)
             count_const = intp_t(tuplety.count)
             return impl_ret_untracked(context, builder, intp_t, count_const)
-
-        return signature(types.intp, val), codegen
-    elif isinstance(val, types.ListTypeIteratorType):
-
-        def codegen(context, builder, sig, args):
-            (value,) = args
-            intp_t = context.get_value_type(types.intp)
-            from numba.typed.listobject import ListIterInstance
-
-            iterobj = ListIterInstance(context, builder, sig.args[0], value)
-            return impl_ret_untracked(context, builder, intp_t, iterobj.size)
 
         return signature(types.intp, val), codegen
     else:

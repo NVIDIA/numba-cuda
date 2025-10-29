@@ -9,8 +9,8 @@ import numpy as np
 from numba.cuda import _HAS_NUMBA
 
 if _HAS_NUMBA:
-    from numba import objmode  # compat-ignore
-    from numba import njit  # compat-ignore
+    from numba import objmode
+    from numba import njit
 from numba.cuda.core import ir
 from numba.cuda import compiler
 from numba.cuda.core import errors

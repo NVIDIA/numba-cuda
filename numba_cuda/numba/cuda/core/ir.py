@@ -1,7 +1,6 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-2-Clause
 
-import numba
 from collections import defaultdict
 import copy
 import itertools
@@ -15,6 +14,10 @@ from types import FunctionType, BuiltinFunctionType
 from functools import total_ordering
 from io import StringIO
 
+from numba.cuda import _HAS_NUMBA
+
+if _HAS_NUMBA:
+    import numba
 from numba.cuda.core import errors
 from numba.cuda.core import config
 from numba.cuda.utils import UNARY_BUILTINS_TO_OPERATORS, OPERATORS_TO_BUILTINS

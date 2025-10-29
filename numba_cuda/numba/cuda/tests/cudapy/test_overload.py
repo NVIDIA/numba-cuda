@@ -1,19 +1,19 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-2-Clause
 
-import numba.cuda as cuda
+from numba import cuda
 import numba.cuda.types as types
 from numba.cuda import _HAS_NUMBA
 
 if _HAS_NUMBA:
-    from numba.core.errors import TypingError  # compat-ignore
-    from numba import njit  # compat-ignore
-    import numba  # compat-ignore
+    from numba.core.errors import TypingError
+    from numba import njit
+    import numba
 else:
     from numba.cuda.core.errors import TypingError
 from numba.cuda.extending import overload, overload_attribute
 from numba.cuda.typing.typeof import typeof
-from numba.core.typing.typeof import typeof as cpu_typeof  # compat-ignore
+from numba.core.typing.typeof import typeof as cpu_typeof
 from numba.cuda.testing import (
     CUDATestCase,
     skip_on_cudasim,

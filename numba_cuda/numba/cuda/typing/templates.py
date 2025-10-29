@@ -28,7 +28,7 @@ from numba.cuda.core import targetconfig
 from numba.cuda import _HAS_NUMBA
 
 if _HAS_NUMBA:
-    from numba.core.typing import Signature as CoreSignature  # compat-ignore
+    from numba.core.typing import Signature as CoreSignature
 
 # info store for inliner callback functions e.g. cost model
 _inline_info = namedtuple("inline_info", "func_ir typemap calltypes signature")

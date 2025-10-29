@@ -12,6 +12,7 @@ import base64
 
 from types import MappingProxyType
 from numba.cuda import utils
+from numba.cuda import _HAS_NUMBA
 
 
 class Option:
@@ -48,9 +49,9 @@ class Option:
         return self._doc
 
 
-try:
+if _HAS_NUMBA:
     from numba.core.targetconfig import ConfigStack, _FlagsStack
-except ImportError:
+else:
 
     class _FlagsStack(utils.ThreadLocalStack, stack_name="flags"):
         pass

@@ -10,6 +10,7 @@ import collections
 import warnings
 
 import numba.cuda
+from numba.cuda import _HAS_NUMBA
 from numba.cuda import types
 from numba.cuda.core import ir
 from numba.cuda import typing
@@ -829,7 +830,7 @@ def has_no_side_effect(rhs, lives, call_table):
         ):
             return True
 
-        try:
+        if _HAS_NUMBA:
             from numba.core.registry import CPUDispatcher
             from numba.cuda.np.linalg import dot_3_mv_check_args
 
@@ -837,8 +838,6 @@ def has_no_side_effect(rhs, lives, call_table):
                 py_func = call_list[0].py_func
                 if py_func == dot_3_mv_check_args:
                     return True
-        except ImportError:
-            pass
 
         for f in remove_call_handlers:
             if f(rhs, lives, call_list):

@@ -10,7 +10,7 @@ import pickle
 
 import numpy as np
 
-import numba.cuda as cuda
+from numba import cuda
 from numba.cuda.testing import (
     skip_on_arm,
     skip_on_cudasim,

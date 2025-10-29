@@ -10,7 +10,7 @@ from numba.cuda import types
 from numba.cuda import _HAS_NUMBA
 
 if _HAS_NUMBA:
-    from numba.core.errors import TypingError, NumbaTypeError  # compat-ignore
+    from numba.core.errors import TypingError, NumbaTypeError
 else:
     from numba.cuda.core.errors import TypingError
 from numba.cuda.extending import make_attribute_wrapper

@@ -1,7 +1,6 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-2-Clause
 
-import numba
 from collections import namedtuple, defaultdict
 import operator
 import warnings
@@ -9,6 +8,7 @@ from functools import partial
 
 from llvmlite import ir as llvm_ir
 
+from numba.cuda import _HAS_NUMBA
 from numba.cuda.core import ir
 from numba.cuda import debuginfo, cgutils, utils, typing, types
 from numba.cuda.core import (
@@ -1880,7 +1880,14 @@ def _lit_or_omitted(value):
     """Returns a Literal instance if the type of value is supported;
     otherwise, return `Omitted(value)`.
     """
+    excepts = LiteralTypingError
+    if _HAS_NUMBA:
+        from numba.core.errors import (
+            LiteralTypingError as CoreLiteralTypingError,
+        )
+
+        excepts = (LiteralTypingError, CoreLiteralTypingError)
     try:
         return types.literal(value)
-    except (LiteralTypingError, numba.core.errors.LiteralTypingError):
+    except excepts:
         return types.Omitted(value)

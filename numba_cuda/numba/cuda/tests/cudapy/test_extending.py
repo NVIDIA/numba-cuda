@@ -7,7 +7,9 @@ from llvmlite import ir
 
 import numpy as np
 import os
-from numba import cuda, njit
+from numba import cuda
+from numba.cuda import _HAS_NUMBA
+from numba.cuda.testing import skip_on_standalone_numba_cuda
 from numba.cuda import types
 from numba.cuda import config
 from numba.cuda.extending import overload
@@ -28,6 +30,12 @@ class Interval:
     @property
     def width(self):
         return self.hi - self.lo
+
+
+if _HAS_NUMBA:
+    from numba import njit
+else:
+    njit = None
 
 
 @njit
@@ -138,6 +146,7 @@ class TestExtending(CUDATestCase):
 
         np.testing.assert_allclose(r[0], x[1] - x[0])
 
+    @skip_on_standalone_numba_cuda
     def test_extension_type_as_arg(self):
         @cuda.jit
         def f(r, x):
@@ -151,6 +160,7 @@ class TestExtending(CUDATestCase):
 
         np.testing.assert_allclose(r[0], x[1] - x[0])
 
+    @skip_on_standalone_numba_cuda
     def test_extension_type_as_retvalue(self):
         @cuda.jit
         def f(r, x):

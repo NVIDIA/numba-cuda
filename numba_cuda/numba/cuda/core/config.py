@@ -643,7 +643,7 @@ def reload_config():
 
 # use numba.core.config if available, otherwise use numba.cuda.core.config
 try:
-    import numba.core.config as _config  # compat-ignore
+    import numba.core.config as _config
 
     sys.modules[__name__] = _config
 except ImportError:

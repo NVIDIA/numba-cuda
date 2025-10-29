@@ -12,8 +12,8 @@ from numba.cuda import vectorize
 from numba.cuda import _HAS_NUMBA
 
 if _HAS_NUMBA:
-    from numba import njit  # compat-ignore
-import numba.cuda as cuda
+    from numba import njit
+from numba import cuda
 from numba.cuda import types
 from numba.cuda.testing import (
     unittest,

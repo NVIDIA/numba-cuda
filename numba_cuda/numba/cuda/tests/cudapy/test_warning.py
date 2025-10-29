@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: BSD-2-Clause
 
 import numpy as np
-import numba.cuda as cuda
+from numba import cuda
 from numba.cuda.cudadrv import driver
 from numba.cuda.testing import (
     unittest,

@@ -4,11 +4,11 @@
 import re
 import itertools
 import numpy as np
-import numba.cuda as cuda
+from numba import cuda
 from numba.cuda import _HAS_NUMBA
 
 if _HAS_NUMBA:
-    from numba.core.errors import TypingError  # compat-ignore
+    from numba.core.errors import TypingError
 else:
     from numba.cuda.core.errors import TypingError
 from numba.cuda.testing import (

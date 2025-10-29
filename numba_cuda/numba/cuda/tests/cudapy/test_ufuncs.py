@@ -5,9 +5,13 @@ import functools
 import warnings
 import numpy as np
 import unittest
+from numba.cuda import _HAS_NUMBA
 
-from numba import cuda, njit
+if _HAS_NUMBA:
+    from numba import njit
+from numba import cuda
 from numba.cuda import config, types
+from numba.cuda.testing import skip_on_standalone_numba_cuda
 from numba.cuda.typing.typeof import typeof
 from numba.cuda.np import numpy_support
 from numba.cuda.tests.support import TestCase
@@ -65,6 +69,7 @@ class BaseUFuncTest:
             ),
         ]
 
+    @skip_on_standalone_numba_cuda
     @functools.lru_cache(maxsize=None)
     def _compile(self, pyfunc, args, nrt=False):
         # NOTE: to test the implementation of Numpy ufuncs, we disable

@@ -4,7 +4,7 @@
 from numba.cuda import types, typing, _HAS_NUMBA
 
 if _HAS_NUMBA:
-    from numba.core.typing import Signature as CoreSignature  # compat-ignore
+    from numba.core.typing import Signature as CoreSignature
 
 
 def is_signature(sig):

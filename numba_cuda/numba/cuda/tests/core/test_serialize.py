@@ -11,26 +11,19 @@ import unittest
 from multiprocessing import get_context
 
 from numba.cuda import _HAS_NUMBA
+import numba
 
 if _HAS_NUMBA:
-    from numba.core.errors import TypingError  # compat-ignore
-    import numba  # compat-ignore
+    from numba.core.errors import TypingError
+    from numba.core.target_extension import resolve_dispatcher_from_str
 else:
     from numba.cuda.core.errors import TypingError
 from numba.cuda.tests.support import TestCase
 from numba.cuda.cloudpickle import dumps, loads
 from numba.cuda.testing import skip_on_standalone_numba_cuda
 
-try:
-    from numba.core.target_extension import resolve_dispatcher_from_str
-except ImportError:
-    resolve_dispatcher_from_str = None
 
-
-@unittest.skipIf(
-    resolve_dispatcher_from_str is None,
-    "numba.core.target_extension not available",
-)
+@skip_on_standalone_numba_cuda
 class TestDispatcherPickling(TestCase):
     def run_with_protocols(self, meth, *args, **kwargs):
         for proto in range(pickle.HIGHEST_PROTOCOL + 1):
@@ -66,6 +59,7 @@ class TestDispatcherPickling(TestCase):
             new_func = pickle.loads(pickled)
             check_result(new_func)
 
+    @skip_on_standalone_numba_cuda
     def test_call_with_sig(self):
         from .serialize_usecases import add_with_sig
 
@@ -73,6 +67,7 @@ class TestDispatcherPickling(TestCase):
         # Compilation has been disabled => float inputs will be coerced to int
         self.run_with_protocols(self.check_call, add_with_sig, 5, (1.2, 4.2))
 
+    @skip_on_standalone_numba_cuda
     def test_call_without_sig(self):
         from .serialize_usecases import add_without_sig
 
@@ -85,6 +80,7 @@ class TestDispatcherPickling(TestCase):
             self.check_call, add_without_sig, "abc", ("a", "bc")
         )
 
+    @skip_on_standalone_numba_cuda
     def test_call_nopython(self):
         from .serialize_usecases import add_nopython
 
@@ -94,6 +90,7 @@ class TestDispatcherPickling(TestCase):
             self.check_call, add_nopython, TypingError, (object(), object())
         )
 
+    @skip_on_standalone_numba_cuda
     def test_call_nopython_fail(self):
         from .serialize_usecases import add_nopython_fail
 
@@ -102,6 +99,7 @@ class TestDispatcherPickling(TestCase):
             self.check_call, add_nopython_fail, TypingError, (1, 2)
         )
 
+    @skip_on_standalone_numba_cuda
     def test_call_objmode_with_global(self):
         from .serialize_usecases import get_global_objmode
 
@@ -109,12 +107,14 @@ class TestDispatcherPickling(TestCase):
             self.check_call, get_global_objmode, 7.5, (2.5,)
         )
 
+    @skip_on_standalone_numba_cuda
     def test_call_closure(self):
         from .serialize_usecases import closure
 
         inner = closure(1)
         self.run_with_protocols(self.check_call, inner, 6, (2, 3))
 
+    @skip_on_standalone_numba_cuda
     def check_call_closure_with_globals(self, **jit_args):
         from .serialize_usecases import closure_with_globals
 
@@ -127,30 +127,35 @@ class TestDispatcherPickling(TestCase):
     def test_call_closure_with_globals_objmode(self):
         self.check_call_closure_with_globals(forceobj=True)
 
+    @skip_on_standalone_numba_cuda
     def test_call_closure_calling_other_function(self):
         from .serialize_usecases import closure_calling_other_function
 
         inner = closure_calling_other_function(3.0)
         self.run_with_protocols(self.check_call, inner, 11.0, (4.0, 6.0))
 
+    @skip_on_standalone_numba_cuda
     def test_call_closure_calling_other_closure(self):
         from .serialize_usecases import closure_calling_other_closure
 
         inner = closure_calling_other_closure(3.0)
         self.run_with_protocols(self.check_call, inner, 8.0, (4.0,))
 
+    @skip_on_standalone_numba_cuda
     def test_call_dyn_func(self):
         from .serialize_usecases import dyn_func
 
         # Check serializing a dynamically-created function
         self.run_with_protocols(self.check_call, dyn_func, 36, (6,))
 
+    @skip_on_standalone_numba_cuda
     def test_call_dyn_func_objmode(self):
         from .serialize_usecases import dyn_func_objmode
 
         # Same with an object mode function
         self.run_with_protocols(self.check_call, dyn_func_objmode, 36, (6,))
 
+    @skip_on_standalone_numba_cuda
     def test_renamed_module(self):
         from .serialize_usecases import get_renamed_module
 
@@ -161,6 +166,7 @@ class TestDispatcherPickling(TestCase):
             self.check_call, get_renamed_module, expected, (0.0,)
         )
 
+    @skip_on_standalone_numba_cuda
     def test_other_process(self):
         """
         Check that reconstructing doesn't depend on resources already
@@ -180,6 +186,7 @@ class TestDispatcherPickling(TestCase):
             """.format(**locals())
         subprocess.check_call([sys.executable, "-c", code])
 
+    @skip_on_standalone_numba_cuda
     def test_reuse(self):
         """
         Check that deserializing the same function multiple times re-uses
@@ -219,6 +226,7 @@ class TestDispatcherPickling(TestCase):
         g.disable_compile()
         self.assertEqual(g(2, 4), 13)
 
+    @skip_on_standalone_numba_cuda
     def test_imp_deprecation(self):
         """
         The imp module was deprecated in v3.4 in favour of importlib
@@ -312,7 +320,7 @@ class TestCloudPickleIssues(TestCase):
 
     @skip_on_standalone_numba_cuda
     def test_dynamic_class_issue_7356(self):
-        import numba  # compat-ignore
+        import numba
 
         cfunc = numba.njit(issue_7356)
         self.assertEqual(cfunc(), (100, 100))

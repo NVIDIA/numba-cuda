@@ -41,8 +41,8 @@ from numba.cuda import _HAS_NUMBA
 if _HAS_NUMBA:
     from numba.core.extending import (
         typeof_impl as upstream_typeof_impl,
-    )  # compat-ignore
-    from numba.core import types as upstream_types  # compat-ignore
+    )
+    from numba.core import types as upstream_types
 else:
     upstream_typeof_impl = None
     upstream_types = None

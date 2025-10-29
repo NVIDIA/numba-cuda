@@ -6,7 +6,7 @@ from numba.cuda import int32, float64, void
 from numba.cuda import _HAS_NUMBA
 
 if _HAS_NUMBA:
-    from numba.core.errors import TypingError  # compat-ignore
+    from numba.core.errors import TypingError
     from numba.cuda.core.errors import TypingError as cudaTypingError
 else:
     from numba.cuda.core.errors import TypingError as cudaTypingError
