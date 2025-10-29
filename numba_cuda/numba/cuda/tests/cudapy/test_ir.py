@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: BSD-2-Clause
 
 import unittest
-from numba.cuda.testing import CUDATestCase
+from numba.cuda.testing import CUDATestCase, skip_on_cudasim
 import warnings
 import numpy as np
 
@@ -378,6 +378,7 @@ class TestIRCompounds(CheckEquality):
 
         self.check(a, same=[b], different=[c])
 
+    @skip_on_cudasim
     def test_functionir(self):
         def run_frontend(x):
             return compiler.run_frontend(x, emit_dels=True)
