@@ -741,16 +741,17 @@ def compile_cuda(
     flags.max_registers = max_registers
     flags.lto = lto
 
-    cres = compile_extra(
-        typingctx=typingctx,
-        targetctx=targetctx,
-        func=pyfunc,
-        args=args,
-        return_type=return_type,
-        flags=flags,
-        locals={},
-        pipeline_class=CUDACompiler,
-    )
+    with utils.numba_target_override():
+        cres = compile_extra(
+            typingctx=typingctx,
+            targetctx=targetctx,
+            func=pyfunc,
+            args=args,
+            return_type=return_type,
+            flags=flags,
+            locals={},
+            pipeline_class=CUDACompiler,
+        )
 
     library = cres.library
     library.finalize()

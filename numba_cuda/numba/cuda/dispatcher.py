@@ -727,7 +727,8 @@ class CUDACache(Cache):
 
     def load_overload(self, sig, target_context):
         # Loading an overload refreshes the context to ensure it is initialized.
-        return super().load_overload(sig, target_context)
+        with utils.numba_target_override():
+            return super().load_overload(sig, target_context)
 
 
 class OmittedArg(object):

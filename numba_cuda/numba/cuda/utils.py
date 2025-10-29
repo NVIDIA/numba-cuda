@@ -8,6 +8,7 @@ import functools
 
 import atexit
 import builtins
+import importlib
 import inspect
 import operator
 import timeit
@@ -311,7 +312,7 @@ class ConfigOptions(object):
         return hash(tuple(sorted(self._values.items())))
 
 
-def order_by_target_specificity(target, templates, fnkey=""):
+def order_by_target_specificity(templates, fnkey=""):
     """This orders the given templates from most to least specific against the
     current "target". "fnkey" is an indicative typing key for use in the
     exception message in the case that there's no usable templates for the
@@ -345,7 +346,7 @@ def order_by_target_specificity(target, templates, fnkey=""):
     if not order:
         msg = (
             f"Function resolution cannot find any matches for function "
-            f"'{fnkey}' for the current target: '{target}'."
+            f"'{fnkey}'."
         )
         from numba.core.errors import UnsupportedError
 
@@ -710,3 +711,14 @@ def _readenv(name, ctor, default):
 def cached_file_read(filepath, how="r"):
     with open(filepath, how) as f:
         return f.read()
+
+
+@contextlib.contextmanager
+def numba_target_override():
+    if importlib.util.find_spec("numba"):
+        from numba.core.target_extension import target_override
+
+        with target_override("cuda"):
+            yield
+    else:
+        yield
