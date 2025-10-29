@@ -493,7 +493,7 @@ class TestCudaDebugInfo(CUDATestCase):
             CHECK-DAG: !DILocalVariable({{.*}}name: "foo"{{.*}}type: [[WRAPPER:![0-9]+]]
             CHECK-DAG: [[WRAPPER]] = !DICompositeType({{.*}}elements: [[ELEMENTS:![0-9]+]]{{.*}}name: "variant_wrapper_struct"{{.*}}size: 128{{.*}}tag: DW_TAG_structure_type)
             CHECK-DAG: [[ELEMENTS]] = !{ [[DISC:![0-9]+]], [[VPART:![0-9]+]] }
-            CHECK-DAG: [[DISC]] = !DIDerivedType({{.*}}name: "discriminator"{{.*}}size: 8{{.*}}tag: DW_TAG_member)
+            CHECK-DAG: [[DISC]] = !DIDerivedType({{.*}}name: "discriminator-{{[0-9]+}}"{{.*}}size: 8{{.*}}tag: DW_TAG_member)
             CHECK-DAG: [[VPART]] = !DICompositeType({{.*}}discriminator: [[DISC]]{{.*}}elements: [[VMEMBERS:![0-9]+]]{{.*}}tag: DW_TAG_variant_part)
             CHECK-DAG: [[VMEMBERS]] = !{ [[VM1:![0-9]+]], [[VM2:![0-9]+]], [[VM3:![0-9]+]], [[VM4:![0-9]+]] }
             CHECK-DAG: [[VM1]] = !DIDerivedType({{.*}}extraData: EXTRADATA{{.*}}name: "_bool"{{.*}}offset: 8{{.*}}tag: DW_TAG_member)
