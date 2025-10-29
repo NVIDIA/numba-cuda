@@ -12,7 +12,7 @@ from numba.cuda import get_current_device
 from numba.cuda.cudadrv.nvrtc import compile
 from numba.cuda import types
 from numba.cuda.typing import signature
-from numba import cuda
+import numba.cuda as cuda
 from numba.cuda import config
 from numba.cuda.typing.templates import AbstractTemplate
 from numba.cuda.cudadrv.linkable_code import (
@@ -218,7 +218,7 @@ class TestNrtStatistics(CUDATestCase):
     def test_stats_env_var_explicit_on(self):
         # Checks that explicitly turning the stats on via the env var works.
         src = """if 1:
-        from numba import cuda
+        import numba.cuda as cuda
         from numba.cuda.memory_management import rtsys
         import numpy as np
 
@@ -256,7 +256,7 @@ class TestNrtStatistics(CUDATestCase):
 
     def check_env_var_off(self, env):
         src = """if 1:
-        from numba import cuda
+        import numba.cuda as cuda
         import numpy as np
         from numba.cuda.memory_management import rtsys
 

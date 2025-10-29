@@ -8,12 +8,12 @@ from numba.cuda import _HAS_NUMBA
 if _HAS_NUMBA:
     from numba.core.errors import TypingError  # compat-ignore
     from numba import njit  # compat-ignore
+    import numba  # compat-ignore
 else:
     from numba.cuda.core.errors import TypingError
-from numba.cuda import version_info
 from numba.cuda.extending import overload, overload_attribute
 from numba.cuda.typing.typeof import typeof
-from numba.core.typing.typeof import typeof as cpu_typeof
+from numba.core.typing.typeof import typeof as cpu_typeof  # compat-ignore
 from numba.cuda.testing import (
     CUDATestCase,
     skip_on_cudasim,
@@ -365,7 +365,7 @@ class TestOverload(CUDATestCase):
         # A different error is produced prior to version 0.60
         # (the fixes in #9454 improved the message)
         # https://github.com/numba/numba/pull/9454
-        if version_info[:2] < (0, 60):
+        if _HAS_NUMBA and numba.version_info[:2] < (0, 60):
             msg = 'resolving type of attribute "cuda_only" of "x"'
         else:
             msg = "Unknown attribute 'cuda_only'"

@@ -6,7 +6,7 @@ from numba.cuda.testing import CUDATestCase
 import warnings
 import numpy as np
 
-from numba import _HAS_NUMBA
+from numba.cuda import _HAS_NUMBA
 
 if _HAS_NUMBA:
     from numba import objmode  # compat-ignore
