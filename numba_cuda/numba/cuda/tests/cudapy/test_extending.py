@@ -815,7 +815,7 @@ class TestIntrinsic(TestCase):
             return sig, codegen
 
         self.assertEqual(
-            "numba.cuda.tests.test_extending", void_func.__module__
+            "numba.cuda.tests.cudapy.test_extending", void_func.__module__
         )
         self.assertEqual("void_func", void_func.__name__)
         self.assertEqual(
