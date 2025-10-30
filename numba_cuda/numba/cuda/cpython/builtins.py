@@ -21,7 +21,7 @@ from numba.cuda.core.imputils import (
 from numba.cuda import typing, types
 from numba.cuda import cgutils
 from numba.cuda.extending import overload, intrinsic, register_jitable
-from numba.core.errors import (
+from numba.cuda.core.errors import (
     TypingError,
     LoweringError,
     NumbaTypeError,

@@ -6,7 +6,7 @@ Helper classes / mixins for defining types.
 """
 
 from .abstract import ArrayCompatible, Dummy, IterableType, IteratorType
-from numba.core.errors import NumbaTypeError, NumbaValueError
+from numba.cuda.core.errors import NumbaTypeError, NumbaValueError
 
 
 class Opaque(Dummy):

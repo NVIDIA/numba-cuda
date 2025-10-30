@@ -8,10 +8,10 @@ from copy import copy
 import warnings
 
 from numba.cuda.core import typeinfer
-from numba.core import (
+from numba.cuda.core import (
     errors,
-    ir,
 )
+from numba.cuda.core import ir
 from numba.cuda import typing, types, lowering
 from numba.cuda.core.compiler_machinery import (
     FunctionPass,

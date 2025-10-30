@@ -9,7 +9,7 @@ from numba.cuda.types.common import (
     SimpleIteratorType,
 )
 from numba.cuda.typeconv import Conversion
-from numba.core.errors import TypingError, LiteralTypingError
+from numba.cuda.core.errors import TypingError, LiteralTypingError
 from numba.cuda.utils import get_hashable_key
 
 

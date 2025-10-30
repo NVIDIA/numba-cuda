@@ -10,7 +10,7 @@ from functools import partial
 import numpy as np
 
 from numba.cuda import types
-from numba.core.errors import TypingError
+from numba.cuda.core.errors import TypingError
 from numba.cuda.typing import templates
 from numba.cuda.np import numpy_support
 

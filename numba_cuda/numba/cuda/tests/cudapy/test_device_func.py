@@ -15,7 +15,7 @@ from numba.cuda.testing import (
 )
 from numba import cuda, jit
 from numba.cuda import float32, int32, types
-from numba.core.errors import TypingError
+from numba.cuda.core.errors import TypingError
 from numba.cuda.tests.support import skip_unless_cffi
 from types import ModuleType
 

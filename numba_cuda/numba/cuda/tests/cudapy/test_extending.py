@@ -26,8 +26,8 @@ from numba.cuda.typing.templates import AttributeTemplate
 from numba.cuda.cudadecl import registry as cuda_registry
 from numba.cuda.cudaimpl import lower_attr as cuda_lower_attr
 
-from numba.core import errors
-from numba.core.errors import LoweringError
+from numba.cuda import errors
+from numba.cuda.errors import LoweringError
 
 from numba.cuda.extending import (
     type_callable,

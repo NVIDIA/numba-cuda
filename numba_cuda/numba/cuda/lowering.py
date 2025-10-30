@@ -1,6 +1,7 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-2-Clause
 
+import numba
 from collections import namedtuple, defaultdict
 import operator
 import warnings
@@ -8,7 +9,7 @@ from functools import partial
 
 from llvmlite import ir as llvm_ir
 
-from numba.core import ir
+from numba.cuda.core import ir
 from numba.cuda import debuginfo, cgutils, utils, typing, types
 from numba.cuda.core import (
     ir_utils,
@@ -19,7 +20,7 @@ from numba.cuda.core import (
     removerefctpass,
 )
 
-from numba.core.errors import (
+from numba.cuda.core.errors import (
     LoweringError,
     new_error_context,
     TypingError,
@@ -1239,12 +1240,9 @@ class Lower(BaseLower):
             )
         tname = expr.target
         if tname is not None:
-            from numba.core.target_extension import (
-                resolve_dispatcher_from_str,
-            )
+            from numba.cuda.descriptor import cuda_target
 
-            disp = resolve_dispatcher_from_str(tname)
-            hw_ctx = disp.targetdescr.target_context
+            hw_ctx = cuda_target.target_context
             impl = hw_ctx.get_function(fnty, signature)
         else:
             impl = self.context.get_function(fnty, signature)
@@ -1884,5 +1882,5 @@ def _lit_or_omitted(value):
     """
     try:
         return types.literal(value)
-    except LiteralTypingError:
+    except (LiteralTypingError, numba.core.errors.LiteralTypingError):
         return types.Omitted(value)
