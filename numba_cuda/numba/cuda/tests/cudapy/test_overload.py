@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: BSD-2-Clause
 
 from numba import cuda
-import numba.cuda.types as types
+from numba.cuda import types
 from numba.cuda import _HAS_NUMBA
 
 if _HAS_NUMBA:
@@ -338,7 +338,12 @@ class TestOverload(CUDATestCase):
         expected = CUDA_TARGET_OL_CALLS_TARGET_OL * CUDA_TARGET_OL
         self.check_overload(kernel, expected)
 
-        # Also check that the CPU overloads are used on the CPU
+    @skip_on_standalone_numba_cuda
+    def test_target_overloaded_calls_target_overloaded_cpu(self):
+        def kernel(x):
+            target_overloaded_calls_target_overloaded(x)
+
+        # Check that the CPU overloads are used on the CPU
         expected = GENERIC_TARGET_OL_CALLS_TARGET_OL * GENERIC_TARGET_OL
         self.check_overload_cpu(kernel, expected)
 
