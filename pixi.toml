@@ -8,16 +8,17 @@ platforms = ["linux-64", "linux-aarch64", "win-64"]
 numba-cuda = { path = ".", editable = true }
 
 [dependencies]
-# build deps
-cuda-compiler = "*"
-make = "*"
-cxx-compiler = "*"
 # core deps
 python = ">=3.9"
 numba = ">=0.60.0"
 cuda-core = ">=0.3,<0.4.0dev0"
 cuda-bindings = ">=12.9,<14"
 cuda-python = ">=12.9,<14"
+
+[feature.build.dependencies]
+cuda-compiler = "*"
+make = "*"
+cxx-compiler = "*"
 
 [feature.cu-12.system-requirements]
 cuda = "12"
@@ -87,12 +88,38 @@ filecheck = "*"
 
 [environments]
 # CUDA 12
-cu-12-0 = { features = ["cu-12-0", "test", "cu-12"], solve-group = "cu-12-0" }
-cu-12-2 = { features = ["cu-12-2", "test", "cu-12"], solve-group = "cu-12-2" }
-cu-12-8 = { features = ["cu-12-8", "test", "cu-12"], solve-group = "cu-12-8" }
-cu-12-9 = { features = ["cu-12-9", "test", "bench", "cu-12"], solve-group = "cu-12-9" }
+cu-12-0 = { features = [
+    "cu-12-0",
+    "test",
+    "build",
+    "cu-12",
+], solve-group = "cu-12-0" }
+cu-12-2 = { features = [
+    "cu-12-2",
+    "test",
+    "build",
+    "cu-12",
+], solve-group = "cu-12-2" }
+cu-12-8 = { features = [
+    "cu-12-8",
+    "test",
+    "build",
+    "cu-12",
+], solve-group = "cu-12-8" }
+cu-12-9 = { features = [
+    "cu-12-9",
+    "test",
+    "build",
+    "bench",
+    "cu-12",
+], solve-group = "cu-12-9" }
 # CUDA 13
-cu-13-0 = { features = ["cu-13-0", "test", "cu-13"], solve-group = "cu-13-0" }
+cu-13-0 = { features = [
+    "cu-13-0",
+    "test",
+    "build",
+    "cu-13",
+], solve-group = "cu-13-0" }
 
 [target.linux.tasks]
 build-tests = { cmd = [
