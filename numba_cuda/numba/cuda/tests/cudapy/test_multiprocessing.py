@@ -10,7 +10,6 @@ import numpy as np
 
 from numba import cuda
 from numba.cuda.testing import skip_on_cudasim, CUDATestCase
-from numba.cuda.cudadrv.error import CudaDriverError
 import unittest
 
 
@@ -22,6 +21,8 @@ class TestMultiprocessing(CUDATestCase):
         """
         Test fork detection.
         """
+        from numba.cuda.cudadrv.error import CudaDriverError
+
         cuda.current_context()  # force cuda initialize
         with concurrent.futures.ProcessPoolExecutor(
             mp_context=mp.get_context("fork")
