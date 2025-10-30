@@ -314,14 +314,8 @@ class BaseFunction(Callable):
             context, self, args, kws, depth=self._depth
         )
 
-        # get the order in which to try templates
-        from numba.core.target_extension import (
-            get_local_target,
-        )  # circular
-
-        target_hw = get_local_target(context)
         order = utils.order_by_target_specificity(
-            target_hw, self.templates, fnkey=self.key[0]
+            self.templates, fnkey=self.key[0]
         )
 
         self._depth += 1

@@ -8,6 +8,7 @@ import functools
 
 import atexit
 import builtins
+import importlib
 import inspect
 import operator
 import timeit
@@ -311,7 +312,7 @@ class ConfigOptions(object):
         return hash(tuple(sorted(self._values.items())))
 
 
-def order_by_target_specificity(target, templates, fnkey=""):
+def order_by_target_specificity(templates, fnkey=""):
     """This orders the given templates from most to least specific against the
     current "target". "fnkey" is an indicative typing key for use in the
     exception message in the case that there's no usable templates for the
@@ -320,8 +321,6 @@ def order_by_target_specificity(target, templates, fnkey=""):
     # No templates... return early!
     if templates == []:
         return []
-
-    from numba.core.target_extension import target_registry
 
     # fish out templates that are specific to the target if a target is
     # specified
@@ -332,20 +331,22 @@ def order_by_target_specificity(target, templates, fnkey=""):
         md = getattr(temp_cls, "metadata", {})
         hw = md.get("target", DEFAULT_TARGET)
         if hw is not None:
-            hw_clazz = target_registry[hw]
-            if target.inherits_from(hw_clazz):
-                usable.append((temp_cls, hw_clazz, ix))
+            if hw in ("generic", "cuda"):
+                usable.append((temp_cls, ix))
 
     # sort templates based on target specificity
+    # cuda-specific templates get priority before generic ones
     def key(x):
-        return target.__mro__.index(x[1])
+        md = getattr(x[0], "metadata", {})
+        hw = md.get("target", DEFAULT_TARGET)
+        return (0 if hw == "cuda" else 1, x[1])
 
     order = [x[0] for x in sorted(usable, key=key)]
 
     if not order:
         msg = (
             f"Function resolution cannot find any matches for function "
-            f"'{fnkey}' for the current target: '{target}'."
+            f"'{fnkey}'."
         )
         from numba.core.errors import UnsupportedError
 
@@ -710,3 +711,14 @@ def _readenv(name, ctor, default):
 def cached_file_read(filepath, how="r"):
     with open(filepath, how) as f:
         return f.read()
+
+
+@contextlib.contextmanager
+def numba_target_override():
+    if importlib.util.find_spec("numba"):
+        from numba.core.target_extension import target_override
+
+        with target_override("cuda"):
+            yield
+    else:
+        yield

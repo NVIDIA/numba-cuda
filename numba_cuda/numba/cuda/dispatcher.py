@@ -726,12 +726,8 @@ class CUDACache(Cache):
     _impl_class = CUDACacheImpl
 
     def load_overload(self, sig, target_context):
-        # Loading an overload refreshes the context to ensure it is
-        # initialized. To initialize the correct (i.e. CUDA) target, we need to
-        # enforce that the current target is the CUDA target.
-        from numba.core.target_extension import target_override
-
-        with target_override("cuda"):
+        # Loading an overload refreshes the context to ensure it is initialized.
+        with utils.numba_target_override():
             return super().load_overload(sig, target_context)
 
 

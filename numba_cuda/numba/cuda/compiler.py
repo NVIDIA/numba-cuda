@@ -741,10 +741,7 @@ def compile_cuda(
     flags.max_registers = max_registers
     flags.lto = lto
 
-    # Run compilation pipeline
-    from numba.core.target_extension import target_override
-
-    with target_override("cuda"):
+    with utils.numba_target_override():
         cres = compile_extra(
             typingctx=typingctx,
             targetctx=targetctx,

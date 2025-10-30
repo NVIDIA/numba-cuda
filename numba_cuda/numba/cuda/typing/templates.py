@@ -778,37 +778,9 @@ class _OverloadFunctionTemplate(AbstractTemplate):
 
     def _get_jit_decorator(self):
         """Gets a jit decorator suitable for the current target"""
+        from numba.cuda.decorators import jit
 
-        from numba.core.target_extension import (
-            target_registry,
-            get_local_target,
-            jit_registry,
-        )
-
-        jitter_str = self.metadata.get("target", "generic")
-        jitter = jit_registry.get(jitter_str, None)
-
-        if jitter is None:
-            # No JIT known for target string, see if something is
-            # registered for the string and report if not.
-            target_class = target_registry.get(jitter_str, None)
-            if target_class is None:
-                msg = ("Unknown target '{}', has it been ", "registered?")
-                raise ValueError(msg.format(jitter_str))
-
-            target_hw = get_local_target(self.context)
-
-            # check that the requested target is in the hierarchy for the
-            # current frame's target.
-            if not issubclass(target_hw, target_class):
-                msg = "No overloads exist for the requested target: {}."
-
-            jitter = jit_registry[target_hw]
-
-        if jitter is None:
-            raise ValueError("Cannot find a suitable jit decorator")
-
-        return jitter
+        return jit
 
     def _build_impl(self, cache_key, args, kws):
         """Build and cache the implementation.
@@ -988,16 +960,9 @@ class _TemplateTargetHelperMixin(object):
         -------
         reg : a registry suitable for the current target.
         """
-        from numba.core.target_extension import (
-            _get_local_target_checked,
-            dispatcher_registry,
-        )
+        from numba.cuda.descriptor import cuda_target
 
-        hwstr = self.metadata.get("target", "generic")
-        target_hw = _get_local_target_checked(self.context, hwstr, reason)
-        # Get registry for the current hardware
-        disp = dispatcher_registry[target_hw]
-        tgtctx = disp.targetdescr.target_context
+        tgtctx = cuda_target.target_context
 
         # ---------------------------------------------------------------------
         # XXX: In upstream Numba, this function would prefer the builtin
