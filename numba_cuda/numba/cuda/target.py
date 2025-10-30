@@ -9,7 +9,7 @@ import warnings
 import importlib.util
 
 from numba.cuda import types
-from numba.cuda import _HAS_NUMBA
+from numba.cuda import HAS_NUMBA
 from numba.core.compiler_lock import global_compiler_lock
 from numba.cuda.core.errors import NumbaWarning
 from numba.cuda.core.base import BaseContext
@@ -64,7 +64,7 @@ class CUDATypingContext(typing.BaseContext):
         from numba.cuda.dispatcher import CUDADispatcher
         from numba.core.dispatcher import Dispatcher
 
-        if _HAS_NUMBA:
+        if HAS_NUMBA:
             if isinstance(val, Dispatcher) and not isinstance(
                 val, CUDADispatcher
             ):

@@ -8,7 +8,7 @@ import enum
 
 import numpy as np
 from numpy.random.bit_generator import BitGenerator
-from numba.cuda import _HAS_NUMBA
+from numba.cuda import HAS_NUMBA
 from numba.cuda import types
 from numba.cuda.core import errors
 from numba.cuda import utils
@@ -65,7 +65,7 @@ def typeof_impl(val, c):
         if cffi_utils.is_ffi_instance(val):
             return types.ffi
 
-    if _HAS_NUMBA:
+    if HAS_NUMBA:
         # Fallback to Numba's typeof_impl for third-party registrations
         from numba.core.typing.typeof import typeof_impl as core_typeof_impl
 

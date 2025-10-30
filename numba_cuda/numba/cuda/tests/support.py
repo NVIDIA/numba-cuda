@@ -36,9 +36,9 @@ from numba.cuda.core.pythonapi import unbox
 from numba.cuda.datamodel.models import OpaqueModel
 from numba.cuda.np import numpy_support
 
-from numba.cuda import _HAS_NUMBA
+from numba.cuda import HAS_NUMBA
 
-if _HAS_NUMBA:
+if HAS_NUMBA:
     from numba.core.extending import (
         typeof_impl as upstream_typeof_impl,
     )
@@ -770,7 +770,7 @@ class TestCase(unittest.TestCase):
             return dummy_type
 
         # Dual registration for cross-target tests
-        if _HAS_NUMBA:
+        if HAS_NUMBA:
             UpstreamDummyType = type(
                 "DummyTypeFor{}".format(test_id), (upstream_types.Opaque,), {}
             )

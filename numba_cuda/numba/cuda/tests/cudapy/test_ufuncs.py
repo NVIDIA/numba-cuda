@@ -5,9 +5,9 @@ import functools
 import warnings
 import numpy as np
 import unittest
-from numba.cuda import _HAS_NUMBA
+from numba.cuda import HAS_NUMBA
 
-if _HAS_NUMBA:
+if HAS_NUMBA:
     from numba import njit
 from numba import cuda
 from numba.cuda import config, types

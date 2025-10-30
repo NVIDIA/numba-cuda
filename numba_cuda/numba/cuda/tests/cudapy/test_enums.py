@@ -8,9 +8,9 @@ Test cases adapted from numba/tests/test_enums.py
 import numpy as np
 
 from numba.cuda import int16, int32
-from numba.cuda import vectorize, _HAS_NUMBA
+from numba.cuda import vectorize, HAS_NUMBA
 
-if _HAS_NUMBA:
+if HAS_NUMBA:
     from numba import njit
 from numba import cuda
 from numba.cuda import types

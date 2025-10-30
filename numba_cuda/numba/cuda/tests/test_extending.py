@@ -11,9 +11,9 @@ import numpy as np
 import numba
 from numba.cuda import jit
 from numba.cuda import types
-from numba.cuda import _HAS_NUMBA
+from numba.cuda import HAS_NUMBA
 
-if _HAS_NUMBA:
+if HAS_NUMBA:
     from numba.core import errors
 else:
     from numba.cuda.core import errors

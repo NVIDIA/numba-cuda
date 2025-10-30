@@ -4,7 +4,7 @@
 import sys
 
 from numba import cuda
-from numba.cuda import _HAS_NUMBA
+from numba.cuda import HAS_NUMBA
 from numba.cuda.testing import CUDATestCase, skip_on_standalone_numba_cuda
 from numba.cuda.tests.cudapy.cache_usecases import CUDAUseCase, UseCase
 
@@ -23,7 +23,7 @@ def target_shared_assign(r, x):
 
 assign_cuda_kernel = cuda.jit(cache=True)(target_shared_assign)
 assign_cuda = CUDAUseCase(assign_cuda_kernel)
-if _HAS_NUMBA:
+if HAS_NUMBA:
     from numba import njit
 
     assign_cpu_jitted = njit(cache=True)(target_shared_assign)

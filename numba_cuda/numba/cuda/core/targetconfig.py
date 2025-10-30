@@ -12,7 +12,7 @@ import base64
 
 from types import MappingProxyType
 from numba.cuda import utils
-from numba.cuda import _HAS_NUMBA
+from numba.cuda import HAS_NUMBA
 
 
 class Option:
@@ -49,7 +49,7 @@ class Option:
         return self._doc
 
 
-if _HAS_NUMBA:
+if HAS_NUMBA:
     from numba.core.targetconfig import ConfigStack, _FlagsStack
 else:
 

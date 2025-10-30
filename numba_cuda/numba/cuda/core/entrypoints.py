@@ -5,7 +5,7 @@ import logging
 import warnings
 
 from importlib import metadata as importlib_metadata
-from numba.cuda import _HAS_NUMBA
+from numba.cuda import HAS_NUMBA
 
 _already_initialized = False
 logger = logging.getLogger(__name__)
@@ -16,7 +16,7 @@ def init_all():
 
     If extensions have already been initialized, this function does nothing.
     """
-    if _HAS_NUMBA:
+    if HAS_NUMBA:
         from numba.core import entrypoints
 
         entrypoints.init_all()

@@ -19,9 +19,9 @@ from numba.cuda.core.errors import TypingError
 from numba.cuda.tests.support import skip_unless_cffi
 from numba.cuda.testing import skip_on_standalone_numba_cuda
 from types import ModuleType
-from numba.cuda import _HAS_NUMBA
+from numba.cuda import HAS_NUMBA
 
-if _HAS_NUMBA:
+if HAS_NUMBA:
     from numba import jit
 
 

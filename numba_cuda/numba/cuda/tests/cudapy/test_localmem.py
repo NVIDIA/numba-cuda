@@ -6,9 +6,9 @@ import numpy as np
 from numba import cuda
 from numba.cuda import int32, complex128, void
 from numba.cuda import types
-from numba.cuda import _HAS_NUMBA
+from numba.cuda import HAS_NUMBA
 
-if _HAS_NUMBA:
+if HAS_NUMBA:
     from numba.core.errors import TypingError
 else:
     from numba.cuda.core.errors import TypingError

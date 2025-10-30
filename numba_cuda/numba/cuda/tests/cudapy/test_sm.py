@@ -3,9 +3,9 @@
 
 from numba import cuda
 from numba.cuda import int32, float64, void
-from numba.cuda import _HAS_NUMBA
+from numba.cuda import HAS_NUMBA
 
-if _HAS_NUMBA:
+if HAS_NUMBA:
     from numba.core.errors import TypingError as NumbaTypingError
 from numba.cuda.core.errors import TypingError
 from numba.cuda import types
@@ -413,7 +413,7 @@ class TestSharedMemory(CUDATestCase):
         def invalid_string_type():
             arr = cuda.shared.array(10, dtype="int33")  # noqa: F841
 
-        if _HAS_NUMBA:
+        if HAS_NUMBA:
             with self.assertRaisesRegex(NumbaTypingError, rgx):
                 cuda.jit(void())(invalid_string_type)
         else:

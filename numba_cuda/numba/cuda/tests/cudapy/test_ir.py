@@ -6,9 +6,9 @@ from numba.cuda.testing import CUDATestCase, skip_on_cudasim
 import warnings
 import numpy as np
 
-from numba.cuda import _HAS_NUMBA
+from numba.cuda import HAS_NUMBA
 
-if _HAS_NUMBA:
+if HAS_NUMBA:
     from numba import objmode
     from numba import njit
 from numba.cuda.core import ir
@@ -400,7 +400,7 @@ class TestIRCompounds(CheckEquality):
                 if np.abs(i) > 0:
                     k = h / i
                     l = np.arange(1, c + 1)
-                    if _HAS_NUMBA:
+                    if HAS_NUMBA:
                         with objmode():
                             print(e, k)
                     m = np.sqrt(l - g)
@@ -416,7 +416,7 @@ class TestIRCompounds(CheckEquality):
                     for r in range(len(p)):
                         q.append(p[r])
                         if r > 4 + 1:
-                            if _HAS_NUMBA:
+                            if HAS_NUMBA:
                                 with objmode(s="intp", t="complex128"):
                                     s = 123
                                     t = 5

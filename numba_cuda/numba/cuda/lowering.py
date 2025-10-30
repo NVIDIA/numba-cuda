@@ -8,7 +8,7 @@ from functools import partial
 
 from llvmlite import ir as llvm_ir
 
-from numba.cuda import _HAS_NUMBA
+from numba.cuda import HAS_NUMBA
 from numba.cuda.core import ir
 from numba.cuda import debuginfo, cgutils, utils, typing, types
 from numba.cuda.core import (
@@ -1881,7 +1881,7 @@ def _lit_or_omitted(value):
     otherwise, return `Omitted(value)`.
     """
     typing_errors = LiteralTypingError
-    if _HAS_NUMBA:
+    if HAS_NUMBA:
         from numba.core.errors import (
             LiteralTypingError as CoreLiteralTypingError,
         )

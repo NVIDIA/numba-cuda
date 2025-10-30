@@ -10,7 +10,7 @@ import collections
 import warnings
 
 import numba.cuda
-from numba.cuda import _HAS_NUMBA
+from numba.cuda import HAS_NUMBA
 from numba.cuda import types
 from numba.cuda.core import ir
 from numba.cuda import typing
@@ -830,7 +830,7 @@ def has_no_side_effect(rhs, lives, call_table):
         ):
             return True
 
-        if _HAS_NUMBA:
+        if HAS_NUMBA:
             from numba.core.registry import CPUDispatcher
             from numba.cuda.np.linalg import dot_3_mv_check_args
 

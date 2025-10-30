@@ -8,7 +8,7 @@ from llvmlite import ir
 import numpy as np
 import os
 from numba import cuda
-from numba.cuda import _HAS_NUMBA
+from numba.cuda import HAS_NUMBA
 from numba.cuda.testing import skip_on_standalone_numba_cuda
 from numba.cuda import types
 from numba.cuda import config
@@ -32,7 +32,7 @@ class Interval:
         return self.hi - self.lo
 
 
-if _HAS_NUMBA:
+if HAS_NUMBA:
     from numba import njit
 else:
     njit = None

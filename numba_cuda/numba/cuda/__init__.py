@@ -20,7 +20,7 @@ import numba.cuda.types as types
 # Re-export all type names
 from numba.cuda.types import *
 
-_HAS_NUMBA = importlib.util.find_spec("numba") is not None
+HAS_NUMBA = importlib.util.find_spec("numba") is not None
 
 # Require NVIDIA CUDA bindings at import time
 if not (

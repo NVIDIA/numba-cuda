@@ -3,9 +3,9 @@
 
 from numba import cuda
 from numba.cuda import types
-from numba.cuda import _HAS_NUMBA
+from numba.cuda import HAS_NUMBA
 
-if _HAS_NUMBA:
+if HAS_NUMBA:
     from numba.core.errors import TypingError
     from numba import njit
     import numba
@@ -366,7 +366,7 @@ class TestOverload(CUDATestCase):
         # A different error is produced prior to version 0.60
         # (the fixes in #9454 improved the message)
         # https://github.com/numba/numba/pull/9454
-        if _HAS_NUMBA and numba.version_info[:2] < (0, 60):
+        if HAS_NUMBA and numba.version_info[:2] < (0, 60):
             msg = 'resolving type of attribute "cuda_only" of "x"'
         else:
             msg = "Unknown attribute 'cuda_only'"

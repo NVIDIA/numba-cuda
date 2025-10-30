@@ -10,10 +10,10 @@ import sys
 import unittest
 from multiprocessing import get_context
 
-from numba.cuda import _HAS_NUMBA
+from numba.cuda import HAS_NUMBA
 import numba
 
-if _HAS_NUMBA:
+if HAS_NUMBA:
     from numba.core.errors import TypingError
     from numba.core.target_extension import resolve_dispatcher_from_str
 else:

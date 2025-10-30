@@ -7,9 +7,9 @@ Test extending types via the numba.extending.* API.
 
 from numba.cuda import jit
 from numba.cuda import types
-from numba.cuda import _HAS_NUMBA
+from numba.cuda import HAS_NUMBA
 
-if _HAS_NUMBA:
+if HAS_NUMBA:
     from numba.core.errors import TypingError, NumbaTypeError
 else:
     from numba.cuda.core.errors import TypingError, NumbaTypeError

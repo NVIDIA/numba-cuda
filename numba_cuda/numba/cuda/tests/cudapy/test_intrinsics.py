@@ -7,9 +7,9 @@ import operator
 import re
 from numba import cuda
 from numba.cuda import int64
-from numba.cuda import _HAS_NUMBA
+from numba.cuda import HAS_NUMBA
 
-if _HAS_NUMBA:
+if HAS_NUMBA:
     from numba.core.errors import TypingError
 else:
     from numba.cuda.core.errors import TypingError

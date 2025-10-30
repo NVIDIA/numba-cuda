@@ -5,7 +5,7 @@ import types as pytypes  # avoid confusion with numba.types
 import copy
 import ctypes
 import numba.cuda.core.analysis
-from numba.cuda import _HAS_NUMBA
+from numba.cuda import HAS_NUMBA
 from numba.cuda import types, config, cgutils
 from numba.cuda.core import ir
 from numba.cuda.core import errors
@@ -236,7 +236,7 @@ def check_reduce_func(func_ir, func_var):
                             analysis"
         )
     if isinstance(reduce_func, (ir.FreeVar, ir.Global)):
-        if _HAS_NUMBA:
+        if HAS_NUMBA:
             from numba.core.registry import CPUDispatcher
 
             if not isinstance(reduce_func.value, CPUDispatcher):

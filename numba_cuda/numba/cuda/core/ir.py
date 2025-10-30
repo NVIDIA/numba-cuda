@@ -14,9 +14,9 @@ from types import FunctionType, BuiltinFunctionType
 from functools import total_ordering
 from io import StringIO
 
-from numba.cuda import _HAS_NUMBA
+from numba.cuda import HAS_NUMBA
 
-if _HAS_NUMBA:
+if HAS_NUMBA:
     import numba
 from numba.cuda.core import errors
 from numba.cuda.core import config
@@ -28,7 +28,7 @@ from numba.cuda.core.errors import (
     ConstantInferenceError,
 )
 from numba.cuda.core import consts
-from numba.cuda import _HAS_NUMBA
+from numba.cuda import HAS_NUMBA
 
 # terminal color markup
 _termcolor = errors.termcolor()
@@ -780,7 +780,7 @@ class StoreMap(Stmt):
 class Del(Stmt):
     def __init__(self, value, loc):
         assert isinstance(value, str)
-        if _HAS_NUMBA:
+        if HAS_NUMBA:
             assert isinstance(loc, (Loc, numba.core.ir.Loc))
         else:
             assert isinstance(loc)
@@ -1349,7 +1349,7 @@ class Block(EqualityCheckMixin):
     """A code block"""
 
     def __init__(self, scope, loc):
-        if _HAS_NUMBA:
+        if HAS_NUMBA:
             assert isinstance(scope, (Scope, numba.core.ir.Scope))
             assert isinstance(loc, (Loc, numba.core.ir.Loc))
         else:
