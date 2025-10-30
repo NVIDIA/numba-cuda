@@ -17,7 +17,7 @@ from numba.cuda.typing import signature
 from numba.cuda.extending import intrinsic, overload, register_jitable
 from numba.cuda import types
 from numba.cuda import cgutils
-from numba.core.errors import (
+from numba.cuda.core.errors import (
     TypingError,
     NumbaTypeError,
     NumbaPerformanceWarning,

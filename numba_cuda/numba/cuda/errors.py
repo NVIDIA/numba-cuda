@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: BSD-2-Clause
 
 import numbers
-from numba.core.errors import LoweringError
+from numba.cuda.core.errors import LoweringError
 
 
 class KernelRuntimeError(RuntimeError):

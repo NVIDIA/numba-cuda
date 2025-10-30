@@ -231,7 +231,7 @@ class Record(Type):
 
         This method only implements width subtyping for records.
         """
-        from numba.core.errors import NumbaExperimentalFeatureWarning
+        from numba.cuda.core.errors import NumbaExperimentalFeatureWarning
 
         if isinstance(other, Record):
             if len(other.fields) > len(self.fields):

@@ -17,7 +17,7 @@ from numba.cuda.typing.templates import (
 
 # import time side effect: array operations requires typing support of sequence
 # defined in collections: e.g. array.shape[i]
-from numba.core.errors import (
+from numba.cuda.core.errors import (
     TypingError,
     RequireLiteralValue,
     NumbaTypeError,

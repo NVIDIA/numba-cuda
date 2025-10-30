@@ -13,10 +13,10 @@ from numba.cuda.core.compiler_machinery import (
     register_pass,
 )
 from numba.cuda.core import postproc, bytecode, transforms, inline_closurecall
-from numba.core import (
+from numba.cuda.core import (
     errors,
-    ir,
 )
+from numba.cuda.core import ir
 from numba.cuda import types
 from numba.cuda.core import consts, rewrites, config
 from numba.cuda.core.interpreter import Interpreter

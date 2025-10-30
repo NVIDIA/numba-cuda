@@ -11,7 +11,7 @@ import warnings
 
 import numba
 from numba.cuda import types
-from numba.core import ir
+from numba.cuda.core import ir
 from numba.cuda import typing
 from numba.cuda.core import analysis, postproc, rewrites, config
 from numba.cuda.typing.templates import signature
@@ -20,7 +20,7 @@ from numba.cuda.core.analysis import (
     compute_use_defs,
     compute_cfg_from_blocks,
 )
-from numba.core.errors import (
+from numba.cuda.core.errors import (
     TypingError,
     UnsupportedError,
     NumbaPendingDeprecationWarning,
