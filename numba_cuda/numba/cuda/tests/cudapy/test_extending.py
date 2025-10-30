@@ -1,6 +1,12 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-2-Clause
 
+from numba.cuda import config
+import unittest
+
+if config.ENABLE_CUDASIM:
+    raise unittest.SkipTest("Simulator does not support extending types")
+
 import inspect
 import math
 import os
@@ -13,7 +19,7 @@ import numpy as np
 import numba
 from numba import cuda, njit
 from numba.cuda import cgutils, jit, types
-from numba.cuda.testing import CUDATestCase, skip_on_cudasim
+from numba.cuda.testing import CUDATestCase
 from numba.cuda.cudadrv.driver import _have_nvjitlink
 from numba.cuda.tests.support import TestCase
 from numba.cuda.typing.templates import AttributeTemplate
@@ -203,7 +209,6 @@ def call_func1_unary(x, res):
     res[0] = func1(x)
 
 
-@skip_on_cudasim("Extensions not supported in the simulator")
 class TestExtending(CUDATestCase):
     def test_attributes(self):
         @cuda.jit
@@ -263,7 +268,6 @@ class TestExtending(CUDATestCase):
         np.testing.assert_allclose(r, expected)
 
 
-@skip_on_cudasim("Extensions not supported in the simulator")
 class TestExtendingLinkage(CUDATestCase):
     @unittest.skipUnless(TEST_BIN_DIR, "Necessary binaries are not available")
     def test_extension_adds_linkable_code(self):
@@ -369,7 +373,6 @@ class TestExtendingLinkage(CUDATestCase):
         np.testing.assert_equal(r, x * 2)
 
 
-@skip_on_cudasim("Simulator does not support extending types")
 class TestLowLevelExtending(TestCase):
     """
     Test the low-level two-tier extension API.
@@ -399,7 +402,6 @@ class TestLowLevelExtending(TestCase):
         self.assertIsNotNone(type_func1)
 
 
-@skip_on_cudasim("Simulator does not support extending types")
 class TestHighLevelExtending(TestCase):
     """
     Test the high-level combined API.
@@ -673,7 +675,6 @@ def _assert_cache_stats(cfunc, expect_hit, expect_misses):
         raise AssertionError("cache not used")
 
 
-@skip_on_cudasim("Simulator does not support extending types")
 class TestIntrinsic(TestCase):
     def test_void_return(self):
         """
@@ -826,7 +827,6 @@ class TestIntrinsic(TestCase):
         self.assertEqual("void_func docstring", void_func.__doc__)
 
 
-@skip_on_cudasim("Simulator does not support extending types")
 class TestRegisterJitable(unittest.TestCase):
     def test_no_flags(self):
         @register_jitable
@@ -846,7 +846,6 @@ class TestRegisterJitable(unittest.TestCase):
         self.assertEqual(x[0], 16)
 
 
-@skip_on_cudasim("Simulator does not support extending types")
 class TestOverloadPreferLiteral(TestCase):
     def test_overload(self):
         def prefer_lit(x):
@@ -902,7 +901,6 @@ class TestOverloadPreferLiteral(TestCase):
         self.assertEqual(c, 300)
 
 
-@skip_on_cudasim("Simulator does not support extending types")
 class TestNumbaInternalOverloads(TestCase):
     def test_signatures_match_overloaded_api(self):
         # This is a "best-effort" test to try and ensure that Numba's internal
