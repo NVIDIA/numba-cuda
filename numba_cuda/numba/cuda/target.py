@@ -10,7 +10,7 @@ import importlib.util
 
 from numba.cuda import types
 from numba.cuda import HAS_NUMBA
-from numba.core.compiler_lock import global_compiler_lock
+from numba.cuda.core.compiler_lock import global_compiler_lock
 from numba.cuda.core.errors import NumbaWarning
 from numba.cuda.core.base import BaseContext
 from numba.cuda.typing import cmathdecl

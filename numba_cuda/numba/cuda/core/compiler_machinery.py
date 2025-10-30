@@ -7,8 +7,8 @@ from collections import namedtuple, OrderedDict
 import inspect
 
 
-from numba.core.compiler_lock import global_compiler_lock
 from numba.cuda.core import errors
+from numba.cuda.core.compiler_lock import global_compiler_lock
 from numba.cuda.core import config
 from numba.cuda import utils
 from numba.cuda.core import transforms

@@ -19,7 +19,7 @@ from numba.cuda.core import errors
 from numba.cuda import serialize, utils
 from numba import cuda
 
-from numba.core.compiler_lock import global_compiler_lock
+from numba.cuda.core.compiler_lock import global_compiler_lock
 from numba.cuda.typeconv.rules import default_type_manager
 from numba.cuda.typing.templates import fold_arguments
 from numba.cuda.typing.typeof import Purpose, typeof
