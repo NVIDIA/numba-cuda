@@ -37,30 +37,29 @@ cuda-version = "12.*"
 
 [feature.cu-12-0.dependencies]
 cuda-version = "12.0.*"
-# cuda-runtime fails to solve because of nvjitlink
+
+[feature.nvvm.dependencies]
+# supported by cuda >=12.2
+cuda-nvvm = "*"
 
 [feature.cu-12-2.dependencies]
 cuda-version = "12.2.*"
-cuda-nvvm = "*"
-# cuda-runtime fails to solve because of nvjitlink
+
+[feature.cu-rt.dependencies]
+# supported by cuda >=12.8
+cuda-runtime = "*"
 
 [feature.cu-12-8.dependencies]
 cuda-version = "12.8.*"
-cuda-nvvm = "*"
-cuda-runtime = "*"
 
 [feature.cu-12-9.dependencies]
 cuda-version = "12.9.*"
-cuda-nvvm = "*"
-cuda-runtime = "*"
 
 [feature.cu-13.system-requirements]
 cuda = "13"
 
 [feature.cu-13.dependencies]
 cuda-version = "13.*"
-cuda-runtime = "*"
-cuda-nvvm = "*"
 
 [feature.cu-13-0.dependencies]
 cuda-version = "13.0.*"
@@ -98,6 +97,7 @@ cu-12-2 = { features = [
     "build",
     "cu",
     "cu-12",
+    "nvvm",
 ], solve-group = "cu-12-2" }
 cu-12-8 = { features = [
     "cu-12-8",
@@ -105,6 +105,8 @@ cu-12-8 = { features = [
     "build",
     "cu",
     "cu-12",
+    "cu-rt",
+    "nvvm",
 ], solve-group = "cu-12-8" }
 cu-12-9 = { features = [
     "cu-12-9",
@@ -113,6 +115,8 @@ cu-12-9 = { features = [
     "bench",
     "cu",
     "cu-12",
+    "cu-rt",
+    "nvvm",
 ], solve-group = "cu-12-9" }
 # CUDA 13
 cu-13-0 = { features = [
@@ -121,6 +125,8 @@ cu-13-0 = { features = [
     "build",
     "cu",
     "cu-13",
+    "cu-rt",
+    "nvvm",
 ], solve-group = "cu-13-0" }
 
 [target.linux.tasks]
