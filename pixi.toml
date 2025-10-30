@@ -63,6 +63,7 @@ cuda-runtime = "*"
 cuda-nvvm = "*"
 
 [feature.cu-13-0.dependencies]
+cuda-version = "13.0.*"
 
 [feature.bench.dependencies]
 pytorch = ">=2.8"
