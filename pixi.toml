@@ -71,12 +71,12 @@ libtorch = ">=2.8"
 cupy = "*"
 
 [feature.test.dependencies]
-pre-commit = "*"
-psutil = "*"
-cffi = "*"
-pytest = "*"
-pytest-xdist = "*"
-pytest-benchmark = "*"
+pre-commit = ">=4.3"
+psutil = ">=7.1.1"
+cffi = ">=2"
+pytest = ">=8.4.2"
+pytest-xdist = ">=3.8"
+pytest-benchmark = ">=5.1"
 
 [feature.test.pypi-dependencies]
 ml_dtypes = "*"
