@@ -10,7 +10,7 @@ from numba import cuda
 from numba.cuda.testing import skip_on_cudasim, CUDATestCase
 import unittest
 import warnings
-from numba.core.errors import NumbaPerformanceWarning, TypingError
+from numba.cuda.core.errors import NumbaPerformanceWarning, TypingError
 from numba.cuda.tests.support import override_config
 
 

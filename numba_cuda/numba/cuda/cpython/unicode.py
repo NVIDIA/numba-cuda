@@ -35,7 +35,7 @@ from numba.cuda.core.pythonapi import (
 )
 from numba.cuda.cext._helperlib import c_helpers
 from numba.cuda.core.unsafe.bytes import memcpy_region
-from numba.core.errors import TypingError
+from numba.cuda.core.errors import TypingError
 from numba.cuda.cpython.unicode_support import (
     _Py_TOUPPER,
     _Py_TOLOWER,

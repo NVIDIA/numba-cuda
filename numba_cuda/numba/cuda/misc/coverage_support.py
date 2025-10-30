@@ -11,7 +11,7 @@ compiler.
 from typing import Optional, Sequence, Callable
 from abc import ABC, abstractmethod
 
-from numba.core import ir
+from numba.cuda.core import ir
 from numba.cuda import config
 
 _the_registry: Callable[[], Optional["NotifyLocBase"]] = []

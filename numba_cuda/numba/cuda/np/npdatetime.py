@@ -22,7 +22,7 @@ from numba.cuda.core.imputils import (
 from numba.cuda.np import npdatetime_helpers, numpy_support, npyfuncs
 from numba.cuda.extending import overload_method
 from numba.cuda.core.config import IS_32BITS
-from numba.core.errors import LoweringError
+from numba.cuda.core.errors import LoweringError
 
 # datetime64 and timedelta64 use the same internal representation
 DATETIME64 = TIMEDELTA64 = llvmlite.ir.IntType(64)

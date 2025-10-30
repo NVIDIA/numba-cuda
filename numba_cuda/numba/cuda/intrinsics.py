@@ -6,7 +6,7 @@ from llvmlite import ir
 from numba import cuda
 from numba.cuda import types
 from numba.cuda import cgutils
-from numba.core.errors import RequireLiteralValue, TypingError
+from numba.cuda.core.errors import RequireLiteralValue, TypingError
 from numba.cuda.typing import signature
 from numba.cuda.extending import overload_attribute, overload_method
 from numba.cuda import nvvmutils

@@ -25,7 +25,7 @@ from .common import (
 )
 from .misc import Undefined, unliteral, Optional, NoneType
 from numba.cuda.typeconv import Conversion
-from numba.core.errors import TypingError
+from numba.cuda.core.errors import TypingError
 from numba.cuda import utils
 
 
