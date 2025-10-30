@@ -20,11 +20,7 @@ cuda-compiler = "*"
 make = "*"
 cxx-compiler = "*"
 
-[feature.cu-12.system-requirements]
-cuda = "12"
-
-[feature.cu-12.dependencies]
-cuda-version = "12.*"
+[feature.cu.dependencies]
 cuda-nvcc = "*"
 cuda-nvcc-impl = "*"
 cuda-cuobjdump = "*"
@@ -32,6 +28,12 @@ cuda-nvrtc = "*"
 libnvjitlink = "*"
 cuda-cccl = "*"
 libcurand = "*"
+
+[feature.cu-12.system-requirements]
+cuda = "12"
+
+[feature.cu-12.dependencies]
+cuda-version = "12.*"
 
 [feature.cu-12-0.dependencies]
 cuda-version = "12.0.*"
@@ -57,14 +59,8 @@ cuda = "13"
 
 [feature.cu-13.dependencies]
 cuda-version = "13.*"
-cuda-nvvm = "*"
-cuda-nvrtc = "*"
-libnvjitlink = "*"
-cuda-cccl = "*"
-libcurand = "*"
 cuda-runtime = "*"
-cuda-nvcc-impl = "*"
-cuda-cuobjdump = "*"
+cuda-nvvm = "*"
 
 [feature.cu-13-0.dependencies]
 
@@ -92,18 +88,21 @@ cu-12-0 = { features = [
     "cu-12-0",
     "test",
     "build",
+    "cu",
     "cu-12",
 ], solve-group = "cu-12-0" }
 cu-12-2 = { features = [
     "cu-12-2",
     "test",
     "build",
+    "cu",
     "cu-12",
 ], solve-group = "cu-12-2" }
 cu-12-8 = { features = [
     "cu-12-8",
     "test",
     "build",
+    "cu",
     "cu-12",
 ], solve-group = "cu-12-8" }
 cu-12-9 = { features = [
@@ -111,6 +110,7 @@ cu-12-9 = { features = [
     "test",
     "build",
     "bench",
+    "cu",
     "cu-12",
 ], solve-group = "cu-12-9" }
 # CUDA 13
@@ -118,6 +118,7 @@ cu-13-0 = { features = [
     "cu-13-0",
     "test",
     "build",
+    "cu",
     "cu-13",
 ], solve-group = "cu-13-0" }
 
