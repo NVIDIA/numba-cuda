@@ -9,11 +9,6 @@ import sys
 
 from numba_cuda._version import __version__
 
-from numba_cuda._version import generate_version_info
-
-version_info = generate_version_info(__version__)
-del generate_version_info
-
 # Re-export types itself
 import numba.cuda.types as types
 
