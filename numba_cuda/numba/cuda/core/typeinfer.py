@@ -49,8 +49,6 @@ from numba.cuda.core.errors import (
     CompilerError,
     NumbaValueError,
 )
-
-# from numba.core import errors as cudaErrors
 from numba.cuda.core.funcdesc import qualifying_prefix
 from numba.cuda.typeconv import Conversion
 
