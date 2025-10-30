@@ -7,10 +7,8 @@ from .utils import _readenv
 import warnings
 import sys
 
-# Import version from the parent package
 from numba_cuda._version import __version__
 
-# Generate version_info early to avoid circular import issues
 from numba_cuda._version import generate_version_info
 
 version_info = generate_version_info(__version__)
@@ -22,14 +20,7 @@ import numba.cuda.types as types
 # Re-export all type names
 from numba.cuda.types import *
 
-# Check if upstream numba is available - needs to be defined early to avoid circular imports
-try:
-    import numba
-
-    _HAS_NUMBA = True
-except ImportError:
-    _HAS_NUMBA = False
-
+_HAS_NUMBA = importlib.util.find_spec("numba") is not None
 
 # Require NVIDIA CUDA bindings at import time
 if not (

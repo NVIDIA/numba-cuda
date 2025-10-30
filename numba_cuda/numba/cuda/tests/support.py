@@ -43,9 +43,6 @@ if _HAS_NUMBA:
         typeof_impl as upstream_typeof_impl,
     )
     from numba.core import types as upstream_types
-else:
-    upstream_typeof_impl = None
-    upstream_types = None
 
 
 class EnableNRTStatsMixin(object):
@@ -773,7 +770,7 @@ class TestCase(unittest.TestCase):
             return dummy_type
 
         # Dual registration for cross-target tests
-        if upstream_typeof_impl is not None and upstream_types is not None:
+        if _HAS_NUMBA:
             UpstreamDummyType = type(
                 "DummyTypeFor{}".format(test_id), (upstream_types.Opaque,), {}
             )

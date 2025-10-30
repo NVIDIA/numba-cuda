@@ -11,10 +11,8 @@ from math import sqrt
 import numpy as np
 import numpy.random as nprand
 
-from numba.cuda import _HAS_NUMBA
-
-if _HAS_NUMBA:
-    from numba import jit
+# This does not need a guard, it's already guarded at the import site
+from numba import jit
 
 
 @jit("int32(int32, int32)")

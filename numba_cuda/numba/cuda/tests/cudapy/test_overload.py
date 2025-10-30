@@ -237,9 +237,7 @@ class TestOverload(CUDATestCase):
         cuda.jit(kernel)[1, 1](x)
         self.assertEqual(x[0], expected)
 
-    @skip_on_standalone_numba_cuda(
-        "Test not supported in standalone numba_cuda"
-    )
+    @skip_on_standalone_numba_cuda
     def check_overload_cpu(self, kernel, expected):
         x = np.ones(1, dtype=np.int32)
         njit(kernel)(x)
@@ -344,9 +342,7 @@ class TestOverload(CUDATestCase):
         expected = GENERIC_TARGET_OL_CALLS_TARGET_OL * GENERIC_TARGET_OL
         self.check_overload_cpu(kernel, expected)
 
-    @skip_on_standalone_numba_cuda(
-        "Test not supported in standalone numba_cuda"
-    )
+    @skip_on_standalone_numba_cuda
     def test_overload_attribute_target(self):
         MyDummy, MyDummyType = self.make_dummy_type()
         mydummy_type_cpu = cpu_typeof(MyDummy())  # For @njit (cpu)

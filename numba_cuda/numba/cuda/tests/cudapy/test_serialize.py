@@ -3,8 +3,7 @@
 
 import pickle
 import numpy as np
-from numba.cuda import vectorize
-from numba import cuda
+from numba import cuda, vectorize
 from numba.cuda import types
 from numba.cuda.testing import skip_on_cudasim, CUDATestCase
 import unittest

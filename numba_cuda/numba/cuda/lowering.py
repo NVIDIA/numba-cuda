@@ -1880,14 +1880,14 @@ def _lit_or_omitted(value):
     """Returns a Literal instance if the type of value is supported;
     otherwise, return `Omitted(value)`.
     """
-    excepts = LiteralTypingError
+    typing_errors = LiteralTypingError
     if _HAS_NUMBA:
         from numba.core.errors import (
             LiteralTypingError as CoreLiteralTypingError,
         )
 
-        excepts = (LiteralTypingError, CoreLiteralTypingError)
+        typing_errors = (LiteralTypingError, CoreLiteralTypingError)
     try:
         return types.literal(value)
-    except excepts:
+    except typing_errors:
         return types.Omitted(value)

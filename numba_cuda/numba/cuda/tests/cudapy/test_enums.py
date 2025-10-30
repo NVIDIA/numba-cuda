@@ -8,8 +8,7 @@ Test cases adapted from numba/tests/test_enums.py
 import numpy as np
 
 from numba.cuda import int16, int32
-from numba.cuda import vectorize
-from numba.cuda import _HAS_NUMBA
+from numba.cuda import vectorize, _HAS_NUMBA
 
 if _HAS_NUMBA:
     from numba import njit
@@ -67,9 +66,7 @@ class EnumTest(CUDATestCase):
         f(expected)
         self.assertPreciseEqual(expected, got)
 
-    @skip_on_standalone_numba_cuda(
-        "Test not supported in standalone numba_cuda"
-    )
+    @skip_on_standalone_numba_cuda
     def test_return_from_device_func(self):
         @njit
         def inner(pred):

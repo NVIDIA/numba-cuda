@@ -15,7 +15,7 @@ from collections import defaultdict
 from functools import wraps
 from abc import abstractmethod
 
-from numba_cuda._version import __version__
+import numba_cuda
 
 # Filled at the end
 __all__ = []
@@ -456,7 +456,7 @@ reportable_issue_info = """
 This should not have happened, a problem has occurred in Numba's internals.
 You are currently using Numba version %s.
 %s
-""" % (__version__, feedback_details)
+""" % (numba_cuda.__version__, feedback_details)
 
 error_extras = dict()
 error_extras["unsupported_error"] = unsupported_error_info

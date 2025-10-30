@@ -10,8 +10,7 @@ from numba.cuda.testing import (
     skip_on_cudasim,
 )
 from numba.cuda.np import numpy_support
-from numba import vectorize
-import numba.cuda as cuda
+from numba import cuda, vectorize
 from numba.cuda import float32, float64, int32, void, int64
 import math
 
