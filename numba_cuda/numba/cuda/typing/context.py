@@ -290,11 +290,7 @@ class BaseContext(object):
     def find_matching_getattr_template(self, typ, attr):
         templates = list(self._get_attribute_templates(typ))
 
-        # get the order in which to try templates
-        from numba.core.target_extension import get_local_target
-
-        target_hw = get_local_target(self)
-        order = order_by_target_specificity(target_hw, templates, fnkey=attr)
+        order = order_by_target_specificity(templates, fnkey=attr)
 
         for template in order:
             return_type = template.resolve(typ, attr)
@@ -446,13 +442,6 @@ class BaseContext(object):
             loader = templates.RegistryLoader(registry)
             self._registries[registry] = loader
 
-        from numba.core.target_extension import (
-            get_local_target,
-            resolve_target_str,
-        )
-
-        current_target = get_local_target(self)
-
         def is_for_this_target(ftcls):
             metadata = getattr(ftcls, "metadata", None)
             if metadata is None:
@@ -462,31 +451,11 @@ class BaseContext(object):
             if target_str is None:
                 return True
 
-            # There may be pending registrations for nonexistent targets.
-            # Ideally it would be impossible to leave a registration pending
-            # for an invalid target, but in practice this is exceedingly
-            # difficult to guard against - many things are registered at import
-            # time, and eagerly reporting an error when registering for invalid
-            # targets would require that all target registration code is
-            # executed prior to all typing registrations during the import
-            # process; attempting to enforce this would impose constraints on
-            # execution order during import that would be very difficult to
-            # resolve and maintain in the presence of typical code maintenance.
-            # Furthermore, these constraints would be imposed not only on
-            # Numba internals, but also on its dependents.
-            #
-            # Instead of that enforcement, we simply catch any occurrences of
-            # registrations for targets that don't exist, and report that
-            # they're not for this target. They will then not be encountered
-            # again during future typing context refreshes (because the
-            # loader's new registrations are a stream_list that doesn't yield
-            # previously-yielded items).
-            try:
-                ft_target = resolve_target_str(target_str)
-            except errors.NonexistentTargetError:
-                return False
+            # Accept both "cuda" and "generic" targets
+            if target_str in ("cuda", "generic"):
+                return True
 
-            return current_target.inherits_from(ft_target)
+            return False
 
         def is_external(obj):
             """Check if obj is from outside numba.* namespace."""

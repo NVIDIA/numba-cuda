@@ -13,7 +13,7 @@ echo "Package path: ${package}"
 DEPENDENCIES=(
     "${package}"
     "cuda-python==${CUDA_VER_MAJOR_MINOR%.*}.*"
-    "cuda-core==0.3.*"
+    "cuda-core>=0.3.0,<1.0.0"
     "--group"
     "test"
 )

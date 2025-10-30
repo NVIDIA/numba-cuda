@@ -3,6 +3,7 @@
 
 from collections import defaultdict
 import copy
+import importlib
 import sys
 from itertools import permutations, takewhile
 from contextlib import contextmanager
@@ -212,10 +213,15 @@ class BaseContext(object):
     def __init__(self, typing_context, target):
         self.address_size = utils.MACHINE_BITS
         self.typing_context = typing_context
-        from numba.core.target_extension import target_registry
-
         self.target_name = target
-        self.target = target_registry[target]
+
+        if importlib.util.find_spec("numba"):
+            from numba.core.target_extension import CUDA
+
+            # Used only in Numba's target_extension implementation.
+            # Numba-CUDA has the target_extension implementation removed, and
+            # references to it hardcoded to values specific to the CUDA target.
+            self.target = CUDA
 
         # A mapping of installed registries to their loaders
         self._registries = {}
