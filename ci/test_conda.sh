@@ -25,6 +25,9 @@ EXITCODE=0
 trap "EXITCODE=1" ERR
 set +e
 
+rapids-logger "Install pixi env"
+pixi install -e "${PIXI_ENV}"
+
 rapids-logger "Show Numba system info"
 pixi run -e "${PIXI_ENV}" python -m numba --sysinfo
 
