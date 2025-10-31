@@ -4,6 +4,7 @@
 from numba import cuda
 from numba.core import errors
 from numba.cuda.extending import overload
+from numba.cuda.testing import skip_on_cudasim
 import numpy as np
 
 import unittest
@@ -249,6 +250,7 @@ class TestMakeFunctionToJITFunction(unittest.TestCase):
         np.testing.assert_allclose(impl(a), cfunc(a))
 
     # this needs true SSA to be able to work correctly, check error for now
+    @skip_on_cudasim("Simulator will not raise a typing error")
     def test_multiply_defined_freevar(self):
         def impl(c):
             if c:
@@ -274,6 +276,7 @@ class TestMakeFunctionToJITFunction(unittest.TestCase):
             "Cannot capture a constant value for variable", str(e.exception)
         )
 
+    @skip_on_cudasim("Simulator will not raise a typing error")
     def test_non_const_in_escapee(self):
         def impl(x):
             z = np.arange(x)
