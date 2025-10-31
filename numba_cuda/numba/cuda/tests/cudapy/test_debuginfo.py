@@ -7,6 +7,7 @@ from numba.cuda.testing import skip_on_cudasim
 from numba import cuda
 from numba.cuda import types
 from numba.cuda.testing import CUDATestCase
+from numba.cuda.core import config
 from textwrap import dedent
 import math
 import itertools
@@ -403,6 +404,9 @@ class TestCudaDebugInfo(CUDATestCase):
         match = re.compile(pat).search(llvm_ir)
         self.assertIsNone(match, msg=llvm_ir)
 
+    @unittest.skipIf(
+        config.CUDA_DEBUG_POLY, "Uses old union format, not variant_part"
+    )
     def test_union_poly_types(self):
         sig = (types.int32, types.int32)
 
@@ -459,6 +463,46 @@ class TestCudaDebugInfo(CUDATestCase):
             print(results.copy_to_host())
         expected = "[1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0]"
         self.assertIn(expected, out.getvalue())
+
+    @unittest.skipUnless(config.CUDA_DEBUG_POLY, "CUDA_DEBUG_POLY not enabled")
+    def test_poly_variant_part(self):
+        """Test polymorphic variables with DW_TAG_variant_part.
+
+        This test verifies that when CUDA_DEBUG_POLY is enabled,
+        polymorphic variables generate proper DWARF5 variant_part
+        debug information with discriminator and variant members.
+        """
+        # Typed constant: i8 0, i8 1, etc. | Node reference: !123, !456
+        if config.CUDA_DEBUG_POLY_USE_TYPED_CONST:
+            extradata_pattern = "i8 {{[0-9]+}}"
+        else:
+            extradata_pattern = "{{![0-9]+}}"
+
+        @cuda.jit("void()", debug=True, opt=False)
+        def f():
+            foo = 100  # noqa: F841
+            foo = 3.14  # noqa: F841
+            foo = True  # noqa: F841
+            foo = np.int32(42)  # noqa: F841
+
+        llvm_ir = f.inspect_llvm()[tuple()]
+
+        # Build FileCheck pattern dynamically based on config
+        # Capture node IDs and verify the hierarchical structure
+        check_pattern = """
+            CHECK-DAG: !DILocalVariable({{.*}}name: "foo"{{.*}}type: [[WRAPPER:![0-9]+]]
+            CHECK-DAG: [[WRAPPER]] = !DICompositeType({{.*}}elements: [[ELEMENTS:![0-9]+]]{{.*}}name: "variant_wrapper_struct"{{.*}}size: 128{{.*}}tag: DW_TAG_structure_type)
+            CHECK-DAG: [[ELEMENTS]] = !{ [[DISC:![0-9]+]], [[VPART:![0-9]+]] }
+            CHECK-DAG: [[DISC]] = !DIDerivedType({{.*}}name: "discriminator-{{[0-9]+}}"{{.*}}size: 8{{.*}}tag: DW_TAG_member)
+            CHECK-DAG: [[VPART]] = !DICompositeType({{.*}}discriminator: [[DISC]]{{.*}}elements: [[VMEMBERS:![0-9]+]]{{.*}}tag: DW_TAG_variant_part)
+            CHECK-DAG: [[VMEMBERS]] = !{ [[VM1:![0-9]+]], [[VM2:![0-9]+]], [[VM3:![0-9]+]], [[VM4:![0-9]+]] }
+            CHECK-DAG: [[VM1]] = !DIDerivedType({{.*}}extraData: EXTRADATA{{.*}}name: "_bool"{{.*}}offset: 8{{.*}}tag: DW_TAG_member)
+            CHECK-DAG: [[VM2]] = !DIDerivedType({{.*}}extraData: EXTRADATA{{.*}}name: "_float64"{{.*}}offset: 64{{.*}}tag: DW_TAG_member)
+            CHECK-DAG: [[VM3]] = !DIDerivedType({{.*}}extraData: EXTRADATA{{.*}}name: "_int32"{{.*}}offset: 32{{.*}}tag: DW_TAG_member)
+            CHECK-DAG: [[VM4]] = !DIDerivedType({{.*}}extraData: EXTRADATA{{.*}}name: "_int64"{{.*}}offset: 64{{.*}}tag: DW_TAG_member)
+        """.replace("EXTRADATA", extradata_pattern)
+
+        self.assertFileCheckMatches(llvm_ir, check_pattern)
 
     def test_DW_LANG(self):
         @cuda.jit(debug=True, opt=False)
