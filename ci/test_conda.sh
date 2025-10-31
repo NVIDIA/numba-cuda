@@ -12,10 +12,6 @@ if [ "$DISTRO" = "ubuntu" ]; then
   apt remove --purge `dpkg --get-selections | grep cuda-nvrtc | awk '{print $1}'` -y
 fi
 
-curl -fsSL https://pixi.sh/install.sh | sh
-
-export PATH="${PATH}:/github/home/.pixi/bin"
-
 # Constrain oldest supported dependencies for testing
 if [ "${RAPIDS_DEPENDENCIES:-}" = "oldest" ]; then
     # add to the default environment's dependencies
