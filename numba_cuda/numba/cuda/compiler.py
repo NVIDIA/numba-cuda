@@ -10,7 +10,7 @@ from numba.cuda.core import ir as numba_ir
 from numba.cuda.core import bytecode
 from numba.cuda import types
 from numba.cuda.core.options import ParallelOptions
-from numba.core.compiler_lock import global_compiler_lock
+from numba.cuda.core.compiler_lock import global_compiler_lock
 from numba.cuda.core.errors import NumbaWarning, NumbaInvalidConfigWarning
 from numba.cuda.core.interpreter import Interpreter
 
