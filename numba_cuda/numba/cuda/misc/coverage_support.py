@@ -21,7 +21,7 @@ def get_registered_loc_notify() -> Sequence["NotifyLocBase"]:
     """
     Returns a list of the registered NotifyLocBase instances.
     """
-    if not config.JIT_COVERAGE:
+    if hasattr(config, "JIT_COVERAGE") and not config.JIT_COVERAGE:
         # Coverage disabled.
         return []
     return list(
