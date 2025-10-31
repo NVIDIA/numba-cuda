@@ -1,6 +1,7 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-2-Clause
 
+import concurrent.futures
 import multiprocessing as mp
 import os
 
@@ -20,11 +21,8 @@ def cuInit_raising(arg):
 # not assigned until we attempt to initialize - mock.patch.object cannot locate
 # the non-existent original method, and so fails. Instead we patch
 # driver.cuInit with our raising version prior to any attempt to initialize.
-def cuInit_raising_test(result_queue):
+def cuInit_raising_test():
     driver.cuInit = cuInit_raising
-
-    success = False
-    msg = None
 
     try:
         # A CUDA operation that forces initialization of the device
@@ -32,76 +30,74 @@ def cuInit_raising_test(result_queue):
     except CudaSupportError as e:
         success = True
         msg = e.msg
+    else:
+        success = False
+        msg = None
 
-    result_queue.put((success, msg))
+    return success, msg
 
 
 # Similar to cuInit_raising_test above, but for testing that the string
 # returned by cuda_error() is as expected.
-def initialization_error_test(result_queue):
+def initialization_error_test():
     driver.cuInit = cuInit_raising
-
-    success = False
-    msg = None
 
     try:
         # A CUDA operation that forces initialization of the device
         cuda.device_array(1)
     except CudaSupportError:
         success = True
+    else:
+        success = False
 
-    msg = cuda.cuda_error()
-    result_queue.put((success, msg))
+    return success, cuda.cuda_error()
 
 
 # For testing the path where Driver.__init__() catches a CudaSupportError
-def cuda_disabled_test(result_queue):
-    success = False
-    msg = None
-
+def cuda_disabled_test():
     try:
         # A CUDA operation that forces initialization of the device
         cuda.device_array(1)
     except CudaSupportError as e:
         success = True
         msg = e.msg
+    else:
+        success = False
+        msg = None
 
-    result_queue.put((success, msg))
+    return success, msg
 
 
 # Similar to cuda_disabled_test, but checks cuda.cuda_error() instead of the
 # exception raised on initialization
-def cuda_disabled_error_test(result_queue):
-    success = False
-    msg = None
-
+def cuda_disabled_error_test():
     try:
         # A CUDA operation that forces initialization of the device
         cuda.device_array(1)
     except CudaSupportError:
         success = True
+    else:
+        success = False
 
-    msg = cuda.cuda_error()
-    result_queue.put((success, msg))
+    return success, cuda.cuda_error()
 
 
 @skip_on_cudasim("CUDA Simulator does not initialize driver")
 class TestInit(CUDATestCase):
     def _test_init_failure(self, target, expected):
         # Run the initialization failure test in a separate subprocess
-        ctx = mp.get_context("spawn")
-        result_queue = ctx.Queue()
-        proc = ctx.Process(target=target, args=(result_queue,))
-        proc.start()
-        proc.join(30)  # should complete within 30s
-        success, msg = result_queue.get()
+        with concurrent.futures.ProcessPoolExecutor(
+            mp_context=mp.get_context("spawn")
+        ) as exe:
+            # should complete within 30s
+            success, msg = exe.submit(target).result(timeout=30)
 
         # Ensure the child process raised an exception during initialization
         # before checking the message
         if not success:
-            self.fail("CudaSupportError not raised")
+            assert "CudaSupportError not raised" in msg
 
-        self.assertIn(expected, msg)
+        assert expected in msg
 
     def test_init_failure_raising(self):
         expected = "Error at driver init: CUDA_ERROR_UNKNOWN (999)"
