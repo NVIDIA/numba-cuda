@@ -575,6 +575,9 @@ class TestBfloat16HighLevelBindings(CUDATestCase):
             _bf16_ulp_distance(raw[4:], f8_expected), 2
         )
 
+    def test_bfloat16_type_import(self):
+        self.skip_unsupported()
+
 
 def _bf16_ulp_rank(bits_int16: np.ndarray) -> np.ndarray:
     """

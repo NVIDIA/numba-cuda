@@ -19,7 +19,7 @@ from numba.cuda.np.npyimpl import register_ufuncs
 from .cudadrv import nvvm
 from numba import cuda
 from numba.cuda import nvvmutils, stubs
-from numba.cuda.ext_types import dim3, CUDADispatcher
+from numba.cuda.types.ext_types import dim3, CUDADispatcher
 
 registry = Registry("cudaimpl")
 lower = registry.lower

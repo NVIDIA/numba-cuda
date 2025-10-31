@@ -14,6 +14,7 @@ from .misc import *
 from .npytypes import *
 from .scalars import *
 from .function_type import *
+from .ext_types import bfloat16
 
 numpy_version = tuple(map(int, np.__version__.split(".")[:2]))
 
@@ -218,6 +219,7 @@ all_str = """
     ffi_forced_object
     ffi
     deferred_type
+    bfloat16
 """
 
 
