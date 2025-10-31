@@ -32,7 +32,10 @@ rapids-logger "Test importing numba.cuda"
 pixi run -e "${PIXI_ENV}" python -c "from numba import cuda"
 
 rapids-logger "Run Tests"
-pixi run -e "${PIXI_ENV}" test -n auto --dist loadscope --benchmark-disable -v
+pixi run -e "${PIXI_ENV}" test -n auto \
+  --dist loadscope \
+  --loadscope-reorder \
+  --benchmark-disable -v
 
 rapids-logger "Test script exiting with value: $EXITCODE"
 exit ${EXITCODE}
