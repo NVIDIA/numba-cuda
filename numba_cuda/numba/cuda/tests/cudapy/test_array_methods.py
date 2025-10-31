@@ -3,7 +3,7 @@
 
 import numpy as np
 from numba import cuda
-from numba.cuda.testing import CUDATestCase
+from numba.cuda.testing import NRTEnablingCUDATestCase
 import unittest
 
 
@@ -13,7 +13,7 @@ def reinterpret_array_type(byte_arr, start, stop, output):
     output[0] = val
 
 
-class TestCudaArrayMethods(CUDATestCase):
+class TestCudaArrayMethods(NRTEnablingCUDATestCase):
     def test_reinterpret_array_type(self):
         """
         Reinterpret byte array as int32 in the GPU.
@@ -32,6 +32,23 @@ class TestCudaArrayMethods(CUDATestCase):
 
             got = output[0]
             self.assertEqual(expect, got)
+
+    def test_array_copy(self):
+        ary = np.array([1.0, 2.0, 3.0])
+        out = cuda.to_device(np.zeros(3))
+
+        @cuda.jit
+        def kernel(out):
+            gid = cuda.grid(1)
+            if gid < 1:
+                cpy = ary.copy()
+                for i in range(len(out)):
+                    out[i] = cpy[i]
+
+        kernel[1, 1](out)
+
+        result = out.copy_to_host()
+        np.testing.assert_array_equal(result, ary)
 
 
 if __name__ == "__main__":

@@ -2,7 +2,8 @@
 # SPDX-License-Identifier: BSD-2-Clause
 import numpy as np
 
-from numba.tests.support import TestCase, MemoryLeakMixin
+from numba.tests.support import MemoryLeakMixin
+from numba.cuda.testing import NRTEnablingCUDATestCase
 from numba import cuda
 
 
@@ -14,7 +15,7 @@ def array_median_global(arr):
     return np.median(arr)
 
 
-class TestArrayReductions(MemoryLeakMixin, TestCase):
+class TestArrayReductions(MemoryLeakMixin, NRTEnablingCUDATestCase):
     """
     Test array reduction methods and functions such as .sum(), .max(), etc.
     """
