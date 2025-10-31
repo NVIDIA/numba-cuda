@@ -184,6 +184,17 @@ class CUDATestCase(TestCase):
             )
 
 
+class NRTEnablingCUDATestCase(CUDATestCase):
+    def setUp(self):
+        self.old_nrt_setting = config.CUDA_ENABLE_NRT
+        config.CUDA_ENABLE_NRT = True
+        super().setUp()
+
+    def tearDown(self):
+        config.CUDA_ENABLE_NRT = self.old_nrt_setting
+        super().tearDown()
+
+
 def skip_on_cudasim(reason):
     """Skip this test if running on the CUDA simulator"""
     return unittest.skipIf(config.ENABLE_CUDASIM, reason)
