@@ -28,7 +28,6 @@ from numba.cuda.core.errors import (
     ConstantInferenceError,
 )
 from numba.cuda.core import consts
-from numba.cuda import HAS_NUMBA
 
 # terminal color markup
 _termcolor = errors.termcolor()
@@ -783,7 +782,7 @@ class Del(Stmt):
         if HAS_NUMBA:
             assert isinstance(loc, (Loc, numba.core.ir.Loc))
         else:
-            assert isinstance(loc)
+            assert isinstance(loc, (Loc))
         self.value = value
         self.loc = loc
 

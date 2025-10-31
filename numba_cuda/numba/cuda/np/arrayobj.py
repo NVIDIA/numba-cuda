@@ -16,7 +16,7 @@ from llvmlite.ir import Constant
 
 import numpy as np
 
-from numba.cuda import literal_unroll
+from numba.cuda.misc.special import literal_unroll
 from numba.cuda import types, typing
 from numba.cuda.core import errors
 from numba.cuda import cgutils, extending
@@ -54,7 +54,6 @@ from numba.cuda.extending import (
     intrinsic,
     overload_attribute,
 )
-from numba.cuda.misc import quicksort, mergesort
 from numba.cuda.cpython import slicing
 from numba.cuda.cpython.unsafe.tuple import (
     tuple_setitem,
@@ -7125,18 +7124,7 @@ def get_sort_func(kind, lt_impl, is_argsort=False):
     try:
         return _sorts[key]
     except KeyError:
-        if kind == "quicksort":
-            sort = quicksort.make_jit_quicksort(
-                lt=lt_impl, is_argsort=is_argsort, is_np_array=True
-            )
-            func = sort.run_quicksort
-        elif kind == "mergesort":
-            sort = mergesort.make_jit_mergesort(
-                lt=lt_impl, is_argsort=is_argsort
-            )
-            func = sort.run_mergesort
-        _sorts[key] = func
-        return func
+        raise errors.NumbaError("Sort kind %s not supported" % kind)
 
 
 def lt_implementation(dtype):
@@ -7146,21 +7134,6 @@ def lt_implementation(dtype):
         return lt_complex
     else:
         return default_lt
-
-
-@lower("array.sort", types.Array)
-def array_sort(context, builder, sig, args):
-    arytype = sig.args[0]
-
-    sort_func = get_sort_func(
-        kind="quicksort", lt_impl=lt_implementation(arytype.dtype)
-    )
-
-    def array_sort_impl(arr):
-        # Note we clobber the return value
-        sort_func(arr)
-
-    return context.compile_internal(builder, array_sort_impl, sig, args)
 
 
 @overload(np.sort)

@@ -10,9 +10,9 @@ from numba.cuda import (
     uint32,
     int64,
     uint64,
-    from_dtype,
     HAS_NUMBA,
 )
+from numba.cuda.np.numpy_support import from_dtype
 from numba.cuda import config
 
 if HAS_NUMBA:
