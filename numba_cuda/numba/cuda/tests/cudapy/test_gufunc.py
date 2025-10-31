@@ -5,12 +5,12 @@ import numpy as np
 
 from collections import namedtuple
 from numba.cuda import void, int32, float32, float64
-from numba import guvectorize
+from numba.cuda import guvectorize
 from numba import cuda
 from numba.cuda.testing import skip_on_cudasim, CUDATestCase
 import unittest
 import warnings
-from numba.core.errors import NumbaPerformanceWarning, TypingError
+from numba.cuda.core.errors import NumbaPerformanceWarning, TypingError
 from numba.cuda.tests.support import override_config
 
 

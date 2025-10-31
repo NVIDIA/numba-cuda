@@ -9,9 +9,9 @@ import warnings
 import importlib.util
 
 from numba.cuda import types
-
+from numba.cuda import HAS_NUMBA
 from numba.core.compiler_lock import global_compiler_lock
-from numba.core.errors import NumbaWarning
+from numba.cuda.core.errors import NumbaWarning
 from numba.cuda.core.base import BaseContext
 from numba.cuda.typing import cmathdecl
 from numba.cuda import datamodel
@@ -64,9 +64,7 @@ class CUDATypingContext(typing.BaseContext):
         from numba.cuda.dispatcher import CUDADispatcher
         from numba.core.dispatcher import Dispatcher
 
-        try:
-            from numba.core.dispatcher import Dispatcher
-
+        if HAS_NUMBA:
             if isinstance(val, Dispatcher) and not isinstance(
                 val, CUDADispatcher
             ):
@@ -88,8 +86,6 @@ class CUDATypingContext(typing.BaseContext):
                     # duplicated copy of the same function.
                     val.__dispatcher = disp
                     val = disp
-        except ImportError:
-            pass
 
         # continue with parent logic
         return super(CUDATypingContext, self).resolve_value_type(val)

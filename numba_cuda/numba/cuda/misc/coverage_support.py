@@ -11,7 +11,7 @@ compiler.
 from typing import Optional, Sequence, Callable
 from abc import ABC, abstractmethod
 
-from numba.core import ir
+from numba.cuda.core import ir
 from numba.cuda import config
 
 _the_registry: Callable[[], Optional["NotifyLocBase"]] = []
@@ -21,7 +21,7 @@ def get_registered_loc_notify() -> Sequence["NotifyLocBase"]:
     """
     Returns a list of the registered NotifyLocBase instances.
     """
-    if not config.JIT_COVERAGE:
+    if hasattr(config, "JIT_COVERAGE") and not config.JIT_COVERAGE:
         # Coverage disabled.
         return []
     return list(
@@ -32,7 +32,7 @@ def get_registered_loc_notify() -> Sequence["NotifyLocBase"]:
 
 
 class NotifyLocBase(ABC):
-    """Interface for notifying visiting of a ``numba.core.ir.Loc``."""
+    """Interface for notifying visiting of a ``numba.cuda.core.ir.Loc``."""
 
     @abstractmethod
     def notify(self, loc: ir.Loc) -> None:

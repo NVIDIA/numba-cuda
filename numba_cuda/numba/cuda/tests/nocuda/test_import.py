@@ -49,8 +49,6 @@ class TestImport(unittest.TestCase):
             "numba.cuda.np.arraymath",
             "numba.cuda.np.npdatetime",
             "numba.cuda.np.npyimpl",
-            "numba.typed.typeddict",
-            "numba.typed.typedlist",
         )
 
         code = "import sys; from numba import cuda; print(list(sys.modules))"

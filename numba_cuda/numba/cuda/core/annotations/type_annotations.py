@@ -11,7 +11,7 @@ import re
 import textwrap
 from io import StringIO
 
-from numba.core import ir
+from numba.cuda.core import ir
 
 
 class SourceLines(Mapping):

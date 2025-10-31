@@ -4,7 +4,12 @@
 import numpy as np
 from numba import cuda
 from numba.cuda import float32, int32, void
-from numba.core.errors import TypingError
+from numba.cuda import HAS_NUMBA
+
+if HAS_NUMBA:
+    from numba.core.errors import TypingError
+else:
+    from numba.cuda.core.errors import TypingError
 from numba.cuda.testing import unittest, CUDATestCase
 from numba.cuda.testing import skip_on_cudasim
 from .extensions_usecases import test_struct_model_type

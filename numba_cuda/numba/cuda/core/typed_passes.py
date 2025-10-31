@@ -8,10 +8,10 @@ from copy import copy
 import warnings
 
 from numba.cuda.core import typeinfer
-from numba.core import (
+from numba.cuda.core import (
     errors,
-    ir,
 )
+from numba.cuda.core import ir
 from numba.cuda import typing, types, lowering
 from numba.cuda.core.compiler_machinery import (
     FunctionPass,
@@ -400,7 +400,7 @@ class BaseNativeLowering(abc.ABC, LoweringPass):
 @register_pass(mutates_CFG=True, analysis_only=False)
 class NativeLowering(BaseNativeLowering):
     """Lowering pass for a native function IR described solely in terms of
-    Numba's standard `numba.core.ir` nodes."""
+    Numba's standard `numba.cuda.core.ir` nodes."""
 
     _name = "native_lowering"
 

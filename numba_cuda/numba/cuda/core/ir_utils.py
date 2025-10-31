@@ -9,9 +9,10 @@ import types as pytypes
 import collections
 import warnings
 
-import numba
+import numba.cuda
+from numba.cuda import HAS_NUMBA
 from numba.cuda import types
-from numba.core import ir
+from numba.cuda.core import ir
 from numba.cuda import typing
 from numba.cuda.core import analysis, postproc, rewrites, config
 from numba.cuda.typing.templates import signature
@@ -20,7 +21,7 @@ from numba.cuda.core.analysis import (
     compute_use_defs,
     compute_cfg_from_blocks,
 )
-from numba.core.errors import (
+from numba.cuda.core.errors import (
     TypingError,
     UnsupportedError,
     NumbaPendingDeprecationWarning,
@@ -816,10 +817,8 @@ def has_no_side_effect(rhs, lives, call_table):
         if (
             call_list == ["empty", numpy]
             or call_list == [slice]
-            or call_list == ["stencil", numba]
             or call_list == ["log", numpy]
             or call_list == ["dtype", numpy]
-            or call_list == ["pndindex", numba]
             or call_list == ["ceil", math]
             or call_list == [max]
             or call_list == [int]
@@ -831,7 +830,7 @@ def has_no_side_effect(rhs, lives, call_table):
         ):
             return True
 
-        try:
+        if HAS_NUMBA:
             from numba.core.registry import CPUDispatcher
             from numba.cuda.np.linalg import dot_3_mv_check_args
 
@@ -839,8 +838,6 @@ def has_no_side_effect(rhs, lives, call_table):
                 py_func = call_list[0].py_func
                 if py_func == dot_3_mv_check_args:
                     return True
-        except ImportError:
-            pass
 
         for f in remove_call_handlers:
             if f(rhs, lives, call_list):
@@ -1992,7 +1989,7 @@ def get_ir_of_code(glbls, fcode):
 
     state = DummyPipeline(ir).state
     rewrites.rewrite_registry.apply("before-inference", state)
-    # call inline pass to handle cases like stencils and comprehensions
+    # call inline pass to handle cases like comprehensions
     swapped = {}  # TODO: get this from diagnostics store
     from numba.cuda.core.inline_closurecall import InlineClosureCallPass
 
@@ -2333,7 +2330,7 @@ def raise_on_unsupported_feature(func_ir, typemap):
                 # check global function
                 found = False
                 if isinstance(val, pytypes.FunctionType):
-                    found = val in {numba.gdb, numba.gdb_init}
+                    found = val in {numba.cuda.gdb, numba.cuda.gdb_init}
                 if not found:  # freevar bind to intrinsic
                     found = getattr(val, "_name", "") == "gdb_internal"
                 if found:
@@ -2491,7 +2488,7 @@ def legalize_single_scope(blocks):
     return len({blk.scope for blk in blocks.values()}) == 1
 
 
-def check_and_legalize_ir(func_ir, flags: "numba.core.flags.Flags"):
+def check_and_legalize_ir(func_ir, flags: "numba.cuda.flags.Flags"):
     """
     This checks that the IR presented is legal
     """

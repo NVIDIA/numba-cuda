@@ -14,7 +14,7 @@ from llvmlite.ir import Constant
 
 from numba.cuda.core import imputils, targetconfig, funcdesc
 from numba.cuda import cgutils, debuginfo, types, utils, datamodel, config
-from numba.core import errors
+from numba.cuda.core import errors
 from numba.core.compiler_lock import global_compiler_lock
 from numba.cuda.core.pythonapi import PythonAPI
 from numba.cuda.core.imputils import (
