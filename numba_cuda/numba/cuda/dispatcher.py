@@ -15,7 +15,7 @@ import uuid
 import re
 from warnings import warn
 
-from numba.core import errors
+from numba.cuda.core import errors
 from numba.cuda import serialize, utils
 from numba import cuda
 
@@ -27,7 +27,7 @@ from numba.cuda.typing.typeof import Purpose, typeof
 from numba.cuda import typing, types, ext_types
 from numba.cuda.api import get_current_device
 from numba.cuda.args import wrap_arg
-from numba.core.bytecode import get_code_object
+from numba.cuda.core.bytecode import get_code_object
 from numba.cuda.compiler import (
     compile_cuda,
     CUDACompiler,
@@ -474,7 +474,7 @@ class _Kernel(serialize.ReduceMixin):
         for t, v in zip(self.argument_types, args):
             self._prepare_args(t, v, stream, retr, kernelargs)
 
-        stream_handle = stream and stream.handle.value or 0
+        stream_handle = driver._stream_handle(stream)
 
         # Invoke kernel
         driver.launch_kernel(
@@ -726,12 +726,8 @@ class CUDACache(Cache):
     _impl_class = CUDACacheImpl
 
     def load_overload(self, sig, target_context):
-        # Loading an overload refreshes the context to ensure it is
-        # initialized. To initialize the correct (i.e. CUDA) target, we need to
-        # enforce that the current target is the CUDA target.
-        from numba.core.target_extension import target_override
-
-        with target_override("cuda"):
+        # Loading an overload refreshes the context to ensure it is initialized.
+        with utils.numba_target_override():
             return super().load_overload(sig, target_context)
 
 

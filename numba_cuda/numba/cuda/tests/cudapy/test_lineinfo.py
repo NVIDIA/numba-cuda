@@ -3,7 +3,7 @@
 
 from numba import cuda
 from numba.cuda import float32, int32
-from numba.core.errors import NumbaInvalidConfigWarning
+from numba.cuda.core.errors import NumbaInvalidConfigWarning
 from numba.cuda.testing import CUDATestCase, skip_on_cudasim
 from numba.cuda.tests.support import ignore_internal_warnings
 import re
