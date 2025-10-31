@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: BSD-2-Clause
 
 from numba import cuda
-from numba.core import errors
+from numba.cuda.core import errors
 from numba.cuda.extending import overload
 from numba.cuda.testing import skip_on_cudasim
 import numpy as np
