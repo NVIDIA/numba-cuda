@@ -7,7 +7,12 @@ Test extending types via the numba.extending.* API.
 
 from numba.cuda import jit
 from numba.cuda import types
-from numba.core.errors import TypingError, NumbaTypeError
+from numba.cuda import HAS_NUMBA
+
+if HAS_NUMBA:
+    from numba.core.errors import TypingError, NumbaTypeError
+else:
+    from numba.cuda.core.errors import TypingError, NumbaTypeError
 from numba.cuda.extending import make_attribute_wrapper
 from numba.cuda.extending import overload
 from numba.cuda.core.imputils import Registry

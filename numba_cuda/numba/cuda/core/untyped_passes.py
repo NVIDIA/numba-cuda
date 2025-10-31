@@ -12,6 +12,7 @@ from numba.cuda.core.compiler_machinery import (
     SSACompliantMixin,
     register_pass,
 )
+from numba import cuda
 from numba.cuda.core import postproc, bytecode, transforms, inline_closurecall
 from numba.cuda.core import (
     errors,
@@ -632,8 +633,6 @@ class MakeFunctionToJitFunction(FunctionPass):
         FunctionPass.__init__(self)
 
     def run_pass(self, state):
-        from numba import njit
-
         func_ir = state.func_ir
         mutated = False
         for idx, blk in func_ir.blocks.items():
@@ -669,7 +668,7 @@ class MakeFunctionToJitFunction(FunctionPass):
                                 continue
 
                             pyfunc = convert_code_obj_to_function(node, func_ir)
-                            func = njit()(pyfunc)
+                            func = cuda.jit()(pyfunc)
                             new_node = ir.Global(
                                 node.code.co_name, func, stmt.loc
                             )

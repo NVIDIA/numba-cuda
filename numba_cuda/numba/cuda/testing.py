@@ -18,6 +18,7 @@ from typing import Iterable, Union
 from io import StringIO
 import unittest
 import numpy as np
+from numba.cuda import HAS_NUMBA
 
 if PYVERSION >= (3, 10):
     from filecheck.matcher import Matcher
@@ -187,6 +188,11 @@ class CUDATestCase(TestCase):
 def skip_on_cudasim(reason):
     """Skip this test if running on the CUDA simulator"""
     return unittest.skipIf(config.ENABLE_CUDASIM, reason)
+
+
+def skip_on_standalone_numba_cuda(reason):
+    """Skip this test if running on standalone numba_cuda"""
+    return unittest.skipIf(not HAS_NUMBA, reason)
 
 
 def skip_unless_cudasim(reason):

@@ -19,7 +19,7 @@ from collections import defaultdict
 
 from numba.cuda import config
 from numba.cuda.core import ir
-from numba.core import errors
+from numba.cuda.core import errors
 from numba.cuda.core import ir_utils
 from numba.cuda.utils import _lazy_pformat
 from numba.cuda.core.analysis import compute_cfg_from_blocks

@@ -11,7 +11,13 @@ import numpy as np
 import numba
 from numba.cuda import jit
 from numba.cuda import types
-from numba.core import errors
+from numba.cuda import HAS_NUMBA
+
+if HAS_NUMBA:
+    from numba.core import errors
+else:
+    from numba.cuda.core import errors
+
 from numba.cuda.tests.support import (
     TestCase,
 )
@@ -675,7 +681,7 @@ class TestNumbaInternalOverloads(TestCase):
                 msg.append(f"    -      got: {ol_sig}")
                 lineno = inspect.getsourcelines(overload_func)[1]
                 tmpsrcfile = inspect.getfile(overload_func)
-                srcfile = tmpsrcfile.replace(numba.__path__[0], "")
+                srcfile = tmpsrcfile.replace(numba.cuda.__path__[0], "")
                 msg.append(f"from {srcfile}:{lineno}")
                 msgstr = "\n" + "\n".join(msg)
                 return msgstr

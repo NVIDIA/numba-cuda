@@ -446,7 +446,7 @@ class CreateLibrary(LoweringPass):
 @register_pass(mutates_CFG=True, analysis_only=False)
 class CUDANativeLowering(BaseNativeLowering):
     """Lowering pass for a CUDA native function IR described solely in terms of
-    Numba's standard `numba.core.ir` nodes."""
+    Numba's standard `numba.cuda.core.ir` nodes."""
 
     _name = "cuda_native_lowering"
 

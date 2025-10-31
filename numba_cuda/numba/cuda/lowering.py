@@ -1,7 +1,6 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-2-Clause
 
-import numba
 from collections import namedtuple, defaultdict
 import operator
 import warnings
@@ -9,6 +8,7 @@ from functools import partial
 
 from llvmlite import ir as llvm_ir
 
+from numba.cuda import HAS_NUMBA
 from numba.cuda.core import ir
 from numba.cuda import debuginfo, cgutils, utils, typing, types
 from numba.cuda.core import (
@@ -32,12 +32,7 @@ from numba.cuda.core.funcdesc import default_mangler
 from numba.cuda.core.environment import Environment
 from numba.cuda.core.analysis import compute_use_defs, must_use_alloca
 from numba.cuda.misc.firstlinefinder import get_func_body_first_lineno
-from numba import version_info
-
-numba_version = version_info.short
-del version_info
-if numba_version > (0, 60):
-    from numba.cuda.misc.coverage_support import get_registered_loc_notify
+from numba.cuda.misc.coverage_support import get_registered_loc_notify
 
 
 _VarArgItem = namedtuple("_VarArgItem", ("vararg", "index"))
@@ -96,9 +91,8 @@ class BaseLower(object):
             directives_only=directives_only,
         )
 
-        if numba_version > (0, 60):
-            # Loc notify objects
-            self._loc_notify_registry = get_registered_loc_notify()
+        # Loc notify objects
+        self._loc_notify_registry = get_registered_loc_notify()
 
         # Subclass initialization
         self.init()
@@ -174,9 +168,8 @@ class BaseLower(object):
         Called after all blocks are lowered
         """
         self.debuginfo.finalize()
-        if numba_version > (0, 60):
-            for notify in self._loc_notify_registry:
-                notify.close()
+        for notify in self._loc_notify_registry:
+            notify.close()
 
     def pre_block(self, block):
         """
@@ -369,11 +362,8 @@ class BaseLower(object):
         """Called when a new instruction with the given `loc` is about to be
         lowered.
         """
-        if numba_version > (0, 60):
-            for notify_obj in self._loc_notify_registry:
-                notify_obj.notify(loc)
-        else:
-            pass
+        for notify_obj in self._loc_notify_registry:
+            notify_obj.notify(loc)
 
     def debug_print(self, msg):
         if config.DEBUG_JIT:
@@ -1880,7 +1870,14 @@ def _lit_or_omitted(value):
     """Returns a Literal instance if the type of value is supported;
     otherwise, return `Omitted(value)`.
     """
+    typing_errors = LiteralTypingError
+    if HAS_NUMBA:
+        from numba.core.errors import (
+            LiteralTypingError as CoreLiteralTypingError,
+        )
+
+        typing_errors = (LiteralTypingError, CoreLiteralTypingError)
     try:
         return types.literal(value)
-    except (LiteralTypingError, numba.core.errors.LiteralTypingError):
+    except typing_errors:
         return types.Omitted(value)

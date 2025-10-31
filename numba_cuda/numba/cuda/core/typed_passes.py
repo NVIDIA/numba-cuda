@@ -400,7 +400,7 @@ class BaseNativeLowering(abc.ABC, LoweringPass):
 @register_pass(mutates_CFG=True, analysis_only=False)
 class NativeLowering(BaseNativeLowering):
     """Lowering pass for a native function IR described solely in terms of
-    Numba's standard `numba.core.ir` nodes."""
+    Numba's standard `numba.cuda.core.ir` nodes."""
 
     _name = "native_lowering"
 

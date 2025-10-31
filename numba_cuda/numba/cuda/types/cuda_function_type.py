@@ -13,7 +13,7 @@ __all__ = [
 from abc import ABC, abstractmethod
 from .abstract import Type
 from .. import types
-from numba.core import errors
+from numba.cuda.core import errors
 
 
 class FunctionType(Type):

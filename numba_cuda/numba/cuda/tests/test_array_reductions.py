@@ -2,12 +2,14 @@
 # SPDX-License-Identifier: BSD-2-Clause
 import numpy as np
 
-from numba.tests.support import TestCase, MemoryLeakMixin
+from numba.cuda.tests.support import TestCase, MemoryLeakMixin
 from numba import cuda
+from numba.cuda.testing import skip_on_cudasim
 from numba.cuda.misc.special import literal_unroll
 from numba.cuda import config
 
 
+@skip_on_cudasim
 class TestArrayReductions(MemoryLeakMixin, TestCase):
     """
     Test array reduction methods and functions such as .sum(), .max(), etc.
