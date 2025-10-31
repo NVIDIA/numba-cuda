@@ -1,9 +1,11 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-2-Clause
 
-from numba import cuda, int32, float64, void
-from numba.core.errors import TypingError
-from numba.core import types
+from numba import cuda
+from numba.cuda import int32, float64, void
+from numba.cuda.core.errors import TypingError
+import numba.core.errors as numbaError
+from numba.cuda import types
 from numba.cuda.testing import unittest, CUDATestCase, skip_on_cudasim
 
 import numpy as np
@@ -408,7 +410,7 @@ class TestSharedMemory(CUDATestCase):
         def invalid_string_type():
             arr = cuda.shared.array(10, dtype="int33")  # noqa: F841
 
-        with self.assertRaisesRegex(TypingError, rgx):
+        with self.assertRaisesRegex(numbaError.TypingError, rgx):
             cuda.jit(void())(invalid_string_type)
 
     @skip_on_cudasim("Struct model array unsupported in simulator")

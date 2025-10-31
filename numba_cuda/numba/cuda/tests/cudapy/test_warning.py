@@ -14,7 +14,7 @@ from numba.cuda.tests.support import (
     override_config,
     run_in_subprocess,
 )
-from numba.core.errors import NumbaPerformanceWarning
+from numba.cuda.core.errors import NumbaPerformanceWarning
 from numba.cuda.core import config
 import warnings
 
@@ -24,11 +24,11 @@ class TestWarnings(CUDATestCase):
     def test_float16_warn_if_lto_missing(self):
         fp16_kernel_invocation = """
 import math
-from numba import cuda, core
+from numba import cuda
 
 @cuda.jit
 def kernel():
-    x = core.types.float16(1.0)
+    x = cuda.types.float16(1.0)
     y = math.sin(x)
 
 kernel[1,1]()

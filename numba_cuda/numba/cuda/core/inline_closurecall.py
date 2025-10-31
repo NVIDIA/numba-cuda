@@ -4,9 +4,11 @@
 import types as pytypes  # avoid confusion with numba.types
 import copy
 import ctypes
-import numba.core.analysis
-from numba.core import types, ir, errors
-from numba.cuda import utils, cgutils, typing, config
+import numba.cuda.core.analysis
+from numba.cuda import types, config, cgutils
+from numba.cuda.core import ir
+from numba.core import errors
+from numba.cuda import typing, utils
 from numba.cuda.core.ir_utils import (
     next_label,
     add_offset_to_labels,
@@ -28,7 +30,7 @@ from numba.cuda.core.ir_utils import (
     dead_code_elimination,
 )
 
-from numba.core.analysis import (
+from numba.cuda.core.analysis import (
     compute_cfg_from_blocks,
     compute_use_defs,
     compute_live_variables,
@@ -616,7 +618,7 @@ class InlineWorker(object):
 
         # call branch pruning to simplify IR and avoid inference errors
         callee_ir._definitions = ir_utils.build_definitions(callee_ir.blocks)
-        numba.core.analysis.dead_branch_prune(callee_ir, arg_typs)
+        numba.cuda.core.analysis.dead_branch_prune(callee_ir, arg_typs)
         # callee's typing may require SSA
         callee_ir = reconstruct_ssa(callee_ir)
         callee_ir._definitions = ir_utils.build_definitions(callee_ir.blocks)

@@ -18,10 +18,10 @@ from numba.cuda.core.imputils import (
     numba_typeref_ctor,
     Registry,
 )
-from numba.core import types
-from numba.cuda import cgutils, typing
+from numba.cuda import typing, types
+from numba.cuda import cgutils
 from numba.cuda.extending import overload, intrinsic, register_jitable
-from numba.core.errors import (
+from numba.cuda.core.errors import (
     TypingError,
     LoweringError,
     NumbaTypeError,

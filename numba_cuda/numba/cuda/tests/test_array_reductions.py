@@ -4,6 +4,9 @@ import numpy as np
 
 from numba.tests.support import TestCase, MemoryLeakMixin
 from numba import cuda
+
+
+from numba.cuda.misc.special import literal_unroll
 from numba.cuda import config
 
 
@@ -27,79 +30,51 @@ class TestArrayReductions(MemoryLeakMixin, TestCase):
         super(TestArrayReductions, self).tearDown()
 
     def test_all_basic(self):
-        cases = [
+        cases = (
             np.float64([1.0, 0.0, float("inf"), float("nan")]),
             np.float64([1.0, -0.0, float("inf"), float("nan")]),
             np.float64([1.0, 1.5, float("inf"), float("nan")]),
             np.float64([[1.0, 1.5], [float("inf"), float("nan")]]),
             np.float64([[1.0, 1.5], [1.5, 1.0]]),
-        ]
-
-        case_0 = cases[0]
-        case_1 = cases[1]
-        case_2 = cases[2]
-        case_3 = cases[3]
-        case_4 = cases[4]
+        )
 
         @cuda.jit
         def kernel(out):
-            gid = cuda.grid(1)
-            if gid == 0:
-                ans = np.all(case_0)
-            if gid == 1:
-                ans = np.all(case_1)
-            if gid == 2:
-                ans = np.all(case_2)
-            if gid == 3:
-                ans = np.all(case_3)
-            if gid == 4:
-                ans = np.all(case_4)
-            out[gid] = ans
+            i = 0
+            for case in literal_unroll(cases):
+                out[i] = np.all(case)
+                i += 1
 
         expected = np.array([np.all(a) for a in cases], dtype=np.bool_)
         out = cuda.to_device(np.zeros(len(cases), dtype=np.bool_))
-        kernel[1, len(cases)](out)
+        kernel[1, 1](out)
         got = out.copy_to_host()
-
         self.assertPreciseEqual(expected, got)
 
     def test_any_basic(self):
-        def check(arr):
-            @cuda.jit
-            def kernel(out):
-                gid = cuda.grid(1)
-                if gid < 1:
-                    out[0] = np.any(arr)
+        cases = (
+            np.float64([0.0, -0.0, 0.0, 0.0]),
+            np.float64([0.0, -0.0, np.nan, 0.0]),
+            np.float64([0.0, -0.0, float("inf"), 0.0]),
+            np.float64([0.0, -0.0, 1.5, 0.0]),
+            np.float64([[0.0, -0.0], [1.5, 0.0]]),
+            np.float64([[0.0, -0.0], [1.5, 0.0]])[::-1],
+        )
 
-            out = cuda.to_device(np.zeros(1, dtype=np.bool_))
-            kernel[1, 1](out)
-            self.assertPreciseEqual(np.any(arr), out.copy_to_host()[0])
+        @cuda.jit
+        def kernel(out):
+            i = 0
+            for arr in literal_unroll(cases):
+                out[i] = np.any(arr)
+                i += 1
 
-        arr = np.float64([0.0, -0.0, 0.0, 0.0])
-        check(arr)
-        arr[2] = float("nan")
-        check(arr)
-        arr[2] = float("inf")
-        check(arr)
-        arr[2] = 1.5
-        check(arr)
-        arr = arr.reshape((2, 2))
-        check(arr)
-        check(arr[::-1])
+        expected = np.array([np.any(a) for a in cases], dtype=np.bool_)
+        out = cuda.to_device(np.zeros(len(cases), dtype=np.bool_))
+        kernel[1, 1](out)
+        self.assertPreciseEqual(expected, out.copy_to_host())
 
     def test_sum_basic(self):
-        def check(arr):
-            @cuda.jit
-            def kernel(out):
-                gid = cuda.grid(1)
-                if gid < 1:
-                    out[0] = np.sum(arr)
-
-            out = cuda.to_device(np.zeros(1, dtype=np.float64))
-            kernel[1, 1](out)
-            self.assertPreciseEqual(np.sum(arr), out.copy_to_host()[0])
-
-        arrays = [
+        arrays = (
             np.float64([1.0, 2.0, 0.0, -0.0, 1.0, -1.5]),
             np.float64([-0.0, -1.5]),
             np.float64([-1.5, 2.5, float("inf")]),
@@ -111,23 +86,22 @@ class TestArrayReductions(MemoryLeakMixin, TestCase):
             ),
             np.float64([5.0, np.nan, -1.5, np.nan]),
             np.float64([np.nan, np.nan]),
-        ]
-        for arr in arrays:
-            check(arr)
+        )
+
+        @cuda.jit
+        def kernel(out):
+            i = 0
+            for arr in literal_unroll(arrays):
+                out[i] = np.sum(arr)
+                i += 1
+
+        expected = np.array([np.sum(a) for a in arrays], dtype=np.float64)
+        out = cuda.to_device(np.zeros(len(arrays), dtype=np.float64))
+        kernel[1, 1](out)
+        self.assertPreciseEqual(expected, out.copy_to_host())
 
     def test_mean_basic(self):
-        def check(arr):
-            @cuda.jit
-            def kernel(out):
-                gid = cuda.grid(1)
-                if gid < 1:
-                    out[0] = np.mean(arr)
-
-            out = cuda.to_device(np.zeros(1, dtype=np.float64))
-            kernel[1, 1](out)
-            self.assertPreciseEqual(np.mean(arr), out.copy_to_host()[0])
-
-        arrays = [
+        arrays = (
             np.float64([1.0, 2.0, 0.0, -0.0, 1.0, -1.5]),
             np.float64([-0.0, -1.5]),
             np.float64([-1.5, 2.5, float("inf")]),
@@ -139,25 +113,22 @@ class TestArrayReductions(MemoryLeakMixin, TestCase):
             ),
             np.float64([5.0, np.nan, -1.5, np.nan]),
             np.float64([np.nan, np.nan]),
-        ]
-        for arr in arrays:
-            check(arr)
+        )
+
+        @cuda.jit
+        def kernel(out):
+            i = 0
+            for arr in literal_unroll(arrays):
+                out[i] = np.mean(arr)
+                i += 1
+
+        expected = np.array([np.mean(a) for a in arrays], dtype=np.float64)
+        out = cuda.to_device(np.zeros(len(arrays), dtype=np.float64))
+        kernel[1, 1](out)
+        self.assertPreciseEqual(expected, out.copy_to_host())
 
     def test_var_basic(self):
-        def check(arr):
-            @cuda.jit
-            def kernel(out):
-                gid = cuda.grid(1)
-                if gid < 1:
-                    out[0] = np.var(arr)
-
-            out = cuda.to_device(np.zeros(1, dtype=np.float64))
-            kernel[1, 1](out)
-            self.assertPreciseEqual(
-                np.var(arr), out.copy_to_host()[0], prec="double"
-            )
-
-        arrays = [
+        arrays = (
             np.float64([1.0, 2.0, 0.0, -0.0, 1.0, -1.5]),
             np.float64([-0.0, -1.5]),
             np.float64([-1.5, 2.5, float("inf")]),
@@ -169,23 +140,22 @@ class TestArrayReductions(MemoryLeakMixin, TestCase):
             ),
             np.float64([5.0, np.nan, -1.5, np.nan]),
             np.float64([np.nan, np.nan]),
-        ]
-        for arr in arrays:
-            check(arr)
+        )
+
+        @cuda.jit
+        def kernel(out):
+            i = 0
+            for arr in literal_unroll(arrays):
+                out[i] = np.var(arr)
+                i += 1
+
+        expected = np.array([np.var(a) for a in arrays], dtype=np.float64)
+        out = cuda.to_device(np.zeros(len(arrays), dtype=np.float64))
+        kernel[1, 1](out)
+        self.assertPreciseEqual(expected, out.copy_to_host(), prec="double")
 
     def test_std_basic(self):
-        def check(arr):
-            @cuda.jit
-            def kernel(out):
-                gid = cuda.grid(1)
-                if gid < 1:
-                    out[0] = np.std(arr)
-
-            out = cuda.to_device(np.zeros(1, dtype=np.float64))
-            kernel[1, 1](out)
-            self.assertPreciseEqual(np.std(arr), out.copy_to_host()[0])
-
-        arrays = [
+        arrays = (
             np.float64([1.0, 2.0, 0.0, -0.0, 1.0, -1.5]),
             np.float64([-0.0, -1.5]),
             np.float64([-1.5, 2.5, float("inf")]),
@@ -197,23 +167,22 @@ class TestArrayReductions(MemoryLeakMixin, TestCase):
             ),
             np.float64([5.0, np.nan, -1.5, np.nan]),
             np.float64([np.nan, np.nan]),
-        ]
-        for arr in arrays:
-            check(arr)
+        )
+
+        @cuda.jit
+        def kernel(out):
+            i = 0
+            for arr in literal_unroll(arrays):
+                out[i] = np.std(arr)
+                i += 1
+
+        expected = np.array([np.std(a) for a in arrays], dtype=np.float64)
+        out = cuda.to_device(np.zeros(len(arrays), dtype=np.float64))
+        kernel[1, 1](out)
+        self.assertPreciseEqual(expected, out.copy_to_host())
 
     def test_min_basic(self):
-        def check(arr):
-            @cuda.jit
-            def kernel(out):
-                gid = cuda.grid(1)
-                if gid < 1:
-                    out[0] = np.min(arr)
-
-            out = cuda.to_device(np.zeros(1, dtype=np.float64))
-            kernel[1, 1](out)
-            self.assertPreciseEqual(np.min(arr), out.copy_to_host()[0])
-
-        arrays = [
+        arrays = (
             np.float64([1.0, 2.0, 0.0, -0.0, 1.0, -1.5]),
             np.float64([-0.0, -1.5]),
             np.float64([-1.5, 2.5, float("inf")]),
@@ -225,23 +194,22 @@ class TestArrayReductions(MemoryLeakMixin, TestCase):
             ),
             np.float64([5.0, np.nan, -1.5, np.nan]),
             np.float64([np.nan, np.nan]),
-        ]
-        for arr in arrays:
-            check(arr)
+        )
+
+        @cuda.jit
+        def kernel(out):
+            i = 0
+            for arr in literal_unroll(arrays):
+                out[i] = np.min(arr)
+                i += 1
+
+        expected = np.array([np.min(a) for a in arrays], dtype=np.float64)
+        out = cuda.to_device(np.zeros(len(arrays), dtype=np.float64))
+        kernel[1, 1](out)
+        self.assertPreciseEqual(expected, out.copy_to_host())
 
     def test_max_basic(self):
-        def check(arr):
-            @cuda.jit
-            def kernel(out):
-                gid = cuda.grid(1)
-                if gid < 1:
-                    out[0] = np.max(arr)
-
-            out = cuda.to_device(np.zeros(1, dtype=np.float64))
-            kernel[1, 1](out)
-            self.assertPreciseEqual(np.max(arr), out.copy_to_host()[0])
-
-        arrays = [
+        arrays = (
             np.float64([1.0, 2.0, 0.0, -0.0, 1.0, -1.5]),
             np.float64([-0.0, -1.5]),
             np.float64([-1.5, 2.5, float("inf")]),
@@ -253,23 +221,22 @@ class TestArrayReductions(MemoryLeakMixin, TestCase):
             ),
             np.float64([5.0, np.nan, -1.5, np.nan]),
             np.float64([np.nan, np.nan]),
-        ]
-        for arr in arrays:
-            check(arr)
+        )
+
+        @cuda.jit
+        def kernel(out):
+            i = 0
+            for arr in literal_unroll(arrays):
+                out[i] = np.max(arr)
+                i += 1
+
+        expected = np.array([np.max(a) for a in arrays], dtype=np.float64)
+        out = cuda.to_device(np.zeros(len(arrays), dtype=np.float64))
+        kernel[1, 1](out)
+        self.assertPreciseEqual(expected, out.copy_to_host())
 
     def test_nanmin_basic(self):
-        def check(arr):
-            @cuda.jit
-            def kernel(out):
-                gid = cuda.grid(1)
-                if gid < 1:
-                    out[0] = np.nanmin(arr)
-
-            out = cuda.to_device(np.zeros(1, dtype=np.float64))
-            kernel[1, 1](out)
-            self.assertPreciseEqual(np.nanmin(arr), out.copy_to_host()[0])
-
-        arrays = [
+        arrays = (
             np.float64([1.0, 2.0, 0.0, -0.0, 1.0, -1.5]),
             np.float64([-0.0, -1.5]),
             np.float64([-1.5, 2.5, np.nan]),
@@ -279,23 +246,22 @@ class TestArrayReductions(MemoryLeakMixin, TestCase):
             np.float64([np.nan, -1.5, 2.5, np.nan, 3.0]),
             np.float64([5.0, np.nan, -1.5, np.nan]),
             np.float64([np.nan, np.nan]),
-        ]
-        for arr in arrays:
-            check(arr)
+        )
+
+        @cuda.jit
+        def kernel(out):
+            i = 0
+            for arr in literal_unroll(arrays):
+                out[i] = np.nanmin(arr)
+                i += 1
+
+        expected = np.array([np.nanmin(a) for a in arrays], dtype=np.float64)
+        out = cuda.to_device(np.zeros(len(arrays), dtype=np.float64))
+        kernel[1, 1](out)
+        self.assertPreciseEqual(expected, out.copy_to_host())
 
     def test_nanmax_basic(self):
-        def check(arr):
-            @cuda.jit
-            def kernel(out):
-                gid = cuda.grid(1)
-                if gid < 1:
-                    out[0] = np.nanmax(arr)
-
-            out = cuda.to_device(np.zeros(1, dtype=np.float64))
-            kernel[1, 1](out)
-            self.assertPreciseEqual(np.nanmax(arr), out.copy_to_host()[0])
-
-        arrays = [
+        arrays = (
             np.float64([1.0, 2.0, 0.0, -0.0, 1.0, -1.5]),
             np.float64([-0.0, -1.5]),
             np.float64([-1.5, 2.5, np.nan]),
@@ -305,23 +271,22 @@ class TestArrayReductions(MemoryLeakMixin, TestCase):
             np.float64([np.nan, -1.5, 2.5, np.nan, 3.0]),
             np.float64([5.0, np.nan, -1.5, np.nan]),
             np.float64([np.nan, np.nan]),
-        ]
-        for arr in arrays:
-            check(arr)
+        )
+
+        @cuda.jit
+        def kernel(out):
+            i = 0
+            for arr in literal_unroll(arrays):
+                out[i] = np.nanmax(arr)
+                i += 1
+
+        expected = np.array([np.nanmax(a) for a in arrays], dtype=np.float64)
+        out = cuda.to_device(np.zeros(len(arrays), dtype=np.float64))
+        kernel[1, 1](out)
+        self.assertPreciseEqual(expected, out.copy_to_host())
 
     def test_nanmean_basic(self):
-        def check(arr):
-            @cuda.jit
-            def kernel(out):
-                gid = cuda.grid(1)
-                if gid < 1:
-                    out[0] = np.nanmean(arr)
-
-            out = cuda.to_device(np.zeros(1, dtype=np.float64))
-            kernel[1, 1](out)
-            self.assertPreciseEqual(np.nanmean(arr), out.copy_to_host()[0])
-
-        arrays = [
+        arrays = (
             np.float64([1.0, 2.0, 0.0, -0.0, 1.0, -1.5]),
             np.float64([-0.0, -1.5]),
             np.float64([-1.5, 2.5, np.nan]),
@@ -331,23 +296,22 @@ class TestArrayReductions(MemoryLeakMixin, TestCase):
             ),
             np.float64([5.0, np.nan, -1.5, np.nan]),
             np.float64([np.nan, np.nan]),
-        ]
-        for arr in arrays:
-            check(arr)
+        )
+
+        @cuda.jit
+        def kernel(out):
+            i = 0
+            for arr in literal_unroll(arrays):
+                out[i] = np.nanmean(arr)
+                i += 1
+
+        expected = np.array([np.nanmean(a) for a in arrays], dtype=np.float64)
+        out = cuda.to_device(np.zeros(len(arrays), dtype=np.float64))
+        kernel[1, 1](out)
+        self.assertPreciseEqual(expected, out.copy_to_host())
 
     def test_nansum_basic(self):
-        def check(arr):
-            @cuda.jit
-            def kernel(out):
-                gid = cuda.grid(1)
-                if gid < 1:
-                    out[0] = np.nansum(arr)
-
-            out = cuda.to_device(np.zeros(1, dtype=np.float64))
-            kernel[1, 1](out)
-            self.assertPreciseEqual(np.nansum(arr), out.copy_to_host()[0])
-
-        arrays = [
+        arrays = (
             np.float64([1.0, 2.0, 0.0, -0.0, 1.0, -1.5]),
             np.float64([-0.0, -1.5]),
             np.float64([-1.5, 2.5, np.nan]),
@@ -357,23 +321,22 @@ class TestArrayReductions(MemoryLeakMixin, TestCase):
             np.float64([np.nan, -1.5, 2.5, np.nan, 3.0]),
             np.float64([5.0, np.nan, -1.5, np.nan]),
             np.float64([np.nan, np.nan]),
-        ]
-        for arr in arrays:
-            check(arr)
+        )
+
+        @cuda.jit
+        def kernel(out):
+            i = 0
+            for arr in literal_unroll(arrays):
+                out[i] = np.nansum(arr)
+                i += 1
+
+        expected = np.array([np.nansum(a) for a in arrays], dtype=np.float64)
+        out = cuda.to_device(np.zeros(len(arrays), dtype=np.float64))
+        kernel[1, 1](out)
+        self.assertPreciseEqual(expected, out.copy_to_host())
 
     def test_nanprod_basic(self):
-        def check(arr):
-            @cuda.jit
-            def kernel(out):
-                gid = cuda.grid(1)
-                if gid < 1:
-                    out[0] = np.nanprod(arr)
-
-            out = cuda.to_device(np.zeros(1, dtype=np.float64))
-            kernel[1, 1](out)
-            self.assertPreciseEqual(np.nanprod(arr), out.copy_to_host()[0])
-
-        arrays = [
+        arrays = (
             np.float64([1.0, 2.0, 0.0, -0.0, 1.0, -1.5]),
             np.float64([-0.0, -1.5]),
             np.float64([-1.5, 2.5, np.nan]),
@@ -383,63 +346,19 @@ class TestArrayReductions(MemoryLeakMixin, TestCase):
             np.float64([np.nan, -1.5, 2.5, np.nan, 3.0]),
             np.float64([5.0, np.nan, -1.5, np.nan]),
             np.float64([np.nan, np.nan]),
-        ]
-        for arr in arrays:
-            check(arr)
+        )
 
-    def test_nanstd_basic(self):
-        def check(arr):
-            @cuda.jit
-            def kernel(out):
-                gid = cuda.grid(1)
-                if gid < 1:
-                    out[0] = np.nanstd(arr)
+        @cuda.jit
+        def kernel(out):
+            i = 0
+            for arr in literal_unroll(arrays):
+                out[i] = np.nanprod(arr)
+                i += 1
 
-            out = cuda.to_device(np.zeros(1, dtype=np.float64))
-            kernel[1, 1](out)
-            self.assertPreciseEqual(np.nanstd(arr), out.copy_to_host()[0])
-
-        arrays = [
-            np.float64([1.0, 2.0, 0.0, -0.0, 1.0, -1.5]),
-            np.float64([-0.0, -1.5]),
-            np.float64([-1.5, 2.5, np.nan]),
-            np.float64([-1.5, 2.5, float("inf")]),
-            np.float64([-1.5, 2.5, -float("inf")]),
-            np.float64([-1.5, 2.5, float("inf"), -float("inf")]),
-            np.float64([np.nan, -1.5, 2.5, np.nan, 3.0]),
-            np.float64([5.0, np.nan, -1.5, np.nan]),
-            np.float64([np.nan, np.nan]),
-        ]
-        for arr in arrays:
-            check(arr)
-
-    def test_nanvar_basic(self):
-        def check(arr):
-            @cuda.jit
-            def kernel(out):
-                gid = cuda.grid(1)
-                if gid < 1:
-                    out[0] = np.nanvar(arr)
-
-            out = cuda.to_device(np.zeros(1, dtype=np.float64))
-            kernel[1, 1](out)
-            self.assertPreciseEqual(
-                np.nanvar(arr), out.copy_to_host()[0], prec="double"
-            )
-
-        arrays = [
-            np.float64([1.0, 2.0, 0.0, -0.0, 1.0, -1.5]),
-            np.float64([-0.0, -1.5]),
-            np.float64([-1.5, 2.5, np.nan]),
-            np.float64([-1.5, 2.5, float("inf")]),
-            np.float64([-1.5, 2.5, -float("inf")]),
-            np.float64([-1.5, 2.5, float("inf"), -float("inf")]),
-            np.float64([np.nan, -1.5, 2.5, np.nan, 3.0]),
-            np.float64([5.0, np.nan, -1.5, np.nan]),
-            np.float64([np.nan, np.nan]),
-        ]
-        for arr in arrays:
-            check(arr)
+        expected = np.array([np.nanprod(a) for a in arrays], dtype=np.float64)
+        out = cuda.to_device(np.zeros(len(arrays), dtype=np.float64))
+        kernel[1, 1](out)
+        self.assertPreciseEqual(expected, out.copy_to_host())
 
     def test_median_basic(self):
         def variations(a):

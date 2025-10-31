@@ -3,6 +3,7 @@
 
 from collections import defaultdict
 import copy
+import importlib
 import sys
 from itertools import permutations, takewhile
 from contextlib import contextmanager
@@ -11,13 +12,9 @@ from functools import cached_property
 from llvmlite import ir as llvmir
 from llvmlite.ir import Constant
 
-from numba.core import (
-    types,
-    datamodel,
-)
-from numba.cuda import cgutils, debuginfo, utils, config
+from numba.cuda.core import imputils, targetconfig, funcdesc
+from numba.cuda import cgutils, debuginfo, types, utils, datamodel, config
 from numba.core import errors
-from numba.cuda.core import targetconfig, funcdesc, imputils
 from numba.core.compiler_lock import global_compiler_lock
 from numba.cuda.core.pythonapi import PythonAPI
 from numba.cuda.core.imputils import (
@@ -216,10 +213,15 @@ class BaseContext(object):
     def __init__(self, typing_context, target):
         self.address_size = utils.MACHINE_BITS
         self.typing_context = typing_context
-        from numba.core.target_extension import target_registry
-
         self.target_name = target
-        self.target = target_registry[target]
+
+        if importlib.util.find_spec("numba"):
+            from numba.core.target_extension import CUDA
+
+            # Used only in Numba's target_extension implementation.
+            # Numba-CUDA has the target_extension implementation removed, and
+            # references to it hardcoded to values specific to the CUDA target.
+            self.target = CUDA
 
         # A mapping of installed registries to their loaders
         self._registries = {}

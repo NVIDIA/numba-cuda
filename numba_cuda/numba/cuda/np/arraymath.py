@@ -12,7 +12,7 @@ import operator
 import llvmlite.ir
 import numpy as np
 
-from numba.core import types
+from numba.cuda import types
 from numba.cuda import cgutils
 from numba.cuda.extending import overload, overload_method, register_jitable
 from numba.cuda.np.numpy_support import (
@@ -40,7 +40,7 @@ from numba.cuda.np.arrayobj import (
 from numba.cuda.np.linalg import ensure_blas
 
 from numba.cuda.extending import intrinsic
-from numba.core.errors import (
+from numba.cuda.core.errors import (
     RequireLiteralValue,
     TypingError,
     NumbaValueError,

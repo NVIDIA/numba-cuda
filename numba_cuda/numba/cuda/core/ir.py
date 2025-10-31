@@ -1,6 +1,7 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-2-Clause
 
+import numba
 from collections import defaultdict
 import copy
 import itertools
@@ -14,9 +15,10 @@ from types import FunctionType, BuiltinFunctionType
 from functools import total_ordering
 from io import StringIO
 
-from numba.core import errors, config
+from numba.core import errors
+from numba.cuda.core import config
 from numba.cuda.utils import UNARY_BUILTINS_TO_OPERATORS, OPERATORS_TO_BUILTINS
-from numba.core.errors import (
+from numba.cuda.core.errors import (
     NotDefinedError,
     RedefinedError,
     VerificationError,
@@ -774,7 +776,7 @@ class StoreMap(Stmt):
 class Del(Stmt):
     def __init__(self, value, loc):
         assert isinstance(value, str)
-        assert isinstance(loc, Loc)
+        assert isinstance(loc, (Loc, numba.core.ir.Loc))
         self.value = value
         self.loc = loc
 
@@ -1340,8 +1342,8 @@ class Block(EqualityCheckMixin):
     """A code block"""
 
     def __init__(self, scope, loc):
-        assert isinstance(scope, Scope)
-        assert isinstance(loc, Loc)
+        assert isinstance(scope, (Scope, numba.core.ir.Scope))
+        assert isinstance(loc, (Loc, numba.core.ir.Loc))
         self.scope = scope
         self.body = []
         self.loc = loc

@@ -2,8 +2,8 @@
 # SPDX-License-Identifier: BSD-2-Clause
 
 # -*- coding: utf-8 -*-
-from numba import int32, int64, uint32, uint64, float32, float64
-from numba.core.types import range_iter32_type
+from numba.cuda import int32, int64, uint32, uint64, float32, float64
+from numba.cuda.types import range_iter32_type
 from numba.cuda import itanium_mangler
 import unittest
 

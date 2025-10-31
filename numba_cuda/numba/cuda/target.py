@@ -8,13 +8,13 @@ from llvmlite import ir
 import warnings
 import importlib.util
 
-from numba.core import types
+from numba.cuda import types
 
 from numba.core.compiler_lock import global_compiler_lock
-from numba.core.errors import NumbaWarning
+from numba.cuda.core.errors import NumbaWarning
 from numba.cuda.core.base import BaseContext
 from numba.cuda.typing import cmathdecl
-from numba.core import datamodel
+from numba.cuda import datamodel
 
 from .cudadrv import nvvm
 from numba.cuda import (
@@ -46,13 +46,14 @@ class CUDATypingContext(typing.Context):
             libdevicedecl,
             vector_types,
         )
-        from numba.cuda.typing import enumdecl, cffi_utils
+        from numba.cuda.typing import enumdecl, cffi_utils, npydecl
 
         self.install_registry(cudadecl.registry)
         self.install_registry(cffi_utils.registry)
         self.install_registry(cudamath.registry)
         self.install_registry(cmathdecl.registry)
         self.install_registry(libdevicedecl.registry)
+        self.install_registry(npydecl.registry)
         self.install_registry(enumdecl.registry)
         self.install_registry(vector_types.typing_registry)
         self.install_registry(fp16.typing_registry)
@@ -62,6 +63,7 @@ class CUDATypingContext(typing.Context):
     def resolve_value_type(self, val):
         # treat other dispatcher object as another device function
         from numba.cuda.dispatcher import CUDADispatcher
+        from numba.core.dispatcher import Dispatcher
 
         try:
             from numba.core.dispatcher import Dispatcher

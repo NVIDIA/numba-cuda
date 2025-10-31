@@ -5,7 +5,7 @@ from collections import namedtuple
 from numba.cuda.tests.support import override_config, captured_stdout
 from numba.cuda.testing import skip_on_cudasim
 from numba import cuda
-from numba.core import types
+from numba.cuda import types
 from numba.cuda.testing import CUDATestCase
 from textwrap import dedent
 import math
@@ -13,7 +13,7 @@ import itertools
 import re
 import unittest
 import warnings
-from numba.core.errors import NumbaDebugInfoWarning
+from numba.cuda.core.errors import NumbaDebugInfoWarning
 from numba.cuda.tests.support import ignore_internal_warnings
 import numpy as np
 import inspect
