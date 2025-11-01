@@ -5,11 +5,12 @@ import numpy as np
 from numba import cuda
 from numba.cuda import float32, void
 from numba.cuda.testing import unittest, CUDATestCase
+import cupy as cp
 
 
 def generate_input(n):
-    A = np.array(np.arange(n * n).reshape(n, n), dtype=np.float32)
-    B = np.array(np.arange(n) + 0, dtype=A.dtype)
+    A = cp.array(np.arange(n * n).reshape(n, n), dtype=np.float32)
+    B = cp.array(np.arange(n) + 0, dtype=A.dtype)
     return A, B
 
 
@@ -33,20 +34,16 @@ class TestCudaNonDet(CUDATestCase):
 
         N = 8
 
-        A, B = generate_input(N)
-
-        F = np.empty(A.shape, dtype=A.dtype)
+        dA, dB = generate_input(N)
+        dF = cp.empty(dA.shape, dtype=dA.dtype)
 
         blockdim = (32, 8)
         griddim = (1, 1)
 
-        dA = cuda.to_device(A)
-        dB = cuda.to_device(B)
-        dF = cuda.to_device(F, copy=False)
         diagproduct[griddim, blockdim](dF, dA, dB)
 
-        E = np.dot(A, np.diag(B))
-        np.testing.assert_array_almost_equal(dF.copy_to_host(), E)
+        E = np.dot(dA.get(), np.diag(dB.get()))
+        np.testing.assert_array_almost_equal(dF.get(), E)
 
 
 if __name__ == "__main__":

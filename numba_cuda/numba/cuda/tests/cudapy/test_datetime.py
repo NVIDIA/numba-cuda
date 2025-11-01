@@ -7,6 +7,7 @@ from numba import cuda, vectorize, guvectorize
 from numba.cuda.np.numpy_support import from_dtype
 from numba.cuda.testing import CUDATestCase, skip_on_cudasim
 import unittest
+import cupy as cp
 
 
 class TestCudaDateTime(CUDATestCase):

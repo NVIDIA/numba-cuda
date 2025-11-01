@@ -369,6 +369,10 @@ class DeviceNDArrayBase(_devicearray.DeviceArray):
             Squeezed view into the array.
 
         """
+        breakpoint()
+        return self._squeeze(axis=axis, stream=stream)
+
+    def _squeeze(self, axis=None, stream=0):
         new_dummy, _ = self._dummy.squeeze(axis=axis)
         return _DeviceNDArray(
             shape=new_dummy.shape,
@@ -622,6 +626,11 @@ class _DeviceNDArray(DeviceNDArrayBase):
 
             d_arr = d_arr.reshape(20, 50, order="F")
         """
+
+        return self._reshape(*newshape, **kws)
+
+    def _reshape(self, *newshape, **kws):
+
         if len(newshape) == 1 and isinstance(newshape[0], (tuple, list)):
             newshape = newshape[0]
 
@@ -673,6 +682,7 @@ class _DeviceNDArray(DeviceNDArrayBase):
     @devices.require_context
     @deprecated_array_api
     def __getitem__(self, item):
+        breakpoint()
         return self._do_getitem(item)
 
     @devices.require_context
@@ -775,7 +785,7 @@ class _DeviceNDArray(DeviceNDArrayBase):
         rhs_shape = np.ones(lhs.ndim, dtype=np.int64)
         # negative indices would not work if rhs.ndim == 0
         rhs_shape[lhs.ndim - rhs.ndim :] = rhs.shape
-        rhs = rhs.reshape(*rhs_shape)
+        rhs = rhs._reshape(*rhs_shape)
         for i, (l, r) in enumerate(zip(lhs.shape, rhs.shape)):
             if r != 1 and l != r:
                 raise ValueError(
@@ -857,10 +867,9 @@ class ManagedNDArray(DeviceNDArrayBase, np.ndarray):
         self.stream = stream
 
 
-@deprecated_array_api
 def from_array_like(ary, stream=0, gpu_data=None):
     "Create a DeviceNDArray object that is like ary."
-    return _DeviceNDArray(
+    return DeviceNDArray(
         ary.shape, ary.strides, ary.dtype, stream=stream, gpu_data=gpu_data
     )
 
@@ -885,7 +894,11 @@ def array_core(ary):
     core_index = []
     for stride in ary.strides:
         core_index.append(0 if stride == 0 else slice(None))
-    return ary[tuple(core_index)]
+    
+    if isinstance(ary, _DeviceNDArray):
+        return ary._do_getitem(tuple(core_index))
+    else:
+        return ary[tuple(core_index)]
 
 
 def is_contiguous(ary):
@@ -965,7 +978,14 @@ def auto_device(obj, stream=0, copy=True, user_explicit=False):
 
 
 def check_array_compatibility(ary1, ary2):
-    ary1sq, ary2sq = ary1.squeeze(), ary2.squeeze()
+    if isinstance(ary1, _DeviceNDArray):
+        ary1sq = ary1._squeeze()
+    else: 
+        ary1sq = ary1.squeeze()
+    if isinstance(ary2, _DeviceNDArray):
+        ary2sq = ary2._squeeze()
+    else:
+        ary2sq = ary2.squeeze()
     if ary1.dtype != ary2.dtype:
         raise TypeError(
             "incompatible dtype: %s vs. %s" % (ary1.dtype, ary2.dtype)
