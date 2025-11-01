@@ -7,7 +7,7 @@ from dataclasses import dataclass, field
 from numba import cuda
 from numba.cuda import float32
 from numba.cuda.compiler import compile_ptx_for_current_device, compile_ptx
-from math import cos, sin, tan, exp, log, log10, log2, pow, tanh
+from math import cos, sin, tan, exp, log, log10, log2, pow, tanh, nextafter
 from operator import truediv
 import numpy as np
 from numba.cuda.testing import CUDATestCase, skip_on_cudasim, skip_unless_cc_75
@@ -191,6 +191,15 @@ class TestFastMathOption(CUDATestCase):
             FastMathCriterion(
                 fast_expected=["lg2.approx.ftz.f32 "],
                 prec_unexpected=["lg2.approx.ftz.f32 "],
+            ),
+        )
+
+    def test_nextafterf(self):
+        self._test_fast_math_binary(
+            nextafter,
+            FastMathCriterion(
+                fast_expected=[".ftz.f32 "],
+                prec_unexpected=[".ftz.f32 "],
             ),
         )
 
