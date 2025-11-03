@@ -5,7 +5,7 @@ import numpy as np
 from textwrap import dedent
 
 from numba import cuda
-from numba.cuda import uint32, uint64, float32, float64
+from numba.cuda import uint32, uint64, float32, float64, int32
 from numba.cuda.testing import unittest, CUDATestCase, cc_X_or_above
 from numba.cuda.core import config
 
@@ -239,19 +239,19 @@ def atomic_add_double_3(ary):
 
 def atomic_sub(ary):
     atomic_binary_1dim_shared(
-        ary, ary, 1, uint32, 32, cuda.atomic.sub, atomic_cast_none, 0, False
+        ary, ary, 1, int32, 32, cuda.atomic.sub, atomic_cast_none, 0, False
     )
 
 
 def atomic_sub2(ary):
     atomic_binary_2dim_shared(
-        ary, 1, uint32, (4, 8), cuda.atomic.sub, atomic_cast_none, False
+        ary, 1, int32, (4, 8), cuda.atomic.sub, atomic_cast_none, False
     )
 
 
 def atomic_sub3(ary):
     atomic_binary_2dim_shared(
-        ary, 1, uint32, (4, 8), cuda.atomic.sub, atomic_cast_to_uint64, False
+        ary, 1, int32, (4, 8), cuda.atomic.sub, atomic_cast_to_uint64, False
     )
 
 
@@ -789,7 +789,7 @@ class TestCudaAtomics(CUDATestCase):
         self.assertCorrectFloat64Atomics(cuda_func, shared=False)
 
     def test_atomic_sub(self):
-        ary = np.random.randint(0, 32, size=32).astype(np.int32)
+        ary = np.random.randint(0, 32, size=32, dtype=np.int32)
         orig = ary.copy()
         cuda_atomic_sub = cuda.jit("void(int32[:])")(atomic_sub)
         cuda_atomic_sub[1, 32](ary)
@@ -801,16 +801,16 @@ class TestCudaAtomics(CUDATestCase):
         self.assertTrue(np.all(ary == gold))
 
     def test_atomic_sub2(self):
-        ary = np.random.randint(0, 32, size=32).astype(np.uint32).reshape(4, 8)
+        ary = np.random.randint(0, 32, size=(4, 8), dtype=np.int32)
         orig = ary.copy()
-        cuda_atomic_sub2 = cuda.jit("void(uint32[:,:])")(atomic_sub2)
+        cuda_atomic_sub2 = cuda.jit("void(int32[:,:])")(atomic_sub2)
         cuda_atomic_sub2[1, (4, 8)](ary)
         self.assertTrue(np.all(ary == orig - 1))
 
     def test_atomic_sub3(self):
-        ary = np.random.randint(0, 32, size=32).astype(np.uint32).reshape(4, 8)
+        ary = np.random.randint(0, 32, size=(4, 8), dtype=np.uint32)
         orig = ary.copy()
-        cuda_atomic_sub3 = cuda.jit("void(uint32[:,:])")(atomic_sub3)
+        cuda_atomic_sub3 = cuda.jit("void(int32[:,:])")(atomic_sub3)
         cuda_atomic_sub3[1, (4, 8)](ary)
         self.assertTrue(np.all(ary == orig - 1))
 

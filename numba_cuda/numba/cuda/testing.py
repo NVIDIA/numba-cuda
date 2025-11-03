@@ -191,9 +191,9 @@ def skip_on_cudasim(reason):
     return unittest.skipIf(config.ENABLE_CUDASIM, reason)
 
 
-def skip_on_standalone_numba_cuda(reason):
-    """Skip this test if running on standalone numba_cuda"""
-    return unittest.skipIf(not HAS_NUMBA, reason)
+skip_on_standalone_numba_cuda = unittest.skipUnless(
+    HAS_NUMBA, "requires base numba install"
+)
 
 
 def skip_unless_cudasim(reason):
