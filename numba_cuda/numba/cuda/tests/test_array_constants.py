@@ -118,7 +118,7 @@ def bytes_as_const_array_kernel(output_array, size):
             output_array[i] = 111  # 'o'
 
 
-@skip_on_cudasim
+@skip_on_cudasim("CUDA simulator does not support array constants")
 class TestConstantArray(CUDATestCase):
     """
     Test array constants.
@@ -260,7 +260,7 @@ class TestConstantArray(CUDATestCase):
         np.testing.assert_array_equal(f_array.flatten(), result)
 
 
-@skip_on_cudasim
+@skip_on_cudasim("CUDA simulator does not support array constants")
 class TestConstantBytes(CUDATestCase):
     def test_constant_bytes(self):
         # Test constant bytes array in CUDA kernel

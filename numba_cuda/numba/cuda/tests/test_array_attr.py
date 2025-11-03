@@ -10,7 +10,7 @@ from numba.cuda import jit
 from numba.core import types
 from numba.cuda.tests.support import MemoryLeakMixin
 from numba.cuda.testing import CUDATestCase
-from numba.core.errors import TypingError
+from numba.cuda.core.errors import TypingError
 from numba.cuda.tests.support import override_config
 from numba.cuda import config
 

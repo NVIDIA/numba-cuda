@@ -617,7 +617,7 @@ class TestNdIter(MemoryLeakMixin, CUDATestCase):
     def test_errors(self):
         # Incompatible shapes
         pyfunc = np_nditer2b_err
-        cfunc = jit(debug=True)(pyfunc)
+        cfunc = jit(debug=True, opt=False)(pyfunc)
 
         self.disable_leak_check()
 
