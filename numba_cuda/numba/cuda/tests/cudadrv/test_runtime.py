@@ -43,6 +43,16 @@ class TestVisibleDevices(unittest.TestCase):
         visible_gpu_count = future.result()
         assert visible_gpu_count == 1
 
+    def test_is_supported_version(self):
+        # Exercise the `cuda.is_supported_version()` API.
+        #
+        # Assume for the purpose of the test that we're running on a supported
+        # toolkit version; if not, there's not much point in running the test
+        # suite.
+        from numba import cuda
+
+        self.assertTrue(cuda.is_supported_version())
+
 
 if __name__ == "__main__":
     unittest.main()
