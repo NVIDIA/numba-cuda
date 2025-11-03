@@ -55,6 +55,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       MATRIX: ${{ steps.compute-matrix.outputs.MATRIX }}
+    timeout-minutes: 60
     steps:
       - name: Compute Build Matrix
         id: compute-matrix
@@ -82,6 +83,7 @@ jobs:
       image: rapidsai/ci-conda:cuda${{ matrix.CUDA_VER }}-${{ matrix.LINUX_VER }}-py${{ matrix.PY_VER }}
       env:
         RAPIDS_BUILD_TYPE: ${{ inputs.build_type }}
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
         with:

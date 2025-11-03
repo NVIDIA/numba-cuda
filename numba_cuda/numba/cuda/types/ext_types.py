@@ -1,11 +1,13 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-2-Clause
 
-from numba.core import types
+from . import Dispatcher, Number, Integer, Float
+from .abstract import Type
+
 from numba.cuda.typeconv import Conversion
 
 
-class Dim3(types.Type):
+class Dim3(Type):
     """
     A 3-tuple (x, y, z) representing the position of a block or thread.
     """
@@ -14,7 +16,7 @@ class Dim3(types.Type):
         super().__init__(name="Dim3")
 
 
-class GridGroup(types.Type):
+class GridGroup(Type):
     """
     The grid of all threads in a cooperative kernel launch.
     """
@@ -27,7 +29,7 @@ dim3 = Dim3()
 grid_group = GridGroup()
 
 
-class CUDADispatcher(types.Dispatcher):
+class CUDADispatcher(Dispatcher):
     """The type of CUDA dispatchers"""
 
     # This type exists (instead of using types.Dispatcher as the type of CUDA
@@ -44,7 +46,7 @@ class CUDADispatcher(types.Dispatcher):
     # dispatcher type in future.
 
 
-class Bfloat16(types.Number):
+class Bfloat16(Number):
     """
     A bfloat16 type. Has 8 exponent bits and 7 significand bits.
 
@@ -73,26 +75,26 @@ class Bfloat16(types.Number):
         self.bitwidth = 16
 
     def can_convert_from(self, typingctx, other):
-        if isinstance(other, types.Float):
+        if isinstance(other, Float):
             return Conversion.unsafe
 
-        elif isinstance(other, types.Integer):
+        elif isinstance(other, Integer):
             if other.bitwidth == 8:
                 return Conversion.safe
             else:
                 return Conversion.unsafe
 
     def can_convert_to(self, typingctx, other):
-        if isinstance(other, types.Float):
+        if isinstance(other, Float):
             if other.bitwidth >= 32:
                 return Conversion.safe
             else:
                 return Conversion.unsafe
-        elif isinstance(other, types.Integer):
+        elif isinstance(other, Integer):
             return Conversion.unsafe
 
     def unify(self, typingctx, other):
-        if isinstance(other, (types.Float, types.Integer)):
+        if isinstance(other, (Float, Integer)):
             return typingctx.unify_pairs(self, other)
 
 

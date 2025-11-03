@@ -10,11 +10,19 @@ import numpy as np
 
 import numba
 from numba.cuda import jit
-from numba.core import types, errors
+from numba.cuda import types
+from numba.cuda import HAS_NUMBA
+
+if HAS_NUMBA:
+    from numba.core import errors
+else:
+    from numba.cuda.core import errors
+
 from numba.cuda.tests.support import (
     TestCase,
+    override_config,
 )
-from numba.core.errors import LoweringError
+from numba.cuda.core.errors import LoweringError
 import unittest
 
 from numba.cuda.extending import (
@@ -91,12 +99,14 @@ class TestLowLevelExtending(TestCase):
         pyfunc = call_func1_nullary
         cfunc = jit(pyfunc)
         res = np.zeros(1)
-        cfunc[1, 1](res)
+        with override_config("DISABLE_PERFORMANCE_WARNINGS", 1):
+            cfunc[1, 1](res)
         self.assertPreciseEqual(res[0], 42.0)
         pyfunc = call_func1_unary
         cfunc = jit(pyfunc)
         self.assertPreciseEqual(res[0], 42.0)
-        cfunc[1, 1](18.0, res)
+        with override_config("DISABLE_PERFORMANCE_WARNINGS", 1):
+            cfunc[1, 1](18.0, res)
         self.assertPreciseEqual(res[0], 6.0)
 
     @TestCase.run_test_in_subprocess
@@ -344,7 +354,8 @@ class TestHighLevelExtending(TestCase):
 
         Z = np.arange(5)
         res = np.zeros(3)
-        bar[1, 1](Z, res)
+        with override_config("DISABLE_PERFORMANCE_WARNINGS", 1):
+            bar[1, 1](Z, res)
         self.assertEqual(res[0], 10)
         self.assertEqual(res[1], 20)
         self.assertEqual(res[2], 30)
@@ -369,7 +380,8 @@ class TestHighLevelExtending(TestCase):
 
         A = np.zeros(1)
         res = np.zeros(1)
-        bar[1, 1](A, res)
+        with override_config("DISABLE_PERFORMANCE_WARNINGS", 1):
+            bar[1, 1](A, res)
         self.assertEqual(res[0], 0xCAFE)
 
 
@@ -551,7 +563,8 @@ class TestRegisterJitable(unittest.TestCase):
         x = np.array([1, 2])
         bar(x, 2)
         self.assertEqual(x[0], 6)
-        cbar[1, 1](x, 2)
+        with override_config("DISABLE_PERFORMANCE_WARNINGS", 1):
+            cbar[1, 1](x, 2)
         self.assertEqual(x[0], 16)
 
 
@@ -592,7 +605,8 @@ class TestOverloadPreferLiteral(TestCase):
             res[2] = prefer_lit(x)
 
         res = np.zeros(3)
-        check_prefer_lit[1, 1](3, res)
+        with override_config("DISABLE_PERFORMANCE_WARNINGS", 1):
+            check_prefer_lit[1, 1](3, res)
         a, b, c = res
         self.assertEqual(a, 0xCAFE)
         self.assertEqual(b, 200)
@@ -604,7 +618,8 @@ class TestOverloadPreferLiteral(TestCase):
             res[1] = non_lit(2)
             res[2] = non_lit(x)
 
-        check_non_lit[1, 1](3, res)
+        with override_config("DISABLE_PERFORMANCE_WARNINGS", 1):
+            check_non_lit[1, 1](3, res)
         a, b, c = res
         self.assertEqual(a, 100)
         self.assertEqual(b, 200)
@@ -674,7 +689,7 @@ class TestNumbaInternalOverloads(TestCase):
                 msg.append(f"    -      got: {ol_sig}")
                 lineno = inspect.getsourcelines(overload_func)[1]
                 tmpsrcfile = inspect.getfile(overload_func)
-                srcfile = tmpsrcfile.replace(numba.__path__[0], "")
+                srcfile = tmpsrcfile.replace(numba.cuda.__path__[0], "")
                 msg.append(f"from {srcfile}:{lineno}")
                 msgstr = "\n" + "\n".join(msg)
                 return msgstr

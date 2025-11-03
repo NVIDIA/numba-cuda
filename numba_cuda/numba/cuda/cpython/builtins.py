@@ -18,10 +18,10 @@ from numba.cuda.core.imputils import (
     numba_typeref_ctor,
     Registry,
 )
-from numba.core import types
-from numba.cuda import cgutils, typing
+from numba.cuda import typing, types
+from numba.cuda import cgutils
 from numba.cuda.extending import overload, intrinsic, register_jitable
-from numba.core.errors import (
+from numba.cuda.core.errors import (
     TypingError,
     LoweringError,
     NumbaTypeError,
@@ -29,7 +29,7 @@ from numba.core.errors import (
 )
 from numba.cuda.typing.templates import AbstractTemplate, signature
 from numba.cuda.typing.templates import infer_global
-from numba.misc.special import literal_unroll
+from numba.cuda.misc.special import literal_unroll
 from numba.cuda.typing.asnumbatype import as_numba_type
 
 from numba.cuda.typing.builtins import IndexValue, IndexValueType

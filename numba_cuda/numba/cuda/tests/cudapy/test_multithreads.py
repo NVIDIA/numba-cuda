@@ -1,7 +1,6 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-2-Clause
 
-import traceback
 import threading
 import multiprocessing
 import numpy as np
@@ -13,12 +12,7 @@ from numba.cuda.testing import (
 )
 import unittest
 
-try:
-    from concurrent.futures import ThreadPoolExecutor
-except ImportError:
-    has_concurrent_futures = False
-else:
-    has_concurrent_futures = True
+from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor
 
 
 has_mp_get_context = hasattr(multiprocessing, "get_context")
@@ -41,21 +35,9 @@ def check_concurrent_compiling():
             np.testing.assert_equal(ary, expected)
 
 
-def spawn_process_entry(q):
-    try:
-        check_concurrent_compiling()
-    # Catch anything that goes wrong in the threads
-    except:  # noqa: E722
-        msg = traceback.format_exc()
-        q.put("\n".join(["", "=" * 80, msg]))
-    else:
-        q.put(None)
-
-
 @skip_under_cuda_memcheck("Hangs cuda-memcheck")
 @skip_on_cudasim("disabled for cudasim")
 class TestMultiThreadCompiling(CUDATestCase):
-    @unittest.skipIf(not has_concurrent_futures, "no concurrent.futures")
     def test_concurrent_compiling(self):
         check_concurrent_compiling()
 
@@ -63,19 +45,13 @@ class TestMultiThreadCompiling(CUDATestCase):
     def test_spawn_concurrent_compilation(self):
         # force CUDA context init
         cuda.get_current_device()
-        # use "spawn" to avoid inheriting the CUDA context
-        ctx = multiprocessing.get_context("spawn")
 
-        q = ctx.Queue()
-        p = ctx.Process(target=spawn_process_entry, args=(q,))
-        p.start()
-        try:
-            err = q.get()
-        finally:
-            p.join()
-        if err is not None:
-            raise AssertionError(err)
-        self.assertEqual(p.exitcode, 0, "test failed in child process")
+        with ProcessPoolExecutor(
+            # use "spawn" to avoid inheriting the CUDA context
+            mp_context=multiprocessing.get_context("spawn")
+        ) as exe:
+            future = exe.submit(check_concurrent_compiling)
+        future.result()
 
     def test_invalid_context_error_with_d2h(self):
         def d2h(arr, out):
@@ -83,10 +59,10 @@ class TestMultiThreadCompiling(CUDATestCase):
 
         arr = np.arange(1, 4)
         out = np.zeros_like(arr)
-        darr = cuda.to_device(arr)
-        th = threading.Thread(target=d2h, args=[darr, out])
-        th.start()
-        th.join()
+
+        with ThreadPoolExecutor() as exe:
+            exe.submit(d2h, cuda.to_device(arr), out)
+
         np.testing.assert_equal(arr, out)
 
     def test_invalid_context_error_with_d2d(self):

@@ -28,7 +28,8 @@ class TestCPointer(CUDATestCase):
     def test_ex_cpointer(self):
         # ex_cpointer.sig.begin
         import numpy as np
-        from numba import cuda, types
+        from numba import cuda
+        from numba.cuda import types
 
         # The first kernel argument is a pointer to a uint8 array.
         # The second argument holds the length as a uint32.

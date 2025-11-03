@@ -18,13 +18,13 @@ import numpy as np
 from numba.cuda.cext import _devicearray
 from numba.cuda.cudadrv import devices, dummyarray
 from numba.cuda.cudadrv import driver as _driver
-from numba.core import types
+from numba.cuda import types
 from numba.cuda.core import config
 from numba.cuda.np.unsafe.ndarray import to_fixed_tuple
 from numba.cuda.np.numpy_support import numpy_version
 from numba.cuda.np import numpy_support
 from numba.cuda.api_util import prepare_shape_strides_dtype
-from numba.core.errors import NumbaPerformanceWarning
+from numba.cuda.core.errors import NumbaPerformanceWarning
 from warnings import warn
 
 try:
