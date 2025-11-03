@@ -584,7 +584,13 @@ class TestCompile(unittest.TestCase):
 
         args = (float32[::1], float32, float32)
         code_list, resty = compile_all(
-            f, args, debug=True, output="ptx", device=False, abi="numba"
+            f,
+            args,
+            debug=True,
+            output="ptx",
+            device=False,
+            abi="numba",
+            opt=False,
         )
         assert len(code_list) == 2
 

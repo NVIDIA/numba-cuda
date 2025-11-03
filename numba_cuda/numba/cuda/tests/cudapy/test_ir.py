@@ -378,7 +378,7 @@ class TestIRCompounds(CheckEquality):
 
         self.check(a, same=[b], different=[c])
 
-    @skip_on_cudasim
+    @skip_on_cudasim("doesn't work in the simulator")
     def test_functionir(self):
         def run_frontend(x):
             return compiler.run_frontend(x, emit_dels=True)

@@ -9,7 +9,7 @@ from numba.cuda.misc.special import literal_unroll
 from numba.cuda import config
 
 
-@skip_on_cudasim
+@skip_on_cudasim("doesn't work in the simulator")
 class TestArrayReductions(MemoryLeakMixin, TestCase):
     """
     Test array reduction methods and functions such as .sum(), .max(), etc.
@@ -19,10 +19,13 @@ class TestArrayReductions(MemoryLeakMixin, TestCase):
         super(TestArrayReductions, self).setUp()
         np.random.seed(42)
         self.old_nrt_setting = config.CUDA_ENABLE_NRT
+        self.old_perf_warnings_setting = config.DISABLE_PERFORMANCE_WARNINGS
         config.CUDA_ENABLE_NRT = True
+        config.DISABLE_PERFORMANCE_WARNINGS = 1
 
     def tearDown(self):
         config.CUDA_ENABLE_NRT = self.old_nrt_setting
+        config.DISABLE_PERFORMANCE_WARNINGS = self.old_perf_warnings_setting
         super(TestArrayReductions, self).tearDown()
 
     def test_all_basic(self):
