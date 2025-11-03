@@ -20,12 +20,12 @@ class _CompilerLock(object):
         self._lock = threading.RLock()
 
     def acquire(self):
-        ev.start_event("numba.cuda:compiler_lock")
+        ev.start_event("numba-cuda:compiler_lock")
         self._lock.acquire()
 
     def release(self):
         self._lock.release()
-        ev.end_event("numba.cuda:compiler_lock")
+        ev.end_event("numba-cuda:compiler_lock")
 
     def __enter__(self):
         self.acquire()
@@ -70,14 +70,12 @@ class _DualCompilerLock(object):
         self._numba_lock = numba_lock
 
     def acquire(self):
-        if self._numba_lock:
-            self._numba_lock.acquire()
+        self._numba_lock.acquire()
         self._cuda_lock.acquire()
 
     def release(self):
         self._cuda_lock.release()
-        if self._numba_lock:
-            self._numba_lock.release()
+        self._numba_lock.release()
 
     def __enter__(self):
         self.acquire()
@@ -86,10 +84,7 @@ class _DualCompilerLock(object):
         self.release()
 
     def is_locked(self):
-        cuda_locked = self._cuda_lock.is_locked()
-        if self._numba_lock:
-            return cuda_locked and self._numba_lock.is_locked()
-        return cuda_locked
+        return self._cuda_lock.is_locked() and self._numba_lock.is_locked()
 
     def __call__(self, func):
         @functools.wraps(func)
@@ -107,9 +102,3 @@ if HAS_NUMBA:
     )
 else:
     global_compiler_lock = _numba_cuda_compiler_lock
-
-
-def require_global_compiler_lock():
-    """Sentry that checks the global_compiler_lock is acquired."""
-    # Use assert to allow turning off this check
-    assert global_compiler_lock.is_locked()
