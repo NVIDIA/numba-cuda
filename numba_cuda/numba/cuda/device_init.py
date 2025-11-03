@@ -133,7 +133,7 @@ def is_supported_version():
     - Generating an error or otherwise preventing the use of CUDA.
     """
 
-    return runtime.get_version()[0] in (12, 13)
+    return runtime.is_supported_version()
 
 
 def cuda_error():
