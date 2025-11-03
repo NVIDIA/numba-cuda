@@ -6,12 +6,12 @@ This file provides internal compiler utilities that support certain special
 operations with numpy.
 """
 
-from numba.core import types
+from numba.cuda import types
 from numba.cuda.cgutils import unpack_tuple
 from numba.cuda.extending import intrinsic
 from numba.cuda import typing
 from numba.cuda.core.imputils import impl_ret_new_ref
-from numba.core.errors import RequireLiteralValue, TypingError
+from numba.cuda.core.errors import RequireLiteralValue, TypingError
 
 from numba.cuda.cpython.unsafe.tuple import tuple_setitem
 

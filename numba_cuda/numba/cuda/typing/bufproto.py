@@ -7,8 +7,8 @@ Typing support for the buffer protocol (PEP 3118).
 
 import array
 
-from numba.core import types
-from numba.core.errors import NumbaValueError
+from numba.cuda import types
+from numba.cuda.core.errors import NumbaValueError
 
 
 _pep3118_int_types = set("bBhHiIlLqQnN")

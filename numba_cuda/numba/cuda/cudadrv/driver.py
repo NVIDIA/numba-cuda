@@ -43,6 +43,7 @@ import contextlib
 import importlib
 import numpy as np
 from collections import namedtuple, deque
+from uuid import UUID
 
 
 from numba.cuda.cext import mviewbuf
@@ -62,6 +63,12 @@ from cuda.core.experimental import (
     LinkerOptions,
     ObjectCode,
 )
+
+from cuda.bindings.utils import get_cuda_native_handle
+from cuda.core.experimental import (
+    Stream as ExperimentalStream,
+)
+
 
 # There is no definition of the default stream in the Nvidia bindings (nor
 # is there at the C/C++ level), so we define it here so we don't need to
@@ -470,10 +477,11 @@ class _ActiveContext(object):
     def __enter__(self):
         is_top = False
         # check TLS cache
-        if hasattr(self._tls_cache, "ctx_devnum"):
-            hctx, devnum = self._tls_cache.ctx_devnum
-        # Not cached. Query the driver API.
-        else:
+        cache = self._tls_cache
+        try:
+            hctx, devnum = cache.ctx_devnum
+        except AttributeError:
+            # Not cached. Query the driver API.
             hctx = driver.cuCtxGetCurrent()
             if int(hctx) == 0:
                 hctx = None
@@ -495,7 +503,7 @@ class _ActiveContext(object):
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         if self._is_top:
-            delattr(self._tls_cache, "ctx_devnum")
+            del self._tls_cache.ctx_devnum
 
     def __bool__(self):
         """Returns True is there's a valid and active CUDA context."""
@@ -535,11 +543,10 @@ class Device(object):
             if d.get_device_identity() == identity:
                 return d
         else:
-            errmsg = (
-                "No device of {} is found. "
+            raise RuntimeError(
+                f"No device of {identity} is found. "
                 "Target device may not be visible in this process."
-            ).format(identity)
-            raise RuntimeError(errmsg)
+            )
 
     def __init__(self, devnum):
         result = driver.cuDeviceGet(devnum)
@@ -550,8 +557,6 @@ class Device(object):
         if devnum != got_devnum:
             raise RuntimeError(msg)
 
-        self.attributes = {}
-
         # Read compute capability
         self.compute_capability = (
             self.COMPUTE_CAPABILITY_MAJOR,
@@ -561,20 +566,13 @@ class Device(object):
         # Read name
         bufsz = 128
         buf = driver.cuDeviceGetName(bufsz, self.id)
-        name = buf.split(b"\x00")[0]
+        name = buf.split(b"\x00", 1)[0]
 
         self.name = name
 
         # Read UUID
         uuid = driver.cuDeviceGetUuid(self.id)
-        uuid_vals = tuple(uuid.bytes)
-
-        b = "%02x"
-        b2 = b * 2
-        b4 = b * 4
-        b6 = b * 6
-        fmt = f"GPU-{b4}-{b2}-{b2}-{b2}-{b6}"
-        self.uuid = fmt % uuid_vals
+        self.uuid = f"GPU-{UUID(bytes=uuid.bytes)}"
 
         self.primary_context = None
 
@@ -586,7 +584,7 @@ class Device(object):
         }
 
     def __repr__(self):
-        return "<CUDA device %d '%s'>" % (self.id, self.name)
+        return f"<CUDA device {self.id:d} '{self.name}'>"
 
     def __getattr__(self, attr):
         """Read attributes lazily"""
@@ -602,9 +600,7 @@ class Device(object):
         return hash(self.id)
 
     def __eq__(self, other):
-        if isinstance(other, Device):
-            return self.id == other.id
-        return False
+        return isinstance(other, Device) and self.id == other.id
 
     def __ne__(self, other):
         return not (self == other)
@@ -614,8 +610,8 @@ class Device(object):
         Returns the primary context for the device.
         Note: it is not pushed to the CPU thread.
         """
-        if self.primary_context is not None:
-            return self.primary_context
+        if (ctx := self.primary_context) is not None:
+            return ctx
 
         met_requirement_for_device(self)
         # create primary context
@@ -636,8 +632,8 @@ class Device(object):
 
     def reset(self):
         try:
-            if self.primary_context is not None:
-                self.primary_context.reset()
+            if (ctx := self.primary_context) is not None:
+                ctx.reset()
             self.release_primary_context()
         finally:
             # reset at the driver level
@@ -842,14 +838,13 @@ class HostOnlyCUDAMemoryManager(BaseCUDAMemoryManager):
         alloc_key = pointer
 
         finalizer = _hostalloc_finalizer(self, pointer, alloc_key, size, mapped)
-        ctx = weakref.proxy(self.context)
 
         if mapped:
-            mem = MappedMemory(ctx, pointer, size, finalizer=finalizer)
+            mem = MappedMemory(pointer, size, finalizer=finalizer)
             self.allocations[alloc_key] = mem
             return mem.own()
         else:
-            return PinnedMemory(ctx, pointer, size, finalizer=finalizer)
+            return PinnedMemory(pointer, size, finalizer=finalizer)
 
     def mempin(self, owner, pointer, size, mapped=False):
         """Implements the pinning of host memory.
@@ -876,18 +871,13 @@ class HostOnlyCUDAMemoryManager(BaseCUDAMemoryManager):
             allocator()
 
         finalizer = _pin_finalizer(self, pointer, alloc_key, mapped)
-        ctx = weakref.proxy(self.context)
 
         if mapped:
-            mem = MappedMemory(
-                ctx, pointer, size, owner=owner, finalizer=finalizer
-            )
+            mem = MappedMemory(pointer, size, owner=owner, finalizer=finalizer)
             self.allocations[alloc_key] = mem
             return mem.own()
         else:
-            return PinnedMemory(
-                ctx, pointer, size, owner=owner, finalizer=finalizer
-            )
+            return PinnedMemory(pointer, size, owner=owner, finalizer=finalizer)
 
     def memallocmanaged(self, size, attach_global):
         def allocator():
@@ -905,8 +895,7 @@ class HostOnlyCUDAMemoryManager(BaseCUDAMemoryManager):
         alloc_key = ptr
 
         finalizer = _alloc_finalizer(self, ptr, alloc_key, size)
-        ctx = weakref.proxy(self.context)
-        mem = ManagedMemory(ctx, ptr, size, finalizer=finalizer)
+        mem = ManagedMemory(ptr, size, finalizer=finalizer)
         self.allocations[alloc_key] = mem
         return mem.own()
 
@@ -969,8 +958,7 @@ class NumbaCUDAMemoryManager(GetIpcHandleMixin, HostOnlyCUDAMemoryManager):
         alloc_key = ptr
 
         finalizer = _alloc_finalizer(self, ptr, alloc_key, size)
-        ctx = weakref.proxy(self.context)
-        mem = AutoFreePointer(ctx, ptr, size, finalizer=finalizer)
+        mem = AutoFreePointer(ptr, size, finalizer=finalizer)
         self.allocations[alloc_key] = mem
         return mem.own()
 
@@ -1301,9 +1289,7 @@ class Context(object):
         dptr = driver.cuIpcOpenMemHandle(handle, flags)
 
         # wrap it
-        return MemoryPointer(
-            context=weakref.proxy(self), pointer=dptr, size=size
-        )
+        return MemoryPointer(pointer=dptr, size=size)
 
     def enable_peer_access(self, peer_context, flags=0):
         """Enable peer access between the current context and the peer context"""
@@ -1509,7 +1495,7 @@ def _alloc_finalizer(memory_manager, ptr, alloc_key, size):
 
     def core():
         if allocations:
-            del allocations[alloc_key]
+            allocations.pop(alloc_key, None)
         deallocations.add_item(driver.cuMemFree, ptr, size)
 
     return core
@@ -1793,7 +1779,7 @@ class IpcHandle(object):
         )
 
 
-class MemoryPointer(object):
+class MemoryPointer:
     """A memory pointer that owns a buffer, with an optional finalizer. Memory
     pointers provide reference counting, and instances are initialized with a
     reference count of 1.
@@ -1809,8 +1795,6 @@ class MemoryPointer(object):
     tie the buffer lifetime to the reference count, so that the buffer is freed
     when there are no more references.
 
-    :param context: The context in which the pointer was allocated.
-    :type context: Context
     :param pointer: The address of the buffer.
     :type pointer: ctypes.c_void_p
     :param size: The size of the allocation in bytes.
@@ -1827,11 +1811,10 @@ class MemoryPointer(object):
 
     __cuda_memory__ = True
 
-    def __init__(self, context, pointer, size, owner=None, finalizer=None):
+    def __init__(self, pointer, size, owner=None, finalizer=None):
         if isinstance(pointer, ctypes.c_void_p):
             pointer = binding.CUdeviceptr(pointer.value)
 
-        self.context = context
         self.device_pointer = pointer
         self.size = size
         self._cuda_memsize_ = size
@@ -1887,7 +1870,7 @@ class MemoryPointer(object):
             pointer = binding.CUdeviceptr()
             ctypes_ptr = drvapi.cu_device_ptr.from_address(pointer.getPtr())
             ctypes_ptr.value = base
-            view = MemoryPointer(self.context, pointer, size, owner=self.owner)
+            view = MemoryPointer(pointer, size, owner=self.owner)
 
         if isinstance(self.owner, (MemoryPointer, OwnedPointer)):
             # Owned by a numba-managed memory segment, take an owned reference
@@ -1916,7 +1899,7 @@ class AutoFreePointer(MemoryPointer):
 
     def __init__(self, *args, **kwargs):
         super(AutoFreePointer, self).__init__(*args, **kwargs)
-        # Releease the self reference to the buffer, so that the finalizer
+        # Release the self reference to the buffer, so that the finalizer
         # is invoked if all the derived pointers are gone.
         self.refct -= 1
 
@@ -1943,7 +1926,7 @@ class MappedMemory(AutoFreePointer):
 
     __cuda_memory__ = True
 
-    def __init__(self, context, pointer, size, owner=None, finalizer=None):
+    def __init__(self, pointer, size, owner=None, finalizer=None):
         self.owned = owner
         self.host_pointer = pointer
 
@@ -1951,9 +1934,7 @@ class MappedMemory(AutoFreePointer):
         self._bufptr_ = self.host_pointer
 
         self.device_pointer = devptr
-        super(MappedMemory, self).__init__(
-            context, devptr, size, finalizer=finalizer
-        )
+        super(MappedMemory, self).__init__(devptr, size, finalizer=finalizer)
         self.handle = self.host_pointer
 
         # For buffer interface
@@ -1982,8 +1963,7 @@ class PinnedMemory(mviewbuf.MemAlloc):
     :type finalizer: function
     """
 
-    def __init__(self, context, pointer, size, owner=None, finalizer=None):
-        self.context = context
+    def __init__(self, pointer, size, owner=None, finalizer=None):
         self.owned = owner
         self.size = size
         self.host_pointer = pointer
@@ -2023,10 +2003,10 @@ class ManagedMemory(AutoFreePointer):
 
     __cuda_memory__ = True
 
-    def __init__(self, context, pointer, size, owner=None, finalizer=None):
+    def __init__(self, pointer, size, owner=None, finalizer=None):
         self.owned = owner
         devptr = pointer
-        super().__init__(context, devptr, size, finalizer=finalizer)
+        super().__init__(devptr, size, finalizer=finalizer)
 
         # For buffer interface
         self._buflen_ = self.size
@@ -2061,6 +2041,10 @@ class OwnedPointer(object):
         self._mem.refct += 1
         weakref.finalize(self, deref)
 
+        # pull this attribute out for speed, because it's used often and
+        # there's overhead to going through `__getattr__`
+        self.device_ctypes_pointer = self._view.device_ctypes_pointer
+
     def __getattr__(self, fname):
         """Proxy MemoryPointer methods"""
         return getattr(self._view, fname)
@@ -2085,6 +2069,11 @@ class Stream(object):
     def __int__(self):
         # The default stream's handle.value is 0, which gives `None`
         return self.handle.value or drvapi.CU_STREAM_DEFAULT
+
+    def __cuda_stream__(self):
+        if not self.handle.value:
+            return (0, drvapi.CU_STREAM_DEFAULT)
+        return (0, self.handle.value)
 
     def __repr__(self):
         default_streams = {
@@ -2232,7 +2221,7 @@ class Event(object):
         queued in the stream at the time of the call to ``record()`` has been
         completed.
         """
-        hstream = stream.handle.value if stream else binding.CUstream(0)
+        hstream = _stream_handle(stream)
         handle = self.handle.value
         driver.cuEventRecord(handle, hstream)
 
@@ -2247,7 +2236,7 @@ class Event(object):
         """
         All future works submitted to stream will wait util the event completes.
         """
-        hstream = stream.handle.value if stream else binding.CUstream(0)
+        hstream = _stream_handle(stream)
         handle = self.handle.value
         flags = 0
         driver.cuStreamWaitEvent(hstream, handle, flags)
@@ -2343,7 +2332,7 @@ class CtypesModule(Module):
         driver.cuModuleGetGlobal(
             byref(ptr), byref(size), self.handle, name.encode("utf8")
         )
-        return MemoryPointer(self.context, ptr, size), size.value
+        return MemoryPointer(ptr, size), size.value
 
 
 class CudaPythonModule(Module):
@@ -2353,7 +2342,7 @@ class CudaPythonModule(Module):
 
     def get_global_symbol(self, name):
         ptr, size = driver.cuModuleGetGlobal(self.handle, name.encode("utf8"))
-        return MemoryPointer(self.context, ptr, size), size
+        return MemoryPointer(ptr, size), size
 
 
 FuncAttr = namedtuple(
@@ -3034,6 +3023,7 @@ def host_memory_extents(obj):
     return mviewbuf.memoryview_get_extents(obj)
 
 
+@functools.cache
 def memory_size_from_info(shape, strides, itemsize):
     """Get the byte size of a contiguous memory buffer given the shape, strides
     and itemsize.
@@ -3072,7 +3062,11 @@ def is_device_memory(obj):
     "device_pointer" which value is an int object carrying the pointer
     value of the device memory address.  This is not tested in this method.
     """
-    return getattr(obj, "__cuda_memory__", False)
+    try:
+        # This is cheaper than getattr in the non-exceptional case
+        return obj.__cuda_memory__
+    except AttributeError:
+        return False
 
 
 def require_device_memory(obj):
@@ -3097,17 +3091,14 @@ def host_to_device(dst, src, size, stream=0):
     it should not be changed until the operation which can be asynchronous
     completes.
     """
-    varargs = []
+    fn = driver.cuMemcpyHtoD
+    args = (device_pointer(dst), host_pointer(src, readonly=True), size)
 
     if stream:
-        assert isinstance(stream, Stream)
         fn = driver.cuMemcpyHtoDAsync
-        handle = stream.handle.value
-        varargs.append(handle)
-    else:
-        fn = driver.cuMemcpyHtoD
+        args += (_stream_handle(stream),)
 
-    fn(device_pointer(dst), host_pointer(src, readonly=True), size, *varargs)
+    fn(*args)
 
 
 def device_to_host(dst, src, size, stream=0):
@@ -3116,61 +3107,52 @@ def device_to_host(dst, src, size, stream=0):
     it should not be changed until the operation which can be asynchronous
     completes.
     """
-    varargs = []
+    fn = driver.cuMemcpyDtoH
+    args = (host_pointer(dst), device_pointer(src), size)
 
     if stream:
-        assert isinstance(stream, Stream)
         fn = driver.cuMemcpyDtoHAsync
-        handle = stream.handle.value
-        varargs.append(handle)
-    else:
-        fn = driver.cuMemcpyDtoH
+        args += (_stream_handle(stream),)
 
-    fn(host_pointer(dst), device_pointer(src), size, *varargs)
+    fn(*args)
 
 
 def device_to_device(dst, src, size, stream=0):
     """
-    NOTE: The underlying data pointer from the host data buffer is used and
+    NOTE: The underlying data pointer from the device buffer is used and
     it should not be changed until the operation which can be asynchronous
     completes.
     """
-    varargs = []
+    fn = driver.cuMemcpyDtoD
+    args = (device_pointer(dst), device_pointer(src), size)
 
     if stream:
-        assert isinstance(stream, Stream)
         fn = driver.cuMemcpyDtoDAsync
-        handle = stream.handle.value
-        varargs.append(handle)
-    else:
-        fn = driver.cuMemcpyDtoD
+        args += (_stream_handle(stream),)
 
-    fn(device_pointer(dst), device_pointer(src), size, *varargs)
+    fn(*args)
 
 
 def device_memset(dst, val, size, stream=0):
-    """Memset on the device.
-    If stream is not zero, asynchronous mode is used.
+    """
+    Memset on the device.
+    If stream is 0, the call is synchronous.
+    If stream is a Stream object, asynchronous mode is used.
 
     dst: device memory
     val: byte value to be written
-    size: number of byte to be written
-    stream: a CUDA stream
+    size: number of bytes to be written
+    stream: 0 (synchronous) or a CUDA stream
     """
-    ptr = device_pointer(dst)
-
-    varargs = []
+    fn = driver.cuMemsetD8
+    args = (device_pointer(dst), val, size)
 
     if stream:
-        assert isinstance(stream, Stream)
         fn = driver.cuMemsetD8Async
-        handle = stream.handle.value
-        varargs.append(handle)
-    else:
-        fn = driver.cuMemsetD8
+        args += (_stream_handle(stream),)
 
     try:
-        fn(ptr, val, size, *varargs)
+        fn(*args)
     except CudaAPIError as e:
         invalid = binding.CUresult.CUDA_ERROR_INVALID_VALUE
         if (
@@ -3243,3 +3225,28 @@ def inspect_obj_content(objpath: str):
             code_types.add(match.group(1))
 
     return code_types
+
+
+def _stream_handle(stream):
+    """
+    Obtain the appropriate handle for various types of
+    acceptable stream objects. Acceptable types are
+    int (0 for default stream), Stream, ExperimentalStream
+    """
+
+    if stream == 0:
+        return stream
+    allowed = (Stream, ExperimentalStream)
+    if not isinstance(stream, allowed):
+        raise TypeError(
+            "Expected a Stream object or 0, got %s" % type(stream).__name__
+        )
+    elif hasattr(stream, "__cuda_stream__"):
+        ver, ptr = stream.__cuda_stream__()
+        assert ver == 0
+        if isinstance(ptr, binding.CUstream):
+            return get_cuda_native_handle(ptr)
+        else:
+            return ptr
+    else:
+        raise TypeError("Invalid Stream")

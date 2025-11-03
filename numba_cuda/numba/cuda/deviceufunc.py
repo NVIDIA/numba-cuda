@@ -16,7 +16,7 @@ import string
 import numpy as np
 
 from numba.cuda.np.ufunc.ufuncbuilder import _BaseUFuncBuilder, parse_identity
-from numba.core import types
+from numba.cuda import types
 from numba.cuda.typing import signature
 from numba.cuda.core import sigutils
 

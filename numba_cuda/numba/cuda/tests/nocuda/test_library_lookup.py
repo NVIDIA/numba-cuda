@@ -8,7 +8,7 @@ import warnings
 
 
 from numba.cuda.core.config import IS_WIN32
-from numba.core.errors import NumbaWarning
+from numba.cuda.core.errors import NumbaWarning
 from numba.cuda.cudadrv import nvvm
 from numba.cuda.testing import (
     unittest,

@@ -110,7 +110,7 @@ from numba.cuda import config
 def print_bfloat16():
     # 0.9375 is a dyadic rational, it's integer significand can expand within 7 digits.
     # printing this should not give any rounding error.
-    a = cuda.types.bfloat16(0.9375)
+    a = cuda.bfloat16(0.9375)
     print(a, a, a)
 
 print_bfloat16[1, 1]()

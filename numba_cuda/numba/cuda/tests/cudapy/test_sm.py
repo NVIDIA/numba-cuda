@@ -1,15 +1,20 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-2-Clause
 
-from numba import cuda, int32, float64, void
-from numba.core.errors import TypingError
-from numba.core import types
+from numba import cuda
+from numba.cuda import int32, float64, void
+from numba.cuda import HAS_NUMBA
+
+if HAS_NUMBA:
+    from numba.core.errors import TypingError as NumbaTypingError
+from numba.cuda.core.errors import TypingError
+from numba.cuda import types
 from numba.cuda.testing import unittest, CUDATestCase, skip_on_cudasim
 
 import numpy as np
 from numba.cuda.np import numpy_support as nps
 
-from .extensions_usecases import test_struct_model_type, TestStruct
+from .extensions_usecases import struct_model_type, MyStruct
 
 recordwith2darray = np.dtype([("i", np.int32), ("j", np.float32, (3, 2))])
 
@@ -408,24 +413,28 @@ class TestSharedMemory(CUDATestCase):
         def invalid_string_type():
             arr = cuda.shared.array(10, dtype="int33")  # noqa: F841
 
-        with self.assertRaisesRegex(TypingError, rgx):
-            cuda.jit(void())(invalid_string_type)
+        if HAS_NUMBA:
+            with self.assertRaisesRegex(NumbaTypingError, rgx):
+                cuda.jit(void())(invalid_string_type)
+        else:
+            with self.assertRaisesRegex(TypingError, rgx):
+                cuda.jit(void())(invalid_string_type)
 
     @skip_on_cudasim("Struct model array unsupported in simulator")
-    def test_struct_model_type_static(self):
+    def struct_model_type_static(self):
         nthreads = 64
 
         @cuda.jit(void(int32[::1], int32[::1]))
         def write_then_reverse_read_static(outx, outy):
             # Test creation
-            arr = cuda.shared.array(nthreads, dtype=test_struct_model_type)
+            arr = cuda.shared.array(nthreads, dtype=struct_model_type)
 
             i = cuda.grid(1)
             ri = nthreads - i - 1
 
             if i < len(outx) and i < len(outy):
                 # Test set to arr
-                obj = TestStruct(int32(i), int32(i * 2))
+                obj = MyStruct(int32(i), int32(i * 2))
                 arr[i] = obj
 
                 cuda.syncthreads()

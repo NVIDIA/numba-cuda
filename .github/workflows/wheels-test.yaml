@@ -67,6 +67,7 @@ jobs:
       BUILD_TYPE: ${{ inputs.build_type }}
     outputs:
       MATRIX: ${{ steps.compute-matrix.outputs.MATRIX }}
+    timeout-minutes: 60
     steps:
       - name: Validate test type
         run: |
@@ -104,6 +105,7 @@ jobs:
       env:
         NVIDIA_VISIBLE_DEVICES: ${{ env.NVIDIA_VISIBLE_DEVICES }} # GPU jobs must set this container env variable
         RAPIDS_BUILD_TYPE: ${{ inputs.build_type }}
+    timeout-minutes: 60
     steps:
     - name: Run nvidia-smi to make sure GPU is working
       run: nvidia-smi
