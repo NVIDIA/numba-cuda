@@ -33,12 +33,6 @@ class _CompilerLock(object):
     def __exit__(self, exc_val, exc_type, traceback):
         self.release()
 
-    def is_locked(self):
-        is_owned = getattr(self._lock, "_is_owned")
-        if not callable(is_owned):
-            is_owned = self._is_owned
-        return is_owned()
-
     def __call__(self, func):
         @functools.wraps(func)
         def _acquire_compile_lock(*args, **kwargs):
@@ -46,16 +40,6 @@ class _CompilerLock(object):
                 return func(*args, **kwargs)
 
         return _acquire_compile_lock
-
-    def _is_owned(self):
-        # This method is borrowed from threading.Condition.
-        # Return True if lock is owned by current_thread.
-        # This method is called only if _lock doesn't have _is_owned().
-        if self._lock.acquire(0):
-            self._lock.release()
-            return False
-        else:
-            return True
 
 
 _numba_cuda_compiler_lock = _CompilerLock()
@@ -82,9 +66,6 @@ class _DualCompilerLock(object):
 
     def __exit__(self, exc_val, exc_type, traceback):
         self.release()
-
-    def is_locked(self):
-        return self._cuda_lock.is_locked() and self._numba_lock.is_locked()
 
     def __call__(self, func):
         @functools.wraps(func)
