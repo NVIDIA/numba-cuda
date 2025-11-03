@@ -3,28 +3,6 @@
 
 on:
   workflow_call:
-    inputs:
-      build_type:
-        required: true
-        type: string
-      branch:
-        type: string
-      date:
-        type: string
-      sha:
-        type: string
-      repo:
-        type: string
-      node_type:
-        type: string
-        default: "cpu4"
-      script:
-        type: string
-        default: "ci/build_docs.sh"
-
-defaults:
-  run:
-    shell: bash
 
 permissions:
   actions: read
@@ -43,39 +21,16 @@ permissions:
 
 jobs:
   build:
-    strategy:
-      fail-fast: false
-    runs-on: "linux-amd64-cpu4"
-    env:
-      RAPIDS_ARTIFACTS_DIR: ${{ github.workspace }}/artifacts
-    container:
-      image: rapidsai/ci-conda:cuda13.0.0-ubuntu24.04-py3.13
-      env:
-        RAPIDS_BUILD_TYPE: ${{ inputs.build_type }}
+    runs-on: ubuntu-latest
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
+      - name: Setup pixi
+        uses: prefix-dev/setup-pixi@fef5c9568ca6c4ff7707bf840ab0692ba3f08293
         with:
-          repository: ${{ inputs.repo }}
-          ref: ${{ inputs.sha }}
-          fetch-depth: 0
-      - uses: actions/download-artifact@v4
-        with:
-          name: conda-repo-py3.13-amd64
-          path: conda-repo
-      - name: Display structure of downloaded files
-        run: ls -R
-      - name: Standardize repository information
-        run: |
-          echo "RAPIDS_REPOSITORY=${{ inputs.repo || github.repository }}" >> "${GITHUB_ENV}"
-          echo "RAPIDS_SHA=$(git rev-parse HEAD)" >> "${GITHUB_ENV}"
-          echo "RAPIDS_REF_NAME=${{ inputs.branch || github.ref_name }}" >> "${GITHUB_ENV}"
-          echo "RAPIDS_NIGHTLY_DATE=${{ inputs.date }}" >> "${GITHUB_ENV}"
-      - name: Setup proxy cache
-        uses: nv-gha-runners/setup-proxy-cache@main
-        continue-on-error: true
+          environments: docs
       - name: Docs build
-        run: ${{ inputs.script }}
+        run: pixi run -e docs build-docs
         env:
           GH_TOKEN: ${{ github.token }}
       - name: Upload docs

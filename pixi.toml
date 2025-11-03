@@ -88,6 +88,16 @@ python = "3.12.*"
 [feature.py313.dependencies]
 python = "3.13.*"
 
+[feature.docs.dependencies]
+make = "*"
+psutil = ">=7.1.3"
+sphinx = ">=8.2.3"
+sphinx-rtd-theme = ">=3.0.2"
+numpydoc = ">=1.9.0"
+
+[feature.docs.pypi-dependencies]
+nvidia-sphinx-theme = "*"
+
 [environments]
 # CUDA 12
 cu-12-0-py310 = { features = [
@@ -178,6 +188,8 @@ cu-13-0-py313 = { features = [
     "py313",
 ], solve-group = "cu-13-0-py313" }
 
+docs = { features = ["docs"], solve-group = "docs" }
+
 [target.linux.tasks]
 build-tests = { cmd = [
     "make",
@@ -214,6 +226,9 @@ benchcmp = { cmd = [
     "--benchmark-group-by=name",
     "--benchmark-compare",
 ] }
+
+[target.linux.tasks.build-docs]
+cmd = ["make", "-C", "$PIXI_PROJECT_ROOT/docs", "html"]
 
 [target.linux.tasks.test]
 cmd = ["pytest", "$PIXI_PROJECT_ROOT/testing"]

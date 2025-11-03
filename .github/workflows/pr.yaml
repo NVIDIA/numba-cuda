@@ -68,7 +68,6 @@ jobs:
       matrix: ${{ needs.compute-matrix.outputs.BUILD_MATRIX }}
   test-conda:
     needs:
-      - build-conda
       - compute-matrix
     uses: ./.github/workflows/conda-python-tests.yaml
     with:
@@ -78,7 +77,6 @@ jobs:
       matrix: ${{ needs.compute-matrix.outputs.TEST_MATRIX }}
   test-simulator:
     needs:
-      - build-conda
       - compute-matrix
     uses: ./.github/workflows/simulator-test.yaml
     with:
@@ -130,11 +128,7 @@ jobs:
       # TODO: Enable for CUDA 13 when a supporting version of cuDF is available
       matrix_filter: map(select(.ARCH == "amd64" and (.CUDA_VER | split(".") | .[0] | tonumber == 12))) | group_by(.CUDA_VER|split(".")|map(tonumber)|.[0]) | map(max_by([(.PY_VER|split(".")|map(tonumber)), (.CUDA_VER|split(".")|map(tonumber))]))
   build-docs:
-    needs:
-      - build-conda
     uses: ./.github/workflows/docs-build.yaml
-    with:
-      build_type: pull-request
   coverage-report:
     needs:
       - build-wheels
