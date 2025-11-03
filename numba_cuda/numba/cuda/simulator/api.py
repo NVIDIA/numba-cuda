@@ -160,3 +160,7 @@ def jit(
 def defer_cleanup():
     # No effect for simulator
     yield
+
+
+def is_supported_version():
+    return True
