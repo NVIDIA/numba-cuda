@@ -13,9 +13,9 @@ if [ "$DISTRO" = "ubuntu" ]; then
 fi
 
 # Constrain oldest supported dependencies for testing
-if [ "${RAPIDS_DEPENDENCIES:-}" = "oldest" ]; then
+if [ "${NUMBA_VERSION:-*}" != "*" ]; then
     # add to the default environment's dependencies
-    pixi add "numba=0.60.0"
+    pixi add --feature "${PY_VER_PART}" "numba=${NUMBA_VERSION}"
 fi
 
 rapids-logger "Check GPU usage"
