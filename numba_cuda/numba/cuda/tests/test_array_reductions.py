@@ -9,7 +9,7 @@ from numba.cuda.misc.special import literal_unroll
 from numba.cuda import config
 
 
-@skip_on_cudasim
+@skip_on_cudasim("doesn't work in the simulator")
 class TestArrayReductions(MemoryLeakMixin, TestCase):
     """
     Test array reduction methods and functions such as .sum(), .max(), etc.
