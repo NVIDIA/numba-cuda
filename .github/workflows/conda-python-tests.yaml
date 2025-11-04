@@ -58,6 +58,7 @@ jobs:
       BUILD_TYPE: ${{ inputs.build_type }}
     outputs:
       MATRIX: ${{ steps.compute-matrix.outputs.MATRIX }}
+    timeout-minutes: 60
     steps:
       - name: Compute Python Test Matrix
         id: compute-matrix
@@ -90,6 +91,7 @@ jobs:
       env:
         RAPIDS_BUILD_TYPE: ${{ inputs.build_type }}
         NVIDIA_VISIBLE_DEVICES: ${{ env.NVIDIA_VISIBLE_DEVICES }}
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
         with:
@@ -111,6 +113,15 @@ jobs:
       - name: Setup proxy cache
         uses: nv-gha-runners/setup-proxy-cache@main
         continue-on-error: true
+      - name: Compute pixi environment name
+        run: |
+          set -euo pipefail
+          PIXI_ENV="cu-$(cut -d. -f1-2 <<< "${{ matrix.CUDA_VER }}" | tr . -)"
+          echo "PIXI_ENV=${PIXI_ENV}" >> "${GITHUB_ENV}"
+      - name: Setup pixi
+        uses: prefix-dev/setup-pixi@fef5c9568ca6c4ff7707bf840ab0692ba3f08293
+        with:
+          environments: ${{ env.PIXI_ENV }}
       - name: Python tests
         run: ${{ inputs.script }}
         env:

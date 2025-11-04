@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: BSD-2-Clause
 
 import numpy as np
-import warnings
+import pytest
 from numba.cuda.testing import unittest
 from numba.cuda.testing import (
     skip_on_cudasim,
@@ -12,8 +12,9 @@ from numba.cuda.testing import (
 from numba.cuda.testing import CUDATestCase, test_data_dir
 from numba.cuda.cudadrv.driver import CudaAPIError, _Linker, LinkerError
 from numba.cuda import require_context
-from numba.cuda.tests.support import ignore_internal_warnings
-from numba import cuda, void, float64, int64, int32, typeof, float32
+from numba import cuda
+from numba.cuda import void, float64, int64, int32, float32
+from numba.cuda.typing.typeof import typeof
 
 CONST1D = np.arange(10, dtype=np.float64)
 
@@ -170,8 +171,7 @@ class TestLinker(CUDATestCase):
 
         link = str(test_data_dir / "warn.cu")
 
-        with warnings.catch_warnings(record=True) as w:
-            ignore_internal_warnings()
+        with pytest.warns(UserWarning) as w:
 
             @cuda.jit("void(int32)", link=[link])
             def kernel(x):

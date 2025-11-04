@@ -11,14 +11,10 @@ from llvmlite.ir import Constant
 
 import ctypes
 from numba.cuda.cext import _helperlib
-from numba.core import (
-    errors,
-    types,
-)
-from numba.cuda import cgutils, lowering, config, serialize
+from numba.cuda.core import errors
 from numba.cuda.core import imputils
 from numba.cuda.utils import PYVERSION
-
+from numba.cuda import config, types, lowering, cgutils, serialize
 
 PY_UNICODE_1BYTE_KIND = _helperlib.py_unicode_1byte_kind
 PY_UNICODE_2BYTE_KIND = _helperlib.py_unicode_2byte_kind

@@ -13,10 +13,16 @@ from numba.cuda.testing import (
     unittest,
     CUDATestCase,
 )
-from numba import cuda, jit, float32, int32, types
-from numba.core.errors import TypingError
+from numba import cuda
+from numba.cuda import float32, int32, types
+from numba.cuda.core.errors import TypingError
 from numba.cuda.tests.support import skip_unless_cffi
+from numba.cuda.testing import skip_on_standalone_numba_cuda
 from types import ModuleType
+from numba.cuda import HAS_NUMBA
+
+if HAS_NUMBA:
+    from numba import jit
 
 
 class TestDeviceFunc(CUDATestCase):
@@ -71,6 +77,7 @@ class TestDeviceFunc(CUDATestCase):
         add_kernel[1, ary.size](ary)
         np.testing.assert_equal(expect, ary)
 
+    @skip_on_standalone_numba_cuda
     def test_cpu_dispatcher(self):
         # Test correct usage
         @jit
@@ -80,6 +87,7 @@ class TestDeviceFunc(CUDATestCase):
         self._check_cpu_dispatcher(add)
 
     @skip_on_cudasim("not supported in cudasim")
+    @skip_on_standalone_numba_cuda
     def test_cpu_dispatcher_invalid(self):
         # Test invalid usage
         # Explicit signature disables compilation, which also disable
@@ -95,6 +103,7 @@ class TestDeviceFunc(CUDATestCase):
         expected = re.compile(msg)
         self.assertTrue(expected.search(str(raises.exception)) is not None)
 
+    @skip_on_standalone_numba_cuda
     def test_cpu_dispatcher_other_module(self):
         @jit
         def add(a, b):

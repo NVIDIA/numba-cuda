@@ -1,17 +1,18 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-2-Clause
 
+import sys
 import math
 import operator
 from llvmlite import ir
-from numba.core import types
-from numba.cuda import cgutils, typing
+from numba.cuda import types, typing
+from numba.cuda import cgutils
 from numba.cuda.core.imputils import Registry
-from numba.types import float32, float64, int64, uint64
+from numba.cuda.types import float32, float64, int64, uint64
 from numba.cuda import libdevice
 from numba.cuda.core import targetconfig
 
-registry = Registry()
+registry = Registry("mathimpl")
 lower = registry.lower
 
 
@@ -25,6 +26,8 @@ unarys += [("ceil", "ceilf", math.ceil)]
 unarys += [("floor", "floorf", math.floor)]
 unarys += [("fabs", "fabsf", math.fabs)]
 unarys += [("exp", "expf", math.exp)]
+if sys.version_info >= (3, 11):
+    unarys += [("exp2", "exp2f", math.exp2)]
 unarys += [("expm1", "expm1f", math.expm1)]
 unarys += [("erf", "erff", math.erf)]
 unarys += [("erfc", "erfcf", math.erfc)]
@@ -330,6 +333,7 @@ impl_tanh(types.float64, libdevice.tanh)
 
 impl_unary_int(math.tanh, int64, libdevice.tanh)
 impl_unary_int(math.tanh, uint64, libdevice.tanh)
+
 
 # Complex power implementations - translations of _Py_c_pow from CPython
 # https://github.com/python/cpython/blob/a755410e054e1e2390de5830befc08fe80706c66/Objects/complexobject.c#L123-L151

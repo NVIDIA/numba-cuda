@@ -3,8 +3,8 @@
 
 from numba.cuda.core.tracing import event
 
-from numba.core import errors
-from numba.core.errors import CompilerError
+from numba.cuda.core import errors
+from numba.cuda.core.errors import CompilerError
 
 from numba.cuda.core import callconv, config, bytecode
 from numba.cuda.core.untyped_passes import ExtractByteCode, FixupArgs

@@ -15,20 +15,20 @@ import uuid
 import re
 from warnings import warn
 
-from numba.core import types, errors
+from numba.cuda.core import errors
 from numba.cuda import serialize, utils
 from numba import cuda
 
-from numba.core.compiler_lock import global_compiler_lock
-from numba.core.typeconv.rules import default_type_manager
+from numba.cuda.core.compiler_lock import global_compiler_lock
+from numba.cuda.typeconv.rules import default_type_manager
 from numba.cuda.typing.templates import fold_arguments
 from numba.cuda.typing.typeof import Purpose, typeof
 
-from numba.cuda import typing
-from numba.cuda import types as cuda_types
+from numba.cuda import typing, types
+from numba.cuda.types import ext_types
 from numba.cuda.api import get_current_device
 from numba.cuda.args import wrap_arg
-from numba.core.bytecode import get_code_object
+from numba.cuda.core.bytecode import get_code_object
 from numba.cuda.compiler import (
     compile_cuda,
     CUDACompiler,
@@ -475,7 +475,7 @@ class _Kernel(serialize.ReduceMixin):
         for t, v in zip(self.argument_types, args):
             self._prepare_args(t, v, stream, retr, kernelargs)
 
-        stream_handle = stream and stream.handle.value or 0
+        stream_handle = driver._stream_handle(stream)
 
         # Invoke kernel
         driver.launch_kernel(
@@ -727,12 +727,8 @@ class CUDACache(Cache):
     _impl_class = CUDACacheImpl
 
     def load_overload(self, sig, target_context):
-        # Loading an overload refreshes the context to ensure it is
-        # initialized. To initialize the correct (i.e. CUDA) target, we need to
-        # enforce that the current target is the CUDA target.
-        from numba.core.target_extension import target_override
-
-        with target_override("cuda"):
+        # Loading an overload refreshes the context to ensure it is initialized.
+        with utils.numba_target_override():
             return super().load_overload(sig, target_context)
 
 
@@ -1537,7 +1533,7 @@ class CUDADispatcher(serialize.ReduceMixin, _MemoMixin, _DispatcherBase):
 
     @property
     def _numba_type_(self):
-        return cuda_types.CUDADispatcher(self)
+        return ext_types.CUDADispatcher(self)
 
     def enable_caching(self):
         self._cache = CUDACache(self.py_func)
@@ -1629,11 +1625,15 @@ class CUDADispatcher(serialize.ReduceMixin, _MemoMixin, _DispatcherBase):
         try:
             return typeof(val, Purpose.argument)
         except ValueError:
-            if cuda.is_cuda_array(val):
+            if (
+                interface := getattr(val, "__cuda_array_interface__")
+            ) is not None:
                 # When typing, we don't need to synchronize on the array's
                 # stream - this is done when the kernel is launched.
+
                 return typeof(
-                    cuda.as_cuda_array(val, sync=False), Purpose.argument
+                    cuda.from_cuda_array_interface(interface, sync=False),
+                    Purpose.argument,
                 )
             else:
                 raise

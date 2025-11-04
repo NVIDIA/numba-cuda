@@ -3,7 +3,7 @@
 
 import itertools
 
-from numba.core import types
+from numba.cuda import types
 from numba.cuda.typeconv.typeconv import TypeManager, TypeCastingRules
 from numba.cuda.typeconv import rules
 from numba.cuda.typeconv import castgraph, Conversion

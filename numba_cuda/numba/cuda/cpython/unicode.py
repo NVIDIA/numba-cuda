@@ -13,8 +13,8 @@ from numba.cuda.extending import (
     overload,
     overload_method,
     register_jitable,
-    core_models,
 )
+from numba.cuda.extending import models
 from numba.cuda.core.pythonapi import box, unbox
 from numba.cuda.extending import make_attribute_wrapper, intrinsic
 from numba.cuda.models import register_model
@@ -24,8 +24,8 @@ from numba.cuda.core.imputils import (
     RefType,
     Registry,
 )
-from numba.core.datamodel import register_default, StructModel
-from numba.core import types
+from numba.cuda.datamodel import register_default, StructModel
+from numba.cuda import types
 from numba.cuda import cgutils
 from numba.cuda.utils import PYVERSION
 from numba.cuda.core.pythonapi import (
@@ -35,7 +35,7 @@ from numba.cuda.core.pythonapi import (
 )
 from numba.cuda.cext._helperlib import c_helpers
 from numba.cuda.core.unsafe.bytes import memcpy_region
-from numba.core.errors import TypingError
+from numba.cuda.core.errors import TypingError
 from numba.cuda.cpython.unicode_support import (
     _Py_TOUPPER,
     _Py_TOLOWER,
@@ -83,7 +83,7 @@ lower_constant = registry.lower_constant
 lower_getattr = registry.lower_getattr
 
 if PYVERSION in ((3, 9), (3, 10), (3, 11)):
-    from numba.core.pythonapi import PY_UNICODE_WCHAR_KIND
+    from numba.cuda.core.pythonapi import PY_UNICODE_WCHAR_KIND
 
 # https://github.com/python/cpython/blob/1d4b6ba19466aba0eb91c4ba01ba509acf18c723/Objects/unicodeobject.c#L84-L85    # noqa: E501
 _MAX_UNICODE = 0x10FFFF
@@ -95,7 +95,7 @@ _BLOOM_WIDTH = types.intp.bitwidth
 
 
 @register_model(types.UnicodeType)
-class UnicodeModel(core_models.StructModel):
+class UnicodeModel(models.StructModel):
     def __init__(self, dmm, fe_type):
         members = [
             ("data", types.voidptr),
@@ -107,7 +107,7 @@ class UnicodeModel(core_models.StructModel):
             # A pointer to the owner python str/unicode object
             ("parent", types.pyobject),
         ]
-        core_models.StructModel.__init__(self, dmm, fe_type, members)
+        models.StructModel.__init__(self, dmm, fe_type, members)
 
 
 make_attribute_wrapper(types.UnicodeType, "data", "_data")

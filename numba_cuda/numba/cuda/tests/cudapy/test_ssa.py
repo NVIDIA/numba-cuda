@@ -10,9 +10,10 @@ import logging
 
 import numpy as np
 
-from numba import types, cuda
+from numba.cuda import types
+from numba import cuda
 from numba.cuda import jit
-from numba.core import errors
+from numba.cuda.core import errors
 
 from numba.cuda.extending import overload
 from numba.cuda.tests.support import override_config

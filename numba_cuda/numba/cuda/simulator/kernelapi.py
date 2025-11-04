@@ -10,7 +10,7 @@ from contextlib import contextmanager
 import sys
 import threading
 import traceback
-from numba.core import types
+from numba.cuda import types
 import numpy as np
 
 from numba.cuda.np import numpy_support

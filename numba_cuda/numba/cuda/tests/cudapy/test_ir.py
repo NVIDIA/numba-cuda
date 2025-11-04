@@ -2,14 +2,18 @@
 # SPDX-License-Identifier: BSD-2-Clause
 
 import unittest
-from numba.cuda.testing import CUDATestCase
+from numba.cuda.testing import CUDATestCase, skip_on_cudasim
 import warnings
 import numpy as np
 
-from numba import objmode
+from numba.cuda import HAS_NUMBA
+
+if HAS_NUMBA:
+    from numba import objmode
+    from numba import njit
 from numba.cuda.core import ir
 from numba.cuda import compiler
-from numba.core import errors
+from numba.cuda.core import errors
 from numba.cuda.core.compiler import (
     CompilerBase,
 )
@@ -23,7 +27,7 @@ from numba.cuda.core.untyped_passes import (
     IRProcessing,
     ReconstructSSA,
 )
-from numba import njit
+from numba.cuda.testing import skip_on_standalone_numba_cuda
 
 
 def requires_fully_vendored_ir(fn):
@@ -374,7 +378,7 @@ class TestIRCompounds(CheckEquality):
 
         self.check(a, same=[b], different=[c])
 
-    @requires_fully_vendored_ir
+    @skip_on_cudasim("doesn't work in the simulator")
     def test_functionir(self):
         def run_frontend(x):
             return compiler.run_frontend(x, emit_dels=True)
@@ -396,8 +400,9 @@ class TestIRCompounds(CheckEquality):
                 if np.abs(i) > 0:
                     k = h / i
                     l = np.arange(1, c + 1)
-                    with objmode():
-                        print(e, k)
+                    if HAS_NUMBA:
+                        with objmode():
+                            print(e, k)
                     m = np.sqrt(l - g)
                     if np.abs(m[0]) < 1:
                         n = 0
@@ -411,9 +416,10 @@ class TestIRCompounds(CheckEquality):
                     for r in range(len(p)):
                         q.append(p[r])
                         if r > 4 + 1:
-                            with objmode(s="intp", t="complex128"):
-                                s = 123
-                                t = 5
+                            if HAS_NUMBA:
+                                with objmode(s="intp", t="complex128"):
+                                    s = 123
+                                    t = 5
                             if s > 122:
                                 t += s
                         t += q[0] + _GLOBAL
@@ -514,8 +520,8 @@ class TestIRCompounds(CheckEquality):
         check_diffstr(tmp, ["c + b", "b + c"])
 
 
-@requires_fully_vendored_ir
 class TestIRPedanticChecks(CUDATestCase):
+    @skip_on_standalone_numba_cuda
     def test_var_in_scope_assumption(self):
         # Create a pass that clears ir.Scope in ir.Block
         @register_pass(mutates_CFG=False, analysis_only=False)

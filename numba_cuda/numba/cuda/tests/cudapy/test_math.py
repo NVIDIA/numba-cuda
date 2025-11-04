@@ -1,7 +1,9 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-2-Clause
 
+import sys
 import numpy as np
+import pytest
 from numba.cuda.testing import (
     skip_unless_cc_53,
     unittest,
@@ -9,7 +11,8 @@ from numba.cuda.testing import (
     skip_on_cudasim,
 )
 from numba.cuda.np import numpy_support
-from numba import cuda, float32, float64, int32, vectorize, void, int64
+from numba import cuda, vectorize
+from numba.cuda import float32, float64, int32, void, int64
 import math
 
 
@@ -81,6 +84,11 @@ def math_atan2(A, B, C):
 def math_exp(A, B):
     i = cuda.grid(1)
     B[i] = math.exp(A[i])
+
+
+def math_exp2(A, B):
+    i = cuda.grid(1)
+    B[i] = math.exp2(A[i])
 
 
 def math_erf(A, B):
@@ -241,8 +249,8 @@ class TestCudaMath(CUDATestCase):
 
     def unary_template(self, func, npfunc, npdtype, nprestype, start, stop):
         nelem = 50
-        A = np.linspace(start, stop, nelem).astype(npdtype)
-        B = np.empty_like(A).astype(nprestype)
+        A = np.linspace(start, stop, nelem, dtype=npdtype)
+        B = np.empty_like(A, dtype=nprestype)
         arytype = numpy_support.from_dtype(npdtype)[::1]
         restype = numpy_support.from_dtype(nprestype)[::1]
         cfunc = cuda.jit((arytype, restype))(func)
@@ -405,6 +413,8 @@ class TestCudaMath(CUDATestCase):
         self.unary_template_float16(math_sqrt, np.sqrt)
         self.unary_template_float16(math_ceil, np.ceil)
         self.unary_template_float16(math_floor, np.floor)
+        if sys.version_info >= (3, 11):
+            self.unary_template_float16(math_exp2, np.exp2)
 
     @skip_on_cudasim("numpy does not support trunc for float16")
     @skip_unless_cc_53
@@ -501,6 +511,16 @@ class TestCudaMath(CUDATestCase):
         self.unary_template_uint64(math_exp, np.exp)
 
     # ---------------------------------------------------------------------------
+    # test_math_exp2
+
+    @unittest.skipUnless(sys.version_info >= (3, 11), "Python 3.11+ required")
+    def test_math_exp2(self):
+        self.unary_template_float32(math_exp2, np.exp2)
+        self.unary_template_float64(math_exp2, np.exp2)
+        self.unary_template_int64(math_exp2, np.exp2)
+        self.unary_template_uint64(math_exp2, np.exp2)
+
+    # ---------------------------------------------------------------------------
     # test_math_expm1
 
     def test_math_expm1(self):
@@ -516,7 +536,7 @@ class TestCudaMath(CUDATestCase):
         self.unary_template_float32(math_fabs, np.fabs, start=-1)
         self.unary_template_float64(math_fabs, np.fabs, start=-1)
         self.unary_template_int64(math_fabs, np.fabs, start=-1)
-        self.unary_template_uint64(math_fabs, np.fabs, start=-1)
+        self.unary_template_uint64(math_fabs, np.fabs, start=0)
 
     # ---------------------------------------------------------------------------
     # test_math_gamma
@@ -644,12 +664,14 @@ class TestCudaMath(CUDATestCase):
         Cref = np.empty_like(A)
         for i in range(len(A)):
             Cref[i] = math.pow(A[i], B[i])
+
         np.testing.assert_allclose(np.power(A, B).astype(npdtype), C, rtol=1e-6)
 
     def test_math_pow(self):
         self.binary_template_float32(math_pow, np.power)
         self.binary_template_float64(math_pow, np.power)
-        self.pow_template_int32(np.float32)
+        with pytest.warns(RuntimeWarning, match="overflow encountered in cast"):
+            self.pow_template_int32(np.float32)
         self.pow_template_int32(np.float64)
 
     # ---------------------------------------------------------------------------

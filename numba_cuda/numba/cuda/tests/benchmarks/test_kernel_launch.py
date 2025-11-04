@@ -3,9 +3,16 @@
 
 import string
 from numba import cuda
+from numba.cuda.core import config
 import numpy as np
 import pytest
 from pytest import param
+
+
+pytestmark = pytest.mark.skipif(
+    condition=config.ENABLE_CUDASIM,
+    reason="no reason to run benchmarks in the simulator",
+)
 
 
 @pytest.mark.parametrize(
@@ -22,6 +29,10 @@ from pytest import param
                 device="cuda:0",
             ),
             id="torch",
+        ),
+        param(
+            lambda: pytest.importorskip("cupy").empty(128, dtype=np.float32),
+            id="cupy",
         ),
     ],
 )
@@ -57,6 +68,13 @@ def test_one_arg(benchmark, array_func):
                 for _ in range(len(string.ascii_lowercase))
             ],
             id="torch",
+        ),
+        param(
+            lambda: [
+                pytest.importorskip("cupy").empty(128, dtype=np.float32)
+                for _ in range(len(string.ascii_lowercase))
+            ],
+            id="cupy",
         ),
     ],
 )

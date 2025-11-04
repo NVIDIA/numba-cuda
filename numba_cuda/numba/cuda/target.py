@@ -8,13 +8,13 @@ from llvmlite import ir
 import warnings
 import importlib.util
 
-from numba.core import types
-
-from numba.core.compiler_lock import global_compiler_lock
-from numba.core.errors import NumbaWarning
+from numba.cuda import types
+from numba.cuda import HAS_NUMBA
+from numba.cuda.core.compiler_lock import global_compiler_lock
+from numba.cuda.core.errors import NumbaWarning
 from numba.cuda.core.base import BaseContext
 from numba.cuda.typing import cmathdecl
-from numba.core import datamodel
+from numba.cuda import datamodel
 
 from .cudadrv import nvvm
 from numba.cuda import (
@@ -46,13 +46,14 @@ class CUDATypingContext(typing.BaseContext):
             libdevicedecl,
             vector_types,
         )
-        from numba.cuda.typing import enumdecl, cffi_utils
+        from numba.cuda.typing import enumdecl, cffi_utils, npydecl
 
         self.install_registry(cudadecl.registry)
         self.install_registry(cffi_utils.registry)
         self.install_registry(cudamath.registry)
         self.install_registry(cmathdecl.registry)
         self.install_registry(libdevicedecl.registry)
+        self.install_registry(npydecl.registry)
         self.install_registry(enumdecl.registry)
         self.install_registry(vector_types.typing_registry)
         self.install_registry(fp16.typing_registry)
@@ -61,10 +62,9 @@ class CUDATypingContext(typing.BaseContext):
     def resolve_value_type(self, val):
         # treat other dispatcher object as another device function
         from numba.cuda.dispatcher import CUDADispatcher
+        from numba.core.dispatcher import Dispatcher
 
-        try:
-            from numba.core.dispatcher import Dispatcher
-
+        if HAS_NUMBA:
             if isinstance(val, Dispatcher) and not isinstance(
                 val, CUDADispatcher
             ):
@@ -86,8 +86,6 @@ class CUDATypingContext(typing.BaseContext):
                     # duplicated copy of the same function.
                     val.__dispatcher = disp
                     val = disp
-        except ImportError:
-            pass
 
         # continue with parent logic
         return super(CUDATypingContext, self).resolve_value_type(val)
@@ -178,11 +176,8 @@ class CUDATargetContext(BaseContext):
         from numba.cuda.cpython import builtins as cpython_builtins
         from numba.cuda.core import optional  # noqa: F401
         from numba.cuda.misc import cffiimpl
-        from numba.cuda.np import (
-            arrayobj,
-            npdatetime,
-            polynomial,
-        )
+        from numba.cuda.np import arrayobj, npdatetime, polynomial, arraymath
+
         from . import (
             cudaimpl,
             fp16,
@@ -222,6 +217,7 @@ class CUDATargetContext(BaseContext):
         self.install_registry(polynomial.registry)
         self.install_registry(npdatetime.registry)
         self.install_registry(arrayobj.registry)
+        self.install_registry(arraymath.registry)
 
         # Install only implementations that are defined outside of numba (i.e.,
         # in third-party extensions) from Numba's builtin_registry.
@@ -238,6 +234,14 @@ class CUDATargetContext(BaseContext):
         if self._target_data is None:
             self._target_data = ll.create_target_data(nvvm.NVVM().data_layout)
         return self._target_data
+
+    def build_list(self, builder, list_type, items):
+        """
+        Build a list from the Numba *list_type* and its initial *items*.
+        """
+        from numba.cuda.cpython import listobj
+
+        return listobj.build_list(self, builder, list_type, items)
 
     @cached_property
     def nonconst_module_attrs(self):
