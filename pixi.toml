@@ -3,43 +3,58 @@
 [workspace]
 channels = ["conda-forge"]
 platforms = ["linux-64", "linux-aarch64", "win-64"]
+preview = ["pixi-build"]
 
-[pypi-dependencies]
-numba-cuda = { path = ".", editable = true }
+[workspace.build-variants]
+python = ["3.10.*", "3.11.*", "3.12.*", "3.13.*"]
 
 [dependencies]
-cuda-compiler = "*"
-make = "*"
-cxx-compiler = "*"
-numba = ">=0.60.0"
-cuda-bindings = ">=12.9.1,<14"
-cuda-core = ">=0.3,<0.4.0dev0"
-python = ">=3.9,<3.14"
+# source
+numba-cuda = { path = "." }
 
-[feature.cu12.system-requirements]
-cuda = "12"
-
-[feature.cu12.dependencies]
-cuda-python = "12.9.*"
-cuda-nvcc = "12.*"
-cuda-nvvm = "12.*"
-cuda-runtime = "12.*"
+[feature.cu.dependencies]
+cuda-nvcc = "*"
+cuda-nvcc-impl = "*"
+cuda-cuobjdump = "*"
 cuda-nvrtc = "*"
-libnvjitlink = "12.*"
-cuda-cccl = "12.*"
+libnvjitlink = "*"
+cuda-cccl = "*"
 libcurand = "*"
 
-[feature.cu13.system-requirements]
+[feature.cu-12.system-requirements]
+cuda = "12"
+
+[feature.cu-12.dependencies]
+cuda-version = "12.*"
+
+[feature.cu-12-0.dependencies]
+cuda-version = "12.0.*"
+
+[feature.nvvm.dependencies]
+# supported by cuda >=12.2
+cuda-nvvm = "*"
+
+[feature.cu-12-2.dependencies]
+cuda-version = "12.2.*"
+
+[feature.cu-rt.dependencies]
+# supported by cuda >=12.8
+cuda-runtime = "*"
+
+[feature.cu-12-8.dependencies]
+cuda-version = "12.8.*"
+
+[feature.cu-12-9.dependencies]
+cuda-version = "12.9.*"
+
+[feature.cu-13.system-requirements]
 cuda = "13"
 
-[feature.cu13.dependencies]
-cuda-python = "13.*"
-cuda-nvvm = "13.*"
-cuda-runtime = "13.*"
-cuda-nvrtc = "*"
-libnvjitlink = "13.*"
-cuda-cccl = "13.*"
-libcurand = "10.4.*"
+[feature.cu-13.dependencies]
+cuda-version = "13.*"
+
+[feature.cu-13-0.dependencies]
+cuda-version = "13.0.*"
 
 [feature.bench.dependencies]
 pytorch = ">=2.8"
@@ -48,20 +63,120 @@ libtorch = ">=2.8"
 cupy = "*"
 
 [feature.test.dependencies]
-pre-commit = "*"
-psutil = "*"
-cffi = "*"
-pytest = "*"
-pytest-xdist = "*"
-pytest-benchmark = "*"
+# for building cuda artifacts for testing
+make = "*"
+pre-commit = ">=4.3"
+psutil = ">=6"
+cffi = ">=1"
+pytest = ">=8"
+pytest-xdist = ">=3.8"
+pytest-benchmark = ">=5.1"
 
 [feature.test.pypi-dependencies]
 ml_dtypes = "*"
 filecheck = "*"
 
+[feature.py310.dependencies]
+python = "3.10.*"
+
+[feature.py311.dependencies]
+python = "3.11.*"
+
+[feature.py312.dependencies]
+python = "3.12.*"
+
+[feature.py313.dependencies]
+python = "3.13.*"
+
 [environments]
-cu12 = { features = ["cu12", "test", "bench"], solve-group = "cu12" }
-cu13 = { features = ["cu13", "test"], solve-group = "cu13" }
+# CUDA 12
+cu-12-0-py310 = { features = [
+    "cu-12-0",
+    "test",
+    "cu",
+    "cu-12",
+    "py310",
+], solve-group = "cu-12-0-py310" }
+cu-12-0-py311 = { features = [
+    "cu-12-0",
+    "test",
+    "cu",
+    "cu-12",
+    "py311",
+], solve-group = "cu-12-0-py311" }
+cu-12-2-py311 = { features = [
+    "cu-12-2",
+    "test",
+    "cu",
+    "cu-12",
+    "nvvm",
+    "py311",
+], solve-group = "cu-12-2-py311" }
+cu-12-8-py310 = { features = [
+    "cu-12-8",
+    "test",
+    "cu",
+    "cu-12",
+    "cu-rt",
+    "nvvm",
+    "py310",
+], solve-group = "cu-12-8-py310" }
+cu-12-8-py311 = { features = [
+    "cu-12-8",
+    "test",
+    "cu",
+    "cu-12",
+    "cu-rt",
+    "nvvm",
+    "py311",
+], solve-group = "cu-12-8-py311" }
+cu-12-8-py312 = { features = [
+    "cu-12-8",
+    "test",
+    "cu",
+    "cu-12",
+    "cu-rt",
+    "nvvm",
+    "py312",
+], solve-group = "cu-12-8-py312" }
+cu-12-8-py313 = { features = [
+    "cu-12-8",
+    "test",
+    "cu",
+    "cu-12",
+    "cu-rt",
+    "nvvm",
+    "py313",
+], solve-group = "cu-12-8-py313" }
+cu-12-9-py312 = { features = [
+    "cu-12-9",
+    "test",
+    "bench",
+    "cu",
+    "cu-12",
+    "cu-rt",
+    "nvvm",
+    "py312",
+], solve-group = "cu-12-9-py312" }
+# CUDA 13
+cu-13-0-py312 = { features = [
+    "cu-13-0",
+    "test",
+    "cu",
+    "cu-13",
+    "cu-rt",
+    "nvvm",
+    "py312",
+], solve-group = "cu-13-0-py312" }
+cu-13-0-py313 = { features = [
+    "cu-13-0",
+    "test",
+    "cu",
+    "cu-13",
+    "cu-rt",
+    "nvvm",
+    "py313",
+], solve-group = "cu-13-0-py313" }
 
 [target.linux.tasks]
 build-tests = { cmd = [
@@ -104,3 +219,36 @@ benchcmp = { cmd = [
 cmd = ["pytest", "$PIXI_PROJECT_ROOT/testing"]
 env = { NUMBA_CUDA_TEST_BIN_DIR = "$PIXI_PROJECT_ROOT/testing" }
 depends-on = [{ task = "build-tests" }]
+
+[target.linux.tasks.simtest]
+cmd = ["pytest", "$PIXI_PROJECT_ROOT/testing"]
+
+[target.linux.tasks.simtest.env]
+NUMBA_CUDA_TEST_BIN_DIR = "$PIXI_PROJECT_ROOT/testing"
+NUMBA_ENABLE_CUDASIM = "1"
+
+[package]
+name = "numba-cuda"
+version = "0.20.1"
+
+[package.build]
+backend = { name = "pixi-build-python", version = "*" }
+# makes the package not noarch which is required for build-variants to work and
+# because numba-cuda has c(++) extensions
+config.compilers = ["cxx"]
+
+[package.build-dependencies]
+# this can't be in `config.compilers` otherwise CUDA_HOME isn't defined
+cuda-compiler = "*"
+
+[package.host-dependencies]
+python = "*"
+setuptools = "*"
+numpy = ">=2.1"
+
+[package.run-dependencies]
+python = "*"
+numba = ">=0.60"
+cuda-core = ">=0.3,<1"
+cuda-bindings = ">=12.9,<14"
+cuda-python = ">=12.9,<14"

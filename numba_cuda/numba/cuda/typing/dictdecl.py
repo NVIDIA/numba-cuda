@@ -6,7 +6,7 @@ This implements the typing template for `dict()`.
 """
 
 from numba.cuda import types
-from numba.core import errors
+from numba.cuda.core import errors
 from .templates import (
     AbstractTemplate,
     Registry,

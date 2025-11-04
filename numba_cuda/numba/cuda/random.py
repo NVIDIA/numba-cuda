@@ -3,17 +3,20 @@
 
 import math
 
-from numba import (
-    cuda,
+from numba import cuda
+from numba.cuda import (
     float32,
     float64,
     uint32,
     int64,
     uint64,
-    from_dtype,
-    jit,
+    HAS_NUMBA,
 )
+from numba.cuda.np.numpy_support import from_dtype
 from numba.cuda import config
+
+if HAS_NUMBA:
+    from numba import jit
 
 import numpy as np
 

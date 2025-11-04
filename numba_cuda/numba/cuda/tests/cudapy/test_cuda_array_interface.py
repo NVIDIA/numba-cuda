@@ -3,7 +3,7 @@
 
 import numpy as np
 
-from numba import vectorize, guvectorize
+from numba.cuda import vectorize, guvectorize
 from numba import cuda
 from numba.cuda.testing import unittest, CUDATestCase, ForeignArray
 from numba.cuda.testing import skip_on_cudasim, skip_if_external_memmgr

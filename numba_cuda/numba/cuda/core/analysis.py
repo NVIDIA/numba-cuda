@@ -4,13 +4,13 @@
 from collections import namedtuple, defaultdict
 from numba.cuda import types
 from numba.cuda.core import ir
-from numba.core import errors
+from numba.cuda.core import errors
 from numba.cuda.core import consts
 import operator
 from functools import reduce
 
 from .controlflow import CFGraph
-from numba.misc import special
+from numba.cuda.misc import special
 
 #
 # Analysis related to variable lifetime
@@ -354,7 +354,7 @@ def rewrite_semantic_constants(func_ir, called_args):
                     if isinstance(argty, types.BaseTuple):
                         rewrite_statement(func_ir, stmt, argty.count)
 
-    from numba.core.ir_utils import get_definition, guard
+    from numba.cuda.core.ir_utils import get_definition, guard
 
     for blk in func_ir.blocks.values():
         for stmt in blk.body:

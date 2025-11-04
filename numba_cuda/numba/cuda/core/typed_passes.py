@@ -70,12 +70,9 @@ def fallback_context(state, msg):
             # this emits a warning containing the error message body in the
             # case of fallback from npm to objmode
             loop_lift = "" if state.flags.enable_looplift else "OUT"
-            msg_rewrite = (
-                "\nCompilation is falling back to object mode "
-                "WITH%s looplifting enabled because %s" % (loop_lift, msg)
-            )
             warnings.warn_explicit(
-                "%s due to: %s" % (msg_rewrite, e),
+                "Compilation is falling back to object mode "
+                f"WITH{loop_lift} looplifting enabled because {msg} due to: {e}",
                 errors.NumbaWarning,
                 state.func_id.filename,
                 state.func_id.firstlineno,
@@ -400,7 +397,7 @@ class BaseNativeLowering(abc.ABC, LoweringPass):
 @register_pass(mutates_CFG=True, analysis_only=False)
 class NativeLowering(BaseNativeLowering):
     """Lowering pass for a native function IR described solely in terms of
-    Numba's standard `numba.core.ir` nodes."""
+    Numba's standard `numba.cuda.core.ir` nodes."""
 
     _name = "native_lowering"
 

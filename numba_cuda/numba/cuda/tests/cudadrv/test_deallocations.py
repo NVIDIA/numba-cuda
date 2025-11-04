@@ -17,8 +17,8 @@ from numba.cuda.core import config
 
 
 @skip_on_cudasim("not supported on CUDASIM")
-@skip_if_external_memmgr("Deallocation specific to Numba memory management")
 class TestDeallocation(CUDATestCase):
+    @skip_if_external_memmgr("Deallocation specific to Numba memory management")
     def test_max_pending_count(self):
         # get deallocation manager and flush it
         deallocs = cuda.current_context().memory_manager.deallocations
@@ -32,6 +32,7 @@ class TestDeallocation(CUDATestCase):
         cuda.to_device(np.arange(1))
         self.assertEqual(len(deallocs), 0)
 
+    @skip_if_external_memmgr("Deallocation specific to Numba memory management")
     def test_max_pending_bytes(self):
         # get deallocation manager and flush it
         ctx = cuda.current_context()
@@ -73,11 +74,8 @@ class TestDeallocation(CUDATestCase):
             # restore old ratio
             config.CUDA_DEALLOCS_RATIO = old_ratio
 
-
-@skip_on_cudasim("defer_cleanup has no effect in CUDASIM")
-@skip_if_external_memmgr("Deallocation specific to Numba memory management")
-class TestDeferCleanup(CUDATestCase):
-    def test_basic(self):
+    @skip_if_external_memmgr("Deallocation specific to Numba memory management")
+    def test_defer_cleanup(self):
         harr = np.arange(5)
         darr1 = cuda.to_device(harr)
         deallocs = cuda.current_context().memory_manager.deallocations
@@ -95,7 +93,8 @@ class TestDeferCleanup(CUDATestCase):
         deallocs.clear()
         self.assertEqual(len(deallocs), 0)
 
-    def test_nested(self):
+    @skip_if_external_memmgr("Deallocation specific to Numba memory management")
+    def test_nested_defer_cleanup(self):
         harr = np.arange(5)
         darr1 = cuda.to_device(harr)
         deallocs = cuda.current_context().memory_manager.deallocations
@@ -116,6 +115,7 @@ class TestDeferCleanup(CUDATestCase):
         deallocs.clear()
         self.assertEqual(len(deallocs), 0)
 
+    @skip_if_external_memmgr("Deallocation specific to Numba memory management")
     def test_exception(self):
         harr = np.arange(5)
         darr1 = cuda.to_device(harr)
@@ -141,20 +141,6 @@ class TestDeferCleanup(CUDATestCase):
         deallocs.clear()
         self.assertEqual(len(deallocs), 0)
 
-
-class TestDeferCleanupAvail(CUDATestCase):
-    def test_context_manager(self):
-        # just make sure the API is available
-        with cuda.defer_cleanup():
-            pass
-
-
-@skip_on_cudasim("not supported on CUDASIM")
-class TestDel(CUDATestCase):
-    """
-    Ensure resources are deleted properly without ignored exception.
-    """
-
     @contextmanager
     def check_ignored_exception(self, ctx):
         with captured_stderr() as cap:
@@ -162,43 +148,43 @@ class TestDel(CUDATestCase):
             ctx.deallocations.clear()
         self.assertFalse(cap.getvalue())
 
-    def test_stream(self):
+    def test_del_stream(self):
         ctx = cuda.current_context()
         stream = ctx.create_stream()
         with self.check_ignored_exception(ctx):
             del stream
 
-    def test_event(self):
+    def test_del_event(self):
         ctx = cuda.current_context()
         event = ctx.create_event()
         with self.check_ignored_exception(ctx):
             del event
 
-    def test_pinned_memory(self):
+    def test_del_pinned_memory(self):
         ctx = cuda.current_context()
         mem = ctx.memhostalloc(32)
         with self.check_ignored_exception(ctx):
             del mem
 
-    def test_mapped_memory(self):
+    def test_del_mapped_memory(self):
         ctx = cuda.current_context()
         mem = ctx.memhostalloc(32, mapped=True)
         with self.check_ignored_exception(ctx):
             del mem
 
-    def test_device_memory(self):
+    def test_del_device_memory(self):
         ctx = cuda.current_context()
         mem = ctx.memalloc(32)
         with self.check_ignored_exception(ctx):
             del mem
 
-    def test_managed_memory(self):
+    def test_del_managed_memory(self):
         ctx = cuda.current_context()
         mem = ctx.memallocmanaged(32)
         with self.check_ignored_exception(ctx):
             del mem
 
-    def test_pinned_contextmanager(self):
+    def test_del_pinned_contextmanager(self):
         # Check that temporarily pinned memory is unregistered immediately,
         # such that it can be re-pinned at any time
         class PinnedException(Exception):
@@ -227,7 +213,7 @@ class TestDel(CUDATestCase):
                 with cuda.pinned(arr):
                     pass
 
-    def test_mapped_contextmanager(self):
+    def test_del_mapped_contextmanager(self):
         # Check that temporarily mapped memory is unregistered immediately,
         # such that it can be re-mapped at any time
         class MappedException(Exception):
