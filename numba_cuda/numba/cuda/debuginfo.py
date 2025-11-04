@@ -70,7 +70,6 @@ if not hasattr(config, "CUDA_DEBUG_POLY"):
     config.CUDA_DEBUG_POLY = DEBUG_POLY_SUPPORTED
 if not hasattr(config, "CUDA_DEBUG_POLY_USE_TYPED_CONST"):
     config.CUDA_DEBUG_POLY_USE_TYPED_CONST = DEBUG_POLY_USE_TYPED_CONST
-from numba.cuda.types.ext_types import GridGroup
 
 
 @contextmanager
