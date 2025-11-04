@@ -1,0 +1,102 @@
+# SPDX-FileCopyrightText: Copyright (c) 2024 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: BSD-2-Clause
+
+on:
+  workflow_call:
+    inputs:
+      dependency_generator_config_file_path:
+        description: "Location of the dependencies.yaml configuration file"
+        default: "dependencies.yaml"
+        required: false
+        type: string
+      enable_check_size:
+        description: "Whether to enable the size checker"
+        default: true
+        type: boolean
+        required: false
+      enable_check_style:
+        description: "Whether to enable the style checker"
+        default: true
+        type: boolean
+        required: false
+      enable_check_generated_files:
+        description: "Whether to enable the generated files checker"
+        default: true
+        type: boolean
+        required: false
+      enable_check_pr_job_dependencies:
+        description: "Whether to enable the PR workflow dependency checker"
+        default: true
+        type: boolean
+        required: false
+      ignored_pr_jobs:
+        description: "Space separated list of jobs to ignore when checking PR workflow dependencies"
+        default: ""
+        type: string
+        required: false
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  other-checks:
+    runs-on: ubuntu-latest
+    container:
+      image: rapidsai/ci-conda:latest
+      env:
+        RAPIDS_GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Telemetry setup
+        uses: rapidsai/shared-actions/telemetry-dispatch-setup@main
+        continue-on-error: true
+        if: ${{ vars.TELEMETRY_ENABLED == 'true' && github.run_attempt == '1' }}
+      - name: Get PR Info
+        id: get-pr-info
+        uses: nv-gha-runners/get-pr-info@main
+      - name: Run rapids-size-checker
+        if: ${{ inputs.enable_check_size }}
+        run: rapids-size-checker
+        env:
+          RAPIDS_BASE_BRANCH: ${{ fromJSON(steps.get-pr-info.outputs.pr-info).base.ref }}
+      - name: Check workflow file dependencies
+        if: ${{ inputs.enable_check_pr_job_dependencies }}
+        run: rapids-check-pr-job-dependencies "${IGNORED_JOBS}"
+        env:
+          IGNORED_JOBS: ${{ inputs.ignored_pr_jobs }}
+      - name: Telemetry upload attributes
+        uses: rapidsai/shared-actions/telemetry-dispatch-stash-job-artifacts@main
+        continue-on-error: true
+        if: ${{ vars.TELEMETRY_ENABLED == 'true' && github.run_attempt == '1' }}
+
+  check-style:
+    if: ${{ inputs.enable_check_style }}
+    runs-on: ubuntu-latest
+    container:
+      image: rapidsai/ci-conda:latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Telemetry setup
+        uses: rapidsai/shared-actions/telemetry-dispatch-setup@main
+        continue-on-error: true
+        if: ${{ vars.TELEMETRY_ENABLED == 'true' && github.run_attempt == '1' }}
+      - name: Get PR Info
+        id: get-pr-info
+        uses: nv-gha-runners/get-pr-info@main
+      - uses: actions/cache@v4
+        with:
+          path: ~/.cache/pre-commit
+          key: pre-commit-0|${{ hashFiles('.pre-commit-config.yaml') }}
+      - name: Run ci/check_style.sh
+        run: ci/check_style.sh
+        env:
+          RAPIDS_BASE_BRANCH: ${{ fromJSON(steps.get-pr-info.outputs.pr-info).base.ref }}
+      - name: Telemetry upload attributes
+        uses: rapidsai/shared-actions/telemetry-dispatch-stash-job-artifacts@main
+        continue-on-error: true
+        if: ${{ vars.TELEMETRY_ENABLED == 'true' && github.run_attempt == '1' }}
