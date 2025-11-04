@@ -7,6 +7,7 @@ import weakref
 from numba import cuda
 from numba.cuda.testing import unittest, CUDATestCase, skip_on_cudasim
 from numba.cuda.cudadrv import driver
+import cupy as cp
 
 
 class TestContextStack(CUDATestCase):
@@ -150,9 +151,9 @@ class Test3rdPartyContext(CUDATestCase):
                 for i in range(a.size):
                     a[i] = i
 
-            a = cuda.device_array(10)
+            a = cp.empty(10)
             foo[1, 1](a)
-            self.assertEqual(list(a.copy_to_host()), list(range(10)))
+            self.assertEqual(list(a.get()), list(range(10)))
 
         self.test_attached_primary(do)
 

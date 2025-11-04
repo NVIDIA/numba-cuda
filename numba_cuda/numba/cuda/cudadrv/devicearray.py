@@ -630,7 +630,6 @@ class _DeviceNDArray(DeviceNDArrayBase):
         return self._reshape(*newshape, **kws)
 
     def _reshape(self, *newshape, **kws):
-
         if len(newshape) == 1 and isinstance(newshape[0], (tuple, list)):
             newshape = newshape[0]
 
@@ -869,7 +868,16 @@ class ManagedNDArray(DeviceNDArrayBase, np.ndarray):
 
 def from_array_like(ary, stream=0, gpu_data=None):
     "Create a DeviceNDArray object that is like ary."
-    return DeviceNDArray(
+
+    warnings.warn(
+        "from_array_like is deprecated. Please prefer cupy for array functions",
+        FutureWarning,
+    )
+    return _from_array_like(ary, stream=stream, gpu_data=gpu_data)
+
+
+def _from_array_like(ary, stream=0, gpu_data=None):
+    return _DeviceNDArray(
         ary.shape, ary.strides, ary.dtype, stream=stream, gpu_data=gpu_data
     )
 
@@ -894,7 +902,7 @@ def array_core(ary):
     core_index = []
     for stride in ary.strides:
         core_index.append(0 if stride == 0 else slice(None))
-    
+
     if isinstance(ary, _DeviceNDArray):
         return ary._do_getitem(tuple(core_index))
     else:
@@ -958,7 +966,7 @@ def auto_device(obj, stream=0, copy=True, user_explicit=False):
                 obj, copy=False if numpy_version < (2, 0) else None, subok=True
             )
             sentry_contiguous(obj)
-            devobj = from_array_like(obj, stream=stream)
+            devobj = _from_array_like(obj, stream=stream)
         if copy:
             if (
                 config.CUDA_WARN_ON_IMPLICIT_COPY
@@ -980,7 +988,7 @@ def auto_device(obj, stream=0, copy=True, user_explicit=False):
 def check_array_compatibility(ary1, ary2):
     if isinstance(ary1, _DeviceNDArray):
         ary1sq = ary1._squeeze()
-    else: 
+    else:
         ary1sq = ary1.squeeze()
     if isinstance(ary2, _DeviceNDArray):
         ary2sq = ary2._squeeze()
@@ -1012,6 +1020,7 @@ class DeviceNDArray(_DeviceNDArray):
     """
 
     def __init__(self, *args, **kwargs):
+        breakpoint()
         warnings.warn(
             "DeviceNDArray api is deprecated. Please prefer cupy for array functions",
             FutureWarning,
