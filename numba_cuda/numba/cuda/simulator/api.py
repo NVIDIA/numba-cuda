@@ -160,3 +160,7 @@ def jit(
 def defer_cleanup():
     # No effect for simulator
     yield
+
+
+class grid(object):
+    pass

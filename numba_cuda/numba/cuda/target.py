@@ -36,7 +36,7 @@ from numba.cuda.core import config, targetconfig
 # Typing
 
 
-class CUDATypingContext(typing.BaseContext):
+class CUDATypingContext(typing.Context):
     def load_additional_registries(self):
         from . import (
             cudadecl,
@@ -58,6 +58,7 @@ class CUDATypingContext(typing.BaseContext):
         self.install_registry(vector_types.typing_registry)
         self.install_registry(fp16.typing_registry)
         self.install_registry(bf16.typing_registry)
+        self.install_registry(npydecl.registry)
 
     def resolve_value_type(self, val):
         # treat other dispatcher object as another device function
@@ -176,8 +177,13 @@ class CUDATargetContext(BaseContext):
         from numba.cuda.cpython import builtins as cpython_builtins
         from numba.cuda.core import optional  # noqa: F401
         from numba.cuda.misc import cffiimpl
-        from numba.cuda.np import arrayobj, npdatetime, polynomial, arraymath
-
+        from numba.cuda.np import (
+            arrayobj,
+            npdatetime,
+            polynomial,
+            arraymath,
+            npyimpl,
+        )
         from . import (
             cudaimpl,
             fp16,
@@ -218,6 +224,7 @@ class CUDATargetContext(BaseContext):
         self.install_registry(npdatetime.registry)
         self.install_registry(arrayobj.registry)
         self.install_registry(arraymath.registry)
+        self.install_registry(npyimpl.registry)
 
         # Install only implementations that are defined outside of numba (i.e.,
         # in third-party extensions) from Numba's builtin_registry.
