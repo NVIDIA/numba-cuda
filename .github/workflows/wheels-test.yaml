@@ -89,11 +89,11 @@ jobs:
 
           echo "MATRIX=${MATRIX}" | tee --append "${GITHUB_OUTPUT}"
   test:
-    name: ${{ matrix.CUDA_VER }}, ${{ matrix.PY_VER }}, ${{ matrix.ARCH }}, ${{ matrix.LINUX_VER }}, ${{ matrix.GPU }}, ${{ matrix.DRIVER }}-driver, ${{ matrix.DEPENDENCIES }}-deps
+    name: ${{ matrix.CUDA_VER }}, ${{ matrix.PY_VER }}, ${{ matrix.ARCH }}, ${{ matrix.LINUX_VER }}, ${{ matrix.GPU }}, ${{ matrix.DRIVER }}-driver, numba@${{ matrix.NUMBA_VERSION }}
     needs: compute-matrix
     env:
       RAPIDS_ARTIFACTS_DIR: ${{ github.workspace }}/artifacts
-      RAPIDS_DEPENDENCIES: ${{ matrix.DEPENDENCIES }}
+      NUMBA_VERSION: ${{ matrix.NUMBA_VERSION }}
       RAPIDS_TESTS_DIR: ${{ github.workspace }}/test-results
     strategy:
       fail-fast: false
