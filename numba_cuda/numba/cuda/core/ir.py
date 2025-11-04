@@ -1,7 +1,6 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-2-Clause
 
-import numba
 from collections import defaultdict
 import copy
 import itertools
@@ -15,7 +14,11 @@ from types import FunctionType, BuiltinFunctionType
 from functools import total_ordering
 from io import StringIO
 
-from numba.core import errors
+from numba.cuda import HAS_NUMBA
+
+if HAS_NUMBA:
+    import numba
+from numba.cuda.core import errors
 from numba.cuda.core import config
 from numba.cuda.utils import UNARY_BUILTINS_TO_OPERATORS, OPERATORS_TO_BUILTINS
 from numba.cuda.core.errors import (
@@ -776,7 +779,10 @@ class StoreMap(Stmt):
 class Del(Stmt):
     def __init__(self, value, loc):
         assert isinstance(value, str)
-        assert isinstance(loc, (Loc, numba.core.ir.Loc))
+        if HAS_NUMBA:
+            assert isinstance(loc, (Loc, numba.core.ir.Loc))
+        else:
+            assert isinstance(loc, (Loc))
         self.value = value
         self.loc = loc
 
@@ -1342,8 +1348,12 @@ class Block(EqualityCheckMixin):
     """A code block"""
 
     def __init__(self, scope, loc):
-        assert isinstance(scope, (Scope, numba.core.ir.Scope))
-        assert isinstance(loc, (Loc, numba.core.ir.Loc))
+        if HAS_NUMBA:
+            assert isinstance(scope, (Scope, numba.core.ir.Scope))
+            assert isinstance(loc, (Loc, numba.core.ir.Loc))
+        else:
+            assert isinstance(scope, Scope)
+            assert isinstance(loc, Loc)
         self.scope = scope
         self.body = []
         self.loc = loc
@@ -1708,8 +1718,8 @@ class FunctionIR(object):
                     raise ValueError(msg)
                 else:
                     from pygments import highlight
-                    from numba.misc.dump_style import NumbaIRLexer as lexer
-                    from numba.misc.dump_style import by_colorscheme
+                    from numba.cuda.misc.dump_style import NumbaIRLexer as lexer
+                    from numba.cuda.misc.dump_style import by_colorscheme
                     from pygments.formatters import Terminal256Formatter
 
                     print(

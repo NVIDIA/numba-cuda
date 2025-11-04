@@ -1,27 +1,31 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-2-Clause
 
+from numba.cuda.testing import unittest, CUDATestCase
+from numba.cuda.cudadrv.driver import _have_nvjitlink
+from llvmlite import ir
+
+import numpy as np
+import os
+from numba import cuda
+from numba.cuda import HAS_NUMBA
+from numba.cuda.testing import skip_on_standalone_numba_cuda
+from numba.cuda import types
 from numba.cuda import config
-import unittest
 
 if config.ENABLE_CUDASIM:
     raise unittest.SkipTest("Simulator does not support extending types")
 
 import inspect
 import math
-import os
 import pickle
 import unittest
 
-from llvmlite import ir
-import numpy as np
 
 import numba
-from numba import cuda, njit
-from numba.cuda import cgutils, jit, types
-from numba.cuda.testing import CUDATestCase
-from numba.cuda.cudadrv.driver import _have_nvjitlink
-from numba.cuda.tests.support import TestCase
+from numba import njit
+from numba.cuda import cgutils, jit
+from numba.cuda.tests.support import TestCase, override_config
 from numba.cuda.typing.templates import AttributeTemplate
 from numba.cuda.cudadecl import registry as cuda_registry
 from numba.cuda.cudaimpl import lower_attr as cuda_lower_attr
@@ -86,6 +90,12 @@ class Interval:
     @property
     def width(self):
         return self.hi - self.lo
+
+
+if HAS_NUMBA:
+    from numba import njit
+else:
+    njit = None
 
 
 @njit
@@ -237,6 +247,7 @@ class TestExtending(CUDATestCase):
 
         np.testing.assert_allclose(r[0], x[1] - x[0])
 
+    @skip_on_standalone_numba_cuda
     def test_extension_type_as_arg(self):
         @cuda.jit
         def f(r, x):
@@ -250,6 +261,7 @@ class TestExtending(CUDATestCase):
 
         np.testing.assert_allclose(r[0], x[1] - x[0])
 
+    @skip_on_standalone_numba_cuda
     def test_extension_type_as_retvalue(self):
         @cuda.jit
         def f(r, x):
@@ -385,10 +397,12 @@ class TestLowLevelExtending(TestCase):
         pyfunc = call_func1_nullary
         cfunc = jit(pyfunc)
         res = np.zeros(1)
-        cfunc[1, 1](res)
+        with override_config("DISABLE_PERFORMANCE_WARNINGS", 1):
+            cfunc[1, 1](res)
         self.assertPreciseEqual(res[0], 42.0)
         pyfunc = call_func1_unary
-        cfunc = jit(pyfunc)
+        with override_config("DISABLE_PERFORMANCE_WARNINGS", 1):
+            cfunc = jit(pyfunc)
         self.assertPreciseEqual(res[0], 42.0)
         cfunc[1, 1](18.0, res)
         self.assertPreciseEqual(res[0], 6.0)
@@ -637,7 +651,8 @@ class TestHighLevelExtending(TestCase):
 
         Z = np.arange(5)
         res = np.zeros(3)
-        bar[1, 1](Z, res)
+        with override_config("DISABLE_PERFORMANCE_WARNINGS", 1):
+            bar[1, 1](Z, res)
         self.assertEqual(res[0], 10)
         self.assertEqual(res[1], 20)
         self.assertEqual(res[2], 30)
@@ -662,7 +677,8 @@ class TestHighLevelExtending(TestCase):
 
         A = np.zeros(1)
         res = np.zeros(1)
-        bar[1, 1](A, res)
+        with override_config("DISABLE_PERFORMANCE_WARNINGS", 1):
+            bar[1, 1](A, res)
         self.assertEqual(res[0], 0xCAFE)
 
 
@@ -842,7 +858,8 @@ class TestRegisterJitable(unittest.TestCase):
         x = np.array([1, 2])
         bar(x, 2)
         self.assertEqual(x[0], 6)
-        cbar[1, 1](x, 2)
+        with override_config("DISABLE_PERFORMANCE_WARNINGS", 1):
+            cbar[1, 1](x, 2)
         self.assertEqual(x[0], 16)
 
 
@@ -882,7 +899,8 @@ class TestOverloadPreferLiteral(TestCase):
             res[2] = prefer_lit(x)
 
         res = np.zeros(3)
-        check_prefer_lit[1, 1](3, res)
+        with override_config("DISABLE_PERFORMANCE_WARNINGS", 1):
+            check_prefer_lit[1, 1](3, res)
         a, b, c = res
         self.assertEqual(a, 0xCAFE)
         self.assertEqual(b, 200)
@@ -894,7 +912,8 @@ class TestOverloadPreferLiteral(TestCase):
             res[1] = non_lit(2)
             res[2] = non_lit(x)
 
-        check_non_lit[1, 1](3, res)
+        with override_config("DISABLE_PERFORMANCE_WARNINGS", 1):
+            check_non_lit[1, 1](3, res)
         a, b, c = res
         self.assertEqual(a, 100)
         self.assertEqual(b, 200)

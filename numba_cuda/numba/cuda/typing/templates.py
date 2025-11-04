@@ -25,12 +25,10 @@ from numba.cuda.core.options import InlineOptions
 from numba.cuda import utils
 from numba.cuda.core import targetconfig
 
-try:
-    from numba.core.typing import Signature as CoreSignature
+from numba.cuda import HAS_NUMBA
 
-    numba_sig_present = True
-except ImportError:
-    numba_sig_present = False
+if HAS_NUMBA:
+    from numba.core.typing import Signature as CoreSignature
 
 # info store for inliner callback functions e.g. cost model
 _inline_info = namedtuple("inline_info", "func_ir typemap calltypes signature")
@@ -100,7 +98,7 @@ class Signature(object):
 
     def __eq__(self, other):
         sig_types = (Signature,)
-        if numba_sig_present:
+        if HAS_NUMBA:
             sig_types = (Signature, CoreSignature)
         if isinstance(other, sig_types):
             return (
@@ -384,7 +382,7 @@ class AbstractTemplate(FunctionTemplate):
         # Enforce that *generic()* must return None or Signature
         if sig is not None:
             sig_types = (Signature,)
-            if numba_sig_present:
+            if HAS_NUMBA:
                 sig_types = (Signature, CoreSignature)
             if not isinstance(sig, sig_types):
                 raise AssertionError(
@@ -409,7 +407,9 @@ class AbstractTemplate(FunctionTemplate):
 
     def get_template_info(self):
         impl = getattr(self, "generic")
-        basepath = os.path.dirname(os.path.dirname(numba.__file__))
+        basepath = os.path.dirname(
+            os.path.dirname(os.path.dirname(numba.cuda.__file__))
+        )
 
         code, firstlineno, path = self.get_source_code_info(impl)
         sig = str(utils.pysignature(impl))
@@ -496,7 +496,9 @@ class CallableTemplate(FunctionTemplate):
 
     def get_template_info(self):
         impl = getattr(self, "generic")
-        basepath = os.path.dirname(os.path.dirname(numba.__file__))
+        basepath = os.path.dirname(
+            os.path.dirname(os.path.dirname(numba.cuda.__file__))
+        )
         code, firstlineno, path = self.get_source_code_info(impl)
         sig = str(utils.pysignature(impl))
         info = {
@@ -885,7 +887,9 @@ class _OverloadFunctionTemplate(AbstractTemplate):
             - "docstring": str
                 The docstring of the definition.
         """
-        basepath = os.path.dirname(os.path.dirname(numba.__file__))
+        basepath = os.path.dirname(
+            os.path.dirname(os.path.dirname(numba.cuda.__file__))
+        )
         impl = cls._overload_func
         code, firstlineno, path = cls.get_source_code_info(impl)
         sig = str(utils.pysignature(impl))
@@ -900,7 +904,9 @@ class _OverloadFunctionTemplate(AbstractTemplate):
         return info
 
     def get_template_info(self):
-        basepath = os.path.dirname(os.path.dirname(numba.__file__))
+        basepath = os.path.dirname(
+            os.path.dirname(os.path.dirname(numba.cuda.__file__))
+        )
         impl = self._overload_func
         code, firstlineno, path = self.get_source_code_info(impl)
         sig = str(utils.pysignature(impl))
@@ -1057,7 +1063,9 @@ class _IntrinsicTemplate(_TemplateTargetHelperMixin, AbstractTemplate):
         return self._overload_cache[sig.args]
 
     def get_template_info(self):
-        basepath = os.path.dirname(os.path.dirname(numba.__file__))
+        basepath = os.path.dirname(
+            os.path.dirname(os.path.dirname(numba.cuda.__file__))
+        )
         impl = self._definition_func
         code, firstlineno, path = self.get_source_code_info(impl)
         sig = str(utils.pysignature(impl))
@@ -1219,7 +1227,9 @@ class _OverloadMethodTemplate(_OverloadAttributeTemplate):
                     return sig.as_method()
 
             def get_template_info(self):
-                basepath = os.path.dirname(os.path.dirname(numba.__file__))
+                basepath = os.path.dirname(
+                    os.path.dirname(os.path.dirname(numba.cuda.__file__))
+                )
                 impl = self._overload_func
                 code, firstlineno, path = self.get_source_code_info(impl)
                 sig = str(utils.pysignature(impl))

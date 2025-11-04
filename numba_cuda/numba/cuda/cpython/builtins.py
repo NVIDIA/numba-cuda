@@ -29,7 +29,7 @@ from numba.cuda.core.errors import (
 )
 from numba.cuda.typing.templates import AbstractTemplate, signature
 from numba.cuda.typing.templates import infer_global
-from numba.misc.special import literal_unroll
+from numba.cuda.misc.special import literal_unroll
 from numba.cuda.typing.asnumbatype import as_numba_type
 
 from numba.cuda.typing.builtins import IndexValue, IndexValueType

@@ -1,12 +1,25 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-2-Clause
 
-from numba import cuda, njit, types, version_info
-from numba.core.errors import TypingError
+from numba import cuda
+from numba.cuda import types
+from numba.cuda import HAS_NUMBA
+
+if HAS_NUMBA:
+    from numba.core.errors import TypingError
+    from numba import njit
+    import numba
+else:
+    from numba.cuda.core.errors import TypingError
 from numba.cuda.extending import overload, overload_attribute
 from numba.cuda.typing.typeof import typeof
 from numba.core.typing.typeof import typeof as cpu_typeof
-from numba.cuda.testing import CUDATestCase, skip_on_cudasim, unittest
+from numba.cuda.testing import (
+    CUDATestCase,
+    skip_on_cudasim,
+    unittest,
+    skip_on_standalone_numba_cuda,
+)
 import numpy as np
 
 
@@ -224,6 +237,7 @@ class TestOverload(CUDATestCase):
         cuda.jit(kernel)[1, 1](x)
         self.assertEqual(x[0], expected)
 
+    @skip_on_standalone_numba_cuda
     def check_overload_cpu(self, kernel, expected):
         x = np.ones(1, dtype=np.int32)
         njit(kernel)(x)
@@ -324,10 +338,16 @@ class TestOverload(CUDATestCase):
         expected = CUDA_TARGET_OL_CALLS_TARGET_OL * CUDA_TARGET_OL
         self.check_overload(kernel, expected)
 
-        # Also check that the CPU overloads are used on the CPU
+    @skip_on_standalone_numba_cuda
+    def test_target_overloaded_calls_target_overloaded_cpu(self):
+        def kernel(x):
+            target_overloaded_calls_target_overloaded(x)
+
+        # Check that the CPU overloads are used on the CPU
         expected = GENERIC_TARGET_OL_CALLS_TARGET_OL * GENERIC_TARGET_OL
         self.check_overload_cpu(kernel, expected)
 
+    @skip_on_standalone_numba_cuda
     def test_overload_attribute_target(self):
         MyDummy, MyDummyType = self.make_dummy_type()
         mydummy_type_cpu = cpu_typeof(MyDummy())  # For @njit (cpu)
@@ -346,7 +366,7 @@ class TestOverload(CUDATestCase):
         # A different error is produced prior to version 0.60
         # (the fixes in #9454 improved the message)
         # https://github.com/numba/numba/pull/9454
-        if version_info[:2] < (0, 60):
+        if HAS_NUMBA and numba.version_info[:2] < (0, 60):
             msg = 'resolving type of attribute "cuda_only" of "x"'
         else:
             msg = "Unknown attribute 'cuda_only'"

@@ -7,7 +7,7 @@ import re
 import numpy as np
 
 from numba.cuda import types
-from numba.core import errors
+from numba.cuda.core import errors
 from numba.cuda.typing.templates import signature
 from numba.cuda.np import npdatetime_helpers
 from numba.cuda.core.errors import TypingError
