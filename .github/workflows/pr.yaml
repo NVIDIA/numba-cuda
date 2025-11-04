@@ -32,10 +32,7 @@ jobs:
     secrets: inherit
     uses: rapidsai/shared-workflows/.github/workflows/pr-builder.yaml@branch-25.04
   checks:
-    secrets: inherit
-    uses: rapidsai/shared-workflows/.github/workflows/checks.yaml@branch-25.04
-    with:
-      enable_check_generated_files: false
+    uses: ./.github/workflows/checks.yaml
   compute-matrix:
     runs-on: ubuntu-latest
     outputs:
