@@ -60,7 +60,7 @@ from numba.cuda.types import (
     uint64,
     void,
 )
-from numba.cuda.ext_types import bfloat16
+from numba.cuda.types.ext_types import bfloat16
 
 float32x2 = vector_types["float32x2"]
 __half = float16

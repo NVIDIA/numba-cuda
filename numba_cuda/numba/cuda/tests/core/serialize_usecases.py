@@ -11,6 +11,7 @@ from math import sqrt
 import numpy as np
 import numpy.random as nprand
 
+# This does not need a guard, it's already guarded at the import site
 from numba import jit
 
 

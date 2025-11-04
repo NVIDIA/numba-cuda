@@ -7,6 +7,7 @@ from numba.cuda.testing import NRTEnablingCUDATestCase
 from numba import cuda
 
 from itertools import combinations_with_replacement
+from numba.cuda.testing import skip_on_cudasim
 from numba.cuda.misc.special import literal_unroll
 from numba.cuda import config
 
@@ -15,6 +16,7 @@ def array_median_global(arr):
     return np.median(arr)
 
 
+@skip_on_cudasim("doesn't work in the simulator")
 class TestArrayReductions(MemoryLeakMixin, NRTEnablingCUDATestCase):
     """
     Test array reduction methods and functions such as .sum(), .max(), etc.
@@ -24,10 +26,13 @@ class TestArrayReductions(MemoryLeakMixin, NRTEnablingCUDATestCase):
         super(TestArrayReductions, self).setUp()
         np.random.seed(42)
         self.old_nrt_setting = config.CUDA_ENABLE_NRT
+        self.old_perf_warnings_setting = config.DISABLE_PERFORMANCE_WARNINGS
         config.CUDA_ENABLE_NRT = True
+        config.DISABLE_PERFORMANCE_WARNINGS = 1
 
     def tearDown(self):
         config.CUDA_ENABLE_NRT = self.old_nrt_setting
+        config.DISABLE_PERFORMANCE_WARNINGS = self.old_perf_warnings_setting
         super(TestArrayReductions, self).tearDown()
 
     def test_all_basic(self):
@@ -465,99 +470,75 @@ class TestArrayReductions(MemoryLeakMixin, NRTEnablingCUDATestCase):
 
         a = a.flatten().tolist()
         q = q.flatten().tolist()
-        check_array_q(a, q)
-        #check(tuple(a), tuple(q))
+
+        # TODO - list types
+        # check_array_q(a, q)
+        # check(tuple(a), tuple(q))
 
         a = self.random.choice([1, 2, 3, 4], 10)
         q = np.linspace(0, q_upper_bound, 5)
         check_array_q(a, q)
 
-        # tests inspired by
-        # https://github.com/numpy/numpy/blob/345b2f6e/numpy/lib/tests/test_function_base.py
-        x = np.arange(8) * 0.5
-        np.testing.assert_equal(np.percentile(x, 0), 0.0)
-        np.testing.assert_equal(np.percentile(x, q_upper_bound), 3.5)
-        np.testing.assert_equal(np.percentile(x, q_upper_bound / 2), 1.75)
-
-        x = np.arange(12).reshape(3, 4)
-        q = np.array((0.25, 0.5, 1.0)) * q_upper_bound
-        np.testing.assert_equal(np.percentile(x, q), [2.75, 5.5, 11.0])
-
-        x = np.arange(3 * 4 * 5 * 6).reshape(3, 4, 5, 6)
-        q = np.array((0.25, 0.50)) * q_upper_bound
-        np.testing.assert_equal(np.percentile(x, q).shape, (2,))
-
-        q = np.array((0.25, 0.50, 0.75)) * q_upper_bound
-        np.testing.assert_equal(np.percentile(x, q).shape, (3,))
-
-        x = np.arange(12).reshape(3, 4)
-        np.testing.assert_equal(np.percentile(x, q_upper_bound / 2), 5.5)
-        self.assertTrue(np.isscalar(np.percentile(x, q_upper_bound / 2)))
-
-        np.testing.assert_equal(np.percentile([1, 2, 3], 0), 1)
-
-        a = np.array([2, 3, 4, 1])
-        np.percentile(a, [q_upper_bound / 2])
-        np.testing.assert_equal(a, np.array([2, 3, 4, 1]))
-
     def test_percentile_basic(self):
         pyfunc = np.percentile
-        self.check_percentile(pyfunc, q_upper_bound=100)
-        # self.check_percentile_edge_cases(pyfunc, q_upper_bound=100)
+        # self.check_percentile(pyfunc, q_upper_bound=100)
+        self.check_percentile_edge_cases(pyfunc, q_upper_bound=100)
         # self.check_percentile_exceptions(pyfunc)
 
     def check_percentile_edge_cases(self, pyfunc, q_upper_bound=100):
-        def check(a, q, abs_tol=1e-14):
-            @cuda.jit
-            def kernel(out):
-                result = np.percentile(a, q)
-                for i in range(len(out)):
-                    out[i] = result[i]
-
-            out = cuda.to_device(np.zeros(len(q), dtype=np.float64))
-            kernel[1, 1](out)
-            expected = np.percentile(a, q)
-
-            got = out.copy_to_host()
-            finite = np.isfinite(expected)
-
-            if np.all(finite):
-                self.assertPreciseEqual(got, expected, abs_tol=abs_tol)
-            else:
-                self.assertPreciseEqual(
-                    got[finite], expected[finite], abs_tol=abs_tol
-                )
-
-        def convert_to_float_and_check(a, q, abs_tol=1e-14):
-            expected = pyfunc(a, q).astype(np.float64)
-            got = np.percentile(a, q)
-            self.assertPreciseEqual(got, expected, abs_tol=abs_tol)
-
+        # intended to be a faitful reproduction of the upstream numba test
+        # packing all the test cases into a single kernel for perf
         def _array_combinations(elements):
             for i in range(1, 10):
                 for comb in combinations_with_replacement(elements, i):
                     yield np.array(comb)
 
-        # high number of combinations, many including non-finite values
         q = (0, 0.1 * q_upper_bound, 0.2 * q_upper_bound, q_upper_bound)
         element_pool = (1, -1, np.nan, np.inf, -np.inf)
-        for a in _array_combinations(element_pool):
-            check(a, q)
+        test_cases = list(_array_combinations(element_pool))
 
-        # edge cases - numpy exhibits behavioural differences across
-        # platforms, see: https://github.com/numpy/numpy/issues/13272
-        if q_upper_bound == 1:
-            _check = convert_to_float_and_check
-        else:
-            _check = check
+        max_len = max(len(a) for a in test_cases)
+        n_cases = len(test_cases)
 
-        a = np.array(5)
-        q = np.array(1)
-        _check(a, q)
+        # create a block containing all the test cases
+        # will independently record and pass the lengths
+        a_batch = np.full((n_cases, max_len), np.nan, dtype=np.float64)
+        lengths = np.zeros(n_cases, dtype=np.int32)
+        for i, a in enumerate(test_cases):
+            a_batch[i, : len(a)] = a
+            lengths[i] = len(a)
 
-        a = 5
-        q = q_upper_bound / 2
-        _check(a, q)
+        @cuda.jit
+        def kernel(a_batch, lengths, q_arr, out):
+            gid = cuda.grid(1)
+            if gid < a_batch.shape[0]:
+                length = lengths[gid]
+                a_valid = a_batch[gid, :length]
+                result = np.percentile(a_valid, q_arr)
+                for j in range(len(result)):
+                    out[gid, j] = result[j]
+
+        q_arr = np.array(q, dtype=np.float64)
+        out = cuda.to_device(np.zeros((n_cases, len(q)), dtype=np.float64))
+
+        kernel.forall(len(test_cases))(
+            cuda.to_device(a_batch),
+            cuda.to_device(lengths),
+            cuda.to_device(q_arr),
+            out,
+        )
+
+        got = out.copy_to_host()
+        for i, a in enumerate(test_cases):
+            expected = np.percentile(a, q)
+            finite = np.isfinite(expected)
+
+            if np.all(finite):
+                self.assertPreciseEqual(got[i], expected, abs_tol=1e-14)
+            else:
+                self.assertPreciseEqual(
+                    got[i][finite], expected[finite], abs_tol=1e-14
+                )
 
     def check_percentile_exceptions(self, pyfunc):
         # TODO

@@ -1,0 +1,85 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: BSD-2-Clause
+
+import threading
+import functools
+import numba.cuda.core.event as ev
+from numba.cuda import HAS_NUMBA
+
+if HAS_NUMBA:
+    from numba.core.compiler_lock import (
+        global_compiler_lock as _numba_compiler_lock,
+    )
+else:
+    _numba_compiler_lock = None
+
+
+# Lock for the preventing multiple compiler execution
+class _CompilerLock(object):
+    def __init__(self):
+        self._lock = threading.RLock()
+
+    def acquire(self):
+        ev.start_event("numba-cuda:compiler_lock")
+        self._lock.acquire()
+
+    def release(self):
+        self._lock.release()
+        ev.end_event("numba-cuda:compiler_lock")
+
+    def __enter__(self):
+        self.acquire()
+
+    def __exit__(self, exc_val, exc_type, traceback):
+        self.release()
+
+    def __call__(self, func):
+        @functools.wraps(func)
+        def _acquire_compile_lock(*args, **kwargs):
+            with self:
+                return func(*args, **kwargs)
+
+        return _acquire_compile_lock
+
+
+_numba_cuda_compiler_lock = _CompilerLock()
+
+
+# Wrapper that coordinates both numba and numba-cuda compiler locks
+class _DualCompilerLock(object):
+    """Wrapper that coordinates both the numba-cuda and upstream numba compiler locks."""
+
+    def __init__(self, cuda_lock, numba_lock):
+        self._cuda_lock = cuda_lock
+        self._numba_lock = numba_lock
+
+    def acquire(self):
+        self._numba_lock.acquire()
+        self._cuda_lock.acquire()
+
+    def release(self):
+        self._cuda_lock.release()
+        self._numba_lock.release()
+
+    def __enter__(self):
+        self.acquire()
+
+    def __exit__(self, exc_val, exc_type, traceback):
+        self.release()
+
+    def __call__(self, func):
+        @functools.wraps(func)
+        def _acquire_compile_lock(*args, **kwargs):
+            with self:
+                return func(*args, **kwargs)
+
+        return _acquire_compile_lock
+
+
+# Create the global compiler lock, wrapping both locks if numba is available
+if HAS_NUMBA:
+    global_compiler_lock = _DualCompilerLock(
+        _numba_cuda_compiler_lock, _numba_compiler_lock
+    )
+else:
+    global_compiler_lock = _numba_cuda_compiler_lock

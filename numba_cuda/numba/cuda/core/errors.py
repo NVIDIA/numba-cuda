@@ -9,11 +9,13 @@ import abc
 import contextlib
 import os
 import warnings
-import numba.core.config
+import numba.cuda.core.config
 import numpy as np
 from collections import defaultdict
 from functools import wraps
 from abc import abstractmethod
+
+import numba_cuda
 
 # Filled at the end
 __all__ = []
@@ -24,7 +26,7 @@ def _is_numba_core_config_loaded():
     To detect if numba.core.config has been initialized due to circular imports.
     """
     try:
-        numba.core.config
+        numba.cuda.core.config
     except AttributeError:
         return False
     else:
@@ -454,7 +456,7 @@ reportable_issue_info = """
 This should not have happened, a problem has occurred in Numba's internals.
 You are currently using Numba version %s.
 %s
-""" % (numba.__version__, feedback_details)
+""" % (numba_cuda.__version__, feedback_details)
 
 error_extras = dict()
 error_extras["unsupported_error"] = unsupported_error_info
@@ -813,7 +815,7 @@ class ForceLiteralArg(NumbaError):
     def bind_fold_arguments(self, fold_arguments):
         """Bind the fold_arguments function"""
         # to avoid circular import
-        from numba.core.utils import chain_exception
+        from numba.cuda.core.utils import chain_exception
 
         e = ForceLiteralArg(self.requested_args, fold_arguments, loc=self.loc)
         return chain_exception(e, self)

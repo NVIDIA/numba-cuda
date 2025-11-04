@@ -10,7 +10,7 @@ from numba.cuda.core import ir as numba_ir
 from numba.cuda.core import bytecode
 from numba.cuda import types
 from numba.cuda.core.options import ParallelOptions
-from numba.core.compiler_lock import global_compiler_lock
+from numba.cuda.core.compiler_lock import global_compiler_lock
 from numba.cuda.core.errors import NumbaWarning, NumbaInvalidConfigWarning
 from numba.cuda.core.interpreter import Interpreter
 
@@ -446,7 +446,7 @@ class CreateLibrary(LoweringPass):
 @register_pass(mutates_CFG=True, analysis_only=False)
 class CUDANativeLowering(BaseNativeLowering):
     """Lowering pass for a CUDA native function IR described solely in terms of
-    Numba's standard `numba.core.ir` nodes."""
+    Numba's standard `numba.cuda.core.ir` nodes."""
 
     _name = "cuda_native_lowering"
 

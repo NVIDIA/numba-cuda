@@ -10,7 +10,7 @@ import weakref
 import collections
 import functools
 
-from numba.core import errors
+from numba.cuda.core import errors
 from numba.cuda import types, utils, config
 
 # # Exported symbols

@@ -1495,7 +1495,7 @@ def _alloc_finalizer(memory_manager, ptr, alloc_key, size):
 
     def core():
         if allocations:
-            del allocations[alloc_key]
+            allocations.pop(alloc_key, None)
         deallocations.add_item(driver.cuMemFree, ptr, size)
 
     return core

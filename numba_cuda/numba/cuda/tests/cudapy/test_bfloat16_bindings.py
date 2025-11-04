@@ -4,7 +4,7 @@
 from collections import OrderedDict
 import bisect
 
-import numba.cuda as cuda
+from numba import cuda
 from numba.cuda.testing import unittest, CUDATestCase
 import numpy as np
 import operator

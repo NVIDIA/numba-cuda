@@ -9,8 +9,8 @@ import warnings
 import importlib.util
 
 from numba.cuda import types
-
-from numba.core.compiler_lock import global_compiler_lock
+from numba.cuda import HAS_NUMBA
+from numba.cuda.core.compiler_lock import global_compiler_lock
 from numba.cuda.core.errors import NumbaWarning
 from numba.cuda.core.base import BaseContext
 from numba.cuda.typing import cmathdecl
@@ -64,9 +64,7 @@ class CUDATypingContext(typing.BaseContext):
         from numba.cuda.dispatcher import CUDADispatcher
         from numba.core.dispatcher import Dispatcher
 
-        try:
-            from numba.core.dispatcher import Dispatcher
-
+        if HAS_NUMBA:
             if isinstance(val, Dispatcher) and not isinstance(
                 val, CUDADispatcher
             ):
@@ -88,8 +86,6 @@ class CUDATypingContext(typing.BaseContext):
                     # duplicated copy of the same function.
                     val.__dispatcher = disp
                     val = disp
-        except ImportError:
-            pass
 
         # continue with parent logic
         return super(CUDATypingContext, self).resolve_value_type(val)
@@ -280,9 +276,9 @@ class CUDATargetContext(BaseContext):
 
     def make_constant_list(self, builder, listty, lst):
         import numpy as np
+
         constvals = [
-            self.get_constant(listty.dtype, i)
-            for i in iter(np.array(lst))
+            self.get_constant(listty.dtype, i) for i in iter(np.array(lst))
         ]
         instance = self.build_list(builder, listty, constvals)
         # create constant address space version of the list
@@ -301,9 +297,10 @@ class CUDATargetContext(BaseContext):
         # Convert to generic address-space
         ptrty = ir.PointerType(constlistty)
         genptr = builder.addrspacecast(gv, ptrty, "generic")
-        lst = cgutils.create_struct_proxy(listty)(self, builder, value=builder.load(genptr))
+        lst = cgutils.create_struct_proxy(listty)(
+            self, builder, value=builder.load(genptr)
+        )
         return lst._getvalue()
-
 
     def make_constant_array(self, builder, aryty, arr):
         """
