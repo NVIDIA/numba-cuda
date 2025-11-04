@@ -278,12 +278,38 @@ class CUDATargetContext(BaseContext):
             name, argtypes, abi_tags=abi_tags, uid=uid
         )
 
+    def make_constant_list(self, builder, listty, lst):
+        import numpy as np
+        constvals = [
+            self.get_constant(listty.dtype, i)
+            for i in iter(np.array(lst))
+        ]
+        instance = self.build_list(builder, listty, constvals)
+        # create constant address space version of the list
+        lmod = builder.module
+
+        constlistty = instance.type
+        constlist = ir.Constant(constlistty, instance)
+        addrspace = nvvm.ADDRSPACE_CONSTANT
+        gv = cgutils.add_global_variable(
+            lmod, constlist.type, "_cudapy_clist", addrspace=addrspace
+        )
+        gv.linkage = "internal"
+        gv.global_constant = True
+        gv.initializer = constlist
+
+        # Convert to generic address-space
+        ptrty = ir.PointerType(constlistty)
+        genptr = builder.addrspacecast(gv, ptrty, "generic")
+        lst = cgutils.create_struct_proxy(listty)(self, builder, value=builder.load(genptr))
+        return lst._getvalue()
+
+
     def make_constant_array(self, builder, aryty, arr):
         """
         Unlike the parent version.  This returns a a pointer in the constant
         addrspace.
         """
-
         lmod = builder.module
 
         constvals = [

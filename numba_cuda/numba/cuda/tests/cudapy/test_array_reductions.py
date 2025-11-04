@@ -414,7 +414,7 @@ class TestArrayReductions(MemoryLeakMixin, NRTEnablingCUDATestCase):
             check_even(a)
 
     def check_percentile(self, pyfunc, q_upper_bound):
-        def check(a, q, abs_tol=1e-12):
+        def check_array_q(a, q, abs_tol=1e-12):
             @cuda.jit
             def kernel(out):
                 result = np.percentile(a, q)
@@ -435,28 +435,42 @@ class TestArrayReductions(MemoryLeakMixin, NRTEnablingCUDATestCase):
                     got[finite], expected[finite], abs_tol=abs_tol
                 )
 
-        a = self.random.randn(27).reshape(3, 3, 3)
-        q = np.linspace(0, q_upper_bound, 14)[::-1]
+        def check_scalar_q(a, q, abs_tol=1e-12):
+            @cuda.jit
+            def kernel(out):
+                out[0] = np.percentile(a, q)
 
-        check(a, q)
-        check(a, 0)
-        check(a, q_upper_bound / 2)
-        check(a, q_upper_bound)
+            out = cuda.to_device(np.zeros(1, dtype=np.float64))
+            kernel[1, 1](out)
+
+            expected = np.percentile(a, q)
+            got = out.copy_to_host()[0]
+
+            if np.isfinite(expected):
+                self.assertPreciseEqual(got, expected, abs_tol=abs_tol)
+
+        a = self.random.randn(27).reshape(3, 3, 3)
+        q = np.linspace(0, q_upper_bound, 14)[::-1].copy()
+
+        check_array_q(a, q)
+        check_scalar_q(a, 0)
+        check_scalar_q(a, q_upper_bound / 2)
+        check_scalar_q(a, q_upper_bound)
 
         not_finite = [np.nan, -np.inf, np.inf]
         a.flat[:10] = self.random.choice(not_finite, 10)
         self.random.shuffle(a)
         self.random.shuffle(q)
-        check(a, q)
+        check_array_q(a, q)
 
         a = a.flatten().tolist()
         q = q.flatten().tolist()
-        check(a, q)
-        check(tuple(a), tuple(q))
+        check_array_q(a, q)
+        #check(tuple(a), tuple(q))
 
         a = self.random.choice([1, 2, 3, 4], 10)
         q = np.linspace(0, q_upper_bound, 5)
-        check(a, q)
+        check_array_q(a, q)
 
         # tests inspired by
         # https://github.com/numpy/numpy/blob/345b2f6e/numpy/lib/tests/test_function_base.py

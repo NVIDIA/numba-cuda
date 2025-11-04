@@ -3646,6 +3646,12 @@ def constant_array(context, builder, ty, pyval):
     """
     return context.make_constant_array(builder, ty, pyval)
 
+@lower_constant(types.List)
+def constant_list(context, builder, ty, pyval):
+    """
+    Create a constant list (mechanism is target-dependent).
+    """
+    return context.make_constant_list(builder, ty, pyval)
 
 @lower_constant(types.Record)
 def constant_record(context, builder, ty, pyval):
