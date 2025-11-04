@@ -404,7 +404,8 @@ class TestLowLevelExtending(TestCase):
         with override_config("DISABLE_PERFORMANCE_WARNINGS", 1):
             cfunc = jit(pyfunc)
         self.assertPreciseEqual(res[0], 42.0)
-        cfunc[1, 1](18.0, res)
+        with override_config("DISABLE_PERFORMANCE_WARNINGS", 1):
+            cfunc[1, 1](18.0, res)
         self.assertPreciseEqual(res[0], 6.0)
 
     @TestCase.run_test_in_subprocess
@@ -451,7 +452,8 @@ class TestHighLevelExtending(TestCase):
                 return -1
 
         with self.assertRaises(errors.TypingError) as e:
-            gen_ol(impl1)[1, 1](1, 2, 3, 4)
+            with override_config("DISABLE_PERFORMANCE_WARNINGS", 1):
+                gen_ol(impl1)[1, 1](1, 2, 3, 4)
         msg = str(e.exception)
         self.assertIn(sentinel, msg)
         self.assertIn("keyword argument default values", msg)
@@ -466,7 +468,8 @@ class TestHighLevelExtending(TestCase):
                 return -1
 
         with self.assertRaises(errors.TypingError) as e:
-            gen_ol(impl2)[1, 1](1, 2, 3, 4)
+            with override_config("DISABLE_PERFORMANCE_WARNINGS", 1):
+                gen_ol(impl2)[1, 1](1, 2, 3, 4)
         msg = str(e.exception)
         self.assertIn(sentinel, msg)
         self.assertIn("keyword argument names", msg)
@@ -481,7 +484,8 @@ class TestHighLevelExtending(TestCase):
                 return -1
 
         with self.assertRaises(errors.TypingError) as e:
-            gen_ol(impl3)[1, 1](1, 2, 3, 4)
+            with override_config("DISABLE_PERFORMANCE_WARNINGS", 1):
+                gen_ol(impl3)[1, 1](1, 2, 3, 4)
         msg = str(e.exception)
         self.assertIn(sentinel, msg)
         self.assertIn("argument names", msg)
@@ -492,7 +496,8 @@ class TestHighLevelExtending(TestCase):
         from .overload_usecases import impl4, impl5
 
         with self.assertRaises(errors.TypingError) as e:
-            gen_ol(impl4)[1, 1](1, 2, 3, 4)
+            with override_config("DISABLE_PERFORMANCE_WARNINGS", 1):
+                gen_ol(impl4)[1, 1](1, 2, 3, 4)
         msg = str(e.exception)
         self.assertIn(sentinel, msg)
         self.assertIn("argument names", msg)
@@ -500,7 +505,8 @@ class TestHighLevelExtending(TestCase):
         self.assertIn("First difference: 'z'", msg)
 
         with self.assertRaises(errors.TypingError) as e:
-            gen_ol(impl5)[1, 1](1, 2, 3, 4)
+            with override_config("DISABLE_PERFORMANCE_WARNINGS", 1):
+                gen_ol(impl5)[1, 1](1, 2, 3, 4)
         msg = str(e.exception)
         self.assertIn(sentinel, msg)
         self.assertIn("argument names", msg)
@@ -516,7 +522,8 @@ class TestHighLevelExtending(TestCase):
                 return -1
 
         with self.assertRaises(errors.TypingError) as e:
-            gen_ol(impl6)[1, 1](1, 2, 3, 4)
+            with override_config("DISABLE_PERFORMANCE_WARNINGS", 1):
+                gen_ol(impl6)[1, 1](1, 2, 3, 4)
         msg = str(e.exception)
         self.assertIn(sentinel, msg)
         self.assertIn("argument names", msg)
@@ -532,7 +539,8 @@ class TestHighLevelExtending(TestCase):
                 return -1
 
         with self.assertRaises(errors.TypingError) as e:
-            gen_ol(impl7)[1, 1](1, 2, 3, 4)
+            with override_config("DISABLE_PERFORMANCE_WARNINGS", 1):
+                gen_ol(impl7)[1, 1](1, 2, 3, 4)
         msg = str(e.exception)
         self.assertIn(sentinel, msg)
         self.assertIn("argument names", msg)
@@ -547,7 +555,8 @@ class TestHighLevelExtending(TestCase):
                 return -1
 
         with self.assertRaises(errors.TypingError) as e:
-            gen_ol(impl8)[1, 1](1, 2, 3, 4)
+            with override_config("DISABLE_PERFORMANCE_WARNINGS", 1):
+                gen_ol(impl8)[1, 1](1, 2, 3, 4)
         msg = str(e.exception)
         self.assertIn(sentinel, msg)
         self.assertIn("keyword argument names", msg)
@@ -561,7 +570,8 @@ class TestHighLevelExtending(TestCase):
                 return -1
 
         with self.assertRaises(errors.TypingError) as e:
-            gen_ol(impl9)[1, 1](1, 2, 3, 4)
+            with override_config("DISABLE_PERFORMANCE_WARNINGS", 1):
+                gen_ol(impl9)[1, 1](1, 2, 3, 4)
         msg = str(e.exception)
         self.assertIn(sentinel, msg)
         self.assertIn("keyword argument names", msg)
@@ -585,7 +595,8 @@ class TestHighLevelExtending(TestCase):
             myoverload(a, b, 9, kw=11)
 
         with self.assertRaises(errors.TypingError) as e:
-            foo[1, 1](1, 5)
+            with override_config("DISABLE_PERFORMANCE_WARNINGS", 1):
+                foo[1, 1](1, 5)
         msg = str(e.exception)
         self.assertIn("VAR_POSITIONAL (e.g. *args) argument kind", msg)
         self.assertIn("offending argument name is '*star_args_token'", msg)
@@ -614,9 +625,13 @@ class TestHighLevelExtending(TestCase):
 
             return impl
 
-        gen_ol(ol1, False)[1, 1](1, 2)  # no error if strictness not enforced
+        with override_config("DISABLE_PERFORMANCE_WARNINGS", 1):
+            gen_ol(ol1, False)[1, 1](
+                1, 2
+            )  # no error if strictness not enforced
         with self.assertRaises(errors.TypingError) as e:
-            gen_ol(ol1)[1, 1](1, 2)
+            with override_config("DISABLE_PERFORMANCE_WARNINGS", 1):
+                gen_ol(ol1)[1, 1](1, 2)
         msg = str(e.exception)
         self.assertIn("use of VAR_KEYWORD (e.g. **kwargs) is unsupported", msg)
         self.assertIn("offending argument name is '**kws'", msg)
@@ -629,7 +644,8 @@ class TestHighLevelExtending(TestCase):
             return impl
 
         with self.assertRaises(errors.TypingError) as e:
-            gen_ol(ol2)[1, 1](1, 2)
+            with override_config("DISABLE_PERFORMANCE_WARNINGS", 1):
+                gen_ol(ol2)[1, 1](1, 2)
         msg = str(e.exception)
         self.assertIn("use of VAR_KEYWORD (e.g. **kwargs) is unsupported", msg)
         self.assertIn("offending argument name is '**kws'", msg)
@@ -726,10 +742,12 @@ class TestIntrinsic(TestCase):
             non_void_func(1)
 
         # void func should work
-        self.assertEqual(call_void_func[1, 1](), None)
+        with override_config("DISABLE_PERFORMANCE_WARNINGS", 1):
+            self.assertEqual(call_void_func[1, 1](), None)
         # not void function should raise exception
         with self.assertRaises(LoweringError) as e:
-            call_non_void_func[1, 1]()
+            with override_config("DISABLE_PERFORMANCE_WARNINGS", 1):
+                call_non_void_func[1, 1]()
         self.assertIn("non-void function returns None", e.exception.msg)
 
     def test_serialization(self):
@@ -751,7 +769,8 @@ class TestIntrinsic(TestCase):
         def foo(x):
             identity(x)
 
-        self.assertEqual(foo[1, 1](1), None)
+        with override_config("DISABLE_PERFORMANCE_WARNINGS", 1):
+            self.assertEqual(foo[1, 1](1), None)
 
         # get serialization memo
         memo = _Intrinsic._memo
@@ -766,7 +785,9 @@ class TestIntrinsic(TestCase):
         foo_rebuilt = pickle.loads(serialized_foo)
         self.assertEqual(memo_size, len(memo))
         # check rebuilt foo
-        self.assertEqual(foo[1, 1](1), foo_rebuilt[1, 1](1))
+
+        with override_config("DISABLE_PERFORMANCE_WARNINGS", 1):
+            self.assertEqual(foo[1, 1](1), foo_rebuilt[1, 1](1))
 
         # pickle identity directly
         serialized_identity = pickle.dumps(identity)
