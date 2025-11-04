@@ -67,11 +67,7 @@ jobs:
         with:
           password: ${{ secrets.RAPIDSAI_PYPI_TOKEN }}
   build-docs:
-    needs:
-      - build-conda
     uses: ./.github/workflows/docs-build.yaml
-    with:
-      build_type: release
   deploy-docs:
     needs: build-docs
     permissions:

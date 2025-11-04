@@ -87,12 +87,6 @@ jobs:
           repository: ${{ inputs.repo }}
           ref: ${{ inputs.sha }}
           fetch-depth: 0
-      - uses: actions/download-artifact@v4
-        with:
-          name: conda-repo-py${{ matrix.PY_VER }}-${{ matrix.ARCH }}
-          path: conda-repo
-      - name: Display structure of downloaded files
-        run: ls -R
       - name: Standardize repository information
         run: |
           echo "RAPIDS_REPOSITORY=${{ inputs.repo || github.repository }}" >> "${GITHUB_ENV}"
@@ -112,6 +106,7 @@ jobs:
         uses: prefix-dev/setup-pixi@fef5c9568ca6c4ff7707bf840ab0692ba3f08293
         with:
           environments: ${{ env.PIXI_ENV }}
+          cache: false
       - name: Python tests
         run: ${{ inputs.script }}
         env:
