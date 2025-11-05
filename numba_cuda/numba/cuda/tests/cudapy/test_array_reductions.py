@@ -10,6 +10,7 @@ from itertools import combinations_with_replacement
 from numba.cuda.testing import skip_on_cudasim
 from numba.cuda.misc.special import literal_unroll
 from numba.cuda import config
+import unittest
 
 
 def array_median_global(arr):
@@ -422,14 +423,14 @@ class TestArrayReductions(MemoryLeakMixin, NRTEnablingCUDATestCase):
         def check_array_q(a, q, abs_tol=1e-12):
             @cuda.jit
             def kernel(out):
-                result = np.percentile(a, q)
+                result = pyfunc(a, q)
                 for i in range(len(out)):
                     out[i] = result[i]
 
             out = cuda.to_device(np.zeros(len(q), dtype=np.float64))
             kernel[1, 1](out)
 
-            expected = np.percentile(a, q)
+            expected = pyfunc(a, q)
             got = out.copy_to_host()
 
             finite = np.isfinite(expected)
@@ -443,12 +444,12 @@ class TestArrayReductions(MemoryLeakMixin, NRTEnablingCUDATestCase):
         def check_scalar_q(a, q, abs_tol=1e-12):
             @cuda.jit
             def kernel(out):
-                out[0] = np.percentile(a, q)
+                out[0] = pyfunc(a, q)
 
             out = cuda.to_device(np.zeros(1, dtype=np.float64))
             kernel[1, 1](out)
 
-            expected = np.percentile(a, q)
+            expected = pyfunc(a, q)
             got = out.copy_to_host()[0]
 
             if np.isfinite(expected):
@@ -481,9 +482,13 @@ class TestArrayReductions(MemoryLeakMixin, NRTEnablingCUDATestCase):
 
     def test_percentile_basic(self):
         pyfunc = np.percentile
-        # self.check_percentile(pyfunc, q_upper_bound=100)
+        self.check_percentile(pyfunc, q_upper_bound=100)
         self.check_percentile_edge_cases(pyfunc, q_upper_bound=100)
-        # self.check_percentile_exceptions(pyfunc)
+
+    @unittest.expectedFailure
+    def test_percentile_exceptions(self):
+        pyfunc = np.percentile
+        self.check_percentile_exceptions(pyfunc)
 
     def check_percentile_edge_cases(self, pyfunc, q_upper_bound=100):
         # intended to be a faitful reproduction of the upstream numba test
@@ -541,9 +546,85 @@ class TestArrayReductions(MemoryLeakMixin, NRTEnablingCUDATestCase):
                 )
 
     def check_percentile_exceptions(self, pyfunc):
-        # TODO
-        pass
+        def check_scalar_q_err(a, q, abs_tol=1e-12):
+            @cuda.jit
+            def kernel(out):
+                out[0] = np.percentile(a, q)
 
+            out = cuda.to_device(np.zeros(1, dtype=np.float64))
+            with self.assertRaises(ValueError) as raises:
+                kernel[1, 1](out)
+            self.assertEqual(
+                "Percentiles must be in the range [0, 100]",
+                str(raises.exception),
+            )
+
+        # Exceptions leak references
+        self.disable_leak_check()
+        a = np.arange(5)
+        check_scalar_q_err(a, -5)  # q less than 0
+        check_scalar_q_err(a, 105)
+        check_scalar_q_err(a, np.nan)
+
+        # complex typing failure
+        @cuda.jit
+        def kernel(out):
+            np.percentile(a, q)
+
+        a = np.arange(5) * 1j
+        q = 0.1
+
+        out = cuda.to_device(np.zeros(1, dtype=np.float64))
+        with self.assertTypingError():
+            kernel[1, 1](out)
+
+    @unittest.expectedFailure
     def check_quantile_exceptions(self, pyfunc):
-        # TODO
-        pass
+        def check_scalar_q_err(a, q, abs_tol=1e-12):
+            @cuda.jit
+            def kernel(out):
+                out[0] = np.percentile(a, q)
+
+            out = cuda.to_device(np.zeros(1, dtype=np.float64))
+            with self.assertRaises(ValueError) as raises:
+                kernel[1, 1](out)
+            self.assertEqual(
+                "Quantiles must be in the range [0, 1]",
+                str(raises.exception),
+            )
+
+        # Exceptions leak references
+        self.disable_leak_check()
+        a = np.arange(5)
+        check_scalar_q_err(a, -0.5)  # q less than 0
+        check_scalar_q_err(a, 1.05)
+        check_scalar_q_err(a, np.nan)
+
+        # complex typing failure
+        @cuda.jit
+        def kernel(out):
+            np.quantile(a, q)
+
+        a = np.arange(5) * 1j
+        q = 0.1
+
+        out = cuda.to_device(np.zeros(1, dtype=np.float64))
+        with self.assertTypingError():
+            kernel[1, 1](out)
+
+    def test_quantile_basic(self):
+        pyfunc = np.quantile
+        self.check_percentile(pyfunc, q_upper_bound=1)
+        self.check_percentile_edge_cases(pyfunc, q_upper_bound=1)
+
+    def test_nanpercentile_basic(self):
+        pyfunc = np.nanpercentile
+        self.check_percentile(pyfunc, q_upper_bound=100)
+        self.check_percentile_edge_cases(pyfunc, q_upper_bound=100)
+        self.check_percentile_exceptions(pyfunc)
+
+    def test_nanquantile_basic(self):
+        pyfunc = np.nanquantile
+        self.check_percentile(pyfunc, q_upper_bound=1)
+        self.check_percentile_edge_cases(pyfunc, q_upper_bound=1)
+        self.check_quantile_exceptions(pyfunc)
