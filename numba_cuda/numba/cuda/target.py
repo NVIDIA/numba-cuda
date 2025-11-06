@@ -273,58 +273,6 @@ class CUDATargetContext(BaseContext):
             name, argtypes, abi_tags=abi_tags, uid=uid
         )
 
-    def make_constant_list(self, builder, listty, lst):
-        """
-        Create a list structure with data in constant address space.
-        The list metadata is in normal memory but the data array is in constant memory.
-        """
-        import numpy as np
-        from numba.cuda.cpython.listobj import ListInstance
-
-        lmod = builder.module
-
-        # Convert to array and serialize
-        arr = np.array(lst)
-        nitems = len(arr)
-
-        constvals = [
-            self.get_constant(types.byte, i)
-            for i in iter(arr.tobytes(order="C"))
-        ]
-        constaryty = ir.ArrayType(ir.IntType(8), len(constvals))
-        constary = ir.Constant(
-            constaryty, constvals
-        )  # constant llvm value with the values
-
-        # create a global variable
-        addrspace = nvvm.ADDRSPACE_CONSTANT
-        gv = cgutils.add_global_variable(
-            lmod, constary.type, "_cudapy_clist", addrspace=addrspace
-        )
-        gv.linkage = "internal"
-        gv.global_constant = True
-        gv.initializer = (
-            constary  # put the gobal variable initializer to the constant array
-        )
-
-        lldtype = self.get_data_type(listty.dtype)
-        align = self.get_abi_sizeof(lldtype)
-        gv.align = 2 ** (align - 1).bit_length()
-
-        ptrty = ir.PointerType(ir.IntType(8))  # an int8 pointer
-        genptr = builder.addrspacecast(gv, ptrty, "generic")
-
-        list_inst = ListInstance.allocate(self, builder, listty, nitems)
-        data_ptrty = self.get_data_type(listty.dtype).as_pointer()
-        const_data_ptr = builder.bitcast(genptr, data_ptrty)
-        payload = list_inst._payload
-
-        # replace with constant mem
-        payload.data = builder.ptrtoint(const_data_ptr, payload.data.type)
-        list_inst.size = self.get_constant(types.intp, nitems)
-
-        return list_inst.value
-
     def make_constant_array(self, builder, aryty, arr):
         """
         Unlike the parent version.  This returns a a pointer in the constant

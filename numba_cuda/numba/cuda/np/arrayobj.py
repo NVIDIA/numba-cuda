@@ -3643,6 +3643,8 @@ def constant_array(context, builder, ty, pyval):
     """
     Create a constant array (mechanism is target-dependent).
     """
+    if isinstance(pyval, list):
+        pyval = np.asarray(pyval)
     return context.make_constant_array(builder, ty, pyval)
 
 
@@ -3654,14 +3656,6 @@ def constant_record(context, builder, ty, pyval):
     lty = ir.ArrayType(ir.IntType(8), pyval.nbytes)
     val = lty(bytearray(pyval.tostring()))
     return cgutils.alloca_once_value(builder, val)
-
-
-@lower_constant(types.List)
-def constant_list(context, builder, ty, pyval):
-    """
-    Create a constant list (mechanism is target-dependent).
-    """
-    return context.make_constant_list(builder, ty, pyval)
 
 
 @lower_constant(types.Bytes)
