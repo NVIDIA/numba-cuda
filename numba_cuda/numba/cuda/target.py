@@ -292,22 +292,26 @@ class CUDATargetContext(BaseContext):
             for i in iter(arr.tobytes(order="C"))
         ]
         constaryty = ir.ArrayType(ir.IntType(8), len(constvals))
-        constary = ir.Constant(constaryty, constvals)
+        constary = ir.Constant(
+            constaryty, constvals
+        )  # constant llvm value with the values
 
-        # Create constant memory data
+        # create a global variable
         addrspace = nvvm.ADDRSPACE_CONSTANT
         gv = cgutils.add_global_variable(
             lmod, constary.type, "_cudapy_clist", addrspace=addrspace
         )
         gv.linkage = "internal"
         gv.global_constant = True
-        gv.initializer = constary
+        gv.initializer = (
+            constary  # put the gobal variable initializer to the constant array
+        )
 
         lldtype = self.get_data_type(listty.dtype)
         align = self.get_abi_sizeof(lldtype)
         gv.align = 2 ** (align - 1).bit_length()
 
-        ptrty = ir.PointerType(ir.IntType(8))
+        ptrty = ir.PointerType(ir.IntType(8))  # an int8 pointer
         genptr = builder.addrspacecast(gv, ptrty, "generic")
 
         list_inst = ListInstance.allocate(self, builder, listty, nitems)

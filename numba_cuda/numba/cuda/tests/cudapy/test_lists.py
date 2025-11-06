@@ -23,7 +23,7 @@ class ListTest(CUDATestCase):
         config.CUDA_ENABLE_NRT = self.old_nrt_setting
         super().tearDown()
 
-    def test_list_roundtrip(self):
+    def test_list_const_roundtrip(self):
         lst = [1, 2, 3]
 
         @cuda.jit
