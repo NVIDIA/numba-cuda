@@ -24,6 +24,7 @@ from numba.cuda.testing import (
     CUDATestCase,
 )
 import math
+import cupy as cp
 
 
 def add(x, y):
@@ -500,8 +501,8 @@ class TestDispatcher(CUDATestCase):
         a = 5
         hx = np.arange(10, dtype=np.int32)
         hy = np.arange(10, dtype=np.int32) * 2
-        dx = cuda.to_device(hx)
-        dy = cuda.to_device(hy)
+        dx = cp.array(hx)
+        dy = cp.array(hy)
         dr = cuda.device_array_like(dx)
 
         r_ptr = dr.__cuda_array_interface__["data"][0]

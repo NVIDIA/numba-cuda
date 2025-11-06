@@ -13,12 +13,13 @@ from numba.cuda.dispatcher import CUDADispatcher
 from numba.cuda import config
 from numba.cuda.tests.support import TestCase
 from pathlib import Path
-
+import warnings
 from typing import Iterable, Union
 from io import StringIO
 import unittest
 import numpy as np
 from numba.cuda import HAS_NUMBA
+from numba.cuda.cudadrv.devicearray import DeprecatedDeviceArrayApiWarning
 
 if PYVERSION >= (3, 10):
     from filecheck.matcher import Matcher
@@ -183,6 +184,18 @@ class CUDATestCase(TestCase):
                 f"FileCheck failed:\n{matcher.stderr.getvalue()}\n\n"
                 + dump_instructions
             )
+
+
+class DeprecatedDeviceArrayApiTest(CUDATestCase):
+    def setUp(self):
+        warnings.filterwarnings(
+            "ignore", category=DeprecatedDeviceArrayApiWarning
+        )
+        super().setUp()
+
+    def tearDown(self):
+        warnings.resetwarnings()
+        super().tearDown()
 
 
 def skip_on_cudasim(reason):

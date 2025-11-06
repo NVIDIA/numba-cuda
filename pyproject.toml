@@ -57,6 +57,7 @@ test = [
     "filecheck",
     "ml_dtypes",
     "statistics",
+    "cupy"
 ]
 test-cu12 = [
     "nvidia-curand-cu12",

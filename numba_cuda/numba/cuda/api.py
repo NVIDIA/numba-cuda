@@ -13,6 +13,7 @@ import warnings
 from .cudadrv import devicearray, devices, driver
 from numba.cuda.core import config
 from numba.cuda.api_util import prepare_shape_strides_dtype
+from numba.cuda.cudadrv.devicearray import DeprecatedDeviceArrayApiWarning
 
 # NDarray device helper
 
@@ -135,7 +136,7 @@ def to_device(obj, stream=0, copy=True, to=None):
     """
     warnings.warn(
         "to_device is deprecated. Please prefer cupy for moving numpy arrays to the device.",
-        FutureWarning,
+        DeprecatedDeviceArrayApiWarning,
     )
     if to is None:
         to, new = devicearray.auto_device(
@@ -155,7 +156,7 @@ def device_array(shape, dtype=np.float64, strides=None, order="C", stream=0):
     """
     warnings.warn(
         "device_array is deprecated. Please prefer cupy for moving numpy arrays to the device.",
-        FutureWarning,
+        DeprecatedDeviceArrayApiWarning,
     )
     shape, strides, dtype = prepare_shape_strides_dtype(
         shape, strides, dtype, order
@@ -191,7 +192,7 @@ def managed_array(
     """
     warnings.warn(
         "managed_array is deprecated. Please prefer cupy for moving numpy arrays to the device.",
-        FutureWarning,
+        DeprecatedDeviceArrayApiWarning,
     )
     shape, strides, dtype = prepare_shape_strides_dtype(
         shape, strides, dtype, order
@@ -217,7 +218,7 @@ def pinned_array(shape, dtype=np.float64, strides=None, order="C"):
     """
     warnings.warn(
         "pinned_array is deprecated. Please prefer cupy for moving numpy arrays to the device.",
-        FutureWarning,
+        DeprecatedDeviceArrayApiWarning,
     )
     shape, strides, dtype = prepare_shape_strides_dtype(
         shape, strides, dtype, order
@@ -253,7 +254,7 @@ def mapped_array(
     """
     warnings.warn(
         "mapped_array is deprecated. Please prefer cupy for moving numpy arrays to the device.",
-        FutureWarning,
+        DeprecatedDeviceArrayApiWarning,
     )
     shape, strides, dtype = prepare_shape_strides_dtype(
         shape, strides, dtype, order

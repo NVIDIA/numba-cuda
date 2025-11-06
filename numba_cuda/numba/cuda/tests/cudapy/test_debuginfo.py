@@ -17,6 +17,7 @@ from numba.cuda.core.errors import NumbaDebugInfoWarning
 from numba.cuda.tests.support import ignore_internal_warnings
 import numpy as np
 import inspect
+import cupy as cp
 
 
 @skip_on_cudasim("Simulator does not produce debug dumps")
@@ -454,7 +455,7 @@ class TestCudaDebugInfo(CUDATestCase):
             results[0] = 1 if not bar else 0
 
         with captured_stdout() as out:
-            results = cuda.to_device(np.zeros(16, dtype=np.int64))
+            results = cp.zeros(16, dtype=np.int64)
             a_union_use_case[1, 1](100, results)
             print(results.copy_to_host())
         expected = "[1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0]"
@@ -638,7 +639,7 @@ class TestCudaDebugInfo(CUDATestCase):
 
         # check it compiles
         with override_config("DEBUGINFO_DEFAULT", 1):
-            result = cuda.device_array(1, dtype=np.float32)
+            result = cp.ones(1, dtype=np.float32)
             foo[1, 1](result, np.pi)
             result.copy_to_host()
 

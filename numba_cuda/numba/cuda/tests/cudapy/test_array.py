@@ -3,7 +3,7 @@
 
 import numpy as np
 
-from numba.cuda.testing import unittest, CUDATestCase
+from numba.cuda.testing import unittest, DeprecatedDeviceArrayApiTest
 from numba.cuda.testing import skip_on_cudasim, skip_unless_cudasim
 from numba import cuda
 from numba.cuda import config
@@ -44,7 +44,7 @@ def array_reshape(arr, newshape):
     return arr.reshape(newshape)
 
 
-class TestCudaArray(CUDATestCase):
+class TestCudaArray(DeprecatedDeviceArrayApiTest):
     def test_gpu_array_zero_length(self):
         x = np.arange(0)
         dx = cuda.to_device(x)

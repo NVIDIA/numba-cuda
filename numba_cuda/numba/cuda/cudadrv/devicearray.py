@@ -36,12 +36,16 @@ except AttributeError:
         return func
 
 
+class DeprecatedDeviceArrayApiWarning(FutureWarning):
+    pass
+
+
 def deprecated_array_api(func):
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
         warnings.warn(
             f"{func.__name__} api is deprecated. Please prefer cupy for array functions",
-            FutureWarning,
+            DeprecatedDeviceArrayApiWarning,
         )
         return func(*args, **kwargs)
 
@@ -869,7 +873,7 @@ def from_array_like(ary, stream=0, gpu_data=None):
 
     warnings.warn(
         "from_array_like is deprecated. Please prefer cupy for array functions",
-        FutureWarning,
+        DeprecatedDeviceArrayApiWarning,
     )
     return _from_array_like(ary, stream=stream, gpu_data=gpu_data)
 
@@ -1012,7 +1016,7 @@ class DeviceNDArray(_DeviceNDArray):
     """
     Deprecated public wrapper around the implementation class _DeviceNDArray.
 
-    Instantiating this class will emit a FutureWarning indicating that the
+    Instantiating this class will emit a DeprecatedDeviceArrayApiWarning indicating that the
     public name DeviceNDArray is deprecated. The implementation class is now
     named _DeviceNDArray; code should migrate to that name.
     """
@@ -1020,6 +1024,6 @@ class DeviceNDArray(_DeviceNDArray):
     def __init__(self, *args, **kwargs):
         warnings.warn(
             "DeviceNDArray api is deprecated. Please prefer cupy for array functions",
-            FutureWarning,
+            DeprecatedDeviceArrayApiWarning,
         )
         super().__init__(*args, **kwargs)

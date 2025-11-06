@@ -1,40 +1,23 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-2-Clause
 
-import warnings
 from itertools import product
 
 import numpy as np
 
 from numba import cuda
-from numba.cuda.testing import unittest, CUDATestCase, skip_on_cudasim
+from numba.cuda.testing import (
+    unittest,
+    DeprecatedDeviceArrayApiTest,
+    skip_on_cudasim,
+)
 from unittest.mock import patch
 
 
-def _to_device(ary, **kwargs):
-    """
-    Module-level helper that wraps cuda.to_device and suppresses the specific
-    FutureWarning:
-
-        "to_device is deprecated. Please prefer cupy for moving numpy arrays to the device."
-
-    The helper uses warnings.catch_warnings() and filterwarnings with a
-    message regex so we only silence that particular deprecation. Any kwargs
-    (e.g. stream=...) are forwarded to cuda.to_device.
-    """
-    with warnings.catch_warnings():
-        warnings.filterwarnings(
-            "ignore",
-            category=FutureWarning,
-            message=r".*to_device is deprecated.*",
-        )
-        return cuda.to_device(ary, **kwargs)
-
-
-class CudaArrayIndexing(CUDATestCase):
+class CudaArrayIndexing(DeprecatedDeviceArrayApiTest):
     def test_index_1d(self):
         arr = np.arange(10)
-        darr = _to_device(arr)
+        darr = cuda.to_device(arr)
         (x,) = arr.shape
         for i in range(-x, x):
             self.assertEqual(arr[i], darr[i])
@@ -45,7 +28,7 @@ class CudaArrayIndexing(CUDATestCase):
 
     def test_index_2d(self):
         arr = np.arange(3 * 4).reshape(3, 4)
-        darr = _to_device(arr)
+        darr = cuda.to_device(arr)
         x, y = arr.shape
         for i in range(-x, x):
             for j in range(-y, y):
@@ -61,7 +44,7 @@ class CudaArrayIndexing(CUDATestCase):
 
     def test_index_3d(self):
         arr = np.arange(3 * 4 * 5).reshape(3, 4, 5)
-        darr = _to_device(arr)
+        darr = cuda.to_device(arr)
         x, y, z = arr.shape
         for i in range(-x, x):
             for j in range(-y, y):
@@ -81,16 +64,16 @@ class CudaArrayIndexing(CUDATestCase):
             darr[0, 0, z]
 
 
-class CudaArrayStridedSlice(CUDATestCase):
+class CudaArrayStridedSlice(DeprecatedDeviceArrayApiTest):
     def test_strided_index_1d(self):
         arr = np.arange(10)
-        darr = _to_device(arr)
+        darr = cuda.to_device(arr)
         for i in range(arr.size):
             np.testing.assert_equal(arr[i::2], darr[i::2].copy_to_host())
 
     def test_strided_index_2d(self):
         arr = np.arange(6 * 7).reshape(6, 7)
-        darr = _to_device(arr)
+        darr = cuda.to_device(arr)
 
         for i in range(arr.shape[0]):
             for j in range(arr.shape[1]):
@@ -100,7 +83,7 @@ class CudaArrayStridedSlice(CUDATestCase):
 
     def test_strided_index_3d(self):
         arr = np.arange(6 * 7 * 8).reshape(6, 7, 8)
-        darr = _to_device(arr)
+        darr = cuda.to_device(arr)
 
         for i in range(arr.shape[0]):
             for j in range(arr.shape[1]):
@@ -111,10 +94,10 @@ class CudaArrayStridedSlice(CUDATestCase):
                     )
 
 
-class CudaArraySlicing(CUDATestCase):
+class CudaArraySlicing(DeprecatedDeviceArrayApiTest):
     def test_prefix_1d(self):
         arr = np.arange(5)
-        darr = _to_device(arr)
+        darr = cuda.to_device(arr)
         for i in range(arr.size):
             expect = arr[i:]
             got = darr[i:].copy_to_host()
@@ -122,7 +105,7 @@ class CudaArraySlicing(CUDATestCase):
 
     def test_prefix_2d(self):
         arr = np.arange(3**2).reshape(3, 3)
-        darr = _to_device(arr)
+        darr = cuda.to_device(arr)
         for i in range(arr.shape[0]):
             for j in range(arr.shape[1]):
                 expect = arr[i:, j:]
@@ -134,7 +117,7 @@ class CudaArraySlicing(CUDATestCase):
 
     def test_select_3d_first_two_dim(self):
         arr = np.arange(3 * 4 * 5).reshape(3, 4, 5)
-        darr = _to_device(arr)
+        darr = cuda.to_device(arr)
         # Select first dimension
         for i in range(arr.shape[0]):
             expect = arr[i]
@@ -155,7 +138,7 @@ class CudaArraySlicing(CUDATestCase):
 
     def test_select_f(self):
         a = np.arange(5 * 6 * 7).reshape(5, 6, 7, order="F")
-        da = _to_device(a)
+        da = cuda.to_device(a)
 
         for i in range(a.shape[0]):
             for j in range(a.shape[1]):
@@ -174,7 +157,7 @@ class CudaArraySlicing(CUDATestCase):
 
     def test_select_c(self):
         a = np.arange(5 * 6 * 7).reshape(5, 6, 7, order="C")
-        da = _to_device(a)
+        da = cuda.to_device(a)
 
         for i in range(a.shape[0]):
             for j in range(a.shape[1]):
@@ -194,18 +177,18 @@ class CudaArraySlicing(CUDATestCase):
     def test_prefix_select(self):
         arr = np.arange(5 * 7).reshape(5, 7, order="F")
 
-        darr = _to_device(arr)
+        darr = cuda.to_device(arr)
         self.assertTrue(np.all(darr[:1, 1].copy_to_host() == arr[:1, 1]))
 
     def test_negative_slicing_1d(self):
         arr = np.arange(10)
-        darr = _to_device(arr)
+        darr = cuda.to_device(arr)
         for i, j in product(range(-10, 10), repeat=2):
             np.testing.assert_array_equal(arr[i:j], darr[i:j].copy_to_host())
 
     def test_negative_slicing_2d(self):
         arr = np.arange(12).reshape(3, 4)
-        darr = _to_device(arr)
+        darr = cuda.to_device(arr)
         for x, y, w, s in product(range(-4, 4), repeat=4):
             np.testing.assert_array_equal(
                 arr[x:y, w:s], darr[x:y, w:s].copy_to_host()
@@ -213,7 +196,7 @@ class CudaArraySlicing(CUDATestCase):
 
     def test_empty_slice_1d(self):
         arr = np.arange(5)
-        darr = _to_device(arr)
+        darr = cuda.to_device(arr)
         for i in range(darr.shape[0]):
             np.testing.assert_array_equal(darr[i:i].copy_to_host(), arr[i:i])
         # empty slice of empty slice
@@ -226,7 +209,7 @@ class CudaArraySlicing(CUDATestCase):
 
     def test_empty_slice_2d(self):
         arr = np.arange(5 * 7).reshape(5, 7)
-        darr = _to_device(arr)
+        darr = cuda.to_device(arr)
         np.testing.assert_array_equal(darr[:0].copy_to_host(), arr[:0])
         np.testing.assert_array_equal(darr[3, :0].copy_to_host(), arr[3, :0])
         # empty slice of empty slice
@@ -238,7 +221,7 @@ class CudaArraySlicing(CUDATestCase):
         )
 
 
-class CudaArraySetting(CUDATestCase):
+class CudaArraySetting(DeprecatedDeviceArrayApiTest):
     """
     Most of the slicing logic is tested in the cases above, so these
     tests focus on the setting logic.
@@ -246,28 +229,28 @@ class CudaArraySetting(CUDATestCase):
 
     def test_scalar(self):
         arr = np.arange(5 * 7).reshape(5, 7)
-        darr = _to_device(arr)
+        darr = cuda.to_device(arr)
         arr[2, 2] = 500
         darr[2, 2] = 500
         np.testing.assert_array_equal(darr.copy_to_host(), arr)
 
     def test_rank(self):
         arr = np.arange(5 * 7).reshape(5, 7)
-        darr = _to_device(arr)
+        darr = cuda.to_device(arr)
         arr[2] = 500
         darr[2] = 500
         np.testing.assert_array_equal(darr.copy_to_host(), arr)
 
     def test_broadcast(self):
         arr = np.arange(5 * 7).reshape(5, 7)
-        darr = _to_device(arr)
+        darr = cuda.to_device(arr)
         arr[:, 2] = 500
         darr[:, 2] = 500
         np.testing.assert_array_equal(darr.copy_to_host(), arr)
 
     def test_array_assign_column(self):
         arr = np.arange(5 * 7).reshape(5, 7)
-        darr = _to_device(arr)
+        darr = cuda.to_device(arr)
         _400 = np.full(shape=7, fill_value=400)
         arr[2] = _400
         darr[2] = _400
@@ -275,7 +258,7 @@ class CudaArraySetting(CUDATestCase):
 
     def test_array_assign_row(self):
         arr = np.arange(5 * 7).reshape(5, 7)
-        darr = _to_device(arr)
+        darr = cuda.to_device(arr)
         _400 = np.full(shape=5, fill_value=400)
         arr[:, 2] = _400
         darr[:, 2] = _400
@@ -283,7 +266,7 @@ class CudaArraySetting(CUDATestCase):
 
     def test_array_assign_subarray(self):
         arr = np.arange(5 * 6 * 7).reshape(5, 6, 7)
-        darr = _to_device(arr)
+        darr = cuda.to_device(arr)
         _400 = np.full(shape=(6, 7), fill_value=400)
         arr[2] = _400
         darr[2] = _400
@@ -291,7 +274,7 @@ class CudaArraySetting(CUDATestCase):
 
     def test_array_assign_deep_subarray(self):
         arr = np.arange(5 * 6 * 7 * 8).reshape(5, 6, 7, 8)
-        darr = _to_device(arr)
+        darr = cuda.to_device(arr)
         _400 = np.full(shape=(5, 6, 8), fill_value=400)
         arr[:, :, 2] = _400
         darr[:, :, 2] = _400
@@ -299,7 +282,7 @@ class CudaArraySetting(CUDATestCase):
 
     def test_array_assign_all(self):
         arr = np.arange(5 * 7).reshape(5, 7)
-        darr = _to_device(arr)
+        darr = cuda.to_device(arr)
         _400 = np.full(shape=(5, 7), fill_value=400)
         arr[:] = _400
         darr[:] = _400
@@ -307,13 +290,13 @@ class CudaArraySetting(CUDATestCase):
 
     def test_strides(self):
         arr = np.ones(20)
-        darr = _to_device(arr)
+        darr = cuda.to_device(arr)
         arr[::2] = 500
         darr[::2] = 500
         np.testing.assert_array_equal(darr.copy_to_host(), arr)
 
     def test_incompatible_highdim(self):
-        darr = _to_device(np.arange(5 * 7))
+        darr = cuda.to_device(np.arange(5 * 7))
 
         with self.assertRaises(ValueError) as e:
             darr[:] = np.ones(shape=(1, 2, 3))
@@ -328,7 +311,7 @@ class CudaArraySetting(CUDATestCase):
         )
 
     def test_incompatible_shape(self):
-        darr = _to_device(np.arange(5))
+        darr = cuda.to_device(np.arange(5))
 
         with self.assertRaises(ValueError) as e:
             darr[:] = [1, 3]
@@ -346,7 +329,7 @@ class CudaArraySetting(CUDATestCase):
     @skip_on_cudasim("cudasim does not use streams and operates synchronously")
     def test_sync(self):
         # There should be a synchronization when no stream is supplied
-        darr = _to_device(np.arange(5))
+        darr = cuda.to_device(np.arange(5))
 
         with patch.object(
             cuda.cudadrv.driver.Stream, "synchronize", return_value=None
@@ -368,7 +351,7 @@ class CudaArraySetting(CUDATestCase):
         )
 
         for stream in streams:
-            darr = _to_device(np.arange(5), stream=stream)
+            darr = cuda.to_device(np.arange(5), stream=stream)
 
             with patch.object(
                 cuda.cudadrv.driver.Stream, "synchronize", return_value=None
@@ -390,7 +373,7 @@ class CudaArraySetting(CUDATestCase):
         )
 
         for stream in streams:
-            darr = _to_device(np.arange(5))
+            darr = cuda.to_device(np.arange(5))
 
             with patch.object(
                 cuda.cudadrv.driver.Stream, "synchronize", return_value=None
