@@ -18,6 +18,8 @@ from warnings import warn
 from numba.cuda.core import errors
 from numba.cuda import serialize, utils
 from numba import cuda
+from abc import ABC
+from typing import Any
 
 from numba.cuda.core.compiler_lock import global_compiler_lock
 from numba.cuda.typeconv.rules import default_type_manager
@@ -52,6 +54,7 @@ from numba.cuda.memory_management.nrt import rtsys, NRT_LIBRARY
 import numba.cuda.core.event as ev
 from numba.cuda.cext import _dispatcher
 
+_arg_handlers = {}
 
 cuda_fp16_math_funcs = [
     "hsin",
@@ -535,8 +538,13 @@ class _Kernel(serialize.ReduceMixin):
         """
 
         # map the arguments using any extension you've registered
-        for extension in reversed(self.extensions):
-            ty, val = extension.prepare_args(ty, val, stream=stream, retr=retr)
+        if self.extensions:
+            for extension in reversed(self.extensions):
+                ty, val = extension.prepare_args(
+                    ty, val, stream=stream, retr=retr
+                )
+        elif handler := _arg_handlers.get(type(val)):
+            ty, val = handler.prepare_args(ty, val, stream=stream, retr=retr)
 
         if isinstance(ty, types.Array):
             devary = wrap_arg(val).to_device(retr, stream)
@@ -613,7 +621,6 @@ class _Kernel(serialize.ReduceMixin):
                 )
             except NotImplementedError:
                 raise NotImplementedError(ty, val)
-
         else:
             raise NotImplementedError(ty, val)
 
@@ -2117,6 +2124,20 @@ class CUDADispatcher(serialize.ReduceMixin, _MemoMixin, _DispatcherBase):
         Compiled definitions are discarded.
         """
         return dict(py_func=self.py_func, targetoptions=self.targetoptions)
+
+
+class ArgHandlerBase(ABC):
+    @abstractmethod
+    def prepare_args(self, ty: Any, val: Any, **kwargs) -> Any:
+        raise NotImplementedError
+
+
+def register_arg_handler(handler, handled_types):
+    global _arg_handlers
+    if not isinstance(handler, ArgHandlerBase):
+        raise ValueError("handler must be an instance of ArgHandlerBase")
+    for ty in handled_types:
+        _arg_handlers[ty] = handler
 
 
 class LiftedCode(serialize.ReduceMixin, _MemoMixin, _DispatcherBase):
