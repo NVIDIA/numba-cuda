@@ -3656,6 +3656,14 @@ def constant_record(context, builder, ty, pyval):
     return cgutils.alloca_once_value(builder, val)
 
 
+@lower_constant(types.List)
+def constant_list(context, builder, ty, pyval):
+    """
+    Create a constant list (mechanism is target-dependent).
+    """
+    return context.make_constant_list(builder, ty, pyval)
+
+
 @lower_constant(types.Bytes)
 def constant_bytes(context, builder, ty, pyval):
     """
