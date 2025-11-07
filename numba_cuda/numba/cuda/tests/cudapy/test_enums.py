@@ -20,7 +20,7 @@ from numba.cuda.testing import (
     skip_on_cudasim,
     skip_on_standalone_numba_cuda,
 )
-from numba.cuda.tests.enum_usecases import (
+from numba.cuda.tests.cudapy.enum_usecases import (
     Color,
     Shape,
     Planet,
