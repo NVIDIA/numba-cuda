@@ -31,7 +31,7 @@ jobs:
       - test-wheels-windows
       - test-wheels
       - test-wheels-deps-wheels
-      - test-thirdparty
+      - test-thirdparty-cudf
       - build-docs
       - coverage-report
     secrets: inherit
@@ -127,14 +127,14 @@ jobs:
       script: "ci/test_wheel_deps_wheels.sh"
       matrix: ${{ needs.compute-matrix.outputs.TEST_MATRIX }}
       matrix_filter: map(select(.ARCH == "amd64" and (.CUDA_VER | split(".") | .[0] | tonumber >= 12))) | group_by(.CUDA_VER|split(".")|map(tonumber)|.[0]) | map(max_by([(.PY_VER|split(".")|map(tonumber)), (.CUDA_VER|split(".")|map(tonumber))]))
-  test-thirdparty:
+  test-thirdparty-cudf:
     needs:
       - build-wheels
       - compute-matrix
     uses: ./.github/workflows/wheels-test.yaml
     with:
       build_type: pull-request
-      script: "ci/test_thirdparty.sh"
+      script: "ci/test_thirdparty_cudf.sh"
       matrix: ${{ needs.compute-matrix.outputs.TEST_MATRIX }}
       # TODO: Enable for CUDA 13 when a supporting version of cuDF is available
       matrix_filter: map(select(.ARCH == "amd64" and (.CUDA_VER | split(".") | .[0] | tonumber == 12))) | group_by(.CUDA_VER|split(".")|map(tonumber)|.[0]) | map(max_by([(.PY_VER|split(".")|map(tonumber)), (.CUDA_VER|split(".")|map(tonumber))]))
