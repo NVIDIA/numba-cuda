@@ -4,6 +4,17 @@
 # Re export
 import sys
 from numba.cuda import cg
+from numba.cuda.cache_hints import (
+    ldca,
+    ldcg,
+    ldcs,
+    ldlu,
+    ldcv,
+    stcg,
+    stcs,
+    stwb,
+    stwt,
+)
 from .stubs import (
     threadIdx,
     blockIdx,

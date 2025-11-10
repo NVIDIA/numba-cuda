@@ -75,7 +75,7 @@ def _validate_arguments(instruction, array, index):
             msg = f"Expected {array.ndim} indices, got {index.count}"
             raise NumbaTypeError(msg)
 
-        if all([isinstance(t, types.Integer) for t in index.dtype]):
+        if all(isinstance(t, types.Integer) for t in index.dtype):
             valid_index = True
 
     if not valid_index:
