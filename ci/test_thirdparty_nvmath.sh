@@ -6,7 +6,9 @@ set -euo pipefail
 
 CUDA_VER_MAJOR_MINOR=${CUDA_VER%.*}
 
-NVMATH_PYTHON_VERSION="0.6.*"
+NVMATH_PYTHON_VERSION="0.6.0"
+# The commit on Github corresponding to 0.6.0
+NVMATH_PYTHON_SHA="6bddfa71c39c07804127adeb23f5b0d2168ae38c"
 
 rapids-logger "Install nvmath-python"
 
@@ -27,13 +29,13 @@ python -m pip install \
 
 
 rapids-logger "Shallow clone nvmath-python repository"
-git clone --single-branch --branch 'release-0.6.x' https://github.com/NVIDIA/nvmath-python.git
+git clone https://github.com/NVIDIA/nvmath-python.git
+pushd nvmath-python
+git checkout ${NVMATH_PYTHON_SHA}
 
 rapids-logger "Install nvmath-python test dependencies"
+pip install -r requirements/pip/tests.txt
 
-pip install nvmath-python/requirements/pip/tests.txt
-
-pushd nvmath-python/tests
 
 rapids-logger "Check GPU usage"
 nvidia-smi
@@ -42,8 +44,10 @@ rapids-logger "Show Numba system info"
 python -m numba --sysinfo
 
 rapids-logger "Run nvmath-python device tests"
+pushd tests
 # Required for nvmath-python to locate pip-install MathDx
 export MATHDX_HOME=${CONDA_PREFIX}/lib/python3.13/site-packages/nvidia/mathdx
 python -m pytest nvmath_tests/device
 
+popd
 popd
