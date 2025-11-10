@@ -46,7 +46,8 @@ python -m numba --sysinfo
 rapids-logger "Run nvmath-python device tests"
 pushd tests
 # Required for nvmath-python to locate pip-install MathDx
-export MATHDX_HOME=${CONDA_PREFIX}/lib/python3.13/site-packages/nvidia/mathdx
+export SYS_PREFIX=`python -c "import sys; print(sys.prefix)`
+export MATHDX_HOME=${SYS_PREFIX}/lib/python3.13/site-packages/nvidia/mathdx
 python -m pytest nvmath_tests/device
 
 popd
