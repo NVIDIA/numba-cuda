@@ -76,30 +76,89 @@ pytest-benchmark = ">=5.1"
 ml_dtypes = "*"
 filecheck = "*"
 
+[feature.py310.dependencies]
+python = "3.10.*"
+
+[feature.py311.dependencies]
+python = "3.11.*"
+
+[feature.py312.dependencies]
+python = "3.12.*"
+
+[feature.py313.dependencies]
+python = "3.13.*"
+
+[feature.docs.dependencies]
+make = "*"
+psutil = ">=7.1.3"
+sphinx = ">=8.2.3"
+sphinx-rtd-theme = ">=3.0.2"
+numpydoc = ">=1.9.0"
+
+[feature.docs.pypi-dependencies]
+nvidia-sphinx-theme = "*"
+
 [environments]
 # CUDA 12
-cu-12-0 = { features = [
+cu-12-0-py310 = { features = [
     "cu-12-0",
     "test",
     "cu",
     "cu-12",
-], solve-group = "cu-12-0" }
-cu-12-2 = { features = [
+    "py310",
+], solve-group = "cu-12-0-py310" }
+cu-12-0-py311 = { features = [
+    "cu-12-0",
+    "test",
+    "cu",
+    "cu-12",
+    "py311",
+], solve-group = "cu-12-0-py311" }
+cu-12-2-py311 = { features = [
     "cu-12-2",
     "test",
     "cu",
     "cu-12",
     "nvvm",
-], solve-group = "cu-12-2" }
-cu-12-8 = { features = [
+    "py311",
+], solve-group = "cu-12-2-py311" }
+cu-12-8-py310 = { features = [
     "cu-12-8",
     "test",
     "cu",
     "cu-12",
     "cu-rt",
     "nvvm",
-], solve-group = "cu-12-8" }
-cu-12-9 = { features = [
+    "py310",
+], solve-group = "cu-12-8-py310" }
+cu-12-8-py311 = { features = [
+    "cu-12-8",
+    "test",
+    "cu",
+    "cu-12",
+    "cu-rt",
+    "nvvm",
+    "py311",
+], solve-group = "cu-12-8-py311" }
+cu-12-8-py312 = { features = [
+    "cu-12-8",
+    "test",
+    "cu",
+    "cu-12",
+    "cu-rt",
+    "nvvm",
+    "py312",
+], solve-group = "cu-12-8-py312" }
+cu-12-8-py313 = { features = [
+    "cu-12-8",
+    "test",
+    "cu",
+    "cu-12",
+    "cu-rt",
+    "nvvm",
+    "py313",
+], solve-group = "cu-12-8-py313" }
+cu-12-9-py312 = { features = [
     "cu-12-9",
     "test",
     "bench",
@@ -107,16 +166,29 @@ cu-12-9 = { features = [
     "cu-12",
     "cu-rt",
     "nvvm",
-], solve-group = "cu-12-9" }
+    "py312",
+], solve-group = "cu-12-9-py312" }
 # CUDA 13
-cu-13-0 = { features = [
+cu-13-0-py312 = { features = [
     "cu-13-0",
     "test",
     "cu",
     "cu-13",
     "cu-rt",
     "nvvm",
-], solve-group = "cu-13-0" }
+    "py312",
+], solve-group = "cu-13-0-py312" }
+cu-13-0-py313 = { features = [
+    "cu-13-0",
+    "test",
+    "cu",
+    "cu-13",
+    "cu-rt",
+    "nvvm",
+    "py313",
+], solve-group = "cu-13-0-py313" }
+
+docs = { features = ["docs"], solve-group = "docs" }
 
 [target.linux.tasks]
 build-tests = { cmd = [
@@ -154,6 +226,9 @@ benchcmp = { cmd = [
     "--benchmark-group-by=name",
     "--benchmark-compare",
 ] }
+
+[target.linux.tasks.build-docs]
+cmd = ["make", "-C", "$PIXI_PROJECT_ROOT/docs", "html"]
 
 [target.linux.tasks.test]
 cmd = ["pytest", "$PIXI_PROJECT_ROOT/testing"]

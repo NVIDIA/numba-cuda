@@ -19,8 +19,8 @@ DEPENDENCIES=(
 )
 
 # Constrain oldest supported dependencies for testing
-if [ "${RAPIDS_DEPENDENCIES:-}" = "oldest" ]; then
-    DEPENDENCIES+=("numba==0.60.0")
+if [ "${NUMBA_VERSION:-*}" != "*" ]; then
+    DEPENDENCIES+=("numba==${NUMBA_VERSION}")
 fi
 
 python -m pip install "${DEPENDENCIES[@]}"

@@ -87,12 +87,6 @@ jobs:
           repository: ${{ inputs.repo }}
           ref: ${{ inputs.sha }}
           fetch-depth: 0
-      - uses: actions/download-artifact@v4
-        with:
-          name: conda-repo-py${{ matrix.PY_VER }}-${{ matrix.ARCH }}
-          path: conda-repo
-      - name: Display structure of downloaded files
-        run: ls -R
       - name: Standardize repository information
         run: |
           echo "RAPIDS_REPOSITORY=${{ inputs.repo || github.repository }}" >> "${GITHUB_ENV}"
@@ -104,12 +98,15 @@ jobs:
       - name: Compute pixi environment name
         run: |
           set -euo pipefail
-          PIXI_ENV="cu-$(cut -d. -f1-2 <<< "${{ matrix.CUDA_VER }}" | tr . -)"
+          CUDA_VER_PART="$(cut -d. -f1-2 <<< "${{ matrix.CUDA_VER }}" | tr . -)"
+          PY_VER_PART="py$(tr -d . <<< "${{ matrix.PY_VER }}")"
+          PIXI_ENV="cu-${CUDA_VER_PART}-${PY_VER_PART}"
           echo "PIXI_ENV=${PIXI_ENV}" >> "${GITHUB_ENV}"
       - name: Setup pixi
         uses: prefix-dev/setup-pixi@fef5c9568ca6c4ff7707bf840ab0692ba3f08293
         with:
           environments: ${{ env.PIXI_ENV }}
+          cache: false
       - name: Python tests
         run: ${{ inputs.script }}
         env:
