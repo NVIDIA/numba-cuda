@@ -35,6 +35,7 @@ git checkout ${NVMATH_PYTHON_SHA}
 
 rapids-logger "Install nvmath-python test dependencies"
 pip install -r requirements/pip/tests.txt
+pip install -r requirements/pip/tests-dx.txt
 pip install nvidia-cutlass
 
 rapids-logger "Check GPU usage"
