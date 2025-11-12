@@ -9,7 +9,7 @@ AWKWARD_VERSION="2.8.10"
 
 rapids-logger "Install awkward and related libraries"
 
-pip install awkward==${AWKWARD_VERSION} cupy pyarrow pandas nox
+pip install awkward==${AWKWARD_VERSION} cupy-cuda12x pyarrow pandas nox
 
 rapids-logger "Install wheel with test dependencies"
 package=$(realpath wheel/numba_cuda*.whl)
