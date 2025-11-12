@@ -3,9 +3,9 @@
 
 from llvmlite import ir
 from numba import types
-from numba.core import cgutils
-from numba.core.extending import intrinsic, overload
-from numba.core.errors import NumbaTypeError
+from numba.cuda import cgutils
+from numba.cuda.extending import intrinsic, overload
+from numba.cuda.core.errors import NumbaTypeError
 from numba.cuda.api_util import normalize_indices
 
 # Docs references:
@@ -82,12 +82,31 @@ def _validate_arguments(instruction, array, index):
         raise NumbaTypeError(f"{index} is not a valid index")
 
 
+def _validate_bitwidth(instruction, array):
+    dtype = array.dtype
+
+    if not isinstance(dtype, (types.Integer, types.Float)):
+        msg = (
+            f"{instruction} requires array of integer or float type, "
+            f"got {dtype}"
+        )
+        raise NumbaTypeError(msg)
+
+    bitwidth = dtype.bitwidth
+    if bitwidth not in CONSTRAINT_MAP:
+        valid_widths = sorted(CONSTRAINT_MAP.keys())
+        msg = (
+            f"{instruction} requires array dtype with bitwidth "
+            f"in {valid_widths}, got bitwidth {bitwidth}"
+        )
+        raise NumbaTypeError(msg)
+
+
 def ld_cache_operator(operator):
     @intrinsic
     def impl(typingctx, array, index):
         _validate_arguments(f"ld{operator}", array, index)
-
-        # Need to validate bitwidth
+        _validate_bitwidth(f"ld{operator}", array)
 
         signature = array.dtype(array, index)
 
@@ -141,8 +160,7 @@ def st_cache_operator(operator):
     @intrinsic
     def impl(typingctx, array, index, value):
         _validate_arguments(f"st{operator}", array, index)
-
-        # Need to validate bitwidth
+        _validate_bitwidth(f"st{operator}", array)
 
         signature = types.void(array, index, value)
 
