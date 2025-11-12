@@ -156,6 +156,20 @@ class TestCacheHints(CUDATestCase):
         with self.assertRaisesRegex(errors.TypingError, msg):
             cuda.compile_ptx(too_short_indices_tuple, sig_2d)
 
+    def test_bad_type(self):
+        """Test that load operators reject arrays with unsupported types."""
+
+        def load_complex(r, x):
+            r[0] = cuda.ldcs(x, 0)
+
+        # complex types are not supported (not integer or float)
+        numba_type = typeof(np.zeros(1, dtype=np.complex64))
+        sig = (numba_type, numba_type)
+
+        msg = "ldcs requires array of integer or float type"
+        with self.assertRaisesRegex(errors.TypingError, msg):
+            cuda.compile_ptx(load_complex, sig)
+
 
 if __name__ == "__main__":
     unittest.main()
