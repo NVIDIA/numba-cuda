@@ -45,8 +45,13 @@ class TestCacheHints(CUDATestCase):
                 for i in range(len(r)):
                     r[i] = operator(x, i)
 
+            @cuda.jit
+            def f_ptr(ptr, r, n):
+                for i in range(n):
+                    r[i] = operator(ptr, i)
+
             for ty in tested_types:
-                with self.subTest(operator=operator, ty=ty):
+                with self.subTest(operator=operator, ty=ty, input_type="array"):
                     x = np.arange(5).astype(ty)
                     r = np.zeros_like(x)
 
@@ -61,6 +66,20 @@ class TestCacheHints(CUDATestCase):
 
                     self.assertIn(f"ld.global.{modifier}.b{bitwidth}", ptx)
 
+                with self.subTest(
+                    operator=operator, ty=ty, input_type="cpointer"
+                ):
+                    x = np.arange(5).astype(ty)
+
+                    numba_type = typeof(x)
+                    ptr_type = types.CPointer(numba_type.dtype)
+                    sig = (ptr_type, numba_type, types.intp)
+
+                    ptx, _ = cuda.compile_ptx(f_ptr, sig)
+
+                    bitwidth = numba_type.dtype.bitwidth
+                    self.assertIn(f"ld.global.{modifier}.b{bitwidth}", ptx)
+
     def test_stores(self):
         for operator, modifier in store_operators:
 
@@ -68,6 +87,11 @@ class TestCacheHints(CUDATestCase):
             def f(r, x):
                 for i in range(len(r)):
                     operator(r, i, x[i])
+
+            @cuda.jit
+            def f_ptr(ptr, values, n):
+                for i in range(n):
+                    operator(ptr, i, values[i])
 
             for ty in tested_types:
                 with self.subTest(operator=operator, ty=ty):
@@ -83,6 +107,20 @@ class TestCacheHints(CUDATestCase):
                     sig = (numba_type, numba_type)
                     ptx, _ = cuda.compile_ptx(f, sig)
 
+                    self.assertIn(f"st.global.{modifier}.b{bitwidth}", ptx)
+
+                with self.subTest(
+                    operator=operator, ty=ty, input_type="cpointer"
+                ):
+                    x = np.zeros(5, dtype=ty)
+                    numba_type = typeof(x)
+                    ptr_type = types.CPointer(numba_type.dtype)
+                    sig = (ptr_type, numba_type, types.intp)
+
+                    ptx, _ = cuda.compile_ptx(f_ptr, sig)
+
+                    numba_type = typeof(x)
+                    bitwidth = numba_type.dtype.bitwidth
                     self.assertIn(f"st.global.{modifier}.b{bitwidth}", ptx)
 
     def test_bad_indices(self):
