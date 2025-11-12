@@ -157,8 +157,6 @@ class TestCacheHints(CUDATestCase):
             cuda.compile_ptx(too_short_indices_tuple, sig_2d)
 
     def test_unsupported_dtypes(self):
-        """Test that load operators reject arrays with unsupported types."""
-
         def load_complex(r, x):
             r[0] = cuda.ldcs(x, 0)
 
