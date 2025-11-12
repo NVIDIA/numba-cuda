@@ -58,19 +58,24 @@ CONSTRAINT_MAP = {1: "b", 8: "r", 16: "h", 32: "r", 64: "l", 128: "q"}
 
 
 def _validate_arguments(instruction, array, index):
-    if not isinstance(array, types.Array):
-        msg = f"{instruction} operates on arrays. Got type {array}"
+    is_array = isinstance(array, types.Array)
+    is_pointer = isinstance(array, types.CPointer)
+    if not (is_array or is_pointer):
+        msg = f"{instruction} operates on arrays or pointers. Got type {array}"
         raise NumbaTypeError(msg)
 
     valid_index = False
 
     if isinstance(index, types.Integer):
-        if array.ndim != 1:
+        if is_array and array.ndim != 1:
+            # for pointers, any integer index is valid
             msg = f"Expected {array.ndim} indices, got a scalar"
             raise NumbaTypeError(msg)
         valid_index = True
 
     if isinstance(index, types.UniTuple):
+        if is_pointer:
+            msg = f"Pointers only support scalar indexing, got tuple of {index.count}"
         if index.count != array.ndim:
             msg = f"Expected {array.ndim} indices, got {index.count}"
             raise NumbaTypeError(msg)
@@ -105,23 +110,28 @@ def _validate_bitwidth(instruction, array):
 def _get_element_pointer(
     context, builder, index_type, indices, array_type, array
 ):
-    index_type, indices = normalize_indices(
-        context,
-        builder,
-        index_type,
-        indices,
-        array_type,
-        array_type.dtype,
-    )
-    array_struct = context.make_array(array_type)(context, builder, value=array)
-    return cgutils.get_item_pointer(
-        context,
-        builder,
-        array_type,
-        array_struct,
-        indices,
-        wraparound=True,
-    )
+    if isinstance(array_type, types.CPointer):
+        return builder.gep(array, [indices])
+    else:
+        index_type, indices = normalize_indices(
+            context,
+            builder,
+            index_type,
+            indices,
+            array_type,
+            array_type.dtype,
+        )
+        array_struct = context.make_array(array_type)(
+            context, builder, value=array
+        )
+        return cgutils.get_item_pointer(
+            context,
+            builder,
+            array_type,
+            array_struct,
+            indices,
+            wraparound=True,
+        )
 
 
 def ld_cache_operator(operator):
