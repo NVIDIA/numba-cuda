@@ -37,6 +37,6 @@ rapids-logger "Show Numba system info"
 python -m numba --sysinfo
 
 rapids-logger "Run Awkward CUDA tests"
-python -m pytest -v -n auto tests-cuda tests-cuda-kernels tests-cuda-kernels-explicit
+python -m pytest -v -n auto --benchmark-disable tests-cuda tests-cuda-kernels tests-cuda-kernels-explicit
 
 popd
