@@ -23,7 +23,7 @@ python -m pip install \
 
 
 rapids-logger "Clone awkward repository"
-git clone --recursive https://github.com/sckit-hep/awkward.git
+git clone --recursive https://github.com/scikit-hep/awkward.git
 pushd awkward
 git checkout v${AWKWARD_VERSION}
 
