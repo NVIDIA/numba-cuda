@@ -4,14 +4,6 @@
 
 set -euo pipefail
 
-DISTRO=`cat /etc/os-release | grep "^ID=" | awk 'BEGIN {FS="="} { print $2 }'`
-
-if [ "$DISTRO" = "ubuntu" ]; then
-  apt-get update
-  apt remove --purge `dpkg --get-selections | grep cuda-nvvm | awk '{print $1}'` -y
-  apt remove --purge `dpkg --get-selections | grep cuda-nvrtc | awk '{print $1}'` -y
-fi
-
 # Constrain oldest supported dependencies for testing
 if [ "${NUMBA_VERSION:-*}" != "*" ]; then
     # add to the default environment's dependencies
