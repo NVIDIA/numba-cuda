@@ -11,7 +11,7 @@ import llvmlite.binding as ll
 
 from numba.cuda.core.imputils import Registry
 from numba.cuda.typing.npydecl import parse_dtype
-from numba.cuda.datamodel import models
+from numba.cuda.datamodel.models import StructModel
 from numba.cuda import types
 from numba.cuda import cgutils
 from numba.cuda.np import ufunc_db
@@ -20,6 +20,10 @@ from .cudadrv import nvvm
 from numba import cuda
 from numba.cuda import nvvmutils, stubs
 from numba.cuda.types.ext_types import dim3, CUDADispatcher
+
+if cuda.HAS_NUMBA:
+    from numba.core.datamodel.models import StructModel as CoreStructModel
+    from numba.core import types as core_types
 
 registry = Registry("cudaimpl")
 lower = registry.lower
@@ -880,13 +884,19 @@ def _generic_array(
         raise ValueError("array length <= 0")
 
     # Check that we support the requested dtype
+    number_domain = types.number_domain
+    struct_model_types = (StructModel,)
+    if cuda.HAS_NUMBA:
+        number_domain |= core_types.number_domain
+        struct_model_types = (StructModel, CoreStructModel)
+
     data_model = context.data_model_manager[dtype]
     other_supported_type = (
         isinstance(dtype, (types.Record, types.Boolean))
-        or isinstance(data_model, models.StructModel)
+        or isinstance(data_model, struct_model_types)
         or dtype == types.float16
     )
-    if dtype not in types.number_domain and not other_supported_type:
+    if dtype not in number_domain and not other_supported_type:
         raise TypeError("unsupported type: %s" % dtype)
 
     lldtype = context.get_data_type(dtype)
