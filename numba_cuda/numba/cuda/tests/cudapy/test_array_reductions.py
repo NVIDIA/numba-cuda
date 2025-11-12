@@ -419,7 +419,7 @@ class TestArrayReductions(MemoryLeakMixin, NRTEnablingCUDATestCase):
         for a in array_variations(np.arange(64) + 10.5):
             check_even(a)
 
-    def check_percentile(self, pyfunc, q_upper_bound):
+    def check_percentile_and_quantile(self, pyfunc, q_upper_bound):
         def check_array_q(a, q, abs_tol=1e-12):
             @cuda.jit
             def kernel(out):
@@ -482,15 +482,17 @@ class TestArrayReductions(MemoryLeakMixin, NRTEnablingCUDATestCase):
 
     def test_percentile_basic(self):
         pyfunc = np.percentile
-        self.check_percentile(pyfunc, q_upper_bound=100)
-        self.check_percentile_edge_cases(pyfunc, q_upper_bound=100)
+        self.check_percentile_and_quantile(pyfunc, q_upper_bound=100)
+        self.check_percentile_and_quantile_edge_cases(pyfunc, q_upper_bound=100)
 
     @unittest.expectedFailure
     def test_percentile_exceptions(self):
         pyfunc = np.percentile
-        self.check_percentile_exceptions(pyfunc)
+        self.check_percentile_and_quantile_exceptions(pyfunc)
 
-    def check_percentile_edge_cases(self, pyfunc, q_upper_bound=100):
+    def check_percentile_and_quantile_edge_cases(
+        self, pyfunc, q_upper_bound=100
+    ):
         # intended to be a faitful reproduction of the upstream numba test
         # packing all the test cases into a single kernel for perf
         def _array_combinations(elements):
@@ -545,7 +547,7 @@ class TestArrayReductions(MemoryLeakMixin, NRTEnablingCUDATestCase):
                     got[i][finite], expected[finite], abs_tol=1e-14
                 )
 
-    def check_percentile_exceptions(self, pyfunc):
+    def check_percentile_and_quantile_exceptions(self, pyfunc):
         def check_scalar_q_err(a, q, abs_tol=1e-12):
             @cuda.jit
             def kernel(out):
@@ -614,17 +616,17 @@ class TestArrayReductions(MemoryLeakMixin, NRTEnablingCUDATestCase):
 
     def test_quantile_basic(self):
         pyfunc = np.quantile
-        self.check_percentile(pyfunc, q_upper_bound=1)
-        self.check_percentile_edge_cases(pyfunc, q_upper_bound=1)
+        self.check_percentile_and_quantile(pyfunc, q_upper_bound=1)
+        self.check_percentile_and_quantile_edge_cases(pyfunc, q_upper_bound=1)
 
     def test_nanpercentile_basic(self):
         pyfunc = np.nanpercentile
-        self.check_percentile(pyfunc, q_upper_bound=100)
-        self.check_percentile_edge_cases(pyfunc, q_upper_bound=100)
-        self.check_percentile_exceptions(pyfunc)
+        self.check_percentile_and_quantile(pyfunc, q_upper_bound=100)
+        self.check_percentile_and_quantile_edge_cases(pyfunc, q_upper_bound=100)
+        self.check_percentile_and_quantile_exceptions(pyfunc)
 
     def test_nanquantile_basic(self):
         pyfunc = np.nanquantile
-        self.check_percentile(pyfunc, q_upper_bound=1)
-        self.check_percentile_edge_cases(pyfunc, q_upper_bound=1)
+        self.check_percentile_and_quantile(pyfunc, q_upper_bound=1)
+        self.check_percentile_and_quantile_edge_cases(pyfunc, q_upper_bound=1)
         self.check_quantile_exceptions(pyfunc)
