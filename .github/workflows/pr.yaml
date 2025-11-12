@@ -33,6 +33,7 @@ jobs:
       - test-wheels-deps-wheels
       - test-thirdparty-cudf
       - test-thirdparty-nvmath
+      - test-thirdparty-awkward
       - build-docs
       - coverage-report
     secrets: inherit
@@ -150,6 +151,18 @@ jobs:
       matrix: ${{ needs.compute-matrix.outputs.TEST_MATRIX }}
       # TODO: Enable for CUDA 13 when a supporting version of nvmath-python is available
       matrix_filter: map(select(.ARCH == "amd64" and (.CUDA_VER | split(".") | .[0] | tonumber == 12))) | group_by(.CUDA_VER|split(".")|map(tonumber)|.[0]) | map(max_by([(.PY_VER|split(".")|map(tonumber)), (.CUDA_VER|split(".")|map(tonumber))]))
+  test-thirdparty-awkward:
+    needs:
+      - build-wheels
+      - compute-matrix
+    uses: ./.github/workflows/wheels-test.yaml
+    with:
+      build_type: pull-request
+      script: "ci/test_thirdparty_awkward.sh"
+      matrix: ${{ needs.compute-matrix.outputs.TEST_MATRIX }}
+      # TODO: Enable for CUDA 13 in future
+      matrix_filter: map(select(.ARCH == "amd64" and (.CUDA_VER | split(".") | .[0] | tonumber == 12))) | group_by(.CUDA_VER|split(".")|map(tonumber)|.[0]) | map(max_by([(.PY_VER|split(".")|map(tonumber)), (.CUDA_VER|split(".")|map(tonumber))]))
+
   build-docs:
     uses: ./.github/workflows/docs-build.yaml
   coverage-report:
