@@ -102,6 +102,28 @@ def _validate_bitwidth(instruction, array):
         raise NumbaTypeError(msg)
 
 
+def _get_element_pointer(
+    context, builder, index_type, indices, array_type, array
+):
+    index_type, indices = normalize_indices(
+        context,
+        builder,
+        index_type,
+        indices,
+        array_type,
+        array_type.dtype,
+    )
+    array_struct = context.make_array(array_type)(context, builder, value=array)
+    return cgutils.get_item_pointer(
+        context,
+        builder,
+        array_type,
+        array_struct,
+        indices,
+        wraparound=True,
+    )
+
+
 def ld_cache_operator(operator):
     @intrinsic
     def impl(typingctx, array, index):
@@ -118,24 +140,8 @@ def ld_cache_operator(operator):
 
             array, indices = args
 
-            index_type, indices = normalize_indices(
-                context,
-                builder,
-                index_type,
-                indices,
-                array_type,
-                array_type.dtype,
-            )
-            array_struct = context.make_array(array_type)(
-                context, builder, value=array
-            )
-            ptr = cgutils.get_item_pointer(
-                context,
-                builder,
-                array_type,
-                array_struct,
-                indices,
-                wraparound=True,
+            ptr = _get_element_pointer(
+                context, builder, index_type, indices, array_type, array
             )
 
             bitwidth = array_type.dtype.bitwidth
@@ -172,24 +178,8 @@ def st_cache_operator(operator):
 
             array, indices, value = args
 
-            index_type, indices = normalize_indices(
-                context,
-                builder,
-                index_type,
-                indices,
-                array_type,
-                array_type.dtype,
-            )
-            array_struct = context.make_array(array_type)(
-                context, builder, value=array
-            )
-            ptr = cgutils.get_item_pointer(
-                context,
-                builder,
-                array_type,
-                array_struct,
-                indices,
-                wraparound=True,
+            ptr = _get_element_pointer(
+                context, builder, index_type, indices, array_type, array
             )
 
             casted_value = context.cast(
