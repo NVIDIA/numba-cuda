@@ -1,6 +1,7 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-2-Clause
 
+import pytest
 import numpy as np
 from numba import cuda
 from numba.cuda.cudadrv import driver
@@ -14,7 +15,10 @@ from numba.cuda.tests.support import (
     override_config,
     run_in_subprocess,
 )
-from numba.cuda.core.errors import NumbaPerformanceWarning
+from numba.cuda.core.errors import (
+    NumbaPerformanceWarning,
+    NumbaInvalidConfigWarning,
+)
 from numba.cuda.core import config
 import warnings
 
@@ -47,12 +51,11 @@ kernel[1,1]()
             pass
 
         with override_config("CUDA_LOW_OCCUPANCY_WARNINGS", 1):
-            with warnings.catch_warnings(record=True) as w:
-                kernel[1, 1]()
-
-        self.assertEqual(w[0].category, NumbaPerformanceWarning)
-        self.assertIn("Grid size", str(w[0].message))
-        self.assertIn("low occupancy", str(w[0].message))
+            with pytest.warns(
+                NumbaPerformanceWarning, match="Grid size .+ low occupancy"
+            ):
+                func = kernel[1, 1]
+        func()
 
     def test_efficient_launch_configuration(self):
         @cuda.jit
@@ -72,15 +75,13 @@ kernel[1,1]()
 
         N = 10
         arr_f32 = np.zeros(N, dtype=np.float32)
+        func = foo[1, N]
         with override_config("CUDA_WARN_ON_IMPLICIT_COPY", 1):
-            with warnings.catch_warnings(record=True) as w:
-                foo[1, N](arr_f32, N)
-
-        self.assertEqual(w[0].category, NumbaPerformanceWarning)
-        self.assertIn(
-            "Host array used in CUDA kernel will incur", str(w[0].message)
-        )
-        self.assertIn("copy overhead", str(w[0].message))
+            with pytest.warns(
+                NumbaPerformanceWarning,
+                match="Host array used in CUDA kernel will incur.+copy overhead",
+            ):
+                func(arr_f32, N)
 
     def test_pinned_warn_on_host_array(self):
         @cuda.jit
@@ -90,15 +91,13 @@ kernel[1,1]()
         N = 10
         ary = cuda.pinned_array(N, dtype=np.float32)
 
+        func = foo[1, N]
         with override_config("CUDA_WARN_ON_IMPLICIT_COPY", 1):
-            with warnings.catch_warnings(record=True) as w:
-                foo[1, N](ary, N)
-
-        self.assertEqual(w[0].category, NumbaPerformanceWarning)
-        self.assertIn(
-            "Host array used in CUDA kernel will incur", str(w[0].message)
-        )
-        self.assertIn("copy overhead", str(w[0].message))
+            with pytest.warns(
+                NumbaPerformanceWarning,
+                match="Host array used in CUDA kernel will incur.+copy overhead",
+            ):
+                func(ary, N)
 
     def test_nowarn_on_mapped_array(self):
         @cuda.jit
@@ -144,18 +143,16 @@ kernel[1,1]()
         self.assertEqual(len(w), 0)
 
     def test_warn_on_debug_and_opt(self):
-        with warnings.catch_warnings(record=True) as w:
+        with pytest.warns(
+            NumbaInvalidConfigWarning, match="not supported by CUDA"
+        ):
             cuda.jit(debug=True, opt=True)
 
-        self.assertEqual(len(w), 1)
-        self.assertIn("not supported by CUDA", str(w[0].message))
-
     def test_warn_on_debug_and_opt_default(self):
-        with warnings.catch_warnings(record=True) as w:
+        with pytest.warns(
+            NumbaInvalidConfigWarning, match="not supported by CUDA"
+        ):
             cuda.jit(debug=True)
-
-        self.assertEqual(len(w), 1)
-        self.assertIn("not supported by CUDA", str(w[0].message))
 
     def test_no_warn_on_debug_and_no_opt(self):
         with warnings.catch_warnings(record=True) as w:
@@ -192,19 +189,17 @@ kernel[1,1]()
         with override_config("CUDA_DEBUGINFO_DEFAULT", 1):
             for opt in (1, 2, 3, "max"):
                 with override_config("OPT", config._OptLevel(opt)):
-                    with warnings.catch_warnings(record=True) as w:
+                    with pytest.warns(
+                        NumbaInvalidConfigWarning, match="not supported by CUDA"
+                    ):
                         cuda.jit()
-
-                self.assertEqual(len(w), 1)
-                self.assertIn("not supported by CUDA", str(w[0].message))
 
         for opt in (1, 2, 3, "max"):
             with override_config("OPT", config._OptLevel(opt)):
-                with warnings.catch_warnings(record=True) as w:
+                with pytest.warns(
+                    NumbaInvalidConfigWarning, match="not supported by CUDA"
+                ):
                     cuda.jit(debug=True)
-
-                self.assertEqual(len(w), 1)
-                self.assertIn("not supported by CUDA", str(w[0].message))
 
 
 if __name__ == "__main__":

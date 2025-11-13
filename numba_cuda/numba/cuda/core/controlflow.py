@@ -5,7 +5,7 @@ import collections
 import functools
 import sys
 
-from numba.core.ir import Loc
+from numba.cuda.core.ir import Loc
 from numba.cuda.core.errors import UnsupportedError
 from numba.cuda.utils import PYVERSION
 

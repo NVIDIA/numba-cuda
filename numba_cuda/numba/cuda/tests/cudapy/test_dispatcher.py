@@ -773,7 +773,9 @@ class TestLaunchBounds(CUDATestCase):
 
         sig = f.signatures[0]
         ptx = f.inspect_asm(sig)
-        self.assertRegex(ptx, r".maxntid\s+128,\s+1,\s+1")
+        # Match either `.maxntid, 128, 1, 1` or `.maxntid 128` on a line by
+        # itself:
+        self.assertRegex(ptx, r".maxntid\s+128(?:,\s+1,\s+1)?\s*\n")
 
         return ptx
 

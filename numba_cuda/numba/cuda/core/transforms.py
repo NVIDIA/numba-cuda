@@ -14,7 +14,7 @@ from numba.cuda.core.analysis import (
     find_top_level_loops,
 )
 from numba.cuda.core import ir
-from numba.core import errors
+from numba.cuda.core import errors
 from numba.cuda.core import ir_utils
 from numba.cuda.core.analysis import compute_use_defs
 
