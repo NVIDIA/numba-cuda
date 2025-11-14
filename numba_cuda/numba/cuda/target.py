@@ -15,6 +15,7 @@ from numba.cuda.core.errors import NumbaWarning
 from numba.cuda.core.base import BaseContext
 from numba.cuda.typing import cmathdecl
 from numba.cuda import datamodel
+from numba.cuda.cpython import listobj
 
 from .cudadrv import nvvm
 from numba.cuda import (
@@ -164,7 +165,6 @@ class CUDATargetContext(BaseContext):
             numbers,
             slicing,
             iterators,
-            listobj,
             unicode,
             charseq,
             cmathimpl,
@@ -239,7 +239,6 @@ class CUDATargetContext(BaseContext):
         """
         Build a list from the Numba *list_type* and its initial *items*.
         """
-        from numba.cuda.cpython import listobj
 
         return listobj.build_list(self, builder, list_type, items)
 
