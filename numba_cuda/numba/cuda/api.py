@@ -71,7 +71,6 @@ def as_cuda_array(obj, sync=True):
     If ``sync`` is ``True``, then the imported stream (if present) will be
     synchronized.
     """
-    breakpoint()
     if (
         interface := getattr(obj, "__cuda_array_interface__", None)
     ) is not None:
@@ -134,7 +133,6 @@ def to_device(obj, stream=0, copy=True, to=None):
 
         hary = d_ary.copy_to_host(stream=stream)
     """
-    breakpoint()
     warnings.warn(
         "to_device is deprecated. Please prefer cupy for moving numpy arrays to the device.",
         FutureWarning,
@@ -159,7 +157,6 @@ def device_array(shape, dtype=np.float64, strides=None, order="C", stream=0):
         "device_array is deprecated. Please prefer cupy for moving numpy arrays to the device.",
         FutureWarning,
     )
-    breakpoint()
     shape, strides, dtype = prepare_shape_strides_dtype(
         shape, strides, dtype, order
     )
@@ -345,7 +342,6 @@ def device_array_like(ary, stream=0):
     Call :func:`device_array() <numba.cuda.device_array>` with information from
     the array.
     """
-    breakpoint()
     strides = _contiguous_strides_like_array(ary)
     order = _order_like_array(ary)
     return device_array(
@@ -362,7 +358,6 @@ def mapped_array_like(ary, stream=0, portable=False, wc=False):
     Call :func:`mapped_array() <numba.cuda.mapped_array>` with the information
     from the array.
     """
-    breakpoint()
     strides = _contiguous_strides_like_array(ary)
     order = _order_like_array(ary)
     return mapped_array(
@@ -381,7 +376,6 @@ def pinned_array_like(ary):
     Call :func:`pinned_array() <numba.cuda.pinned_array>` with the information
     from the array.
     """
-    breakpoint()
     strides = _contiguous_strides_like_array(ary)
     order = _order_like_array(ary)
     return pinned_array(

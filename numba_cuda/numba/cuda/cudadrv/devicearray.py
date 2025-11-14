@@ -1020,7 +1020,6 @@ class DeviceNDArray(_DeviceNDArray):
     """
 
     def __init__(self, *args, **kwargs):
-        breakpoint()
         warnings.warn(
             "DeviceNDArray api is deprecated. Please prefer cupy for array functions",
             FutureWarning,
