@@ -8,6 +8,7 @@ from llvmlite import ir
 import warnings
 import importlib.util
 import numpy as np
+
 from numba.cuda import types
 from numba.cuda import HAS_NUMBA
 from numba.cuda.core.compiler_lock import global_compiler_lock
@@ -283,10 +284,8 @@ class CUDATargetContext(BaseContext):
         # Ensure we have a contiguous buffer with non-negative strides. views with
         # negative strides must be materialized so that the
         # constant bytes and the data pointer/strides are consistent.
-        if (
-            not getattr(arr, "flags", None)
-            or (not arr.flags.c_contiguous)
-            or any(s < 0 for s in arr.strides)
+        if any(s < 0 for s in arr.strides) or not (
+            arr.flags.c_contiguous or arr.flags.f_contiguous
         ):
             arr = np.ascontiguousarray(arr)
 
