@@ -1,6 +1,8 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-2-Clause
 
+from numba import types
+from numba.core import cgutils
 import numpy as np
 
 import functools
@@ -47,3 +49,28 @@ def _fill_stride_by_order(shape, dtype, order):
     else:
         raise ValueError("must be either C/F order")
     return tuple(strides)
+
+
+def normalize_indices(context, builder, indty, inds, aryty, valty):
+    """
+    Convert integer indices into tuple of intp
+    """
+    if indty in types.integer_domain:
+        indty = types.UniTuple(dtype=indty, count=1)
+        indices = [inds]
+    else:
+        indices = cgutils.unpack_tuple(builder, inds, count=len(indty))
+    indices = [
+        context.cast(builder, i, t, types.intp) for t, i in zip(indty, indices)
+    ]
+
+    dtype = aryty.dtype
+    if dtype != valty:
+        raise TypeError("expect %s but got %s" % (dtype, valty))
+
+    if aryty.ndim != len(indty):
+        raise TypeError(
+            "indexing %d-D array with %d-D index" % (aryty.ndim, len(indty))
+        )
+
+    return indty, indices
