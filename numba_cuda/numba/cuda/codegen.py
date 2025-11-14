@@ -206,6 +206,9 @@ class CUDACodeLibrary(serialize.ReduceMixin, CodeLibrary):
         return device.compute_capability
 
     def get_asm_str(self, cc=None):
+        return "\n".join(self.get_asm_strs(cc=cc))
+
+    def get_asm_strs(self, cc=None):
         cc = self._ensure_cc(cc)
 
         ptxes = self._ptx_cache.get(cc, None)
@@ -218,21 +221,25 @@ class CUDACodeLibrary(serialize.ReduceMixin, CodeLibrary):
 
         irs = self.llvm_strs
 
-        ptx = nvvm.compile_ir(irs, **options)
+        if "g" in options:
+            ptxes = [nvvm.compile_ir(ir) for ir in irs]
+        else:
+            ptxes = [nvvm.compile_ir(irs, **options)]
 
         # Sometimes the result from NVVM contains trailing whitespace and
         # nulls, which we strip so that the assembly dump looks a little
         # tidier.
-        ptx = ptx.decode().strip("\x00").strip()
+        ptxes = [ptx.decode().strip("\x00").strip() for ptx in ptxes]
 
         if config.DUMP_ASSEMBLY:
             print(("ASSEMBLY %s" % self._name).center(80, "-"))
-            print(ptx)
+            for ptx in ptxes:
+                print(ptx)
             print("=" * 80)
 
-        self._ptx_cache[cc] = ptx
+        self._ptx_cache[cc] = ptxes
 
-        return ptx
+        return ptxes
 
     def get_lto_ptx(self, cc=None):
         """
@@ -284,8 +291,9 @@ class CUDACodeLibrary(serialize.ReduceMixin, CodeLibrary):
             ltoir = self.get_ltoir(cc=cc)
             linker.add_ltoir(ltoir)
         else:
-            ptx = self.get_asm_str(cc=cc)
-            linker.add_ptx(ptx.encode())
+            ptxes = self.get_asm_strs(cc=cc)
+            for ptx in ptxes:
+                linker.add_ptx(ptx.encode())
 
         for path in self._linking_files:
             linker.add_file_guess_ext(path, ignore_nonlto)
@@ -432,7 +440,10 @@ class CUDACodeLibrary(serialize.ReduceMixin, CodeLibrary):
             for mod in library.modules:
                 for fn in mod.functions:
                     if not fn.is_declaration:
-                        fn.linkage = "linkonce_odr"
+                        if "g" in self._nvvm_options:
+                            fn.linkage = "weak_odr"
+                        else:
+                            fn.linkage = "linkonce_odr"
 
         self._finalized = True
 
