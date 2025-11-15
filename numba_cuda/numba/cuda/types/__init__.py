@@ -14,7 +14,7 @@ from .misc import *
 from .npytypes import *
 from .scalars import *
 from .function_type import *
-from .ext_types import bfloat16, dim3, grid_group
+from .ext_types import bfloat16, dim3, grid_group, GridGroup, Dim3
 
 numpy_version = tuple(map(int, np.__version__.split(".")[:2]))
 
@@ -222,6 +222,8 @@ all_str = """
     bfloat16
     dim3
     grid_group
+    Dim3
+    GridGroup
 """
 
 

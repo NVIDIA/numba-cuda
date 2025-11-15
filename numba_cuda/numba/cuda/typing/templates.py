@@ -200,7 +200,11 @@ def make_callable_template(key, typer, recvr=None):
 def signature(return_type, *args, **kws):
     recvr = kws.pop("recvr", None)
     assert not kws
-    return Signature(return_type, args, recvr=recvr)
+    if HAS_NUMBA:
+        signature_class = CoreSignature
+    else:
+        signature_class = Signature
+    return signature_class(return_type, args, recvr=recvr)
 
 
 def fold_arguments(
