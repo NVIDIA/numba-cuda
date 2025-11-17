@@ -7,6 +7,7 @@ import llvmlite.binding as ll
 from llvmlite import ir
 import warnings
 import importlib.util
+import numpy as np
 
 from numba.cuda import types
 from numba.cuda import HAS_NUMBA
@@ -279,6 +280,14 @@ class CUDATargetContext(BaseContext):
         Unlike the parent version.  This returns a a pointer in the constant
         addrspace.
         """
+
+        # Ensure we have a contiguous buffer with non-negative strides. views with
+        # negative strides must be materialized so that the
+        # constant bytes and the data pointer/strides are consistent.
+        if any(s < 0 for s in arr.strides) or not (
+            arr.flags.c_contiguous or arr.flags.f_contiguous
+        ):
+            arr = np.ascontiguousarray(arr)
 
         lmod = builder.module
 
