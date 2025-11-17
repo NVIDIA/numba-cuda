@@ -4,13 +4,25 @@
 import abc
 import os
 from contextlib import contextmanager
+from enum import IntEnum
 
 from llvmlite import ir
 from numba.cuda import types
 from numba.cuda.core import config
 from numba.cuda import cgutils
+from numba.cuda.cudadrv import nvvm
 from numba.cuda.datamodel.models import ComplexModel, UnionModel, UniTupleModel
 from numba.cuda.types.ext_types import GridGroup
+
+
+class DwarfAddressClass(IntEnum):
+    GENERIC = 0x00
+    GLOBAL = 0x01
+    REGISTER = 0x02
+    CONSTANT = 0x05
+    LOCAL = 0x06
+    PARAMETER = 0x07
+    SHARED = 0x08
 
 
 @contextmanager
@@ -120,6 +132,18 @@ class DIBuilder(AbstractDIBuilder):
         # Create the compile unit now because it is referenced when
         # constructing subprograms
         self.dicompileunit = self._di_compile_unit()
+
+    def get_dwarf_address_class(self, addrspace):
+        # Map NVVM address space to DWARF address class.
+
+        addrspace_to_addrclass_dict = {
+            nvvm.ADDRSPACE_GENERIC: None,
+            nvvm.ADDRSPACE_GLOBAL: DwarfAddressClass.GLOBAL,
+            nvvm.ADDRSPACE_SHARED: DwarfAddressClass.SHARED,
+            nvvm.ADDRSPACE_CONSTANT: DwarfAddressClass.CONSTANT,
+            nvvm.ADDRSPACE_LOCAL: DwarfAddressClass.LOCAL,
+        }
+        return addrspace_to_addrclass_dict.get(addrspace)
 
     def _var_type(self, lltype, size, datamodel=None):
         if self._DEBUG:
@@ -659,6 +683,67 @@ class CUDADIBuilder(DIBuilder):
                 },
                 is_distinct=True,
             )
+
+        # Check if there's actually address space info to handle
+        if (
+            isinstance(lltype, ir.LiteralStructType)
+            and datamodel is not None
+            and datamodel.inner_models()
+            and hasattr(datamodel, "fe_type")
+            and getattr(datamodel.fe_type, "_addrspace", None) not in (None, 0)
+        ):
+            # Process struct with datamodel that has _addrspace available
+            meta = []
+            offset = 0
+            for element, field, model in zip(
+                lltype.elements, datamodel._fields, datamodel.inner_models()
+            ):
+                size_field = self.cgctx.get_abi_sizeof(element)
+                if isinstance(element, ir.PointerType) and field == "data":
+                    # Create pointer type with correct address space
+                    pointee_size = self.cgctx.get_abi_sizeof(element.pointee)
+                    pointee_model = getattr(model, "_pointee_model", None)
+                    pointee_type = self._var_type(
+                        element.pointee, pointee_size, datamodel=pointee_model
+                    )
+                    meta_ptr = {
+                        "tag": ir.DIToken("DW_TAG_pointer_type"),
+                        "baseType": pointee_type,
+                        "size": _BYTE_SIZE * size_field,
+                    }
+                    addrspace = getattr(datamodel.fe_type, "_addrspace", None)
+                    dwarf_addrclass = self.get_dwarf_address_class(addrspace)
+                    if dwarf_addrclass is not None:
+                        meta_ptr["dwarfAddressSpace"] = dwarf_addrclass
+                    basetype = m.add_debug_info("DIDerivedType", meta_ptr)
+                else:
+                    basetype = self._var_type(
+                        element, size_field, datamodel=model
+                    )
+                derived_type = m.add_debug_info(
+                    "DIDerivedType",
+                    {
+                        "tag": ir.DIToken("DW_TAG_member"),
+                        "name": field,
+                        "baseType": basetype,
+                        "size": _BYTE_SIZE * size_field,
+                        "offset": offset,
+                    },
+                )
+                meta.append(derived_type)
+                offset += _BYTE_SIZE * size_field
+
+            return m.add_debug_info(
+                "DICompositeType",
+                {
+                    "tag": ir.DIToken("DW_TAG_structure_type"),
+                    "name": f"{datamodel.fe_type}",
+                    "elements": m.add_metadata(meta),
+                    "size": offset,
+                },
+                is_distinct=True,
+            )
+
         # For other cases, use upstream Numba implementation
         return super()._var_type(lltype, size, datamodel=datamodel)
 

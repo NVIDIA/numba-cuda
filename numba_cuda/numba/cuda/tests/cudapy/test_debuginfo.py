@@ -840,6 +840,37 @@ class TestCudaDebugInfo(CUDATestCase):
         """,
         )
 
+    def test_shared_memory_address_class(self):
+        """Test that shared memory arrays have correct DWARF address class.
+
+        Shared memory pointers should have addressClass: 8 (DW_AT_address_class
+        for CUDA shared memory) in their debug metadata.
+        """
+        sig = (types.int32,)
+
+        @cuda.jit(sig, debug=True, opt=False)
+        def kernel_with_shared(data):
+            shared_arr = cuda.shared.array(32, dtype=np.int32)
+            idx = cuda.grid(1)
+            if idx < 32:
+                shared_arr[idx] = data + idx
+            cuda.syncthreads()
+            if idx == 0:
+                result = np.int32(0)
+                for i in range(32):
+                    result += shared_arr[i]
+
+        llvm_ir = kernel_with_shared.inspect_llvm(sig)
+
+        # Find the DIDerivedType for the pointer to shared memory (int32 addrspace(3)*)
+        # The pointer should have dwarfAddressSpace: 8 for shared memory
+        pat = r"!DIDerivedType\([^)]*dwarfAddressSpace:\s*8[^)]*tag:\s*DW_TAG_pointer_type[^)]*\)"
+        match = re.compile(pat).search(llvm_ir)
+        self.assertIsNotNone(
+            match,
+            msg=f"Shared memory pointer should have dwarfAddressSpace: 8 in LLVM IR.\n{llvm_ir}",
+        )
+
 
 if __name__ == "__main__":
     unittest.main()
