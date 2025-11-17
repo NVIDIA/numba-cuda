@@ -369,7 +369,6 @@ class DeviceNDArrayBase(_devicearray.DeviceArray):
             Squeezed view into the array.
 
         """
-        breakpoint()
         return self._squeeze(axis=axis, stream=stream)
 
     def _squeeze(self, axis=None, stream=0):
@@ -681,7 +680,6 @@ class _DeviceNDArray(DeviceNDArrayBase):
     @devices.require_context
     @deprecated_array_api
     def __getitem__(self, item):
-        breakpoint()
         return self._do_getitem(item)
 
     @devices.require_context
