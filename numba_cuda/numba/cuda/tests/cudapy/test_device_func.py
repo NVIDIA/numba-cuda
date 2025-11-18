@@ -207,7 +207,7 @@ class TestDeviceFunc(CUDATestCase):
         def rgba_caller(x, channels):
             x[0] = rgba(channels[0], channels[1], channels[2], channels[3])
 
-        x = cuda.device_array(1, dtype=np.int32)
+        x = cp.asarray([1], dtype=np.int32)
         channels = cp.array([1.0, 2.0, 3.0, 4.0], dtype=np.float32)
 
         rgba_caller[1, 1](x, channels)

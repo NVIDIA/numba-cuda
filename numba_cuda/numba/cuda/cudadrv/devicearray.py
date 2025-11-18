@@ -1022,8 +1022,21 @@ class DeviceNDArray(_DeviceNDArray):
     """
 
     def __init__(self, *args, **kwargs):
+        breakpoint()
         warnings.warn(
             "DeviceNDArray api is deprecated. Please prefer cupy for array functions",
             DeprecatedDeviceArrayApiWarning,
         )
         super().__init__(*args, **kwargs)
+
+    @classmethod
+    def _legacy_ctor(cls, *args, **kwargs):
+        """
+        Legacy constructor that does not emit a deprecation warning.
+        Useful for APIs like vectorize and guvectorize that need to
+        continue to return the deprecated class right now for backwards
+        compatibility.
+        """
+        instance = cls.__new__(cls)
+        _DeviceNDArray.__init__(instance, *args, **kwargs)
+        return instance 

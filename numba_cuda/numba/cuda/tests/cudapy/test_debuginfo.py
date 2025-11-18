@@ -706,9 +706,9 @@ class TestCudaDebugInfo(CUDATestCase):
             foo.py_func
         )
 
-        result = cuda.device_array(1, dtype=np.int32)
+        result = cp.asarray([1], dtype=np.int32)
         foo[1, 1](result, 1)
-        result.copy_to_host()
+        result = result.get()
         self.assertEqual(result[0], 5)
 
         ir_content = foo.inspect_llvm()[foo.signatures[0]]

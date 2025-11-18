@@ -10,6 +10,7 @@ from numba.cuda.testing import (
     skip_unless_cc_60,
 )
 from numba.cuda.tests.support import captured_stdout
+import cupy as cp
 
 
 @skip_if_cudadevrt_missing
@@ -42,8 +43,7 @@ class TestSessionization(CUDATestCase):
 
         # ex_sessionize.allocate.begin
         # Generate data
-        ids = cuda.to_device(
-            np.array(
+        cp.array(
                 [
                     1,
                     1,
@@ -75,9 +75,7 @@ class TestSessionization(CUDATestCase):
                     4,
                 ]
             )
-        )
-        sec = cuda.to_device(
-            np.array(
+        sec = cp.array(
                 [
                     1,
                     2,
@@ -110,9 +108,9 @@ class TestSessionization(CUDATestCase):
                 ],
                 dtype="datetime64[ns]",
             ).astype("int64")  # Cast to int64 for compatibility
-        )
+
         # Create a vector to hold the results
-        results = cuda.to_device(np.zeros(len(ids)))
+        results = cp.zeros(len(ids))
         # ex_sessionize.allocate.end
 
         # ex_sessionize.kernel.begin
@@ -161,7 +159,7 @@ class TestSessionization(CUDATestCase):
         # ex_sessionize.launch.begin
         sessionize.forall(len(ids))(ids, sec, results)
 
-        print(results.copy_to_host())
+        print(results.get())
         # array([ 0.,  0.,  0.,  3.,  3.,  3.,
         #         6.,  6.,  6.,  9.,  9., 11.,
         #         11., 13., 13., 13., 13., 17.,
@@ -199,7 +197,7 @@ class TestSessionization(CUDATestCase):
             24,
             24,
         ]
-        np.testing.assert_equal(expect, results.copy_to_host())
+        np.testing.assert_equal(expect, results.get())
 
 
 if __name__ == "__main__":

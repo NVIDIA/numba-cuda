@@ -22,7 +22,7 @@ current_context = devices.get_context
 gpus = devices.gpus
 
 
-def from_cuda_array_interface(desc, owner=None, sync=True):
+def _from_cuda_array_interface(desc, owner=None, sync=True):
     """Create a _DeviceNDArray from a cuda-array-interface description.
     The ``owner`` is the owner of the underlying memory.
     The resulting _DeviceNDArray will acquire a reference from it.
@@ -62,7 +62,7 @@ def from_cuda_array_interface(desc, owner=None, sync=True):
     return da
 
 
-def as_cuda_array(obj, sync=True):
+def _as_cuda_array(obj, sync=True):
     """Create a _DeviceNDArray from any object that implements
     the :ref:`cuda array interface <cuda-array-interface>`.
 
@@ -79,7 +79,7 @@ def as_cuda_array(obj, sync=True):
     raise TypeError("*obj* doesn't implement the cuda array interface.")
 
 
-def is_cuda_array(obj):
+def _is_cuda_array(obj):
     """Test if the object has defined the `__cuda_array_interface__` attribute.
 
     Does not verify the validity of the interface.
@@ -87,24 +87,9 @@ def is_cuda_array(obj):
     return hasattr(obj, "__cuda_array_interface__")
 
 
-def is_float16_supported():
-    """Whether 16-bit floats are supported.
-
-    float16 is always supported in current versions of Numba - returns True.
-    """
-    return True
-
-
-def is_bfloat16_supported():
-    """Whether bfloat16 are supported.
-
-    bfloat16 is only supported on devices with compute capability >= 8.0
-    """
-    return current_context().device.supports_bfloat16
-
 
 @require_context
-def to_device(obj, stream=0, copy=True, to=None):
+def _to_device(obj, stream=0, copy=True, to=None):
     """to_device(obj, stream=0, copy=True, to=None)
 
     Allocate and transfer a numpy ndarray or structured scalar to the device.
@@ -134,10 +119,6 @@ def to_device(obj, stream=0, copy=True, to=None):
 
         hary = d_ary.copy_to_host(stream=stream)
     """
-    warnings.warn(
-        "to_device is deprecated. Please prefer cupy for moving numpy arrays to the device.",
-        DeprecatedDeviceArrayApiWarning,
-    )
     if to is None:
         to, new = devicearray.auto_device(
             obj, stream=stream, copy=copy, user_explicit=True
@@ -149,19 +130,11 @@ def to_device(obj, stream=0, copy=True, to=None):
 
 
 @require_context
-def device_array(shape, dtype=np.float64, strides=None, order="C", stream=0):
+def _device_array(shape, dtype=np.float64, strides=None, order="C", stream=0):
     """device_array(shape, dtype=np.float64, strides=None, order='C', stream=0)
 
     Allocate an empty device ndarray. Similar to :meth:`numpy.empty`.
     """
-    warnings.warn(
-        "device_array is deprecated. Please prefer cupy for moving numpy arrays to the device.",
-        DeprecatedDeviceArrayApiWarning,
-    )
-    return _device_array(shape, dtype=dtype, strides=strides, order=order, stream=stream)
-
-
-def _device_array(shape, dtype=np.float64, strides=None, order="C", stream=0):
     shape, strides, dtype = prepare_shape_strides_dtype(
         shape, strides, dtype, order
     )
@@ -171,7 +144,7 @@ def _device_array(shape, dtype=np.float64, strides=None, order="C", stream=0):
 
 
 @require_context
-def managed_array(
+def _managed_array(
     shape,
     dtype=np.float64,
     strides=None,
@@ -194,10 +167,6 @@ def managed_array(
                           *host*, and memory is only accessible by devices
                           with Compute Capability 6.0 and later.
     """
-    warnings.warn(
-        "managed_array is deprecated. Please prefer cupy for moving numpy arrays to the device.",
-        DeprecatedDeviceArrayApiWarning,
-    )
     shape, strides, dtype = prepare_shape_strides_dtype(
         shape, strides, dtype, order
     )
@@ -214,7 +183,7 @@ def managed_array(
 
 
 @require_context
-def pinned_array(shape, dtype=np.float64, strides=None, order="C"):
+def _pinned_array(shape, dtype=np.float64, strides=None, order="C"):
     """pinned_array(shape, dtype=np.float64, strides=None, order='C')
 
     Allocate an :class:`ndarray <numpy.ndarray>` with a buffer that is pinned
@@ -235,7 +204,7 @@ def pinned_array(shape, dtype=np.float64, strides=None, order="C"):
 
 
 @require_context
-def mapped_array(
+def _mapped_array(
     shape,
     dtype=np.float64,
     strides=None,
@@ -275,7 +244,7 @@ def mapped_array(
 
 @contextlib.contextmanager
 @require_context
-def open_ipc_array(handle, shape, dtype, strides=None, offset=0):
+def _open_ipc_array(handle, shape, dtype, strides=None, offset=0):
     """
     A context manager that opens a IPC *handle* (*CUipcMemHandle*) that is
     represented as a sequence of bytes (e.g. *bytes*, tuple of int)
@@ -300,10 +269,6 @@ def open_ipc_array(handle, shape, dtype, strides=None, offset=0):
     )
     ipchandle.close()
 
-
-def synchronize():
-    "Synchronize the current context."
-    return current_context().synchronize()
 
 
 def _contiguous_strides_like_array(ary):
@@ -342,7 +307,7 @@ def _order_like_array(ary):
         return "C"
 
 
-def device_array_like(ary, stream=0):
+def _device_array_like(ary, stream=0):
     """
     Call :func:`device_array() <numba.cuda.device_array>` with information from
     the array.
@@ -358,7 +323,7 @@ def device_array_like(ary, stream=0):
     )
 
 
-def mapped_array_like(ary, stream=0, portable=False, wc=False):
+def _mapped_array_like(ary, stream=0, portable=False, wc=False):
     """
     Call :func:`mapped_array() <numba.cuda.mapped_array>` with the information
     from the array.
@@ -376,7 +341,7 @@ def mapped_array_like(ary, stream=0, portable=False, wc=False):
     )
 
 
-def pinned_array_like(ary):
+def _pinned_array_like(ary):
     """
     Call :func:`pinned_array() <numba.cuda.pinned_array>` with the information
     from the array.
@@ -388,215 +353,4 @@ def pinned_array_like(ary):
     )
 
 
-# Stream helper
-@require_context
-def stream():
-    """
-    Create a CUDA stream that represents a command queue for the device.
-    """
-    return current_context().create_stream()
 
-
-@require_context
-def default_stream():
-    """
-    Get the default CUDA stream. CUDA semantics in general are that the default
-    stream is either the legacy default stream or the per-thread default stream
-    depending on which CUDA APIs are in use. In Numba, the APIs for the legacy
-    default stream are always the ones in use, but an option to use APIs for
-    the per-thread default stream may be provided in future.
-    """
-    return current_context().get_default_stream()
-
-
-@require_context
-def legacy_default_stream():
-    """
-    Get the legacy default CUDA stream.
-    """
-    return current_context().get_legacy_default_stream()
-
-
-@require_context
-def per_thread_default_stream():
-    """
-    Get the per-thread default CUDA stream.
-    """
-    return current_context().get_per_thread_default_stream()
-
-
-@require_context
-def external_stream(ptr):
-    """Create a Numba stream object for a stream allocated outside Numba.
-
-    :param ptr: Pointer to the external stream to wrap in a Numba Stream
-    :type ptr: int
-    """
-    return current_context().create_external_stream(ptr)
-
-
-# Page lock
-@require_context
-@contextlib.contextmanager
-def pinned(*arylist):
-    """A context manager for temporary pinning a sequence of host ndarrays."""
-    pmlist = []
-    for ary in arylist:
-        pm = current_context().mempin(
-            ary,
-            driver.host_pointer(ary),
-            driver.host_memory_size(ary),
-            mapped=False,
-        )
-        pmlist.append(pm)
-    yield
-
-
-@require_context
-@contextlib.contextmanager
-def mapped(*arylist, **kws):
-    """A context manager for temporarily mapping a sequence of host ndarrays."""
-    assert not kws or "stream" in kws, "Only accept 'stream' as keyword."
-    stream = kws.get("stream", 0)
-    pmlist = []
-    devarylist = []
-    for ary in arylist:
-        pm = current_context().mempin(
-            ary,
-            driver.host_pointer(ary),
-            driver.host_memory_size(ary),
-            mapped=True,
-        )
-        pmlist.append(pm)
-        devary = devicearray.from_array_like(ary, gpu_data=pm, stream=stream)
-        devarylist.append(devary)
-    try:
-        if len(devarylist) == 1:
-            yield devarylist[0]
-        else:
-            yield devarylist
-    finally:
-        # When exiting from `with cuda.mapped(*arrs) as mapped_arrs:`, the name
-        # `mapped_arrs` stays in scope, blocking automatic unmapping based on
-        # reference count. We therefore invoke the finalizer manually.
-        for pm in pmlist:
-            pm.free()
-
-
-def event(timing=True):
-    """
-    Create a CUDA event. Timing data is only recorded by the event if it is
-    created with ``timing=True``.
-    """
-    evt = current_context().create_event(timing=timing)
-    return evt
-
-
-event_elapsed_time = driver.event_elapsed_time
-
-
-# Device selection
-
-
-def select_device(device_id):
-    """
-    Make the context associated with device *device_id* the current context.
-
-    Returns a Device instance.
-
-    Raises exception on error.
-    """
-    context = devices.get_context(device_id)
-    return context.device
-
-
-def get_current_device():
-    "Get current device associated with the current thread"
-    return current_context().device
-
-
-def list_devices():
-    "Return a list of all detected devices"
-    return devices.gpus
-
-
-def close():
-    """
-    Explicitly clears all contexts in the current thread, and destroys all
-    contexts if the current thread is the main thread.
-    """
-    # Must clear memsys object in case it has been used already
-    from .memory_management import rtsys
-
-    rtsys.close()
-
-    devices.reset()
-
-
-def _auto_device(ary, stream=0, copy=True):
-    return devicearray.auto_device(ary, stream=stream, copy=copy)
-
-
-def detect():
-    """
-    Detect supported CUDA hardware and print a summary of the detected hardware.
-
-    Returns a boolean indicating whether any supported devices were detected.
-    """
-    devlist = list_devices()
-    print("Found %d CUDA devices" % len(devlist))
-    supported_count = 0
-    for dev in devlist:
-        attrs = []
-        cc = dev.compute_capability
-        kernel_timeout = dev.KERNEL_EXEC_TIMEOUT
-        tcc = dev.TCC_DRIVER
-        fp32_to_fp64_ratio = dev.SINGLE_TO_DOUBLE_PRECISION_PERF_RATIO
-        attrs += [("Compute Capability", "%d.%d" % cc)]
-        attrs += [("PCI Device ID", dev.PCI_DEVICE_ID)]
-        attrs += [("PCI Bus ID", dev.PCI_BUS_ID)]
-        attrs += [("UUID", dev.uuid)]
-        attrs += [("Watchdog", "Enabled" if kernel_timeout else "Disabled")]
-        if os.name == "nt":
-            attrs += [("Compute Mode", "TCC" if tcc else "WDDM")]
-        attrs += [("FP32/FP64 Performance Ratio", fp32_to_fp64_ratio)]
-        if cc < (3, 5):
-            support = "[NOT SUPPORTED: CC < 3.5]"
-        elif cc < (5, 0):
-            support = "[SUPPORTED (DEPRECATED)]"
-            supported_count += 1
-        else:
-            support = "[SUPPORTED]"
-            supported_count += 1
-
-        print("id %d    %20s %40s" % (dev.id, dev.name, support))
-        for key, val in attrs:
-            print("%40s: %s" % (key, val))
-
-    print("Summary:")
-    print("\t%d/%d devices are supported" % (supported_count, len(devlist)))
-    return supported_count > 0
-
-
-@contextlib.contextmanager
-def defer_cleanup():
-    """
-    Temporarily disable memory deallocation.
-    Use this to prevent resource deallocation breaking asynchronous execution.
-
-    For example::
-
-        with defer_cleanup():
-            # all cleanup is deferred in here
-            do_speed_critical_code()
-        # cleanup can occur here
-
-    Note: this context manager can be nested.
-    """
-    with current_context().defer_cleanup():
-        yield
-
-
-profiling = require_context(driver.profiling)
-profile_start = require_context(driver.profile_start)
-profile_stop = require_context(driver.profile_stop)

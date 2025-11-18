@@ -6,7 +6,7 @@ import numpy as np
 
 from numba import cuda
 from numba.cuda.core import config
-from numba.cuda.testing import unittest, CUDATestCase, skip_on_cudasim
+from numba.cuda.testing import unittest, DeprecatedDeviceArrayApiTest, skip_on_cudasim
 from numba.cuda.tests.support import linux_only
 
 if not config.ENABLE_CUDASIM:
@@ -101,7 +101,7 @@ if not config.ENABLE_CUDASIM:
 
 
 @skip_on_cudasim("EMM Plugins not supported on CUDA simulator")
-class TestDeviceOnlyEMMPlugin(CUDATestCase):
+class TestDeviceOnlyEMMPlugin(DeprecatedDeviceArrayApiTest):
     """
     Tests that the API of an EMM Plugin that implements device allocations
     only is used correctly by Numba.

@@ -3,7 +3,7 @@
 
 import numpy as np
 from numba import cuda
-from numba.cuda.testing import unittest, CUDATestCase
+from numba.cuda.testing import unittest, DeprecatedDeviceArrayApiTest
 
 
 def foo(inp, out):
@@ -16,7 +16,7 @@ def copy(inp, out):
     cufoo(inp[i, :], out[i, :])
 
 
-class TestCudaSlicing(CUDATestCase):
+class TestCudaSlicing(DeprecatedDeviceArrayApiTest):
     def test_slice_as_arg(self):
         global cufoo
         cufoo = cuda.jit("void(int32[:], int32[:])", device=True)(foo)

@@ -14,6 +14,7 @@ from numba.cuda import (
 )
 from numba.cuda.np.numpy_support import from_dtype
 from numba.cuda import config
+from numba.cuda import _api
 
 if HAS_NUMBA:
     from numba import jit
@@ -303,6 +304,6 @@ def create_xoroshiro128p_states(n, seed, subsequence_start=0, stream=0):
     :type stream: CUDA stream
     :param stream: stream to run initialization kernel on
     """
-    states = cuda.device_array(n, dtype=xoroshiro128p_dtype, stream=stream)
+    states = _api._device_array(n, dtype=xoroshiro128p_dtype, stream=stream)
     init_xoroshiro128p_states(states, seed, subsequence_start, stream)
     return states

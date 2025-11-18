@@ -4,6 +4,7 @@
 from numba import cuda
 from numba.cuda import int32, float64, void
 from numba.cuda import HAS_NUMBA
+import cupy as cp
 
 if HAS_NUMBA:
     from numba.core.errors import TypingError as NumbaTypingError
@@ -91,7 +92,7 @@ class TestSharedMemoryIssue(CUDATestCase):
             d_block_costs[0] = s_initialcost[0] + prediction
 
         block_costs = np.zeros(num_blocks, dtype=np.float64)
-        d_block_costs = cuda.to_device(block_costs)
+        d_block_costs = cp.asarray(block_costs)
 
         costs_func[num_blocks, threads_per_block](d_block_costs)
 
@@ -130,9 +131,9 @@ class TestSharedMemory(CUDATestCase):
                 for j in range(nthreads):
                     y[bd * bx + j] = sm[j]
 
-        d_result = cuda.device_array_like(arr)
+        d_result = cp.asarray(arr)
         use_sm_chunk_copy[nblocks, nthreads](arr, d_result)
-        host_result = d_result.copy_to_host()
+        host_result = d_result.get()
         np.testing.assert_array_equal(arr, host_result)
 
     def test_shared_recarray(self):

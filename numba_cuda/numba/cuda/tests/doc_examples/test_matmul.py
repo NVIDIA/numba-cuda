@@ -13,6 +13,7 @@ Contents in this file are referenced from the sphinx-generated docs.
 import unittest
 from numba.cuda.testing import CUDATestCase, skip_on_cudasim
 from numba.cuda.tests.support import captured_stdout
+import cupy as cp
 
 
 @skip_on_cudasim("cudasim doesn't support cuda import at non-top-level")
@@ -60,9 +61,9 @@ class TestMatMul(CUDATestCase):
         y_h = np.ones([4, 4])
         z_h = np.zeros([4, 4])
 
-        x_d = cuda.to_device(x_h)
-        y_d = cuda.to_device(y_h)
-        z_d = cuda.to_device(z_h)
+        x_d = cp.asarray(x_h)
+        y_d = cp.asarray(y_h)
+        z_d = cp.asarray(z_h)
 
         threadsperblock = (16, 16)
         blockspergrid_x = math.ceil(z_h.shape[0] / threadsperblock[0])
@@ -70,7 +71,7 @@ class TestMatMul(CUDATestCase):
         blockspergrid = (blockspergrid_x, blockspergrid_y)
 
         matmul[blockspergrid, threadsperblock](x_d, y_d, z_d)
-        z_h = z_d.copy_to_host()
+        z_h = z_d.get()
         print(z_h)
         print(x_h @ y_h)
         # magictoken.ex_run_matmul.end
@@ -130,9 +131,9 @@ class TestMatMul(CUDATestCase):
         y_h = np.ones([4, 4])
         z_h = np.zeros([4, 4])
 
-        x_d = cuda.to_device(x_h)
-        y_d = cuda.to_device(y_h)
-        z_d = cuda.to_device(z_h)
+        x_d = cp.asarray(x_h)
+        y_d = cp.asarray(y_h)
+        z_d = cp.asarray(z_h)
 
         threadsperblock = (TPB, TPB)
         blockspergrid_x = math.ceil(z_h.shape[0] / threadsperblock[0])
@@ -154,9 +155,9 @@ class TestMatMul(CUDATestCase):
         y_h = np.ones([23, 7])
         z_h = np.zeros([5, 7])
 
-        x_d = cuda.to_device(x_h)
-        y_d = cuda.to_device(y_h)
-        z_d = cuda.to_device(z_h)
+        x_d = cp.asarray(x_h)
+        y_d = cp.asarray(y_h)
+        z_d = cp.asarray(z_h)
 
         threadsperblock = (TPB, TPB)
         grid_y_max = max(x_h.shape[0], y_h.shape[0])
@@ -166,7 +167,7 @@ class TestMatMul(CUDATestCase):
         blockspergrid = (blockspergrid_x, blockspergrid_y)
 
         fast_matmul[blockspergrid, threadsperblock](x_d, y_d, z_d)
-        z_h = z_d.copy_to_host()
+        z_h = z_d.get()
         print(z_h)
         print(x_h @ y_h)
         # magictoken.ex_run_nonsquare.end

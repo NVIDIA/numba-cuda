@@ -6,6 +6,7 @@ import numpy as np
 from numba.cuda.testing import CUDATestCase
 from numba.cuda.tests.support import override_config
 import unittest
+import cupy as cp
 
 
 class TestCudaJitNoTypes(CUDATestCase):
@@ -22,12 +23,12 @@ class TestCudaJitNoTypes(CUDATestCase):
         x = np.arange(10)
         y = np.empty_like(x)
 
-        dx = cuda.to_device(x)
-        dy = cuda.to_device(y)
+        dx = cp.asarray(x)
+        dy = cp.asarray(y)
 
         foo[10, 1](dx, dy)
 
-        dy.copy_to_host(y)
+        y = dy.get()
 
         self.assertTrue(np.all(x == y))
 
@@ -70,13 +71,14 @@ class TestCudaJitNoTypes(CUDATestCase):
         a = np.zeros(1)
         b = np.zeros(1)
 
-        stream = cuda.stream()
-        d_a = cuda.to_device(a, stream)
-        d_b = cuda.to_device(b, stream)
+        stream = cp.cuda.stream()
+        with stream:
+            d_a = cp.asarray(a)
+            d_b = cp.asarray(b)
 
-        outer[1, 1, stream](d_a, d_b)
-
-        d_b.copy_to_host(b, stream)
+            outer[1, 1, stream](d_a, d_b)
+        
+            b = d_b.get()
 
         self.assertEqual(b[0], (a[0] + 1) + (2 + 1))
 

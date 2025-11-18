@@ -369,7 +369,7 @@ class UFuncMechanism(object):
         if out is None:
             # No output is provided
             devout = cr.allocate_device_array(shape, resty, stream=stream)
-
+            breakpoint()
             devarys.extend([devout])
             cr.launch(func, shape[0], stream, devarys)
 
@@ -806,7 +806,7 @@ class GeneralizedUFunc(object):
 
         newretvals = []
         for retval, oshape in zip(retvals, schedule.oshapes):
-            newretvals.append(retval.reshape(odim, *oshape))
+            newretvals.append(retval._reshape(odim, *oshape))
         return tuple(newparams) + tuple(newretvals)
 
     def _broadcast_array(self, ary, newdim, innerdim):

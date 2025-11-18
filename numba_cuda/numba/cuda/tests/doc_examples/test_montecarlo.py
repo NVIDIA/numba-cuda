@@ -9,6 +9,7 @@ from numba.cuda.testing import (
     skip_on_standalone_numba_cuda,
 )
 from numba.cuda.tests.support import captured_stdout
+import cupy as cp
 
 
 @skip_on_cudasim("cudasim doesn't support cuda import at non-top-level")
@@ -80,7 +81,7 @@ class TestMonteCarlo(CUDATestCase):
             approximate the definite integral of `func` from
             `lower_lim` to `upper_lim`
             """
-            out = cuda.to_device(np.zeros(nsamps, dtype="float32"))
+            out = cp.zeros(nsamps, dtype="float32")
             rng_states = create_xoroshiro128p_states(nsamps, seed=42)
 
             # jit the function for use in CUDA kernels

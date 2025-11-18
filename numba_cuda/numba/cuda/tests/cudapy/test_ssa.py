@@ -18,6 +18,7 @@ from numba.cuda.core import errors
 from numba.cuda.extending import overload
 from numba.cuda.tests.support import override_config
 from numba.cuda.testing import CUDATestCase, skip_on_cudasim
+import cupy as cp
 
 
 _DEBUG = False
@@ -38,11 +39,11 @@ class SSABaseTest(CUDATestCase):
     def check_func(self, func, result_array, *args):
         # For CUDA kernels, we need to create output arrays and call with [1,1] launch config
         # Create GPU array with same shape as expected result array
-        gpu_result_array = cuda.to_device(np.zeros_like(result_array))
+        gpu_result_array = cp.zeros(len(result_array), dtype=result_array.dtype)
 
         # Call the CUDA kernel
         func[1, 1](gpu_result_array, *copy.deepcopy(args))
-        gpu_result = gpu_result_array.copy_to_host()
+        gpu_result = gpu_result_array.get()
 
         # Call the original Python function for expected result
         cpu_result = np.zeros_like(result_array)
