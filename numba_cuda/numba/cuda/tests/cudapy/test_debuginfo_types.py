@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-2-Clause
 
-import numba.cuda as cuda
+from numba import cuda
 from numba.cuda.testing import CUDATestCase, skip_on_cudasim
 import llvmlite
 from numba.cuda import types

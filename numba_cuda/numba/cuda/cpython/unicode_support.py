@@ -20,7 +20,7 @@ from numba.cuda.core.imputils import impl_ret_untracked
 
 from numba.cuda.extending import overload, register_jitable
 from numba.cuda.extending import intrinsic
-from numba.core.errors import TypingError
+from numba.cuda.core.errors import TypingError
 
 # This is equivalent to the struct `_PyUnicode_TypeRecord defined in CPython's
 # Objects/unicodectype.c

@@ -11,7 +11,7 @@ from shutil import get_terminal_size
 from .abstract import Callable, DTypeSpec, Dummy, Literal, Type, weakref
 from .common import Opaque
 from .misc import unliteral
-from numba.core import errors
+from numba.cuda.core import errors
 from numba.cuda import utils, types, config
 from numba.cuda.typeconv import Conversion
 
@@ -314,14 +314,8 @@ class BaseFunction(Callable):
             context, self, args, kws, depth=self._depth
         )
 
-        # get the order in which to try templates
-        from numba.core.target_extension import (
-            get_local_target,
-        )  # circular
-
-        target_hw = get_local_target(context)
         order = utils.order_by_target_specificity(
-            target_hw, self.templates, fnkey=self.key[0]
+            self.templates, fnkey=self.key[0]
         )
 
         self._depth += 1

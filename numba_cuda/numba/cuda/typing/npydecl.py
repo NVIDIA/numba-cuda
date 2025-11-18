@@ -7,7 +7,7 @@ import operator
 from numba.cuda.typing.templates import AbstractTemplate, Registry, signature
 from numba.cuda import types
 from numba.cuda import utils
-from numba.core.errors import TypingError, NumbaTypeError
+from numba.cuda.core.errors import TypingError, NumbaTypeError
 from numba.cuda.np.numpy_support import (
     ufunc_find_matching_loop,
     supported_ufunc_loop,
@@ -504,12 +504,6 @@ class Numpy_method_redirection(AbstractTemplate):
                         pass
 
                     pysig = utils.pysignature(sum_stub)
-            elif self.method_name == "argsort":
-
-                def argsort_stub(arr, kind="quicksort"):
-                    pass
-
-                pysig = utils.pysignature(argsort_stub)
             else:
                 fmt = "numba doesn't support kwarg for {}"
                 raise TypingError(fmt.format(self.method_name))

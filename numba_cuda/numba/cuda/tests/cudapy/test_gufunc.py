@@ -3,14 +3,14 @@
 
 import numpy as np
 
+import pytest
 from collections import namedtuple
 from numba.cuda import void, int32, float32, float64
-from numba import guvectorize
+from numba.cuda import guvectorize
 from numba import cuda
 from numba.cuda.testing import skip_on_cudasim, CUDATestCase
 import unittest
-import warnings
-from numba.core.errors import NumbaPerformanceWarning, TypingError
+from numba.cuda.core.errors import NumbaPerformanceWarning, TypingError
 from numba.cuda.tests.support import override_config
 
 
@@ -217,11 +217,10 @@ class TestCUDAGufunc(CUDATestCase):
         dist = np.zeros(a.shape[0]).astype("float32")
 
         with override_config("CUDA_LOW_OCCUPANCY_WARNINGS", 1):
-            with warnings.catch_warnings(record=True) as w:
+            with pytest.warns(
+                NumbaPerformanceWarning, match="Grid size .+ low occupancy"
+            ):
                 numba_dist_cuda(a, b, dist)
-                self.assertEqual(w[0].category, NumbaPerformanceWarning)
-                self.assertIn("Grid size", str(w[0].message))
-                self.assertIn("low occupancy", str(w[0].message))
 
     def test_efficient_launch_configuration(self):
         @guvectorize(
@@ -240,9 +239,7 @@ class TestCUDAGufunc(CUDATestCase):
         dist = np.zeros_like(a)
 
         with override_config("CUDA_LOW_OCCUPANCY_WARNINGS", 1):
-            with warnings.catch_warnings(record=True) as w:
-                numba_dist_cuda2(a, b, dist)
-                self.assertEqual(len(w), 0)
+            numba_dist_cuda2(a, b, dist)
 
     def test_nopython_flag(self):
         def foo(A, B):

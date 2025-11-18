@@ -11,13 +11,14 @@ import stat
 import subprocess
 
 from numba import cuda
-from numba.core.errors import NumbaWarning
+from numba.cuda.core.errors import NumbaWarning
 from numba.cuda.testing import (
     CUDATestCase,
     skip_on_cudasim,
     skip_unless_cc_60,
     skip_if_cudadevrt_missing,
     test_data_dir,
+    skip_on_standalone_numba_cuda,
 )
 from numba.cuda.tests.support import (
     TestCase,
@@ -415,6 +416,7 @@ class CUDAAndCPUCachingTest(DispatcherCacheUsecasesTest):
         CUDATestCase.tearDown(self)
         DispatcherCacheUsecasesTest.tearDown(self)
 
+    @skip_on_standalone_numba_cuda
     def test_cpu_and_cuda_targets(self):
         # The same function jitted for CPU and CUDA targets should maintain
         # separate caches for each target.
@@ -440,6 +442,7 @@ class CUDAAndCPUCachingTest(DispatcherCacheUsecasesTest):
         self.check_hits(f_cpu.func, 0, 2)
         self.check_hits(f_cuda.func, 0, 2)
 
+    @skip_on_standalone_numba_cuda
     def test_cpu_and_cuda_reuse(self):
         # Existing cache files for the CPU and CUDA targets are reused.
         mod = self.import_module()

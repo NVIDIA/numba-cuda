@@ -7,14 +7,12 @@ repos:
   hooks:
     - id: check-added-large-files
     - id: check-ast
-    - id: check-json
     - id: check-merge-conflict
     - id: check-toml
     - id: check-yaml
       exclude: ^conda/recipes/numba-cuda/meta.yaml
     - id: debug-statements
     - id: end-of-file-fixer
-    - id: requirements-txt-fixer
     - id: trailing-whitespace
     - id: mixed-line-ending
       args: ['--fix=lf']

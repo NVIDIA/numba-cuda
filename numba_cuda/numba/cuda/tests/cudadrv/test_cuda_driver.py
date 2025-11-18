@@ -9,10 +9,14 @@ from numba.cuda.cudadrv.driver import (
     driver,
     launch_kernel,
 )
+
+from numba import cuda
 from numba.cuda.cudadrv import devices, driver as _driver
 from numba.cuda.testing import unittest, CUDATestCase
 from numba.cuda.testing import skip_on_cudasim
+import contextlib
 
+from cuda.core.experimental import Device
 
 ptx1 = """
     .version 1.4
@@ -150,6 +154,65 @@ class TestCudaDriver(CUDATestCase):
         device_to_host(array, memory, sizeof(array), stream=stream)
 
         for i, v in enumerate(array):
+            self.assertEqual(i, v)
+
+    def test_cuda_core_stream_operations(self):
+        module = self.context.create_module_ptx(self.ptx)
+        function = module.get_function("_Z10helloworldPi")
+        array = (c_int * 100)()
+        dev = Device()
+        dev.set_current()
+        stream = dev.create_stream()
+
+        @contextlib.contextmanager
+        def auto_synchronize(stream):
+            try:
+                yield stream
+            finally:
+                stream.sync()
+
+        with auto_synchronize(stream):
+            memory = self.context.memalloc(sizeof(array))
+            host_to_device(memory, array, sizeof(array), stream=stream)
+
+            ptr = memory.device_ctypes_pointer
+
+            launch_kernel(
+                function.handle,  # Kernel
+                1,
+                1,
+                1,  # gx, gy, gz
+                100,
+                1,
+                1,  # bx, by, bz
+                0,  # dynamic shared mem
+                stream.handle,  # stream
+                [ptr],
+            )
+
+            device_to_host(array, memory, sizeof(array), stream=stream)
+        for i, v in enumerate(array):
+            self.assertEqual(i, v)
+
+    def test_cuda_core_stream_launch_user_facing(self):
+        @cuda.jit
+        def kernel(a):
+            idx = cuda.grid(1)
+            if idx < len(a):
+                a[idx] = idx
+
+        dev = Device()
+        dev.set_current()
+        stream = dev.create_stream()
+
+        ary = cuda.to_device([0] * 100, stream=stream)
+        stream.sync()
+
+        kernel[1, 100, stream](ary)
+        stream.sync()
+
+        result = ary.copy_to_host(stream=stream)
+        for i, v in enumerate(result):
             self.assertEqual(i, v)
 
     def test_cuda_driver_default_stream(self):

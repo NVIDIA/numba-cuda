@@ -3,9 +3,16 @@
 
 import string
 from numba import cuda
+from numba.cuda.core import config
 import numpy as np
 import pytest
 from pytest import param
+
+
+pytestmark = pytest.mark.skipif(
+    condition=config.ENABLE_CUDASIM,
+    reason="no reason to run benchmarks in the simulator",
+)
 
 
 @pytest.mark.parametrize(

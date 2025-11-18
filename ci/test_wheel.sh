@@ -13,14 +13,14 @@ echo "Package path: ${package}"
 DEPENDENCIES=(
     "${package}"
     "cuda-python==${CUDA_VER_MAJOR_MINOR%.*}.*"
-    "cuda-core==0.3.*"
+    "cuda-core>=0.3.0,<1.0.0"
     "--group"
     "test"
 )
 
 # Constrain oldest supported dependencies for testing
-if [ "${RAPIDS_DEPENDENCIES:-}" = "oldest" ]; then
-    DEPENDENCIES+=("numba==0.60.0")
+if [ "${NUMBA_VERSION:-*}" != "*" ]; then
+    DEPENDENCIES+=("numba==${NUMBA_VERSION}")
 fi
 
 python -m pip install "${DEPENDENCIES[@]}"

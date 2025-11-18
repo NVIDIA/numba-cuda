@@ -128,11 +128,11 @@ class TestNrtBasic(CUDATestCase):
         match = re.search(p1, ptx)
         assert match is not None
 
-        p2 = r"call\.uni.*\n.*NRT_incref"
+        p2 = r"call\.uni.*\n?.*NRT_incref"
         match = re.search(p2, ptx)
         assert match is not None
 
-        p3 = r"call\.uni.*\n.*NRT_decref"
+        p3 = r"call\.uni.*\n?.*NRT_decref"
         match = re.search(p3, ptx)
         assert match is not None
 

@@ -10,13 +10,20 @@ import sys
 import unittest
 from multiprocessing import get_context
 
+from numba.cuda import HAS_NUMBA
 import numba
-from numba.core.errors import TypingError
+
+if HAS_NUMBA:
+    from numba.core.errors import TypingError
+    from numba.core.target_extension import resolve_dispatcher_from_str
+else:
+    from numba.cuda.core.errors import TypingError
 from numba.cuda.tests.support import TestCase
-from numba.core.target_extension import resolve_dispatcher_from_str
 from numba.cuda.cloudpickle import dumps, loads
+from numba.cuda.testing import skip_on_standalone_numba_cuda
 
 
+@skip_on_standalone_numba_cuda
 class TestDispatcherPickling(TestCase):
     def run_with_protocols(self, meth, *args, **kwargs):
         for proto in range(pickle.HIGHEST_PROTOCOL + 1):
@@ -297,6 +304,8 @@ class TestCloudPickleIssues(TestCase):
         self.assertEqual(proc.exitcode, 0)
 
     def test_dynamic_class_issue_7356(self):
+        import numba
+
         cfunc = numba.njit(issue_7356)
         self.assertEqual(cfunc(), (100, 100))
 

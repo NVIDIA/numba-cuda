@@ -9,7 +9,7 @@ import operator
 
 from llvmlite import ir
 from numba.cuda import types
-from numba.core import errors
+from numba.cuda.core import errors
 from numba.cuda import cgutils
 from numba.cuda.core.imputils import (
     Registry,
@@ -19,9 +19,8 @@ from numba.cuda.core.imputils import (
     RefType,
 )
 from numba.cuda.extending import overload_method, overload
-from numba.misc import quicksort
 from numba.cuda.cpython import slicing
-from numba import literal_unroll
+from numba.cuda.misc.special import literal_unroll
 
 registry = Registry("listobj")
 lower = registry.lower
@@ -300,8 +299,12 @@ class ListInstance(_ListPayloadMixin):
         mod = builder.module
         # Declare dtor
         fnty = ir.FunctionType(ir.VoidType(), [cgutils.voidptr_t])
+        if isinstance(self.dtype, types.containers.List):
+            dtypestr = f"list_{self.dtype.dtype}"
+        else:
+            dtypestr = str(self.dtype)
         fn = cgutils.get_or_insert_function(
-            mod, fnty, ".dtor.list.{}".format(self.dtype)
+            mod, fnty, f"numba_cuda_dtor_list_{dtypestr}"
         )
         if not fn.is_declaration:
             # End early if the dtor is already defined
@@ -1128,17 +1131,6 @@ def gt(a, b):
     return a > b
 
 
-sort_forwards = quicksort.make_jit_quicksort().run_quicksort
-sort_backwards = quicksort.make_jit_quicksort(lt=gt).run_quicksort
-
-arg_sort_forwards = quicksort.make_jit_quicksort(
-    is_argsort=True, is_list=True
-).run_quicksort
-arg_sort_backwards = quicksort.make_jit_quicksort(
-    is_argsort=True, lt=gt, is_list=True
-).run_quicksort
-
-
 def _sort_check_reverse(reverse):
     if isinstance(reverse, types.Omitted):
         rty = reverse.value
@@ -1162,35 +1154,6 @@ def _sort_check_key(key):
     if not (cgutils.is_nonelike(key) or isinstance(key, types.Dispatcher)):
         msg = "Key must be None or a Numba JIT compiled function"
         raise errors.TypingError(msg)
-
-
-@overload_method(types.List, "sort")
-def ol_list_sort(lst, key=None, reverse=False):
-    _sort_check_key(key)
-    _sort_check_reverse(reverse)
-
-    if cgutils.is_nonelike(key):
-        KEY = False
-        sort_f = sort_forwards
-        sort_b = sort_backwards
-    elif isinstance(key, types.Dispatcher):
-        KEY = True
-        sort_f = arg_sort_forwards
-        sort_b = arg_sort_backwards
-
-    def impl(lst, key=None, reverse=False):
-        if KEY is True:
-            _lst = [key(x) for x in lst]
-        else:
-            _lst = lst
-        if reverse is False or reverse == 0:
-            tmp = sort_f(_lst)
-        else:
-            tmp = sort_b(_lst)
-        if KEY is True:
-            lst[:] = [lst[i] for i in tmp]
-
-    return impl
 
 
 @overload(sorted)

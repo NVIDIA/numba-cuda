@@ -5,10 +5,10 @@ from functools import singledispatch
 from llvmlite import ir
 from numba.cuda import types
 from numba.cuda import cgutils
-from numba.core.errors import NumbaWarning
+from numba.cuda.core.errors import NumbaWarning
 from numba.cuda.core.imputils import Registry
 from numba.cuda import nvvmutils
-from numba.cuda.ext_types import Dim3, Bfloat16
+from numba.cuda.types.ext_types import Dim3, Bfloat16
 from warnings import warn
 
 registry = Registry("printimpl")

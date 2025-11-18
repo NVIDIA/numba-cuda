@@ -3,6 +3,7 @@
 
 import sys
 import numpy as np
+import pytest
 from numba.cuda.testing import (
     skip_unless_cc_53,
     unittest,
@@ -145,6 +146,11 @@ def math_remainder(A, B, C):
     C[i] = math.remainder(A[i], B[i])
 
 
+def math_nextafter(A, B, C):
+    i = cuda.grid(1)
+    C[i] = math.nextafter(A[i], B[i])
+
+
 def math_sqrt(A, B):
     i = cuda.grid(1)
     B[i] = math.sqrt(A[i])
@@ -243,8 +249,8 @@ class TestCudaMath(CUDATestCase):
 
     def unary_template(self, func, npfunc, npdtype, nprestype, start, stop):
         nelem = 50
-        A = np.linspace(start, stop, nelem).astype(npdtype)
-        B = np.empty_like(A).astype(nprestype)
+        A = np.linspace(start, stop, nelem, dtype=npdtype)
+        B = np.empty_like(A, dtype=nprestype)
         arytype = numpy_support.from_dtype(npdtype)[::1]
         restype = numpy_support.from_dtype(nprestype)[::1]
         cfunc = cuda.jit((arytype, restype))(func)
@@ -530,7 +536,7 @@ class TestCudaMath(CUDATestCase):
         self.unary_template_float32(math_fabs, np.fabs, start=-1)
         self.unary_template_float64(math_fabs, np.fabs, start=-1)
         self.unary_template_int64(math_fabs, np.fabs, start=-1)
-        self.unary_template_uint64(math_fabs, np.fabs, start=-1)
+        self.unary_template_uint64(math_fabs, np.fabs, start=0)
 
     # ---------------------------------------------------------------------------
     # test_math_gamma
@@ -614,6 +620,15 @@ class TestCudaMath(CUDATestCase):
         self.assertTrue(np.isnan(r[0]))
 
     # ---------------------------------------------------------------------------
+    # test_math_nextafter
+
+    def test_math_nextafter(self):
+        self.binary_template_float32(math_nextafter, np.nextafter, start=1e-11)
+        self.binary_template_float64(math_remainder, np.remainder, start=1e-11)
+        self.binary_template_int64(math_remainder, np.remainder, start=1)
+        self.binary_template_uint64(math_remainder, np.remainder, start=1)
+
+    # ---------------------------------------------------------------------------
     # test_math_sqrt
 
     def test_math_sqrt(self):
@@ -649,12 +664,14 @@ class TestCudaMath(CUDATestCase):
         Cref = np.empty_like(A)
         for i in range(len(A)):
             Cref[i] = math.pow(A[i], B[i])
+
         np.testing.assert_allclose(np.power(A, B).astype(npdtype), C, rtol=1e-6)
 
     def test_math_pow(self):
         self.binary_template_float32(math_pow, np.power)
         self.binary_template_float64(math_pow, np.power)
-        self.pow_template_int32(np.float32)
+        with pytest.warns(RuntimeWarning, match="overflow encountered in cast"):
+            self.pow_template_int32(np.float32)
         self.pow_template_int32(np.float64)
 
     # ---------------------------------------------------------------------------

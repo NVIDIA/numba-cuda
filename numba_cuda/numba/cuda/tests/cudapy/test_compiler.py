@@ -584,7 +584,13 @@ class TestCompile(unittest.TestCase):
 
         args = (float32[::1], float32, float32)
         code_list, resty = compile_all(
-            f, args, debug=True, output="ptx", device=False, abi="numba"
+            f,
+            args,
+            debug=True,
+            output="ptx",
+            device=False,
+            abi="numba",
+            opt=False,
         )
         assert len(code_list) == 2
 
@@ -655,7 +661,9 @@ class TestCompileWithLaunchBounds(unittest.TestCase):
         sig = "void()"
         ptx, resty = cuda.compile_ptx(f, sig, launch_bounds=launch_bounds)
         self.assertIsInstance(resty, types.NoneType)
-        self.assertRegex(ptx, r".maxntid\s+128,\s+1,\s+1")
+        # Match either `.maxntid, 128, 1, 1` or `.maxntid 128` on a line by
+        # itself:
+        self.assertRegex(ptx, r".maxntid\s+128(?:,\s+1,\s+1)?\s*\n")
         return ptx
 
     def test_launch_bounds_scalar(self):

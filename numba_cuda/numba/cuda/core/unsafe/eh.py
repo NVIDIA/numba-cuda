@@ -6,7 +6,7 @@ Exception handling intrinsics.
 """
 
 from numba.cuda import types
-from numba.core import errors
+from numba.cuda.core import errors
 from numba.cuda import cgutils
 from numba.cuda.extending import intrinsic
 

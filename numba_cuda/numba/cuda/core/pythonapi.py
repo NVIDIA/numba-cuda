@@ -11,7 +11,7 @@ from llvmlite.ir import Constant
 
 import ctypes
 from numba.cuda.cext import _helperlib
-from numba.core import errors
+from numba.cuda.core import errors
 from numba.cuda.core import imputils
 from numba.cuda.utils import PYVERSION
 from numba.cuda import config, types, lowering, cgutils, serialize
