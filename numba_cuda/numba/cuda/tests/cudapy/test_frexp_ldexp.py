@@ -1,7 +1,10 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: BSD-2-Clause
+
 import numpy as np
 import math
 from numba import cuda
-from numba.types import float32, float64, int32, void
+from numba.cuda.types import float32, float64, int32, void
 from numba.cuda.testing import unittest, CUDATestCase
 
 
@@ -62,5 +65,5 @@ class TestCudaFrexpLdexp(CUDATestCase):
         self.template_test_ldexp(np.float64, float64)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: BSD-2-Clause
+
 import numpy as np
 
 from numba import cuda
@@ -44,9 +47,11 @@ class TestForAll(CUDATestCase):
         # negative element count.
         with self.assertRaises(ValueError) as raises:
             foo.forall(-1)
-        self.assertIn("Can't create ForAll with negative task count",
-                      str(raises.exception))
+        self.assertIn(
+            "Can't create ForAll with negative task count",
+            str(raises.exception),
+        )
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

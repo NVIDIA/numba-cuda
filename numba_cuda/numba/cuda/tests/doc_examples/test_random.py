@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: BSD-2-Clause
+
 # Contents in this file are referenced from the sphinx-generated docs.
 # "magictoken" is used for markers as beginning and ending of example text.
 
@@ -10,8 +13,10 @@ class TestRandom(CUDATestCase):
     def test_ex_3d_grid(self):
         # magictoken.ex_3d_grid.begin
         from numba import cuda
-        from numba.cuda.random import (create_xoroshiro128p_states,
-                                       xoroshiro128p_uniform_float32)
+        from numba.cuda.random import (
+            create_xoroshiro128p_states,
+            xoroshiro128p_uniform_float32,
+        )
         import numpy as np
 
         @cuda.jit
@@ -27,7 +32,9 @@ class TestRandom(CUDATestCase):
             for i in range(startz, arr.shape[0], stridez):
                 for j in range(starty, arr.shape[1], stridey):
                     for k in range(startx, arr.shape[2], stridex):
-                        arr[i, j, k] = xoroshiro128p_uniform_float32(rng_states, tid)
+                        arr[i, j, k] = xoroshiro128p_uniform_float32(
+                            rng_states, tid
+                        )
 
         # Array dimensions
         X, Y, Z = 701, 900, 719
@@ -55,5 +62,5 @@ class TestRandom(CUDATestCase):
         self.assertTrue(np.all(host_arr >= 0.0))
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

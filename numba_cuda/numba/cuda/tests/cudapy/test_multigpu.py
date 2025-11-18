@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: BSD-2-Clause
+
 from numba import cuda
 import numpy as np
 from numba.cuda.testing import skip_on_cudasim, CUDATestCase
@@ -47,7 +50,7 @@ class TestMultiGPUContext(CUDATestCase):
         copy_plus_1[1, N](A, B)
         check(A, B)
 
-    @skip_on_cudasim('Simulator does not support multiple threads')
+    @skip_on_cudasim("Simulator does not support multiple threads")
     def test_multithreaded(self):
         def work(gpu, dA, results, ridx):
             try:
@@ -64,9 +67,12 @@ class TestMultiGPUContext(CUDATestCase):
 
         nthreads = 10
         results = [None] * nthreads
-        threads = [threading.Thread(target=work, args=(cuda.gpus.current,
-                                                       dA, results, i))
-                   for i in range(nthreads)]
+        threads = [
+            threading.Thread(
+                target=work, args=(cuda.gpus.current, dA, results, i)
+            )
+            for i in range(nthreads)
+        ]
         for th in threads:
             th.start()
 
@@ -81,7 +87,6 @@ class TestMultiGPUContext(CUDATestCase):
 
     @unittest.skipIf(len(cuda.gpus) < 2, "need more than 1 gpus")
     def test_with_context(self):
-
         @cuda.jit
         def vector_add_scalar(arr, val):
             i = cuda.grid(1)
@@ -115,7 +120,7 @@ class TestMultiGPUContext(CUDATestCase):
         with cuda.gpus[0]:
             ctx = cuda.current_context()
             if not ctx.can_access_peer(1):
-                self.skipTest('Peer access between GPUs disabled')
+                self.skipTest("Peer access between GPUs disabled")
 
         # 1. Create a range in an array
         hostarr = np.arange(10, dtype=np.float32)
@@ -136,5 +141,5 @@ class TestMultiGPUContext(CUDATestCase):
             np.testing.assert_equal(arr2.copy_to_host(), hostarr)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

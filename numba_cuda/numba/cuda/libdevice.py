@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: BSD-2-Clause
+
+
 def abs(x):
     """
     See https://docs.nvidia.com/cuda/libdevice-users-guide/__nv_abs.html
@@ -5,7 +9,7 @@ def abs(x):
     :param x: Argument.
     :type x: int32
     :rtype: int32
-"""
+    """
 
 
 def acos(x):
@@ -15,7 +19,7 @@ def acos(x):
     :param x: Argument.
     :type x: float64
     :rtype: float64
-"""
+    """
 
 
 def acosf(x):
@@ -25,7 +29,7 @@ def acosf(x):
     :param x: Argument.
     :type x: float32
     :rtype: float32
-"""
+    """
 
 
 def acosh(x):
@@ -35,7 +39,7 @@ def acosh(x):
     :param x: Argument.
     :type x: float64
     :rtype: float64
-"""
+    """
 
 
 def acoshf(x):
@@ -45,7 +49,7 @@ def acoshf(x):
     :param x: Argument.
     :type x: float32
     :rtype: float32
-"""
+    """
 
 
 def asin(x):
@@ -55,7 +59,7 @@ def asin(x):
     :param x: Argument.
     :type x: float64
     :rtype: float64
-"""
+    """
 
 
 def asinf(x):
@@ -65,7 +69,7 @@ def asinf(x):
     :param x: Argument.
     :type x: float32
     :rtype: float32
-"""
+    """
 
 
 def asinh(x):
@@ -75,7 +79,7 @@ def asinh(x):
     :param x: Argument.
     :type x: float64
     :rtype: float64
-"""
+    """
 
 
 def asinhf(x):
@@ -85,7 +89,7 @@ def asinhf(x):
     :param x: Argument.
     :type x: float32
     :rtype: float32
-"""
+    """
 
 
 def atan(x):
@@ -95,7 +99,7 @@ def atan(x):
     :param x: Argument.
     :type x: float64
     :rtype: float64
-"""
+    """
 
 
 def atan2(x, y):
@@ -107,7 +111,7 @@ def atan2(x, y):
     :param y: Argument.
     :type y: float64
     :rtype: float64
-"""
+    """
 
 
 def atan2f(x, y):
@@ -119,7 +123,7 @@ def atan2f(x, y):
     :param y: Argument.
     :type y: float32
     :rtype: float32
-"""
+    """
 
 
 def atanf(x):
@@ -129,7 +133,7 @@ def atanf(x):
     :param x: Argument.
     :type x: float32
     :rtype: float32
-"""
+    """
 
 
 def atanh(x):
@@ -139,7 +143,7 @@ def atanh(x):
     :param x: Argument.
     :type x: float64
     :rtype: float64
-"""
+    """
 
 
 def atanhf(x):
@@ -149,7 +153,7 @@ def atanhf(x):
     :param x: Argument.
     :type x: float32
     :rtype: float32
-"""
+    """
 
 
 def brev(x):
@@ -159,7 +163,7 @@ def brev(x):
     :param x: Argument.
     :type x: int32
     :rtype: int32
-"""
+    """
 
 
 def brevll(x):
@@ -169,7 +173,7 @@ def brevll(x):
     :param x: Argument.
     :type x: int64
     :rtype: int64
-"""
+    """
 
 
 def byte_perm(x, y, z):
@@ -183,7 +187,7 @@ def byte_perm(x, y, z):
     :param z: Argument.
     :type z: int32
     :rtype: int32
-"""
+    """
 
 
 def cbrt(x):
@@ -193,7 +197,7 @@ def cbrt(x):
     :param x: Argument.
     :type x: float64
     :rtype: float64
-"""
+    """
 
 
 def cbrtf(x):
@@ -203,7 +207,7 @@ def cbrtf(x):
     :param x: Argument.
     :type x: float32
     :rtype: float32
-"""
+    """
 
 
 def ceil(x):
@@ -213,7 +217,7 @@ def ceil(x):
     :param x: Argument.
     :type x: float64
     :rtype: float64
-"""
+    """
 
 
 def ceilf(x):
@@ -223,7 +227,7 @@ def ceilf(x):
     :param x: Argument.
     :type x: float32
     :rtype: float32
-"""
+    """
 
 
 def clz(x):
@@ -233,7 +237,7 @@ def clz(x):
     :param x: Argument.
     :type x: int32
     :rtype: int32
-"""
+    """
 
 
 def clzll(x):
@@ -243,7 +247,7 @@ def clzll(x):
     :param x: Argument.
     :type x: int64
     :rtype: int32
-"""
+    """
 
 
 def copysign(x, y):
@@ -255,7 +259,7 @@ def copysign(x, y):
     :param y: Argument.
     :type y: float64
     :rtype: float64
-"""
+    """
 
 
 def copysignf(x, y):
@@ -267,7 +271,7 @@ def copysignf(x, y):
     :param y: Argument.
     :type y: float32
     :rtype: float32
-"""
+    """
 
 
 def cos(x):
@@ -277,7 +281,7 @@ def cos(x):
     :param x: Argument.
     :type x: float64
     :rtype: float64
-"""
+    """
 
 
 def cosf(x):
@@ -287,7 +291,7 @@ def cosf(x):
     :param x: Argument.
     :type x: float32
     :rtype: float32
-"""
+    """
 
 
 def cosh(x):
@@ -297,7 +301,7 @@ def cosh(x):
     :param x: Argument.
     :type x: float64
     :rtype: float64
-"""
+    """
 
 
 def coshf(x):
@@ -307,7 +311,7 @@ def coshf(x):
     :param x: Argument.
     :type x: float32
     :rtype: float32
-"""
+    """
 
 
 def cospi(x):
@@ -317,7 +321,7 @@ def cospi(x):
     :param x: Argument.
     :type x: float64
     :rtype: float64
-"""
+    """
 
 
 def cospif(x):
@@ -327,7 +331,7 @@ def cospif(x):
     :param x: Argument.
     :type x: float32
     :rtype: float32
-"""
+    """
 
 
 def dadd_rd(x, y):
@@ -339,7 +343,7 @@ def dadd_rd(x, y):
     :param y: Argument.
     :type y: float64
     :rtype: float64
-"""
+    """
 
 
 def dadd_rn(x, y):
@@ -351,7 +355,7 @@ def dadd_rn(x, y):
     :param y: Argument.
     :type y: float64
     :rtype: float64
-"""
+    """
 
 
 def dadd_ru(x, y):
@@ -363,7 +367,7 @@ def dadd_ru(x, y):
     :param y: Argument.
     :type y: float64
     :rtype: float64
-"""
+    """
 
 
 def dadd_rz(x, y):
@@ -375,7 +379,7 @@ def dadd_rz(x, y):
     :param y: Argument.
     :type y: float64
     :rtype: float64
-"""
+    """
 
 
 def ddiv_rd(x, y):
@@ -387,7 +391,7 @@ def ddiv_rd(x, y):
     :param y: Argument.
     :type y: float64
     :rtype: float64
-"""
+    """
 
 
 def ddiv_rn(x, y):
@@ -399,7 +403,7 @@ def ddiv_rn(x, y):
     :param y: Argument.
     :type y: float64
     :rtype: float64
-"""
+    """
 
 
 def ddiv_ru(x, y):
@@ -411,7 +415,7 @@ def ddiv_ru(x, y):
     :param y: Argument.
     :type y: float64
     :rtype: float64
-"""
+    """
 
 
 def ddiv_rz(x, y):
@@ -423,7 +427,7 @@ def ddiv_rz(x, y):
     :param y: Argument.
     :type y: float64
     :rtype: float64
-"""
+    """
 
 
 def dmul_rd(x, y):
@@ -435,7 +439,7 @@ def dmul_rd(x, y):
     :param y: Argument.
     :type y: float64
     :rtype: float64
-"""
+    """
 
 
 def dmul_rn(x, y):
@@ -447,7 +451,7 @@ def dmul_rn(x, y):
     :param y: Argument.
     :type y: float64
     :rtype: float64
-"""
+    """
 
 
 def dmul_ru(x, y):
@@ -459,7 +463,7 @@ def dmul_ru(x, y):
     :param y: Argument.
     :type y: float64
     :rtype: float64
-"""
+    """
 
 
 def dmul_rz(x, y):
@@ -471,7 +475,7 @@ def dmul_rz(x, y):
     :param y: Argument.
     :type y: float64
     :rtype: float64
-"""
+    """
 
 
 def double2float_rd(d):
@@ -481,7 +485,7 @@ def double2float_rd(d):
     :param d: Argument.
     :type d: float64
     :rtype: float32
-"""
+    """
 
 
 def double2float_rn(d):
@@ -491,7 +495,7 @@ def double2float_rn(d):
     :param d: Argument.
     :type d: float64
     :rtype: float32
-"""
+    """
 
 
 def double2float_ru(d):
@@ -501,7 +505,7 @@ def double2float_ru(d):
     :param d: Argument.
     :type d: float64
     :rtype: float32
-"""
+    """
 
 
 def double2float_rz(d):
@@ -511,7 +515,7 @@ def double2float_rz(d):
     :param d: Argument.
     :type d: float64
     :rtype: float32
-"""
+    """
 
 
 def double2hiint(d):
@@ -521,7 +525,7 @@ def double2hiint(d):
     :param d: Argument.
     :type d: float64
     :rtype: int32
-"""
+    """
 
 
 def double2int_rd(d):
@@ -531,7 +535,7 @@ def double2int_rd(d):
     :param d: Argument.
     :type d: float64
     :rtype: int32
-"""
+    """
 
 
 def double2int_rn(d):
@@ -541,7 +545,7 @@ def double2int_rn(d):
     :param d: Argument.
     :type d: float64
     :rtype: int32
-"""
+    """
 
 
 def double2int_ru(d):
@@ -551,7 +555,7 @@ def double2int_ru(d):
     :param d: Argument.
     :type d: float64
     :rtype: int32
-"""
+    """
 
 
 def double2int_rz(d):
@@ -561,7 +565,7 @@ def double2int_rz(d):
     :param d: Argument.
     :type d: float64
     :rtype: int32
-"""
+    """
 
 
 def double2ll_rd(f):
@@ -571,7 +575,7 @@ def double2ll_rd(f):
     :param f: Argument.
     :type f: float64
     :rtype: int64
-"""
+    """
 
 
 def double2ll_rn(f):
@@ -581,7 +585,7 @@ def double2ll_rn(f):
     :param f: Argument.
     :type f: float64
     :rtype: int64
-"""
+    """
 
 
 def double2ll_ru(f):
@@ -591,7 +595,7 @@ def double2ll_ru(f):
     :param f: Argument.
     :type f: float64
     :rtype: int64
-"""
+    """
 
 
 def double2ll_rz(f):
@@ -601,7 +605,7 @@ def double2ll_rz(f):
     :param f: Argument.
     :type f: float64
     :rtype: int64
-"""
+    """
 
 
 def double2loint(d):
@@ -611,7 +615,7 @@ def double2loint(d):
     :param d: Argument.
     :type d: float64
     :rtype: int32
-"""
+    """
 
 
 def double2uint_rd(d):
@@ -621,7 +625,7 @@ def double2uint_rd(d):
     :param d: Argument.
     :type d: float64
     :rtype: int32
-"""
+    """
 
 
 def double2uint_rn(d):
@@ -631,7 +635,7 @@ def double2uint_rn(d):
     :param d: Argument.
     :type d: float64
     :rtype: int32
-"""
+    """
 
 
 def double2uint_ru(d):
@@ -641,7 +645,7 @@ def double2uint_ru(d):
     :param d: Argument.
     :type d: float64
     :rtype: int32
-"""
+    """
 
 
 def double2uint_rz(d):
@@ -651,7 +655,7 @@ def double2uint_rz(d):
     :param d: Argument.
     :type d: float64
     :rtype: int32
-"""
+    """
 
 
 def double2ull_rd(f):
@@ -661,7 +665,7 @@ def double2ull_rd(f):
     :param f: Argument.
     :type f: float64
     :rtype: int64
-"""
+    """
 
 
 def double2ull_rn(f):
@@ -671,7 +675,7 @@ def double2ull_rn(f):
     :param f: Argument.
     :type f: float64
     :rtype: int64
-"""
+    """
 
 
 def double2ull_ru(f):
@@ -681,7 +685,7 @@ def double2ull_ru(f):
     :param f: Argument.
     :type f: float64
     :rtype: int64
-"""
+    """
 
 
 def double2ull_rz(f):
@@ -691,7 +695,7 @@ def double2ull_rz(f):
     :param f: Argument.
     :type f: float64
     :rtype: int64
-"""
+    """
 
 
 def double_as_longlong(x):
@@ -701,7 +705,7 @@ def double_as_longlong(x):
     :param x: Argument.
     :type x: float64
     :rtype: int64
-"""
+    """
 
 
 def drcp_rd(x):
@@ -711,7 +715,7 @@ def drcp_rd(x):
     :param x: Argument.
     :type x: float64
     :rtype: float64
-"""
+    """
 
 
 def drcp_rn(x):
@@ -721,7 +725,7 @@ def drcp_rn(x):
     :param x: Argument.
     :type x: float64
     :rtype: float64
-"""
+    """
 
 
 def drcp_ru(x):
@@ -731,7 +735,7 @@ def drcp_ru(x):
     :param x: Argument.
     :type x: float64
     :rtype: float64
-"""
+    """
 
 
 def drcp_rz(x):
@@ -741,7 +745,7 @@ def drcp_rz(x):
     :param x: Argument.
     :type x: float64
     :rtype: float64
-"""
+    """
 
 
 def dsqrt_rd(x):
@@ -751,7 +755,7 @@ def dsqrt_rd(x):
     :param x: Argument.
     :type x: float64
     :rtype: float64
-"""
+    """
 
 
 def dsqrt_rn(x):
@@ -761,7 +765,7 @@ def dsqrt_rn(x):
     :param x: Argument.
     :type x: float64
     :rtype: float64
-"""
+    """
 
 
 def dsqrt_ru(x):
@@ -771,7 +775,7 @@ def dsqrt_ru(x):
     :param x: Argument.
     :type x: float64
     :rtype: float64
-"""
+    """
 
 
 def dsqrt_rz(x):
@@ -781,7 +785,7 @@ def dsqrt_rz(x):
     :param x: Argument.
     :type x: float64
     :rtype: float64
-"""
+    """
 
 
 def erf(x):
@@ -791,7 +795,7 @@ def erf(x):
     :param x: Argument.
     :type x: float64
     :rtype: float64
-"""
+    """
 
 
 def erfc(x):
@@ -801,7 +805,7 @@ def erfc(x):
     :param x: Argument.
     :type x: float64
     :rtype: float64
-"""
+    """
 
 
 def erfcf(x):
@@ -811,7 +815,7 @@ def erfcf(x):
     :param x: Argument.
     :type x: float32
     :rtype: float32
-"""
+    """
 
 
 def erfcinv(x):
@@ -821,7 +825,7 @@ def erfcinv(x):
     :param x: Argument.
     :type x: float64
     :rtype: float64
-"""
+    """
 
 
 def erfcinvf(x):
@@ -831,7 +835,7 @@ def erfcinvf(x):
     :param x: Argument.
     :type x: float32
     :rtype: float32
-"""
+    """
 
 
 def erfcx(x):
@@ -841,7 +845,7 @@ def erfcx(x):
     :param x: Argument.
     :type x: float64
     :rtype: float64
-"""
+    """
 
 
 def erfcxf(x):
@@ -851,7 +855,7 @@ def erfcxf(x):
     :param x: Argument.
     :type x: float32
     :rtype: float32
-"""
+    """
 
 
 def erff(x):
@@ -861,7 +865,7 @@ def erff(x):
     :param x: Argument.
     :type x: float32
     :rtype: float32
-"""
+    """
 
 
 def erfinv(x):
@@ -871,7 +875,7 @@ def erfinv(x):
     :param x: Argument.
     :type x: float64
     :rtype: float64
-"""
+    """
 
 
 def erfinvf(x):
@@ -881,7 +885,7 @@ def erfinvf(x):
     :param x: Argument.
     :type x: float32
     :rtype: float32
-"""
+    """
 
 
 def exp(x):
@@ -891,7 +895,7 @@ def exp(x):
     :param x: Argument.
     :type x: float64
     :rtype: float64
-"""
+    """
 
 
 def exp10(x):
@@ -901,7 +905,7 @@ def exp10(x):
     :param x: Argument.
     :type x: float64
     :rtype: float64
-"""
+    """
 
 
 def exp10f(x):
@@ -911,7 +915,7 @@ def exp10f(x):
     :param x: Argument.
     :type x: float32
     :rtype: float32
-"""
+    """
 
 
 def exp2(x):
@@ -921,7 +925,7 @@ def exp2(x):
     :param x: Argument.
     :type x: float64
     :rtype: float64
-"""
+    """
 
 
 def exp2f(x):
@@ -931,7 +935,7 @@ def exp2f(x):
     :param x: Argument.
     :type x: float32
     :rtype: float32
-"""
+    """
 
 
 def expf(x):
@@ -941,7 +945,7 @@ def expf(x):
     :param x: Argument.
     :type x: float32
     :rtype: float32
-"""
+    """
 
 
 def expm1(x):
@@ -951,7 +955,7 @@ def expm1(x):
     :param x: Argument.
     :type x: float64
     :rtype: float64
-"""
+    """
 
 
 def expm1f(x):
@@ -961,7 +965,7 @@ def expm1f(x):
     :param x: Argument.
     :type x: float32
     :rtype: float32
-"""
+    """
 
 
 def fabs(f):
@@ -971,7 +975,7 @@ def fabs(f):
     :param f: Argument.
     :type f: float64
     :rtype: float64
-"""
+    """
 
 
 def fabsf(f):
@@ -981,7 +985,7 @@ def fabsf(f):
     :param f: Argument.
     :type f: float32
     :rtype: float32
-"""
+    """
 
 
 def fadd_rd(x, y):
@@ -993,7 +997,7 @@ def fadd_rd(x, y):
     :param y: Argument.
     :type y: float32
     :rtype: float32
-"""
+    """
 
 
 def fadd_rn(x, y):
@@ -1005,7 +1009,7 @@ def fadd_rn(x, y):
     :param y: Argument.
     :type y: float32
     :rtype: float32
-"""
+    """
 
 
 def fadd_ru(x, y):
@@ -1017,7 +1021,7 @@ def fadd_ru(x, y):
     :param y: Argument.
     :type y: float32
     :rtype: float32
-"""
+    """
 
 
 def fadd_rz(x, y):
@@ -1029,7 +1033,7 @@ def fadd_rz(x, y):
     :param y: Argument.
     :type y: float32
     :rtype: float32
-"""
+    """
 
 
 def fast_cosf(x):
@@ -1039,7 +1043,7 @@ def fast_cosf(x):
     :param x: Argument.
     :type x: float32
     :rtype: float32
-"""
+    """
 
 
 def fast_exp10f(x):
@@ -1049,7 +1053,7 @@ def fast_exp10f(x):
     :param x: Argument.
     :type x: float32
     :rtype: float32
-"""
+    """
 
 
 def fast_expf(x):
@@ -1059,7 +1063,7 @@ def fast_expf(x):
     :param x: Argument.
     :type x: float32
     :rtype: float32
-"""
+    """
 
 
 def fast_fdividef(x, y):
@@ -1071,7 +1075,7 @@ def fast_fdividef(x, y):
     :param y: Argument.
     :type y: float32
     :rtype: float32
-"""
+    """
 
 
 def fast_log10f(x):
@@ -1081,7 +1085,7 @@ def fast_log10f(x):
     :param x: Argument.
     :type x: float32
     :rtype: float32
-"""
+    """
 
 
 def fast_log2f(x):
@@ -1091,7 +1095,7 @@ def fast_log2f(x):
     :param x: Argument.
     :type x: float32
     :rtype: float32
-"""
+    """
 
 
 def fast_logf(x):
@@ -1101,7 +1105,7 @@ def fast_logf(x):
     :param x: Argument.
     :type x: float32
     :rtype: float32
-"""
+    """
 
 
 def fast_powf(x, y):
@@ -1113,7 +1117,7 @@ def fast_powf(x, y):
     :param y: Argument.
     :type y: float32
     :rtype: float32
-"""
+    """
 
 
 def fast_sincosf(x):
@@ -1123,7 +1127,7 @@ def fast_sincosf(x):
     :param x: Argument.
     :type x: float32
     :rtype: UniTuple(float32 x 2)
-"""
+    """
 
 
 def fast_sinf(x):
@@ -1133,7 +1137,7 @@ def fast_sinf(x):
     :param x: Argument.
     :type x: float32
     :rtype: float32
-"""
+    """
 
 
 def fast_tanf(x):
@@ -1143,7 +1147,7 @@ def fast_tanf(x):
     :param x: Argument.
     :type x: float32
     :rtype: float32
-"""
+    """
 
 
 def fdim(x, y):
@@ -1155,7 +1159,7 @@ def fdim(x, y):
     :param y: Argument.
     :type y: float64
     :rtype: float64
-"""
+    """
 
 
 def fdimf(x, y):
@@ -1167,7 +1171,7 @@ def fdimf(x, y):
     :param y: Argument.
     :type y: float32
     :rtype: float32
-"""
+    """
 
 
 def fdiv_rd(x, y):
@@ -1179,7 +1183,7 @@ def fdiv_rd(x, y):
     :param y: Argument.
     :type y: float32
     :rtype: float32
-"""
+    """
 
 
 def fdiv_rn(x, y):
@@ -1191,7 +1195,7 @@ def fdiv_rn(x, y):
     :param y: Argument.
     :type y: float32
     :rtype: float32
-"""
+    """
 
 
 def fdiv_ru(x, y):
@@ -1203,7 +1207,7 @@ def fdiv_ru(x, y):
     :param y: Argument.
     :type y: float32
     :rtype: float32
-"""
+    """
 
 
 def fdiv_rz(x, y):
@@ -1215,7 +1219,7 @@ def fdiv_rz(x, y):
     :param y: Argument.
     :type y: float32
     :rtype: float32
-"""
+    """
 
 
 def ffs(x):
@@ -1225,7 +1229,7 @@ def ffs(x):
     :param x: Argument.
     :type x: int32
     :rtype: int32
-"""
+    """
 
 
 def ffsll(x):
@@ -1235,7 +1239,7 @@ def ffsll(x):
     :param x: Argument.
     :type x: int64
     :rtype: int32
-"""
+    """
 
 
 def finitef(x):
@@ -1245,7 +1249,7 @@ def finitef(x):
     :param x: Argument.
     :type x: float32
     :rtype: int32
-"""
+    """
 
 
 def float2half_rn(f):
@@ -1255,7 +1259,7 @@ def float2half_rn(f):
     :param f: Argument.
     :type f: float32
     :rtype: int16
-"""
+    """
 
 
 def float2int_rd(x):
@@ -1265,7 +1269,7 @@ def float2int_rd(x):
     :param in: Argument.
     :type in: float32
     :rtype: int32
-"""
+    """
 
 
 def float2int_rn(x):
@@ -1275,7 +1279,7 @@ def float2int_rn(x):
     :param in: Argument.
     :type in: float32
     :rtype: int32
-"""
+    """
 
 
 def float2int_ru(x):
@@ -1285,7 +1289,7 @@ def float2int_ru(x):
     :param in: Argument.
     :type in: float32
     :rtype: int32
-"""
+    """
 
 
 def float2int_rz(x):
@@ -1295,7 +1299,7 @@ def float2int_rz(x):
     :param in: Argument.
     :type in: float32
     :rtype: int32
-"""
+    """
 
 
 def float2ll_rd(f):
@@ -1305,7 +1309,7 @@ def float2ll_rd(f):
     :param f: Argument.
     :type f: float32
     :rtype: int64
-"""
+    """
 
 
 def float2ll_rn(f):
@@ -1315,7 +1319,7 @@ def float2ll_rn(f):
     :param f: Argument.
     :type f: float32
     :rtype: int64
-"""
+    """
 
 
 def float2ll_ru(f):
@@ -1325,7 +1329,7 @@ def float2ll_ru(f):
     :param f: Argument.
     :type f: float32
     :rtype: int64
-"""
+    """
 
 
 def float2ll_rz(f):
@@ -1335,7 +1339,7 @@ def float2ll_rz(f):
     :param f: Argument.
     :type f: float32
     :rtype: int64
-"""
+    """
 
 
 def float2uint_rd(x):
@@ -1345,7 +1349,7 @@ def float2uint_rd(x):
     :param in: Argument.
     :type in: float32
     :rtype: int32
-"""
+    """
 
 
 def float2uint_rn(x):
@@ -1355,7 +1359,7 @@ def float2uint_rn(x):
     :param in: Argument.
     :type in: float32
     :rtype: int32
-"""
+    """
 
 
 def float2uint_ru(x):
@@ -1365,7 +1369,7 @@ def float2uint_ru(x):
     :param in: Argument.
     :type in: float32
     :rtype: int32
-"""
+    """
 
 
 def float2uint_rz(x):
@@ -1375,7 +1379,7 @@ def float2uint_rz(x):
     :param in: Argument.
     :type in: float32
     :rtype: int32
-"""
+    """
 
 
 def float2ull_rd(f):
@@ -1385,7 +1389,7 @@ def float2ull_rd(f):
     :param f: Argument.
     :type f: float32
     :rtype: int64
-"""
+    """
 
 
 def float2ull_rn(f):
@@ -1395,7 +1399,7 @@ def float2ull_rn(f):
     :param f: Argument.
     :type f: float32
     :rtype: int64
-"""
+    """
 
 
 def float2ull_ru(f):
@@ -1405,7 +1409,7 @@ def float2ull_ru(f):
     :param f: Argument.
     :type f: float32
     :rtype: int64
-"""
+    """
 
 
 def float2ull_rz(f):
@@ -1415,7 +1419,7 @@ def float2ull_rz(f):
     :param f: Argument.
     :type f: float32
     :rtype: int64
-"""
+    """
 
 
 def float_as_int(x):
@@ -1425,7 +1429,7 @@ def float_as_int(x):
     :param x: Argument.
     :type x: float32
     :rtype: int32
-"""
+    """
 
 
 def floor(f):
@@ -1435,7 +1439,7 @@ def floor(f):
     :param f: Argument.
     :type f: float64
     :rtype: float64
-"""
+    """
 
 
 def floorf(f):
@@ -1445,7 +1449,7 @@ def floorf(f):
     :param f: Argument.
     :type f: float32
     :rtype: float32
-"""
+    """
 
 
 def fma(x, y, z):
@@ -1459,7 +1463,7 @@ def fma(x, y, z):
     :param z: Argument.
     :type z: float64
     :rtype: float64
-"""
+    """
 
 
 def fma_rd(x, y, z):
@@ -1473,7 +1477,7 @@ def fma_rd(x, y, z):
     :param z: Argument.
     :type z: float64
     :rtype: float64
-"""
+    """
 
 
 def fma_rn(x, y, z):
@@ -1487,7 +1491,7 @@ def fma_rn(x, y, z):
     :param z: Argument.
     :type z: float64
     :rtype: float64
-"""
+    """
 
 
 def fma_ru(x, y, z):
@@ -1501,7 +1505,7 @@ def fma_ru(x, y, z):
     :param z: Argument.
     :type z: float64
     :rtype: float64
-"""
+    """
 
 
 def fma_rz(x, y, z):
@@ -1515,7 +1519,7 @@ def fma_rz(x, y, z):
     :param z: Argument.
     :type z: float64
     :rtype: float64
-"""
+    """
 
 
 def fmaf(x, y, z):
@@ -1529,7 +1533,7 @@ def fmaf(x, y, z):
     :param z: Argument.
     :type z: float32
     :rtype: float32
-"""
+    """
 
 
 def fmaf_rd(x, y, z):
@@ -1543,7 +1547,7 @@ def fmaf_rd(x, y, z):
     :param z: Argument.
     :type z: float32
     :rtype: float32
-"""
+    """
 
 
 def fmaf_rn(x, y, z):
@@ -1557,7 +1561,7 @@ def fmaf_rn(x, y, z):
     :param z: Argument.
     :type z: float32
     :rtype: float32
-"""
+    """
 
 
 def fmaf_ru(x, y, z):
@@ -1571,7 +1575,7 @@ def fmaf_ru(x, y, z):
     :param z: Argument.
     :type z: float32
     :rtype: float32
-"""
+    """
 
 
 def fmaf_rz(x, y, z):
@@ -1585,7 +1589,7 @@ def fmaf_rz(x, y, z):
     :param z: Argument.
     :type z: float32
     :rtype: float32
-"""
+    """
 
 
 def fmax(x, y):
@@ -1597,7 +1601,7 @@ def fmax(x, y):
     :param y: Argument.
     :type y: float64
     :rtype: float64
-"""
+    """
 
 
 def fmaxf(x, y):
@@ -1609,7 +1613,7 @@ def fmaxf(x, y):
     :param y: Argument.
     :type y: float32
     :rtype: float32
-"""
+    """
 
 
 def fmin(x, y):
@@ -1621,7 +1625,7 @@ def fmin(x, y):
     :param y: Argument.
     :type y: float64
     :rtype: float64
-"""
+    """
 
 
 def fminf(x, y):
@@ -1633,7 +1637,7 @@ def fminf(x, y):
     :param y: Argument.
     :type y: float32
     :rtype: float32
-"""
+    """
 
 
 def fmod(x, y):
@@ -1645,7 +1649,7 @@ def fmod(x, y):
     :param y: Argument.
     :type y: float64
     :rtype: float64
-"""
+    """
 
 
 def fmodf(x, y):
@@ -1657,7 +1661,7 @@ def fmodf(x, y):
     :param y: Argument.
     :type y: float32
     :rtype: float32
-"""
+    """
 
 
 def fmul_rd(x, y):
@@ -1669,7 +1673,7 @@ def fmul_rd(x, y):
     :param y: Argument.
     :type y: float32
     :rtype: float32
-"""
+    """
 
 
 def fmul_rn(x, y):
@@ -1681,7 +1685,7 @@ def fmul_rn(x, y):
     :param y: Argument.
     :type y: float32
     :rtype: float32
-"""
+    """
 
 
 def fmul_ru(x, y):
@@ -1693,7 +1697,7 @@ def fmul_ru(x, y):
     :param y: Argument.
     :type y: float32
     :rtype: float32
-"""
+    """
 
 
 def fmul_rz(x, y):
@@ -1705,7 +1709,7 @@ def fmul_rz(x, y):
     :param y: Argument.
     :type y: float32
     :rtype: float32
-"""
+    """
 
 
 def frcp_rd(x):
@@ -1715,7 +1719,7 @@ def frcp_rd(x):
     :param x: Argument.
     :type x: float32
     :rtype: float32
-"""
+    """
 
 
 def frcp_rn(x):
@@ -1725,7 +1729,7 @@ def frcp_rn(x):
     :param x: Argument.
     :type x: float32
     :rtype: float32
-"""
+    """
 
 
 def frcp_ru(x):
@@ -1735,7 +1739,7 @@ def frcp_ru(x):
     :param x: Argument.
     :type x: float32
     :rtype: float32
-"""
+    """
 
 
 def frcp_rz(x):
@@ -1745,7 +1749,7 @@ def frcp_rz(x):
     :param x: Argument.
     :type x: float32
     :rtype: float32
-"""
+    """
 
 
 def frexp(x):
@@ -1755,7 +1759,7 @@ def frexp(x):
     :param x: Argument.
     :type x: float64
     :rtype: Tuple(float64, int32)
-"""
+    """
 
 
 def frexpf(x):
@@ -1765,7 +1769,7 @@ def frexpf(x):
     :param x: Argument.
     :type x: float32
     :rtype: Tuple(float32, int32)
-"""
+    """
 
 
 def frsqrt_rn(x):
@@ -1775,7 +1779,7 @@ def frsqrt_rn(x):
     :param x: Argument.
     :type x: float32
     :rtype: float32
-"""
+    """
 
 
 def fsqrt_rd(x):
@@ -1785,7 +1789,7 @@ def fsqrt_rd(x):
     :param x: Argument.
     :type x: float32
     :rtype: float32
-"""
+    """
 
 
 def fsqrt_rn(x):
@@ -1795,7 +1799,7 @@ def fsqrt_rn(x):
     :param x: Argument.
     :type x: float32
     :rtype: float32
-"""
+    """
 
 
 def fsqrt_ru(x):
@@ -1805,7 +1809,7 @@ def fsqrt_ru(x):
     :param x: Argument.
     :type x: float32
     :rtype: float32
-"""
+    """
 
 
 def fsqrt_rz(x):
@@ -1815,7 +1819,7 @@ def fsqrt_rz(x):
     :param x: Argument.
     :type x: float32
     :rtype: float32
-"""
+    """
 
 
 def fsub_rd(x, y):
@@ -1827,7 +1831,7 @@ def fsub_rd(x, y):
     :param y: Argument.
     :type y: float32
     :rtype: float32
-"""
+    """
 
 
 def fsub_rn(x, y):
@@ -1839,7 +1843,7 @@ def fsub_rn(x, y):
     :param y: Argument.
     :type y: float32
     :rtype: float32
-"""
+    """
 
 
 def fsub_ru(x, y):
@@ -1851,7 +1855,7 @@ def fsub_ru(x, y):
     :param y: Argument.
     :type y: float32
     :rtype: float32
-"""
+    """
 
 
 def fsub_rz(x, y):
@@ -1863,7 +1867,7 @@ def fsub_rz(x, y):
     :param y: Argument.
     :type y: float32
     :rtype: float32
-"""
+    """
 
 
 def hadd(x, y):
@@ -1875,7 +1879,7 @@ def hadd(x, y):
     :param y: Argument.
     :type y: int32
     :rtype: int32
-"""
+    """
 
 
 def half2float(h):
@@ -1885,7 +1889,7 @@ def half2float(h):
     :param h: Argument.
     :type h: int16
     :rtype: float32
-"""
+    """
 
 
 def hiloint2double(x, y):
@@ -1897,7 +1901,7 @@ def hiloint2double(x, y):
     :param y: Argument.
     :type y: int32
     :rtype: float64
-"""
+    """
 
 
 def hypot(x, y):
@@ -1909,7 +1913,7 @@ def hypot(x, y):
     :param y: Argument.
     :type y: float64
     :rtype: float64
-"""
+    """
 
 
 def hypotf(x, y):
@@ -1921,7 +1925,7 @@ def hypotf(x, y):
     :param y: Argument.
     :type y: float32
     :rtype: float32
-"""
+    """
 
 
 def ilogb(x):
@@ -1931,7 +1935,7 @@ def ilogb(x):
     :param x: Argument.
     :type x: float64
     :rtype: int32
-"""
+    """
 
 
 def ilogbf(x):
@@ -1941,7 +1945,7 @@ def ilogbf(x):
     :param x: Argument.
     :type x: float32
     :rtype: int32
-"""
+    """
 
 
 def int2double_rn(i):
@@ -1951,7 +1955,7 @@ def int2double_rn(i):
     :param i: Argument.
     :type i: int32
     :rtype: float64
-"""
+    """
 
 
 def int2float_rd(x):
@@ -1961,7 +1965,7 @@ def int2float_rd(x):
     :param in: Argument.
     :type in: int32
     :rtype: float32
-"""
+    """
 
 
 def int2float_rn(x):
@@ -1971,7 +1975,7 @@ def int2float_rn(x):
     :param in: Argument.
     :type in: int32
     :rtype: float32
-"""
+    """
 
 
 def int2float_ru(x):
@@ -1981,7 +1985,7 @@ def int2float_ru(x):
     :param in: Argument.
     :type in: int32
     :rtype: float32
-"""
+    """
 
 
 def int2float_rz(x):
@@ -1991,7 +1995,7 @@ def int2float_rz(x):
     :param in: Argument.
     :type in: int32
     :rtype: float32
-"""
+    """
 
 
 def int_as_float(x):
@@ -2001,7 +2005,7 @@ def int_as_float(x):
     :param x: Argument.
     :type x: int32
     :rtype: float32
-"""
+    """
 
 
 def isfinited(x):
@@ -2011,7 +2015,7 @@ def isfinited(x):
     :param x: Argument.
     :type x: float64
     :rtype: int32
-"""
+    """
 
 
 def isinfd(x):
@@ -2021,7 +2025,7 @@ def isinfd(x):
     :param x: Argument.
     :type x: float64
     :rtype: int32
-"""
+    """
 
 
 def isinff(x):
@@ -2031,7 +2035,7 @@ def isinff(x):
     :param x: Argument.
     :type x: float32
     :rtype: int32
-"""
+    """
 
 
 def isnand(x):
@@ -2041,7 +2045,7 @@ def isnand(x):
     :param x: Argument.
     :type x: float64
     :rtype: int32
-"""
+    """
 
 
 def isnanf(x):
@@ -2051,7 +2055,7 @@ def isnanf(x):
     :param x: Argument.
     :type x: float32
     :rtype: int32
-"""
+    """
 
 
 def j0(x):
@@ -2061,7 +2065,7 @@ def j0(x):
     :param x: Argument.
     :type x: float64
     :rtype: float64
-"""
+    """
 
 
 def j0f(x):
@@ -2071,7 +2075,7 @@ def j0f(x):
     :param x: Argument.
     :type x: float32
     :rtype: float32
-"""
+    """
 
 
 def j1(x):
@@ -2081,7 +2085,7 @@ def j1(x):
     :param x: Argument.
     :type x: float64
     :rtype: float64
-"""
+    """
 
 
 def j1f(x):
@@ -2091,7 +2095,7 @@ def j1f(x):
     :param x: Argument.
     :type x: float32
     :rtype: float32
-"""
+    """
 
 
 def jn(n, x):
@@ -2103,7 +2107,7 @@ def jn(n, x):
     :param x: Argument.
     :type x: float64
     :rtype: float64
-"""
+    """
 
 
 def jnf(n, x):
@@ -2115,7 +2119,7 @@ def jnf(n, x):
     :param x: Argument.
     :type x: float32
     :rtype: float32
-"""
+    """
 
 
 def ldexp(x, y):
@@ -2127,7 +2131,7 @@ def ldexp(x, y):
     :param y: Argument.
     :type y: int32
     :rtype: float64
-"""
+    """
 
 
 def ldexpf(x, y):
@@ -2139,7 +2143,7 @@ def ldexpf(x, y):
     :param y: Argument.
     :type y: int32
     :rtype: float32
-"""
+    """
 
 
 def lgamma(x):
@@ -2149,7 +2153,7 @@ def lgamma(x):
     :param x: Argument.
     :type x: float64
     :rtype: float64
-"""
+    """
 
 
 def lgammaf(x):
@@ -2159,7 +2163,7 @@ def lgammaf(x):
     :param x: Argument.
     :type x: float32
     :rtype: float32
-"""
+    """
 
 
 def ll2double_rd(l):
@@ -2169,7 +2173,7 @@ def ll2double_rd(l):
     :param l: Argument.
     :type l: int64
     :rtype: float64
-"""
+    """
 
 
 def ll2double_rn(l):
@@ -2179,7 +2183,7 @@ def ll2double_rn(l):
     :param l: Argument.
     :type l: int64
     :rtype: float64
-"""
+    """
 
 
 def ll2double_ru(l):
@@ -2189,7 +2193,7 @@ def ll2double_ru(l):
     :param l: Argument.
     :type l: int64
     :rtype: float64
-"""
+    """
 
 
 def ll2double_rz(l):
@@ -2199,7 +2203,7 @@ def ll2double_rz(l):
     :param l: Argument.
     :type l: int64
     :rtype: float64
-"""
+    """
 
 
 def ll2float_rd(l):
@@ -2209,7 +2213,7 @@ def ll2float_rd(l):
     :param l: Argument.
     :type l: int64
     :rtype: float32
-"""
+    """
 
 
 def ll2float_rn(l):
@@ -2219,7 +2223,7 @@ def ll2float_rn(l):
     :param l: Argument.
     :type l: int64
     :rtype: float32
-"""
+    """
 
 
 def ll2float_ru(l):
@@ -2229,7 +2233,7 @@ def ll2float_ru(l):
     :param l: Argument.
     :type l: int64
     :rtype: float32
-"""
+    """
 
 
 def ll2float_rz(l):
@@ -2239,7 +2243,7 @@ def ll2float_rz(l):
     :param l: Argument.
     :type l: int64
     :rtype: float32
-"""
+    """
 
 
 def llabs(x):
@@ -2249,7 +2253,7 @@ def llabs(x):
     :param x: Argument.
     :type x: int64
     :rtype: int64
-"""
+    """
 
 
 def llmax(x, y):
@@ -2261,7 +2265,7 @@ def llmax(x, y):
     :param y: Argument.
     :type y: int64
     :rtype: int64
-"""
+    """
 
 
 def llmin(x, y):
@@ -2273,7 +2277,7 @@ def llmin(x, y):
     :param y: Argument.
     :type y: int64
     :rtype: int64
-"""
+    """
 
 
 def llrint(x):
@@ -2283,7 +2287,7 @@ def llrint(x):
     :param x: Argument.
     :type x: float64
     :rtype: int64
-"""
+    """
 
 
 def llrintf(x):
@@ -2293,7 +2297,7 @@ def llrintf(x):
     :param x: Argument.
     :type x: float32
     :rtype: int64
-"""
+    """
 
 
 def llround(x):
@@ -2303,7 +2307,7 @@ def llround(x):
     :param x: Argument.
     :type x: float64
     :rtype: int64
-"""
+    """
 
 
 def llroundf(x):
@@ -2313,7 +2317,7 @@ def llroundf(x):
     :param x: Argument.
     :type x: float32
     :rtype: int64
-"""
+    """
 
 
 def log(x):
@@ -2323,7 +2327,7 @@ def log(x):
     :param x: Argument.
     :type x: float64
     :rtype: float64
-"""
+    """
 
 
 def log10(x):
@@ -2333,7 +2337,7 @@ def log10(x):
     :param x: Argument.
     :type x: float64
     :rtype: float64
-"""
+    """
 
 
 def log10f(x):
@@ -2343,7 +2347,7 @@ def log10f(x):
     :param x: Argument.
     :type x: float32
     :rtype: float32
-"""
+    """
 
 
 def log1p(x):
@@ -2353,7 +2357,7 @@ def log1p(x):
     :param x: Argument.
     :type x: float64
     :rtype: float64
-"""
+    """
 
 
 def log1pf(x):
@@ -2363,7 +2367,7 @@ def log1pf(x):
     :param x: Argument.
     :type x: float32
     :rtype: float32
-"""
+    """
 
 
 def log2(x):
@@ -2373,7 +2377,7 @@ def log2(x):
     :param x: Argument.
     :type x: float64
     :rtype: float64
-"""
+    """
 
 
 def log2f(x):
@@ -2383,7 +2387,7 @@ def log2f(x):
     :param x: Argument.
     :type x: float32
     :rtype: float32
-"""
+    """
 
 
 def logb(x):
@@ -2393,7 +2397,7 @@ def logb(x):
     :param x: Argument.
     :type x: float64
     :rtype: float64
-"""
+    """
 
 
 def logbf(x):
@@ -2403,7 +2407,7 @@ def logbf(x):
     :param x: Argument.
     :type x: float32
     :rtype: float32
-"""
+    """
 
 
 def logf(x):
@@ -2413,7 +2417,7 @@ def logf(x):
     :param x: Argument.
     :type x: float32
     :rtype: float32
-"""
+    """
 
 
 def longlong_as_double(x):
@@ -2423,7 +2427,7 @@ def longlong_as_double(x):
     :param x: Argument.
     :type x: int64
     :rtype: float64
-"""
+    """
 
 
 def max(x, y):
@@ -2435,7 +2439,7 @@ def max(x, y):
     :param y: Argument.
     :type y: int32
     :rtype: int32
-"""
+    """
 
 
 def min(x, y):
@@ -2447,7 +2451,7 @@ def min(x, y):
     :param y: Argument.
     :type y: int32
     :rtype: int32
-"""
+    """
 
 
 def modf(x):
@@ -2457,7 +2461,7 @@ def modf(x):
     :param x: Argument.
     :type x: float64
     :rtype: UniTuple(float64 x 2)
-"""
+    """
 
 
 def modff(x):
@@ -2467,7 +2471,7 @@ def modff(x):
     :param x: Argument.
     :type x: float32
     :rtype: UniTuple(float32 x 2)
-"""
+    """
 
 
 def mul24(x, y):
@@ -2479,7 +2483,7 @@ def mul24(x, y):
     :param y: Argument.
     :type y: int32
     :rtype: int32
-"""
+    """
 
 
 def mul64hi(x, y):
@@ -2491,7 +2495,7 @@ def mul64hi(x, y):
     :param y: Argument.
     :type y: int64
     :rtype: int64
-"""
+    """
 
 
 def mulhi(x, y):
@@ -2503,7 +2507,7 @@ def mulhi(x, y):
     :param y: Argument.
     :type y: int32
     :rtype: int32
-"""
+    """
 
 
 def nearbyint(x):
@@ -2513,7 +2517,7 @@ def nearbyint(x):
     :param x: Argument.
     :type x: float64
     :rtype: float64
-"""
+    """
 
 
 def nearbyintf(x):
@@ -2523,7 +2527,7 @@ def nearbyintf(x):
     :param x: Argument.
     :type x: float32
     :rtype: float32
-"""
+    """
 
 
 def nextafter(x, y):
@@ -2535,7 +2539,7 @@ def nextafter(x, y):
     :param y: Argument.
     :type y: float64
     :rtype: float64
-"""
+    """
 
 
 def nextafterf(x, y):
@@ -2547,7 +2551,7 @@ def nextafterf(x, y):
     :param y: Argument.
     :type y: float32
     :rtype: float32
-"""
+    """
 
 
 def normcdf(x):
@@ -2557,7 +2561,7 @@ def normcdf(x):
     :param x: Argument.
     :type x: float64
     :rtype: float64
-"""
+    """
 
 
 def normcdff(x):
@@ -2567,7 +2571,7 @@ def normcdff(x):
     :param x: Argument.
     :type x: float32
     :rtype: float32
-"""
+    """
 
 
 def normcdfinv(x):
@@ -2577,7 +2581,7 @@ def normcdfinv(x):
     :param x: Argument.
     :type x: float64
     :rtype: float64
-"""
+    """
 
 
 def normcdfinvf(x):
@@ -2587,7 +2591,7 @@ def normcdfinvf(x):
     :param x: Argument.
     :type x: float32
     :rtype: float32
-"""
+    """
 
 
 def popc(x):
@@ -2597,7 +2601,7 @@ def popc(x):
     :param x: Argument.
     :type x: int32
     :rtype: int32
-"""
+    """
 
 
 def popcll(x):
@@ -2607,7 +2611,7 @@ def popcll(x):
     :param x: Argument.
     :type x: int64
     :rtype: int32
-"""
+    """
 
 
 def pow(x, y):
@@ -2619,7 +2623,7 @@ def pow(x, y):
     :param y: Argument.
     :type y: float64
     :rtype: float64
-"""
+    """
 
 
 def powf(x, y):
@@ -2631,7 +2635,7 @@ def powf(x, y):
     :param y: Argument.
     :type y: float32
     :rtype: float32
-"""
+    """
 
 
 def powi(x, y):
@@ -2643,7 +2647,7 @@ def powi(x, y):
     :param y: Argument.
     :type y: int32
     :rtype: float64
-"""
+    """
 
 
 def powif(x, y):
@@ -2655,7 +2659,7 @@ def powif(x, y):
     :param y: Argument.
     :type y: int32
     :rtype: float32
-"""
+    """
 
 
 def rcbrt(x):
@@ -2665,7 +2669,7 @@ def rcbrt(x):
     :param x: Argument.
     :type x: float64
     :rtype: float64
-"""
+    """
 
 
 def rcbrtf(x):
@@ -2675,7 +2679,7 @@ def rcbrtf(x):
     :param x: Argument.
     :type x: float32
     :rtype: float32
-"""
+    """
 
 
 def remainder(x, y):
@@ -2687,7 +2691,7 @@ def remainder(x, y):
     :param y: Argument.
     :type y: float64
     :rtype: float64
-"""
+    """
 
 
 def remainderf(x, y):
@@ -2699,7 +2703,7 @@ def remainderf(x, y):
     :param y: Argument.
     :type y: float32
     :rtype: float32
-"""
+    """
 
 
 def remquo(x, y):
@@ -2711,7 +2715,7 @@ def remquo(x, y):
     :param y: Argument.
     :type y: float64
     :rtype: Tuple(float64, int32)
-"""
+    """
 
 
 def remquof(x, y):
@@ -2723,7 +2727,7 @@ def remquof(x, y):
     :param y: Argument.
     :type y: float32
     :rtype: Tuple(float32, int32)
-"""
+    """
 
 
 def rhadd(x, y):
@@ -2735,7 +2739,7 @@ def rhadd(x, y):
     :param y: Argument.
     :type y: int32
     :rtype: int32
-"""
+    """
 
 
 def rint(x):
@@ -2745,7 +2749,7 @@ def rint(x):
     :param x: Argument.
     :type x: float64
     :rtype: float64
-"""
+    """
 
 
 def rintf(x):
@@ -2755,7 +2759,7 @@ def rintf(x):
     :param x: Argument.
     :type x: float32
     :rtype: float32
-"""
+    """
 
 
 def round(x):
@@ -2765,7 +2769,7 @@ def round(x):
     :param x: Argument.
     :type x: float64
     :rtype: float64
-"""
+    """
 
 
 def roundf(x):
@@ -2775,7 +2779,7 @@ def roundf(x):
     :param x: Argument.
     :type x: float32
     :rtype: float32
-"""
+    """
 
 
 def rsqrt(x):
@@ -2785,7 +2789,7 @@ def rsqrt(x):
     :param x: Argument.
     :type x: float64
     :rtype: float64
-"""
+    """
 
 
 def rsqrtf(x):
@@ -2795,7 +2799,7 @@ def rsqrtf(x):
     :param x: Argument.
     :type x: float32
     :rtype: float32
-"""
+    """
 
 
 def sad(x, y, z):
@@ -2809,7 +2813,7 @@ def sad(x, y, z):
     :param z: Argument.
     :type z: int32
     :rtype: int32
-"""
+    """
 
 
 def saturatef(x):
@@ -2819,7 +2823,7 @@ def saturatef(x):
     :param x: Argument.
     :type x: float32
     :rtype: float32
-"""
+    """
 
 
 def scalbn(x, y):
@@ -2831,7 +2835,7 @@ def scalbn(x, y):
     :param y: Argument.
     :type y: int32
     :rtype: float64
-"""
+    """
 
 
 def scalbnf(x, y):
@@ -2843,7 +2847,7 @@ def scalbnf(x, y):
     :param y: Argument.
     :type y: int32
     :rtype: float32
-"""
+    """
 
 
 def signbitd(x):
@@ -2853,7 +2857,7 @@ def signbitd(x):
     :param x: Argument.
     :type x: float64
     :rtype: int32
-"""
+    """
 
 
 def signbitf(x):
@@ -2863,7 +2867,7 @@ def signbitf(x):
     :param x: Argument.
     :type x: float32
     :rtype: int32
-"""
+    """
 
 
 def sin(x):
@@ -2873,7 +2877,7 @@ def sin(x):
     :param x: Argument.
     :type x: float64
     :rtype: float64
-"""
+    """
 
 
 def sincos(x):
@@ -2883,7 +2887,7 @@ def sincos(x):
     :param x: Argument.
     :type x: float64
     :rtype: UniTuple(float64 x 2)
-"""
+    """
 
 
 def sincosf(x):
@@ -2893,7 +2897,7 @@ def sincosf(x):
     :param x: Argument.
     :type x: float32
     :rtype: UniTuple(float32 x 2)
-"""
+    """
 
 
 def sincospi(x):
@@ -2903,7 +2907,7 @@ def sincospi(x):
     :param x: Argument.
     :type x: float64
     :rtype: UniTuple(float64 x 2)
-"""
+    """
 
 
 def sincospif(x):
@@ -2913,7 +2917,7 @@ def sincospif(x):
     :param x: Argument.
     :type x: float32
     :rtype: UniTuple(float32 x 2)
-"""
+    """
 
 
 def sinf(x):
@@ -2923,7 +2927,7 @@ def sinf(x):
     :param x: Argument.
     :type x: float32
     :rtype: float32
-"""
+    """
 
 
 def sinh(x):
@@ -2933,7 +2937,7 @@ def sinh(x):
     :param x: Argument.
     :type x: float64
     :rtype: float64
-"""
+    """
 
 
 def sinhf(x):
@@ -2943,7 +2947,7 @@ def sinhf(x):
     :param x: Argument.
     :type x: float32
     :rtype: float32
-"""
+    """
 
 
 def sinpi(x):
@@ -2953,7 +2957,7 @@ def sinpi(x):
     :param x: Argument.
     :type x: float64
     :rtype: float64
-"""
+    """
 
 
 def sinpif(x):
@@ -2963,7 +2967,7 @@ def sinpif(x):
     :param x: Argument.
     :type x: float32
     :rtype: float32
-"""
+    """
 
 
 def sqrt(x):
@@ -2973,7 +2977,7 @@ def sqrt(x):
     :param x: Argument.
     :type x: float64
     :rtype: float64
-"""
+    """
 
 
 def sqrtf(x):
@@ -2983,7 +2987,7 @@ def sqrtf(x):
     :param x: Argument.
     :type x: float32
     :rtype: float32
-"""
+    """
 
 
 def tan(x):
@@ -2993,7 +2997,7 @@ def tan(x):
     :param x: Argument.
     :type x: float64
     :rtype: float64
-"""
+    """
 
 
 def tanf(x):
@@ -3003,7 +3007,7 @@ def tanf(x):
     :param x: Argument.
     :type x: float32
     :rtype: float32
-"""
+    """
 
 
 def tanh(x):
@@ -3013,7 +3017,7 @@ def tanh(x):
     :param x: Argument.
     :type x: float64
     :rtype: float64
-"""
+    """
 
 
 def tanhf(x):
@@ -3023,7 +3027,7 @@ def tanhf(x):
     :param x: Argument.
     :type x: float32
     :rtype: float32
-"""
+    """
 
 
 def tgamma(x):
@@ -3033,7 +3037,7 @@ def tgamma(x):
     :param x: Argument.
     :type x: float64
     :rtype: float64
-"""
+    """
 
 
 def tgammaf(x):
@@ -3043,7 +3047,7 @@ def tgammaf(x):
     :param x: Argument.
     :type x: float32
     :rtype: float32
-"""
+    """
 
 
 def trunc(x):
@@ -3053,7 +3057,7 @@ def trunc(x):
     :param x: Argument.
     :type x: float64
     :rtype: float64
-"""
+    """
 
 
 def truncf(x):
@@ -3063,7 +3067,7 @@ def truncf(x):
     :param x: Argument.
     :type x: float32
     :rtype: float32
-"""
+    """
 
 
 def uhadd(x, y):
@@ -3075,7 +3079,7 @@ def uhadd(x, y):
     :param y: Argument.
     :type y: int32
     :rtype: int32
-"""
+    """
 
 
 def uint2double_rn(i):
@@ -3085,7 +3089,7 @@ def uint2double_rn(i):
     :param i: Argument.
     :type i: int32
     :rtype: float64
-"""
+    """
 
 
 def uint2float_rd(x):
@@ -3095,7 +3099,7 @@ def uint2float_rd(x):
     :param in: Argument.
     :type in: int32
     :rtype: float32
-"""
+    """
 
 
 def uint2float_rn(x):
@@ -3105,7 +3109,7 @@ def uint2float_rn(x):
     :param in: Argument.
     :type in: int32
     :rtype: float32
-"""
+    """
 
 
 def uint2float_ru(x):
@@ -3115,7 +3119,7 @@ def uint2float_ru(x):
     :param in: Argument.
     :type in: int32
     :rtype: float32
-"""
+    """
 
 
 def uint2float_rz(x):
@@ -3125,7 +3129,7 @@ def uint2float_rz(x):
     :param in: Argument.
     :type in: int32
     :rtype: float32
-"""
+    """
 
 
 def ull2double_rd(l):
@@ -3135,7 +3139,7 @@ def ull2double_rd(l):
     :param l: Argument.
     :type l: int64
     :rtype: float64
-"""
+    """
 
 
 def ull2double_rn(l):
@@ -3145,7 +3149,7 @@ def ull2double_rn(l):
     :param l: Argument.
     :type l: int64
     :rtype: float64
-"""
+    """
 
 
 def ull2double_ru(l):
@@ -3155,7 +3159,7 @@ def ull2double_ru(l):
     :param l: Argument.
     :type l: int64
     :rtype: float64
-"""
+    """
 
 
 def ull2double_rz(l):
@@ -3165,7 +3169,7 @@ def ull2double_rz(l):
     :param l: Argument.
     :type l: int64
     :rtype: float64
-"""
+    """
 
 
 def ull2float_rd(l):
@@ -3175,7 +3179,7 @@ def ull2float_rd(l):
     :param l: Argument.
     :type l: int64
     :rtype: float32
-"""
+    """
 
 
 def ull2float_rn(l):
@@ -3185,7 +3189,7 @@ def ull2float_rn(l):
     :param l: Argument.
     :type l: int64
     :rtype: float32
-"""
+    """
 
 
 def ull2float_ru(l):
@@ -3195,7 +3199,7 @@ def ull2float_ru(l):
     :param l: Argument.
     :type l: int64
     :rtype: float32
-"""
+    """
 
 
 def ull2float_rz(l):
@@ -3205,7 +3209,7 @@ def ull2float_rz(l):
     :param l: Argument.
     :type l: int64
     :rtype: float32
-"""
+    """
 
 
 def ullmax(x, y):
@@ -3217,7 +3221,7 @@ def ullmax(x, y):
     :param y: Argument.
     :type y: int64
     :rtype: int64
-"""
+    """
 
 
 def ullmin(x, y):
@@ -3229,7 +3233,7 @@ def ullmin(x, y):
     :param y: Argument.
     :type y: int64
     :rtype: int64
-"""
+    """
 
 
 def umax(x, y):
@@ -3241,7 +3245,7 @@ def umax(x, y):
     :param y: Argument.
     :type y: int32
     :rtype: int32
-"""
+    """
 
 
 def umin(x, y):
@@ -3253,7 +3257,7 @@ def umin(x, y):
     :param y: Argument.
     :type y: int32
     :rtype: int32
-"""
+    """
 
 
 def umul24(x, y):
@@ -3265,7 +3269,7 @@ def umul24(x, y):
     :param y: Argument.
     :type y: int32
     :rtype: int32
-"""
+    """
 
 
 def umul64hi(x, y):
@@ -3277,7 +3281,7 @@ def umul64hi(x, y):
     :param y: Argument.
     :type y: int64
     :rtype: int64
-"""
+    """
 
 
 def umulhi(x, y):
@@ -3289,7 +3293,7 @@ def umulhi(x, y):
     :param y: Argument.
     :type y: int32
     :rtype: int32
-"""
+    """
 
 
 def urhadd(x, y):
@@ -3301,7 +3305,7 @@ def urhadd(x, y):
     :param y: Argument.
     :type y: int32
     :rtype: int32
-"""
+    """
 
 
 def usad(x, y, z):
@@ -3315,7 +3319,7 @@ def usad(x, y, z):
     :param z: Argument.
     :type z: int32
     :rtype: int32
-"""
+    """
 
 
 def y0(x):
@@ -3325,7 +3329,7 @@ def y0(x):
     :param x: Argument.
     :type x: float64
     :rtype: float64
-"""
+    """
 
 
 def y0f(x):
@@ -3335,7 +3339,7 @@ def y0f(x):
     :param x: Argument.
     :type x: float32
     :rtype: float32
-"""
+    """
 
 
 def y1(x):
@@ -3345,7 +3349,7 @@ def y1(x):
     :param x: Argument.
     :type x: float64
     :rtype: float64
-"""
+    """
 
 
 def y1f(x):
@@ -3355,7 +3359,7 @@ def y1f(x):
     :param x: Argument.
     :type x: float32
     :rtype: float32
-"""
+    """
 
 
 def yn(n, x):
@@ -3367,7 +3371,7 @@ def yn(n, x):
     :param x: Argument.
     :type x: float64
     :rtype: float64
-"""
+    """
 
 
 def ynf(n, x):
@@ -3379,4 +3383,4 @@ def ynf(n, x):
     :param x: Argument.
     :type x: float32
     :rtype: float32
-"""
+    """

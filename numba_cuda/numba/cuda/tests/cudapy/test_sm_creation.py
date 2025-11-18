@@ -1,9 +1,18 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: BSD-2-Clause
+
 import numpy as np
-from numba import cuda, float32, int32, void
-from numba.core.errors import TypingError
+from numba import cuda
+from numba.cuda import float32, int32, void
+from numba.cuda import HAS_NUMBA
+
+if HAS_NUMBA:
+    from numba.core.errors import TypingError
+else:
+    from numba.cuda.core.errors import TypingError
 from numba.cuda.testing import unittest, CUDATestCase
 from numba.cuda.testing import skip_on_cudasim
-from .extensions_usecases import test_struct_model_type
+from .extensions_usecases import struct_model_type
 
 GLOBAL_CONSTANT = 5
 GLOBAL_CONSTANT_2 = 6
@@ -17,15 +26,17 @@ def udt_global_constants(A):
 
 
 def udt_global_build_tuple(A):
-    sa = cuda.shared.array(shape=(GLOBAL_CONSTANT, GLOBAL_CONSTANT_2),
-                           dtype=float32)
+    sa = cuda.shared.array(
+        shape=(GLOBAL_CONSTANT, GLOBAL_CONSTANT_2), dtype=float32
+    )
     i, j = cuda.grid(2)
     A[i, j] = sa[i, j]
 
 
 def udt_global_build_list(A):
-    sa = cuda.shared.array(shape=[GLOBAL_CONSTANT, GLOBAL_CONSTANT_2],
-                           dtype=float32)
+    sa = cuda.shared.array(
+        shape=[GLOBAL_CONSTANT, GLOBAL_CONSTANT_2], dtype=float32
+    )
     i, j = cuda.grid(2)
     A[i, j] = sa[i, j]
 
@@ -59,7 +70,7 @@ class TestSharedMemoryCreation(CUDATestCase):
         return np.array(100, dtype=np.float32, ndmin=1)
 
     def getarg2(self):
-        return self.getarg().reshape(1,1)
+        return self.getarg().reshape(1, 1)
 
     def test_global_constants(self):
         udt = cuda.jit((float32[:],))(udt_global_constants)
@@ -69,18 +80,21 @@ class TestSharedMemoryCreation(CUDATestCase):
         udt = cuda.jit((float32[:, :],))(udt_global_build_tuple)
         udt[1, 1](self.getarg2())
 
-    @skip_on_cudasim('Simulator does not prohibit lists for shared array shape')
+    @skip_on_cudasim("Simulator does not prohibit lists for shared array shape")
     def test_global_build_list(self):
         with self.assertRaises(TypingError) as raises:
             cuda.jit((float32[:, :],))(udt_global_build_list)
 
-        self.assertIn("No implementation of function "
-                      "Function(<function shared.array",
-                      str(raises.exception))
-        self.assertIn("found for signature:\n \n "
-                      ">>> array(shape=list(int64)<iv=[5, 6]>, "
-                      "dtype=class(float32)",
-                      str(raises.exception))
+        self.assertIn(
+            "No implementation of function Function(<function shared.array",
+            str(raises.exception),
+        )
+        self.assertIn(
+            "found for signature:\n \n "
+            ">>> array(shape=list(int64)<iv=[5, 6]>, "
+            "dtype=class(float32)",
+            str(raises.exception),
+        )
 
     def test_global_constant_tuple(self):
         udt = cuda.jit((float32[:, :],))(udt_global_constant_tuple)
@@ -92,12 +106,15 @@ class TestSharedMemoryCreation(CUDATestCase):
         with self.assertRaises(TypingError) as raises:
             cuda.jit((float32[:],))(udt_invalid_1)
 
-        self.assertIn("No implementation of function "
-                      "Function(<function shared.array",
-                      str(raises.exception))
-        self.assertIn("found for signature:\n \n "
-                      ">>> array(shape=float32, dtype=class(float32))",
-                      str(raises.exception))
+        self.assertIn(
+            "No implementation of function Function(<function shared.array",
+            str(raises.exception),
+        )
+        self.assertIn(
+            "found for signature:\n \n "
+            ">>> array(shape=float32, dtype=class(float32))",
+            str(raises.exception),
+        )
 
     @skip_on_cudasim("Can't check for constants in simulator")
     def test_invalid_2(self):
@@ -105,13 +122,16 @@ class TestSharedMemoryCreation(CUDATestCase):
         with self.assertRaises(TypingError) as raises:
             cuda.jit((float32[:, :],))(udt_invalid_2)
 
-        self.assertIn("No implementation of function "
-                      "Function(<function shared.array",
-                      str(raises.exception))
-        self.assertIn("found for signature:\n \n "
-                      ">>> array(shape=Tuple(Literal[int](1), "
-                      "array(float32, 1d, A)), dtype=class(float32))",
-                      str(raises.exception))
+        self.assertIn(
+            "No implementation of function Function(<function shared.array",
+            str(raises.exception),
+        )
+        self.assertIn(
+            "found for signature:\n \n "
+            ">>> array(shape=Tuple(Literal[int](1), "
+            "array(float32, 1d, A)), dtype=class(float32))",
+            str(raises.exception),
+        )
 
     @skip_on_cudasim("Can't check for constants in simulator")
     def test_invalid_3(self):
@@ -119,12 +139,15 @@ class TestSharedMemoryCreation(CUDATestCase):
         with self.assertRaises(TypingError) as raises:
             cuda.jit((int32[:],))(udt_invalid_1)
 
-        self.assertIn("No implementation of function "
-                      "Function(<function shared.array",
-                      str(raises.exception))
-        self.assertIn("found for signature:\n \n "
-                      ">>> array(shape=int32, dtype=class(float32))",
-                      str(raises.exception))
+        self.assertIn(
+            "No implementation of function Function(<function shared.array",
+            str(raises.exception),
+        )
+        self.assertIn(
+            "found for signature:\n \n "
+            ">>> array(shape=int32, dtype=class(float32))",
+            str(raises.exception),
+        )
 
     @skip_on_cudasim("Can't check for constants in simulator")
     def test_invalid_4(self):
@@ -132,18 +155,21 @@ class TestSharedMemoryCreation(CUDATestCase):
         with self.assertRaises(TypingError) as raises:
             cuda.jit((int32[:],))(udt_invalid_3)
 
-        self.assertIn("No implementation of function "
-                      "Function(<function shared.array",
-                      str(raises.exception))
-        self.assertIn("found for signature:\n \n "
-                      ">>> array(shape=Tuple(Literal[int](1), int32), "
-                      "dtype=class(float32))",
-                      str(raises.exception))
+        self.assertIn(
+            "No implementation of function Function(<function shared.array",
+            str(raises.exception),
+        )
+        self.assertIn(
+            "found for signature:\n \n "
+            ">>> array(shape=Tuple(Literal[int](1), int32), "
+            "dtype=class(float32))",
+            str(raises.exception),
+        )
 
     def check_dtype(self, f, dtype):
         # Find the typing of the dtype argument to cuda.shared.array
         annotation = next(iter(f.overloads.values()))._type_annotation
-        l_dtype = annotation.typemap['s'].dtype
+        l_dtype = annotation.typemap["s"].dtype
         # Ensure that the typing is correct
         self.assertEqual(l_dtype, dtype)
 
@@ -174,7 +200,7 @@ class TestSharedMemoryCreation(CUDATestCase):
         # Check that strings can be used to specify the dtype of a shared array
         @cuda.jit(void(int32[::1]))
         def f(x):
-            s = cuda.shared.array(10, dtype='int32')
+            s = cuda.shared.array(10, dtype="int32")
             s[0] = x[0]
             x[0] = s[0]
 
@@ -185,21 +211,23 @@ class TestSharedMemoryCreation(CUDATestCase):
         # Check that strings of invalid dtypes cause a typing error
         re = ".*Invalid NumPy dtype specified: 'int33'.*"
         with self.assertRaisesRegex(TypingError, re):
+
             @cuda.jit(void(int32[::1]))
             def f(x):
-                s = cuda.shared.array(10, dtype='int33')
+                s = cuda.shared.array(10, dtype="int33")
                 s[0] = x[0]
                 x[0] = s[0]
 
     @skip_on_cudasim("Can't check typing in simulator")
     def test_type_with_struct_data_model(self):
-        @cuda.jit(void(test_struct_model_type[::1]))
+        @cuda.jit(void(struct_model_type[::1]))
         def f(x):
-            s = cuda.shared.array(10, dtype=test_struct_model_type)
+            s = cuda.shared.array(10, dtype=struct_model_type)
             s[0] = x[0]
             x[0] = s[0]
-        self.check_dtype(f, test_struct_model_type)
+
+        self.check_dtype(f, struct_model_type)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

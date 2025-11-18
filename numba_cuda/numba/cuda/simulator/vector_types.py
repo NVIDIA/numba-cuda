@@ -1,9 +1,12 @@
-from numba import types
+# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: BSD-2-Clause
+
+from numba.cuda import types
 from numba.cuda.stubs import _vector_type_stubs
 
 
 class SimulatedVectorType:
-    attributes = ['x', 'y', 'z', 'w']
+    attributes = ["x", "y", "z", "w"]
 
     def __init__(self, *args):
         args_flattened = []
@@ -12,7 +15,7 @@ class SimulatedVectorType:
                 args_flattened += arg.as_list()
             else:
                 args_flattened.append(arg)
-        self._attrs = self.attributes[:len(args_flattened)]
+        self._attrs = self.attributes[: len(args_flattened)]
         if not self.num_elements == len(args_flattened):
             raise TypeError(
                 f"{self.name} expects {self.num_elements}"
@@ -35,11 +38,15 @@ class SimulatedVectorType:
 
 
 def make_simulated_vector_type(num_elements, name):
-    obj = type(name, (SimulatedVectorType,), {
-        "num_elements": num_elements,
-        "base_type": types.float32,
-        "name": name
-    })
+    obj = type(
+        name,
+        (SimulatedVectorType,),
+        {
+            "num_elements": num_elements,
+            "base_type": types.float32,
+            "name": name,
+        },
+    )
     obj.user_facing_object = obj
     return obj
 
@@ -48,8 +55,8 @@ def _initialize():
     _simulated_vector_types = {}
     for stub in _vector_type_stubs:
         num_elements = int(stub.__name__[-1])
-        _simulated_vector_types[stub.__name__] = (
-            make_simulated_vector_type(num_elements, stub.__name__)
+        _simulated_vector_types[stub.__name__] = make_simulated_vector_type(
+            num_elements, stub.__name__
         )
         _simulated_vector_types[stub.__name__].aliases = stub.aliases
     return _simulated_vector_types

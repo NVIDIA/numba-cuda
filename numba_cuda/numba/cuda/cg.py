@@ -1,9 +1,12 @@
-from numba.core import types
-from numba.core.extending import overload, overload_method
-from numba.core.typing import signature
+# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: BSD-2-Clause
+
+from numba.cuda import types
+from numba.cuda.extending import overload, overload_method
+from numba.cuda.typing import signature
 from numba.cuda import nvvmutils
 from numba.cuda.extending import intrinsic
-from numba.cuda.types import grid_group, GridGroup as GridGroupClass
+from numba.cuda.types.ext_types import grid_group, GridGroup as GridGroupClass
 
 
 class GridGroup:
@@ -23,16 +26,17 @@ def _this_grid(typingctx):
     sig = signature(grid_group)
 
     def codegen(context, builder, sig, args):
+        context.active_code_library.use_cooperative = True
         one = context.get_constant(types.int32, 1)
         mod = builder.module
         return builder.call(
-            nvvmutils.declare_cudaCGGetIntrinsicHandle(mod),
-            (one,))
+            nvvmutils.declare_cudaCGGetIntrinsicHandle(mod), (one,)
+        )
 
     return sig, codegen
 
 
-@overload(this_grid, target='cuda')
+@overload(this_grid, target="cuda")
 def _ol_this_grid():
     def impl():
         return _this_grid()
@@ -45,16 +49,17 @@ def _grid_group_sync(typingctx, group):
     sig = signature(types.int32, group)
 
     def codegen(context, builder, sig, args):
+        context.active_code_library.use_cooperative = True
         flags = context.get_constant(types.int32, 0)
         mod = builder.module
         return builder.call(
-            nvvmutils.declare_cudaCGSynchronize(mod),
-            (*args, flags))
+            nvvmutils.declare_cudaCGSynchronize(mod), (*args, flags)
+        )
 
     return sig, codegen
 
 
-@overload_method(GridGroupClass, 'sync', target='cuda')
+@overload_method(GridGroupClass, "sync", target="cuda")
 def _ol_grid_group_sync(group):
     def impl(group):
         return _grid_group_sync(group)

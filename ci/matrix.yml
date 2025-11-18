@@ -1,0 +1,34 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: BSD-2-Clause
+# Please keep the matrices sorted in ascending order by the following:
+#
+#     [ARCH, PY_VER, CUDA_VER, LINUX_VER, GPU, DRIVER, NUMBA_VERSION]
+#
+build-matrix:
+  - { ARCH: 'amd64', PY_VER: '3.10', CUDA_VER: '12.8.0', LINUX_VER: 'rockylinux8' }
+  - { ARCH: 'amd64', PY_VER: '3.11', CUDA_VER: '12.8.0', LINUX_VER: 'rockylinux8' }
+  - { ARCH: 'amd64', PY_VER: '3.12', CUDA_VER: '12.8.0', LINUX_VER: 'rockylinux8' }
+  - { ARCH: 'amd64', PY_VER: '3.13', CUDA_VER: '12.8.0', LINUX_VER: 'rockylinux8' }
+  - { ARCH: 'arm64', PY_VER: '3.10', CUDA_VER: '12.8.0', LINUX_VER: 'rockylinux8' }
+  - { ARCH: 'arm64', PY_VER: '3.11', CUDA_VER: '12.8.0', LINUX_VER: 'rockylinux8' }
+  - { ARCH: 'arm64', PY_VER: '3.12', CUDA_VER: '12.8.0', LINUX_VER: 'rockylinux8' }
+  - { ARCH: 'arm64', PY_VER: '3.13', CUDA_VER: '12.8.0', LINUX_VER: 'rockylinux8' }
+simulator-matrix:
+  - { ARCH: 'amd64', PY_VER: '3.12', CUDA_VER: '12.8.0', LINUX_VER: 'rockylinux8' }
+# We test "oldest" dependencies with the oldest supported Python version and
+# the second-newest Python version.
+test-matrix:
+  - { CUDA_VER: '12.0.1', ARCH: 'amd64', PY_VER: '3.10',  LINUX_VER: 'rockylinux8', GPU: 'l4',   DRIVER: 'earliest', NUMBA_VERSION: '0.60' }
+  - { CUDA_VER: '12.0.1', ARCH: 'amd64', PY_VER: '3.11',  LINUX_VER: 'rockylinux8', GPU: 'l4',   DRIVER: 'earliest', NUMBA_VERSION: '*' }
+  - { CUDA_VER: '12.2.2', ARCH: 'amd64', PY_VER: '3.11', LINUX_VER: 'ubuntu22.04', GPU: 'l4',   DRIVER: 'latest',   NUMBA_VERSION: '*' }
+  - { CUDA_VER: '12.9.1', ARCH: 'amd64', PY_VER: '3.12', LINUX_VER: 'ubuntu24.04', GPU: 'l4',   DRIVER: 'latest',   NUMBA_VERSION: '*' }
+  - { CUDA_VER: '13.0.0', ARCH: 'amd64', PY_VER: '3.12', LINUX_VER: 'ubuntu22.04', GPU: 'l4',   DRIVER: 'latest',   NUMBA_VERSION: '0.60' }
+  - { CUDA_VER: '13.0.0', ARCH: 'amd64', PY_VER: '3.13', LINUX_VER: 'ubuntu22.04', GPU: 'l4',   DRIVER: 'latest',   NUMBA_VERSION: '*' }
+  - { CUDA_VER: '13.0.0', ARCH: 'amd64', PY_VER: '3.13', LINUX_VER: 'ubuntu24.04', GPU: 'l4',   DRIVER: 'latest',   NUMBA_VERSION: '*' }
+  - { CUDA_VER: '12.0.1', ARCH: 'arm64', PY_VER: '3.10',  LINUX_VER: 'rockylinux8', GPU: 'a100', DRIVER: 'earliest', NUMBA_VERSION: '0.60' }
+  - { CUDA_VER: '12.0.1', ARCH: 'arm64', PY_VER: '3.11',  LINUX_VER: 'rockylinux8', GPU: 'a100', DRIVER: 'earliest', NUMBA_VERSION: '*' }
+  - { CUDA_VER: '12.2.2', ARCH: 'arm64', PY_VER: '3.11', LINUX_VER: 'ubuntu22.04', GPU: 'a100', DRIVER: 'latest',   NUMBA_VERSION: '*' }
+  - { CUDA_VER: '12.9.1', ARCH: 'arm64', PY_VER: '3.12', LINUX_VER: 'ubuntu24.04', GPU: 'a100', DRIVER: 'latest',   NUMBA_VERSION: '*' }
+  - { CUDA_VER: '13.0.0', ARCH: 'arm64', PY_VER: '3.12', LINUX_VER: 'ubuntu22.04', GPU: 'a100', DRIVER: 'latest',   NUMBA_VERSION: '0.60' }
+  - { CUDA_VER: '13.0.0', ARCH: 'arm64', PY_VER: '3.13', LINUX_VER: 'ubuntu22.04', GPU: 'a100', DRIVER: 'latest',   NUMBA_VERSION: '*' }
+  - { CUDA_VER: '13.0.0', ARCH: 'arm64', PY_VER: '3.13', LINUX_VER: 'ubuntu24.04', GPU: 'a100', DRIVER: 'latest',   NUMBA_VERSION: '*' }

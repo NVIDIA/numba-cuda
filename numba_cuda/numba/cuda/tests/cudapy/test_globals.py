@@ -1,5 +1,9 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: BSD-2-Clause
+
 import numpy as np
-from numba import cuda, int32, float32
+from numba import cuda
+from numba.cuda import int32, float32
 from numba.cuda.testing import unittest, CUDATestCase
 
 N = 100
@@ -29,8 +33,7 @@ def coop_smem2d(ary):
 
 class TestCudaTestGlobal(CUDATestCase):
     def test_global_int_const(self):
-        """Test simple_smem
-        """
+        """Test simple_smem"""
         compiled = cuda.jit("void(int32[:])")(simple_smem)
 
         nelem = 100
@@ -41,8 +44,7 @@ class TestCudaTestGlobal(CUDATestCase):
 
     @unittest.SkipTest
     def test_global_tuple_const(self):
-        """Test coop_smem2d
-        """
+        """Test coop_smem2d"""
         compiled = cuda.jit("void(float32[:,:])")(coop_smem2d)
 
         shape = 10, 20
@@ -56,5 +58,5 @@ class TestCudaTestGlobal(CUDATestCase):
         self.assertTrue(np.allclose(ary, exp))
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

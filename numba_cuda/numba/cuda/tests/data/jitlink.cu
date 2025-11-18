@@ -1,3 +1,8 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+ * SPDX-License-Identifier: BSD-2-Clause
+ */
+
 // Compile with:
 //
 //   nvcc -gencode arch=compute_50,code=compute_50 -rdc true -ptx jitlink.cu
@@ -20,4 +25,4 @@ int array_mutator(void *out, int *a)
 {
   a[0] = a[1];
   return 0;
-}  
+}

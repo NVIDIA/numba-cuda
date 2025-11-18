@@ -1,7 +1,11 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: BSD-2-Clause
+
 import sys
 
-from numba import cuda, njit
-from numba.cuda.testing import CUDATestCase
+from numba import cuda
+from numba.cuda import HAS_NUMBA
+from numba.cuda.testing import CUDATestCase, skip_on_standalone_numba_cuda
 from numba.cuda.tests.cudapy.cache_usecases import CUDAUseCase, UseCase
 
 
@@ -12,16 +16,21 @@ class CPUUseCase(UseCase):
 
 # Using the same function as a cached CPU and CUDA-jitted function
 
+
 def target_shared_assign(r, x):
     r[()] = x[()]
 
 
 assign_cuda_kernel = cuda.jit(cache=True)(target_shared_assign)
 assign_cuda = CUDAUseCase(assign_cuda_kernel)
-assign_cpu_jitted = njit(cache=True)(target_shared_assign)
-assign_cpu = CPUUseCase(assign_cpu_jitted)
+if HAS_NUMBA:
+    from numba import njit
+
+    assign_cpu_jitted = njit(cache=True)(target_shared_assign)
+    assign_cpu = CPUUseCase(assign_cpu_jitted)
 
 
+@skip_on_standalone_numba_cuda
 class _TestModule(CUDATestCase):
     """
     Tests for functionality of this module's functions.

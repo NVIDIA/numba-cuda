@@ -1,11 +1,16 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: BSD-2-Clause
+
 import functools
 
 from llvmlite import ir
 
-from numba.core.datamodel.registry import DataModelManager, register
-from numba.core.extending import models
-from numba.core import types
-from numba.cuda.types import Dim3, GridGroup, CUDADispatcher
+from numba.cuda.datamodel.registry import DataModelManager, register
+from numba.cuda.datamodel import PrimitiveModel
+from numba.cuda.datamodel.models import StructModel
+from numba.cuda.extending import core_models as models
+from numba.cuda import types
+from numba.cuda.types.ext_types import Dim3, GridGroup, CUDADispatcher, Bfloat16
 
 
 cuda_data_manager = DataModelManager()
@@ -14,13 +19,9 @@ register_model = functools.partial(register, cuda_data_manager)
 
 
 @register_model(Dim3)
-class Dim3Model(models.StructModel):
+class Dim3Model(StructModel):
     def __init__(self, dmm, fe_type):
-        members = [
-            ('x', types.int32),
-            ('y', types.int32),
-            ('z', types.int32)
-        ]
+        members = [("x", types.int32), ("y", types.int32), ("z", types.int32)]
         super().__init__(dmm, fe_type, members)
 
 
@@ -46,3 +47,10 @@ class FloatModel(models.PrimitiveModel):
 
 
 register_model(CUDADispatcher)(models.OpaqueModel)
+
+
+@register_model(Bfloat16)
+class _model___nv_bfloat16(PrimitiveModel):
+    def __init__(self, dmm, fe_type):
+        be_type = ir.IntType(16)
+        super(_model___nv_bfloat16, self).__init__(dmm, fe_type, be_type)

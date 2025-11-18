@@ -1,3 +1,7 @@
+..
+   SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+   SPDX-License-Identifier: BSD-2-Clause
+
 
 Supported Atomic Operations
 ===========================
@@ -54,5 +58,3 @@ Multiple dimension arrays are supported by using a tuple of ints for the index::
     result = np.zeros((3, 3, 3), dtype=np.float64)
     max_example_3d[(2, 2, 2), (5, 5, 5)](result, arr)
     print(result[0, 1, 2], '==', np.max(arr))
-
-

@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: BSD-2-Clause
+
 name: Test RAPIDS wheels
 
 on:
@@ -18,6 +21,9 @@ on:
       script:
         type: string
         default: "ci/test_wheel.sh"
+      matrix:
+        type: string
+        required: true
       matrix_filter:
         type: string
         default: "."
@@ -61,36 +67,20 @@ jobs:
       BUILD_TYPE: ${{ inputs.build_type }}
     outputs:
       MATRIX: ${{ steps.compute-matrix.outputs.MATRIX }}
+    timeout-minutes: 60
     steps:
       - name: Validate test type
         run: |
-          if [[ "$BUILD_TYPE" != "pull-request" ]] && [[ "$BUILD_TYPE" != "nightly" ]]; then
-              echo "Invalid build type! Must be 'nightly' or 'pull-request'."
+          if [[ "$BUILD_TYPE" != "pull-request" ]] && [[ "$BUILD_TYPE" != "nightly" ]] && [[ "$BUILD_TYPE" != "branch" ]]; then
+              echo "Invalid build type! Must be one of 'nightly', 'pull-request', or 'branch'."
               exit 1
           fi
       - name: Compute test matrix
         id: compute-matrix
+        env:
+          TEST_MATRIX: ${{ inputs.matrix }}
         run: |
           set -eo pipefail
-
-          # please keep the matrices sorted in ascending order by the following:
-          #
-          #     [ARCH, PY_VER, CUDA_VER, LINUX_VER, GPU, DRIVER]
-          #
-          export MATRICES="
-            pull-request:
-              - { CUDA_VER: '11.8.0', ARCH: 'amd64', PY_VER: '3.9', LINUX_VER: 'ubuntu20.04', gpu: 'v100', driver: 'latest' }
-              - { CUDA_VER: '11.8.0', ARCH: 'amd64', PY_VER: '3.10', LINUX_VER: 'ubuntu20.04', gpu: 'v100', driver: 'latest' }
-              - { CUDA_VER: '12.0.1', ARCH: 'amd64', PY_VER: '3.11', LINUX_VER: 'ubuntu20.04', gpu: 'v100', driver: 'latest' }
-              - { CUDA_VER: '12.5.1', ARCH: 'amd64', PY_VER: '3.12', LINUX_VER: 'ubuntu20.04', gpu: 'v100', driver: 'latest' }
-              - { CUDA_VER: '11.8.0', ARCH: 'arm64', PY_VER: '3.9', LINUX_VER: 'ubuntu20.04', gpu: 'a100', driver: 'latest' }
-              - { CUDA_VER: '11.8.0', ARCH: 'arm64', PY_VER: '3.10', LINUX_VER: 'ubuntu20.04', gpu: 'a100', driver: 'latest' }
-              - { CUDA_VER: '12.0.1', ARCH: 'arm64', PY_VER: '3.11', LINUX_VER: 'ubuntu20.04', gpu: 'a100', driver: 'latest' }
-              - { CUDA_VER: '12.5.1', ARCH: 'arm64', PY_VER: '3.12', LINUX_VER: 'ubuntu20.04', gpu: 'a100', driver: 'latest' }
-          "
-
-          TEST_MATRIX=$(yq -n 'env(MATRICES) | .[strenv(BUILD_TYPE)]')
-          export TEST_MATRIX
 
           MATRIX="$(
             yq -n -o json 'env(TEST_MATRIX)' | \
@@ -99,25 +89,26 @@ jobs:
 
           echo "MATRIX=${MATRIX}" | tee --append "${GITHUB_OUTPUT}"
   test:
-    name: ${{ matrix.CUDA_VER }}, ${{ matrix.PY_VER }}, ${{ matrix.ARCH }}, ${{ matrix.LINUX_VER }}, ${{ matrix.gpu }}
+    name: ${{ matrix.CUDA_VER }}, ${{ matrix.PY_VER }}, ${{ matrix.ARCH }}, ${{ matrix.LINUX_VER }}, ${{ matrix.GPU }}, ${{ matrix.DRIVER }}-driver, numba@${{ matrix.NUMBA_VERSION }}
     needs: compute-matrix
     env:
-      RAPIDS_TESTS_DIR: ${{ github.workspace }}/test-results
       RAPIDS_ARTIFACTS_DIR: ${{ github.workspace }}/artifacts
+      NUMBA_VERSION: ${{ matrix.NUMBA_VERSION }}
+      RAPIDS_TESTS_DIR: ${{ github.workspace }}/test-results
     strategy:
       fail-fast: false
       matrix: ${{ fromJSON(needs.compute-matrix.outputs.MATRIX) }}
-    runs-on: "linux-${{ matrix.ARCH }}-gpu-${{ matrix.gpu }}-${{ matrix.driver }}-1"
+    runs-on: "linux-${{ matrix.ARCH }}-gpu-${{ matrix.GPU }}-${{ matrix.DRIVER }}-1"
     container:
       image: "rapidsai/citestwheel:cuda${{ matrix.CUDA_VER }}-${{ matrix.LINUX_VER }}-py${{ matrix.PY_VER }}"
       options: ${{ inputs.container-options }}
       env:
         NVIDIA_VISIBLE_DEVICES: ${{ env.NVIDIA_VISIBLE_DEVICES }} # GPU jobs must set this container env variable
         RAPIDS_BUILD_TYPE: ${{ inputs.build_type }}
+    timeout-minutes: 60
     steps:
     - name: Run nvidia-smi to make sure GPU is working
       run: nvidia-smi
-
     - name: checkout code repo
       uses: actions/checkout@v4
       with:
@@ -126,7 +117,9 @@ jobs:
         fetch-depth: 0 # unshallow fetch for setuptools-scm
         persist-credentials: false
     - uses: actions/download-artifact@v4
-      name: wheel
+      with:
+        name: wheel-py${{ matrix.PY_VER }}-${{ matrix.ARCH }}
+        path: wheel
     - name: Display structure of downloaded files
       run: ls -R
     - name: Standardize repository information
@@ -136,20 +129,18 @@ jobs:
         branch: ${{ inputs.branch }}
         date: ${{ inputs.date }}
         sha: ${{ inputs.sha }}
-
     - name: Run tests
       run: ${{ inputs.script }}
       env:
+        CUDA_VER: ${{ matrix.CUDA_VER }}
         GH_TOKEN: ${{ github.token }}
         RAPIDS_AUX_SECRET_1: ${{ secrets.RAPIDS_AUX_SECRET_1 }}
-
     - name: Generate test report
       uses: test-summary/action@v2.3
       with:
         paths: "${{ env.RAPIDS_TESTS_DIR }}/*.xml"
         show: ${{ inputs.test_summary_show }}
       if: always()
-
     - name: Upload additional artifacts
       if: "!cancelled()"
       run: rapids-upload-artifacts-dir cuda${RAPIDS_CUDA_VERSION%%.*}_$(arch)_py${RAPIDS_PY_VERSION//.}

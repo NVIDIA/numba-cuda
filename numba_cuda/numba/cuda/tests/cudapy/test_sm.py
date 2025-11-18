@@ -1,15 +1,22 @@
-from numba import cuda, int32, float64, void
-from numba.core.errors import TypingError
-from numba.core import types
+# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: BSD-2-Clause
+
+from numba import cuda
+from numba.cuda import int32, float64, void
+from numba.cuda import HAS_NUMBA
+
+if HAS_NUMBA:
+    from numba.core.errors import TypingError as NumbaTypingError
+from numba.cuda.core.errors import TypingError
+from numba.cuda import types
 from numba.cuda.testing import unittest, CUDATestCase, skip_on_cudasim
 
 import numpy as np
-from numba.np import numpy_support as nps
+from numba.cuda.np import numpy_support as nps
 
-from .extensions_usecases import test_struct_model_type, TestStruct
+from .extensions_usecases import struct_model_type, MyStruct
 
-recordwith2darray = np.dtype([('i', np.int32),
-                              ('j', np.float32, (3, 2))])
+recordwith2darray = np.dtype([("i", np.int32), ("j", np.float32, (3, 2))])
 
 
 class TestSharedMemoryIssue(CUDATestCase):
@@ -42,7 +49,6 @@ class TestSharedMemoryIssue(CUDATestCase):
         self._check_shared_array_size((2, 3), 6)
 
     def test_issue_1051_shared_size_broken_3d(self):
-
         self._check_shared_array_size((2, 3, 4), 24)
 
     def _check_shared_array_size_fp16(self, shape, expected, ty):
@@ -71,8 +77,9 @@ class TestSharedMemoryIssue(CUDATestCase):
 
         @cuda.jit
         def costs_func(d_block_costs):
-            s_features = cuda.shared.array((examples_per_block, num_weights),
-                                           float64)
+            s_features = cuda.shared.array(
+                (examples_per_block, num_weights), float64
+            )
             s_initialcost = cuda.shared.array(7, float64)  # Bug
 
             threadIdx = cuda.threadIdx.x
@@ -364,7 +371,7 @@ class TestSharedMemory(CUDATestCase):
         def sm_slice_copy(x, y, chunksize):
             dynsmem = cuda.shared.array(0, dtype=dt)
             sm1 = dynsmem[0:chunksize]
-            sm2 = dynsmem[chunksize:chunksize * 2]
+            sm2 = dynsmem[chunksize : chunksize * 2]
 
             tx = cuda.threadIdx.x
             bx = cuda.blockIdx.x
@@ -396,32 +403,38 @@ class TestSharedMemory(CUDATestCase):
         rgx = ".*Cannot infer the type of variable 'arr'.*"
 
         def unsupported_type():
-            arr = cuda.shared.array(10, dtype=np.dtype('O')) # noqa: F841
+            arr = cuda.shared.array(10, dtype=np.dtype("O"))  # noqa: F841
+
         with self.assertRaisesRegex(TypingError, rgx):
             cuda.jit(void())(unsupported_type)
 
         rgx = ".*Invalid NumPy dtype specified: 'int33'.*"
 
         def invalid_string_type():
-            arr = cuda.shared.array(10, dtype='int33') # noqa: F841
-        with self.assertRaisesRegex(TypingError, rgx):
-            cuda.jit(void())(invalid_string_type)
+            arr = cuda.shared.array(10, dtype="int33")  # noqa: F841
+
+        if HAS_NUMBA:
+            with self.assertRaisesRegex(NumbaTypingError, rgx):
+                cuda.jit(void())(invalid_string_type)
+        else:
+            with self.assertRaisesRegex(TypingError, rgx):
+                cuda.jit(void())(invalid_string_type)
 
     @skip_on_cudasim("Struct model array unsupported in simulator")
-    def test_struct_model_type_static(self):
+    def struct_model_type_static(self):
         nthreads = 64
 
         @cuda.jit(void(int32[::1], int32[::1]))
         def write_then_reverse_read_static(outx, outy):
             # Test creation
-            arr = cuda.shared.array(nthreads, dtype=test_struct_model_type)
+            arr = cuda.shared.array(nthreads, dtype=struct_model_type)
 
             i = cuda.grid(1)
             ri = nthreads - i - 1
 
             if i < len(outx) and i < len(outy):
                 # Test set to arr
-                obj = TestStruct(int32(i), int32(i * 2))
+                obj = MyStruct(int32(i), int32(i * 2))
                 arr[i] = obj
 
                 cuda.syncthreads()
@@ -440,5 +453,5 @@ class TestSharedMemory(CUDATestCase):
             self.assertEqual(y, (nthreads - i - 1) * 2)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

@@ -1,7 +1,11 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: BSD-2-Clause
+
 import numpy as np
 
 from numba.cuda.testing import skip_on_cudasim, CUDATestCase
-from numba import cuda, float64
+from numba import cuda
+from numba.cuda import float64
 import unittest
 
 
@@ -18,10 +22,10 @@ def device_func(x, y, z):
 # the test function were more complex it may be possible to isolate additional
 # fragments of PTX we could check for the absence / presence of, but removal of
 # the use of local memory is a good indicator that optimization was applied.
-removed_by_opt = ( '__local_depot0',)
+removed_by_opt = ("__local_depot0",)
 
 
-@skip_on_cudasim('Simulator does not optimize code')
+@skip_on_cudasim("Simulator does not optimize code")
 class TestOptimization(CUDATestCase):
     def test_eager_opt(self):
         # Optimization should occur by default
@@ -74,7 +78,7 @@ class TestOptimization(CUDATestCase):
         sig = (float64, float64, float64)
         device = cuda.jit(sig, device=True)(device_func)
         ptx = device.inspect_asm(sig)
-        self.assertIn('fma.rn.f64', ptx)
+        self.assertIn("fma.rn.f64", ptx)
 
     def test_device_noopt(self):
         # Optimization disabled
@@ -82,8 +86,8 @@ class TestOptimization(CUDATestCase):
         device = cuda.jit(sig, device=True, opt=False)(device_func)
         ptx = device.inspect_asm(sig)
         # Fused-multiply adds should be disabled when not optimizing
-        self.assertNotIn('fma.rn.f64', ptx)
+        self.assertNotIn("fma.rn.f64", ptx)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

@@ -1,13 +1,24 @@
-from ctypes import byref, c_int, c_void_p, sizeof
+# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: BSD-2-Clause
 
-from numba.cuda.cudadrv.driver import (host_to_device, device_to_host, driver,
-                                       launch_kernel)
-from numba.cuda.cudadrv import devices, drvapi, driver as _driver
+from ctypes import c_int, sizeof
+
+from numba.cuda.cudadrv.driver import (
+    host_to_device,
+    device_to_host,
+    driver,
+    launch_kernel,
+)
+
+from numba import cuda
+from numba.cuda.cudadrv import devices, driver as _driver
 from numba.cuda.testing import unittest, CUDATestCase
 from numba.cuda.testing import skip_on_cudasim
+import contextlib
 
+from cuda.core.experimental import Device
 
-ptx1 = '''
+ptx1 = """
     .version 1.4
     .target sm_10, map_f64_to_f32
 
@@ -29,9 +40,9 @@ $LDWbegin__Z10helloworldPi:
     exit;
 $LDWend__Z10helloworldPi:
     } // _Z10helloworldPi
-'''
+"""
 
-ptx2 = '''
+ptx2 = """
 .version 3.0
 .target sm_20
 .address_size 64
@@ -57,10 +68,10 @@ ptx2 = '''
     .loc 2 7 2
     ret;
 }
-'''
+"""
 
 
-@skip_on_cudasim('CUDA Driver API unsupported in the simulator')
+@skip_on_cudasim("CUDA Driver API unsupported in the simulator")
 class TestCudaDriver(CUDATestCase):
     def setUp(self):
         super().setUp()
@@ -79,7 +90,7 @@ class TestCudaDriver(CUDATestCase):
 
     def test_cuda_driver_basic(self):
         module = self.context.create_module_ptx(self.ptx)
-        function = module.get_function('_Z10helloworldPi')
+        function = module.get_function("_Z10helloworldPi")
 
         array = (c_int * 100)()
 
@@ -89,16 +100,20 @@ class TestCudaDriver(CUDATestCase):
         ptr = memory.device_ctypes_pointer
         stream = 0
 
-        if _driver.USE_NV_BINDING:
-            ptr = c_void_p(int(ptr))
-            stream = _driver.binding.CUstream(stream)
+        stream = _driver.binding.CUstream(stream)
 
-        launch_kernel(function.handle,  # Kernel
-                      1,   1, 1,        # gx, gy, gz
-                      100, 1, 1,        # bx, by, bz
-                      0,                # dynamic shared mem
-                      stream,           # stream
-                      [ptr])            # arguments
+        launch_kernel(
+            function.handle,  # Kernel
+            1,
+            1,
+            1,  # gx, gy, gz
+            100,
+            1,
+            1,  # bx, by, bz
+            0,  # dynamic shared mem
+            stream,  # stream
+            [ptr],
+        )  # arguments
 
         device_to_host(array, memory, sizeof(array))
         for i, v in enumerate(array):
@@ -108,7 +123,7 @@ class TestCudaDriver(CUDATestCase):
 
     def test_cuda_driver_stream_operations(self):
         module = self.context.create_module_ptx(self.ptx)
-        function = module.get_function('_Z10helloworldPi')
+        function = module.get_function("_Z10helloworldPi")
 
         array = (c_int * 100)()
 
@@ -119,19 +134,85 @@ class TestCudaDriver(CUDATestCase):
             host_to_device(memory, array, sizeof(array), stream=stream)
 
             ptr = memory.device_ctypes_pointer
-            if _driver.USE_NV_BINDING:
-                ptr = c_void_p(int(ptr))
 
-            launch_kernel(function.handle,  # Kernel
-                          1,   1, 1,        # gx, gy, gz
-                          100, 1, 1,        # bx, by, bz
-                          0,                # dynamic shared mem
-                          stream.handle,    # stream
-                          [ptr])            # arguments
+            stream_handle = stream.handle
+            stream_handle = stream_handle.value
+
+            launch_kernel(
+                function.handle,  # Kernel
+                1,
+                1,
+                1,  # gx, gy, gz
+                100,
+                1,
+                1,  # bx, by, bz
+                0,  # dynamic shared mem
+                stream_handle,  # stream
+                [ptr],
+            )  # arguments
 
         device_to_host(array, memory, sizeof(array), stream=stream)
 
         for i, v in enumerate(array):
+            self.assertEqual(i, v)
+
+    def test_cuda_core_stream_operations(self):
+        module = self.context.create_module_ptx(self.ptx)
+        function = module.get_function("_Z10helloworldPi")
+        array = (c_int * 100)()
+        dev = Device()
+        dev.set_current()
+        stream = dev.create_stream()
+
+        @contextlib.contextmanager
+        def auto_synchronize(stream):
+            try:
+                yield stream
+            finally:
+                stream.sync()
+
+        with auto_synchronize(stream):
+            memory = self.context.memalloc(sizeof(array))
+            host_to_device(memory, array, sizeof(array), stream=stream)
+
+            ptr = memory.device_ctypes_pointer
+
+            launch_kernel(
+                function.handle,  # Kernel
+                1,
+                1,
+                1,  # gx, gy, gz
+                100,
+                1,
+                1,  # bx, by, bz
+                0,  # dynamic shared mem
+                stream.handle,  # stream
+                [ptr],
+            )
+
+            device_to_host(array, memory, sizeof(array), stream=stream)
+        for i, v in enumerate(array):
+            self.assertEqual(i, v)
+
+    def test_cuda_core_stream_launch_user_facing(self):
+        @cuda.jit
+        def kernel(a):
+            idx = cuda.grid(1)
+            if idx < len(a):
+                a[idx] = idx
+
+        dev = Device()
+        dev.set_current()
+        stream = dev.create_stream()
+
+        ary = cuda.to_device([0] * 100, stream=stream)
+        stream.sync()
+
+        kernel[1, 100, stream](ary)
+        stream.sync()
+
+        result = ary.copy_to_host(stream=stream)
+        for i, v in enumerate(result):
             self.assertEqual(i, v)
 
     def test_cuda_driver_default_stream(self):
@@ -175,13 +256,8 @@ class TestCudaDriver(CUDATestCase):
         # Test properties of a stream created from an external stream object.
         # We use the driver API directly to create a stream, to emulate an
         # external library creating a stream
-        if _driver.USE_NV_BINDING:
-            handle = driver.cuStreamCreate(0)
-            ptr = int(handle)
-        else:
-            handle = drvapi.cu_stream()
-            driver.cuStreamCreate(byref(handle), 0)
-            ptr = handle.value
+        handle = driver.cuStreamCreate(0)
+        ptr = int(handle)
         s = self.context.create_external_stream(ptr)
 
         self.assertIn("External CUDA stream", repr(s))
@@ -193,17 +269,19 @@ class TestCudaDriver(CUDATestCase):
 
     def test_cuda_driver_occupancy(self):
         module = self.context.create_module_ptx(self.ptx)
-        function = module.get_function('_Z10helloworldPi')
+        function = module.get_function("_Z10helloworldPi")
 
-        value = self.context.get_active_blocks_per_multiprocessor(function,
-                                                                  128, 128)
+        value = self.context.get_active_blocks_per_multiprocessor(
+            function, 128, 128
+        )
         self.assertTrue(value > 0)
 
         def b2d(bs):
             return bs
 
-        grid, block = self.context.get_max_potential_block_size(function, b2d,
-                                                                128, 128)
+        grid, block = self.context.get_max_potential_block_size(
+            function, b2d, 128, 128
+        )
         self.assertTrue(grid > 0)
         self.assertTrue(block > 0)
 
@@ -221,15 +299,15 @@ class TestDevice(CUDATestCase):
         # 4122) pertaining to versions and variants, so we do not extract and
         # validate the values of these bits.
 
-        h = '[0-9a-f]{%d}'
+        h = "[0-9a-f]{%d}"
         h4 = h % 4
         h8 = h % 8
         h12 = h % 12
-        uuid_format = f'^GPU-{h8}-{h4}-{h4}-{h4}-{h12}$'
+        uuid_format = f"^GPU-{h8}-{h4}-{h4}-{h4}-{h12}$"
 
         dev = devices.get_context().device
         self.assertRegex(dev.uuid, uuid_format)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

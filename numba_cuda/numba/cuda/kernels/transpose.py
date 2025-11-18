@@ -1,7 +1,10 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: BSD-2-Clause
+
 from numba import cuda
 from numba.cuda.cudadrv.driver import driver
 import math
-from numba.np import numpy_support as nps
+from numba.cuda.np import numpy_support as nps
 
 
 def transpose(a, b=None):
@@ -18,16 +21,14 @@ def transpose(a, b=None):
     """
 
     # prefer `a`'s stream if
-    stream = getattr(a, 'stream', 0)
+    stream = getattr(a, "stream", 0)
 
     if not b:
         cols, rows = a.shape
         strides = a.dtype.itemsize * cols, a.dtype.itemsize
         b = cuda.cudadrv.devicearray.DeviceNDArray(
-            (rows, cols),
-            strides,
-            dtype=a.dtype,
-            stream=stream)
+            (rows, cols), strides, dtype=a.dtype, stream=stream
+        )
 
     dt = nps.from_dtype(a.dtype)
 
@@ -40,7 +41,6 @@ def transpose(a, b=None):
 
     @cuda.jit
     def kernel(input, output):
-
         tile = cuda.shared.array(shape=tile_shape, dtype=dt)
 
         tx = cuda.threadIdx.x

@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: BSD-2-Clause
+
 #
 # Test does not work on some cards.
 #
@@ -6,7 +9,7 @@ from queue import Queue
 
 import numpy as np
 from numba import cuda
-from numba.cuda.testing import unittest, ContextResettingTestCase
+from numba.cuda.testing import unittest, CUDATestCase
 
 
 def newthread(exception_queue):
@@ -18,12 +21,12 @@ def newthread(exception_queue):
         stream.synchronize()
         del dA
         del stream
-        cuda.close()
+        cuda.synchronize()
     except Exception as e:
         exception_queue.put(e)
 
 
-class TestSelectDevice(ContextResettingTestCase):
+class TestSelectDevice(CUDATestCase):
     def test_select_device(self):
         exception_queue = Queue()
         for i in range(10):
@@ -37,5 +40,5 @@ class TestSelectDevice(ContextResettingTestCase):
         self.assertEqual(exceptions, [])
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

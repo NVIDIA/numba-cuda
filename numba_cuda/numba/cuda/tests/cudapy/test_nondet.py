@@ -1,5 +1,9 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: BSD-2-Clause
+
 import numpy as np
-from numba import cuda, float32, void
+from numba import cuda
+from numba.cuda import float32, void
 from numba.cuda.testing import unittest, CUDATestCase
 
 
@@ -45,5 +49,5 @@ class TestCudaNonDet(CUDATestCase):
         np.testing.assert_array_almost_equal(dF.copy_to_host(), E)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

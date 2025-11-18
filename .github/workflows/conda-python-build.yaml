@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: BSD-2-Clause
+
 on:
   workflow_call:
     inputs:
@@ -18,6 +21,9 @@ on:
       script:
         type: string
         default: "ci/build_python.sh"
+      matrix:
+        type: string
+        required: true
       matrix_filter:
         type: string
         default: "."
@@ -49,34 +55,14 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       MATRIX: ${{ steps.compute-matrix.outputs.MATRIX }}
+    timeout-minutes: 60
     steps:
       - name: Compute Build Matrix
         id: compute-matrix
+        env:
+          MATRIX: ${{ inputs.matrix }}
         run: |
           set -eo pipefail
-
-          # please keep the matrices sorted in ascending order by the following:
-          #
-          #     [ARCH, PY_VER, CUDA_VER, LINUX_VER]
-          #
-          export MATRIX="
-          # amd64
-          - { ARCH: 'amd64', PY_VER: '3.9',  CUDA_VER: '11.8.0', LINUX_VER: 'ubuntu22.04' }
-          - { ARCH: 'amd64', PY_VER: '3.9',  CUDA_VER: '12.5.1', LINUX_VER: 'ubuntu22.04' }
-          - { ARCH: 'amd64', PY_VER: '3.10', CUDA_VER: '11.8.0', LINUX_VER: 'ubuntu22.04' }
-          - { ARCH: 'amd64', PY_VER: '3.10', CUDA_VER: '12.5.1', LINUX_VER: 'ubuntu22.04' }
-          - { ARCH: 'amd64', PY_VER: '3.11', CUDA_VER: '11.8.0', LINUX_VER: 'ubuntu22.04' }
-          - { ARCH: 'amd64', PY_VER: '3.11', CUDA_VER: '12.2.2', LINUX_VER: 'ubuntu22.04' }
-          - { ARCH: 'amd64', PY_VER: '3.11', CUDA_VER: '12.5.1', LINUX_VER: 'ubuntu22.04' }
-          # arm64
-          - { ARCH: 'arm64', PY_VER: '3.9',  CUDA_VER: '11.8.0', LINUX_VER: 'ubuntu22.04' }
-          - { ARCH: 'arm64', PY_VER: '3.9',  CUDA_VER: '12.5.1', LINUX_VER: 'ubuntu22.04' }
-          - { ARCH: 'arm64', PY_VER: '3.10', CUDA_VER: '11.8.0', LINUX_VER: 'ubuntu22.04' }
-          - { ARCH: 'arm64', PY_VER: '3.10', CUDA_VER: '12.5.1', LINUX_VER: 'ubuntu22.04' }
-          - { ARCH: 'arm64', PY_VER: '3.11', CUDA_VER: '11.8.0', LINUX_VER: 'ubuntu22.04' }
-          - { ARCH: 'arm64', PY_VER: '3.11', CUDA_VER: '12.2.2', LINUX_VER: 'ubuntu22.04' }
-          - { ARCH: 'arm64', PY_VER: '3.11', CUDA_VER: '12.5.1', LINUX_VER: 'ubuntu22.04' }
-          "
 
           MATRIX="$(
             yq -n -o json 'env(MATRIX)' | \
@@ -85,6 +71,7 @@ jobs:
 
           echo "MATRIX=${MATRIX}" | tee --append "${GITHUB_OUTPUT}"
   build:
+    name: ${{ matrix.CUDA_VER }}, ${{ matrix.PY_VER }}, ${{ matrix.ARCH }}, ${{ matrix.LINUX_VER }}
     needs: compute-matrix
     strategy:
       fail-fast: false
@@ -96,6 +83,7 @@ jobs:
       image: rapidsai/ci-conda:cuda${{ matrix.CUDA_VER }}-${{ matrix.LINUX_VER }}-py${{ matrix.PY_VER }}
       env:
         RAPIDS_BUILD_TYPE: ${{ inputs.build_type }}
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
         with:
@@ -108,6 +96,8 @@ jobs:
           echo "RAPIDS_SHA=$(git rev-parse HEAD)" >> "${GITHUB_ENV}"
           echo "RAPIDS_REF_NAME=${{ inputs.branch || github.ref_name }}" >> "${GITHUB_ENV}"
           echo "RAPIDS_NIGHTLY_DATE=${{ inputs.date }}" >> "${GITHUB_ENV}"
+      - name: Setup proxy cache
+        uses: nv-gha-runners/setup-proxy-cache@main
       - name: Python build
         run: ${{ inputs.script }}
         env:
@@ -116,7 +106,7 @@ jobs:
         if: "!cancelled()"
         uses: actions/upload-artifact@v4
         with:
-          name: conda-repo
+          name: conda-repo-py${{ matrix.PY_VER }}-${{ matrix.ARCH }}
           path: "/tmp/conda-bld-output"
       - name: Publish conda package
         if: inputs.upload_to_anaconda

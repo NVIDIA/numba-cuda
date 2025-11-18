@@ -1,3 +1,7 @@
+..
+   SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+   SPDX-License-Identifier: BSD-2-Clause
+
 
 Device management
 =================
@@ -89,4 +93,3 @@ For example, to obtain the UUID of the current device:
    dev = cuda.current_context().device
    # prints e.g. "GPU-e6489c45-5b68-3b03-bab7-0e7c8e809643"
    print(dev.uuid)
-

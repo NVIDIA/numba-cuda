@@ -1,11 +1,14 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: BSD-2-Clause
+
 import numpy as np
-from numba import cuda, float32, float64, int32, void
+from numba import cuda
+from numba.cuda import float32, float64, int32, void
 from numba.cuda.testing import unittest, CUDATestCase
 
 
 class TestCudaIDiv(CUDATestCase):
     def test_inplace_div(self):
-
         @cuda.jit(void(float32[:, :], int32, int32))
         def div(grid, l_x, l_y):
             for x in range(l_x):
@@ -19,7 +22,6 @@ class TestCudaIDiv(CUDATestCase):
         self.assertTrue(np.all(y == 0.5))
 
     def test_inplace_div_double(self):
-
         @cuda.jit(void(float64[:, :], int32, int32))
         def div_double(grid, l_x, l_y):
             for x in range(l_x):
@@ -33,5 +35,5 @@ class TestCudaIDiv(CUDATestCase):
         self.assertTrue(np.all(y == 0.5))
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

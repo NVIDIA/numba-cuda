@@ -1,19 +1,24 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: BSD-2-Clause
+
 from functools import singledispatch
 from llvmlite import ir
-from numba.core import types, cgutils
-from numba.core.errors import NumbaWarning
-from numba.core.imputils import Registry
+from numba.cuda import types
+from numba.cuda import cgutils
+from numba.cuda.core.errors import NumbaWarning
+from numba.cuda.core.imputils import Registry
 from numba.cuda import nvvmutils
-from numba.cuda.types import Dim3
+from numba.cuda.types.ext_types import Dim3, Bfloat16
 from warnings import warn
 
-registry = Registry()
+registry = Registry("printimpl")
 lower = registry.lower
 
 voidptr = ir.PointerType(ir.IntType(8))
 
 
 # NOTE: we don't use @lower here since print_item() doesn't return a LLVM value
+
 
 @singledispatch
 def print_item(ty, context, builder, val):
@@ -22,8 +27,9 @@ def print_item(ty, context, builder, val):
     A (format string, [list of arguments]) is returned that will allow
     forming the final printf()-like call.
     """
-    raise NotImplementedError("printing unimplemented for values of type %s"
-                              % (ty,))
+    raise NotImplementedError(
+        "printing unimplemented for values of type %s" % (ty,)
+    )
 
 
 @print_item.register(types.Integer)
@@ -43,6 +49,17 @@ def int_print_impl(ty, context, builder, val):
 def real_print_impl(ty, context, builder, val):
     lld = context.cast(builder, val, ty, types.float64)
     return "%f", [lld]
+
+
+@print_item.register(Bfloat16)
+def bfloat16_print_impl(ty, context, builder, val):
+    # Hand rolled bfloat16 -> float32 -> double conversion with zero-ext
+    bits32 = builder.zext(val, ir.IntType(32))
+    shift = builder.shl(bits32, ir.Constant(ir.IntType(32), 16))
+    f32 = builder.bitcast(shift, ir.FloatType())
+    # printf("%f") expects a double; promote to f64 to match vararg expectation
+    f64 = builder.fpext(f32, ir.DoubleType())
+    return "%f", [f64]
 
 
 @print_item.register(types.StringLiteral)
@@ -92,11 +109,13 @@ def print_varargs(context, builder, sig, args):
 
     rawfmt = " ".join(formats) + "\n"
     if len(args) > 32:
-        msg = ('CUDA print() cannot print more than 32 items. '
-               'The raw format string will be emitted by the kernel instead.')
+        msg = (
+            "CUDA print() cannot print more than 32 items. "
+            "The raw format string will be emitted by the kernel instead."
+        )
         warn(msg, NumbaWarning)
 
-        rawfmt = rawfmt.replace('%', '%%')
+        rawfmt = rawfmt.replace("%", "%%")
     fmt = context.insert_string_const_addrspace(builder, rawfmt)
     array = cgutils.make_anonymous_struct(builder, values)
     arrayptr = cgutils.alloca_once_value(builder, array)

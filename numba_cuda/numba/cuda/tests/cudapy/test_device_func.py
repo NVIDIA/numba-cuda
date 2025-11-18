@@ -1,20 +1,32 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: BSD-2-Clause
+
 import re
 import cffi
 
 import numpy as np
 
-from numba.cuda.testing import (skip_if_curand_kernel_missing, skip_on_cudasim,
-                                test_data_dir, unittest, CUDATestCase)
-from numba import cuda, jit, float32, int32, types
-from numba.core.errors import TypingError
-from numba.tests.support import skip_unless_cffi
+from numba.cuda.testing import (
+    skip_if_curand_kernel_missing,
+    skip_on_cudasim,
+    test_data_dir,
+    unittest,
+    CUDATestCase,
+)
+from numba import cuda
+from numba.cuda import float32, int32, types
+from numba.cuda.core.errors import TypingError
+from numba.cuda.tests.support import skip_unless_cffi
+from numba.cuda.testing import skip_on_standalone_numba_cuda
 from types import ModuleType
+from numba.cuda import HAS_NUMBA
+
+if HAS_NUMBA:
+    from numba import jit
 
 
 class TestDeviceFunc(CUDATestCase):
-
     def test_use_add2f(self):
-
         @cuda.jit("float32(float32, float32)", device=True)
         def add2f(a, b):
             return a + b
@@ -33,7 +45,6 @@ class TestDeviceFunc(CUDATestCase):
         self.assertTrue(np.all(ary == exp), (ary, exp))
 
     def test_indirect_add2f(self):
-
         @cuda.jit("float32(float32, float32)", device=True)
         def add2f(a, b):
             return a + b
@@ -66,6 +77,7 @@ class TestDeviceFunc(CUDATestCase):
         add_kernel[1, ary.size](ary)
         np.testing.assert_equal(expect, ary)
 
+    @skip_on_standalone_numba_cuda
     def test_cpu_dispatcher(self):
         # Test correct usage
         @jit
@@ -74,12 +86,13 @@ class TestDeviceFunc(CUDATestCase):
 
         self._check_cpu_dispatcher(add)
 
-    @skip_on_cudasim('not supported in cudasim')
+    @skip_on_cudasim("not supported in cudasim")
+    @skip_on_standalone_numba_cuda
     def test_cpu_dispatcher_invalid(self):
         # Test invalid usage
         # Explicit signature disables compilation, which also disable
         # compiling on CUDA.
-        @jit('(i4, i4)')
+        @jit("(i4, i4)")
         def add(a, b):
             return a + b
 
@@ -90,12 +103,13 @@ class TestDeviceFunc(CUDATestCase):
         expected = re.compile(msg)
         self.assertTrue(expected.search(str(raises.exception)) is not None)
 
+    @skip_on_standalone_numba_cuda
     def test_cpu_dispatcher_other_module(self):
         @jit
         def add(a, b):
             return a + b
 
-        mymod = ModuleType(name='mymod')
+        mymod = ModuleType(name="mymod")
         mymod.add = add
         del add
 
@@ -109,7 +123,7 @@ class TestDeviceFunc(CUDATestCase):
         add_kernel[1, ary.size](ary)
         np.testing.assert_equal(expect, ary)
 
-    @skip_on_cudasim('not supported in cudasim')
+    @skip_on_cudasim("not supported in cudasim")
     def test_inspect_llvm(self):
         @cuda.jit(device=True)
         def foo(x, y):
@@ -120,13 +134,13 @@ class TestDeviceFunc(CUDATestCase):
 
         fname = cres.fndesc.mangled_name
         # Verify that the function name has "foo" in it as in the python name
-        self.assertIn('foo', fname)
+        self.assertIn("foo", fname)
 
         llvm = foo.inspect_llvm(args)
         # Check that the compiled function name is in the LLVM.
         self.assertIn(fname, llvm)
 
-    @skip_on_cudasim('not supported in cudasim')
+    @skip_on_cudasim("not supported in cudasim")
     def test_inspect_asm(self):
         @cuda.jit(device=True)
         def foo(x, y):
@@ -137,13 +151,13 @@ class TestDeviceFunc(CUDATestCase):
 
         fname = cres.fndesc.mangled_name
         # Verify that the function name has "foo" in it as in the python name
-        self.assertIn('foo', fname)
+        self.assertIn("foo", fname)
 
         ptx = foo.inspect_asm(args)
         # Check that the compiled function name is in the PTX
         self.assertIn(fname, ptx)
 
-    @skip_on_cudasim('not supported in cudasim')
+    @skip_on_cudasim("not supported in cudasim")
     def test_inspect_sass_disallowed(self):
         @cuda.jit(device=True)
         def foo(x, y):
@@ -152,10 +166,11 @@ class TestDeviceFunc(CUDATestCase):
         with self.assertRaises(RuntimeError) as raises:
             foo.inspect_sass((int32, int32))
 
-        self.assertIn('Cannot inspect SASS of a device function',
-                      str(raises.exception))
+        self.assertIn(
+            "Cannot inspect SASS of a device function", str(raises.exception)
+        )
 
-    @skip_on_cudasim('cudasim will allow calling any function')
+    @skip_on_cudasim("cudasim will allow calling any function")
     def test_device_func_as_kernel_disallowed(self):
         @cuda.jit(device=True)
         def f():
@@ -164,10 +179,12 @@ class TestDeviceFunc(CUDATestCase):
         with self.assertRaises(RuntimeError) as raises:
             f[1, 1]()
 
-        self.assertIn('Cannot compile a device function as a kernel',
-                      str(raises.exception))
+        self.assertIn(
+            "Cannot compile a device function as a kernel",
+            str(raises.exception),
+        )
 
-    @skip_on_cudasim('cudasim ignores casting by jit decorator signature')
+    @skip_on_cudasim("cudasim ignores casting by jit decorator signature")
     def test_device_casting(self):
         # Ensure that casts to the correct type are forced when calling a
         # device function with a signature. This test ensures that:
@@ -176,20 +193,23 @@ class TestDeviceFunc(CUDATestCase):
         #   shouldn't
         # - We insert a cast when calling rgba, as opposed to failing to type.
 
-        @cuda.jit('int32(int32, int32, int32, int32)', device=True)
+        @cuda.jit("int32(int32, int32, int32, int32)", device=True)
         def rgba(r, g, b, a):
-            return (((r & 0xFF) << 16) |
-                    ((g & 0xFF) << 8) |
-                    ((b & 0xFF) << 0) |
-                    ((a & 0xFF) << 24))
+            return (
+                ((r & 0xFF) << 16)
+                | ((g & 0xFF) << 8)
+                | ((b & 0xFF) << 0)
+                | ((a & 0xFF) << 24)
+            )
 
         @cuda.jit
         def rgba_caller(x, channels):
             x[0] = rgba(channels[0], channels[1], channels[2], channels[3])
 
         x = cuda.device_array(1, dtype=np.int32)
-        channels = cuda.to_device(np.asarray([1.0, 2.0, 3.0, 4.0],
-                                             dtype=np.float32))
+        channels = cuda.to_device(
+            np.asarray([1.0, 2.0, 3.0, 4.0], dtype=np.float32)
+        )
 
         rgba_caller[1, 1](x, channels)
 
@@ -259,32 +279,31 @@ int random_number(unsigned int *out, unsigned long long seed)
 }""")
 
 
-@skip_on_cudasim('External functions unsupported in the simulator')
+@skip_on_cudasim("External functions unsupported in the simulator")
 class TestDeclareDevice(CUDATestCase):
-
     def check_api(self, decl):
-        self.assertEqual(decl.name, 'f1')
+        self.assertEqual(decl.name, "f1")
         self.assertEqual(decl.sig.args, (float32[:],))
         self.assertEqual(decl.sig.return_type, int32)
 
     def test_declare_device_signature(self):
-        f1 = cuda.declare_device('f1', int32(float32[:]))
+        f1 = cuda.declare_device("f1", int32(float32[:]))
         self.check_api(f1)
 
     def test_declare_device_string(self):
-        f1 = cuda.declare_device('f1', 'int32(float32[:])')
+        f1 = cuda.declare_device("f1", "int32(float32[:])")
         self.check_api(f1)
 
     def test_bad_declare_device_tuple(self):
-        with self.assertRaisesRegex(TypeError, 'Return type'):
-            cuda.declare_device('f1', (float32[:],))
+        with self.assertRaisesRegex(TypeError, "Return type"):
+            cuda.declare_device("f1", (float32[:],))
 
     def test_bad_declare_device_string(self):
-        with self.assertRaisesRegex(TypeError, 'Return type'):
-            cuda.declare_device('f1', '(float32[:],)')
+        with self.assertRaisesRegex(TypeError, "Return type"):
+            cuda.declare_device("f1", "(float32[:],)")
 
     def test_link_cu_source(self):
-        times2 = cuda.declare_device('times2', 'int32(int32)', link=times2_cu)
+        times2 = cuda.declare_device("times2", "int32(int32)", link=times2_cu)
 
         @cuda.jit
         def kernel(r, x):
@@ -301,7 +320,7 @@ class TestDeclareDevice(CUDATestCase):
 
     def _test_link_multiple_sources(self, link_type):
         link = link_type([times2_cu, times4_cu])
-        times4 = cuda.declare_device('times4', 'int32(int32)', link=link)
+        times4 = cuda.declare_device("times4", "int32(int32)", link=link)
 
         @cuda.jit
         def kernel(r, x):
@@ -360,7 +379,7 @@ class TestDeclareDevice(CUDATestCase):
         np.testing.assert_equal(x[0], 323845807)
 
     def test_declared_in_called_function(self):
-        times2 = cuda.declare_device('times2', 'int32(int32)', link=times2_cu)
+        times2 = cuda.declare_device("times2", "int32(int32)", link=times2_cu)
 
         @cuda.jit
         def device_func(x):
@@ -380,7 +399,7 @@ class TestDeclareDevice(CUDATestCase):
         np.testing.assert_equal(r, x * 2)
 
     def test_declared_in_called_function_twice(self):
-        times2 = cuda.declare_device('times2', 'int32(int32)', link=times2_cu)
+        times2 = cuda.declare_device("times2", "int32(int32)", link=times2_cu)
 
         @cuda.jit
         def device_func_1(x):
@@ -404,7 +423,7 @@ class TestDeclareDevice(CUDATestCase):
         np.testing.assert_equal(r, x * 2)
 
     def test_declared_in_called_function_two_calls(self):
-        times2 = cuda.declare_device('times2', 'int32(int32)', link=times2_cu)
+        times2 = cuda.declare_device("times2", "int32(int32)", link=times2_cu)
 
         @cuda.jit
         def device_func(x):
@@ -424,7 +443,7 @@ class TestDeclareDevice(CUDATestCase):
         np.testing.assert_equal(r, x * 6)
 
     def test_call_declared_function_twice(self):
-        times2 = cuda.declare_device('times2', 'int32(int32)', link=times2_cu)
+        times2 = cuda.declare_device("times2", "int32(int32)", link=times2_cu)
 
         @cuda.jit
         def kernel(r, x):
@@ -440,7 +459,7 @@ class TestDeclareDevice(CUDATestCase):
         np.testing.assert_equal(r, x * 6)
 
     def test_declared_in_called_function_and_parent(self):
-        times2 = cuda.declare_device('times2', 'int32(int32)', link=times2_cu)
+        times2 = cuda.declare_device("times2", "int32(int32)", link=times2_cu)
 
         @cuda.jit
         def device_func(x):
@@ -460,8 +479,8 @@ class TestDeclareDevice(CUDATestCase):
         np.testing.assert_equal(r, x * 4)
 
     def test_call_two_different_declared_functions(self):
-        times2 = cuda.declare_device('times2', 'int32(int32)', link=times2_cu)
-        times3 = cuda.declare_device('times3', 'int32(int32)', link=times3_cu)
+        times2 = cuda.declare_device("times2", "int32(int32)", link=times2_cu)
+        times3 = cuda.declare_device("times3", "int32(int32)", link=times3_cu)
 
         @cuda.jit
         def kernel(r, x):
@@ -477,5 +496,5 @@ class TestDeclareDevice(CUDATestCase):
         np.testing.assert_equal(r, x * 5)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

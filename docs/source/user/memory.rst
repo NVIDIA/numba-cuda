@@ -1,3 +1,7 @@
+..
+   SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+   SPDX-License-Identifier: BSD-2-Clause
+
 =================
 Memory management
 =================
@@ -67,6 +71,7 @@ Mapped memory
    :noindex:
 
 
+.. _cuda-managed-memory:
 
 Managed memory
 ==============
@@ -126,10 +131,10 @@ traditional dynamic memory management.
    device function). *shape* is either an integer or a tuple of integers
    representing the array's dimensions and must be a simple constant
    expression. A "simple constant expression" includes, but is not limited to:
-   
+
       #. A literal (e.g. ``10``)
       #. A local variable whose right-hand side is a literal or a simple constant
-         expression (e.g. ``shape``, where ``shape`` is defined earlier in the function 
+         expression (e.g. ``shape``, where ``shape`` is defined earlier in the function
          as ``shape = 10``)
       #. A global variable that is defined in the jitted function's globals by the time
          of compilation (e.g. ``shape``, where ``shape`` is defined using any expression
@@ -259,14 +264,14 @@ unlike traditional dynamic memory management.
 
    Allocate a local array of the given *shape* and *type* on the device.
    *shape* is either an integer or a tuple of integers representing the array's
-   dimensions and must be a simple constant expression. A "simple constant expression" 
+   dimensions and must be a simple constant expression. A "simple constant expression"
    includes, but is not limited to:
 
       #. A literal (e.g. ``10``)
       #. A local variable whose right-hand side is a literal or a simple constant
          expression (e.g. ``shape``, where ``shape`` is defined earlier in the function
          as ``shape = 10``)
-      #. A global variable that is defined in the jitted function's globals by the time 
+      #. A global variable that is defined in the jitted function's globals by the time
          of compilation (e.g. ``shape``, where ``shape`` is defined using any expression
          at global scope).
 

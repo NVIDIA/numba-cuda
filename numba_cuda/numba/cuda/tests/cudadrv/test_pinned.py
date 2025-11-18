@@ -1,12 +1,14 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: BSD-2-Clause
+
 import numpy as np
 import platform
 
 from numba import cuda
-from numba.cuda.testing import unittest, ContextResettingTestCase
+from numba.cuda.testing import unittest, CUDATestCase
 
 
-class TestPinned(ContextResettingTestCase):
-
+class TestPinned(CUDATestCase):
     def _run_copies(self, A):
         A0 = np.copy(A)
 
@@ -20,8 +22,8 @@ class TestPinned(ContextResettingTestCase):
 
     def test_pinned(self):
         machine = platform.machine()
-        if machine.startswith('arm') or machine.startswith('aarch64'):
-            count = 262144   # 2MB
+        if machine.startswith("arm") or machine.startswith("aarch64"):
+            count = 262144  # 2MB
         else:
             count = 2097152  # 16MB
         A = np.arange(count)
@@ -29,9 +31,9 @@ class TestPinned(ContextResettingTestCase):
             self._run_copies(A)
 
     def test_unpinned(self):
-        A = np.arange(2 * 1024 * 1024) # 16 MB
+        A = np.arange(2 * 1024 * 1024)  # 16 MB
         self._run_copies(A)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

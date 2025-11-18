@@ -1,6 +1,10 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: BSD-2-Clause
+
 import math
 import numpy as np
-from numba import cuda, float64, int8, int32, void
+from numba import cuda
+from numba.cuda import float64, int8, int32, void
 from numba.cuda.testing import unittest, CUDATestCase
 
 
@@ -47,7 +51,7 @@ def vec_pow_inplace_binop(r, x):
 
 def random_complex(N):
     np.random.seed(123)
-    return (np.random.random(1) + np.random.random(1) * 1j)
+    return np.random.random(1) + np.random.random(1) * 1j
 
 
 class TestCudaPowi(CUDATestCase):
@@ -59,7 +63,7 @@ class TestCudaPowi(CUDATestCase):
         A = np.arange(10, dtype=np.float64).reshape(2, 5)
         Aout = np.empty_like(A)
         kernel[1, A.shape](A, power, Aout)
-        self.assertTrue(np.allclose(Aout, A ** power))
+        self.assertTrue(np.allclose(Aout, A**power))
 
     def test_powi_binop(self):
         dec = cuda.jit(void(float64[:, :], int8, float64[:, :]))
@@ -69,7 +73,7 @@ class TestCudaPowi(CUDATestCase):
         A = np.arange(10, dtype=np.float64).reshape(2, 5)
         Aout = np.empty_like(A)
         kernel[1, A.shape](A, power, Aout)
-        self.assertTrue(np.allclose(Aout, A ** power))
+        self.assertTrue(np.allclose(Aout, A**power))
 
     # Relative tolerance kwarg is provided because 1.0e-7 (the default for
     # assert_allclose) is a bit tight for single precision.
@@ -81,7 +85,7 @@ class TestCudaPowi(CUDATestCase):
 
         cfunc = cuda.jit(func)
         cfunc[1, N](r, x, y)
-        np.testing.assert_allclose(r, x ** y, rtol=rtol)
+        np.testing.assert_allclose(r, x**y, rtol=rtol)
 
         # Checks special cases
         x = np.asarray([0.0j, 1.0j], dtype=dtype)
@@ -89,7 +93,7 @@ class TestCudaPowi(CUDATestCase):
         r = np.zeros_like(x)
 
         cfunc[1, 2](r, x, y)
-        np.testing.assert_allclose(r, x ** y, rtol=rtol)
+        np.testing.assert_allclose(r, x**y, rtol=rtol)
 
     def test_cpow_complex64_pow(self):
         self._test_cpow(np.complex64, vec_pow, rtol=3.0e-7)
@@ -107,7 +111,7 @@ class TestCudaPowi(CUDATestCase):
         N = 32
         x = random_complex(N).astype(dtype)
         y = random_complex(N).astype(dtype)
-        r = x ** y
+        r = x**y
 
         cfunc = cuda.jit(vec_pow_inplace_binop)
         cfunc[1, N](x, y)
@@ -120,5 +124,5 @@ class TestCudaPowi(CUDATestCase):
         self._test_cpow_inplace_binop(np.complex128, rtol=3.0e-7)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

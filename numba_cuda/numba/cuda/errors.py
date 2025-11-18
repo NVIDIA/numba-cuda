@@ -1,5 +1,8 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: BSD-2-Clause
+
 import numbers
-from numba.core.errors import LoweringError
+from numba.cuda.core.errors import LoweringError
 
 
 class KernelRuntimeError(RuntimeError):
@@ -7,18 +10,25 @@ class KernelRuntimeError(RuntimeError):
         self.tid = tid
         self.ctaid = ctaid
         self.msg = msg
-        t = ("An exception was raised in thread=%s block=%s\n"
-             "\t%s")
+        t = "An exception was raised in thread=%s block=%s\n\t%s"
         msg = t % (self.tid, self.ctaid, self.msg)
         super(KernelRuntimeError, self).__init__(msg)
+
+
+class UnsupportedBytecodeError(Exception):
+    """Unsupported bytecode is non-recoverable"""
+
+    def __init__(self, msg, loc=None):
+        super().__init__(f"{msg}. Raised from {loc}")
 
 
 class CudaLoweringError(LoweringError):
     pass
 
 
-_launch_help_url = ("https://numba.readthedocs.io/en/stable/cuda/"
-                    "kernels.html#kernel-invocation")
+_launch_help_url = (
+    "https://numba.readthedocs.io/en/stable/cuda/kernels.html#kernel-invocation"
+)
 missing_launch_config_msg = """
 Kernel launch configuration was not specified. Use the syntax:
 
@@ -40,12 +50,15 @@ def normalize_kernel_dimensions(griddim, blockdim):
         else:
             dim = list(dim)
         if len(dim) > 3:
-            raise ValueError('%s must be a sequence of 1, 2 or 3 integers, '
-                             'got %r' % (name, dim))
+            raise ValueError(
+                "%s must be a sequence of 1, 2 or 3 integers, "
+                "got %r" % (name, dim)
+            )
         for v in dim:
             if not isinstance(v, numbers.Integral):
-                raise TypeError('%s must be a sequence of integers, got %r'
-                                % (name, dim))
+                raise TypeError(
+                    "%s must be a sequence of integers, got %r" % (name, dim)
+                )
         while len(dim) < 3:
             dim.append(1)
         return tuple(dim)
@@ -53,7 +66,7 @@ def normalize_kernel_dimensions(griddim, blockdim):
     if None in (griddim, blockdim):
         raise ValueError(missing_launch_config_msg)
 
-    griddim = check_dim(griddim, 'griddim')
-    blockdim = check_dim(blockdim, 'blockdim')
+    griddim = check_dim(griddim, "griddim")
+    blockdim = check_dim(blockdim, "blockdim")
 
     return griddim, blockdim

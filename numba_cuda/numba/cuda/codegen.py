@@ -1,15 +1,21 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: BSD-2-Clause
+
 from llvmlite import ir
 
-from numba.core import config, serialize
-from numba.core.codegen import Codegen, CodeLibrary
-from .cudadrv import devices, driver, nvvm, runtime
+from numba.cuda.core import config
+from numba.cuda import serialize
+from .cudadrv import devices, driver, nvvm, runtime, nvrtc
+from numba.cuda.core.codegen import Codegen, CodeLibrary
 from numba.cuda.cudadrv.libs import get_cudalib
+from numba.cuda.cudadrv.linkable_code import LinkableCode
+from numba.cuda.memory_management.nrt import NRT_LIBRARY
 
 import os
 import subprocess
 import tempfile
 
-CUDA_TRIPLE = 'nvptx64-nvidia-cuda'
+CUDA_TRIPLE = "nvptx64-nvidia-cuda"
 
 
 def run_nvdisasm(cubin, flags):
@@ -19,19 +25,24 @@ def run_nvdisasm(cubin, flags):
     fname = None
     try:
         fd, fname = tempfile.mkstemp()
-        with open(fname, 'wb') as f:
-            f.write(cubin)
+        with open(fname, "wb") as f:
+            f.write(cubin.code)
 
         try:
-            cp = subprocess.run(['nvdisasm', *flags, fname], check=True,
-                                stdout=subprocess.PIPE,
-                                stderr=subprocess.PIPE)
+            cp = subprocess.run(
+                ["nvdisasm", *flags, fname],
+                check=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+            )
         except FileNotFoundError as e:
-            msg = ("nvdisasm has not been found. You may need "
-                   "to install the CUDA toolkit and ensure that "
-                   "it is available on your PATH.\n")
+            msg = (
+                "nvdisasm has not been found. You may need "
+                "to install the CUDA toolkit and ensure that "
+                "it is available on your PATH.\n"
+            )
             raise RuntimeError(msg) from e
-        return cp.stdout.decode('utf-8')
+        return cp.stdout.decode("utf-8")
     finally:
         if fd is not None:
             os.close(fd)
@@ -41,14 +52,67 @@ def run_nvdisasm(cubin, flags):
 
 def disassemble_cubin(cubin):
     # Request lineinfo in disassembly
-    flags = ['-gi']
+    flags = ["-gi"]
     return run_nvdisasm(cubin, flags)
 
 
 def disassemble_cubin_for_cfg(cubin):
     # Request control flow graph in disassembly
-    flags = ['-cfg']
+    flags = ["-cfg"]
     return run_nvdisasm(cubin, flags)
+
+
+class ExternalCodeLibrary(CodeLibrary):
+    """Holds code produced externally, for linking with generated code."""
+
+    def __init__(self, codegen, name):
+        super().__init__(codegen, name)
+        # Files to link
+        self._linking_files = set()
+        # Setup and teardown functions for the module.
+        # The order is determined by the order they are added to the codelib.
+        self._setup_functions = []
+        self._teardown_functions = []
+
+        self.use_cooperative = False
+
+    @property
+    def modules(self):
+        # There are no LLVM IR modules in an ExternalCodeLibrary
+        return set()
+
+    def add_linking_file(self, path_or_obj):
+        # Adding new files after finalization is prohibited, in case the list
+        # of libraries has already been added to another code library; the
+        # newly-added files would be omitted from their linking process.
+        self._raise_if_finalized()
+
+        if isinstance(path_or_obj, LinkableCode):
+            if path_or_obj.setup_callback:
+                self._setup_functions.append(path_or_obj.setup_callback)
+            if path_or_obj.teardown_callback:
+                self._teardown_functions.append(path_or_obj.teardown_callback)
+
+        self._linking_files.add(path_or_obj)
+
+    def add_ir_module(self, module):
+        raise NotImplementedError("Cannot add LLVM IR to external code")
+
+    def add_linking_library(self, library):
+        raise NotImplementedError("Cannot add libraries to external code")
+
+    def finalize(self):
+        self._raise_if_finalized()
+        self._finalized = True
+
+    def get_asm_str(self):
+        raise NotImplementedError("No assembly for external code")
+
+    def get_llvm_str(self):
+        raise NotImplementedError("No LLVM IR for external code")
+
+    def get_function(self, name):
+        raise NotImplementedError("Cannot get function from external code")
 
 
 class CUDACodeLibrary(serialize.ReduceMixin, CodeLibrary):
@@ -65,7 +129,7 @@ class CUDACodeLibrary(serialize.ReduceMixin, CodeLibrary):
         entry_name=None,
         max_registers=None,
         lto=False,
-        nvvm_options=None
+        nvvm_options=None,
     ):
         """
         codegen:
@@ -94,6 +158,12 @@ class CUDACodeLibrary(serialize.ReduceMixin, CodeLibrary):
         # Files to link with the generated PTX. These are linked using the
         # Driver API at link time.
         self._linking_files = set()
+        # List of setup functions to the loaded module
+        # the order is determined by the order they are added to the codelib.
+        self._setup_functions = []
+        # List of teardown functions to the loaded module
+        # the order is determined by the order they are added to the codelib.
+        self._teardown_functions = []
         # Should we link libcudadevrt?
         self.needs_cudadevrt = False
 
@@ -116,6 +186,8 @@ class CUDACodeLibrary(serialize.ReduceMixin, CodeLibrary):
             nvvm_options = {}
         self._nvvm_options = nvvm_options
         self._entry_name = entry_name
+
+        self.use_cooperative = False
 
     @property
     def llvm_strs(self):
@@ -140,9 +212,9 @@ class CUDACodeLibrary(serialize.ReduceMixin, CodeLibrary):
         if ptxes:
             return ptxes
 
-        arch = nvvm.get_arch_option(*cc)
+        arch = nvrtc.get_arch_option(*cc)
         options = self._nvvm_options.copy()
-        options['arch'] = arch
+        options["arch"] = arch
 
         irs = self.llvm_strs
 
@@ -151,14 +223,41 @@ class CUDACodeLibrary(serialize.ReduceMixin, CodeLibrary):
         # Sometimes the result from NVVM contains trailing whitespace and
         # nulls, which we strip so that the assembly dump looks a little
         # tidier.
-        ptx = ptx.decode().strip('\x00').strip()
+        ptx = ptx.decode().strip("\x00").strip()
 
         if config.DUMP_ASSEMBLY:
-            print(("ASSEMBLY %s" % self._name).center(80, '-'))
+            print(("ASSEMBLY %s" % self._name).center(80, "-"))
             print(ptx)
-            print('=' * 80)
+            print("=" * 80)
 
         self._ptx_cache[cc] = ptx
+
+        return ptx
+
+    def get_lto_ptx(self, cc=None):
+        """
+        Get the PTX code after LTO.
+        """
+
+        if not self._lto:
+            raise RuntimeError("LTO is not enabled")
+
+        if not driver._have_nvjitlink():
+            raise RuntimeError("Link time optimization requires nvJitLink.")
+
+        cc = self._ensure_cc(cc)
+
+        linker = driver._Linker.new(
+            max_registers=self._max_registers,
+            cc=cc,
+            additional_flags=["-ptx"],
+            lto=self._lto,
+        )
+
+        self._link_all(linker, cc, ignore_nonlto=True)
+
+        ptx = linker.get_linked_ptx()
+        ptx = ptx.decode("utf-8")
 
         return ptx
 
@@ -169,10 +268,10 @@ class CUDACodeLibrary(serialize.ReduceMixin, CodeLibrary):
         if ltoir is not None:
             return ltoir
 
-        arch = nvvm.get_arch_option(*cc)
+        arch = nvrtc.get_arch_option(*cc)
         options = self._nvvm_options.copy()
-        options['arch'] = arch
-        options['gen-lto'] = None
+        options["arch"] = arch
+        options["gen-lto"] = None
 
         irs = self.llvm_strs
         ltoir = nvvm.compile_ir(irs, **options)
@@ -192,7 +291,7 @@ class CUDACodeLibrary(serialize.ReduceMixin, CodeLibrary):
             linker.add_file_guess_ext(path, ignore_nonlto)
         if self.needs_cudadevrt:
             linker.add_file_guess_ext(
-                get_cudalib('cudadevrt', static=True), ignore_nonlto
+                get_cudalib("cudadevrt", static=True), ignore_nonlto
             )
 
     def get_cubin(self, cc=None):
@@ -203,26 +302,14 @@ class CUDACodeLibrary(serialize.ReduceMixin, CodeLibrary):
             return cubin
 
         if self._lto and config.DUMP_ASSEMBLY:
-            linker = driver.Linker.new(
-                max_registers=self._max_registers,
-                cc=cc,
-                additional_flags=["-ptx"],
-                lto=self._lto
-            )
-            # `-ptx` flag is meant to view the optimized PTX for LTO objects.
-            # Non-LTO objects are not passed to linker.
-            self._link_all(linker, cc, ignore_nonlto=True)
+            ptx = self.get_lto_ptx(cc=cc)
 
-            ptx = linker.get_linked_ptx().decode('utf-8')
-
-            print(("ASSEMBLY (AFTER LTO) %s" % self._name).center(80, '-'))
+            print(("ASSEMBLY (AFTER LTO) %s" % self._name).center(80, "-"))
             print(ptx)
-            print('=' * 80)
+            print("=" * 80)
 
-        linker = driver.Linker.new(
-            max_registers=self._max_registers,
-            cc=cc,
-            lto=self._lto
+        linker = driver._Linker.new(
+            max_registers=self._max_registers, cc=cc, lto=self._lto
         )
         self._link_all(linker, cc, ignore_nonlto=False)
         cubin = linker.complete()
@@ -234,8 +321,10 @@ class CUDACodeLibrary(serialize.ReduceMixin, CodeLibrary):
 
     def get_cufunc(self):
         if self._entry_name is None:
-            msg = "Missing entry_name - are you trying to get the cufunc " \
-                  "for a device function?"
+            msg = (
+                "Missing entry_name - are you trying to get the cufunc "
+                "for a device function?"
+            )
             raise RuntimeError(msg)
 
         ctx = devices.get_context()
@@ -244,9 +333,10 @@ class CUDACodeLibrary(serialize.ReduceMixin, CodeLibrary):
         cufunc = self._cufunc_cache.get(device.id, None)
         if cufunc:
             return cufunc
-
         cubin = self.get_cubin(cc=device.compute_capability)
-        module = ctx.create_module_image(cubin)
+        module = ctx.create_module_image(
+            cubin, self._setup_functions, self._teardown_functions
+        )
 
         # Load
         cufunc = module.get_function(self._entry_name)
@@ -260,7 +350,7 @@ class CUDACodeLibrary(serialize.ReduceMixin, CodeLibrary):
         try:
             return self._linkerinfo_cache[cc]
         except KeyError:
-            raise KeyError(f'No linkerinfo for CC {cc}')
+            raise KeyError(f"No linkerinfo for CC {cc}")
 
     def get_sass(self, cc=None):
         return disassemble_cubin(self.get_cubin(cc=cc))
@@ -271,7 +361,7 @@ class CUDACodeLibrary(serialize.ReduceMixin, CodeLibrary):
     def add_ir_module(self, mod):
         self._raise_if_finalized()
         if self._module is not None:
-            raise RuntimeError('CUDACodeLibrary only supports one module')
+            raise RuntimeError("CUDACodeLibrary only supports one module")
         self._module = mod
 
     def add_linking_library(self, library):
@@ -283,20 +373,31 @@ class CUDACodeLibrary(serialize.ReduceMixin, CodeLibrary):
         self._raise_if_finalized()
 
         self._linking_libraries.add(library)
+        self._linking_files.update(library._linking_files)
+        self._setup_functions.extend(library._setup_functions)
+        self._teardown_functions.extend(library._teardown_functions)
+        self.use_cooperative |= library.use_cooperative
 
-    def add_linking_file(self, filepath):
-        self._linking_files.add(filepath)
+    def add_linking_file(self, path_or_obj):
+        if isinstance(path_or_obj, LinkableCode):
+            if path_or_obj.setup_callback:
+                self._setup_functions.append(path_or_obj.setup_callback)
+            if path_or_obj.teardown_callback:
+                self._teardown_functions.append(path_or_obj.teardown_callback)
+
+        self._linking_files.add(path_or_obj)
 
     def get_function(self, name):
         for fn in self._module.functions:
             if fn.name == name:
                 return fn
-        raise KeyError(f'Function {name} not found')
+        raise KeyError(f"Function {name} not found")
 
     @property
     def modules(self):
-        return [self._module] + [mod for lib in self._linking_libraries
-                                 for mod in lib.modules]
+        return [self._module] + [
+            mod for lib in self._linking_libraries for mod in lib.modules
+        ]
 
     @property
     def linking_libraries(self):
@@ -331,7 +432,7 @@ class CUDACodeLibrary(serialize.ReduceMixin, CodeLibrary):
             for mod in library.modules:
                 for fn in mod.functions:
                     if not fn.is_declaration:
-                        fn.linkage = 'linkonce_odr'
+                        fn.linkage = "linkonce_odr"
 
         self._finalized = True
 
@@ -341,11 +442,19 @@ class CUDACodeLibrary(serialize.ReduceMixin, CodeLibrary):
         but loaded functions are discarded. They are recreated when needed
         after deserialization.
         """
+        nrt = False
         if self._linking_files:
-            msg = 'Cannot pickle CUDACodeLibrary with linking files'
-            raise RuntimeError(msg)
+            if (
+                len(self._linking_files) == 1
+                and NRT_LIBRARY in self._linking_files
+            ):
+                nrt = True
+            else:
+                msg = "Cannot pickle CUDACodeLibrary with linking files"
+                raise RuntimeError(msg)
+
         if not self._finalized:
-            raise RuntimeError('Cannot pickle unfinalized CUDACodeLibrary')
+            raise RuntimeError("Cannot pickle unfinalized CUDACodeLibrary")
         return dict(
             codegen=None,
             name=self.name,
@@ -356,13 +465,29 @@ class CUDACodeLibrary(serialize.ReduceMixin, CodeLibrary):
             linkerinfo_cache=self._linkerinfo_cache,
             max_registers=self._max_registers,
             nvvm_options=self._nvvm_options,
-            needs_cudadevrt=self.needs_cudadevrt
+            needs_cudadevrt=self.needs_cudadevrt,
+            nrt=nrt,
+            use_cooperative=self.use_cooperative,
+            lto=self._lto,
         )
 
     @classmethod
-    def _rebuild(cls, codegen, name, entry_name, llvm_strs, ptx_cache,
-                 cubin_cache, linkerinfo_cache, max_registers, nvvm_options,
-                 needs_cudadevrt):
+    def _rebuild(
+        cls,
+        codegen,
+        name,
+        entry_name,
+        llvm_strs,
+        ptx_cache,
+        cubin_cache,
+        linkerinfo_cache,
+        max_registers,
+        nvvm_options,
+        needs_cudadevrt,
+        nrt,
+        use_cooperative,
+        lto,
+    ):
         """
         Rebuild an instance.
         """
@@ -376,9 +501,13 @@ class CUDACodeLibrary(serialize.ReduceMixin, CodeLibrary):
         instance._max_registers = max_registers
         instance._nvvm_options = nvvm_options
         instance.needs_cudadevrt = needs_cudadevrt
+        instance.use_cooperative = use_cooperative
 
         instance._finalized = True
+        if nrt:
+            instance._linking_files = {NRT_LIBRARY}
 
+        instance._lto = lto
         return instance
 
 

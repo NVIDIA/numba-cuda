@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: BSD-2-Clause
+
 from functools import reduce as pyreduce
 
 
@@ -9,6 +12,7 @@ def Reduce(func):
             return None
         else:
             return r
+
     return reduce_wrapper
 
 

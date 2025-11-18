@@ -1,3 +1,7 @@
+..
+   SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+   SPDX-License-Identifier: BSD-2-Clause
+
 
 .. _cuda_ffi:
 
@@ -160,6 +164,27 @@ CUDA C/C++ source code will be compiled with the `NVIDIA Runtime Compiler
 kernel as either PTX or LTOIR, depending on whether LTO is enabled. Other files
 will be passed directly to the CUDA Linker.
 
+A ``LinkableCode`` object may have setup and teardown callback functions that
+perform module-specific initialization and cleanup tasks.
+
+* Setup functions are invoked once for every new module loaded.
+* Teardown functions are invoked just prior to module unloading.
+
+Both setup and teardown callbacks are called with a handle to the relevant
+module. In practice, Numba creates a new module each time a kernel is compiled
+for a specific set of argument types.
+
+For each module, the setup callback is invoked once only. When a module is
+executed by multiple threads, only one thread will execute the setup
+callback.
+
+The callbacks are defined as follows:
+
+.. code::
+
+  def setup_callback(mod: cuda.cudadrv.drvapi.cu_module):...
+  def teardown_callback(mod: cuda.cudadrv.drvapi.cu_module):...
+
 :class:`LinkableCode <numba.cuda.LinkableCode>` objects are initialized using
 the parameters of their base class:
 
@@ -212,7 +237,58 @@ of NVRTC subject to the following considerations:
   on Linux and ``$env:CUDA_PATH\include`` on Windows. It can be modified using
   the environment variable :envvar:`NUMBA_CUDA_INCLUDE_PATH`.
 - The CUDA include directory will be made available to NVRTC on the include
-  path; additional includes are not supported.
+  path.
+- Additional search paths can be set to the environment variable
+  :envvar:`NUMBA_CUDA_NVRTC_EXTRA_SEARCH_PATHS`. Multiple paths should be colon
+  separated.
+
+Extra Search Paths Example
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+This example demonstrates calling a foreign function that includes additional
+headers not in the default Numba-CUDA search paths.
+
+The definitions of the C++ template APIs are in two different locations:
+
+.. literalinclude:: ../../../numba_cuda/numba/cuda/tests/doc_examples/ffi/include/mul.cuh
+   :language: C
+   :caption: ``numba/cuda/tests/doc_examples/ffi/include/mul.cuh``
+   :linenos:
+
+.. literalinclude:: ../../../numba_cuda/numba/cuda/tests/data/include/add.cuh
+   :language: C
+   :caption: ``numba/cuda/tests/data/include/add.cuh``
+   :linenos:
+
+Neither of the headers are in the default search paths of Numba-CUDA, but the
+foreign device function ``saxpy`` depends on them:
+
+.. literalinclude:: ../../../numba_cuda/numba/cuda/tests/doc_examples/ffi/saxpy.cu
+   :language: C
+   :caption: ``numba/cuda/tests/data/doc_examples/ffi/saxpy.cu``
+   :linenos:
+
+In the Python code, assume that ``mul_dir`` and ``add_dir`` are set to the
+paths that contain ``mul.cuh`` and ``add.cuh`` respectively. The paths are
+joined with ``:`` before setting ``config.CUDA_NVRTC_EXTRA_SEARCH_PATHS``:
+
+.. literalinclude:: ../../../numba_cuda/numba/cuda/tests/doc_examples/test_ffi.py
+   :language: python
+   :caption: from ``test_ex_extra_includes`` in ``numba/cuda/tests/doc_examples/test_ffi.py``
+   :start-after: magictoken.ex_extra_search_paths.begin
+   :end-before: magictoken.ex_extra_search_paths.end
+   :dedent: 12
+   :linenos:
+
+Next, use ``saxpy`` as intended:
+
+.. literalinclude:: ../../../numba_cuda/numba/cuda/tests/doc_examples/test_ffi.py
+   :language: python
+   :caption: from ``test_ex_extra_includes`` in ``numba/cuda/tests/doc_examples/test_ffi.py``
+   :start-after: magictoken.ex_extra_search_paths_kernel.begin
+   :end-before: magictoken.ex_extra_search_paths_kernel.end
+   :dedent: 12
+   :linenos:
 
 
 Complete Example

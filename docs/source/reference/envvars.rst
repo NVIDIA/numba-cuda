@@ -1,3 +1,7 @@
+..
+   SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+   SPDX-License-Identifier: BSD-2-Clause
+
 .. _numba-envvars-gpu-support:
 
 Environment Variables
@@ -48,12 +52,7 @@ target.
    Setting this variable to 1 also includes the values of arguments to Driver
    API calls in the logs.
 
-.. envvar:: NUMBA_CUDA_DRIVER
 
-   Path of the directory in which the CUDA driver libraries are to be found.
-   Normally this should not need to be set as Numba can locate the driver in
-   standard locations. However, this variable can be used if the driver is in a
-   non-standard location.
 
 .. envvar:: NUMBA_CUDA_LOG_SIZE
 
@@ -84,8 +83,8 @@ target.
 
    .. seealso::
 
-      The `Default Stream section
-      <https://nvidia.github.io/cuda-python/release/11.6.0-notes.html#default-stream>`_
+      The `Runtime Environment Variables section
+      <https://nvidia.github.io/cuda-python/cuda-bindings/latest/environment_variables.html#runtime-environment-variables>`_
       in the NVIDIA Bindings documentation.
 
 .. envvar:: NUMBA_CUDA_LOW_OCCUPANCY_WARNINGS
@@ -104,13 +103,11 @@ target.
    Enable warnings if a kernel is launched with host memory which forces a copy to and
    from the device. This option is on by default (default value is 1).
 
-.. envvar:: NUMBA_CUDA_USE_NVIDIA_BINDING
+.. note::
 
-   When set to 1, Numba will attempt to use the `NVIDIA CUDA Python binding
-   <https://nvidia.github.io/cuda-python/>`_ to make calls to the driver API
-   instead of using its own ctypes binding. This defaults to 0 (off), as the
-   NVIDIA binding is currently missing support for Per-Thread Default
-   Streams and the profiler APIs.
+   Numba-CUDA always uses the NVIDIA CUDA Python bindings. The legacy ctypes
+   bindings and the ``NUMBA_CUDA_USE_NVIDIA_BINDING`` environment variable have
+   been removed.
 
 .. envvar:: NUMBA_CUDA_INCLUDE_PATH
 
@@ -120,14 +117,8 @@ target.
    ``/usr/local/cuda/include``. On Windows, the default is
    ``$env:CUDA_PATH\include``.
 
-.. envvar:: NUMBA_CUDA_ENABLE_MINOR_VERSION_COMPATIBILITY
+.. envvar:: NUMBA_CUDA_NVRTC_EXTRA_SEARCH_PATHS
 
-      Enable minor version compatibility for the CUDA driver. Requires the
-      ``cubinlinker`` and ``ptxcompiler`` packages to be installed. Provides minor
-      version compatibility for driver versions less than 12.0.
-
-.. envvar:: NUMBA_CUDA_ENABLE_PYNVJITLINK
-
-   Use ``pynvjitlink`` for minor version compatibility. Requires the ``pynvjitlink``
-   package to be installed. Provides minor version compatibility for driver versions
-   greater than 12.0.
+   A colon separated list of paths that Numba's NVRTC should search for when compiling
+   external functions. These folders are searched after the system cudatoolkit search
+   paths and Numba-CUDA's internal search paths.

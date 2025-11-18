@@ -1,15 +1,18 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: BSD-2-Clause
+
 import numpy as np
 import unittest
-from numba.tests.support import override_config
-from numba.cuda.runtime import rtsys
+from numba.cuda.tests.support import override_config
+from numba.cuda.memory_management import rtsys
 from numba.cuda.tests.support import EnableNRTStatsMixin
-from numba.cuda.testing import CUDATestCase
+from numba.cuda.testing import CUDATestCase, skip_on_cudasim
 
 from numba import cuda
 
 
+@skip_on_cudasim("No refcounting in the simulator")
 class TestNrtRefCt(EnableNRTStatsMixin, CUDATestCase):
-
     def setUp(self):
         super(TestNrtRefCt, self).setUp()
 
@@ -19,7 +22,7 @@ class TestNrtRefCt(EnableNRTStatsMixin, CUDATestCase):
     def run(self, result=None):
         with (
             override_config("CUDA_ENABLE_NRT", True),
-            override_config('CUDA_NRT_STATS', True)
+            override_config("CUDA_NRT_STATS", True),
         ):
             super(TestNrtRefCt, self).run(result)
 
@@ -33,7 +36,7 @@ class TestNrtRefCt(EnableNRTStatsMixin, CUDATestCase):
         @cuda.jit
         def kernel():
             for i in range(n):
-                temp = np.empty(2) # noqa: F841
+                temp = np.empty(2)  # noqa: F841
             return None
 
         init_stats = rtsys.get_allocation_stats()
@@ -49,14 +52,13 @@ class TestNrtRefCt(EnableNRTStatsMixin, CUDATestCase):
 
         @cuda.jit
         def g(n):
-
             x = np.empty((n, 2))
 
             for i in range(n):
                 y = x[i]
 
             for i in range(n):
-                y = x[i] # noqa: F841
+                y = x[i]  # noqa: F841
 
             return None
 
@@ -70,6 +72,7 @@ class TestNrtRefCt(EnableNRTStatsMixin, CUDATestCase):
         """
         Test issue #1573
         """
+
         @cuda.jit
         def if_with_allocation_and_initialization(arr1, test1):
             tmp_arr = np.empty_like(arr1)
@@ -83,15 +86,18 @@ class TestNrtRefCt(EnableNRTStatsMixin, CUDATestCase):
         arr = np.random.random((5, 5))  # the values are not consumed
 
         init_stats = rtsys.get_allocation_stats()
-        if_with_allocation_and_initialization[1, 1](arr, False)
+        with override_config("DISABLE_PERFORMANCE_WARNINGS", 1):
+            if_with_allocation_and_initialization[1, 1](arr, False)
         cur_stats = rtsys.get_allocation_stats()
-        self.assertEqual(cur_stats.alloc - init_stats.alloc,
-                         cur_stats.free - init_stats.free)
+        self.assertEqual(
+            cur_stats.alloc - init_stats.alloc, cur_stats.free - init_stats.free
+        )
 
     def test_del_at_beginning_of_loop(self):
         """
         Test issue #1734
         """
+
         @cuda.jit
         def f(arr):
             res = 0
@@ -106,11 +112,13 @@ class TestNrtRefCt(EnableNRTStatsMixin, CUDATestCase):
         arr = np.ones((2, 2))
 
         init_stats = rtsys.get_allocation_stats()
-        f[1, 1](arr)
+        with override_config("DISABLE_PERFORMANCE_WARNINGS", 1):
+            f[1, 1](arr)
         cur_stats = rtsys.get_allocation_stats()
-        self.assertEqual(cur_stats.alloc - init_stats.alloc,
-                         cur_stats.free - init_stats.free)
+        self.assertEqual(
+            cur_stats.alloc - init_stats.alloc, cur_stats.free - init_stats.free
+        )
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

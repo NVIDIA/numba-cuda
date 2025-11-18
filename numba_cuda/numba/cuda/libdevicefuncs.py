@@ -1,8 +1,11 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: BSD-2-Clause
+
 from collections import namedtuple
 from textwrap import indent
 
-from numba.types import float32, float64, int16, int32, int64, void, Tuple
-from numba.core.typing.templates import signature
+from numba.cuda.types import float32, float64, int16, int32, int64, void, Tuple
+from numba.cuda.typing.templates import signature
 
 arg = namedtuple("arg", ("name", "ty", "is_ptr"))
 

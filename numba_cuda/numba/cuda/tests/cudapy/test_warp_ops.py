@@ -1,80 +1,87 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: BSD-2-Clause
+
+import re
+
 import numpy as np
-from numba import cuda, int32, int64, float32, float64
+from numba import cuda
+from numba.cuda import int32, int64, float32, float64
 from numba.cuda.testing import unittest, CUDATestCase, skip_on_cudasim
-from numba.core import config
+from numba.cuda.compiler import compile_ptx
+from numba.cuda.core import config
 
 
 def useful_syncwarp(ary):
     i = cuda.grid(1)
     if i == 0:
         ary[0] = 42
-    cuda.syncwarp(0xffffffff)
+    cuda.syncwarp(0xFFFFFFFF)
     ary[i] = ary[0]
 
 
 def use_shfl_sync_idx(ary, idx):
     i = cuda.grid(1)
-    val = cuda.shfl_sync(0xffffffff, i, idx)
+    val = cuda.shfl_sync(0xFFFFFFFF, i, idx)
     ary[i] = val
 
 
 def use_shfl_sync_up(ary, delta):
     i = cuda.grid(1)
-    val = cuda.shfl_up_sync(0xffffffff, i, delta)
+    val = cuda.shfl_up_sync(0xFFFFFFFF, i, delta)
     ary[i] = val
 
 
 def use_shfl_sync_down(ary, delta):
     i = cuda.grid(1)
-    val = cuda.shfl_down_sync(0xffffffff, i, delta)
+    val = cuda.shfl_down_sync(0xFFFFFFFF, i, delta)
     ary[i] = val
 
 
 def use_shfl_sync_xor(ary, xor):
     i = cuda.grid(1)
-    val = cuda.shfl_xor_sync(0xffffffff, i, xor)
+    val = cuda.shfl_xor_sync(0xFFFFFFFF, i, xor)
     ary[i] = val
 
 
 def use_shfl_sync_with_val(ary, into):
     i = cuda.grid(1)
-    val = cuda.shfl_sync(0xffffffff, into, 0)
+    val = cuda.shfl_sync(0xFFFFFFFF, into, 0)
     ary[i] = val
 
 
 def use_vote_sync_all(ary_in, ary_out):
     i = cuda.grid(1)
-    pred = cuda.all_sync(0xffffffff, ary_in[i])
+    pred = cuda.all_sync(0xFFFFFFFF, ary_in[i])
     ary_out[i] = pred
 
 
 def use_vote_sync_any(ary_in, ary_out):
     i = cuda.grid(1)
-    pred = cuda.any_sync(0xffffffff, ary_in[i])
+    pred = cuda.any_sync(0xFFFFFFFF, ary_in[i])
     ary_out[i] = pred
 
 
 def use_vote_sync_eq(ary_in, ary_out):
     i = cuda.grid(1)
-    pred = cuda.eq_sync(0xffffffff, ary_in[i])
+    pred = cuda.eq_sync(0xFFFFFFFF, ary_in[i])
     ary_out[i] = pred
 
 
 def use_vote_sync_ballot(ary):
     i = cuda.threadIdx.x
-    ballot = cuda.ballot_sync(0xffffffff, True)
+    ballot = cuda.ballot_sync(0xFFFFFFFF, True)
     ary[i] = ballot
 
 
 def use_match_any_sync(ary_in, ary_out):
     i = cuda.grid(1)
-    ballot = cuda.match_any_sync(0xffffffff, ary_in[i])
+    ballot = cuda.match_any_sync(0xFFFFFFFF, ary_in[i])
     ary_out[i] = ballot
 
 
 def use_match_all_sync(ary_in, ary_out):
     i = cuda.grid(1)
-    ballot, pred = cuda.match_all_sync(0xffffffff, ary_in[i])
+    ballot, pred = cuda.match_all_sync(0xFFFFFFFF, ary_in[i])
     ary_out[i] = ballot if pred else 0
 
 
@@ -144,16 +151,62 @@ class TestCudaWarpOperations(CUDATestCase):
         compiled[1, nelem](ary, xor)
         self.assertTrue(np.all(ary == exp))
 
+    def test_shfl_sync_const_mode_val(self):
+        # Test `mode` argument is constant in shfl_sync calls.
+        # Related to https://github.com/NVIDIA/numba-cuda/pull/231
+        subtest = [
+            (use_shfl_sync_idx, 4),
+            (use_shfl_sync_up, 4),
+            (use_shfl_sync_down, 4),
+            (use_shfl_sync_xor, 16),
+        ]
+
+        args_re = r"\((.*)\)"
+        m = re.compile(args_re)
+
+        for func, value in subtest:
+            with self.subTest(func=func.__name__):
+                compiled = cuda.jit("void(int32[:], int32)")(func)
+                nelem = 32
+                ary = np.empty(nelem, dtype=np.int32)
+                compiled[1, nelem](ary, value)
+                irs = next(iter(compiled.inspect_llvm().values()))
+
+                for ir in irs.split("\n"):
+                    if "call" in ir and "llvm.nvvm.shfl.sync.i32" in ir:
+                        args = m.search(ir).group(0)
+                        arglist = args.split(",")
+                        mode_arg = arglist[1]
+                        self.assertNotIn("%", mode_arg)
+
+    def test_shfl_sync_const_mode_val_sm100(self):
+        # Test shfl_sync compiles with cc=(10, 0)
+        subtest = [
+            use_shfl_sync_idx,
+            use_shfl_sync_up,
+            use_shfl_sync_down,
+            use_shfl_sync_xor,
+        ]
+
+        for func in subtest:
+            with self.subTest(func=func.__name__):
+                compile_ptx(func, (int32[:], int32), cc=(10, 0))
+
     def test_shfl_sync_types(self):
         types = int32, int64, float32, float64
-        values = (np.int32(-1), np.int64(1 << 42),
-                  np.float32(np.pi), np.float64(np.pi))
+        values = (
+            np.int32(-1),
+            np.int64(1 << 42),
+            np.float32(np.pi),
+            np.float64(np.pi),
+        )
         for typ, val in zip(types, values):
-            compiled = cuda.jit((typ[:], typ))(use_shfl_sync_with_val)
-            nelem = 32
-            ary = np.empty(nelem, dtype=val.dtype)
-            compiled[1, nelem](ary, val)
-            self.assertTrue(np.all(ary == val))
+            with self.subTest(typ=typ):
+                compiled = cuda.jit((typ[:], typ))(use_shfl_sync_with_val)
+                nelem = 32
+                ary = np.empty(nelem, dtype=val.dtype)
+                compiled[1, nelem](ary, val)
+                self.assertTrue(np.all(ary == val))
 
     def test_vote_sync_all(self):
         compiled = cuda.jit("void(int32[:], int32[:])")(use_vote_sync_all)
@@ -197,10 +250,11 @@ class TestCudaWarpOperations(CUDATestCase):
         nelem = 32
         ary = np.empty(nelem, dtype=np.uint32)
         compiled[1, nelem](ary)
-        self.assertTrue(np.all(ary == np.uint32(0xffffffff)))
+        self.assertTrue(np.all(ary == np.uint32(0xFFFFFFFF)))
 
-    @unittest.skipUnless(_safe_cc_check((7, 0)),
-                         "Matching requires at least Volta Architecture")
+    @unittest.skipUnless(
+        _safe_cc_check((7, 0)), "Matching requires at least Volta Architecture"
+    )
     def test_match_any_sync(self):
         compiled = cuda.jit("void(int32[:], int32[:])")(use_match_any_sync)
         nelem = 10
@@ -210,8 +264,9 @@ class TestCudaWarpOperations(CUDATestCase):
         compiled[1, nelem](ary_in, ary_out)
         self.assertTrue(np.all(ary_out == exp))
 
-    @unittest.skipUnless(_safe_cc_check((7, 0)),
-                         "Matching requires at least Volta Architecture")
+    @unittest.skipUnless(
+        _safe_cc_check((7, 0)), "Matching requires at least Volta Architecture"
+    )
     def test_match_all_sync(self):
         compiled = cuda.jit("void(int32[:], int32[:])")(use_match_all_sync)
         nelem = 10
@@ -223,9 +278,10 @@ class TestCudaWarpOperations(CUDATestCase):
         compiled[1, nelem](ary_in, ary_out)
         self.assertTrue(np.all(ary_out == 0))
 
-    @unittest.skipUnless(_safe_cc_check((7, 0)),
-                         "Independent scheduling requires at least Volta "
-                         "Architecture")
+    @unittest.skipUnless(
+        _safe_cc_check((7, 0)),
+        "Independent scheduling requires at least Volta Architecture",
+    )
     def test_independent_scheduling(self):
         compiled = cuda.jit("void(uint32[:])")(use_independent_scheduling)
         arr = np.empty(32, dtype=np.uint32)
@@ -267,10 +323,9 @@ class TestCudaWarpOperations(CUDATestCase):
         # 0, 1, 3, 7, F, 1F, 3F, 7F, FF, 1FF, etc.
         # or in binary:
         # ...0001, ....0011, ...0111, etc.
-        expected = np.asarray([(2 ** i) - 1 for i in range(32)],
-                              dtype=np.uint32)
+        expected = np.asarray([(2**i) - 1 for i in range(32)], dtype=np.uint32)
         np.testing.assert_equal(expected, out)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

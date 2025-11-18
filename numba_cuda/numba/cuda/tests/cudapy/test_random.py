@@ -1,14 +1,24 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: BSD-2-Clause
+
 import math
 
 import numpy as np
 
 from numba import cuda
 from numba.cuda.testing import unittest
-from numba.cuda.testing import skip_on_cudasim, CUDATestCase
+from numba.cuda.testing import (
+    skip_on_cudasim,
+    CUDATestCase,
+    skip_on_standalone_numba_cuda,
+)
 
-from numba.cuda.random import \
-    xoroshiro128p_uniform_float32, xoroshiro128p_normal_float32, \
-    xoroshiro128p_uniform_float64, xoroshiro128p_normal_float64
+from numba.cuda.random import (
+    xoroshiro128p_uniform_float32,
+    xoroshiro128p_normal_float32,
+    xoroshiro128p_uniform_float64,
+    xoroshiro128p_normal_float64,
+)
 
 
 # Distributions
@@ -42,6 +52,7 @@ def rng_kernel_float64(states, out, count, distribution):
             out[idx] = xoroshiro128p_normal_float64(states, thread_id)
 
 
+@skip_on_standalone_numba_cuda
 class TestCudaRandomXoroshiro128p(CUDATestCase):
     def test_create(self):
         states = cuda.random.create_xoroshiro128p_states(10, seed=1)
@@ -52,8 +63,9 @@ class TestCudaRandomXoroshiro128p(CUDATestCase):
         states = cuda.random.create_xoroshiro128p_states(10, seed=1)
         s1 = states.copy_to_host()
 
-        states = cuda.random.create_xoroshiro128p_states(10, seed=1,
-                                                         subsequence_start=3)
+        states = cuda.random.create_xoroshiro128p_states(
+            10, seed=1, subsequence_start=3
+        )
         s2 = states.copy_to_host()
 
         # Starting seeds should match up with offset of 3
@@ -61,8 +73,9 @@ class TestCudaRandomXoroshiro128p(CUDATestCase):
 
     def test_create_stream(self):
         stream = cuda.stream()
-        states = cuda.random.create_xoroshiro128p_states(10, seed=1,
-                                                         stream=stream)
+        states = cuda.random.create_xoroshiro128p_states(
+            10, seed=1, stream=stream
+        )
         s = states.copy_to_host()
         self.assertEqual(len(np.unique(s)), 10)
 
@@ -79,7 +92,7 @@ class TestCudaRandomXoroshiro128p(CUDATestCase):
     def test_uniform_float32(self):
         self.check_uniform(rng_kernel_float32, np.float32)
 
-    @skip_on_cudasim('skip test for speed under cudasim')
+    @skip_on_cudasim("skip test for speed under cudasim")
     def test_uniform_float64(self):
         self.check_uniform(rng_kernel_float64, np.float64)
 
@@ -95,10 +108,10 @@ class TestCudaRandomXoroshiro128p(CUDATestCase):
     def test_normal_float32(self):
         self.check_normal(rng_kernel_float32, np.float32)
 
-    @skip_on_cudasim('skip test for speed under cudasim')
+    @skip_on_cudasim("skip test for speed under cudasim")
     def test_normal_float64(self):
         self.check_normal(rng_kernel_float64, np.float64)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

@@ -1,6 +1,13 @@
-from numba.cuda.testing import (skip_on_cudasim, skip_unless_cudasim, unittest,
-                                CUDATestCase)
-from numba import config, cuda
+# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: BSD-2-Clause
+
+from numba.cuda.testing import (
+    skip_on_cudasim,
+    skip_unless_cudasim,
+    unittest,
+    CUDATestCase,
+)
+from numba import cuda
 
 # Basic tests that stream APIs execute on the hardware and in the simulator.
 #
@@ -34,10 +41,7 @@ class TestStreamAPI(CUDATestCase):
         # We don't test synchronization on the stream because it's not a real
         # stream - we used a dummy pointer for testing the API, so we just
         # ensure that the stream handle matches the external stream pointer.
-        if config.CUDA_USE_NVIDIA_BINDING:
-            value = int(s.handle)
-        else:
-            value = s.handle.value
+        value = s.handle.value
         self.assertEqual(ptr, value)
 
     @skip_unless_cudasim("External streams are usable with hardware")
@@ -48,5 +52,5 @@ class TestStreamAPI(CUDATestCase):
             cuda.external_stream(ptr)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

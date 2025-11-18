@@ -1,9 +1,13 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: BSD-2-Clause
+
 from llvmlite import ir
-from numba.core import cgutils, types
-from numba.core.imputils import Registry
+from numba.cuda import types
+from numba.cuda import cgutils
+from numba.cuda.core.imputils import Registry
 from numba.cuda import libdevice, libdevicefuncs
 
-registry = Registry()
+registry = Registry("libdeviceimpl")
 lower = registry.lower
 
 
@@ -49,8 +53,9 @@ def libdevice_implement_multiple_returns(func, retty, prototype_args):
         for arg in prototype_args:
             if arg.is_ptr:
                 # Allocate space for return value and add to args
-                tmp_arg = cgutils.alloca_once(builder,
-                                              context.get_value_type(arg.ty))
+                tmp_arg = cgutils.alloca_once(
+                    builder, context.get_value_type(arg.ty)
+                )
                 actual_args.append(tmp_arg)
                 virtual_args.append(tmp_arg)
             else:

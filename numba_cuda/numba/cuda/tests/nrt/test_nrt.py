@@ -1,14 +1,91 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: BSD-2-Clause
+
 import re
 import os
 
 import numpy as np
 import unittest
-from numba.cuda.testing import CUDATestCase
-
-from numba.tests.support import run_in_subprocess, override_config
-
+from numba.cuda.testing import CUDATestCase, skip_on_cudasim
+from numba.cuda.tests.support import run_in_subprocess, override_config
+from numba.cuda import get_current_device
+from numba.cuda.cudadrv.nvrtc import compile
+from numba.cuda import types
+from numba.cuda.typing import signature
 from numba import cuda
-from numba.cuda.runtime.nrt import rtsys
+from numba.cuda import config
+from numba.cuda.typing.templates import AbstractTemplate
+from numba.cuda.cudadrv.linkable_code import (
+    CUSource,
+    PTXSource,
+    Fatbin,
+    Cubin,
+    Archive,
+    Object,
+)
+
+TEST_BIN_DIR = os.getenv("NUMBA_CUDA_TEST_BIN_DIR")
+
+if not config.ENABLE_CUDASIM:
+    from numba.cuda.memory_management.nrt import rtsys, get_include
+    from numba.cuda.cudadecl import registry as cuda_decl_registry
+    from numba.cuda.cudaimpl import lower as cuda_lower
+
+    def allocate_deallocate_handle():
+        """
+        Handle to call NRT_Allocate and NRT_Free
+        """
+        pass
+
+    @cuda_decl_registry.register_global(allocate_deallocate_handle)
+    class AllocateShimImpl(AbstractTemplate):
+        def generic(self, args, kws):
+            return signature(types.void)
+
+    device_fun_shim = cuda.declare_device(
+        "device_allocate_deallocate", types.int32()
+    )
+
+    # wrapper to turn the above into a python callable
+    def call_device_fun_shim():
+        return device_fun_shim()
+
+    @cuda_lower(allocate_deallocate_handle)
+    def allocate_deallocate_impl(context, builder, sig, args):
+        sig_ = types.int32()
+        # call the external function, passing the pointer
+        result = context.compile_internal(
+            builder,
+            call_device_fun_shim,
+            sig_,
+            (),
+        )
+
+        return result
+
+    if TEST_BIN_DIR:
+
+        def make_linkable_code(name, kind, mode):
+            path = os.path.join(TEST_BIN_DIR, name)
+            with open(path, mode) as f:
+                contents = f.read()
+            return kind(contents, nrt=True)
+
+        nrt_extern_a = make_linkable_code("nrt_extern.a", Archive, "rb")
+        nrt_extern_cubin = make_linkable_code("nrt_extern.cubin", Cubin, "rb")
+        nrt_extern_cu = make_linkable_code(
+            "nrt_extern.cu",
+            CUSource,
+            "rb",
+        )
+        nrt_extern_fatbin = make_linkable_code(
+            "nrt_extern.fatbin", Fatbin, "rb"
+        )
+        nrt_extern_fatbin_multi = make_linkable_code(
+            "nrt_extern_multi.fatbin", Fatbin, "rb"
+        )
+        nrt_extern_o = make_linkable_code("nrt_extern.o", Object, "rb")
+        nrt_extern_ptx = make_linkable_code("nrt_extern.ptx", PTXSource, "rb")
 
 
 class TestNrtBasic(CUDATestCase):
@@ -26,9 +103,10 @@ class TestNrtBasic(CUDATestCase):
             x = np.empty(10, np.int64)
             f(x)
 
-        g[1,1]()
+        g[1, 1]()
         cuda.synchronize()
 
+    @skip_on_cudasim("CUDA Simulator does not produce PTX")
     def test_nrt_ptx_contains_refcount(self):
         @cuda.jit
         def f(x):
@@ -39,7 +117,7 @@ class TestNrtBasic(CUDATestCase):
             x = np.empty(10, np.int64)
             f(x)
 
-        g[1,1]()
+        g[1, 1]()
 
         ptx = next(iter(g.inspect_asm().values()))
 
@@ -50,11 +128,11 @@ class TestNrtBasic(CUDATestCase):
         match = re.search(p1, ptx)
         assert match is not None
 
-        p2 = r"call\.uni.*\n.*NRT_incref"
+        p2 = r"call\.uni.*\n?.*NRT_incref"
         match = re.search(p2, ptx)
         assert match is not None
 
-        p3 = r"call\.uni.*\n.*NRT_decref"
+        p3 = r"call\.uni.*\n?.*NRT_decref"
         match = re.search(p3, ptx)
         assert match is not None
 
@@ -72,13 +150,59 @@ class TestNrtBasic(CUDATestCase):
 
         out_ary = np.zeros(1, dtype=np.int64)
 
-        g[1,1](out_ary)
+        g[1, 1](out_ary)
 
         self.assertEqual(out_ary[0], 1)
 
 
-class TestNrtStatistics(CUDATestCase):
+class TestNrtLinking(CUDATestCase):
+    def run(self, result=None):
+        with override_config("CUDA_ENABLE_NRT", True):
+            super(TestNrtLinking, self).run(result)
 
+    @skip_on_cudasim("CUDA Simulator does not link PTX")
+    def test_nrt_detect_linked_ptx_file(self):
+        src = f"#include <{get_include()}/nrt.cuh>"
+        src += """
+                 extern "C" __device__ int device_allocate_deallocate(int* nb_retval){
+                     auto ptr = NRT_Allocate(1);
+                     NRT_Free(ptr);
+                     return 0;
+                 }
+        """
+        cc = get_current_device().compute_capability
+        ptx, _ = compile(src, "external_nrt.cu", cc)
+
+        @cuda.jit(link=[PTXSource(ptx.code, nrt=True)])
+        def kernel():
+            allocate_deallocate_handle()
+
+        kernel[1, 1]()
+
+    @unittest.skipIf(not TEST_BIN_DIR, "necessary binaries not generated.")
+    @skip_on_cudasim("CUDA Simulator does not link code")
+    def test_nrt_detect_linkable_code(self):
+        codes = (
+            nrt_extern_a,
+            nrt_extern_cubin,
+            nrt_extern_cu,
+            nrt_extern_fatbin,
+            nrt_extern_fatbin_multi,
+            nrt_extern_o,
+            nrt_extern_ptx,
+        )
+        for code in codes:
+            with self.subTest(code=code):
+
+                @cuda.jit(link=[code])
+                def kernel():
+                    allocate_deallocate_handle()
+
+                kernel[1, 1]()
+
+
+@skip_on_cudasim("CUDASIM does not have NRT statistics")
+class TestNrtStatistics(CUDATestCase):
     def setUp(self):
         self._stream = cuda.default_stream()
         # Store the current stats state
@@ -95,7 +219,7 @@ class TestNrtStatistics(CUDATestCase):
         # Checks that explicitly turning the stats on via the env var works.
         src = """if 1:
         from numba import cuda
-        from numba.cuda.runtime import rtsys
+        from numba.cuda.memory_management import rtsys
         import numpy as np
 
         @cuda.jit
@@ -126,16 +250,15 @@ class TestNrtStatistics(CUDATestCase):
 
         # Check env var explicitly being set works
         env = os.environ.copy()
-        env['NUMBA_CUDA_NRT_STATS'] = "1"
-        env['NUMBA_CUDA_ENABLE_NRT'] = "1"
+        env["NUMBA_CUDA_NRT_STATS"] = "1"
+        env["NUMBA_CUDA_ENABLE_NRT"] = "1"
         run_in_subprocess(src, env=env)
 
     def check_env_var_off(self, env):
-
         src = """if 1:
         from numba import cuda
         import numpy as np
-        from numba.cuda.runtime import rtsys
+        from numba.cuda.memory_management import rtsys
 
         @cuda.jit
         def foo():
@@ -152,27 +275,26 @@ class TestNrtStatistics(CUDATestCase):
     def test_stats_env_var_explicit_off(self):
         # Checks that explicitly turning the stats off via the env var works.
         env = os.environ.copy()
-        env['NUMBA_CUDA_NRT_STATS'] = "0"
+        env["NUMBA_CUDA_NRT_STATS"] = "0"
         self.check_env_var_off(env)
 
     def test_stats_env_var_default_off(self):
         # Checks that the env var not being set is the same as "off", i.e.
         # default for Numba is off.
         env = os.environ.copy()
-        env.pop('NUMBA_CUDA_NRT_STATS', None)
+        env.pop("NUMBA_CUDA_NRT_STATS", None)
         self.check_env_var_off(env)
 
     def test_stats_status_toggle(self):
-
         @cuda.jit
         def foo():
             tmp = np.ones(3)
-            arr = np.arange(5 * tmp[0]) # noqa: F841
+            arr = np.arange(5 * tmp[0])  # noqa: F841
             return None
 
         with (
-            override_config('CUDA_ENABLE_NRT', True),
-            override_config('CUDA_NRT_STATS', True)
+            override_config("CUDA_ENABLE_NRT", True),
+            override_config("CUDA_NRT_STATS", True),
         ):
             # Switch on stats
             rtsys.memsys_enable_stats()
@@ -218,9 +340,9 @@ class TestNrtStatistics(CUDATestCase):
     def test_nrt_explicit_stats_query_raises_exception_when_disabled(self):
         # Checks the various memsys_get_stats functions raise if queried when
         # the stats counters are disabled.
-        method_variations = ('alloc', 'free', 'mi_alloc', 'mi_free')
+        method_variations = ("alloc", "free", "mi_alloc", "mi_free")
         for meth in method_variations:
-            stats_func = getattr(rtsys, f'memsys_get_stats_{meth}')
+            stats_func = getattr(rtsys, f"memsys_get_stats_{meth}")
             with self.subTest(stats_func=stats_func):
                 # Turn stats off
                 rtsys.memsys_disable_stats()
@@ -233,14 +355,13 @@ class TestNrtStatistics(CUDATestCase):
         @cuda.jit
         def foo():
             tmp = np.ones(3)
-            arr = np.arange(5 * tmp[0]) # noqa: F841
+            arr = np.arange(5 * tmp[0])  # noqa: F841
             return None
 
         with (
-            override_config('CUDA_ENABLE_NRT', True),
-            override_config('CUDA_NRT_STATS', True)
+            override_config("CUDA_ENABLE_NRT", True),
+            override_config("CUDA_NRT_STATS", True),
         ):
-
             # Switch on stats
             rtsys.memsys_enable_stats()
 
@@ -262,5 +383,5 @@ class TestNrtStatistics(CUDATestCase):
             self.assertEqual(stats.mi_free, stats_mi_free)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

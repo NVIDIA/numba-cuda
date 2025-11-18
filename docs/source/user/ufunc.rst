@@ -1,3 +1,7 @@
+..
+   SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+   SPDX-License-Identifier: BSD-2-Clause
+
 CUDA Ufuncs and Generalized Ufuncs
 ==================================
 
@@ -46,7 +50,7 @@ All CUDA ufunc kernels have the ability to call other CUDA device functions::
     from numba import vectorize, cuda
 
     # define a device function
-    @cuda.jit('float32(float32, float32, float32)', device=True, inline=True)
+    @cuda.jit('float32(float32, float32, float32)', device=True, inline="always")
     def cu_device_fn(x, y, z):
         return x ** y / z
 
@@ -64,7 +68,7 @@ the CUDA ufunc functionality.  This may be accomplished as follows::
 
     from numba import guvectorize
 
-    @guvectorize(['void(float32[:,:], float32[:,:], float32[:,:])'], 
+    @guvectorize(['void(float32[:,:], float32[:,:], float32[:,:])'],
                  '(m,n),(n,p)->(m,p)', target='cuda')
     def matmulcore(A, B, C):
         ...

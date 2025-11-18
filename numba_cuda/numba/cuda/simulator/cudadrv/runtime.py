@@ -1,7 +1,10 @@
-'''
+# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: BSD-2-Clause
+
+"""
 The runtime API is unsupported in the simulator, but some stubs are
 provided to allow tests to import correctly.
-'''
+"""
 
 
 class FakeRuntime(object):
@@ -13,7 +16,7 @@ class FakeRuntime(object):
 
     @property
     def supported_versions(self):
-        return (-1, -1),
+        return ((-1, -1),)
 
 
 runtime = FakeRuntime()

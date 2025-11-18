@@ -1,68 +1,76 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: BSD-2-Clause
+
+import sys
 import math
 import operator
 from llvmlite import ir
-from numba.core import types, typing, cgutils, targetconfig
-from numba.core.imputils import Registry
-from numba.types import float32, float64, int64, uint64
+from numba.cuda import types, typing
+from numba.cuda import cgutils
+from numba.cuda.core.imputils import Registry
+from numba.cuda.types import float32, float64, int64, uint64
 from numba.cuda import libdevice
-from numba import cuda
+from numba.cuda.core import targetconfig
 
-registry = Registry()
+registry = Registry("mathimpl")
 lower = registry.lower
 
 
 booleans = []
-booleans += [('isnand', 'isnanf', math.isnan)]
-booleans += [('isinfd', 'isinff', math.isinf)]
-booleans += [('isfinited', 'finitef', math.isfinite)]
+booleans += [("isnand", "isnanf", math.isnan)]
+booleans += [("isinfd", "isinff", math.isinf)]
+booleans += [("isfinited", "finitef", math.isfinite)]
 
 unarys = []
-unarys += [('ceil', 'ceilf', math.ceil)]
-unarys += [('floor', 'floorf', math.floor)]
-unarys += [('fabs', 'fabsf', math.fabs)]
-unarys += [('exp', 'expf', math.exp)]
-unarys += [('expm1', 'expm1f', math.expm1)]
-unarys += [('erf', 'erff', math.erf)]
-unarys += [('erfc', 'erfcf', math.erfc)]
-unarys += [('tgamma', 'tgammaf', math.gamma)]
-unarys += [('lgamma', 'lgammaf', math.lgamma)]
-unarys += [('sqrt', 'sqrtf', math.sqrt)]
-unarys += [('log', 'logf', math.log)]
-unarys += [('log2', 'log2f', math.log2)]
-unarys += [('log10', 'log10f', math.log10)]
-unarys += [('log1p', 'log1pf', math.log1p)]
-unarys += [('acosh', 'acoshf', math.acosh)]
-unarys += [('acos', 'acosf', math.acos)]
-unarys += [('cos', 'cosf', math.cos)]
-unarys += [('cosh', 'coshf', math.cosh)]
-unarys += [('asinh', 'asinhf', math.asinh)]
-unarys += [('asin', 'asinf', math.asin)]
-unarys += [('sin', 'sinf', math.sin)]
-unarys += [('sinh', 'sinhf', math.sinh)]
-unarys += [('atan', 'atanf', math.atan)]
-unarys += [('atanh', 'atanhf', math.atanh)]
-unarys += [('tan', 'tanf', math.tan)]
-unarys += [('trunc', 'truncf', math.trunc)]
+unarys += [("ceil", "ceilf", math.ceil)]
+unarys += [("floor", "floorf", math.floor)]
+unarys += [("fabs", "fabsf", math.fabs)]
+unarys += [("exp", "expf", math.exp)]
+if sys.version_info >= (3, 11):
+    unarys += [("exp2", "exp2f", math.exp2)]
+unarys += [("expm1", "expm1f", math.expm1)]
+unarys += [("erf", "erff", math.erf)]
+unarys += [("erfc", "erfcf", math.erfc)]
+unarys += [("tgamma", "tgammaf", math.gamma)]
+unarys += [("lgamma", "lgammaf", math.lgamma)]
+unarys += [("sqrt", "sqrtf", math.sqrt)]
+unarys += [("log", "logf", math.log)]
+unarys += [("log2", "log2f", math.log2)]
+unarys += [("log10", "log10f", math.log10)]
+unarys += [("log1p", "log1pf", math.log1p)]
+unarys += [("acosh", "acoshf", math.acosh)]
+unarys += [("acos", "acosf", math.acos)]
+unarys += [("cos", "cosf", math.cos)]
+unarys += [("cosh", "coshf", math.cosh)]
+unarys += [("asinh", "asinhf", math.asinh)]
+unarys += [("asin", "asinf", math.asin)]
+unarys += [("sin", "sinf", math.sin)]
+unarys += [("sinh", "sinhf", math.sinh)]
+unarys += [("atan", "atanf", math.atan)]
+unarys += [("atanh", "atanhf", math.atanh)]
+unarys += [("tan", "tanf", math.tan)]
+unarys += [("trunc", "truncf", math.trunc)]
 
 unarys_fastmath = {}
-unarys_fastmath['cosf'] = 'fast_cosf'
-unarys_fastmath['sinf'] = 'fast_sinf'
-unarys_fastmath['tanf'] = 'fast_tanf'
-unarys_fastmath['expf'] = 'fast_expf'
-unarys_fastmath['log2f'] = 'fast_log2f'
-unarys_fastmath['log10f'] = 'fast_log10f'
-unarys_fastmath['logf'] = 'fast_logf'
+unarys_fastmath["cosf"] = "fast_cosf"
+unarys_fastmath["sinf"] = "fast_sinf"
+unarys_fastmath["tanf"] = "fast_tanf"
+unarys_fastmath["expf"] = "fast_expf"
+unarys_fastmath["log2f"] = "fast_log2f"
+unarys_fastmath["log10f"] = "fast_log10f"
+unarys_fastmath["logf"] = "fast_logf"
 
 binarys = []
-binarys += [('copysign', 'copysignf', math.copysign)]
-binarys += [('atan2', 'atan2f', math.atan2)]
-binarys += [('pow', 'powf', math.pow)]
-binarys += [('fmod', 'fmodf', math.fmod)]
-binarys += [('hypot', 'hypotf', math.hypot)]
-binarys += [('remainder', 'remainderf', math.remainder)]
+binarys += [("copysign", "copysignf", math.copysign)]
+binarys += [("atan2", "atan2f", math.atan2)]
+binarys += [("pow", "powf", math.pow)]
+binarys += [("fmod", "fmodf", math.fmod)]
+binarys += [("hypot", "hypotf", math.hypot)]
+binarys += [("remainder", "remainderf", math.remainder)]
+binarys += [("nextafter", "nextafterf", math.nextafter)]
 
 binarys_fastmath = {}
-binarys_fastmath['powf'] = 'fast_powf'
+binarys_fastmath["powf"] = "fast_powf"
 
 
 @lower(math.isinf, types.Integer)
@@ -89,98 +97,11 @@ def math_isfinite_int(context, builder, sig, args):
     return context.get_constant(types.boolean, 1)
 
 
-@lower(math.sin, types.float16)
-def fp16_sin_impl(context, builder, sig, args):
-    def fp16_sin(x):
-        return cuda.fp16.hsin(x)
-
-    return context.compile_internal(builder, fp16_sin, sig, args)
-
-
-@lower(math.cos, types.float16)
-def fp16_cos_impl(context, builder, sig, args):
-    def fp16_cos(x):
-        return cuda.fp16.hcos(x)
-
-    return context.compile_internal(builder, fp16_cos, sig, args)
-
-
-@lower(math.log, types.float16)
-def fp16_log_impl(context, builder, sig, args):
-    def fp16_log(x):
-        return cuda.fp16.hlog(x)
-
-    return context.compile_internal(builder, fp16_log, sig, args)
-
-
-@lower(math.log10, types.float16)
-def fp16_log10_impl(context, builder, sig, args):
-    def fp16_log10(x):
-        return cuda.fp16.hlog10(x)
-
-    return context.compile_internal(builder, fp16_log10, sig, args)
-
-
-@lower(math.log2, types.float16)
-def fp16_log2_impl(context, builder, sig, args):
-    def fp16_log2(x):
-        return cuda.fp16.hlog2(x)
-
-    return context.compile_internal(builder, fp16_log2, sig, args)
-
-
-@lower(math.exp, types.float16)
-def fp16_exp_impl(context, builder, sig, args):
-    def fp16_exp(x):
-        return cuda.fp16.hexp(x)
-
-    return context.compile_internal(builder, fp16_exp, sig, args)
-
-
-@lower(math.floor, types.float16)
-def fp16_floor_impl(context, builder, sig, args):
-    def fp16_floor(x):
-        return cuda.fp16.hfloor(x)
-
-    return context.compile_internal(builder, fp16_floor, sig, args)
-
-
-@lower(math.ceil, types.float16)
-def fp16_ceil_impl(context, builder, sig, args):
-    def fp16_ceil(x):
-        return cuda.fp16.hceil(x)
-
-    return context.compile_internal(builder, fp16_ceil, sig, args)
-
-
-@lower(math.sqrt, types.float16)
-def fp16_sqrt_impl(context, builder, sig, args):
-    def fp16_sqrt(x):
-        return cuda.fp16.hsqrt(x)
-
-    return context.compile_internal(builder, fp16_sqrt, sig, args)
-
-
-@lower(math.fabs, types.float16)
-def fp16_fabs_impl(context, builder, sig, args):
-    def fp16_fabs(x):
-        return cuda.fp16.habs(x)
-
-    return context.compile_internal(builder, fp16_fabs, sig, args)
-
-
-@lower(math.trunc, types.float16)
-def fp16_trunc_impl(context, builder, sig, args):
-    def fp16_trunc(x):
-        return cuda.fp16.htrunc(x)
-
-    return context.compile_internal(builder, fp16_trunc, sig, args)
-
-
 def impl_boolean(key, ty, libfunc):
     def lower_boolean_impl(context, builder, sig, args):
-        libfunc_impl = context.get_function(libfunc,
-                                            typing.signature(types.int32, ty))
+        libfunc_impl = context.get_function(
+            libfunc, typing.signature(types.int32, ty)
+        )
         result = libfunc_impl(builder, args)
         return context.cast(builder, result, types.int32, types.boolean)
 
@@ -197,9 +118,11 @@ def get_lower_unary_impl(key, ty, libfunc):
         if fast_replacement is not None:
             actual_libfunc = getattr(libdevice, fast_replacement)
 
-        libfunc_impl = context.get_function(actual_libfunc,
-                                            typing.signature(ty, ty))
+        libfunc_impl = context.get_function(
+            actual_libfunc, typing.signature(ty, ty)
+        )
         return libfunc_impl(builder, args)
+
     return lower_unary_impl
 
 
@@ -208,7 +131,7 @@ def get_unary_impl_for_fn_and_ty(fn, ty):
     # unary implementations, it does not appear in the unarys list. However,
     # its implementation can be looked up by key like the other
     # implementations, so we add it to the list we search here.
-    tanh_impls = ('tanh', 'tanhf', math.tanh)
+    tanh_impls = ("tanh", "tanhf", math.tanh)
     for fname64, fname32, key in unarys + [tanh_impls]:
         if fn == key:
             if ty == float32:
@@ -233,7 +156,7 @@ def impl_unary_int(key, ty, libfunc):
         elif sig.args[0] == uint64:
             convert = builder.uitofp
         else:
-            m = 'Only 64-bit integers are supported for generic unary int ops'
+            m = "Only 64-bit integers are supported for generic unary int ops"
             raise TypeError(m)
 
         arg = convert(args[0], ir.DoubleType())
@@ -254,9 +177,11 @@ def get_lower_binary_impl(key, ty, libfunc):
         if fast_replacement is not None:
             actual_libfunc = getattr(libdevice, fast_replacement)
 
-        libfunc_impl = context.get_function(actual_libfunc,
-                                            typing.signature(ty, ty, ty))
+        libfunc_impl = context.get_function(
+            actual_libfunc, typing.signature(ty, ty, ty)
+        )
         return libfunc_impl(builder, args)
+
     return lower_binary_impl
 
 
@@ -285,7 +210,7 @@ def impl_binary_int(key, ty, libfunc):
         elif sig.args[0] == uint64:
             convert = builder.uitofp
         else:
-            m = 'Only 64-bit integers are supported for generic binary int ops'
+            m = "Only 64-bit integers are supported for generic binary int ops"
             raise TypeError(m)
 
         args = [convert(arg, ir.DoubleType()) for arg in args]
@@ -390,12 +315,12 @@ def impl_tanh(ty, libfunc):
 
         def tanhf_impl_fastmath():
             fnty = ir.FunctionType(ir.FloatType(), [ir.FloatType()])
-            asm = ir.InlineAsm(fnty, 'tanh.approx.f32 $0, $1;', '=f,f')
+            asm = ir.InlineAsm(fnty, "tanh.approx.f32 $0, $1;", "=f,f")
             return builder.call(asm, args)
 
         if ty == float32 and context.fastmath:
             cc = get_compute_capability()
-            if cc >= (7,5):
+            if cc >= (7, 5):
                 return tanhf_impl_fastmath()
 
         return tanh_impl_libdevice()
@@ -409,6 +334,7 @@ impl_tanh(types.float64, libdevice.tanh)
 impl_unary_int(math.tanh, int64, libdevice.tanh)
 impl_unary_int(math.tanh, uint64, libdevice.tanh)
 
+
 # Complex power implementations - translations of _Py_c_pow from CPython
 # https://github.com/python/cpython/blob/a755410e054e1e2390de5830befc08fe80706c66/Objects/complexobject.c#L123-L151
 #
@@ -420,7 +346,6 @@ impl_unary_int(math.tanh, uint64, libdevice.tanh)
 def cpow_implement(fty, cty):
     def core(context, builder, sig, args):
         def cpow_internal(a, b):
-
             if b.real == fty(0.0) and b.imag == fty(0.0):
                 return cty(1.0) + cty(0.0j)
             elif a.real == fty(0.0) and b.real == fty(0.0):
@@ -434,8 +359,9 @@ def cpow_implement(fty, cty):
                 len /= math.exp(at * b.imag)
                 phase += b.imag * math.log(vabs)
 
-            return len * (cty(math.cos(phase)) +
-                          cty(math.sin(phase) * cty(1.0j)))
+            return len * (
+                cty(math.cos(phase)) + cty(math.sin(phase) * cty(1.0j))
+            )
 
         return context.compile_internal(builder, cpow_internal, sig, args)
 

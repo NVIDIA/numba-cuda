@@ -1,3 +1,7 @@
+..
+   SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+   SPDX-License-Identifier: BSD-2-Clause
+
 .. _cuda-emm-plugin:
 
 =================================================
@@ -52,7 +56,7 @@ sections, using the :func:`~numba.cuda.defer_cleanup` context manager.
 When an EMM Plugin is in use, the deallocation strategy is implemented by the
 EMM, and Numba's internal deallocation mechanism is not used. The EMM
 Plugin could implement:
-  
+
 - A similar strategy to the Numba deallocation behaviour, or
 - Something more appropriate to the plugin - for example, deallocated memory
   might immediately be returned to a memory pool.
@@ -278,7 +282,7 @@ Numba test suite with an EMM Plugin, e.g.:
 
 .. code::
 
-   $ NUMBA_CUDA_MEMORY_MANAGER=rmm python -m numba.runtests numba.cuda.tests
+   $ NUMBA_CUDA_MEMORY_MANAGER=rmm pytest --pyargs numba.cuda.tests -v
 
 
 Function

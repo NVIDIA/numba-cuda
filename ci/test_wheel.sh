@@ -1,34 +1,45 @@
 #!/bin/bash
-# Copyright (c) 2023-2024, NVIDIA CORPORATION
+# SPDX-FileCopyrightText: Copyright (c) 2024 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: BSD-2-Clause
 
 set -euo pipefail
 
-rapids-logger "Install testing dependencies"
-# TODO: Replace with rapids-dependency-file-generator
-python -m pip install \
-    psutil \
-    cffi \
-    cuda-python \
-    nvidia-cuda-cccl-cu12 \
-    nvidia-curand-cu12 \
-    pytest
+CUDA_VER_MAJOR_MINOR=${CUDA_VER%.*}
 
-rapids-logger "Install wheel"
+rapids-logger "Install wheel with test dependencies"
 package=$(realpath wheel/numba_cuda*.whl)
-echo "Wheel path: $package"
-python -m pip install $package
+echo "Package path: ${package}"
+
+DEPENDENCIES=(
+    "${package}"
+    "cuda-python==${CUDA_VER_MAJOR_MINOR%.*}.*"
+    "cuda-core>=0.3.0,<1.0.0"
+    "--group"
+    "test"
+)
+
+# Constrain oldest supported dependencies for testing
+if [ "${NUMBA_VERSION:-*}" != "*" ]; then
+    DEPENDENCIES+=("numba==${NUMBA_VERSION}")
+fi
+
+python -m pip install "${DEPENDENCIES[@]}"
+
+rapids-logger "Build tests"
+export NUMBA_CUDA_TEST_BIN_DIR=`pwd`/testing
+pushd $NUMBA_CUDA_TEST_BIN_DIR
+make -j $(nproc)
+
+rapids-logger "Test importing numba.cuda"
+python -c "from numba import cuda"
 
 rapids-logger "Check GPU usage"
 nvidia-smi
-
-RAPIDS_TESTS_DIR=${RAPIDS_TESTS_DIR:-"${PWD}/test-results"}/
-mkdir -p "${RAPIDS_TESTS_DIR}"
-pushd "${RAPIDS_TESTS_DIR}"
 
 rapids-logger "Show Numba system info"
 python -m numba --sysinfo
 
 rapids-logger "Run Tests"
-python -m numba.runtests numba.cuda.tests -v
+python -m pytest -v
 
 popd

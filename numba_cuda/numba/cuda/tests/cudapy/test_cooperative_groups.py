@@ -1,11 +1,28 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: BSD-2-Clause
+
 from __future__ import print_function
+
+import os
+
+import cffi
 
 import numpy as np
 
-from numba import config, cuda, int32
-from numba.cuda.testing import (unittest, CUDATestCase, skip_on_cudasim,
-                                skip_unless_cc_60, skip_if_cudadevrt_missing,
-                                skip_if_mvc_enabled)
+from numba import cuda
+from numba.cuda import int32
+from numba.cuda import config
+from numba.cuda.types import CPointer
+from numba.cuda.testing import (
+    unittest,
+    CUDATestCase,
+    skip_on_cudasim,
+    skip_unless_cc_60,
+    skip_if_cudadevrt_missing,
+)
+from numba.cuda.typing import signature
+
+ffi = cffi.FFI()
 
 
 @cuda.jit
@@ -47,7 +64,6 @@ def sequential_rows(M):
 
 
 @skip_if_cudadevrt_missing
-@skip_if_mvc_enabled('CG not supported with MVC')
 class TestCudaCooperativeGroups(CUDATestCase):
     @skip_unless_cc_60
     def test_this_grid(self):
@@ -55,11 +71,12 @@ class TestCudaCooperativeGroups(CUDATestCase):
         this_grid[1, 1](A)
 
         # Ensure the kernel executed beyond the call to cuda.this_grid()
-        self.assertFalse(np.isnan(A[0]), 'Value was not set')
+        self.assertFalse(np.isnan(A[0]), "Value was not set")
 
     @skip_unless_cc_60
-    @skip_on_cudasim("Simulator doesn't differentiate between normal and "
-                     "cooperative kernels")
+    @skip_on_cudasim(
+        "Simulator doesn't differentiate between normal and cooperative kernels"
+    )
     def test_this_grid_is_cooperative(self):
         A = np.full(1, fill_value=np.nan)
         this_grid[1, 1](A)
@@ -74,11 +91,12 @@ class TestCudaCooperativeGroups(CUDATestCase):
         sync_group[1, 1](A)
 
         # Ensure the kernel executed beyond the call to cuda.sync_group()
-        self.assertFalse(np.isnan(A[0]), 'Value was not set')
+        self.assertFalse(np.isnan(A[0]), "Value was not set")
 
     @skip_unless_cc_60
-    @skip_on_cudasim("Simulator doesn't differentiate between normal and "
-                     "cooperative kernels")
+    @skip_on_cudasim(
+        "Simulator doesn't differentiate between normal and cooperative kernels"
+    )
     def test_sync_group_is_cooperative(self):
         A = np.full(1, fill_value=np.nan)
         sync_group[1, 1](A)
@@ -99,7 +117,7 @@ class TestCudaCooperativeGroups(CUDATestCase):
         for key, overload in no_sync.overloads.items():
             self.assertFalse(overload.cooperative)
             for link in overload._codelibrary._linking_files:
-                self.assertNotIn('cudadevrt', link)
+                self.assertNotIn("cudadevrt", link)
 
     @skip_unless_cc_60
     def test_sync_at_matrix_row(self):
@@ -113,7 +131,7 @@ class TestCudaCooperativeGroups(CUDATestCase):
         blockdim = 32
         griddim = A.shape[1] // blockdim
 
-        sig = (int32[:,::1],)
+        sig = (int32[:, ::1],)
         c_sequential_rows = cuda.jit(sig)(sequential_rows)
 
         overload = c_sequential_rows.overloads[sig]
@@ -133,7 +151,7 @@ class TestCudaCooperativeGroups(CUDATestCase):
         # doesn't error, and that varying the number of dimensions of the block
         # whilst keeping the total number of threads constant doesn't change
         # the maximum to validate some of the logic.
-        sig = (int32[:,::1],)
+        sig = (int32[:, ::1],)
         c_sequential_rows = cuda.jit(sig)(sequential_rows)
         overload = c_sequential_rows.overloads[sig]
         blocks1d = overload.max_cooperative_grid_blocks(256)
@@ -142,6 +160,34 @@ class TestCudaCooperativeGroups(CUDATestCase):
         self.assertEqual(blocks1d, blocks2d)
         self.assertEqual(blocks1d, blocks3d)
 
+    @skip_on_cudasim("External code unsupported on cudasim")
+    @skip_unless_cc_60
+    def test_external_cooperative_func(self):
+        cudapy_test_path = os.path.dirname(__file__)
+        tests_path = os.path.dirname(cudapy_test_path)
+        data_path = os.path.join(tests_path, "data")
+        src = os.path.join(data_path, "cta_barrier.cu")
 
-if __name__ == '__main__':
+        sig = signature(
+            CPointer(int32),
+        )
+        cta_barrier = cuda.declare_device(
+            "cta_barrier", sig=sig, link=[src], use_cooperative=True
+        )
+
+        @cuda.jit("void()")
+        def kernel():
+            cta_barrier()
+
+        overload = kernel.overloads[()]
+        block_size = 32
+        grid_size = overload.max_cooperative_grid_blocks(block_size)
+
+        kernel[grid_size, block_size]()
+
+        overload = kernel.overloads[()]
+        self.assertTrue(overload.cooperative)
+
+
+if __name__ == "__main__":
     unittest.main()

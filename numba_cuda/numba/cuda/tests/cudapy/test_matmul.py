@@ -1,8 +1,12 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: BSD-2-Clause
+
 import numpy as np
 
-from numba import cuda, float32, void
+from numba import cuda
+from numba.cuda import float32, void
 from numba.cuda.testing import unittest, CUDATestCase
-from numba.core import config
+from numba.cuda.core import config
 
 # Ensure the test takes a reasonable amount of time in the simulator
 if config.ENABLE_CUDASIM:
@@ -15,9 +19,7 @@ SM_SIZE = (tpb, tpb)
 
 
 class TestCudaMatMul(CUDATestCase):
-
     def test_func(self):
-
         @cuda.jit(void(float32[:, ::1], float32[:, ::1], float32[:, ::1]))
         def cu_square_matrix_mul(A, B, C):
             sA = cuda.shared.array(shape=SM_SIZE, dtype=float32)
@@ -70,5 +72,5 @@ class TestCudaMatMul(CUDATestCase):
         np.testing.assert_allclose(C, Cans, rtol=1e-5)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

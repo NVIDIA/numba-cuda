@@ -1,7 +1,14 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: BSD-2-Clause
+
 import unittest
 
-from numba.cuda.testing import CUDATestCase, skip_on_cudasim
-from numba.tests.support import captured_stdout
+from numba.cuda.testing import (
+    CUDATestCase,
+    skip_on_cudasim,
+    skip_on_standalone_numba_cuda,
+)
+from numba.cuda.tests.support import captured_stdout
 
 
 @skip_on_cudasim("cudasim doesn't support cuda import at non-top-level")
@@ -21,6 +28,7 @@ class TestMonteCarlo(CUDATestCase):
         self._captured_stdout.__exit__(None, None, None)
         super().tearDown()
 
+    @skip_on_standalone_numba_cuda
     def test_ex_montecarlo(self):
         # ex_montecarlo.import.begin
         import numba
@@ -59,6 +67,7 @@ class TestMonteCarlo(CUDATestCase):
                 # value of the sample
                 y = func(samp)
                 out[gid] = y
+
         # ex_montecarlo.kernel.end
 
         # ex_montecarlo.callfunc.begin
@@ -84,6 +93,7 @@ class TestMonteCarlo(CUDATestCase):
             factor = (upper_lim - lower_lim) / (nsamps - 1)
 
             return sum_reduce(out) * factor
+
         # ex_montecarlo.callfunc.end
 
         # ex_montecarlo.launch.begin

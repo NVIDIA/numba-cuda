@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: BSD-2-Clause
+
 """
 Enum values for CUDA driver. Information about the values
 can be found on the official NVIDIA documentation website.
@@ -140,7 +143,7 @@ CU_CTX_USER_COREDUMP_ENABLE = 0x40
 # Force synchronous blocking on cudaMemcpy/cudaMemset
 CU_CTX_SYNC_MEMOPS = 0x80
 
-CU_CTX_FLAGS_MASK = 0xff
+CU_CTX_FLAGS_MASK = 0xFF
 
 
 # DEFINES
