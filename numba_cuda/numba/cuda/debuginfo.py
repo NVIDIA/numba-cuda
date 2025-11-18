@@ -796,16 +796,25 @@ class CUDADIBuilder(DIBuilder):
                 # to llvm.dbg.value
                 return
             else:
-                return super().mark_variable(
-                    builder,
-                    allocavalue,
-                    name,
-                    lltype,
-                    size,
-                    line,
-                    datamodel,
-                    argidx,
-                )
+                try:
+                    return super().mark_variable(
+                        builder,
+                        allocavalue,
+                        name,
+                        lltype,
+                        size,
+                        line,
+                        datamodel,
+                        argidx,
+                    )
+                finally:
+                    # Clean up _addrspace to bypass the type caching
+                    if (
+                        datamodel is not None
+                        and hasattr(datamodel, "fe_type")
+                        and hasattr(datamodel.fe_type, "_addrspace")
+                    ):
+                        delattr(datamodel.fe_type, "_addrspace")
 
     def update_variable(
         self,
