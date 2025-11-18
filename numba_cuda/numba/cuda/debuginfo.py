@@ -10,7 +10,6 @@ from llvmlite import ir
 from numba.cuda import types
 from numba.cuda.core import config
 from numba.cuda import cgutils
-from numba.cuda.cudadrv import nvvm
 from numba.cuda.datamodel.models import ComplexModel, UnionModel, UniTupleModel
 from numba.cuda.types.ext_types import GridGroup
 
@@ -135,6 +134,7 @@ class DIBuilder(AbstractDIBuilder):
 
     def get_dwarf_address_class(self, addrspace):
         # Map NVVM address space to DWARF address class.
+        from numba.cuda.cudadrv import nvvm
 
         addrspace_to_addrclass_dict = {
             nvvm.ADDRSPACE_GENERIC: None,
