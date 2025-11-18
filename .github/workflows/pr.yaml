@@ -36,6 +36,8 @@ jobs:
       - test-thirdparty-awkward
       - build-docs
       - coverage-report
+    # This job should run even if the nvmath-python tests are skipped (which will happen on a PR rather than main)
+    if: ${{ needs.test-thirdparty-nvmath.result == 'success' || needs.test-thirdparty-nvmath.result == 'skipped' }}
     secrets: inherit
     uses: rapidsai/shared-workflows/.github/workflows/pr-builder.yaml@branch-25.04
   pre-commit:
