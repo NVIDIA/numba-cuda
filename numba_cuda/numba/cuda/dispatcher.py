@@ -18,8 +18,6 @@ from warnings import warn
 from numba.cuda.core import errors
 from numba.cuda import serialize, utils
 from numba import cuda
-from abc import ABC
-from typing import Any
 
 from numba.cuda.core.compiler_lock import global_compiler_lock
 from numba.cuda.typeconv.rules import default_type_manager
@@ -38,6 +36,7 @@ from numba.cuda.compiler import (
     compile_extra,
     compile_ir,
 )
+from numba.cuda.extending import typeof_impl
 from numba.cuda.core import sigutils, config, entrypoints
 from numba.cuda.flags import Flags
 from numba.cuda.cudadrv import driver, nvvm
@@ -544,7 +543,7 @@ class _Kernel(serialize.ReduceMixin):
                     ty, val, stream=stream, retr=retr
                 )
         elif handler := _arg_handlers.get(type(val)):
-            ty, val = handler.prepare_args(ty, val, stream=stream, retr=retr)
+            ty, val = handler(ty, val, stream=stream, retr=retr)
 
         if isinstance(ty, types.Array):
             devary = wrap_arg(val).to_device(retr, stream)
@@ -2126,17 +2125,17 @@ class CUDADispatcher(serialize.ReduceMixin, _MemoMixin, _DispatcherBase):
         return dict(py_func=self.py_func, targetoptions=self.targetoptions)
 
 
-class ArgHandlerBase(ABC):
-    @abstractmethod
-    def prepare_args(self, ty: Any, val: Any, **kwargs) -> Any:
-        raise NotImplementedError
+# class ArgHandlerBase(ABC):
+#    @abstractmethod
+#    def prepare_args(self, ty: Any, val: Any, **kwargs) -> Any:
+#        raise NotImplementedError
 
 
-def register_arg_handler(handler, handled_types):
+def register_arg_handler(handler, handled_types, impl):
     global _arg_handlers
-    if not isinstance(handler, ArgHandlerBase):
-        raise ValueError("handler must be an instance of ArgHandlerBase")
+
     for ty in handled_types:
+        typeof_impl.register(ty)(impl)
         _arg_handlers[ty] = handler
 
 
