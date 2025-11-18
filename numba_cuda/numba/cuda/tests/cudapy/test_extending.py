@@ -48,6 +48,7 @@ from numba.cuda.extending import (
     register_model,
     make_attribute_wrapper,
 )
+from numba.cuda import dispatcher
 
 TEST_BIN_DIR = os.getenv("NUMBA_CUDA_TEST_BIN_DIR")
 if TEST_BIN_DIR:
@@ -390,24 +391,20 @@ class TestExtendingLinkage(CUDATestCase):
 @skip_on_cudasim("Extensions not supported in the simulator")
 class TestArgHandlerRegistration(CUDATestCase):
     def test_register_arg_handler(self):
-        class NumpyArrayWrapper:
+        class NumpyArrayWrapper_int32:
             def __init__(self, arr):
                 self.arr = arr
 
-        # class NumpyArrayWrapperArgHandler(ArgHandlerBase):
-        #    def prepare_args(self, ty, val, **kwargs):
-        #        return types.int32[::1], val.arr
-
-        def numpy_array_wrapper_arg_handler(ty, val, **kwargs):
+        def numpy_array_wrapper_int32_arg_handler(ty, val, **kwargs):
             return types.int32[::1], val.arr
 
-        def numpy_array_wrapper_typeof_impl(val, c):
+        def numpy_array_wrapper_int32_typeof_impl(val, c):
             return typeof(val.arr)
 
         register_arg_handler(
-            numpy_array_wrapper_arg_handler,
-            (NumpyArrayWrapper,),
-            numpy_array_wrapper_typeof_impl,
+            numpy_array_wrapper_int32_arg_handler,
+            (NumpyArrayWrapper_int32,),
+            numpy_array_wrapper_int32_typeof_impl,
         )
 
         @cuda.jit("void(int32[::1])")
@@ -417,7 +414,7 @@ class TestArgHandlerRegistration(CUDATestCase):
                 arr[i] += 1
 
         arr = np.zeros(10, dtype=np.int32)
-        wrapped_arr = NumpyArrayWrapper(arr)
+        wrapped_arr = NumpyArrayWrapper_int32(arr)
 
         kernel.forall(len(arr))(wrapped_arr)
         np.testing.assert_equal(arr, np.ones(10, dtype=np.int32))
@@ -430,26 +427,26 @@ class TestArgHandlerRegistration(CUDATestCase):
                 arr[i] += 1
 
         arr = np.zeros(10, dtype=np.int32)
-        wrapped_arr = NumpyArrayWrapper(arr)
+        wrapped_arr = NumpyArrayWrapper_int32(arr)
         kernel.forall(len(arr))(wrapped_arr)
 
         np.testing.assert_equal(arr, np.ones(10, dtype=np.int32))
 
         # Two arg handlers
-        class OtherNumpyArrayWrapper:
+        class NumpyArrayWrapper_float32:
             def __init__(self, arr):
                 self.arr = arr
 
-        def other_numpy_array_wrapper_arg_handler(ty, val, **kwargs):
+        def numpy_array_wrapper_float32_arg_handler(ty, val, **kwargs):
             return types.float32[::1], val.arr
 
-        def other_numpy_array_wrapper_typeof_impl(val, c):
+        def numpy_array_wrapper_float32_typeof_impl(val, c):
             return typeof(val.arr)
 
         register_arg_handler(
-            other_numpy_array_wrapper_arg_handler,
-            (OtherNumpyArrayWrapper,),
-            other_numpy_array_wrapper_typeof_impl,
+            numpy_array_wrapper_float32_arg_handler,
+            (NumpyArrayWrapper_float32,),
+            numpy_array_wrapper_float32_typeof_impl,
         )
 
         @cuda.jit("void(float32[::1], int32[::1])")
@@ -461,23 +458,23 @@ class TestArgHandlerRegistration(CUDATestCase):
 
         arr_f = np.zeros(10, dtype=np.float32)
         arr_i = np.zeros(10, dtype=np.int32)
-        wrapped_arr_f = OtherNumpyArrayWrapper(arr_f)
-        wrapped_arr_i = NumpyArrayWrapper(arr_i)
+        wrapped_arr_f = NumpyArrayWrapper_float32(arr_f)
+        wrapped_arr_i = NumpyArrayWrapper_int32(arr_i)
         kernel.forall(len(arr_f))(wrapped_arr_f, wrapped_arr_i)
         np.testing.assert_equal(arr_f, np.ones(10, dtype=np.float32))
         np.testing.assert_equal(arr_i, np.ones(10, dtype=np.int32) * 2)
 
         # multiple handlers for the same type - last one wins
-        def numpy_array_wrapper_arg_handler_v2(ty, val, **kwargs):
+        def numpy_array_wrapper_int32_arg_handler_v2(ty, val, **kwargs):
             return types.float64[::1], val.arr
 
-        def numpy_array_wrapper_typeof_impl_v2(val, c):
+        def numpy_array_wrapper_int32_typeof_impl_v2(val, c):
             return typeof(val.arr)
 
         register_arg_handler(
-            numpy_array_wrapper_arg_handler_v2,
-            (NumpyArrayWrapper,),
-            numpy_array_wrapper_typeof_impl_v2,
+            numpy_array_wrapper_int32_arg_handler_v2,
+            (NumpyArrayWrapper_int32,),
+            numpy_array_wrapper_int32_typeof_impl_v2,
         )
 
         @cuda.jit("void(float64[::1])")
@@ -487,9 +484,38 @@ class TestArgHandlerRegistration(CUDATestCase):
                 arr[i] += 3.0
 
         arr = np.zeros(10, dtype=np.float64)
-        wrapped_arr = NumpyArrayWrapper(arr)
+        wrapped_arr = NumpyArrayWrapper_int32(arr)
         kernel.forall(len(arr))(wrapped_arr)
         np.testing.assert_equal(arr, np.ones(10, dtype=np.float64) * 3.0)
+
+        # Register one pass one
+        # clear all handlers
+        dispatcher._arg_handlers = {}
+        register_arg_handler(
+            numpy_array_wrapper_int32_arg_handler,
+            (NumpyArrayWrapper_int32,),
+            numpy_array_wrapper_int32_typeof_impl,
+        )
+
+        class PassedArgHandler_float32:
+            def prepare_args(self, ty, val, **kwargs):
+                return types.float32[::1], val.arr
+
+        @cuda.jit(extensions=[PassedArgHandler_float32()])
+        def kernel(arr_i, arr_f):
+            i = cuda.grid(1)
+            if i < arr_i.size:
+                arr_i[i] += 4
+                arr_f[i] += 5.0
+
+        arr_i = np.zeros(10, dtype=np.int32)
+        arr_f = np.zeros(10, dtype=np.float32)
+
+        wrapped_arr_i = NumpyArrayWrapper_int32(arr_i)
+        wrapped_arr_f = NumpyArrayWrapper_float32(arr_f)
+        kernel.forall(len(arr_i))(wrapped_arr_i, wrapped_arr_f)
+        np.testing.assert_equal(arr_i, np.ones(10, dtype=np.int32) * 4)
+        np.testing.assert_equal(arr_f, np.ones(10, dtype=np.float32) * 5.0)
 
 
 @skip_on_cudasim("Extensions not supported in the simulator")

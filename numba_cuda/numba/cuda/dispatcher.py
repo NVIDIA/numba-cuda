@@ -2125,12 +2125,6 @@ class CUDADispatcher(serialize.ReduceMixin, _MemoMixin, _DispatcherBase):
         return dict(py_func=self.py_func, targetoptions=self.targetoptions)
 
 
-# class ArgHandlerBase(ABC):
-#    @abstractmethod
-#    def prepare_args(self, ty: Any, val: Any, **kwargs) -> Any:
-#        raise NotImplementedError
-
-
 def register_arg_handler(handler, handled_types, impl):
     global _arg_handlers
 
