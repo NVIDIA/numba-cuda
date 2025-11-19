@@ -5,6 +5,7 @@ import abc
 import os
 from contextlib import contextmanager
 
+import llvmlite
 from llvmlite import ir
 from numba.cuda import types
 from numba.cuda.core import config
@@ -18,8 +19,6 @@ from cuda.bindings import runtime
 def _get_llvmlite_version():
     """Get llvmlite version as tuple (major, minor)."""
     try:
-        import llvmlite
-
         version_str = llvmlite.__version__
         # Parse version string like "0.46.0" or "0.46.0dev"
         parts = version_str.split(".")
@@ -28,7 +27,7 @@ def _get_llvmlite_version():
         major = int(parts[0])
         minor = int(parts[1])
         return (major, minor)
-    except (ImportError, AttributeError, ValueError):
+    except (IndexError, AttributeError, ValueError):
         return (0, 0)
 
 
