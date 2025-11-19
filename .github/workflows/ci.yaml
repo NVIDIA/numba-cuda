@@ -7,6 +7,7 @@ on:
   push:
     branches:
       - "main"
+      - "pull-request/[0-9]+" # Temporary for testing
 
 jobs:
   pre-commit:
