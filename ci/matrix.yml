@@ -9,10 +9,12 @@ build-matrix:
   - { ARCH: 'amd64', PY_VER: '3.11', CUDA_VER: '12.8.0', LINUX_VER: 'rockylinux8' }
   - { ARCH: 'amd64', PY_VER: '3.12', CUDA_VER: '12.8.0', LINUX_VER: 'rockylinux8' }
   - { ARCH: 'amd64', PY_VER: '3.13', CUDA_VER: '12.8.0', LINUX_VER: 'rockylinux8' }
+  - { ARCH: 'amd64', PY_VER: '3.14', CUDA_VER: '12.8.0', LINUX_VER: 'rockylinux8' }
   - { ARCH: 'arm64', PY_VER: '3.10', CUDA_VER: '12.8.0', LINUX_VER: 'rockylinux8' }
   - { ARCH: 'arm64', PY_VER: '3.11', CUDA_VER: '12.8.0', LINUX_VER: 'rockylinux8' }
   - { ARCH: 'arm64', PY_VER: '3.12', CUDA_VER: '12.8.0', LINUX_VER: 'rockylinux8' }
   - { ARCH: 'arm64', PY_VER: '3.13', CUDA_VER: '12.8.0', LINUX_VER: 'rockylinux8' }
+  - { ARCH: 'arm64', PY_VER: '3.14', CUDA_VER: '12.8.0', LINUX_VER: 'rockylinux8' }
 simulator-matrix:
   - { ARCH: 'amd64', PY_VER: '3.12', CUDA_VER: '12.8.0', LINUX_VER: 'rockylinux8' }
 # We test "oldest" dependencies with the oldest supported Python version and
@@ -25,6 +27,8 @@ test-matrix:
   - { CUDA_VER: '13.0.0', ARCH: 'amd64', PY_VER: '3.12', LINUX_VER: 'ubuntu22.04', GPU: 'l4',   DRIVER: 'latest',   NUMBA_VERSION: '0.60' }
   - { CUDA_VER: '13.0.0', ARCH: 'amd64', PY_VER: '3.13', LINUX_VER: 'ubuntu22.04', GPU: 'l4',   DRIVER: 'latest',   NUMBA_VERSION: '*' }
   - { CUDA_VER: '13.0.0', ARCH: 'amd64', PY_VER: '3.13', LINUX_VER: 'ubuntu24.04', GPU: 'l4',   DRIVER: 'latest',   NUMBA_VERSION: '*' }
+  - { CUDA_VER: '13.0.0', ARCH: 'amd64', PY_VER: '3.14', LINUX_VER: 'ubuntu22.04', GPU: 'l4',   DRIVER: 'latest',   NUMBA_VERSION: '*' }
+  - { CUDA_VER: '13.0.0', ARCH: 'amd64', PY_VER: '3.14', LINUX_VER: 'ubuntu24.04', GPU: 'l4',   DRIVER: 'latest',   NUMBA_VERSION: '*' }
   - { CUDA_VER: '12.0.1', ARCH: 'arm64', PY_VER: '3.10',  LINUX_VER: 'rockylinux8', GPU: 'a100', DRIVER: 'earliest', NUMBA_VERSION: '0.60' }
   - { CUDA_VER: '12.0.1', ARCH: 'arm64', PY_VER: '3.11',  LINUX_VER: 'rockylinux8', GPU: 'a100', DRIVER: 'earliest', NUMBA_VERSION: '*' }
   - { CUDA_VER: '12.2.2', ARCH: 'arm64', PY_VER: '3.11', LINUX_VER: 'ubuntu22.04', GPU: 'a100', DRIVER: 'latest',   NUMBA_VERSION: '*' }
@@ -32,3 +36,5 @@ test-matrix:
   - { CUDA_VER: '13.0.0', ARCH: 'arm64', PY_VER: '3.12', LINUX_VER: 'ubuntu22.04', GPU: 'a100', DRIVER: 'latest',   NUMBA_VERSION: '0.60' }
   - { CUDA_VER: '13.0.0', ARCH: 'arm64', PY_VER: '3.13', LINUX_VER: 'ubuntu22.04', GPU: 'a100', DRIVER: 'latest',   NUMBA_VERSION: '*' }
   - { CUDA_VER: '13.0.0', ARCH: 'arm64', PY_VER: '3.13', LINUX_VER: 'ubuntu24.04', GPU: 'a100', DRIVER: 'latest',   NUMBA_VERSION: '*' }
+  - { CUDA_VER: '13.0.0', ARCH: 'arm64', PY_VER: '3.14', LINUX_VER: 'ubuntu22.04', GPU: 'a100', DRIVER: 'latest',   NUMBA_VERSION: '*' }
+  - { CUDA_VER: '13.0.0', ARCH: 'arm64', PY_VER: '3.14', LINUX_VER: 'ubuntu24.04', GPU: 'a100', DRIVER: 'latest',   NUMBA_VERSION: '*' }
