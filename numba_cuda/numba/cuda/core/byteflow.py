@@ -324,30 +324,29 @@ class Flow(object):
         else:
             return False
 
+    if PYVERSION in ((3, 14),):
 
-if PYVERSION in ((3, 14),):
+        def _guard_with_as(self, state):
+            # Handled as part of `LOAD_SPECIAL` as of 3.14.
+            pass
+    elif PYVERSION in ((3, 10), (3, 11), (3, 12), (3, 13)):
 
-    def _guard_with_as(self, state):
-        # Handled as part of `LOAD_SPECIAL` as of 3.14.
-        pass
-elif PYVERSION in ((3, 10), (3, 11), (3, 12), (3, 13)):
-
-    def _guard_with_as(self, state):
-        """Checks if the next instruction after a SETUP_WITH is something
-        other than a POP_TOP, if it is something else it'll be some sort of
-        store which is not supported (this corresponds to `with CTXMGR as
-        VAR(S)`)."""
-        current_inst = state.get_inst()
-        if current_inst.opname in {"SETUP_WITH", "BEFORE_WITH"}:
-            next_op = self._bytecode[current_inst.next].opname
-            if next_op != "POP_TOP":
-                msg = (
-                    "The 'with (context manager) as (variable):' "
-                    "construct is not supported."
-                )
-                raise UnsupportedBytecodeError(msg)
-else:
-    raise NotImplementedError(PYVERSION)
+        def _guard_with_as(self, state):
+            """Checks if the next instruction after a SETUP_WITH is something
+            other than a POP_TOP, if it is something else it'll be some sort of
+            store which is not supported (this corresponds to `with CTXMGR as
+            VAR(S)`)."""
+            current_inst = state.get_inst()
+            if current_inst.opname in {"SETUP_WITH", "BEFORE_WITH"}:
+                next_op = self._bytecode[current_inst.next].opname
+                if next_op != "POP_TOP":
+                    msg = (
+                        "The 'with (context manager) as (variable):' "
+                        "construct is not supported."
+                    )
+                    raise UnsupportedBytecodeError(msg)
+    else:
+        raise NotImplementedError(PYVERSION)
 
 
 def _is_null_temp_reg(reg):
