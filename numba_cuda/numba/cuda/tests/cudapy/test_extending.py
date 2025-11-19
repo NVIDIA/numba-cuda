@@ -497,23 +497,13 @@ class TestArgHandlerRegistration(CUDATestCase):
             self.numpy_array_wrapper_int32_typeof_impl,
         )
 
-        # multiple handlers for the same type - last one wins
-        register_arg_handler(
-            self.numpy_array_wrapper_int32_arg_handler_v2,
-            (self.NumpyArrayWrapper_int32,),
-            self.numpy_array_wrapper_int32_typeof_impl_v2,
-        )
-
-        @cuda.jit("void(int32[::1])")
-        def kernel(arr):
-            i = cuda.grid(1)
-            if i < arr.size:
-                arr[i] += 3.0
-
-        arr = np.zeros(10, dtype=np.int32)
-        wrapped_arr = self.NumpyArrayWrapper_int32(arr)
-        kernel.forall(len(arr))(wrapped_arr)
-        np.testing.assert_equal(arr, np.ones(10, dtype=np.int32) * 3.0)
+        # multiple handlers for the same type - error
+        with self.assertRaises(ValueError):
+            register_arg_handler(
+                self.numpy_array_wrapper_int32_arg_handler_v2,
+                (self.NumpyArrayWrapper_int32,),
+                self.numpy_array_wrapper_int32_typeof_impl_v2,
+            )
 
     def test_register_arg_handler_and_pass(self):
         register_arg_handler(
