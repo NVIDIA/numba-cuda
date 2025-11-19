@@ -1,45 +1,18 @@
 # SPDX-FileCopyrightText: Copyright (c) 2024 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-2-Clause
 
-name: pr
+name: ci
 
 on:
   push:
     branches:
-      - "pull-request/[0-9]+"
-
-concurrency:
-  group: >-
-    ${{
-      (github.ref == 'refs/heads/main') &&
-      format('{0}-{1}', github.workflow, github.run_id) ||
-      format('{0}-{1}', github.workflow, github.ref)
-    }}
-  cancel-in-progress: true
+      - "main"
 
 jobs:
-  pr-builder:
-    needs:
-      - pre-commit
-      - compute-matrix
-      - build-conda
-      - test-conda
-      - test-simulator
-      - build-wheels
-      - build-wheels-windows
-      - test-wheels-windows
-      - test-wheels
-      - test-wheels-deps-wheels
-      - test-thirdparty-cudf
-      - test-thirdparty-awkward
-      - build-docs
-      - coverage-report
-    secrets: inherit
-    uses: rapidsai/shared-workflows/.github/workflows/pr-builder.yaml@branch-25.04
   pre-commit:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
       - uses: pre-commit/action@2c7b3805fd2a0fd8c1884dcaebf91fc102a13ecd
         with:
@@ -51,7 +24,7 @@ jobs:
       SIMULATOR_MATRIX: ${{ steps.compute-matrix.outputs.SIMULATOR_MATRIX }}
       TEST_MATRIX: ${{ steps.compute-matrix.outputs.TEST_MATRIX }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Compute Matrices
         id: compute-matrix
         run: |
@@ -137,6 +110,17 @@ jobs:
       script: "ci/test_thirdparty_cudf.sh"
       matrix: ${{ needs.compute-matrix.outputs.TEST_MATRIX }}
       # TODO: Enable for CUDA 13 when a supporting version of cuDF is available
+      matrix_filter: map(select(.ARCH == "amd64" and (.CUDA_VER | split(".") | .[0] | tonumber == 12))) | group_by(.CUDA_VER|split(".")|map(tonumber)|.[0]) | map(max_by([(.PY_VER|split(".")|map(tonumber)), (.CUDA_VER|split(".")|map(tonumber))]))
+  test-thirdparty-nvmath:
+    needs:
+      - build-wheels
+      - compute-matrix
+    uses: ./.github/workflows/wheels-test.yaml
+    with:
+      build_type: pull-request
+      script: "ci/test_thirdparty_nvmath.sh"
+      matrix: ${{ needs.compute-matrix.outputs.TEST_MATRIX }}
+      # TODO: Enable for CUDA 13 when a supporting version of nvmath-python is available
       matrix_filter: map(select(.ARCH == "amd64" and (.CUDA_VER | split(".") | .[0] | tonumber == 12))) | group_by(.CUDA_VER|split(".")|map(tonumber)|.[0]) | map(max_by([(.PY_VER|split(".")|map(tonumber)), (.CUDA_VER|split(".")|map(tonumber))]))
   test-thirdparty-awkward:
     needs:
