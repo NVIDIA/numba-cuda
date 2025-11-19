@@ -5,6 +5,7 @@ import numpy as np
 from numba import cuda
 from numba.cuda.testing import CUDATestCase
 import unittest
+from numba.cuda import config
 
 
 def reinterpret_array_type(byte_arr, start, stop, output):
@@ -14,6 +15,15 @@ def reinterpret_array_type(byte_arr, start, stop, output):
 
 
 class TestCudaArrayMethods(CUDATestCase):
+    def setUp(self):
+        self.old_nrt_setting = config.CUDA_ENABLE_NRT
+        config.CUDA_ENABLE_NRT = True
+        super(TestCudaArrayMethods, self).setUp()
+
+    def tearDown(self):
+        config.CUDA_ENABLE_NRT = self.old_nrt_setting
+        super(TestCudaArrayMethods, self).tearDown()
+
     def test_reinterpret_array_type(self):
         """
         Reinterpret byte array as int32 in the GPU.
@@ -32,6 +42,21 @@ class TestCudaArrayMethods(CUDATestCase):
 
             got = output[0]
             self.assertEqual(expect, got)
+
+    def test_array_copy(self):
+        val = np.array([1, 2, 3])[::-1]
+
+        @cuda.jit
+        def kernel(out):
+            q = val.copy()
+            for i in range(len(out)):
+                out[i] = q[i]
+
+        out = cuda.to_device(np.zeros(len(val), dtype="float64"))
+
+        kernel[1, 1](out)
+        for i, j in zip(out.copy_to_host(), val):
+            self.assertEqual(i, j)
 
 
 if __name__ == "__main__":

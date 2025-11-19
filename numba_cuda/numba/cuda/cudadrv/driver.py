@@ -43,7 +43,6 @@ import contextlib
 import importlib
 import numpy as np
 from collections import namedtuple, deque
-from uuid import UUID
 
 
 from numba.cuda.cext import mviewbuf
@@ -67,6 +66,7 @@ from cuda.core.experimental import (
 from cuda.bindings.utils import get_cuda_native_handle
 from cuda.core.experimental import (
     Stream as ExperimentalStream,
+    Device as ExperimentalDevice,
 )
 
 
@@ -527,7 +527,7 @@ def _build_reverse_device_attrs():
 DEVICE_ATTRIBUTES = _build_reverse_device_attrs()
 
 
-class Device(object):
+class Device:
     """
     The device object owns the CUDA contexts.  This is owned by the driver
     object.  User should not construct devices directly.
@@ -548,32 +548,12 @@ class Device(object):
                 "Target device may not be visible in this process."
             )
 
-    def __init__(self, devnum):
-        result = driver.cuDeviceGet(devnum)
-        self.id = result
-        got_devnum = int(result)
-
-        msg = f"Driver returned device {got_devnum} instead of {devnum}"
-        if devnum != got_devnum:
-            raise RuntimeError(msg)
-
-        # Read compute capability
-        self.compute_capability = (
-            self.COMPUTE_CAPABILITY_MAJOR,
-            self.COMPUTE_CAPABILITY_MINOR,
-        )
-
-        # Read name
-        bufsz = 128
-        buf = driver.cuDeviceGetName(bufsz, self.id)
-        name = buf.split(b"\x00", 1)[0]
-
-        self.name = name
-
-        # Read UUID
-        uuid = driver.cuDeviceGetUuid(self.id)
-        self.uuid = f"GPU-{UUID(bytes=uuid.bytes)}"
-
+    def __init__(self, devnum: int) -> None:
+        self._dev = ExperimentalDevice(devnum)
+        self.id = self._dev.device_id
+        self.compute_capability = self._dev.compute_capability
+        self.name = self._dev.name
+        self.uuid = f"GPU-{self._dev.uuid}"
         self.primary_context = None
 
     def get_device_identity(self):
@@ -613,13 +593,16 @@ class Device(object):
         if (ctx := self.primary_context) is not None:
             return ctx
 
-        met_requirement_for_device(self)
-        # create primary context
-        hctx = driver.cuDevicePrimaryCtxRetain(self.id)
-        hctx = drvapi.cu_context(int(hctx))
+        if self.compute_capability < MIN_REQUIRED_CC:
+            raise CudaSupportError(
+                f"{self} has compute capability < {MIN_REQUIRED_CC}"
+            )
 
-        ctx = Context(weakref.proxy(self), hctx)
-        self.primary_context = ctx
+        self._dev.set_current()
+        self.primary_context = ctx = Context(
+            weakref.proxy(self),
+            ctypes.c_void_p(int(self._dev.context._handle)),
+        )
         return ctx
 
     def release_primary_context(self):
@@ -646,13 +629,6 @@ class Device(object):
     @property
     def supports_bfloat16(self):
         return self.compute_capability >= (8, 0)
-
-
-def met_requirement_for_device(device):
-    if device.compute_capability < MIN_REQUIRED_CC:
-        raise CudaSupportError(
-            "%s has compute capability < %s" % (device, MIN_REQUIRED_CC)
-        )
 
 
 class BaseCUDAMemoryManager(object, metaclass=ABCMeta):
@@ -1329,19 +1305,19 @@ class Context(object):
 
     def get_default_stream(self):
         handle = drvapi.cu_stream(int(binding.CUstream(CU_STREAM_DEFAULT)))
-        return Stream(weakref.proxy(self), handle, None)
+        return Stream(handle)
 
     def get_legacy_default_stream(self):
         handle = drvapi.cu_stream(
             int(binding.CUstream(binding.CU_STREAM_LEGACY))
         )
-        return Stream(weakref.proxy(self), handle, None)
+        return Stream(handle)
 
     def get_per_thread_default_stream(self):
         handle = drvapi.cu_stream(
             int(binding.CUstream(binding.CU_STREAM_PER_THREAD))
         )
-        return Stream(weakref.proxy(self), handle, None)
+        return Stream(handle)
 
     def create_stream(self):
         # The default stream creation flag, specifying that the created
@@ -1351,16 +1327,14 @@ class Context(object):
         flags = binding.CUstream_flags.CU_STREAM_DEFAULT.value
         handle = drvapi.cu_stream(int(driver.cuStreamCreate(flags)))
         return Stream(
-            weakref.proxy(self),
-            handle,
-            _stream_finalizer(self.deallocations, handle),
+            handle, finalizer=_stream_finalizer(self.deallocations, handle)
         )
 
     def create_external_stream(self, ptr):
         if not isinstance(ptr, int):
             raise TypeError("ptr for external stream must be an int")
         handle = drvapi.cu_stream(int(binding.CUstream(ptr)))
-        return Stream(weakref.proxy(self), handle, None, external=True)
+        return Stream(handle, external=True)
 
     def create_event(self, timing=True):
         flags = 0
@@ -1368,9 +1342,7 @@ class Context(object):
             flags |= enums.CU_EVENT_DISABLE_TIMING
         handle = drvapi.cu_event(int(driver.cuEventCreate(flags)))
         return Event(
-            weakref.proxy(self),
-            handle,
-            finalizer=_event_finalizer(self.deallocations, handle),
+            handle, finalizer=_event_finalizer(self.deallocations, handle)
         )
 
     def synchronize(self):
@@ -1383,7 +1355,7 @@ class Context(object):
                 yield
 
     def __repr__(self):
-        return "<CUDA context %s of device %d>" % (self.handle, self.device.id)
+        return f"<CUDA context {self.handle} of device {self.device.id:d}>"
 
     def __eq__(self, other):
         if isinstance(other, Context):
@@ -2058,9 +2030,8 @@ class ManagedOwnedPointer(OwnedPointer, mviewbuf.MemAlloc):
     pass
 
 
-class Stream(object):
-    def __init__(self, context, handle, finalizer, external=False):
-        self.context = context
+class Stream:
+    def __init__(self, handle, finalizer=None, external=False):
         self.handle = handle
         self.external = external
         if finalizer is not None:
@@ -2077,18 +2048,18 @@ class Stream(object):
 
     def __repr__(self):
         default_streams = {
-            drvapi.CU_STREAM_DEFAULT: "<Default CUDA stream on %s>",
-            drvapi.CU_STREAM_LEGACY: "<Legacy default CUDA stream on %s>",
-            drvapi.CU_STREAM_PER_THREAD: "<Per-thread default CUDA stream on %s>",
+            drvapi.CU_STREAM_DEFAULT: "<Default CUDA stream>",
+            drvapi.CU_STREAM_LEGACY: "<Legacy default CUDA stream>",
+            drvapi.CU_STREAM_PER_THREAD: "<Per-thread default CUDA stream>",
         }
         ptr = self.handle.value or drvapi.CU_STREAM_DEFAULT
 
         if ptr in default_streams:
-            return default_streams[ptr] % self.context
+            return default_streams[ptr]
         elif self.external:
-            return "<External CUDA stream %d on %s>" % (ptr, self.context)
+            return f"<External CUDA stream {ptr:d}>"
         else:
-            return "<CUDA stream %d on %s>" % (ptr, self.context)
+            return f"<CUDA stream {ptr:d}>"
 
     def synchronize(self):
         """
@@ -2190,9 +2161,8 @@ class Stream(object):
         return future
 
 
-class Event(object):
-    def __init__(self, context, handle, finalizer=None):
-        self.context = context
+class Event:
+    def __init__(self, handle, finalizer=None):
         self.handle = handle
         if finalizer is not None:
             weakref.finalize(self, finalizer)

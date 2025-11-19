@@ -255,10 +255,10 @@ class TestCasting(CUDATestCase):
     @skip_on_cudasim("Compilation unsupported in the simulator")
     def test_native_cast(self):
         float32_ptx, _ = cuda.compile_ptx(native_cast, (float32,), device=True)
-        self.assertIn("st.f32", float32_ptx)
+        self.assertRegex(float32_ptx, r"st\.[bf]32")
 
         float16_ptx, _ = cuda.compile_ptx(native_cast, (float16,), device=True)
-        self.assertIn("st.u16", float16_ptx)
+        self.assertRegex(float16_ptx, r"st\.[bu]16", float16_ptx)
 
 
 if __name__ == "__main__":
