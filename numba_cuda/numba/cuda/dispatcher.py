@@ -2129,11 +2129,11 @@ def register_arg_handler(handler, handled_types, impl):
     global _arg_handlers
 
     for ty in handled_types:
-        typeof_impl.register(ty)(impl)
         if _arg_handlers.get(ty, None):
             raise ValueError(
                 f"A handler for args of type {ty} is already registered."
             )
+        typeof_impl.register(ty)(impl)
         _arg_handlers[ty] = handler
 
 
