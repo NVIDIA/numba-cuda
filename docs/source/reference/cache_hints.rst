@@ -2,7 +2,7 @@
    SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
    SPDX-License-Identifier: BSD-2-Clause
 
-_cache-hints:
+.. _cache-hints:
 
 Cache Hints for Memory Operations
 =================================
@@ -12,6 +12,10 @@ operations. They generate PTX instructions with cache policy hints that can
 optimize specific memory access patterns. All functions support arrays or
 pointers with integer and floating-point types (bitwidths 8, 16, 32, 64, or
 128).
+
+.. seealso:: `Cache Operators
+   <https://docs.nvidia.com/cuda/parallel-thread-execution/index.html#cache-operators>`_
+   in the PTX ISA documentation.
 
 .. function:: numba.cuda.ldca(array, i)
 
@@ -57,7 +61,3 @@ pointers with integer and floating-point types (bitwidths 8, 16, 32, 64, or
 
    Store ``value`` to ``array[i]`` with write-through policy (``st.global.wt``).
    Writes through cache hierarchy to memory.
-
-.. seealso:: `Cache Operators
-   <https://docs.nvidia.com/cuda/parallel-thread-execution/index.html#cache-operators>`_
-   in the PTX ISA documentation.
