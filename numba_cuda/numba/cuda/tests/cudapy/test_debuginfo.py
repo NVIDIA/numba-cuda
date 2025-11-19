@@ -844,31 +844,45 @@ class TestCudaDebugInfo(CUDATestCase):
         """Test that shared memory arrays have correct DWARF address class.
 
         Shared memory pointers should have addressClass: 8 (DW_AT_address_class
-        for CUDA shared memory) in their debug metadata.
+        for CUDA shared memory) in their debug metadata, while regular local
+        arrays should not have this annotation.
         """
         sig = (types.int32,)
 
         @cuda.jit(sig, debug=True, opt=False)
         def kernel_with_shared(data):
             shared_arr = cuda.shared.array(32, dtype=np.int32)
+            local_arr = cuda.local.array(32, dtype=np.int32)
             idx = cuda.grid(1)
             if idx < 32:
                 shared_arr[idx] = data + idx
+                local_arr[idx] = data * 2 + idx
             cuda.syncthreads()
             if idx == 0:
                 result = np.int32(0)
                 for i in range(32):
-                    result += shared_arr[i]
+                    result += shared_arr[i] + local_arr[i]
 
         llvm_ir = kernel_with_shared.inspect_llvm(sig)
 
-        # Find the DIDerivedType for the pointer to shared memory (int32 addrspace(3)*)
-        # The pointer should have dwarfAddressSpace: 8 for shared memory
-        pat = r"!DIDerivedType\([^)]*dwarfAddressSpace:\s*8[^)]*tag:\s*DW_TAG_pointer_type[^)]*\)"
-        match = re.compile(pat).search(llvm_ir)
-        self.assertIsNotNone(
-            match,
-            msg=f"Shared memory pointer should have dwarfAddressSpace: 8 in LLVM IR.\n{llvm_ir}",
+        # shared_arr -> composite -> elements[4] (data field at index 4) -> pointer with dwarfAddressSpace: 8
+        # local_arr -> composite -> elements[4] (data field at index 4) -> pointer without dwarfAddressSpace: 8
+        self.assertFileCheckMatches(
+            llvm_ir,
+            r"""
+            CHECK-DAG: [[SHARED_VAR:![0-9]+]] = !DILocalVariable({{.*}}name: "shared_arr"{{.*}}type: [[SHARED_COMPOSITE:![0-9]+]]
+            CHECK-DAG: [[SHARED_COMPOSITE]] = {{.*}}!DICompositeType(elements: [[SHARED_ELEMENTS:![0-9]+]]
+            CHECK-DAG: [[SHARED_ELEMENTS]] = !{{{.*}}, {{.*}}, {{.*}}, {{.*}}, [[SHARED_DATA:![0-9]+]], {{.*}}, {{.*}}}
+            CHECK-DAG: [[SHARED_DATA]] = !DIDerivedType(baseType: [[SHARED_PTR:![0-9]+]], name: "data"
+            CHECK-DAG: [[SHARED_PTR]] = !DIDerivedType({{.*}}dwarfAddressSpace: 8{{.*}}tag: DW_TAG_pointer_type
+
+            CHECK-DAG: [[LOCAL_VAR:![0-9]+]] = !DILocalVariable({{.*}}name: "local_arr"{{.*}}type: [[LOCAL_COMPOSITE:![0-9]+]]
+            CHECK-DAG: [[LOCAL_COMPOSITE]] = {{.*}}!DICompositeType(elements: [[LOCAL_ELEMENTS:![0-9]+]]
+            CHECK-DAG: [[LOCAL_ELEMENTS]] = !{{{.*}}, {{.*}}, {{.*}}, {{.*}}, [[LOCAL_DATA:![0-9]+]], {{.*}}, {{.*}}}
+            CHECK-DAG: [[LOCAL_DATA]] = !DIDerivedType(baseType: [[LOCAL_PTR:![0-9]+]], name: "data"
+            CHECK-DAG: [[LOCAL_PTR]] = !DIDerivedType(baseType: {{.*}}tag: DW_TAG_pointer_type
+            CHECK-NOT: [[LOCAL_PTR]]{{.*}}dwarfAddressSpace: 8
+        """,
         )
 
 

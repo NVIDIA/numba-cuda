@@ -62,20 +62,6 @@ class Cuda_array_decl(CallableTemplate):
 class Cuda_shared_array(Cuda_array_decl):
     key = cuda.shared.array
 
-    def generic(self):
-        typer = super().generic()
-
-        # Wrap it to add _addrspace attribute for debug info only
-        from numba.cuda.cudadrv import nvvm
-
-        def shared_array_typer(shape, dtype, alignment=None):
-            result = typer(shape, dtype, alignment)
-            if result is not None:
-                result._addrspace = nvvm.ADDRSPACE_SHARED
-            return result
-
-        return shared_array_typer
-
 
 @register
 class Cuda_local_array(Cuda_array_decl):

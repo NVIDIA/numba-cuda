@@ -588,6 +588,11 @@ class CUDADIBuilder(DIBuilder):
         super().__init__(module, filepath, cgctx, directives_only)
         # Cache for local variable metadata type and line deduplication
         self._vartypelinemap = {}
+        # Variable address space dictionary
+        self._var_addrspace_map = {}
+
+    def _set_addrspace_map(self, map):
+        self._var_addrspace_map = map
 
     def _var_type(self, lltype, size, datamodel=None):
         is_bool = False
@@ -685,14 +690,14 @@ class CUDADIBuilder(DIBuilder):
             )
 
         # Check if there's actually address space info to handle
+        addrspace = getattr(self, "_addrspace", None)
         if (
             isinstance(lltype, ir.LiteralStructType)
             and datamodel is not None
             and datamodel.inner_models()
-            and hasattr(datamodel, "fe_type")
-            and getattr(datamodel.fe_type, "_addrspace", None) not in (None, 0)
+            and addrspace not in (None, 0)
         ):
-            # Process struct with datamodel that has _addrspace available
+            # Process struct with datamodel that has address space info
             meta = []
             offset = 0
             for element, field, model in zip(
@@ -711,7 +716,6 @@ class CUDADIBuilder(DIBuilder):
                         "baseType": pointee_type,
                         "size": _BYTE_SIZE * size_field,
                     }
-                    addrspace = getattr(datamodel.fe_type, "_addrspace", None)
                     dwarf_addrclass = self.get_dwarf_address_class(addrspace)
                     if dwarf_addrclass is not None:
                         meta_ptr["dwarfAddressSpace"] = dwarf_addrclass
@@ -796,6 +800,8 @@ class CUDADIBuilder(DIBuilder):
                 # to llvm.dbg.value
                 return
             else:
+                # Look up address space for this variable
+                self._addrspace = self._var_addrspace_map.get(name)
                 try:
                     return super().mark_variable(
                         builder,
@@ -808,13 +814,8 @@ class CUDADIBuilder(DIBuilder):
                         argidx,
                     )
                 finally:
-                    # Clean up _addrspace to bypass the type caching
-                    if (
-                        datamodel is not None
-                        and hasattr(datamodel, "fe_type")
-                        and hasattr(datamodel.fe_type, "_addrspace")
-                    ):
-                        delattr(datamodel.fe_type, "_addrspace")
+                    # Clean up address space info
+                    self._addrspace = None
 
     def update_variable(
         self,
