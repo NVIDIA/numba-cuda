@@ -28,13 +28,6 @@ from numba.cuda.api_util import prepare_shape_strides_dtype
 from numba.cuda.core.errors import NumbaPerformanceWarning
 from warnings import warn
 
-try:
-    lru_cache = getattr(functools, "lru_cache")(None)
-except AttributeError:
-    # Python 3.1 or lower
-    def lru_cache(func):
-        return func
-
 
 class DeprecatedDeviceArrayApiWarning(FutureWarning):
     pass
@@ -534,7 +527,7 @@ class DeviceRecord(DeviceNDArrayBase):
             stream.synchronize()
 
 
-@lru_cache
+@functools.lru_cache
 def _assign_kernel(ndim):
     """
     A separate method so we don't need to compile code every assignment (!).
