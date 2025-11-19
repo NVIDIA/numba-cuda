@@ -36,8 +36,13 @@ pytestmark = pytest.mark.skipif(
         ),
     ],
 )
-def test_one_arg(benchmark, array_func):
-    @cuda.jit("void(float32[:])")
+@pytest.mark.parametrize(
+    "jit",
+    [cuda.jit, cuda.jit("void(float32[::1])")],
+    ids=["dispatch", "signature"],
+)
+def test_one_arg(benchmark, array_func, jit):
+    @jit
     def one_arg(arr1):
         return
 
@@ -78,10 +83,22 @@ def test_one_arg(benchmark, array_func):
         ),
     ],
 )
-def test_many_args(benchmark, array_func):
+@pytest.mark.parametrize(
+    "jit",
+    [
+        cuda.jit,
+        cuda.jit(
+            "void({})".format(
+                ", ".join(["float32[::1]"] * len(string.ascii_lowercase))
+            )
+        ),
+    ],
+    ids=["dispatch", "signature"],
+)
+def test_many_args(benchmark, array_func, jit):
     many_arrs = array_func()
 
-    @cuda.jit("void({})".format(", ".join(["float32[:]"] * len(many_arrs))))
+    @jit
     def many_args(
         a,
         b,
