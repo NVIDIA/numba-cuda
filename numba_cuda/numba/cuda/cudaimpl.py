@@ -18,6 +18,7 @@ from numba.cuda.np import ufunc_db
 from numba.cuda.np.npyimpl import register_ufuncs
 from .cudadrv import nvvm
 from numba import cuda
+from numba.cuda.api_util import normalize_indices
 from numba.cuda import nvvmutils, stubs
 from numba.cuda.types.ext_types import dim3, CUDADispatcher
 
@@ -580,31 +581,6 @@ lower(math.degrees, types.f4)(gen_deg_rad(_rad2deg))
 lower(math.degrees, types.f8)(gen_deg_rad(_rad2deg))
 
 
-def _normalize_indices(context, builder, indty, inds, aryty, valty):
-    """
-    Convert integer indices into tuple of intp
-    """
-    if indty in types.integer_domain:
-        indty = types.UniTuple(dtype=indty, count=1)
-        indices = [inds]
-    else:
-        indices = cgutils.unpack_tuple(builder, inds, count=len(indty))
-    indices = [
-        context.cast(builder, i, t, types.intp) for t, i in zip(indty, indices)
-    ]
-
-    dtype = aryty.dtype
-    if dtype != valty:
-        raise TypeError("expect %s but got %s" % (dtype, valty))
-
-    if aryty.ndim != len(indty):
-        raise TypeError(
-            "indexing %d-D array with %d-D index" % (aryty.ndim, len(indty))
-        )
-
-    return indty, indices
-
-
 def _atomic_dispatcher(dispatch_fn):
     def imp(context, builder, sig, args):
         # The common argument handling code
@@ -612,7 +588,7 @@ def _atomic_dispatcher(dispatch_fn):
         ary, inds, val = args
         dtype = aryty.dtype
 
-        indty, indices = _normalize_indices(
+        indty, indices = normalize_indices(
             context, builder, indty, inds, aryty, valty
         )
 
@@ -822,7 +798,7 @@ def ptx_atomic_cas(context, builder, sig, args):
     aryty, indty, oldty, valty = sig.args
     ary, inds, old, val = args
 
-    indty, indices = _normalize_indices(
+    indty, indices = normalize_indices(
         context, builder, indty, inds, aryty, valty
     )
 
