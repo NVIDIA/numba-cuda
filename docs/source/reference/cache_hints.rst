@@ -10,8 +10,8 @@ Cache Hints for Memory Operations
 These functions provide explicit control over caching behavior for memory
 operations. They generate PTX instructions with cache policy hints that can
 optimize specific memory access patterns. All functions support arrays or
-pointers with integer and floating-point types (bitwidths 8, 16, 32, 64, or
-128).
+pointers with all bitwidths of signed/unsigned integer and floating-point
+types.
 
 .. seealso:: `Cache Operators
    <https://docs.nvidia.com/cuda/parallel-thread-execution/index.html#cache-operators>`_

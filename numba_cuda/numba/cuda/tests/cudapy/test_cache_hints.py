@@ -19,8 +19,6 @@ tested_types = (
     np.float64,
 )
 
-complex_types = (np.complex64, np.complex128)
-
 load_operators = (
     (cuda.ldca, "ca"),
     (cuda.ldcg, "cg"),
