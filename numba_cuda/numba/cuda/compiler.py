@@ -1245,7 +1245,7 @@ def compile(
             code = codes[0]
         else:
             raise RuntimeError(
-                "Compiling this function results in multiple"
+                "Compiling this function results in multiple "
                 "PTX files. Use compile_all() instead"
             )
     return code, resty

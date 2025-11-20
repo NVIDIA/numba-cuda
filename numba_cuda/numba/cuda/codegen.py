@@ -222,7 +222,7 @@ class CUDACodeLibrary(serialize.ReduceMixin, CodeLibrary):
         irs = self.llvm_strs
 
         if "g" in options:
-            ptxes = [nvvm.compile_ir(ir) for ir in irs]
+            ptxes = [nvvm.compile_ir(ir, **options) for ir in irs]
         else:
             ptxes = [nvvm.compile_ir(irs, **options)]
 
