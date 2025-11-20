@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: BSD-2-Clause
 
 from numba import cuda, errors, typeof, types
-from numba.cuda.testing import unittest, CUDATestCase
+from numba.cuda.testing import unittest, CUDATestCase, skip_on_cudasim
 import numpy as np
 
 tested_types = (
@@ -34,6 +34,7 @@ store_operators = (
 )
 
 
+@skip_on_cudasim("Cache hints not supported on simulator")
 class TestCacheHints(CUDATestCase):
     def test_loads(self):
         for operator, modifier in load_operators:
