@@ -69,7 +69,7 @@ class TestCacheHints(CUDATestCase):
                     operator=operator, ty=ty, input_type="cpointer"
                 ):
                     ptr_type = types.CPointer(numba_type.dtype)
-                    
+
                     sig = (ptr_type, numba_type, types.intp)
                     ptx, _ = cuda.compile_ptx(f_ptr, sig)
 
