@@ -27,12 +27,12 @@ jobs:
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8  # v5.0.0
         with:
           fetch-depth: 0
+
       - name: Get CUDA build versions
         id: get-vars
         run: |
           cuda_build_ver=$(jq -r .cuda.build.version ci/versions.json)
           echo "cuda_build_ver=$cuda_build_ver" >> $GITHUB_OUTPUT
-
           cuda_prev_build_ver=$(jq -r .cuda.prev_build.version ci/versions.json)
           echo "cuda_prev_build_ver=$cuda_prev_build_ver" >> $GITHUB_OUTPUT
 
@@ -66,7 +66,7 @@ jobs:
       matrix:
         host-platform:
           - linux-64
-    name: Build ${{ matrix.host-platform }}, CUDA ${{ needs.ci-vars.outputs.CUDA_BUILD_VER }}
+    name: Build ${{ matrix.host-platform }}
     if: ${{ github.repository_owner == 'nvidia' && !fromJSON(needs.should-skip.outputs.skip) }}
     secrets: inherit
     uses: ./.github/workflows/build-wheel.yml
@@ -85,7 +85,7 @@ jobs:
       matrix:
         host-platform:
           - linux-aarch64
-    name: Build ${{ matrix.host-platform }}, CUDA ${{ needs.ci-vars.outputs.CUDA_BUILD_VER }}
+    name: Build ${{ matrix.host-platform }}
     if: ${{ github.repository_owner == 'nvidia' && !fromJSON(needs.should-skip.outputs.skip) }}
     secrets: inherit
     uses: ./.github/workflows/build-wheel.yml
@@ -104,7 +104,7 @@ jobs:
       matrix:
         host-platform:
           - win-64
-    name: Build ${{ matrix.host-platform }}, CUDA ${{ needs.ci-vars.outputs.CUDA_BUILD_VER }}
+    name: Build ${{ matrix.host-platform }}
     if: ${{ github.repository_owner == 'nvidia' && !fromJSON(needs.should-skip.outputs.skip) }}
     secrets: inherit
     uses: ./.github/workflows/build-wheel.yml
@@ -125,14 +125,12 @@ jobs:
     permissions:
       contents: read  # This is required for actions/checkout
     needs:
-      - ci-vars
       - build-linux-64
     secrets: inherit
     uses: ./.github/workflows/test-wheel-linux.yml
     with:
       build-type: pull-request
       host-platform: ${{ matrix.host-platform }}
-      build-ctk-ver: ${{ needs.ci-vars.outputs.CUDA_BUILD_VER }}
 
   # WARNING: make sure both Linux test jobs are in sync
   test-linux-aarch64:
@@ -146,14 +144,12 @@ jobs:
     permissions:
       contents: read  # This is required for actions/checkout
     needs:
-      - ci-vars
       - build-linux-aarch64
     secrets: inherit
     uses: ./.github/workflows/test-wheel-linux.yml
     with:
       build-type: pull-request
       host-platform: ${{ matrix.host-platform }}
-      build-ctk-ver: ${{ needs.ci-vars.outputs.CUDA_BUILD_VER }}
 
   test-windows:
     strategy:
@@ -166,30 +162,12 @@ jobs:
     permissions:
       contents: read  # This is required for actions/checkout
     needs:
-      - ci-vars
       - build-windows
     secrets: inherit
     uses: ./.github/workflows/test-wheel-windows.yml
     with:
       build-type: pull-request
       host-platform: ${{ matrix.host-platform }}
-      build-ctk-ver: ${{ needs.ci-vars.outputs.CUDA_BUILD_VER }}
-
-  doc:
-    name: Docs
-    if: ${{ github.repository_owner == 'nvidia' }}
-    # Sets permissions of the GITHUB_TOKEN to allow deployment to GitHub Pages
-    permissions:
-      id-token: write
-      contents: write
-      pull-requests: write
-    needs:
-      - ci-vars
-      - build-linux-64
-    secrets: inherit
-    uses: ./.github/workflows/build-docs.yml
-    with:
-      build-ctk-ver: ${{ needs.ci-vars.outputs.CUDA_BUILD_VER }}
 
   checks:
     name: Check job status
@@ -199,7 +177,6 @@ jobs:
       - test-linux-64
       - test-linux-aarch64
       - test-windows
-      - doc
     steps:
       - name: Exit
         run: |

@@ -27,13 +27,7 @@ elif [[ "${HOST_PLATFORM}" == win* ]]; then
 fi
 
 echo "${TOOLS_PATH}" >> $GITHUB_PATH
-echo "CUDA_PYTHON_PARALLEL_LEVEL=$(nproc)" >> $GITHUB_ENV
-CUDA_CORE_ARTIFACT_BASENAME="cuda-core-python${PYTHON_VERSION_FORMATTED}-${HOST_PLATFORM}"
 {
-  echo "CUDA_CORE_ARTIFACT_BASENAME=${CUDA_CORE_ARTIFACT_BASENAME}"
-  echo "CUDA_CORE_ARTIFACT_NAME=${CUDA_CORE_ARTIFACT_BASENAME}-${SHA}"
-  echo "CUDA_CORE_ARTIFACTS_DIR=$(realpath "${REPO_DIR}/cuda_core/dist")"
-  echo "CUDA_CORE_CYTHON_TESTS_DIR=$(realpath "${REPO_DIR}/cuda_core/tests/cython")"
   echo "PYTHON_VERSION_FORMATTED=${PYTHON_VERSION_FORMATTED}"
 } >> $GITHUB_ENV
 
@@ -41,51 +35,35 @@ if [[ "${1}" == "build" ]]; then
   # platform is handled by the default value of platform (`auto`) in cibuildwheel
   # here we only need to specify the python version we want
   echo "CIBW_BUILD=cp${PYTHON_VERSION_FORMATTED}-*" >> $GITHUB_ENV
-  BUILD_CUDA_MAJOR="$(cut -d '.' -f 1 <<< ${CUDA_VER})"
-  echo "BUILD_CUDA_MAJOR=${BUILD_CUDA_MAJOR}" >> $GITHUB_ENV
-  echo "BUILD_PREV_CUDA_MAJOR=$((${BUILD_CUDA_MAJOR} - 1))" >> $GITHUB_ENV
-  CUDA_BINDINGS_ARTIFACT_BASENAME="cuda-bindings-python${PYTHON_VERSION_FORMATTED}-cuda${CUDA_VER}-${HOST_PLATFORM}"
+  NUMBA_CUDA_ARTIFACT_BASENAME="numba-cuda-python${PYTHON_VERSION_FORMATTED}-${HOST_PLATFORM}"
   # Enforce an explicit cache dir so that we can reuse this path later
   echo "SCCACHE_DIR=${HOME}/.cache/sccache" >> $GITHUB_ENV
   echo "SCCACHE_CACHE_SIZE=1G" >> $GITHUB_ENV
 elif [[ "${1}" == "test" ]]; then
-  BUILD_CUDA_MAJOR="$(cut -d '.' -f 1 <<< ${BUILD_CUDA_VER})"
   TEST_CUDA_MAJOR="$(cut -d '.' -f 1 <<< ${CUDA_VER})"
-  CUDA_BINDINGS_ARTIFACT_BASENAME="cuda-bindings-python${PYTHON_VERSION_FORMATTED}-cuda${BUILD_CUDA_VER}-${HOST_PLATFORM}"
-  if [[ ${BUILD_CUDA_MAJOR} != ${TEST_CUDA_MAJOR} ]]; then
-    SKIP_CUDA_BINDINGS_TEST=1
-    SKIP_CYTHON_TEST=1
-  else
-    SKIP_CUDA_BINDINGS_TEST=0
-    BUILD_CUDA_MINOR="$(cut -d '.' -f 2 <<< ${BUILD_CUDA_VER})"
-    TEST_CUDA_MINOR="$(cut -d '.' -f 2 <<< ${CUDA_VER})"
-    if [[ ${BUILD_CUDA_MINOR} != ${TEST_CUDA_MINOR} ]]; then
-      SKIP_CYTHON_TEST=1
-    else
-      SKIP_CYTHON_TEST=0
-    fi
-  fi
-  # We don't test compute-sanitizer on CTK<12 because backporting fixes is too much effort
-  # We only test compute-sanitizer on python 3.12 arbitrarily; we don't need to use sanitizer on the entire matrix
-  # Only local ctk installs have compute-sanitizer; there is no wheel for it
-  if [[ "${PY_VER}" == "3.12" && "${CUDA_VER}" != "11.8.0" && "${LOCAL_CTK}" == 1 && "${HOST_PLATFORM}" == linux* ]]; then
-    echo "LATEST_CUDA_VERSION=$(bash .github/workflows/guess_latest.sh $TEST_CUDA_MAJOR)" >> $GITHUB_ENV
-    SETUP_SANITIZER=1
-  else
-    SETUP_SANITIZER=0
-    echo "SANITIZER_CMD=" >> $GITHUB_ENV
-  fi
+  NUMBA_CUDA_ARTIFACT_BASENAME="numba-cuda-python${PYTHON_VERSION_FORMATTED}-${HOST_PLATFORM}"
+#  TEST_CUDA_MINOR="$(cut -d '.' -f 2 <<< ${CUDA_VER})"
+#  # We don't test compute-sanitizer on CTK<12 because backporting fixes is too much effort
+#  # We only test compute-sanitizer on python 3.12 arbitrarily; we don't need to use sanitizer on the entire matrix
+#  # Only local ctk installs have compute-sanitizer; there is no wheel for it
+#  if [[ "${PY_VER}" == "3.12" && "${CUDA_VER}" != "11.8.0" && "${LOCAL_CTK}" == 1 && "${HOST_PLATFORM}" == linux* ]]; then
+#    echo "LATEST_CUDA_VERSION=$(bash .github/workflows/guess_latest.sh $TEST_CUDA_MAJOR)" >> $GITHUB_ENV
+#    SETUP_SANITIZER=1
+#  else
+#    SETUP_SANITIZER=0
+#    echo "SANITIZER_CMD=" >> $GITHUB_ENV
+#  fi
   {
-    echo "SETUP_SANITIZER=${SETUP_SANITIZER}"
-    echo "SKIP_CUDA_BINDINGS_TEST=${SKIP_CUDA_BINDINGS_TEST}"
-    echo "SKIP_CYTHON_TEST=${SKIP_CYTHON_TEST}"
+#    echo "SETUP_SANITIZER=${SETUP_SANITIZER}"
+#    echo "SKIP_NUMBA_CUDA_TEST=${SKIP_NUMBA_CUDA_TEST}"
+    echo "SANITIZER_CMD="
     echo "TEST_CUDA_MAJOR=${TEST_CUDA_MAJOR}"
   } >> $GITHUB_ENV
 fi
 
 {
-  echo "CUDA_BINDINGS_ARTIFACT_BASENAME=${CUDA_BINDINGS_ARTIFACT_BASENAME}"
-  echo "CUDA_BINDINGS_ARTIFACT_NAME=${CUDA_BINDINGS_ARTIFACT_BASENAME}-${SHA}"
-  echo "CUDA_BINDINGS_ARTIFACTS_DIR=$(realpath "${REPO_DIR}/cuda_bindings/dist")"
-  echo "CUDA_BINDINGS_CYTHON_TESTS_DIR=$(realpath "${REPO_DIR}/cuda_bindings/tests/cython")"
+  echo "NUMBA_CUDA_ARTIFACT_BASENAME=${NUMBA_CUDA_ARTIFACT_BASENAME}"
+  echo "NUMBA_CUDA_ARTIFACT_NAME=${NUMBA_CUDA_ARTIFACT_BASENAME}-${SHA}"
+  echo "NUMBA_CUDA_TEST_ARTIFACT_NAME=numba-cuda-${HOST_PLATFORM}-${SHA}-test"
+  echo "NUMBA_CUDA_ARTIFACTS_DIR=$(realpath "${REPO_DIR}/dist")"
 } >> $GITHUB_ENV
