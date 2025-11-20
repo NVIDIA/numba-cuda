@@ -75,6 +75,30 @@ class TestCacheHints(CUDATestCase):
 
                     self.assertIn(f"ld.global.{modifier}.b{bitwidth}", ptx)
 
+    def test_loads_2d(self):
+        for operator, modifier in load_operators:
+
+            @cuda.jit
+            def f(r, x):
+                for i in range(x.shape[0]):
+                    for j in range(x.shape[1]):
+                        r[i, j] = operator(x, (i, j))
+
+            for ty in tested_types:
+                x = np.arange(12).reshape(3, 4).astype(ty)
+                numba_type = typeof(x)
+                bitwidth = numba_type.dtype.bitwidth
+
+                with self.subTest(operator=operator, ty=ty, dims=2):
+                    r = np.zeros_like(x)
+                    f[1, 1](r, x)
+                    np.testing.assert_equal(r, x)
+
+                    sig = (numba_type, numba_type)
+                    ptx = f.inspect_asm(signature=sig)
+
+                    self.assertIn(f"ld.global.{modifier}.b{bitwidth}", ptx)
+
     def test_stores(self):
         for operator, modifier in store_operators:
 
@@ -110,6 +134,30 @@ class TestCacheHints(CUDATestCase):
 
                     sig = (ptr_type, numba_type, types.intp)
                     ptx, _ = cuda.compile_ptx(f_ptr, sig)
+
+                    self.assertIn(f"st.global.{modifier}.b{bitwidth}", ptx)
+
+    def test_stores_2d(self):
+        for operator, modifier in store_operators:
+
+            @cuda.jit
+            def f(r, x):
+                for i in range(x.shape[0]):
+                    for j in range(x.shape[1]):
+                        operator(r, (i, j), x[i, j])
+
+            for ty in tested_types:
+                x = np.arange(12).reshape(3, 4).astype(ty)
+                numba_type = typeof(x)
+                bitwidth = numba_type.dtype.bitwidth
+
+                with self.subTest(operator=operator, ty=ty):
+                    r = np.zeros_like(x)
+                    f[1, 1](r, x)
+                    np.testing.assert_equal(r, x)
+
+                    sig = (numba_type, numba_type)
+                    ptx = f.inspect_asm(signature=sig)
 
                     self.assertIn(f"st.global.{modifier}.b{bitwidth}", ptx)
 

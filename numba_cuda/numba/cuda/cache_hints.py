@@ -76,11 +76,13 @@ def _validate_arguments(instruction, array, index):
     if isinstance(index, types.UniTuple):
         if is_pointer:
             msg = f"Pointers only support scalar indexing, got tuple of {index.count}"
+            raise NumbaTypeError(msg)
+
         if index.count != array.ndim:
             msg = f"Expected {array.ndim} indices, got {index.count}"
             raise NumbaTypeError(msg)
 
-        if all(isinstance(t, types.Integer) for t in index.dtype):
+        if isinstance(index.dtype, types.Integer):
             valid_index = True
 
     if not valid_index:
