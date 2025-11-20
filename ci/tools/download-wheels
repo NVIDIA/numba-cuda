@@ -35,7 +35,7 @@ echo "Downloading wheels for component: $COMPONENT from run: $RUN_ID"
 # Download component wheels using the same logic as release.yml
 if [[ "$COMPONENT" == "all" ]]; then
     # Download all component patterns
-    gh run download "$RUN_ID" -p "cuda-*" -R "$REPOSITORY"
+    gh run download "$RUN_ID" -p "numba*" -R "$REPOSITORY"
 else
     gh run download "$RUN_ID" -p "${COMPONENT}*" -R "$REPOSITORY"
 fi
@@ -44,7 +44,7 @@ fi
 mkdir -p "$OUTPUT_DIR"
 
 # Process downloaded artifacts
-for p in cuda-*
+for p in numba*
 do
     if [[ ! -d "$p" ]]; then
         continue
@@ -69,7 +69,7 @@ do
 done
 
 # Clean up artifact directories
-rm -rf cuda-*
+rm -rf numba*
 
 echo "Downloaded wheels to: $OUTPUT_DIR"
 ls -la "$OUTPUT_DIR"

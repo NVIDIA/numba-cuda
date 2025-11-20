@@ -13,9 +13,6 @@ on:
       host-platform:
         type: string
         required: true
-      build-ctk-ver:
-        type: string
-        required: true
       matrix_filter:
         type: string
         default: "."
@@ -83,7 +80,6 @@ jobs:
     # The build stage could fail but we want the CI to keep moving.
     if: ${{ github.repository_owner == 'nvidia' && !cancelled() }}
     # Our self-hosted runners require a container
-    # TODO: use a different (nvidia?) container
     container:
       options: -u root --security-opt seccomp=unconfined --shm-size 16g
       image: ubuntu:22.04
@@ -110,7 +106,6 @@ jobs:
 
       - name: Set environment variables
         env:
-          BUILD_CUDA_VER: ${{ inputs.build-ctk-ver }}
           CUDA_VER: ${{ matrix.CUDA_VER }}
           HOST_PLATFORM: ${{ inputs.host-platform }}
           LOCAL_CTK: ${{ matrix.LOCAL_CTK }}
@@ -118,107 +113,28 @@ jobs:
           SHA: ${{ github.sha }}
         run: ./ci/tools/env-vars test
 
-      - name: Download cuda-pathfinder build artifacts
+      - name: Download numba-cuda build artifacts
+        if: ${{ env.SKIP_NUMBA_CUDA_TEST == '0'}}
         uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0  # v5.0.0
         with:
-          name: cuda-pathfinder-wheel
-          path: ./cuda_pathfinder
+          name: ${{ env.NUMBA_CUDA_ARTIFACT_NAME }}
+          path: ${{ env.NUMBA_CUDA_ARTIFACTS_DIR }}
 
-      - name: Download cuda-python build artifacts
-        if: ${{ env.SKIP_CUDA_BINDINGS_TEST == '0'}}
-        uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0  # v5.0.0
-        with:
-          name: cuda-python-wheel
-          path: .
-
-      - name: Download cuda.bindings build artifacts
-        if: ${{ env.SKIP_CUDA_BINDINGS_TEST == '0'}}
-        uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0  # v5.0.0
-        with:
-          name: ${{ env.CUDA_BINDINGS_ARTIFACT_NAME }}
-          path: ${{ env.CUDA_BINDINGS_ARTIFACTS_DIR }}
-
-      - name: Download cuda-python & cuda.bindings build artifacts from the prior branch
-        if: ${{ env.SKIP_CUDA_BINDINGS_TEST == '1'}}
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          # See https://github.com/cli/cli/blob/trunk/docs/install_linux.md#debian-ubuntu-linux-raspberry-pi-os-apt.
-          # gh is needed for artifact fetching.
-          mkdir -p -m 755 /etc/apt/keyrings \
-                && out=$(mktemp) && wget -nv -O$out https://cli.github.com/packages/githubcli-archive-keyring.gpg \
-                && cat $out | tee /etc/apt/keyrings/githubcli-archive-keyring.gpg > /dev/null \
-          && chmod go+r /etc/apt/keyrings/githubcli-archive-keyring.gpg \
-          && echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | tee /etc/apt/sources.list.d/github-cli.list > /dev/null \
-          && apt update \
-          && apt install gh -y
-
-          OLD_BRANCH=$(cat .github/BACKPORT_BRANCH)
-          OLD_BASENAME="cuda-bindings-python${PYTHON_VERSION_FORMATTED}-cuda*-${{ inputs.host-platform }}*"
-          LATEST_PRIOR_RUN_ID=$(gh run list -b ${OLD_BRANCH} -L 1 -w "ci.yml" -s completed -R NVIDIA/cuda-python --json databaseId | jq '.[]| .databaseId')
-          if [[ "$LATEST_PRIOR_RUN_ID" == "" ]]; then
-            echo "LATEST_PRIOR_RUN_ID not found!"
-            exit 1
-          fi
-
-          gh run download $LATEST_PRIOR_RUN_ID -p ${OLD_BASENAME} -R NVIDIA/cuda-python
-          rm -rf ${OLD_BASENAME}-tests  # exclude cython test artifacts
-          ls -al $OLD_BASENAME
-          mkdir -p "${{ env.CUDA_BINDINGS_ARTIFACTS_DIR }}"
-          mv $OLD_BASENAME/*.whl "${{ env.CUDA_BINDINGS_ARTIFACTS_DIR }}"/
-          rmdir $OLD_BASENAME
-
-          gh run download $LATEST_PRIOR_RUN_ID -p cuda-python-wheel -R NVIDIA/cuda-python
-          ls -al cuda-python-wheel
-          mv cuda-python-wheel/*.whl .
-          rmdir cuda-python-wheel
-
-      - name: Display structure of downloaded cuda-python artifacts
+      - name: Display structure of downloaded numba-cuda artifacts
         run: |
           pwd
-          ls -lahR .
+          ls -lahR $NUMBA_CUDA_ARTIFACTS_DIR
 
-      - name: Display structure of downloaded cuda.bindings artifacts
-        run: |
-          pwd
-          ls -lahR $CUDA_BINDINGS_ARTIFACTS_DIR
-
-      - name: Download cuda.bindings Cython tests
-        if: ${{ env.SKIP_CYTHON_TEST == '0' }}
+      - name: Download numba-cuda test artifacts
         uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0  # v5.0.0
         with:
-          name: ${{ env.CUDA_BINDINGS_ARTIFACT_NAME }}-tests
-          path: ${{ env.CUDA_BINDINGS_CYTHON_TESTS_DIR }}
+          name: ${{ env.NUMBA_CUDA_TEST_ARTIFACT_NAME }}-cu${{ env.TEST_CUDA_MAJOR }}
+          path: testing/
 
-      - name: Display structure of downloaded cuda.bindings Cython tests
-        if: ${{ env.SKIP_CYTHON_TEST == '0' }}
+      - name: Display structure of downloaded numba-cuda test artifacts
         run: |
           pwd
-          ls -lahR $CUDA_BINDINGS_CYTHON_TESTS_DIR
-
-      - name: Download cuda.core build artifacts
-        uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0  # v5.0.0
-        with:
-          name: ${{ env.CUDA_CORE_ARTIFACT_NAME }}
-          path: ${{ env.CUDA_CORE_ARTIFACTS_DIR }}
-
-      - name: Display structure of downloaded cuda.core build artifacts
-        run: |
-          pwd
-          ls -lahR $CUDA_CORE_ARTIFACTS_DIR
-
-      - name: Download cuda.core Cython tests
-        if: ${{ env.SKIP_CYTHON_TEST == '0' }}
-        uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0  # v5.0.0
-        with:
-          name: ${{ env.CUDA_CORE_ARTIFACT_NAME }}-tests
-          path: ${{ env.CUDA_CORE_CYTHON_TESTS_DIR }}
-
-      - name: Display structure of downloaded cuda.core Cython tests
-        if: ${{ env.SKIP_CYTHON_TEST == '0' }}
-        run: |
-          pwd
-          ls -lahR $CUDA_CORE_CYTHON_TESTS_DIR
+          ls -lahR testing/
 
       - name: Set up Python ${{ matrix.PY_VER }}
         uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065  # v5.6.0
@@ -236,55 +152,21 @@ jobs:
           host-platform: ${{ inputs.host-platform }}
           cuda-version: ${{ matrix.CUDA_VER }}
 
-      - name: Set up latest cuda_sanitizer_api
-        if: ${{ env.SETUP_SANITIZER == '1' }}
-        uses: ./.github/actions/fetch_ctk
-        continue-on-error: false
-        with:
-          host-platform: ${{ inputs.host-platform }}
-          cuda-version: ${{ env.LATEST_CUDA_VERSION }}
-          cuda-components: "cuda_sanitizer_api"
+#      - name: Set up latest cuda_sanitizer_api
+#        if: ${{ env.SETUP_SANITIZER == '1' }}
+#        uses: ./.github/actions/fetch_ctk
+#        continue-on-error: false
+#        with:
+#          host-platform: ${{ inputs.host-platform }}
+#          cuda-version: ${{ env.LATEST_CUDA_VERSION }}
+#          cuda-components: "cuda_sanitizer_api"
+#
+#      - name: Set up compute-sanitizer
+#        run: setup-sanitizer
 
-      - name: Set up compute-sanitizer
-        run: setup-sanitizer
-
-      - name: Run cuda.pathfinder tests with see_what_works
-        env:
-          CUDA_PATHFINDER_TEST_LOAD_NVIDIA_DYNAMIC_LIB_STRICTNESS: see_what_works
-          CUDA_PATHFINDER_TEST_FIND_NVIDIA_HEADERS_STRICTNESS: see_what_works
-        run: run-tests pathfinder
-
-      - name: Run cuda.bindings tests
-        if: ${{ env.SKIP_CUDA_BINDINGS_TEST == '0' }}
+      - name: Run numba-cuda tests
+        if: ${{ env.SKIP_NUMBA_CUDA_TEST == '0' }}
         env:
           CUDA_VER: ${{ matrix.CUDA_VER }}
           LOCAL_CTK: ${{ matrix.LOCAL_CTK }}
-        run: run-tests bindings
-
-      - name: Run cuda.core tests
-        env:
-          CUDA_VER: ${{ matrix.CUDA_VER }}
-          LOCAL_CTK: ${{ matrix.LOCAL_CTK }}
-        run: run-tests core
-
-      - name: Ensure cuda-python installable
-        run: |
-          if [[ "${{ matrix.LOCAL_CTK }}" == 1 ]]; then
-            pip install cuda_python*.whl
-          else
-            pip install $(ls cuda_python*.whl)[all]
-          fi
-
-      - name: Install cuda.pathfinder extra wheels for testing
-        run: |
-          set -euo pipefail
-          pushd cuda_pathfinder
-          pip install --only-binary=:all: -v . --group "test-cu${TEST_CUDA_MAJOR}"
-          pip list
-          popd
-
-      - name: Run cuda.pathfinder tests with all_must_work
-        env:
-          CUDA_PATHFINDER_TEST_LOAD_NVIDIA_DYNAMIC_LIB_STRICTNESS: all_must_work
-          CUDA_PATHFINDER_TEST_FIND_NVIDIA_HEADERS_STRICTNESS: all_must_work
-        run: run-tests pathfinder
+        run: run-tests
