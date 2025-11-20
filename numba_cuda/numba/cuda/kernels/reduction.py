@@ -239,7 +239,7 @@ class Reduce(object):
         partials_size = full_blockct
         if size_partial:
             partials_size += 1
-        partials = cuda.device_array(shape=partials_size, dtype=arr.dtype)
+        partials = cuda._api._device_array(shape=partials_size, dtype=arr.dtype)
 
         if size_full:
             # kernel for the fully populated threadblocks

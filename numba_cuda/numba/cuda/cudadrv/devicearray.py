@@ -322,7 +322,7 @@ class DeviceNDArrayBase(_devicearray.DeviceArray):
             end = min(begin + section, self.size)
             shape = (end - begin,)
             gpu_data = self.gpu_data.view(begin * itemsize, end * itemsize)
-            yield _DeviceNDArray(
+            yield DeviceNDArray._create_nowarn(
                 shape,
                 strides,
                 dtype=self.dtype,
@@ -370,7 +370,7 @@ class DeviceNDArrayBase(_devicearray.DeviceArray):
 
     def _squeeze(self, axis=None, stream=0):
         new_dummy, _ = self._dummy.squeeze(axis=axis)
-        return _DeviceNDArray(
+        return DeviceNDArray._create_nowarn(
             shape=new_dummy.shape,
             strides=new_dummy.strides,
             dtype=self.dtype,
@@ -407,7 +407,7 @@ class DeviceNDArrayBase(_devicearray.DeviceArray):
 
             strides[-1] = dtype.itemsize
 
-        return _DeviceNDArray(
+        return DeviceNDArray._create_nowarn(
             shape=shape,
             strides=strides,
             dtype=dtype,
@@ -480,7 +480,7 @@ class DeviceRecord(DeviceNDArrayBase):
             shape, strides, dtype = prepare_shape_strides_dtype(
                 typ.shape, None, typ.subdtype[0], "C"
             )
-            return _DeviceNDArray(
+            return DeviceNDArray._create_nowarn(
                 shape=shape,
                 strides=strides,
                 dtype=dtype,
@@ -571,11 +571,24 @@ def _assign_kernel(ndim):
     return kernel
 
 
-class _DeviceNDArray(DeviceNDArrayBase):
+class DeviceNDArray(DeviceNDArrayBase):
     """
-    An on-GPU array type (internal implementation class formerly named
-    DeviceNDArray)
+    An on-GPU array type
     """
+
+    def __init__(self, *args, **kwargs):
+        warnings.warn(
+            "DeviceNDArray is deprecated. Please prefer cupy for array operations.",
+            DeprecatedDeviceArrayApiWarning,
+        )
+        super().__init__(*args, **kwargs)
+
+    @classmethod
+    def _create_nowarn(cls, *args, **kwargs):
+        """Create a DeviceNDArray without the deprecation warning."""
+        instance = cls.__new__(cls)
+        DeviceNDArrayBase.__init__(instance, *args, **kwargs)
+        return instance
 
     def is_f_contiguous(self):
         """
@@ -614,7 +627,6 @@ class _DeviceNDArray(DeviceNDArrayBase):
     def __len__(self):
         return self.shape[0]
 
-    @deprecated_array_api
     def reshape(self, *newshape, **kws):
         """
         Reshape the array without changing its contents, similarly to
@@ -622,10 +634,6 @@ class _DeviceNDArray(DeviceNDArrayBase):
 
             d_arr = d_arr.reshape(20, 50, order="F")
         """
-
-        return self._reshape(*newshape, **kws)
-
-    def _reshape(self, *newshape, **kws):
         if len(newshape) == 1 and isinstance(newshape[0], (tuple, list)):
             newshape = newshape[0]
 
@@ -651,7 +659,6 @@ class _DeviceNDArray(DeviceNDArrayBase):
         else:
             raise NotImplementedError("operation requires copying")
 
-    @deprecated_array_api
     def ravel(self, order="C", stream=0):
         """
         Flattens a contiguous array without changing its contents, similar to
@@ -675,12 +682,10 @@ class _DeviceNDArray(DeviceNDArrayBase):
             raise NotImplementedError("operation requires copying")
 
     @devices.require_context
-    @deprecated_array_api
     def __getitem__(self, item):
         return self._do_getitem(item)
 
     @devices.require_context
-    @deprecated_array_api
     def getitem(self, item, stream=0):
         """Do `__getitem__(item)` with CUDA stream"""
         return self._do_getitem(item, stream)
@@ -779,7 +784,7 @@ class _DeviceNDArray(DeviceNDArrayBase):
         rhs_shape = np.ones(lhs.ndim, dtype=np.int64)
         # negative indices would not work if rhs.ndim == 0
         rhs_shape[lhs.ndim - rhs.ndim :] = rhs.shape
-        rhs = rhs._reshape(*rhs_shape)
+        rhs = rhs.reshape(*rhs_shape)
         for i, (l, r) in enumerate(zip(lhs.shape, rhs.shape)):
             if r != 1 and l != r:
                 raise ValueError(
@@ -793,7 +798,6 @@ class _DeviceNDArray(DeviceNDArrayBase):
         _assign_kernel(lhs.ndim).forall(n_elements, stream=stream)(lhs, rhs)
         if synchronous:
             stream.synchronize()
-
 
 class IpcArrayHandle(object):
     """
@@ -826,7 +830,7 @@ class IpcArrayHandle(object):
         original process.  Must not be used on the original process.
         """
         dptr = self._ipc_handle.open(devices.get_context())
-        return _DeviceNDArray(gpu_data=dptr, **self._array_desc)
+        return DeviceNDArray._create_nowarn(gpu_data=dptr, **self._array_desc)
 
     def close(self):
         """
@@ -872,7 +876,7 @@ def from_array_like(ary, stream=0, gpu_data=None):
 
 
 def _from_array_like(ary, stream=0, gpu_data=None):
-    return _DeviceNDArray(
+    return DeviceNDArray._create_nowarn(
         ary.shape, ary.strides, ary.dtype, stream=stream, gpu_data=gpu_data
     )
 
@@ -897,11 +901,7 @@ def array_core(ary):
     core_index = []
     for stride in ary.strides:
         core_index.append(0 if stride == 0 else slice(None))
-
-    if isinstance(ary, _DeviceNDArray):
-        return ary._do_getitem(tuple(core_index))
-    else:
-        return ary[tuple(core_index)]
+    return ary[tuple(core_index)]
 
 
 def is_contiguous(ary):
@@ -981,14 +981,8 @@ def auto_device(obj, stream=0, copy=True, user_explicit=False):
 
 
 def check_array_compatibility(ary1, ary2):
-    if isinstance(ary1, _DeviceNDArray):
-        ary1sq = ary1._squeeze()
-    else:
-        ary1sq = ary1.squeeze()
-    if isinstance(ary2, _DeviceNDArray):
-        ary2sq = ary2._squeeze()
-    else:
-        ary2sq = ary2.squeeze()
+    ary1sq = ary1.squeeze()
+    ary2sq = ary2.squeeze()
     if ary1.dtype != ary2.dtype:
         raise TypeError(
             "incompatible dtype: %s vs. %s" % (ary1.dtype, ary2.dtype)
@@ -1003,33 +997,3 @@ def check_array_compatibility(ary1, ary2):
         raise ValueError(
             "incompatible strides: %s vs. %s" % (ary1.strides, ary2.strides)
         )
-
-
-class DeviceNDArray(_DeviceNDArray):
-    """
-    Deprecated public wrapper around the implementation class _DeviceNDArray.
-
-    Instantiating this class will emit a DeprecatedDeviceArrayApiWarning indicating that the
-    public name DeviceNDArray is deprecated. The implementation class is now
-    named _DeviceNDArray; code should migrate to that name.
-    """
-
-    def __init__(self, *args, **kwargs):
-        breakpoint()
-        warnings.warn(
-            "DeviceNDArray api is deprecated. Please prefer cupy for array functions",
-            DeprecatedDeviceArrayApiWarning,
-        )
-        super().__init__(*args, **kwargs)
-
-    @classmethod
-    def _legacy_ctor(cls, *args, **kwargs):
-        """
-        Legacy constructor that does not emit a deprecation warning.
-        Useful for APIs like vectorize and guvectorize that need to
-        continue to return the deprecated class right now for backwards
-        compatibility.
-        """
-        instance = cls.__new__(cls)
-        _DeviceNDArray.__init__(instance, *args, **kwargs)
-        return instance 

@@ -369,7 +369,6 @@ class UFuncMechanism(object):
         if out is None:
             # No output is provided
             devout = cr.allocate_device_array(shape, resty, stream=stream)
-            breakpoint()
             devarys.extend([devout])
             cr.launch(func, shape[0], stream, devarys)
 

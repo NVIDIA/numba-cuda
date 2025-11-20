@@ -1716,7 +1716,7 @@ class IpcHandle(object):
             strides = dtype.itemsize
         dptr = self.open(context)
         # read the device pointer as an array
-        return devicearray._DeviceNDArray(
+        return devicearray.DeviceNDArray._create_nowarn(
             shape=shape, strides=strides, dtype=dtype, gpu_data=dptr
         )
 

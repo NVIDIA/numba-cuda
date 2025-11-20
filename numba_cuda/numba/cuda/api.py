@@ -14,6 +14,7 @@ from .cudadrv import devicearray, devices, driver
 from numba.cuda.core import config
 from numba.cuda.api_util import prepare_shape_strides_dtype
 from numba.cuda.cudadrv.devicearray import DeprecatedDeviceArrayApiWarning
+from . import _api
 
 # NDarray device helper
 
@@ -23,60 +24,37 @@ gpus = devices.gpus
 
 
 def from_cuda_array_interface(desc, owner=None, sync=True):
-    """Create a _DeviceNDArray from a cuda-array-interface description.
+    """Create a DeviceNDArray from a cuda-array-interface description.
     The ``owner`` is the owner of the underlying memory.
-    The resulting _DeviceNDArray will acquire a reference from it.
+    The resulting DeviceNDArray will acquire a reference from it.
 
     If ``sync`` is ``True``, then the imported stream (if present) will be
     synchronized.
     """
-    version = desc.get("version")
-    # Mask introduced in version 1
-    if 1 <= version:
-        mask = desc.get("mask")
-        # Would ideally be better to detect if the mask is all valid
-        if mask is not None:
-            raise NotImplementedError("Masked arrays are not supported")
-
-    shape = desc["shape"]
-    strides = desc.get("strides")
-
-    shape, strides, dtype = prepare_shape_strides_dtype(
-        shape, strides, desc["typestr"], order="C"
+    warnings.warn(
+        "Constructing DeviceNDArray objects via the __cuda_array_interface__ "
+        "is now deprecated. Please prefer cupy for constructing device arrays."
     )
-    size = driver.memory_size_from_info(shape, strides, dtype.itemsize)
+    return _api._from_cuda_array_interface(desc, owner=owner, sync=sync)
 
-    cudevptr_class = driver.binding.CUdeviceptr
-    devptr = cudevptr_class(desc["data"][0])
-    data = driver.MemoryPointer(devptr, size=size, owner=owner)
-    stream_ptr = desc.get("stream", None)
-    if stream_ptr is not None:
-        stream = external_stream(stream_ptr)
-        if sync and config.CUDA_ARRAY_INTERFACE_SYNC:
-            stream.synchronize()
-    else:
-        stream = 0  # No "Numba default stream", not the CUDA default stream
-    da = devicearray._DeviceNDArray(
-        shape=shape, strides=strides, dtype=dtype, gpu_data=data, stream=stream
-    )
-    return da
 
 
 def as_cuda_array(obj, sync=True):
-    """Create a _DeviceNDArray from any object that implements
+    """Create a DeviceNDArray from any object that implements
     the :ref:`cuda array interface <cuda-array-interface>`.
 
     A view of the underlying GPU buffer is created.  No copying of the data
-    is done.  The resulting _DeviceNDArray will acquire a reference from `obj`.
+    is done.  The resulting DeviceNDArray will acquire a reference from `obj`.
 
     If ``sync`` is ``True``, then the imported stream (if present) will be
     synchronized.
     """
-    if (
-        interface := getattr(obj, "__cuda_array_interface__", None)
-    ) is not None:
-        return from_cuda_array_interface(interface, owner=obj, sync=sync)
-    raise TypeError("*obj* doesn't implement the cuda array interface.")
+    warnings.warn(
+        "Constructing DeviceNDArray objects via as_cuda_array is now deprecated. "
+        "Please prefer cupy for constructing device arrays.",
+        DeprecatedDeviceArrayApiWarning,
+    )
+    return _api._as_cuda_array(obj, sync=sync)
 
 
 def is_cuda_array(obj):
@@ -165,7 +143,7 @@ def _device_array(shape, dtype=np.float64, strides=None, order="C", stream=0):
     shape, strides, dtype = prepare_shape_strides_dtype(
         shape, strides, dtype, order
     )
-    return devicearray._DeviceNDArray(
+    return devicearray.DeviceNDArray._create_nowarn(
         shape=shape, strides=strides, dtype=dtype, stream=stream
     )
 
