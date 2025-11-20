@@ -23,7 +23,7 @@ if not (
 ):
     raise ImportError(
         "NVIDIA CUDA Python bindings not found. Install the 'cuda' package "
-        "(e.g. pip install nvidia-cuda-python or numba-cuda[cuXY])."
+        "(e.g. pip install cuda-python or numba-cuda[cuXY])."
     )
 
 if config.ENABLE_CUDASIM:
