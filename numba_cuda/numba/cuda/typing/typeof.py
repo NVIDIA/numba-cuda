@@ -193,7 +193,7 @@ def _typeof_list(val, c):
     ty = typeof_impl(val[0], c)
     if ty is None:
         raise ValueError(f"Cannot type list element type {type(val[0])}")
-    return types.List(ty, reflected=True)
+    return ty[::1]
 
 
 @typeof_impl.register(set)
