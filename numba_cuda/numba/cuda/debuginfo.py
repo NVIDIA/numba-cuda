@@ -855,7 +855,7 @@ class CUDADIBuilder(DIBuilder):
                     }
                     dwarf_addrclass = self.get_dwarf_address_class(addrspace)
                     if dwarf_addrclass is not None:
-                        meta_ptr["dwarfAddressSpace"] = dwarf_addrclass
+                        meta_ptr["dwarfAddressSpace"] = int(dwarf_addrclass)
                     basetype = m.add_debug_info("DIDerivedType", meta_ptr)
                 else:
                     basetype = self._var_type(
