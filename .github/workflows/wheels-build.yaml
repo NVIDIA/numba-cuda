@@ -158,15 +158,31 @@ jobs:
         with:
           name: sdist-py${{ matrix.PY_VER }}-${{ matrix.ARCH }}
           path: ${{ env.sdist_path }}
+      - name: Remove sdist
+        run: rm dist/*.tar.gz
+        if: ${{ !(matrix.ARCH == 'amd64' && matrix.PY_VER == '3.10' && matrix.CUDA_VER == '12.8.0') }}
       - name: Upload wheel
         if: "!cancelled()"
         uses: actions/upload-artifact@v4
         with:
-          name: wheel-py${{ matrix.PY_VER }}-${{ matrix.ARCH }}
+          name: wheel-py${{ matrix.PY_VER }}-${{ matrix.ARCH }}-linux
           path: ${{ env.wheel_path }}
-      - name: Remove sdist
-        run: rm dist/*.tar.gz
-        if: ${{ !(matrix.ARCH == 'amd64' && matrix.PY_VER == '3.10' && matrix.CUDA_VER == '12.8.0') }}
+  publish:
+    name: Publish wheels for Linux
+    needs: [build]
+    permissions:
+      id-token: write
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Download wheels
+        uses: actions/download-artifact@v4
+        with:
+          pattern: wheel-py*-linux
+          path: dist/
+          merge-multiple: true
+      - name: Display structure of downloaded files
+        run: ls -R
       - name: Publish to PyPI (test)
         # if: inputs.upload_to_pypi
         uses: pypa/gh-action-pypi-publish@release/v1

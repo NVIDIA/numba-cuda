@@ -58,23 +58,19 @@ jobs:
           name: wheel-py${{ matrix.PY_VER }}-windows
           path: ${{ env.wheel_path }}
   publish:
-    name: Publish ${{ matrix.PY_VER }}, windows
+    name: Publish wheels for windows
     needs: [build]
+    permissions:
+      id-token: write
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        PY_VER:
-          - "3.10"
-          - "3.11"
-          - "3.12"
-          - "3.13"
     timeout-minutes: 10
     steps:
       - name: Download wheel
         uses: actions/download-artifact@v4
         with:
-          name: wheel-py${{ matrix.PY_VER }}-windows
-          path: dist
+          pattern: wheel-py*-windows
+          path: dist/
+          merge-multiple: true
       - name: Display structure of downloaded files
         run: ls -R
       - name: Publish to PyPI (test)
