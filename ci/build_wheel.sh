@@ -9,7 +9,7 @@ python -m pip install build
 
 rapids-logger "Build sdist and wheel"
 python -m build .
-auditwheel repair -w ../final-dist dist/*.whl
+auditwheel repair -w final-dist dist/*.whl
 echo "Repaired wheel $(ls -lh final-dist)"
 
 wheel_path=$(realpath ./final-dist/numba_cuda-*.whl)
