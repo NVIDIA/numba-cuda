@@ -13,9 +13,6 @@ on:
       script:
         type: string
         default: "./ci/build_wheel.ps1"
-      upload_to_pypi:
-        type: boolean
-        required: false
 
 jobs:
   build:
@@ -57,25 +54,3 @@ jobs:
         with:
           name: wheel-py${{ matrix.PY_VER }}-windows
           path: ${{ env.wheel_path }}
-  publish:
-    name: Publish wheels for windows
-    needs: [build]
-    permissions:
-      id-token: write
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    steps:
-      - name: Download wheel
-        uses: actions/download-artifact@v4
-        with:
-          pattern: wheel-py*-windows
-          path: dist/
-          merge-multiple: true
-      - name: Display structure of downloaded files
-        run: ls -R
-      - name: Publish to PyPI (test)
-        # if: inputs.upload_to_pypi
-        uses: pypa/gh-action-pypi-publish@release/v1
-        with:
-          repository-url: https://test.pypi.org/legacy/
-          verbose: true

@@ -50,9 +50,6 @@ on:
         required: false
         type: string
         default: ''
-      upload_to_pypi:
-        type: boolean
-        required: false
 
 defaults:
   run:
@@ -167,25 +164,3 @@ jobs:
         with:
           name: wheel-py${{ matrix.PY_VER }}-${{ matrix.ARCH }}-linux
           path: ${{ env.wheel_path }}
-  publish:
-    name: Publish wheels for Linux
-    needs: [build]
-    permissions:
-      id-token: write
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    steps:
-      - name: Download wheels
-        uses: actions/download-artifact@v4
-        with:
-          pattern: wheel-py*-linux
-          path: dist/
-          merge-multiple: true
-      - name: Display structure of downloaded files
-        run: ls -R
-      - name: Publish to PyPI (test)
-        # if: inputs.upload_to_pypi
-        uses: pypa/gh-action-pypi-publish@release/v1
-        with:
-          repository-url: https://test.pypi.org/legacy/
-          verbose: true

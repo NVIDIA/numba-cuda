@@ -4,6 +4,7 @@
 name: Publish packages
 
 on:
+  workflow_call:
   push:
     tags:
       - 'v*'
@@ -52,6 +53,27 @@ jobs:
     secrets: inherit
     with:
       upload_to_pypi: true
+  publish-wheels:
+    name: Publish wheels to PyPi
+    needs: [build-wheels, build-wheels-windows]
+    permissions:
+      id-token: write
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Download wheels
+        uses: actions/download-artifact@v4
+        with:
+          pattern: wheel-py*
+          path: dist/
+          merge-multiple: true
+      - name: Display structure of downloaded files
+        run: ls -R
+      - name: Publish to PyPI (test)
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          repository-url: https://test.pypi.org/legacy/
+          verbose: true
   build-docs:
     uses: ./.github/workflows/docs-build.yaml
   deploy-docs:
