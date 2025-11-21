@@ -176,6 +176,7 @@ runs:
         # mimics actual CTK installation
         if [[ "${{ inputs.host-platform }}" == linux* ]]; then
           CUDA_PATH=$(realpath "${{ inputs.cuda-path }}")
+          echo "${CUDA_PATH}/bin" >> $GITHUB_PATH
           echo "LD_LIBRARY_PATH=${CUDA_PATH}/lib:${LD_LIBRARY_PATH:-}" >> $GITHUB_ENV
         elif [[ "${{ inputs.host-platform }}" == win* ]]; then
           function normpath() {
