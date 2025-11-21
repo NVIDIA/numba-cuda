@@ -171,6 +171,7 @@ jobs:
           pushd testing
           if [[ "${{ inputs.host-platform }}" == linux* ]]; then
             PATH=$(dirname ${SCCACHE_PATH}):${CUDA_PATH}/bin:${PATH}
+            SCCACHE_GHA_ENABLED=true
           fi
           CUDA_MAJOR="$(cut -d '.' -f 1 <<< ${{ inputs.cuda-version }})"
           # used in testing/Makefile
@@ -204,6 +205,7 @@ jobs:
           pushd testing
           if [[ "${{ inputs.host-platform }}" == linux* ]]; then
             PATH=$(dirname ${SCCACHE_PATH}):${CUDA_PATH}/bin:${PATH}
+            SCCACHE_GHA_ENABLED=true
           fi
           CUDA_MAJOR="$(cut -d '.' -f 1 <<< ${{ inputs.prev-cuda-version }})"
           # used in testing/Makefile
