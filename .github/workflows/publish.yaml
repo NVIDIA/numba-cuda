@@ -38,7 +38,7 @@ jobs:
       build_type: release
       script: "ci/build_conda.sh"
       matrix: ${{ needs.compute-matrix.outputs.BUILD_MATRIX }}
-      upload_to_anaconda: true
+      upload_to_anaconda: false
   build-wheels:
     needs: compute-matrix
     uses: ./.github/workflows/wheels-build.yaml
@@ -47,12 +47,9 @@ jobs:
       build_type: release
       script: "ci/build_wheel.sh"
       matrix: ${{ needs.compute-matrix.outputs.BUILD_MATRIX }}
-      upload_to_pypi: true
   build-wheels-windows:
     uses: ./.github/workflows/wheel-windows-build.yaml
     secrets: inherit
-    with:
-      upload_to_pypi: true
   publish-wheels:
     name: Publish wheels to PyPi
     needs: [build-wheels, build-wheels-windows]
