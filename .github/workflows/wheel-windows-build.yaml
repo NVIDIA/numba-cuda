@@ -78,7 +78,7 @@ jobs:
       - name: Display structure of downloaded files
         run: ls -R
       - name: Publish to PyPI (test)
-        if: inputs.upload_to_pypi
+        # if: inputs.upload_to_pypi
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
           repository-url: https://test.pypi.org/legacy/
