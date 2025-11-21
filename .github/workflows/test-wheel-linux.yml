@@ -151,6 +151,7 @@ jobs:
         with:
           host-platform: ${{ inputs.host-platform }}
           cuda-version: ${{ matrix.CUDA_VER }}
+          cuda-components: "cuda_nvcc,cuda_cudart,cuda_crt,libnvvm,cuda_nvrtc,cuda_cccl,libnvjitlink,cuda_cuobjdump"
 
 #      - name: Set up latest cuda_sanitizer_api
 #        if: ${{ env.SETUP_SANITIZER == '1' }}
@@ -169,4 +170,5 @@ jobs:
         env:
           CUDA_VER: ${{ matrix.CUDA_VER }}
           LOCAL_CTK: ${{ matrix.LOCAL_CTK }}
-        run: run-tests
+        run: |
+          run-tests

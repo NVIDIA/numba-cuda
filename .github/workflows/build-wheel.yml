@@ -226,6 +226,7 @@ jobs:
         with:
           host-platform: ${{ inputs.host-platform }}
           cuda-version: ${{ matrix.cuda-version }}
+          cuda-components: "cuda_nvcc,cuda_cudart,cuda_crt,libnvvm,cuda_nvrtc,cuda_cccl,libnvjitlink,cuda_cuobjdump"
 
       - name: Build numba-cuda test artifacts aginst CUDA ${{ matrix.cuda-version }}
         run: |
