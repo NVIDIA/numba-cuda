@@ -118,7 +118,7 @@ jobs:
         persist-credentials: false
     - uses: actions/download-artifact@v4
       with:
-        name: wheel-py${{ matrix.PY_VER }}-${{ matrix.ARCH }}
+        name: wheel-py${{ matrix.PY_VER }}-${{ matrix.ARCH }}-linux
         path: wheel
     - name: Display structure of downloaded files
       run: ls -R
