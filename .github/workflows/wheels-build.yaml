@@ -164,7 +164,10 @@ jobs:
         with:
           name: wheel-py${{ matrix.PY_VER }}-${{ matrix.ARCH }}
           path: ${{ env.wheel_path }}
-      - name: Publish wheel
+      - name: Remove sdist
+        run: rm dist/*.tar.gz
+        if: ${{ !(matrix.ARCH == "amd64" && matrix.PY_VER == "3.10" && matrix.CUDA_VER == "12.8.0") }}
+      - name: Publish to PyPI
         if: inputs.upload_to_pypi
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
