@@ -13,6 +13,9 @@ on:
       script:
         type: string
         default: "./ci/build_wheel.ps1"
+      upload_to_pypi:
+        type: boolean
+        required: false
 
 jobs:
   build:
@@ -54,3 +57,30 @@ jobs:
         with:
           name: wheel-py${{ matrix.PY_VER }}-windows
           path: ${{ env.wheel_path }}
+  publish:
+    name: Publish ${{ matrix.PY_VER }}, windows
+    needs: [build]
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        PY_VER:
+          - "3.10"
+          - "3.11"
+          - "3.12"
+          - "3.13"
+    timeout-minutes: 10
+    steps:
+      - name: Download wheel
+        uses: actions/download-artifact@v4
+        with:
+          name: wheel-py${{ matrix.PY_VER }}-windows
+          path: dist
+      - name: Display structure of downloaded files
+        run: ls -R
+      - name: Remove sdist
+        run: rm dist/*.tar.gz
+      - name: Publish to PyPI
+        if: inputs.upload_to_pypi
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          password: ${{ secrets.RAPIDSAI_PYPI_TOKEN }}
