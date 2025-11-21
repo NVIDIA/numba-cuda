@@ -4,7 +4,6 @@
 name: Publish packages
 
 on:
-  workflow_dispatch:
   push:
     tags:
       - 'v*'
@@ -38,7 +37,7 @@ jobs:
       build_type: release
       script: "ci/build_conda.sh"
       matrix: ${{ needs.compute-matrix.outputs.BUILD_MATRIX }}
-      upload_to_anaconda: false
+      upload_to_anaconda: true
   build-wheels:
     needs: compute-matrix
     uses: ./.github/workflows/wheels-build.yaml
@@ -69,7 +68,6 @@ jobs:
       - name: Publish to PyPI (test)
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
-          repository-url: https://test.pypi.org/legacy/
           verbose: true
   build-docs:
     uses: ./.github/workflows/docs-build.yaml
