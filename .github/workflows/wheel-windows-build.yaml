@@ -77,8 +77,6 @@ jobs:
           path: dist
       - name: Display structure of downloaded files
         run: ls -R
-      - name: Remove sdist
-        run: rm dist/*.tar.gz
       - name: Publish to PyPI
         if: inputs.upload_to_pypi
         uses: pypa/gh-action-pypi-publish@release/v1
