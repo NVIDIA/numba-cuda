@@ -155,6 +155,7 @@ jobs:
         with:
           host-platform: ${{ inputs.host-platform }}
           cuda-version: ${{ matrix.CUDA_VER }}
+          cuda-components: "cuda_nvcc,cuda_cudart,cuda_crt,libnvvm,cuda_nvrtc,cuda_cccl,libnvjitlink,cuda_cuobjdump"
 
       - name: Run numba-cuda tests
         if: ${{ env.SKIP_NUMBA_CUDA_TEST == '0' }}
