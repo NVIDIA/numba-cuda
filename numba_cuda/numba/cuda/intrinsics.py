@@ -381,6 +381,7 @@ def shfl_sync_intrinsic(
 
     return sig, codegen
 
+
 # -------------------------------------------------------------------------------
 # Warp vote functions
 #
@@ -390,7 +391,7 @@ def shfl_sync_intrinsic(
 # - https://docs.nvidia.com/cuda/nvvm-ir-spec/index.html?highlight=data%2520movement#vote
 #
 # Notes:
-# 
+#
 # - The NVVM IR specification requires some of the mode parameter to be
 #   constants. It's therefore essential that we pass in mode values to the
 #   vote_sync_intrinsic.
@@ -406,12 +407,12 @@ def all_sync(typingctx, mask_type, predicate_type):
     sig, codegen_inner = vote_sync_intrinsic(
         typingctx, mask_type, mode_value, predicate_type
     )
-    
+
     def codegen(context, builder, sig_outer, args):
         # Call vote_sync_intrinsic and extract the boolean result (index 1)
         result_tuple = codegen_inner(context, builder, sig, args)
         return builder.extract_value(result_tuple, 1)
-    
+
     sig_outer = signature(types.b1, mask_type, predicate_type)
     return sig_outer, codegen
 
@@ -426,11 +427,11 @@ def any_sync(typingctx, mask_type, predicate_type):
     sig, codegen_inner = vote_sync_intrinsic(
         typingctx, mask_type, mode_value, predicate_type
     )
-    
+
     def codegen(context, builder, sig_outer, args):
         result_tuple = codegen_inner(context, builder, sig, args)
         return builder.extract_value(result_tuple, 1)
-    
+
     sig_outer = signature(types.b1, mask_type, predicate_type)
     return sig_outer, codegen
 
@@ -445,11 +446,11 @@ def eq_sync(typingctx, mask_type, predicate_type):
     sig, codegen_inner = vote_sync_intrinsic(
         typingctx, mask_type, mode_value, predicate_type
     )
-    
+
     def codegen(context, builder, sig_outer, args):
         result_tuple = codegen_inner(context, builder, sig, args)
         return builder.extract_value(result_tuple, 1)
-    
+
     sig_outer = signature(types.b1, mask_type, predicate_type)
     return sig_outer, codegen
 
@@ -464,22 +465,25 @@ def ballot_sync(typingctx, mask_type, predicate_type):
     sig, codegen_inner = vote_sync_intrinsic(
         typingctx, mask_type, mode_value, predicate_type
     )
-    
+
     def codegen(context, builder, sig_outer, args):
         result_tuple = codegen_inner(context, builder, sig, args)
-        return builder.extract_value(result_tuple, 0)  # Extract ballot result (index 0)
-    
+        return builder.extract_value(
+            result_tuple, 0
+        )  # Extract ballot result (index 0)
+
     sig_outer = signature(types.i4, mask_type, predicate_type)
     return sig_outer, codegen
+
 
 def vote_sync_intrinsic(typingctx, mask_type, mode_value, predicate_type):
     # Validate mode value
     if mode_value not in (0, 1, 2, 3):
         raise ValueError("mode must be 0 (all), 1 (any), 2 (eq), or 3 (ballot)")
-    
+
     def codegen(context, builder, sig, args):
         mask, predicate = args
-        
+
         # Types
         i1 = ir.IntType(1)
         i32 = ir.IntType(32)
@@ -492,22 +496,23 @@ def vote_sync_intrinsic(typingctx, mask_type, mode_value, predicate_type):
         fname = "llvm.nvvm.vote.sync"
         lmod = builder.module
         vote_sync = cgutils.get_or_insert_function(lmod, fnty, fname)
-        
+
         # Intrinsic arguments
         mode = ir.Constant(i32, mode_value)
         mask_i32 = builder.trunc(mask, i32)
-        
+
         # Convert predicate to i1
         if predicate.type != ir.IntType(1):
             predicate_bool = builder.icmp_signed(
-                '!=', predicate, ir.Constant(predicate.type, 0)
+                "!=", predicate, ir.Constant(predicate.type, 0)
             )
         else:
             predicate_bool = predicate
-        
-        return builder.call(vote_sync, [mask_i32, mode, predicate_bool])
-    
-    sig = signature(types.Tuple((types.i4, types.b1)), mask_type, predicate_type)
-    
-    return sig, codegen
 
+        return builder.call(vote_sync, [mask_i32, mode, predicate_bool])
+
+    sig = signature(
+        types.Tuple((types.i4, types.b1)), mask_type, predicate_type
+    )
+
+    return sig, codegen
