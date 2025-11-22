@@ -208,6 +208,46 @@ class TestCudaWarpOperations(CUDATestCase):
                 compiled[1, nelem](ary, val)
                 self.assertTrue(np.all(ary == val))
 
+    def test_vote_sync_const_mode_val(self):
+        nelem = 32
+        ary1 = np.ones(nelem, dtype=np.int32)
+        ary2 = np.empty(nelem, dtype=np.int32)
+
+        subtest = [
+            (use_vote_sync_all, "void(int32[:], int32[:])", (ary1, ary2)),
+            (use_vote_sync_any, "void(int32[:], int32[:])", (ary1, ary2)),
+            (use_vote_sync_eq, "void(int32[:], int32[:])", (ary1, ary2)),
+            (use_vote_sync_ballot, "void(uint32[:])", (ary2,)),
+        ]
+
+        args_re = r"\((.*)\)"
+        m = re.compile(args_re)
+
+        for func, sig, input in subtest:
+            with self.subTest(func=func.__name__):
+                compiled = cuda.jit(sig)(func)
+                compiled[1, nelem](*input)
+                irs = next(iter(compiled.inspect_llvm().values()))
+
+                for ir in irs.split("\n"):
+                    if "call" in ir and "llvm.nvvm.vote.sync" in ir:
+                        args = m.search(ir).group(0)
+                        arglist = args.split(",")
+                        mode_arg = arglist[1]
+                        self.assertNotIn("%", mode_arg)
+
+    def test_vote_sync_const_mode_val_sm100(self):
+        subtest = [
+            (use_vote_sync_all, "void(int32[:], int32[:])"),
+            (use_vote_sync_any, "void(int32[:], int32[:])"),
+            (use_vote_sync_eq, "void(int32[:], int32[:])"),
+            (use_vote_sync_ballot, "void(uint32[:])"),
+        ]
+
+        for func, sig in subtest:
+            with self.subTest(func=func.__name__):
+                compile_ptx(func, sig, cc=(10, 0))
+
     def test_vote_sync_all(self):
         compiled = cuda.jit("void(int32[:], int32[:])")(use_vote_sync_all)
         nelem = 32

@@ -104,16 +104,6 @@ class Cuda_syncwarp(ConcreteTemplate):
 
 
 @register
-class Cuda_vote_sync_intrinsic(ConcreteTemplate):
-    key = cuda.vote_sync_intrinsic
-    cases = [
-        signature(
-            types.Tuple((types.i4, types.b1)), types.i4, types.i4, types.b1
-        )
-    ]
-
-
-@register
 class Cuda_match_any_sync(ConcreteTemplate):
     key = cuda.match_any_sync
     cases = [
@@ -521,9 +511,6 @@ class CudaModuleTemplate(AttributeTemplate):
 
     def resolve_syncwarp(self, mod):
         return types.Function(Cuda_syncwarp)
-
-    def resolve_vote_sync_intrinsic(self, mod):
-        return types.Function(Cuda_vote_sync_intrinsic)
 
     def resolve_match_any_sync(self, mod):
         return types.Function(Cuda_match_any_sync)
