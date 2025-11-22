@@ -380,3 +380,134 @@ def shfl_sync_intrinsic(
     sig = signature(a_type, membermask_type, a_type, b_type)
 
     return sig, codegen
+
+# -------------------------------------------------------------------------------
+# Warp vote functions
+#
+# References:
+#
+# - https://docs.nvidia.com/cuda/cuda-c-programming-guide/index.html#warp-vote-functions
+# - https://docs.nvidia.com/cuda/nvvm-ir-spec/index.html?highlight=data%2520movement#vote
+#
+# Notes:
+# 
+# - The NVVM IR specification requires some of the mode parameter to be
+#   constants. It's therefore essential that we pass in mode values to the
+#   vote_sync_intrinsic.
+
+
+@intrinsic
+def all_sync(typingctx, mask_type, predicate_type):
+    """
+    If for all threads in the masked warp the predicate is true, then
+    a non-zero value is returned, otherwise 0 is returned.
+    """
+    mode_value = 0
+    sig, codegen_inner = vote_sync_intrinsic(
+        typingctx, mask_type, mode_value, predicate_type
+    )
+    
+    def codegen(context, builder, sig_outer, args):
+        # Call vote_sync_intrinsic and extract the boolean result (index 1)
+        result_tuple = codegen_inner(context, builder, sig, args)
+        return builder.extract_value(result_tuple, 1)
+    
+    sig_outer = signature(types.b1, mask_type, predicate_type)
+    return sig_outer, codegen
+
+
+@intrinsic
+def any_sync(typingctx, mask_type, predicate_type):
+    """
+    If for any thread in the masked warp the predicate is true, then
+    a non-zero value is returned, otherwise 0 is returned.
+    """
+    mode_value = 1
+    sig, codegen_inner = vote_sync_intrinsic(
+        typingctx, mask_type, mode_value, predicate_type
+    )
+    
+    def codegen(context, builder, sig_outer, args):
+        result_tuple = codegen_inner(context, builder, sig, args)
+        return builder.extract_value(result_tuple, 1)
+    
+    sig_outer = signature(types.b1, mask_type, predicate_type)
+    return sig_outer, codegen
+
+
+@intrinsic
+def eq_sync(typingctx, mask_type, predicate_type):
+    """
+    If for all threads in the masked warp the boolean predicate is the same,
+    then a non-zero value is returned, otherwise 0 is returned.
+    """
+    mode_value = 2
+    sig, codegen_inner = vote_sync_intrinsic(
+        typingctx, mask_type, mode_value, predicate_type
+    )
+    
+    def codegen(context, builder, sig_outer, args):
+        result_tuple = codegen_inner(context, builder, sig, args)
+        return builder.extract_value(result_tuple, 1)
+    
+    sig_outer = signature(types.b1, mask_type, predicate_type)
+    return sig_outer, codegen
+
+
+@intrinsic
+def ballot_sync(typingctx, mask_type, predicate_type):
+    """
+    Returns a mask of all threads in the warp whose predicate is true,
+    and are within the given mask.
+    """
+    mode_value = 3
+    sig, codegen_inner = vote_sync_intrinsic(
+        typingctx, mask_type, mode_value, predicate_type
+    )
+    
+    def codegen(context, builder, sig_outer, args):
+        result_tuple = codegen_inner(context, builder, sig, args)
+        return builder.extract_value(result_tuple, 0)  # Extract ballot result (index 0)
+    
+    sig_outer = signature(types.i4, mask_type, predicate_type)
+    return sig_outer, codegen
+
+def vote_sync_intrinsic(typingctx, mask_type, mode_value, predicate_type):
+    # Validate mode value
+    if mode_value not in (0, 1, 2, 3):
+        raise ValueError("mode must be 0 (all), 1 (any), 2 (eq), or 3 (ballot)")
+    
+    def codegen(context, builder, sig, args):
+        mask, predicate = args
+        
+        # Types
+        i1 = ir.IntType(1)
+        i32 = ir.IntType(32)
+
+        # NVVM intrinsic definition
+        arg_types = (i32, i32, i1)
+        vote_return_type = ir.LiteralStructType((i32, i1))
+        fnty = ir.FunctionType(vote_return_type, arg_types)
+
+        fname = "llvm.nvvm.vote.sync"
+        lmod = builder.module
+        vote_sync = cgutils.get_or_insert_function(lmod, fnty, fname)
+        
+        # Intrinsic arguments
+        mode = ir.Constant(i32, mode_value)
+        mask_i32 = builder.trunc(mask, i32)
+        
+        # Convert predicate to i1
+        if predicate.type != ir.IntType(1):
+            predicate_bool = builder.icmp_signed(
+                '!=', predicate, ir.Constant(predicate.type, 0)
+            )
+        else:
+            predicate_bool = predicate
+        
+        return builder.call(vote_sync, [mask_i32, mode, predicate_bool])
+    
+    sig = signature(types.Tuple((types.i4, types.b1)), mask_type, predicate_type)
+    
+    return sig, codegen
+
