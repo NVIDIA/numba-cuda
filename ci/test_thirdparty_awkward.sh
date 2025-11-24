@@ -9,7 +9,7 @@ AWKWARD_VERSION="2.8.10"
 
 rapids-logger "Install awkward and related libraries"
 
-pip install awkward==${AWKWARD_VERSION} cupy-cuda12x pyarrow pandas nox
+pip install awkward==${AWKWARD_VERSION} "cupy-cuda12x==13.4.*" pyarrow pandas nox
 
 rapids-logger "Install wheel with test dependencies"
 package=$(realpath wheel/numba_cuda*.whl)
@@ -17,7 +17,7 @@ echo "Package path: ${package}"
 python -m pip install \
     "${package}" \
     "cuda-python==${CUDA_VER_MAJOR_MINOR%.*}.*" \
-    "cuda-core==0.3.*" \
+    "cuda-core" \
     "nvidia-nvjitlink-cu12" \
     --group test
 
