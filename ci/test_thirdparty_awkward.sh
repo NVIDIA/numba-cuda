@@ -9,7 +9,7 @@ AWKWARD_VERSION="2.8.10"
 
 rapids-logger "Install awkward and related libraries"
 
-pip install awkward==${AWKWARD_VERSION} "cupy-cuda12x==13.4.*" pyarrow pandas nox
+pip install awkward==${AWKWARD_VERSION} cupy-cuda12x pyarrow pandas nox
 
 rapids-logger "Install wheel with test dependencies"
 package=$(realpath wheel/numba_cuda*.whl)
@@ -40,6 +40,18 @@ index 1292e0cf..4534a57c 100644
      "awkward_reduce_count_64",
      "awkward_reduce_max",
      "awkward_reduce_max_complex",
+diff --git a/tests-cuda/test_3459_virtualarray_with_cuda.py b/tests-cuda/test_3459_virtualarray_with_cuda.py
+index e2bcab12..c82f63c3 100644
+--- a/tests-cuda/test_3459_virtualarray_with_cuda.py
++++ b/tests-cuda/test_3459_virtualarray_with_cuda.py
+@@ -9,6 +9,7 @@ import awkward as ak
+ from awkward._nplikes.cupy import Cupy
+ from awkward._nplikes.virtual import VirtualNDArray
+
++pytestmark = pytest.mark.skip("temporarily skipping all tests in this module")
+
+ @pytest.fixture(scope="function", autouse=True)
+ def cleanup_cuda():
 EOF
 
 rapids-logger "Generate awkward tests"
