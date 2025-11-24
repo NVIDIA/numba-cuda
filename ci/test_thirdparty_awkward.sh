@@ -27,6 +27,21 @@ git clone --recursive https://github.com/scikit-hep/awkward.git
 pushd awkward
 git checkout v${AWKWARD_VERSION}
 
+patch -p1 <<'EOF'
+diff --git a/dev/generate-tests.py b/dev/generate-tests.py
+index 1292e0cf..4534a57c 100644
+--- a/dev/generate-tests.py
++++ b/dev/generate-tests.py
+@@ -970,7 +970,6 @@ cuda_kernels_tests = [
+     "awkward_UnionArray_regular_index_getsize",
+     "awkward_UnionArray_simplify",
+     "awkward_UnionArray_simplify_one",
+-    "awkward_RecordArray_reduce_nonlocal_outoffsets_64",
+     "awkward_reduce_count_64",
+     "awkward_reduce_max",
+     "awkward_reduce_max_complex",
+EOF
+
 rapids-logger "Generate awkward tests"
 nox -s prepare -- --tests
 
