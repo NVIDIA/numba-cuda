@@ -61,7 +61,10 @@ from cuda.core.experimental import (
     Linker,
     LinkerOptions,
     ObjectCode,
+    launch,
+    LaunchConfig,
 )
+from cuda.core.experimental._module import Kernel
 
 from cuda.bindings.utils import get_cuda_native_handle
 from cuda.core.experimental import (
@@ -2450,39 +2453,62 @@ def launch_kernel(
     args,
     cooperative=False,
 ):
-    param_ptrs = [addressof(arg) for arg in args]
-    params = (c_void_p * len(param_ptrs))(*param_ptrs)
+    # Convert stream handle to cuda.core Stream object
+    # Handle both integer handles and None (default stream)
+    if hstream is None or not isinstance(hstream, int):
+        hstream = 0
+    stream = ExperimentalStream.from_handle(hstream)
 
-    params_for_launch = addressof(params)
-    extra = 0
+    # Configure kernel launch parameters
+    config = LaunchConfig(
+        grid=(int(gx), int(gy), int(gz)),
+        block=(int(bx), int(by), int(bz)),
+        shmem_size=int(sharedmem) if sharedmem is not None else 0,
+        cooperative_launch=cooperative
+    )
 
-    if cooperative:
-        driver.cuLaunchCooperativeKernel(
-            cufunc_handle,
-            gx,
-            gy,
-            gz,
-            bx,
-            by,
-            bz,
-            sharedmem,
-            hstream,
-            params_for_launch,
-        )
+    # Convert function handle to CUfunction binding type
+    if isinstance(cufunc_handle, binding.CUfunction):
+        cufunction = cufunc_handle
     else:
-        driver.cuLaunchKernel(
-            cufunc_handle,
-            gx,
-            gy,
-            gz,
-            bx,
-            by,
-            bz,
-            sharedmem,
-            hstream,
-            params_for_launch,
-            extra,
-        )
+        cufunction = binding.CUfunction(int(cufunc_handle))
+
+    # Convert arguments: cuda.core.launch expects numpy.uint64 for pointers,
+    # but can handle ctypes scalars directly
+    converted_args = [
+        np.uint64(arg.value if arg.value is not None else 0)
+        if isinstance(arg, c_void_p)
+        else arg
+        for arg in args
+    ]
+
+    # Create Kernel object and launch
+    # We use Kernel._from_obj with an ObjectCode stub since we're wrapping
+    # an existing CUfunction handle rather than creating from object code.
+    # Create a minimal ObjectCode stub without calling __init__ to satisfy the type check.
+    from cuda.core.experimental._module import _lazy_init
+    _lazy_init()
+    objcode_stub = object.__new__(ObjectCode)
+    kernel = Kernel._from_obj(cufunction, objcode_stub)
+
+    try:
+        launch(stream, config, kernel, *converted_args)
+    except Exception as e:
+        # Convert cuda.core CUDAError to CudaAPIError for compatibility
+        from cuda.core.experimental._utils.cuda_utils import CUDAError
+        if isinstance(e, CUDAError):
+            # Extract error name from the exception
+            # CUDAError string format is "CUDA_ERROR_XXX: description"
+            error_str = str(e)
+            if ':' in error_str:
+                error_name = error_str.split(':')[0].strip()
+            else:
+                # Fallback: try err attribute if string parsing fails
+                error_code = getattr(e, 'err', None)
+                error_name = error_code.name if error_code and hasattr(error_code, 'name') else "CUDA_ERROR_UNKNOWN"
+            msg = f"Call to cuLaunchKernel results in {error_name}"
+            raise CudaAPIError(error_name, msg) from e
+        raise
 
 
 class _LinkerBase(metaclass=ABCMeta):
