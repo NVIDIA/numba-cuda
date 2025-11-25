@@ -2339,6 +2339,32 @@ FuncAttr = namedtuple(
 )
 
 
+def _convert_cuda_core_error(e):
+    """
+    Convert cuda.core CUDAError to numba CudaAPIError for compatibility.
+    
+    Extracts the error code from cuda.core exceptions and converts them to the
+    CudaAPIError format that existing code expects.
+    """
+    from cuda.core.experimental._utils.cuda_utils import CUDAError
+    
+    if isinstance(e, CUDAError):
+        # Extract error name from the exception
+        # CUDAError string format is "CUDA_ERROR_XXX: description"
+        error_str = str(e)
+        if ':' in error_str:
+            error_name = error_str.split(':')[0].strip()
+        else:
+            # Fallback: try err attribute if string parsing fails
+            error_code = getattr(e, 'err', None)
+            error_name = error_code.name if error_code and hasattr(error_code, 'name') else "CUDA_ERROR_UNKNOWN"
+        msg = f"Call to cuLaunchKernel results in {error_name}"
+        raise CudaAPIError(error_name, msg) from e
+    else:
+        # Not a CUDA error, re-raise as-is
+        raise
+
+
 class Function(metaclass=ABCMeta):
     griddim = 1, 1, 1
     blockdim = 1, 1, 1
@@ -2494,21 +2520,7 @@ def launch_kernel(
     try:
         launch(stream, config, kernel, *converted_args)
     except Exception as e:
-        # Convert cuda.core CUDAError to CudaAPIError for compatibility
-        from cuda.core.experimental._utils.cuda_utils import CUDAError
-        if isinstance(e, CUDAError):
-            # Extract error name from the exception
-            # CUDAError string format is "CUDA_ERROR_XXX: description"
-            error_str = str(e)
-            if ':' in error_str:
-                error_name = error_str.split(':')[0].strip()
-            else:
-                # Fallback: try err attribute if string parsing fails
-                error_code = getattr(e, 'err', None)
-                error_name = error_code.name if error_code and hasattr(error_code, 'name') else "CUDA_ERROR_UNKNOWN"
-            msg = f"Call to cuLaunchKernel results in {error_name}"
-            raise CudaAPIError(error_name, msg) from e
-        raise
+        _convert_cuda_core_error(e)
 
 
 class _LinkerBase(metaclass=ABCMeta):
