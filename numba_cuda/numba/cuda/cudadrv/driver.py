@@ -2468,8 +2468,11 @@ def launch_kernel(
     cooperative=False,
 ):
     # Convert stream handle to cuda.core Stream object
-    # Handle both integer handles and None (default stream)
-    if hstream is None or not isinstance(hstream, int):
+    if hstream is None:
+        hstream = 0
+    elif isinstance(hstream, binding.CUstream):
+        hstream = get_cuda_native_handle(hstream)
+    elif not isinstance(hstream, int):
         hstream = 0
     stream = ExperimentalStream.from_handle(hstream)
 
@@ -2499,7 +2502,6 @@ def launch_kernel(
     # Create Kernel object and launch
     # We use Kernel._from_obj with an ObjectCode stub since we're wrapping
     # an existing CUfunction handle rather than creating from object code.
-    # Create a minimal ObjectCode stub without calling __init__ to satisfy the type check.
     from cuda.core.experimental._module import _lazy_init
 
     _lazy_init()
