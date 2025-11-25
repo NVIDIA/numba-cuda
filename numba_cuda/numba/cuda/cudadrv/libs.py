@@ -59,13 +59,6 @@ def get_cudalib(lib, static=False):
     libdir = get_cuda_paths()[dir_type].info
 
     candidates = find_lib(lib, libdir, static=static)
-
-    # If static library not found in lib64 (e.g., conda environments), try lib
-    if not candidates and static and libdir and "lib64" in libdir:
-        alt_libdir = libdir.replace("lib64", "lib")
-        if alt_libdir != libdir and os.path.exists(alt_libdir):
-            candidates = find_lib(lib, alt_libdir, static=static)
-
     namepattern = _staticnamepattern if static else _dllnamepattern
     return max(candidates) if candidates else namepattern % lib
 
