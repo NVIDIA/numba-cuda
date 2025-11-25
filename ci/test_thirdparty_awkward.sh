@@ -27,6 +27,16 @@ git clone --recursive https://github.com/scikit-hep/awkward.git
 pushd awkward
 git checkout v${AWKWARD_VERSION}
 
+# Avoid tests that are unreliable on the CUDA target:
+#
+# - awkward_RecordArray_reduce_nonlocal_outoffsets_64
+# - test_3459_virtualarray_with_cuda
+#
+# as per discussion in https://github.com/scikit-hep/awkward/discussions/3587
+
+
+rapids-logger "Patch awkward tests"
+
 patch -p1 <<'EOF'
 diff --git a/dev/generate-tests.py b/dev/generate-tests.py
 index 1292e0cf..4534a57c 100644
