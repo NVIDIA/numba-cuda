@@ -24,7 +24,7 @@ as well as CUDA device functions to obtain uniformly or normally distributed
 random numbers.
 
 .. note:: Numba (like cuRAND) uses the
-    `Box-Muller transform <https://en.wikipedia.org/wiki/Box%E2%80%93Muller_transform>`
+    `Box-Muller transform <https://en.wikipedia.org/wiki/Box%E2%80%93Muller_transform>`_
     to generate normally distributed random numbers from a uniform generator.
     However, Box-Muller generates pairs of random numbers, and the current
     implementation only returns one of them.  As a result, generating normally
@@ -87,7 +87,7 @@ Instead, it uses a fixed size 3D grid with a total of 2,097,152 (``(16 ** 3) *
 
 .. literalinclude:: ../../../numba_cuda/numba/cuda/tests/doc_examples/test_random.py
    :language: python
-   :caption: from ``test_ex_3d_grid of ``numba/cuda/tests/doc_example/test_random.py``
+   :caption: from ``test_ex_3d_grid`` of ``numba/cuda/tests/doc_example/test_random.py``
    :start-after: magictoken.ex_3d_grid.begin
    :end-before: magictoken.ex_3d_grid.end
    :dedent: 8

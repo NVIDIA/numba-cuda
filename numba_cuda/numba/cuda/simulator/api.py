@@ -160,3 +160,20 @@ def jit(
 def defer_cleanup():
     # No effect for simulator
     yield
+
+
+def is_supported_version():
+    return True
+
+
+# cache hints operations
+ldca = None
+ldcg = None
+ldcs = None
+ldlu = None
+ldcv = None
+
+stcg = None
+stcs = None
+stwb = None
+stwt = None

@@ -11,15 +11,20 @@ import llvmlite.binding as ll
 
 from numba.cuda.core.imputils import Registry
 from numba.cuda.typing.npydecl import parse_dtype
-from numba.cuda.datamodel import models
+from numba.cuda.datamodel.models import StructModel
 from numba.cuda import types
 from numba.cuda import cgutils
 from numba.cuda.np import ufunc_db
 from numba.cuda.np.npyimpl import register_ufuncs
 from .cudadrv import nvvm
 from numba import cuda
+from numba.cuda.api_util import normalize_indices
 from numba.cuda import nvvmutils, stubs
 from numba.cuda.types.ext_types import dim3, CUDADispatcher
+
+if cuda.HAS_NUMBA:
+    from numba.core.datamodel.models import StructModel as CoreStructModel
+    from numba.core import types as core_types
 
 registry = Registry("cudaimpl")
 lower = registry.lower
@@ -576,31 +581,6 @@ lower(math.degrees, types.f4)(gen_deg_rad(_rad2deg))
 lower(math.degrees, types.f8)(gen_deg_rad(_rad2deg))
 
 
-def _normalize_indices(context, builder, indty, inds, aryty, valty):
-    """
-    Convert integer indices into tuple of intp
-    """
-    if indty in types.integer_domain:
-        indty = types.UniTuple(dtype=indty, count=1)
-        indices = [inds]
-    else:
-        indices = cgutils.unpack_tuple(builder, inds, count=len(indty))
-    indices = [
-        context.cast(builder, i, t, types.intp) for t, i in zip(indty, indices)
-    ]
-
-    dtype = aryty.dtype
-    if dtype != valty:
-        raise TypeError("expect %s but got %s" % (dtype, valty))
-
-    if aryty.ndim != len(indty):
-        raise TypeError(
-            "indexing %d-D array with %d-D index" % (aryty.ndim, len(indty))
-        )
-
-    return indty, indices
-
-
 def _atomic_dispatcher(dispatch_fn):
     def imp(context, builder, sig, args):
         # The common argument handling code
@@ -608,7 +588,7 @@ def _atomic_dispatcher(dispatch_fn):
         ary, inds, val = args
         dtype = aryty.dtype
 
-        indty, indices = _normalize_indices(
+        indty, indices = normalize_indices(
             context, builder, indty, inds, aryty, valty
         )
 
@@ -818,7 +798,7 @@ def ptx_atomic_cas(context, builder, sig, args):
     aryty, indty, oldty, valty = sig.args
     ary, inds, old, val = args
 
-    indty, indices = _normalize_indices(
+    indty, indices = normalize_indices(
         context, builder, indty, inds, aryty, valty
     )
 
@@ -880,13 +860,19 @@ def _generic_array(
         raise ValueError("array length <= 0")
 
     # Check that we support the requested dtype
+    number_domain = types.number_domain
+    struct_model_types = (StructModel,)
+    if cuda.HAS_NUMBA:
+        number_domain |= core_types.number_domain
+        struct_model_types = (StructModel, CoreStructModel)
+
     data_model = context.data_model_manager[dtype]
     other_supported_type = (
         isinstance(dtype, (types.Record, types.Boolean))
-        or isinstance(data_model, models.StructModel)
+        or isinstance(data_model, struct_model_types)
         or dtype == types.float16
     )
-    if dtype not in types.number_domain and not other_supported_type:
+    if dtype not in number_domain and not other_supported_type:
         raise TypeError("unsupported type: %s" % dtype)
 
     lldtype = context.get_data_type(dtype)
