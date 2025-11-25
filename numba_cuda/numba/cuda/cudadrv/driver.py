@@ -61,7 +61,9 @@ from cuda.core.experimental import (
     Linker,
     LinkerOptions,
     ObjectCode,
+    launch,
 )
+from cuda.core.experimental._module import Kernel, _lazy_init
 
 from cuda.bindings.utils import get_cuda_native_handle
 from cuda.core.experimental import (
@@ -1314,37 +1316,43 @@ class Context(object):
         del self.modules[key]
 
     def get_default_stream(self):
-        handle = drvapi.cu_stream(int(binding.CUstream(CU_STREAM_DEFAULT)))
-        return Stream(handle)
+        core_stream = ExperimentalStream.from_handle(CU_STREAM_DEFAULT)
+        return Stream(core_stream)
 
     def get_legacy_default_stream(self):
-        handle = drvapi.cu_stream(
-            int(binding.CUstream(binding.CU_STREAM_LEGACY))
-        )
-        return Stream(handle)
+        core_stream = ExperimentalStream.from_handle(binding.CU_STREAM_LEGACY)
+        return Stream(core_stream)
 
     def get_per_thread_default_stream(self):
-        handle = drvapi.cu_stream(
-            int(binding.CUstream(binding.CU_STREAM_PER_THREAD))
+        core_stream = ExperimentalStream.from_handle(
+            binding.CU_STREAM_PER_THREAD
         )
-        return Stream(handle)
+        return Stream(core_stream)
 
     def create_stream(self):
-        # The default stream creation flag, specifying that the created
-        # stream synchronizes with stream 0 (this is different from the
-        # default stream, which we define also as CU_STREAM_DEFAULT when
-        # the NV binding is in use).
+        # Create a cuda.core Stream directly
+        # Note: cuda.core doesn't have direct stream creation from context,
+        # so we use the NVIDIA bindings directly
         flags = binding.CUstream_flags.CU_STREAM_DEFAULT.value
-        handle = drvapi.cu_stream(int(driver.cuStreamCreate(flags)))
-        return Stream(
-            handle, finalizer=_stream_finalizer(self.deallocations, handle)
-        )
+        cu_stream_handle = driver.cuStreamCreate(flags)
+        core_stream = ExperimentalStream.from_handle(int(cu_stream_handle))
+
+        # Wrap in our shim
+        stream_wrapper = Stream(core_stream)
+
+        # Set up finalizer on the wrapper (not on core_stream which doesn't support weakref)
+        def stream_finalizer(handle):
+            self.deallocations.add_item(driver.cuStreamDestroy, handle)
+
+        weakref.finalize(stream_wrapper, stream_finalizer, cu_stream_handle)
+
+        return stream_wrapper
 
     def create_external_stream(self, ptr):
         if not isinstance(ptr, int):
             raise TypeError("ptr for external stream must be an int")
-        handle = drvapi.cu_stream(int(binding.CUstream(ptr)))
-        return Stream(handle, external=True)
+        core_stream = ExperimentalStream.from_handle(ptr)
+        return Stream(core_stream, external=True)
 
     def create_event(self, timing=True):
         flags = 0
@@ -1385,45 +1393,6 @@ def load_module_image(
     """
     return load_module_image_cuda_python(
         context, image, setup_callbacks, teardown_callbacks
-    )
-
-
-def load_module_image_ctypes(
-    context, image, setup_callbacks, teardown_callbacks
-):
-    logsz = config.CUDA_LOG_SIZE
-
-    jitinfo = (c_char * logsz)()
-    jiterrors = (c_char * logsz)()
-
-    options = {
-        enums.CU_JIT_INFO_LOG_BUFFER: addressof(jitinfo),
-        enums.CU_JIT_INFO_LOG_BUFFER_SIZE_BYTES: c_void_p(logsz),
-        enums.CU_JIT_ERROR_LOG_BUFFER: addressof(jiterrors),
-        enums.CU_JIT_ERROR_LOG_BUFFER_SIZE_BYTES: c_void_p(logsz),
-        enums.CU_JIT_LOG_VERBOSE: c_void_p(config.CUDA_VERBOSE_JIT_LOG),
-    }
-
-    option_keys = (drvapi.cu_jit_option * len(options))(*options.keys())
-    option_vals = (c_void_p * len(options))(*options.values())
-    handle = drvapi.cu_module()
-    try:
-        driver.cuModuleLoadDataEx(
-            byref(handle), image, len(options), option_keys, option_vals
-        )
-    except CudaAPIError as e:
-        msg = "cuModuleLoadDataEx error:\n%s" % jiterrors.value.decode("utf8")
-        raise CudaAPIError(e.code, msg)
-
-    info_log = jitinfo.value
-
-    return CtypesModule(
-        weakref.proxy(context),
-        handle,
-        info_log,
-        _module_finalizer(context, handle),
-        setup_callbacks,
-        teardown_callbacks,
     )
 
 
@@ -2047,28 +2016,63 @@ class ManagedOwnedPointer(OwnedPointer, mviewbuf.MemAlloc):
 
 
 class Stream:
-    def __init__(self, handle, finalizer=None, external=False):
-        self.handle = handle
+    """
+    Compatibility shim for cuda.core.experimental.Stream.
+
+    This class wraps cuda.core.experimental.Stream to provide backward
+    compatibility with the legacy numba Stream API while using cuda.core
+    internally.
+
+    The underlying cuda.core Stream is accessible via the `_core_stream` attribute.
+    """
+
+    def __init__(self, core_stream, external=False):
+        self._core_stream = core_stream
         self.external = external
-        if finalizer is not None:
-            weakref.finalize(self, finalizer)
+
+    @property
+    def handle(self):
+        class _HandleCompat:
+            def __init__(self, stream_handle):
+                # Convert to int if CUstream object
+                if isinstance(stream_handle, int):
+                    self.value = stream_handle
+                else:
+                    self.value = int(stream_handle) if stream_handle else 0
+
+        return _HandleCompat(self._core_stream.handle)
 
     def __int__(self):
-        # The default stream's handle.value is 0, which gives `None`
-        return self.handle.value or drvapi.CU_STREAM_DEFAULT
+        handle = self._core_stream.handle
+        # Handle can be CUstream object or int
+        if isinstance(handle, int):
+            return handle if handle else drvapi.CU_STREAM_DEFAULT
+        else:
+            # It's a binding.CUstream object
+            return int(handle) if handle else drvapi.CU_STREAM_DEFAULT
 
     def __cuda_stream__(self):
-        if not self.handle.value:
+        handle = self._core_stream.handle
+        # Convert to int if needed
+        if not isinstance(handle, int):
+            handle = int(handle) if handle else 0
+        if not handle:
             return (0, drvapi.CU_STREAM_DEFAULT)
-        return (0, self.handle.value)
+        return (0, handle)
 
     def __repr__(self):
         default_streams = {
+            0: "<Default CUDA stream>",
             drvapi.CU_STREAM_DEFAULT: "<Default CUDA stream>",
             drvapi.CU_STREAM_LEGACY: "<Legacy default CUDA stream>",
             drvapi.CU_STREAM_PER_THREAD: "<Per-thread default CUDA stream>",
         }
-        ptr = self.handle.value or drvapi.CU_STREAM_DEFAULT
+        handle = self._core_stream.handle
+        # Convert to int if needed
+        if not isinstance(handle, int):
+            ptr = int(handle) if handle else drvapi.CU_STREAM_DEFAULT
+        else:
+            ptr = handle if handle else drvapi.CU_STREAM_DEFAULT
 
         if ptr in default_streams:
             return default_streams[ptr]
@@ -2082,8 +2086,7 @@ class Stream:
         Wait for all commands in this stream to execute. This will commit any
         pending memory transfers.
         """
-        handle = self.handle.value
-        driver.cuStreamSynchronize(handle)
+        self._core_stream.sync()
 
     @contextlib.contextmanager
     def auto_synchronize(self):
@@ -2130,7 +2133,10 @@ class Stream:
         stream_callback = binding.CUstreamCallback(ptr)
         # The callback needs to receive a pointer to the data PyObject
         data = id(data)
-        handle = self.handle.value
+        handle = self._core_stream.handle
+        # Convert to int if needed
+        if not isinstance(handle, int):
+            handle = int(handle)
         driver.cuStreamAddCallback(handle, stream_callback, data, 0)
 
     @staticmethod
@@ -2304,27 +2310,10 @@ class Module(metaclass=ABCMeta):
         )
 
 
-class CtypesModule(Module):
-    def get_function(self, name):
-        handle = drvapi.cu_function()
-        driver.cuModuleGetFunction(
-            byref(handle), self.handle, name.encode("utf8")
-        )
-        return CtypesFunction(weakref.proxy(self), handle, name)
-
-    def get_global_symbol(self, name):
-        ptr = drvapi.cu_device_ptr()
-        size = drvapi.c_size_t()
-        driver.cuModuleGetGlobal(
-            byref(ptr), byref(size), self.handle, name.encode("utf8")
-        )
-        return MemoryPointer(self.context, ptr, size), size.value
-
-
 class CudaPythonModule(Module):
     def get_function(self, name):
         handle = driver.cuModuleGetFunction(self.handle, name.encode("utf8"))
-        return CudaPythonFunction(weakref.proxy(self), handle, name)
+        return Function(weakref.proxy(self), handle, name)
 
     def get_global_symbol(self, name):
         ptr, size = driver.cuModuleGetGlobal(self.handle, name.encode("utf8"))
@@ -2336,7 +2325,7 @@ FuncAttr = namedtuple(
 )
 
 
-class Function(metaclass=ABCMeta):
+class Function:
     griddim = 1, 1, 1
     blockdim = 1, 1, 1
     stream = 0
@@ -2355,7 +2344,6 @@ class Function(metaclass=ABCMeta):
     def device(self):
         return self.module.context.device
 
-    @abstractmethod
     def cache_config(
         self, prefer_equal=False, prefer_cache=False, prefer_shared=False
     ):
@@ -2459,52 +2447,65 @@ class CudaPythonFunction(Function):
         )
 
 
-def launch_kernel(
-    cufunc_handle,
-    gx,
-    gy,
-    gz,
-    bx,
-    by,
-    bz,
-    sharedmem,
-    hstream,
-    args,
-    cooperative=False,
-):
-    param_ptrs = [addressof(arg) for arg in args]
-    params = (c_void_p * len(param_ptrs))(*param_ptrs)
+# Alias for backward compatibility
+CudaPythonFunction = Function
 
-    params_for_launch = addressof(params)
-    extra = 0
 
-    if cooperative:
-        driver.cuLaunchCooperativeKernel(
-            cufunc_handle,
-            gx,
-            gy,
-            gz,
-            bx,
-            by,
-            bz,
-            sharedmem,
-            hstream,
-            params_for_launch,
-        )
+def _to_experimental_stream(stream):
+    # stream can be: int (0 for default), Stream (shim), or ExperimentalStream
+    if stream == 0 or stream is None:
+        return ExperimentalStream.from_handle(0)
+    elif isinstance(stream, Stream):
+        # Our shim wraps a cuda.core Stream - just return it!
+        return stream._core_stream
+    elif isinstance(stream, ExperimentalStream):
+        return stream
     else:
-        driver.cuLaunchKernel(
-            cufunc_handle,
-            gx,
-            gy,
-            gz,
-            bx,
-            by,
-            bz,
-            sharedmem,
-            hstream,
-            params_for_launch,
-            extra,
+        raise TypeError(
+            f"Expected a Stream object, ExperimentalStream, or 0, got {type(stream).__name__}"
         )
+
+
+def _normalize_kernel_args(args):
+    # cuda.core.launch can handle ctypes scalars directly, but for pointers
+    # ensure c_void_p is converted to integer (0 if None)
+    return [
+        (arg.value if arg.value is not None else 0)
+        if isinstance(arg, c_void_p)
+        else arg
+        for arg in args
+    ]
+
+
+def _to_cufunction(cufunc_handle):
+    # Ensure handle is a binding.CUfunction
+    if isinstance(cufunc_handle, binding.CUfunction):
+        return cufunc_handle
+    return binding.CUfunction(int(cufunc_handle))
+
+
+# Internal cache for Kernel objects created from CUfunction handles
+_kernel_cache = {}
+
+
+def _get_or_create_kernel(cufunction):
+    key = int(cufunction)
+    kernel = _kernel_cache.get(key)
+    if kernel is not None:
+        return kernel
+    _lazy_init()
+    objcode_stub = object.__new__(ObjectCode)
+    kernel = Kernel._from_obj(cufunction, objcode_stub)
+    _kernel_cache[key] = kernel
+    return kernel
+
+
+def _core_launch(stream, config, cufunction, *args):
+    """
+    Internal helper to launch via cuda.core.experimental.launch ensuring a Kernel object.
+    """
+    kernel = _get_or_create_kernel(_to_cufunction(cufunction))
+    return launch(stream, config, kernel, *args)
 
 
 class _LinkerBase(metaclass=ABCMeta):

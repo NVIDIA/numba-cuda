@@ -39,6 +39,7 @@ from numba.cuda.compiler import (
 from numba.cuda.core import sigutils, config, entrypoints
 from numba.cuda.flags import Flags
 from numba.cuda.cudadrv import driver, nvvm
+from cuda.core.experimental import LaunchConfig
 from numba.cuda.locks import module_init_lock
 from numba.cuda.core.caching import Cache, CacheImpl, NullCache
 from numba.cuda.descriptor import cuda_target
@@ -475,18 +476,17 @@ class _Kernel(serialize.ReduceMixin):
         for t, v in zip(self.argument_types, args):
             self._prepare_args(t, v, stream, retr, kernelargs)
 
-        stream_handle = driver._stream_handle(stream)
-
         # Invoke kernel
-        driver.launch_kernel(
-            cufunc.handle,
-            *griddim,
-            *blockdim,
-            sharedmem,
-            stream_handle,
-            kernelargs,
-            cooperative=self.cooperative,
+        config = LaunchConfig(
+            grid=tuple(griddim),
+            block=tuple(blockdim),
+            shmem_size=sharedmem,
+            cooperative_launch=self.cooperative,
         )
+        exp_stream = driver._to_experimental_stream(stream)
+        cufunction = driver._to_cufunction(cufunc.handle)
+        args2 = driver._normalize_kernel_args(kernelargs)
+        driver._core_launch(exp_stream, config, cufunction, *args2)
 
         if self.debug:
             driver.device_to_host(ctypes.addressof(excval), excmem, excsz)
