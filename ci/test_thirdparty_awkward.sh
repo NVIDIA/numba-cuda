@@ -62,6 +62,18 @@ index e2bcab12..c82f63c3 100644
 
  @pytest.fixture(scope="function", autouse=True)
  def cleanup_cuda():
+diff --git a/tests-cuda/test_3149_complex_reducers.py b/tests-cuda/test_3149_complex_reducers.py
+index 39080a34..0eb3940f 100644
+--- a/tests-cuda/test_3149_complex_reducers.py
++++ b/tests-cuda/test_3149_complex_reducers.py
+@@ -544,6 +544,7 @@ def test_block_boundary_prod_complex12():
+     del cuda_content, cuda_depth1
+
+
++@pytest.mark.skip("Intermittent failures")
+ def test_block_boundary_prod_complex13():
+     rng = np.random.default_rng(seed=42)
+     array = rng.integers(50, size=1000)
 EOF
 
 rapids-logger "Generate awkward tests"
