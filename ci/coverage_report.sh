@@ -12,7 +12,7 @@ echo "Package path: ${package}"
 python -m pip install \
     "${package}" \
     "cuda-python==${CUDA_VER_MAJOR_MINOR%.*}.*" \
-    "cuda-core==0.3.*" \
+    "cuda-core" \
     pytest-cov \
     coverage \
     --group test
