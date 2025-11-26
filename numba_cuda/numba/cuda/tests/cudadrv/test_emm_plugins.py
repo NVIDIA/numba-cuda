@@ -58,7 +58,7 @@ if not config.ENABLE_CUDASIM:
             # We use an AutoFreePointer so that the finalizer will be run when
             # the reference count drops to zero.
             ptr = ctypes.c_void_p(alloc_count)
-            return cuda.cudadrv.driver.AutoFreePointer(
+            return cuda.cudadrv.driver._AutoFreePointer(
                 ptr, size, finalizer=finalizer
             )
 

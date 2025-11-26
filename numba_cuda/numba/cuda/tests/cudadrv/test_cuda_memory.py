@@ -87,13 +87,13 @@ class TestCudaMemory(CUDATestCase):
             dtor_invoked[0] += 1
 
         # Ensure finalizer is called when pointer is deleted
-        ptr = driver.MemoryPointer(pointer=fake_ptr, size=40, finalizer=dtor)
+        ptr = driver._MemoryPointer(pointer=fake_ptr, size=40, finalizer=dtor)
         self.assertEqual(dtor_invoked[0], 0)
         del ptr
         self.assertEqual(dtor_invoked[0], 1)
 
         # Ensure removing derived pointer doesn't call finalizer
-        ptr = driver.MemoryPointer(pointer=fake_ptr, size=40, finalizer=dtor)
+        ptr = driver._MemoryPointer(pointer=fake_ptr, size=40, finalizer=dtor)
         owned = ptr.own()
         del owned
         self.assertEqual(dtor_invoked[0], 1)

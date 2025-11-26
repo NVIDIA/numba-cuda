@@ -816,11 +816,11 @@ class HostOnlyCUDAMemoryManager(BaseCUDAMemoryManager):
         finalizer = _hostalloc_finalizer(self, pointer, alloc_key, size, mapped)
 
         if mapped:
-            mem = MappedMemory(pointer, size, finalizer=finalizer)
+            mem = _MappedMemory(pointer, size, finalizer=finalizer)
             self.allocations[alloc_key] = mem
             return mem.own()
         else:
-            return PinnedMemory(pointer, size, finalizer=finalizer)
+            return _PinnedMemory(pointer, size, finalizer=finalizer)
 
     def mempin(self, owner, pointer, size, mapped=False):
         """Implements the pinning of host memory.
@@ -849,11 +849,13 @@ class HostOnlyCUDAMemoryManager(BaseCUDAMemoryManager):
         finalizer = _pin_finalizer(self, pointer, alloc_key, mapped)
 
         if mapped:
-            mem = MappedMemory(pointer, size, owner=owner, finalizer=finalizer)
+            mem = _MappedMemory(pointer, size, owner=owner, finalizer=finalizer)
             self.allocations[alloc_key] = mem
             return mem.own()
         else:
-            return PinnedMemory(pointer, size, owner=owner, finalizer=finalizer)
+            return _PinnedMemory(
+                pointer, size, owner=owner, finalizer=finalizer
+            )
 
     def memallocmanaged(self, size, attach_global):
         def allocator():
@@ -871,7 +873,7 @@ class HostOnlyCUDAMemoryManager(BaseCUDAMemoryManager):
         alloc_key = ptr
 
         finalizer = _alloc_finalizer(self, ptr, alloc_key, size)
-        mem = ManagedMemory(ptr, size, finalizer=finalizer)
+        mem = _ManagedMemory(ptr, size, finalizer=finalizer)
         self.allocations[alloc_key] = mem
         return mem.own()
 
@@ -934,7 +936,7 @@ class NumbaCUDAMemoryManager(GetIpcHandleMixin, HostOnlyCUDAMemoryManager):
         alloc_key = ptr
 
         finalizer = _alloc_finalizer(self, ptr, alloc_key, size)
-        mem = AutoFreePointer(ptr, size, finalizer=finalizer)
+        mem = _AutoFreePointer(ptr, size, finalizer=finalizer)
         self.allocations[alloc_key] = mem
         return mem.own()
 
@@ -1265,7 +1267,7 @@ class Context(object):
         dptr = driver.cuIpcOpenMemHandle(handle, flags)
 
         # wrap it
-        return MemoryPointer(pointer=dptr, size=size)
+        return _MemoryPointer(pointer=dptr, size=size)
 
     def enable_peer_access(self, peer_context, flags=0):
         """Enable peer access between the current context and the peer context"""
@@ -1751,36 +1753,7 @@ class IpcHandle(object):
         )
 
 
-class MemoryPointer:
-    """A memory pointer that owns a buffer, with an optional finalizer. Memory
-    pointers provide reference counting, and instances are initialized with a
-    reference count of 1.
-
-    The base ``MemoryPointer`` class does not use the
-    reference count for managing the buffer lifetime. Instead, the buffer
-    lifetime is tied to the memory pointer instance's lifetime:
-
-    - When the instance is deleted, the finalizer will be called.
-    - When the reference count drops to 0, no action is taken.
-
-    Subclasses of ``MemoryPointer`` may modify these semantics, for example to
-    tie the buffer lifetime to the reference count, so that the buffer is freed
-    when there are no more references.
-
-    :param pointer: The address of the buffer.
-    :type pointer: ctypes.c_void_p
-    :param size: The size of the allocation in bytes.
-    :type size: int
-    :param owner: The owner is sometimes set by the internals of this class, or
-                  used for Numba's internal memory management. It should not be
-                  provided by an external user of the ``MemoryPointer`` class
-                  (e.g. from within an EMM Plugin); the default of `None`
-                  should always suffice.
-    :type owner: NoneType
-    :param finalizer: A function that is called when the buffer is to be freed.
-    :type finalizer: function
-    """
-
+class _MemoryPointer:
     __cuda_memory__ = True
 
     def __init__(self, pointer, size, owner=None, finalizer=None):
@@ -1842,9 +1815,9 @@ class MemoryPointer:
             pointer = binding.CUdeviceptr()
             ctypes_ptr = drvapi.cu_device_ptr.from_address(pointer.getPtr())
             ctypes_ptr.value = base
-            view = MemoryPointer(pointer, size, owner=self.owner)
+            view = _MemoryPointer(pointer, size, owner=self.owner)
 
-        if isinstance(self.owner, (MemoryPointer, OwnedPointer)):
+        if isinstance(self.owner, (_MemoryPointer, OwnedPointer)):
             # Owned by a numba-managed memory segment, take an owned reference
             return OwnedPointer(weakref.proxy(self.owner), view)
         else:
@@ -1860,7 +1833,51 @@ class MemoryPointer:
         return int(self.device_pointer) or None
 
 
-class AutoFreePointer(MemoryPointer):
+class MemoryPointer(_MemoryPointer):
+    """A memory pointer that owns a buffer, with an optional finalizer. Memory
+    pointers provide reference counting, and instances are initialized with a
+    reference count of 1.
+
+    The base ``MemoryPointer`` class does not use the
+    reference count for managing the buffer lifetime. Instead, the buffer
+    lifetime is tied to the memory pointer instance's lifetime:
+
+    - When the instance is deleted, the finalizer will be called.
+    - When the reference count drops to 0, no action is taken.
+
+    Subclasses of ``MemoryPointer`` may modify these semantics, for example to
+    tie the buffer lifetime to the reference count, so that the buffer is freed
+    when there are no more references.
+
+    :param context: Ignored. Passing ``None`` is recommended.
+    :type context: NoneType
+    :param pointer: The address of the buffer.
+    :type pointer: ctypes.c_void_p
+    :param size: The size of the allocation in bytes.
+    :type size: int
+    :param owner: The owner is sometimes set by the internals of this class, or
+                  used for Numba's internal memory management. It should not be
+                  provided by an external user of the ``MemoryPointer`` class
+                  (e.g. from within an EMM Plugin); the default of ``None``
+                  should always suffice.
+    :type owner: NoneType
+    :param finalizer: A function that is called when the buffer is to be freed.
+    :type finalizer: function
+    """
+
+    def __init__(self, context, pointer, size, owner=None, finalizer=None):
+        super().__init__(pointer, size, owner=owner, finalizer=None)
+
+
+class _AutoFreePointer(_MemoryPointer):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Release the self reference to the buffer, so that the finalizer
+        # is invoked if all the derived pointers are gone.
+        self.refct -= 1
+
+
+class AutoFreePointer(_AutoFreePointer):
     """Modifies the ownership semantic of the MemoryPointer so that the
     instance lifetime is directly tied to the number of references.
 
@@ -1869,19 +1886,40 @@ class AutoFreePointer(MemoryPointer):
     Constructor arguments are the same as for :class:`MemoryPointer`.
     """
 
-    def __init__(self, *args, **kwargs):
-        super(AutoFreePointer, self).__init__(*args, **kwargs)
+    def __init__(self, context, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         # Release the self reference to the buffer, so that the finalizer
         # is invoked if all the derived pointers are gone.
         self.refct -= 1
 
 
-class MappedMemory(AutoFreePointer):
+class _MappedMemory(_AutoFreePointer):
+    __cuda_memory__ = True
+
+    def __init__(self, pointer, size, owner=None, finalizer=None):
+        self.owned = owner
+        self.host_pointer = pointer
+
+        devptr = driver.cuMemHostGetDevicePointer(pointer, 0)
+        self._bufptr_ = self.host_pointer
+
+        self.device_pointer = devptr
+        super().__init__(devptr, size, finalizer=finalizer)
+        self.handle = self.host_pointer
+
+        # For buffer interface
+        self._buflen_ = self.size
+
+    def own(self):
+        return MappedOwnedPointer(weakref.proxy(self))
+
+
+class MappedMemory(_MappedMemory):
     """A memory pointer that refers to a buffer on the host that is mapped into
     device memory.
 
-    :param context: The context in which the pointer was mapped.
-    :type context: Context
+    :param context: Ignored. Passing ``None`` is recommended.
+    :type context: NoneType
     :param pointer: The address of the buffer.
     :type pointer: ctypes.c_void_p
     :param size: The size of the buffer in bytes.
@@ -1896,45 +1934,11 @@ class MappedMemory(AutoFreePointer):
     :type finalizer: function
     """
 
-    __cuda_memory__ = True
-
-    def __init__(self, pointer, size, owner=None, finalizer=None):
-        self.owned = owner
-        self.host_pointer = pointer
-
-        devptr = driver.cuMemHostGetDevicePointer(pointer, 0)
-        self._bufptr_ = self.host_pointer
-
-        self.device_pointer = devptr
-        super(MappedMemory, self).__init__(devptr, size, finalizer=finalizer)
-        self.handle = self.host_pointer
-
-        # For buffer interface
-        self._buflen_ = self.size
-
-    def own(self):
-        return MappedOwnedPointer(weakref.proxy(self))
+    def __init__(self, context, pointer, size, owner=None, finalizer=None):
+        super().__init__(pointer, size, owner=None, finalizer=None)
 
 
-class PinnedMemory(mviewbuf.MemAlloc):
-    """A pointer to a pinned buffer on the host.
-
-    :param context: The context in which the pointer was mapped.
-    :type context: Context
-    :param owner: The object owning the memory. For EMM plugin implementation,
-                  this ca
-    :param pointer: The address of the buffer.
-    :type pointer: ctypes.c_void_p
-    :param size: The size of the buffer in bytes.
-    :type size: int
-    :param owner: An object owning the buffer that has been pinned. For EMM
-                  plugin implementation, the default of ``None`` suffices for
-                  memory allocated in ``memhostalloc`` - for ``mempin``, it
-                  should be the owner passed in to the ``mempin`` method.
-    :param finalizer: A function that is called when the buffer is to be freed.
-    :type finalizer: function
-    """
-
+class _PinnedMemory(mviewbuf.MemAlloc):
     def __init__(self, pointer, size, owner=None, finalizer=None):
         self.owned = owner
         self.size = size
@@ -1953,12 +1957,51 @@ class PinnedMemory(mviewbuf.MemAlloc):
         return self
 
 
-class ManagedMemory(AutoFreePointer):
+class PinnedMemory(_PinnedMemory):
+    """A pointer to a pinned buffer on the host.
+
+    :param context: Ignored. Passing ``None`` is recommended.
+    :type context: NoneType
+    :param owner: The object owning the memory. For EMM plugin implementation,
+                  this ca
+    :param pointer: The address of the buffer.
+    :type pointer: ctypes.c_void_p
+    :param size: The size of the buffer in bytes.
+    :type size: int
+    :param owner: An object owning the buffer that has been pinned. For EMM
+                  plugin implementation, the default of ``None`` suffices for
+                  memory allocated in ``memhostalloc`` - for ``mempin``, it
+                  should be the owner passed in to the ``mempin`` method.
+    :param finalizer: A function that is called when the buffer is to be freed.
+    :type finalizer: function
+    """
+
+    def __init__(self, context, pointer, size, owner=None, finalizer=None):
+        super().__init__(pointer, size, owner=owner, finalizer=finalizer)
+
+
+class _ManagedMemory(_AutoFreePointer):
+    __cuda_memory__ = True
+
+    def __init__(self, pointer, size, owner=None, finalizer=None):
+        self.owned = owner
+        devptr = pointer
+        super().__init__(devptr, size, finalizer=finalizer)
+
+        # For buffer interface
+        self._buflen_ = self.size
+        self._bufptr_ = self.device_pointer
+
+    def own(self):
+        return ManagedOwnedPointer(weakref.proxy(self))
+
+
+class ManagedMemory(_ManagedMemory):
     """A memory pointer that refers to a managed memory buffer (can be accessed
     on both host and device).
 
-    :param context: The context in which the pointer was mapped.
-    :type context: Context
+    :param context: Ignored. Passing ``None`` is recommended.
+    :type context: NoneType
     :param pointer: The address of the buffer.
     :type pointer: ctypes.c_void_p
     :param size: The size of the buffer in bytes.
@@ -1973,19 +2016,8 @@ class ManagedMemory(AutoFreePointer):
     :type finalizer: function
     """
 
-    __cuda_memory__ = True
-
-    def __init__(self, pointer, size, owner=None, finalizer=None):
-        self.owned = owner
-        devptr = pointer
-        super().__init__(devptr, size, finalizer=finalizer)
-
-        # For buffer interface
-        self._buflen_ = self.size
-        self._bufptr_ = self.device_pointer
-
-    def own(self):
-        return ManagedOwnedPointer(weakref.proxy(self))
+    def __init__(self, context, pointer, size, owner=None, finalizer=None):
+        super().__init__(pointer, size, owner=owner, finalizer=finalizer)
 
 
 class OwnedPointer(object):
@@ -2302,7 +2334,7 @@ class CtypesModule(Module):
         driver.cuModuleGetGlobal(
             byref(ptr), byref(size), self.handle, name.encode("utf8")
         )
-        return MemoryPointer(ptr, size), size.value
+        return _MemoryPointer(ptr, size), size.value
 
 
 class CudaPythonModule(Module):
@@ -2312,7 +2344,7 @@ class CudaPythonModule(Module):
 
     def get_global_symbol(self, name):
         ptr, size = driver.cuModuleGetGlobal(self.handle, name.encode("utf8"))
-        return MemoryPointer(ptr, size), size
+        return _MemoryPointer(ptr, size), size
 
 
 FuncAttr = namedtuple(
