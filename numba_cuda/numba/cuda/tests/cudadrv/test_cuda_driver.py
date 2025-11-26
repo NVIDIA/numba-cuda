@@ -11,7 +11,7 @@ from numba.cuda.cudadrv.driver import (
 )
 
 from numba import cuda
-from numba.cuda.cudadrv import devices, driver as _driver
+from numba.cuda.cudadrv import devices
 from numba.cuda.testing import unittest, CUDATestCase
 from numba.cuda.testing import skip_on_cudasim
 import contextlib
@@ -100,8 +100,6 @@ class TestCudaDriver(CUDATestCase):
         ptr = memory.device_ctypes_pointer
         stream = 0
 
-        stream = _driver.binding.CUstream(stream)
-
         launch_kernel(
             function.handle,  # Kernel
             1,
@@ -135,9 +133,6 @@ class TestCudaDriver(CUDATestCase):
 
             ptr = memory.device_ctypes_pointer
 
-            stream_handle = stream.handle
-            stream_handle = stream_handle.value
-
             launch_kernel(
                 function.handle,  # Kernel
                 1,
@@ -147,7 +142,7 @@ class TestCudaDriver(CUDATestCase):
                 1,
                 1,  # bx, by, bz
                 0,  # dynamic shared mem
-                stream_handle,  # stream
+                stream,  # stream - pass Stream object directly
                 [ptr],
             )  # arguments
 
@@ -186,7 +181,7 @@ class TestCudaDriver(CUDATestCase):
                 1,
                 1,  # bx, by, bz
                 0,  # dynamic shared mem
-                stream.handle,  # stream
+                stream,  # stream - pass ExperimentalStream object directly
                 [ptr],
             )
 

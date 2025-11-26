@@ -188,7 +188,7 @@ class _Runtime:
             1,
             1,
             0,
-            stream.handle.value,
+            stream,
             params,
             cooperative=False,
         )

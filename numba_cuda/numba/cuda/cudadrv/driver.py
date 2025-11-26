@@ -2433,18 +2433,33 @@ def launch_kernel(
     by,
     bz,
     sharedmem,
-    hstream,
+    stream,
     args,
     cooperative=False,
 ):
-    # Convert stream handle to cuda.core Stream object
-    if hstream is None:
-        hstream = 0
-    elif isinstance(hstream, binding.CUstream):
-        hstream = get_cuda_native_handle(hstream)
-    elif not isinstance(hstream, int):
-        hstream = 0
-    stream = ExperimentalStream.from_handle(hstream)
+    # Convert stream to cuda.core Stream object if needed
+    # stream can be: int (0 for default), Stream, or ExperimentalStream
+    if stream == 0 or stream is None:
+        stream = ExperimentalStream.from_handle(0)
+    elif isinstance(stream, Stream):
+        # Extract handle from numba Stream and create ExperimentalStream
+        if hasattr(stream, "__cuda_stream__"):
+            ver, ptr = stream.__cuda_stream__()
+            assert ver == 0
+            if isinstance(ptr, binding.CUstream):
+                handle = get_cuda_native_handle(ptr)
+            else:
+                handle = ptr
+            stream = ExperimentalStream.from_handle(handle)
+        else:
+            raise TypeError("Invalid Stream object")
+    elif isinstance(stream, ExperimentalStream):
+        # Already the right type, use as-is
+        pass
+    else:
+        raise TypeError(
+            f"Expected a Stream object, ExperimentalStream, or 0, got {type(stream).__name__}"
+        )
 
     # Configure kernel launch parameters
     config = LaunchConfig(
