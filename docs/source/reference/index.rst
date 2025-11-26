@@ -9,6 +9,7 @@ Reference documentation
 
    host.rst
    kernel.rst
+   cache_hints.rst
    types.rst
    memory.rst
    libdevice.rst
