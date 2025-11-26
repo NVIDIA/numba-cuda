@@ -2493,7 +2493,7 @@ def launch_kernel(
     # Convert arguments: cuda.core.launch expects numpy.uint64 for pointers,
     # but can handle ctypes scalars directly
     converted_args = [
-        np.uint64(arg.value if arg.value is not None else 0)
+        (arg.value if arg.value is not None else 0)
         if isinstance(arg, c_void_p)
         else arg
         for arg in args
