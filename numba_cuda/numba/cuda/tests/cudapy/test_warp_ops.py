@@ -262,6 +262,10 @@ class TestCudaWarpOperations(CUDATestCase):
                 "Mask type must be an integer",
             ),
             (
+                "void(boolean[:], int32[:], int32[:])",
+                "Mask type must be an integer",
+            ),
+            (
                 "void(float64[:], int32[:], int32[:])",
                 "Mask type must be an integer",
             ),
