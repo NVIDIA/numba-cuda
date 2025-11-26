@@ -2494,8 +2494,8 @@ def launch_kernel(
 
     # Configure kernel launch parameters
     config = LaunchConfig(
-        grid=(int(gx), int(gy), int(gz)),
-        block=(int(bx), int(by), int(bz)),
+        grid=(gx, gy, gz),
+        block=(bx, by, bz),
         shmem_size=int(sharedmem) if sharedmem is not None else 0,
         cooperative_launch=cooperative,
     )
