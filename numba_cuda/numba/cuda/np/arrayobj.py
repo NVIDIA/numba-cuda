@@ -3643,6 +3643,8 @@ def constant_array(context, builder, ty, pyval):
     """
     Create a constant array (mechanism is target-dependent).
     """
+    if isinstance(pyval, list):
+        pyval = np.asarray(pyval)
     return context.make_constant_array(builder, ty, pyval)
 
 
