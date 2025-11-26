@@ -6,7 +6,11 @@ from llvmlite import ir
 from numba import cuda
 from numba.cuda import types
 from numba.cuda import cgutils
-from numba.cuda.core.errors import RequireLiteralValue, TypingError
+from numba.cuda.core.errors import (
+    RequireLiteralValue,
+    TypingError,
+    NumbaTypeError,
+)
 from numba.cuda.typing import signature
 from numba.cuda.extending import overload_attribute, overload_method
 from numba.cuda import nvvmutils
@@ -479,7 +483,16 @@ def ballot_sync(typingctx, mask_type, predicate_type):
 def vote_sync_intrinsic(typingctx, mask_type, mode_value, predicate_type):
     # Validate mode value
     if mode_value not in (0, 1, 2, 3):
-        raise ValueError("mode must be 0 (all), 1 (any), 2 (eq), or 3 (ballot)")
+        raise ValueError("Mode must be 0 (all), 1 (any), 2 (eq), or 3 (ballot)")
+
+    if types.unliteral(mask_type) not in types.integer_domain:
+        raise NumbaTypeError(f"Mask type must be an integer. Got {mask_type}")
+    predicate_types = types.integer_domain | {types.boolean}
+
+    if types.unliteral(predicate_type) not in predicate_types:
+        raise NumbaTypeError(
+            f"Predicate must be an integer or boolean. Got {predicate_type}"
+        )
 
     def codegen(context, builder, sig, args):
         mask, predicate = args
