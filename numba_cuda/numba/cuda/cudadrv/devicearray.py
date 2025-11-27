@@ -178,7 +178,8 @@ class DeviceNDArrayBase(_devicearray.DeviceArray):
         # of which will be 0, will not match those hardcoded in for 'C' or 'F'
         # layouts.
 
-        broadcast = 0 in self.strides
+        broadcast = 0 in self.strides and (self.size != 0)
+
         if self.flags["C_CONTIGUOUS"] and not broadcast:
             layout = "C"
         elif self.flags["F_CONTIGUOUS"] and not broadcast:
