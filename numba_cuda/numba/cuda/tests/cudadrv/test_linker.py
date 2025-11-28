@@ -10,11 +10,12 @@ from numba.cuda.testing import (
     skip_if_nvjitlink_missing,
 )
 from numba.cuda.testing import CUDATestCase, test_data_dir
-from numba.cuda.cudadrv.driver import CudaAPIError, _Linker, LinkerError
+from numba.cuda.cudadrv.driver import _Linker, LinkerError
 from numba.cuda import require_context
 from numba import cuda
 from numba.cuda import void, float64, int64, int32, float32
 from numba.cuda.typing.typeof import typeof
+from cuda.core.experimental._utils.cuda_utils import CUDAError
 
 CONST1D = np.arange(10, dtype=np.float64)
 
@@ -308,10 +309,8 @@ class TestLinker(CUDATestCase):
         max_threads = compiled.get_max_threads_per_block()
         nelem = max_threads + 1
         ary = np.empty(nelem, dtype=np.int32)
-        try:
+        with self.assertRaisesRegex(CUDAError, "CUDA_ERROR_INVALID_VALUE"):
             compiled[1, nelem](ary)
-        except CudaAPIError as e:
-            self.assertIn("cuLaunchKernel", e.msg)
 
     def test_get_local_mem_per_thread(self):
         sig = void(int32[::1], int32[::1], typeof(np.int32))
