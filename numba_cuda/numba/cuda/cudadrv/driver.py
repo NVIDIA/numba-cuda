@@ -1316,37 +1316,40 @@ class Context(object):
         del self.modules[key]
 
     def get_default_stream(self):
-        handle = drvapi.cu_stream(int(binding.CUstream(CU_STREAM_DEFAULT)))
-        return Stream(handle)
+        core_stream = ExperimentalStream.from_handle(CU_STREAM_DEFAULT)
+        return Stream(core_stream)
 
     def get_legacy_default_stream(self):
-        handle = drvapi.cu_stream(
-            int(binding.CUstream(binding.CU_STREAM_LEGACY))
-        )
-        return Stream(handle)
+        core_stream = ExperimentalStream.from_handle(binding.CU_STREAM_LEGACY)
+        return Stream(core_stream)
 
     def get_per_thread_default_stream(self):
-        handle = drvapi.cu_stream(
-            int(binding.CUstream(binding.CU_STREAM_PER_THREAD))
-        )
-        return Stream(handle)
+        core_stream = ExperimentalStream.from_handle(binding.CU_STREAM_PER_THREAD)
+        return Stream(core_stream)
 
     def create_stream(self):
-        # The default stream creation flag, specifying that the created
-        # stream synchronizes with stream 0 (this is different from the
-        # default stream, which we define also as CU_STREAM_DEFAULT when
-        # the NV binding is in use).
+        # Create a cuda.core Stream directly
+        # Note: cuda.core doesn't have direct stream creation from context,
+        # so we use the NVIDIA bindings directly
         flags = binding.CUstream_flags.CU_STREAM_DEFAULT.value
-        handle = drvapi.cu_stream(int(driver.cuStreamCreate(flags)))
-        return Stream(
-            handle, finalizer=_stream_finalizer(self.deallocations, handle)
-        )
+        cu_stream_handle = driver.cuStreamCreate(flags)
+        core_stream = ExperimentalStream.from_handle(int(cu_stream_handle))
+        
+        # Wrap in our shim
+        stream_wrapper = Stream(core_stream)
+        
+        # Set up finalizer on the wrapper (not on core_stream which doesn't support weakref)
+        def stream_finalizer(handle):
+            self.deallocations.add_item(driver.cuStreamDestroy, handle)
+        weakref.finalize(stream_wrapper, stream_finalizer, cu_stream_handle)
+        
+        return stream_wrapper
 
     def create_external_stream(self, ptr):
         if not isinstance(ptr, int):
             raise TypeError("ptr for external stream must be an int")
-        handle = drvapi.cu_stream(int(binding.CUstream(ptr)))
-        return Stream(handle, external=True)
+        core_stream = ExperimentalStream.from_handle(ptr)
+        return Stream(core_stream, external=True)
 
     def create_event(self, timing=True):
         flags = 0
@@ -2010,44 +2013,77 @@ class ManagedOwnedPointer(OwnedPointer, mviewbuf.MemAlloc):
 
 
 class Stream:
-    def __init__(self, handle, finalizer=None, external=False):
-        self.handle = handle
+    """
+    Compatibility shim for cuda.core.experimental.Stream.
+    
+    This class wraps cuda.core.experimental.Stream to provide backward
+    compatibility with the legacy numba Stream API while using cuda.core
+    internally.
+    
+    The underlying cuda.core Stream is accessible via the `_core_stream` attribute.
+    """
+    
+    def __init__(self, core_stream, external=False):
+        self._core_stream = core_stream
         self.external = external
-        if finalizer is not None:
-            weakref.finalize(self, finalizer)
-
+        
+    @property
+    def handle(self):
+        class _HandleCompat:
+            def __init__(self, stream_handle):
+                # Convert to int if CUstream object
+                if isinstance(stream_handle, int):
+                    self.value = stream_handle
+                else:
+                    self.value = int(stream_handle) if stream_handle else 0
+        return _HandleCompat(self._core_stream.handle)
+    
     def __int__(self):
-        # The default stream's handle.value is 0, which gives `None`
-        return self.handle.value or drvapi.CU_STREAM_DEFAULT
-
+        handle = self._core_stream.handle
+        # Handle can be CUstream object or int
+        if isinstance(handle, int):
+            return handle if handle else drvapi.CU_STREAM_DEFAULT
+        else:
+            # It's a binding.CUstream object
+            return int(handle) if handle else drvapi.CU_STREAM_DEFAULT
+    
     def __cuda_stream__(self):
-        if not self.handle.value:
+        handle = self._core_stream.handle
+        # Convert to int if needed
+        if not isinstance(handle, int):
+            handle = int(handle) if handle else 0
+        if not handle:
             return (0, drvapi.CU_STREAM_DEFAULT)
-        return (0, self.handle.value)
-
+        return (0, handle)
+    
     def __repr__(self):
         default_streams = {
+            0: "<Default CUDA stream>",
             drvapi.CU_STREAM_DEFAULT: "<Default CUDA stream>",
             drvapi.CU_STREAM_LEGACY: "<Legacy default CUDA stream>",
             drvapi.CU_STREAM_PER_THREAD: "<Per-thread default CUDA stream>",
         }
-        ptr = self.handle.value or drvapi.CU_STREAM_DEFAULT
-
+        handle = self._core_stream.handle
+        # Convert to int if needed
+        if not isinstance(handle, int):
+            ptr = int(handle) if handle else drvapi.CU_STREAM_DEFAULT
+        else:
+            ptr = handle if handle else drvapi.CU_STREAM_DEFAULT
+        
         if ptr in default_streams:
             return default_streams[ptr]
         elif self.external:
             return f"<External CUDA stream {ptr:d}>"
         else:
             return f"<CUDA stream {ptr:d}>"
-
+    
     def synchronize(self):
         """
         Wait for all commands in this stream to execute. This will commit any
         pending memory transfers.
         """
-        handle = self.handle.value
-        driver.cuStreamSynchronize(handle)
-
+        self._core_stream.sync()
+    
     @contextlib.contextmanager
     def auto_synchronize(self):
         """
@@ -2056,7 +2092,7 @@ class Stream:
         """
         yield self
         self.synchronize()
-
+    
     def add_callback(self, callback, arg=None):
         """
         Add a callback to a compute stream.
@@ -2093,9 +2129,12 @@ class Stream:
         stream_callback = binding.CUstreamCallback(ptr)
         # The callback needs to receive a pointer to the data PyObject
         data = id(data)
-        handle = self.handle.value
+        handle = self._core_stream.handle
+        # Convert to int if needed
+        if not isinstance(handle, int):
+            handle = int(handle)
         driver.cuStreamAddCallback(handle, stream_callback, data, 0)
-
+    
     @staticmethod
     @cu_stream_callback_pyobj
     def _stream_callback(handle, status, data):
@@ -2106,7 +2145,7 @@ class Stream:
             warnings.warn(f"Exception in stream callback: {e}")
         finally:
             _py_decref(data)
-
+    
     def async_done(self) -> asyncio.futures.Future:
         """
         Return an awaitable that resolves once all preceding stream operations
@@ -2339,21 +2378,12 @@ CudaPythonFunction = Function
 
 
 def _to_experimental_stream(stream):
-    # stream can be: int (0 for default), Stream, or ExperimentalStream
+    # stream can be: int (0 for default), Stream (shim), or ExperimentalStream
     if stream == 0 or stream is None:
         return ExperimentalStream.from_handle(0)
     elif isinstance(stream, Stream):
-        # Extract handle from numba Stream and create ExperimentalStream
-        if hasattr(stream, "__cuda_stream__"):
-            ver, ptr = stream.__cuda_stream__()
-            assert ver == 0
-            if isinstance(ptr, binding.CUstream):
-                handle = get_cuda_native_handle(ptr)
-            else:
-                handle = ptr
-            return ExperimentalStream.from_handle(handle)
-        else:
-            raise TypeError("Invalid Stream object")
+        # Our shim wraps a cuda.core Stream - just return it!
+        return stream._core_stream
     elif isinstance(stream, ExperimentalStream):
         return stream
     else:
