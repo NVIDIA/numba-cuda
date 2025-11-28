@@ -275,19 +275,11 @@ class Array(object):
         # 13661ac70).
         # https://github.com/numpy/numpy/blob/maintenance/1.19.x/numpy/core/src/multiarray/flagsobject.c#L123-L191
 
+        flags = {"C_CONTIGUOUS": True, "F_CONTIGUOUS": True}
+
         # Records have no dims, and we can treat them as contiguous
         if not self.dims:
-            return {"C_CONTIGUOUS": True, "F_CONTIGUOUS": True}
-
-        # All 0-size arrays are considered contiguous, even if they are multidimensional
-        if self.size == 0:
-            return {"C_CONTIGUOUS": True, "F_CONTIGUOUS": True}
-
-        # If this is a broadcast array then it is not contiguous
-        if any([dim.stride == 0 for dim in self.dims]):
-            return {"C_CONTIGUOUS": False, "F_CONTIGUOUS": False}
-
-        flags = {"C_CONTIGUOUS": True, "F_CONTIGUOUS": True}
+            return flags
 
         # Check C contiguity
         sd = self.itemsize
@@ -342,7 +334,16 @@ class Array(object):
 
         arr = Array(dims, self.itemsize)
         if newshape:
-            return arr.reshape(*newshape)[0]
+            # "A" order is required here so that the reshape can read and write
+            # the elements in fortran-like index order if the array is
+            # fortran-contiguous, and in C-like order otherwise. Otherwise, we
+            # end up reshaping fortran-contiguous arrays to C-contiguous,
+            # transposing indices in the process.
+            #
+            # See the NumPy reshape documentation of the order argument for a
+            # description of the behaviour this is following:
+            # https://numpy.org/doc/stable/reference/generated/numpy.reshape.html
+            return arr.reshape(*newshape, order="A")[0]
         else:
             return Element(arr.extent)
 
