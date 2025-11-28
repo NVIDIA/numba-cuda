@@ -108,7 +108,9 @@ class DeviceNDArrayBase(_devicearray.DeviceArray):
         else:
             # Make NULL pointer for empty allocation
             null = _driver.binding.CUdeviceptr(0)
-            gpu_data = _driver.MemoryPointer(pointer=null, size=0)
+            gpu_data = _driver.MemoryPointer(
+                context=devices.get_context(), pointer=null, size=0
+            )
             self.alloc_size = 0
 
         self.gpu_data = gpu_data
@@ -178,7 +180,8 @@ class DeviceNDArrayBase(_devicearray.DeviceArray):
         # of which will be 0, will not match those hardcoded in for 'C' or 'F'
         # layouts.
 
-        broadcast = 0 in self.strides
+        broadcast = 0 in self.strides and (self.size != 0)
+
         if self.flags["C_CONTIGUOUS"] and not broadcast:
             layout = "C"
         elif self.flags["F_CONTIGUOUS"] and not broadcast:
