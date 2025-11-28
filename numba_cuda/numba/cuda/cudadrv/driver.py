@@ -64,7 +64,7 @@ from cuda.core.experimental import (
     launch,
     LaunchConfig,
 )
-from cuda.core.experimental._module import Kernel
+from cuda.core.experimental._module import Kernel, _lazy_init
 
 from cuda.bindings.utils import get_cuda_native_handle
 from cuda.core.experimental import (
@@ -1391,45 +1391,6 @@ def load_module_image(
     )
 
 
-def load_module_image_ctypes(
-    context, image, setup_callbacks, teardown_callbacks
-):
-    logsz = config.CUDA_LOG_SIZE
-
-    jitinfo = (c_char * logsz)()
-    jiterrors = (c_char * logsz)()
-
-    options = {
-        enums.CU_JIT_INFO_LOG_BUFFER: addressof(jitinfo),
-        enums.CU_JIT_INFO_LOG_BUFFER_SIZE_BYTES: c_void_p(logsz),
-        enums.CU_JIT_ERROR_LOG_BUFFER: addressof(jiterrors),
-        enums.CU_JIT_ERROR_LOG_BUFFER_SIZE_BYTES: c_void_p(logsz),
-        enums.CU_JIT_LOG_VERBOSE: c_void_p(config.CUDA_VERBOSE_JIT_LOG),
-    }
-
-    option_keys = (drvapi.cu_jit_option * len(options))(*options.keys())
-    option_vals = (c_void_p * len(options))(*options.values())
-    handle = drvapi.cu_module()
-    try:
-        driver.cuModuleLoadDataEx(
-            byref(handle), image, len(options), option_keys, option_vals
-        )
-    except CudaAPIError as e:
-        msg = "cuModuleLoadDataEx error:\n%s" % jiterrors.value.decode("utf8")
-        raise CudaAPIError(e.code, msg)
-
-    info_log = jitinfo.value
-
-    return CtypesModule(
-        weakref.proxy(context),
-        handle,
-        info_log,
-        _module_finalizer(context, handle),
-        setup_callbacks,
-        teardown_callbacks,
-    )
-
-
 def load_module_image_cuda_python(
     context, image, setup_callbacks, teardown_callbacks
 ):
@@ -2307,27 +2268,10 @@ class Module(metaclass=ABCMeta):
         )
 
 
-class CtypesModule(Module):
-    def get_function(self, name):
-        handle = drvapi.cu_function()
-        driver.cuModuleGetFunction(
-            byref(handle), self.handle, name.encode("utf8")
-        )
-        return CtypesFunction(weakref.proxy(self), handle, name)
-
-    def get_global_symbol(self, name):
-        ptr = drvapi.cu_device_ptr()
-        size = drvapi.c_size_t()
-        driver.cuModuleGetGlobal(
-            byref(ptr), byref(size), self.handle, name.encode("utf8")
-        )
-        return MemoryPointer(self.context, ptr, size), size.value
-
-
 class CudaPythonModule(Module):
     def get_function(self, name):
         handle = driver.cuModuleGetFunction(self.handle, name.encode("utf8"))
-        return CudaPythonFunction(weakref.proxy(self), handle, name)
+        return Function(weakref.proxy(self), handle, name)
 
     def get_global_symbol(self, name):
         ptr, size = driver.cuModuleGetGlobal(self.handle, name.encode("utf8"))
@@ -2339,7 +2283,7 @@ FuncAttr = namedtuple(
 )
 
 
-class Function(metaclass=ABCMeta):
+class Function:
     griddim = 1, 1, 1
     blockdim = 1, 1, 1
     stream = 0
@@ -2358,59 +2302,10 @@ class Function(metaclass=ABCMeta):
     def device(self):
         return self.module.context.device
 
-    @abstractmethod
     def cache_config(
         self, prefer_equal=False, prefer_cache=False, prefer_shared=False
     ):
         """Set the cache configuration for this function."""
-
-    @abstractmethod
-    def read_func_attr(self, attrid):
-        """Return the value of the attribute with given ID."""
-
-    @abstractmethod
-    def read_func_attr_all(self):
-        """Return a FuncAttr object with the values of various function
-        attributes."""
-
-
-class CtypesFunction(Function):
-    def cache_config(
-        self, prefer_equal=False, prefer_cache=False, prefer_shared=False
-    ):
-        prefer_equal = prefer_equal or (prefer_cache and prefer_shared)
-        if prefer_equal:
-            flag = enums.CU_FUNC_CACHE_PREFER_EQUAL
-        elif prefer_cache:
-            flag = enums.CU_FUNC_CACHE_PREFER_L1
-        elif prefer_shared:
-            flag = enums.CU_FUNC_CACHE_PREFER_SHARED
-        else:
-            flag = enums.CU_FUNC_CACHE_PREFER_NONE
-        driver.cuFuncSetCacheConfig(self.handle, flag)
-
-    def read_func_attr(self, attrid):
-        retval = c_int()
-        driver.cuFuncGetAttribute(byref(retval), attrid, self.handle)
-        return retval.value
-
-    def read_func_attr_all(self):
-        nregs = self.read_func_attr(enums.CU_FUNC_ATTRIBUTE_NUM_REGS)
-        cmem = self.read_func_attr(enums.CU_FUNC_ATTRIBUTE_CONST_SIZE_BYTES)
-        lmem = self.read_func_attr(enums.CU_FUNC_ATTRIBUTE_LOCAL_SIZE_BYTES)
-        smem = self.read_func_attr(enums.CU_FUNC_ATTRIBUTE_SHARED_SIZE_BYTES)
-        maxtpb = self.read_func_attr(
-            enums.CU_FUNC_ATTRIBUTE_MAX_THREADS_PER_BLOCK
-        )
-        return FuncAttr(
-            regs=nregs, const=cmem, local=lmem, shared=smem, maxthreads=maxtpb
-        )
-
-
-class CudaPythonFunction(Function):
-    def cache_config(
-        self, prefer_equal=False, prefer_cache=False, prefer_shared=False
-    ):
         prefer_equal = prefer_equal or (prefer_cache and prefer_shared)
         attr = binding.CUfunc_cache
         if prefer_equal:
@@ -2439,24 +2334,14 @@ class CudaPythonFunction(Function):
             regs=nregs, const=cmem, local=lmem, shared=smem, maxthreads=maxtpb
         )
 
+# Alias for backward compatibility
+CudaPythonFunction = Function
 
-def launch_kernel(
-    cufunc_handle,
-    gx,
-    gy,
-    gz,
-    bx,
-    by,
-    bz,
-    sharedmem,
-    stream,
-    args,
-    cooperative=False,
-):
-    # Convert stream to cuda.core Stream object if needed
+
+def _to_experimental_stream(stream):
     # stream can be: int (0 for default), Stream, or ExperimentalStream
     if stream == 0 or stream is None:
-        stream = ExperimentalStream.from_handle(0)
+        return ExperimentalStream.from_handle(0)
     elif isinstance(stream, Stream):
         # Extract handle from numba Stream and create ExperimentalStream
         if hasattr(stream, "__cuda_stream__"):
@@ -2466,49 +2351,55 @@ def launch_kernel(
                 handle = get_cuda_native_handle(ptr)
             else:
                 handle = ptr
-            stream = ExperimentalStream.from_handle(handle)
+            return ExperimentalStream.from_handle(handle)
         else:
             raise TypeError("Invalid Stream object")
     elif isinstance(stream, ExperimentalStream):
-        # Already the right type, use as-is
-        pass
+        return stream
     else:
         raise TypeError(
             f"Expected a Stream object, ExperimentalStream, or 0, got {type(stream).__name__}"
         )
 
-    # Configure kernel launch parameters
-    config = LaunchConfig(
-        grid=(gx, gy, gz),
-        block=(bx, by, bz),
-        shmem_size=sharedmem,
-        cooperative_launch=cooperative,
-    )
 
-    # Convert function handle to CUfunction binding type
-    if isinstance(cufunc_handle, binding.CUfunction):
-        cufunction = cufunc_handle
-    else:
-        cufunction = binding.CUfunction(int(cufunc_handle))
-
-    # Convert arguments: cuda.core.launch expects numpy.uint64 for pointers,
-    # but can handle ctypes scalars directly
-    converted_args = [
-        (arg.value if arg.value is not None else 0)
-        if isinstance(arg, c_void_p)
-        else arg
+def _normalize_kernel_args(args):
+    # cuda.core.launch can handle ctypes scalars directly, but for pointers
+    # ensure c_void_p is converted to integer (0 if None)
+    return [
+        (arg.value if arg.value is not None else 0) if isinstance(arg, c_void_p) else arg
         for arg in args
     ]
 
-    # Create Kernel object and launch
-    # We use Kernel._from_obj with an ObjectCode stub since we're wrapping
-    # an existing CUfunction handle rather than creating from object code.
-    from cuda.core.experimental._module import _lazy_init
 
+def _to_cufunction(cufunc_handle):
+    # Ensure handle is a binding.CUfunction
+    if isinstance(cufunc_handle, binding.CUfunction):
+        return cufunc_handle
+    return binding.CUfunction(int(cufunc_handle))
+
+
+# Internal cache for Kernel objects created from CUfunction handles
+_kernel_cache = {}
+
+
+def _get_or_create_kernel(cufunction):
+    key = int(cufunction)
+    kernel = _kernel_cache.get(key)
+    if kernel is not None:
+        return kernel
     _lazy_init()
     objcode_stub = object.__new__(ObjectCode)
     kernel = Kernel._from_obj(cufunction, objcode_stub)
-    launch(stream, config, kernel, *converted_args)
+    _kernel_cache[key] = kernel
+    return kernel
+
+
+def _core_launch(stream, config, cufunction, *args):
+    """
+    Internal helper to launch via cuda.core.experimental.launch ensuring a Kernel object.
+    """
+    kernel = _get_or_create_kernel(_to_cufunction(cufunction))
+    return launch(stream, config, kernel, *args)
 
 
 class _LinkerBase(metaclass=ABCMeta):

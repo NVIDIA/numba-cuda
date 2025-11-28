@@ -7,8 +7,10 @@ from numba.cuda.cudadrv.driver import (
     host_to_device,
     device_to_host,
     driver,
-    launch_kernel,
 )
+import numba.cuda.cudadrv.driver as drvmod
+from cuda.core.experimental import launch, LaunchConfig, Stream as ExperimentalStream
+from cuda.bindings import driver as binding
 
 from numba import cuda
 from numba.cuda.cudadrv import devices
@@ -98,20 +100,15 @@ class TestCudaDriver(CUDATestCase):
         host_to_device(memory, array, sizeof(array))
 
         ptr = memory.device_ctypes_pointer
-        stream = 0
 
-        launch_kernel(
-            function.handle,  # Kernel
-            1,
-            1,
-            1,  # gx, gy, gz
-            100,
-            1,
-            1,  # bx, by, bz
-            0,  # dynamic shared mem
-            stream,  # stream
-            [ptr],
-        )  # arguments
+        config = LaunchConfig(
+            grid=(1, 1, 1),
+            block=(100, 1, 1),
+            shmem_size=0,
+            cooperative_launch=False,
+        )
+        exp_stream = ExperimentalStream.from_handle(0)
+        drvmod._core_launch(exp_stream, config, function.handle, ptr)
 
         device_to_host(array, memory, sizeof(array))
         for i, v in enumerate(array):
@@ -133,18 +130,15 @@ class TestCudaDriver(CUDATestCase):
 
             ptr = memory.device_ctypes_pointer
 
-            launch_kernel(
-                function.handle,  # Kernel
-                1,
-                1,
-                1,  # gx, gy, gz
-                100,
-                1,
-                1,  # bx, by, bz
-                0,  # dynamic shared mem
-                stream,  # stream - pass Stream object directly
-                [ptr],
-            )  # arguments
+            config = LaunchConfig(
+                grid=(1, 1, 1),
+                block=(100, 1, 1),
+                shmem_size=0,
+                cooperative_launch=False,
+            )
+            # Convert numba Stream to ExperimentalStream
+            exp_stream = drvmod._to_experimental_stream(stream)
+            drvmod._core_launch(exp_stream, config, function.handle, ptr)
 
         device_to_host(array, memory, sizeof(array), stream=stream)
 
@@ -172,18 +166,13 @@ class TestCudaDriver(CUDATestCase):
 
             ptr = memory.device_ctypes_pointer
 
-            launch_kernel(
-                function.handle,  # Kernel
-                1,
-                1,
-                1,  # gx, gy, gz
-                100,
-                1,
-                1,  # bx, by, bz
-                0,  # dynamic shared mem
-                stream,  # stream - pass ExperimentalStream object directly
-                [ptr],
+            config = LaunchConfig(
+                grid=(1, 1, 1),
+                block=(100, 1, 1),
+                shmem_size=0,
+                cooperative_launch=False,
             )
+            drvmod._core_launch(stream, config, function.handle, ptr)
 
             device_to_host(array, memory, sizeof(array), stream=stream)
         for i, v in enumerate(array):
