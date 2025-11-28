@@ -7,7 +7,7 @@ import platform
 from numba import cuda
 from numba.cuda.testing import unittest, CUDATestCase
 
-
+# TODO
 class TestPinned(CUDATestCase):
     def _run_copies(self, A):
         A0 = np.copy(A)

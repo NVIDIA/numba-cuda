@@ -23,6 +23,7 @@ from numba.cuda import HAS_NUMBA
 
 if HAS_NUMBA:
     from numba import jit
+import cupy as cp
 
 
 class TestDeviceFunc(CUDATestCase):
@@ -207,9 +208,7 @@ class TestDeviceFunc(CUDATestCase):
             x[0] = rgba(channels[0], channels[1], channels[2], channels[3])
 
         x = cuda.device_array(1, dtype=np.int32)
-        channels = cuda.to_device(
-            np.asarray([1.0, 2.0, 3.0, 4.0], dtype=np.float32)
-        )
+        channels = cp.array([1.0, 2.0, 3.0, 4.0], dtype=np.float32)
 
         rgba_caller[1, 1](x, channels)
 

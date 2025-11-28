@@ -9,10 +9,11 @@ import contextlib
 import os
 
 import numpy as np
-
+import warnings
 from .cudadrv import devicearray, devices, driver
 from numba.cuda.core import config
 from numba.cuda.api_util import prepare_shape_strides_dtype
+from numba.cuda.cudadrv.devicearray import DeprecatedDeviceArrayApiWarning
 
 # NDarray device helper
 
@@ -23,9 +24,9 @@ gpus = devices.gpus
 
 @require_context
 def from_cuda_array_interface(desc, owner=None, sync=True):
-    """Create a DeviceNDArray from a cuda-array-interface description.
+    """Create a _DeviceNDArray from a cuda-array-interface description.
     The ``owner`` is the owner of the underlying memory.
-    The resulting DeviceNDArray will acquire a reference from it.
+    The resulting _DeviceNDArray will acquire a reference from it.
 
     If ``sync`` is ``True``, then the imported stream (if present) will be
     synchronized.
@@ -58,18 +59,18 @@ def from_cuda_array_interface(desc, owner=None, sync=True):
             stream.synchronize()
     else:
         stream = 0  # No "Numba default stream", not the CUDA default stream
-    da = devicearray.DeviceNDArray(
+    da = devicearray._DeviceNDArray(
         shape=shape, strides=strides, dtype=dtype, gpu_data=data, stream=stream
     )
     return da
 
 
 def as_cuda_array(obj, sync=True):
-    """Create a DeviceNDArray from any object that implements
+    """Create a _DeviceNDArray from any object that implements
     the :ref:`cuda array interface <cuda-array-interface>`.
 
     A view of the underlying GPU buffer is created.  No copying of the data
-    is done.  The resulting DeviceNDArray will acquire a reference from `obj`.
+    is done.  The resulting _DeviceNDArray will acquire a reference from `obj`.
 
     If ``sync`` is ``True``, then the imported stream (if present) will be
     synchronized.
@@ -136,6 +137,10 @@ def to_device(obj, stream=0, copy=True, to=None):
 
         hary = d_ary.copy_to_host(stream=stream)
     """
+    warnings.warn(
+        "to_device is deprecated. Please prefer cupy for moving numpy arrays to the device.",
+        DeprecatedDeviceArrayApiWarning,
+    )
     if to is None:
         to, new = devicearray.auto_device(
             obj, stream=stream, copy=copy, user_explicit=True
@@ -152,6 +157,10 @@ def device_array(shape, dtype=np.float64, strides=None, order="C", stream=0):
 
     Allocate an empty device ndarray. Similar to :meth:`numpy.empty`.
     """
+    warnings.warn(
+        "device_array is deprecated. Please prefer cupy for moving numpy arrays to the device.",
+        DeprecatedDeviceArrayApiWarning,
+    )
     shape, strides, dtype = prepare_shape_strides_dtype(
         shape, strides, dtype, order
     )
@@ -184,6 +193,10 @@ def managed_array(
                           *host*, and memory is only accessible by devices
                           with Compute Capability 6.0 and later.
     """
+    warnings.warn(
+        "managed_array is deprecated. Please prefer cupy for moving numpy arrays to the device.",
+        DeprecatedDeviceArrayApiWarning,
+    )
     shape, strides, dtype = prepare_shape_strides_dtype(
         shape, strides, dtype, order
     )
@@ -206,6 +219,10 @@ def pinned_array(shape, dtype=np.float64, strides=None, order="C"):
     Allocate an :class:`ndarray <numpy.ndarray>` with a buffer that is pinned
     (pagelocked).  Similar to :func:`np.empty() <numpy.empty>`.
     """
+    warnings.warn(
+        "pinned_array is deprecated. Please prefer cupy for moving numpy arrays to the device.",
+        DeprecatedDeviceArrayApiWarning,
+    )
     shape, strides, dtype = prepare_shape_strides_dtype(
         shape, strides, dtype, order
     )
@@ -238,6 +255,10 @@ def mapped_array(
         to write by the host and to read by the device, but slower to
         write by the host and slower to write by the device.
     """
+    warnings.warn(
+        "mapped_array is deprecated. Please prefer cupy for moving numpy arrays to the device.",
+        DeprecatedDeviceArrayApiWarning,
+    )
     shape, strides, dtype = prepare_shape_strides_dtype(
         shape, strides, dtype, order
     )
