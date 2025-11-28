@@ -9,8 +9,7 @@ from numba.cuda.cudadrv.driver import (
     driver,
 )
 import numba.cuda.cudadrv.driver as drvmod
-from cuda.core.experimental import launch, LaunchConfig, Stream as ExperimentalStream
-from cuda.bindings import driver as binding
+from cuda.core.experimental import LaunchConfig, Stream as ExperimentalStream
 
 from numba import cuda
 from numba.cuda.cudadrv import devices

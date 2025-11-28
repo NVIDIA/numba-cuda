@@ -16,7 +16,7 @@ from numba.cuda.cudadrv.driver import (
     _have_nvjitlink,
 )
 import numba.cuda.cudadrv.driver as drvmod
-from cuda.core.experimental import launch, LaunchConfig
+from cuda.core.experimental import LaunchConfig
 from numba.cuda.cudadrv import devices
 from numba.cuda.api import get_current_device
 from numba.cuda.utils import _readenv, cached_file_read
