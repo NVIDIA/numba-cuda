@@ -4,7 +4,7 @@
 import re
 
 import numpy as np
-from numba import cuda
+from numba import cuda, errors
 from numba.cuda import int32, int64, float32, float64
 from numba.cuda.testing import unittest, CUDATestCase, skip_on_cudasim
 from numba.cuda.compiler import compile_ptx
@@ -207,6 +207,121 @@ class TestCudaWarpOperations(CUDATestCase):
                 ary = np.empty(nelem, dtype=val.dtype)
                 compiled[1, nelem](ary, val)
                 self.assertTrue(np.all(ary == val))
+
+    def test_vote_sync_const_mode_val(self):
+        nelem = 32
+        ary1 = np.ones(nelem, dtype=np.int32)
+        ary2 = np.empty(nelem, dtype=np.int32)
+
+        subtest = [
+            (use_vote_sync_all, "void(int32[:], int32[:])", (ary1, ary2)),
+            (use_vote_sync_any, "void(int32[:], int32[:])", (ary1, ary2)),
+            (use_vote_sync_eq, "void(int32[:], int32[:])", (ary1, ary2)),
+            (use_vote_sync_ballot, "void(uint32[:])", (ary2,)),
+        ]
+
+        args_re = r"\((.*)\)"
+        m = re.compile(args_re)
+
+        for func, sig, input in subtest:
+            with self.subTest(func=func.__name__):
+                compiled = cuda.jit(sig)(func)
+                compiled[1, nelem](*input)
+                irs = next(iter(compiled.inspect_llvm().values()))
+
+                for ir in irs.split("\n"):
+                    if "call" in ir and "llvm.nvvm.vote.sync" in ir:
+                        args = m.search(ir).group(0)
+                        arglist = args.split(",")
+                        mode_arg = arglist[1]
+                        self.assertNotIn("%", mode_arg)
+
+    def test_vote_sync_const_mode_val_sm100(self):
+        subtest = [
+            (use_vote_sync_all, "void(int32[:], int32[:])"),
+            (use_vote_sync_any, "void(int32[:], int32[:])"),
+            (use_vote_sync_eq, "void(int32[:], int32[:])"),
+            (use_vote_sync_ballot, "void(uint32[:])"),
+        ]
+
+        for func, sig in subtest:
+            with self.subTest(func=func.__name__):
+                compile_ptx(func, sig, cc=(10, 0))
+
+    def test_vote_sync_type_validation(self):
+        nelem = 32
+
+        def use_vote_sync_all_with_mask(mask, predicate, result):
+            i = cuda.grid(1)
+            if i < result.shape[0]:
+                result[i] = cuda.all_sync(mask[i], predicate[i])
+
+        invalid_cases = [
+            (
+                "void(float32[:], int32[:], int32[:])",
+                "Mask type must be an integer",
+            ),
+            (
+                "void(boolean[:], int32[:], int32[:])",
+                "Mask type must be an integer",
+            ),
+            (
+                "void(float64[:], int32[:], int32[:])",
+                "Mask type must be an integer",
+            ),
+            (
+                "void(int32[:], float32[:], int32[:])",
+                "Predicate must be an integer or boolean",
+            ),
+            (
+                "void(int32[:], float64[:], int32[:])",
+                "Predicate must be an integer or boolean",
+            ),
+        ]
+
+        for sig, expected_msg in invalid_cases:
+            with self.subTest(sig=sig):
+                with self.assertRaisesRegex(errors.TypingError, expected_msg):
+                    cuda.jit(sig)(use_vote_sync_all_with_mask)
+
+        valid_cases = [
+            # mask: unsigned/signed integer
+            # predicate: unsigned/signed integer, boolean
+            ("void(uint32[:], uint32[:], int32[:])", np.uint32, np.uint32, 1),
+            ("void(int64[:], int64[:], int32[:])", np.int64, np.int64, 1),
+            ("void(uint64[:], uint64[:], int32[:])", np.uint64, np.uint64, 1),
+            ("void(int32[:], int32[:], int32[:])", np.int32, np.int32, 1),
+            ("void(uint32[:], boolean[:], int32[:])", np.uint32, np.bool_, 1),
+            ("void(uint64[:], boolean[:], int32[:])", np.uint64, np.bool_, 1),
+        ]
+
+        for sig, mask_dtype, pred_dtype, mask_val in valid_cases:
+            with self.subTest(sig=sig):
+                compiled = cuda.jit(sig)(use_vote_sync_all_with_mask)
+                ary_mask = np.full(nelem, mask_val, dtype=mask_dtype)
+                ary_pred = np.ones(nelem, dtype=pred_dtype)
+                ary_result = np.empty(nelem, dtype=np.int32)
+                compiled[1, nelem](ary_mask, ary_pred, ary_result)
+
+        # literals
+        @cuda.jit
+        def use_vote_sync_all_with_literal(result):
+            i = cuda.grid(1)
+            if i < result.shape[0]:
+                result[i] = cuda.all_sync(0xFFFFFFFF, 1)
+
+        ary_result = np.empty(nelem, dtype=np.int32)
+        use_vote_sync_all_with_literal[1, nelem](ary_result)
+
+        @cuda.jit
+        def use_vote_sync_all_with_predicate_literal(mask, result):
+            i = cuda.grid(1)
+            if i < mask.shape[0]:
+                result[i] = cuda.all_sync(mask[i], 1)
+
+        ary_mask = np.full(nelem, 0xFFFFFFFF, dtype=np.uint32)
+        ary_result = np.empty(nelem, dtype=np.int32)
+        use_vote_sync_all_with_predicate_literal[1, nelem](ary_mask, ary_result)
 
     def test_vote_sync_all(self):
         compiled = cuda.jit("void(int32[:], int32[:])")(use_vote_sync_all)

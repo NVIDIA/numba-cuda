@@ -3,6 +3,7 @@
 
 import ctypes
 import numpy as np
+import weakref
 
 from numba import cuda
 from numba.cuda.core import config
@@ -57,9 +58,10 @@ if not config.ENABLE_CUDASIM:
 
             # We use an AutoFreePointer so that the finalizer will be run when
             # the reference count drops to zero.
+            ctx = weakref.proxy(self.context)
             ptr = ctypes.c_void_p(alloc_count)
             return cuda.cudadrv.driver.AutoFreePointer(
-                ptr, size, finalizer=finalizer
+                ctx, ptr, size, finalizer=finalizer
             )
 
         def initialize(self):

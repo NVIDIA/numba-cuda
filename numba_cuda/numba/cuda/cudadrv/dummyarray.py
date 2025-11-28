@@ -279,6 +279,10 @@ class Array(object):
         if not self.dims:
             return {"C_CONTIGUOUS": True, "F_CONTIGUOUS": True}
 
+        # All 0-size arrays are considered contiguous, even if they are multidimensional
+        if self.size == 0:
+            return {"C_CONTIGUOUS": True, "F_CONTIGUOUS": True}
+
         # If this is a broadcast array then it is not contiguous
         if any([dim.stride == 0 for dim in self.dims]):
             return {"C_CONTIGUOUS": False, "F_CONTIGUOUS": False}

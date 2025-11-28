@@ -280,18 +280,6 @@ def ptx_syncwarp_mask(context, builder, sig, args):
     return context.get_dummy_value()
 
 
-@lower(stubs.vote_sync_intrinsic, types.i4, types.i4, types.boolean)
-def ptx_vote_sync(context, builder, sig, args):
-    fname = "llvm.nvvm.vote.sync"
-    lmod = builder.module
-    fnty = ir.FunctionType(
-        ir.LiteralStructType((ir.IntType(32), ir.IntType(1))),
-        (ir.IntType(32), ir.IntType(32), ir.IntType(1)),
-    )
-    func = cgutils.get_or_insert_function(lmod, fnty, fname)
-    return builder.call(func, args)
-
-
 @lower(stubs.match_any_sync, types.i4, types.i4)
 @lower(stubs.match_any_sync, types.i4, types.i8)
 @lower(stubs.match_any_sync, types.i4, types.f4)
