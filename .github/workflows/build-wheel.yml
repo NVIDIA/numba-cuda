@@ -176,7 +176,6 @@ jobs:
           CUDA_MAJOR="$(cut -d '.' -f 1 <<< ${{ inputs.cuda-version }})"
           # used in testing/Makefile
           pip install --force-reinstall "cuda-bindings==${CUDA_MAJOR}.*"
-          python -c "from numba.cuda.memory_management.nrt import get_include; print(get_include())"
           nvcc --version
           # TODO: move this list to json
           # TODO: fix handling of 70/75
@@ -210,11 +209,10 @@ jobs:
           CUDA_MAJOR="$(cut -d '.' -f 1 <<< ${{ inputs.prev-cuda-version }})"
           # used in testing/Makefile
           pip install --force-reinstall "cuda-bindings==${CUDA_MAJOR}.*"
-          python -c "from numba.cuda.memory_management.nrt import get_include; print(get_include())"
           nvcc --version
           # TODO: move this list to json
           # TODO: fix handling of 70/75
-          for cc in 75 80 86 89 90; do
+          for cc in 70 75 80 86 89 90; do
             make -j $(nproc) GPU_CC=${cc}
             mkdir cu${CUDA_MAJOR}_cc${cc}
             mv *.cubin *.fatbin *.ptx *.o *.a *.ltoir cu${CUDA_MAJOR}_cc${cc}
