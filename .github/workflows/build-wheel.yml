@@ -155,39 +155,12 @@ jobs:
           # used in testing/Makefile
           pip install ${{ env.NUMBA_CUDA_ARTIFACTS_DIR }}/*.whl
 
-      - name: Set up mini CTK
-        # We only need/want one artifact uploaded per platform, pick index 0.
-        if: ${{ strategy.job-index == 0 }}
-        uses: ./.github/actions/fetch_ctk
-        continue-on-error: false
-        with:
-          host-platform: ${{ inputs.host-platform }}
-          cuda-version: ${{ inputs.cuda-version }}
-
-      - name: Build numba-cuda test artifacts aginst CUDA ${{ inputs.cuda-version }}
-        # We only need/want one artifact uploaded per platform, pick index 0.
-        if: ${{ strategy.job-index == 0 }}
-        run: |
-          pushd testing
-          if [[ "${{ inputs.host-platform }}" == linux* ]]; then
-            PATH=$(dirname ${SCCACHE_PATH}):${CUDA_PATH}/bin:${PATH}
-            SCCACHE_GHA_ENABLED=true
-          fi
-          CUDA_MAJOR="$(cut -d '.' -f 1 <<< ${{ inputs.cuda-version }})"
-          # used in testing/Makefile
-          pip install --force-reinstall "cuda-bindings==${CUDA_MAJOR}.*"
-          nvcc --version
-          # TODO: move this list to json
-          # TODO: fix handling of 70/75
-          for cc in 75 80 86 89 90; do
-            make -j $(nproc) GPU_CC=${cc}
-            mkdir cu${CUDA_MAJOR}_cc${cc}
-            mv *.cubin *.fatbin *.ptx *.o *.a *.ltoir cu${CUDA_MAJOR}_cc${cc}
-          done
-          popd
-
-      # Note: This overwrites CUDA_PATH etc
-      - name: Set up mini CTK
+      # Note: Here is one subtlety. We need to start with the older CTK, because
+      # the pathfinder has a preference to find the newer CTK, and so if we start
+      # with it first, it would not pick up the right version. The proper fix is
+      # to ensure the fetch_ctk version does not just prepend to LD_LIBRARY_PATH,
+      # but to ensure non-current CTK is removed from the paths.
+      - name: Set up mini CTK ${{ inputs.prev-cuda-version }}
         # We only need/want one artifact uploaded per platform, pick index 0.
         if: ${{ strategy.job-index == 0 }}
         uses: ./.github/actions/fetch_ctk
@@ -211,8 +184,38 @@ jobs:
           pip install --force-reinstall "cuda-bindings==${CUDA_MAJOR}.*"
           nvcc --version
           # TODO: move this list to json
-          # TODO: fix handling of 70/75
           for cc in 70 75 80 86 89 90; do
+            make -j $(nproc) GPU_CC=${cc}
+            mkdir cu${CUDA_MAJOR}_cc${cc}
+            mv *.cubin *.fatbin *.ptx *.o *.a *.ltoir cu${CUDA_MAJOR}_cc${cc}
+          done
+          popd
+
+      # Note: This overwrites CUDA_PATH etc
+      - name: Set up mini CTK ${{ inputs.cuda-version }}
+        # We only need/want one artifact uploaded per platform, pick index 0.
+        if: ${{ strategy.job-index == 0 }}
+        uses: ./.github/actions/fetch_ctk
+        continue-on-error: false
+        with:
+          host-platform: ${{ inputs.host-platform }}
+          cuda-version: ${{ inputs.cuda-version }}
+
+      - name: Build numba-cuda test artifacts aginst CUDA ${{ inputs.cuda-version }}
+        # We only need/want one artifact uploaded per platform, pick index 0.
+        if: ${{ strategy.job-index == 0 }}
+        run: |
+          pushd testing
+          if [[ "${{ inputs.host-platform }}" == linux* ]]; then
+            PATH=$(dirname ${SCCACHE_PATH}):${CUDA_PATH}/bin:${PATH}
+            SCCACHE_GHA_ENABLED=true
+          fi
+          CUDA_MAJOR="$(cut -d '.' -f 1 <<< ${{ inputs.cuda-version }})"
+          # used in testing/Makefile
+          pip install --force-reinstall "cuda-bindings==${CUDA_MAJOR}.*"
+          nvcc --version
+          # TODO: move this list to json
+          for cc in 75 80 86 89 90; do
             make -j $(nproc) GPU_CC=${cc}
             mkdir cu${CUDA_MAJOR}_cc${cc}
             mv *.cubin *.fatbin *.ptx *.o *.a *.ltoir cu${CUDA_MAJOR}_cc${cc}
