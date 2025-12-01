@@ -139,7 +139,7 @@ class CUDAGeneralizedUFunc(GeneralizedUFunc):
         return _CUDAGUFuncCallSteps
 
     def _broadcast_scalar_input(self, ary, shape):
-        return cuda.cudadrv.devicearray._DeviceNDArray(
+        return cuda.cudadrv.devicearray.DeviceNDArray._create_nowarn(
             shape=shape, strides=(0,), dtype=ary.dtype, gpu_data=ary.gpu_data
         )
 
@@ -147,7 +147,7 @@ class CUDAGeneralizedUFunc(GeneralizedUFunc):
         newax = len(newshape) - len(ary.shape)
         # Add 0 strides for missing dimension
         newstrides = (0,) * newax + ary.strides
-        return cuda.cudadrv.devicearray._DeviceNDArray(
+        return cuda.cudadrv.devicearray.DeviceNDArray._create_nowarn(
             shape=newshape,
             strides=newstrides,
             dtype=ary.dtype,
@@ -202,7 +202,7 @@ class CUDAUFuncMechanism(UFuncMechanism):
         for ax in ax_differs:
             strides[ax] = 0
 
-        return cuda.cudadrv.devicearray._DeviceNDArray(
+        return cuda.cudadrv.devicearray.DeviceNDArray._create_nowarn(
             shape=shape, strides=strides, dtype=ary.dtype, gpu_data=ary.gpu_data
         )
 

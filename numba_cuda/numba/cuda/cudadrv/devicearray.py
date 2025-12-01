@@ -125,7 +125,9 @@ class DeviceNDArrayBase(_devicearray.DeviceArray):
         else:
             # Make NULL pointer for empty allocation
             null = _driver.binding.CUdeviceptr(0)
-            gpu_data = _driver.MemoryPointer(pointer=null, size=0)
+            gpu_data = _driver.MemoryPointer(
+                context=devices.get_context(), pointer=null, size=0
+            )
             self.alloc_size = 0
 
         self.gpu_data = gpu_data
@@ -195,7 +197,8 @@ class DeviceNDArrayBase(_devicearray.DeviceArray):
         # of which will be 0, will not match those hardcoded in for 'C' or 'F'
         # layouts.
 
-        broadcast = 0 in self.strides
+        broadcast = 0 in self.strides and (self.size != 0)
+
         if self.flags["C_CONTIGUOUS"] and not broadcast:
             layout = "C"
         elif self.flags["F_CONTIGUOUS"] and not broadcast:
@@ -716,7 +719,7 @@ class DeviceNDArray(DeviceNDArrayBase):
                     )
                 return hostary[0]
             else:
-                return cls(
+                return cls._create_nowarn(
                     shape=arr.shape,
                     strides=arr.strides,
                     dtype=self.dtype,
@@ -725,7 +728,7 @@ class DeviceNDArray(DeviceNDArrayBase):
                 )
         else:
             newdata = self.gpu_data.view(*arr.extent)
-            return cls(
+            return cls._create_nowarn(
                 shape=arr.shape,
                 strides=arr.strides,
                 dtype=self.dtype,
@@ -798,6 +801,7 @@ class DeviceNDArray(DeviceNDArrayBase):
         _assign_kernel(lhs.ndim).forall(n_elements, stream=stream)(lhs, rhs)
         if synchronous:
             stream.synchronize()
+
 
 class IpcArrayHandle(object):
     """
@@ -981,18 +985,21 @@ def auto_device(obj, stream=0, copy=True, user_explicit=False):
 
 
 def check_array_compatibility(ary1, ary2):
-    ary1sq = ary1.squeeze()
-    ary2sq = ary2.squeeze()
+    with warnings.catch_warnings():
+        warnings.filterwarnings("ignore", category=DeprecatedDeviceArrayApiWarning)
+        ary1sq = ary1.squeeze()
+        ary2sq = ary2.squeeze()
+
     if ary1.dtype != ary2.dtype:
         raise TypeError(
             "incompatible dtype: %s vs. %s" % (ary1.dtype, ary2.dtype)
         )
+
     if ary1sq.shape != ary2sq.shape:
         raise ValueError(
             "incompatible shape: %s vs. %s" % (ary1.shape, ary2.shape)
         )
-    # We check strides only if the size is nonzero, because strides are
-    # irrelevant (and can differ) for zero-length copies.
+
     if ary1.size and ary1sq.strides != ary2sq.strides:
         raise ValueError(
             "incompatible strides: %s vs. %s" % (ary1.strides, ary2.strides)

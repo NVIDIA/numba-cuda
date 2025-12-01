@@ -11,7 +11,6 @@ import os
 import numpy as np
 import warnings
 from .cudadrv import devicearray, devices, driver
-from numba.cuda.core import config
 from numba.cuda.api_util import prepare_shape_strides_dtype
 from numba.cuda.cudadrv.devicearray import DeprecatedDeviceArrayApiWarning
 from . import _api
@@ -23,6 +22,7 @@ current_context = devices.get_context
 gpus = devices.gpus
 
 
+@require_context
 def from_cuda_array_interface(desc, owner=None, sync=True):
     """Create a DeviceNDArray from a cuda-array-interface description.
     The ``owner`` is the owner of the underlying memory.
@@ -36,7 +36,6 @@ def from_cuda_array_interface(desc, owner=None, sync=True):
         "is now deprecated. Please prefer cupy for constructing device arrays."
     )
     return _api._from_cuda_array_interface(desc, owner=owner, sync=sync)
-
 
 
 def as_cuda_array(obj, sync=True):
@@ -136,7 +135,9 @@ def device_array(shape, dtype=np.float64, strides=None, order="C", stream=0):
         "device_array is deprecated. Please prefer cupy for moving numpy arrays to the device.",
         DeprecatedDeviceArrayApiWarning,
     )
-    return _device_array(shape, dtype=dtype, strides=strides, order=order, stream=stream)
+    return _device_array(
+        shape, dtype=dtype, strides=strides, order=order, stream=stream
+    )
 
 
 def _device_array(shape, dtype=np.float64, strides=None, order="C", stream=0):
@@ -410,7 +411,7 @@ def external_stream(ptr):
     :param ptr: Pointer to the external stream to wrap in a Numba Stream
     :type ptr: int
     """
-    return current_context().create_external_stream(ptr)
+    return _api.external_stream(ptr)
 
 
 # Page lock

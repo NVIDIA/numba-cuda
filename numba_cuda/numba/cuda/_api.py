@@ -6,14 +6,13 @@ API that are reported to numba.cuda
 """
 
 import contextlib
-import os
 
 import numpy as np
 import warnings
 from .cudadrv import devicearray, devices, driver
 from numba.cuda.core import config
 from numba.cuda.api_util import prepare_shape_strides_dtype
-from numba.cuda.cudadrv.devicearray import DeprecatedDeviceArrayApiWarning
+from numba.cuda.cudadrv.devicearray import DeprecatedDeviceArrayApiWarning, DeviceNDArray
 
 # NDarray device helper
 
@@ -21,6 +20,14 @@ require_context = devices.require_context
 current_context = devices.get_context
 gpus = devices.gpus
 
+@require_context
+def external_stream(ptr):
+    """Create a Numba stream object for a stream allocated outside Numba.
+
+    :param ptr: Pointer to the external stream to wrap in a Numba Stream
+    :type ptr: int
+    """
+    return current_context().create_external_stream(ptr)
 
 def _from_cuda_array_interface(desc, owner=None, sync=True):
     """Create a _DeviceNDArray from a cuda-array-interface description.
@@ -48,7 +55,9 @@ def _from_cuda_array_interface(desc, owner=None, sync=True):
 
     cudevptr_class = driver.binding.CUdeviceptr
     devptr = cudevptr_class(desc["data"][0])
-    data = driver.MemoryPointer(devptr, size=size, owner=owner)
+    data = driver.MemoryPointer(
+        current_context(), devptr, size=size, owner=owner
+    )
     stream_ptr = desc.get("stream", None)
     if stream_ptr is not None:
         stream = external_stream(stream_ptr)
@@ -56,7 +65,7 @@ def _from_cuda_array_interface(desc, owner=None, sync=True):
             stream.synchronize()
     else:
         stream = 0  # No "Numba default stream", not the CUDA default stream
-    da = devicearray._DeviceNDArray(
+    da = devicearray.DeviceNDArray(
         shape=shape, strides=strides, dtype=dtype, gpu_data=data, stream=stream
     )
     return da
@@ -85,7 +94,6 @@ def _is_cuda_array(obj):
     Does not verify the validity of the interface.
     """
     return hasattr(obj, "__cuda_array_interface__")
-
 
 
 @require_context
@@ -138,7 +146,7 @@ def _device_array(shape, dtype=np.float64, strides=None, order="C", stream=0):
     shape, strides, dtype = prepare_shape_strides_dtype(
         shape, strides, dtype, order
     )
-    return devicearray._DeviceNDArray(
+    return DeviceNDArray._create_nowarn(
         shape=shape, strides=strides, dtype=dtype, stream=stream
     )
 
@@ -270,7 +278,6 @@ def _open_ipc_array(handle, shape, dtype, strides=None, offset=0):
     ipchandle.close()
 
 
-
 def _contiguous_strides_like_array(ary):
     """
     Given an array, compute strides for a new contiguous array of the same
@@ -351,6 +358,3 @@ def _pinned_array_like(ary):
     return pinned_array(
         shape=ary.shape, dtype=ary.dtype, strides=strides, order=order
     )
-
-
-
