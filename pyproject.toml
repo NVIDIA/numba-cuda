@@ -164,8 +164,16 @@ build-verbosity = 1
 
 [tool.cibuildwheel.linux]
 archs = "native"
+before-build = "pip install twine"
+repair-wheel-command = [
+    "auditwheel repair -w {dest_dir} {wheel}",
+    "twine check --strict {dest_dir}/*",
+]
 
 [tool.cibuildwheel.windows]
 archs = "AMD64"
-before-build = "pip install delvewheel"
-repair-wheel-command = "delvewheel repair --namespace-pkg cuda -w {dest_dir} {wheel}"
+before-build = "pip install delvewheel twine"
+repair-wheel-command = [
+    "delvewheel repair --namespace-pkg cuda -w {dest_dir} {wheel}",
+    "twine check --strict {dest_dir}/*",
+]

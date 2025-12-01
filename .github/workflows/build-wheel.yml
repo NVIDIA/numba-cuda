@@ -87,10 +87,6 @@ jobs:
         run: |
           env
 
-      - name: Install twine
-        run: |
-          pip install twine
-
       - name: Build numba-cuda wheel
         uses: pypa/cibuildwheel@9c00cb4f6b517705a3794b22395aedc36257242c  # v3.2.1
         with:
@@ -128,10 +124,6 @@ jobs:
           fi
           $CHOWN -R $(whoami) ${{ env.NUMBA_CUDA_ARTIFACTS_DIR }}
           ls -lahR ${{ env.NUMBA_CUDA_ARTIFACTS_DIR }}
-
-      - name: Check numba-cuda wheel
-        run: |
-          twine check --strict ${{ env.NUMBA_CUDA_ARTIFACTS_DIR }}/*.whl
 
       - name: Upload numba-cuda build artifacts
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4.6.2
