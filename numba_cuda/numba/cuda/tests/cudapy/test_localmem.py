@@ -3,11 +3,17 @@
 
 import numpy as np
 
-from numba import cuda, int32, complex128, void
-from numba.core import types
-from numba.core.errors import TypingError
+from numba import cuda
+from numba.cuda import int32, complex128, void
+from numba.cuda import types
+from numba.cuda import HAS_NUMBA
+
+if HAS_NUMBA:
+    from numba.core.errors import TypingError
+else:
+    from numba.cuda.core.errors import TypingError
 from numba.cuda.testing import unittest, CUDATestCase, skip_on_cudasim
-from .extensions_usecases import test_struct_model_type, TestStruct
+from .extensions_usecases import struct_model_type, MyStruct
 
 
 def culocal(A, B):
@@ -116,22 +122,22 @@ class TestCudaLocalMem(CUDATestCase):
                 x[0] = l[0]
 
     def test_type_with_struct_data_model(self):
-        @cuda.jit(void(test_struct_model_type[::1]))
+        @cuda.jit(void(struct_model_type[::1]))
         def f(x):
-            l = cuda.local.array(10, dtype=test_struct_model_type)
+            l = cuda.local.array(10, dtype=struct_model_type)
             l[0] = x[0]
             x[0] = l[0]
 
-        self.check_dtype(f, test_struct_model_type)
+        self.check_dtype(f, struct_model_type)
 
     def test_struct_model_type_arr(self):
         @cuda.jit(void(int32[::1], int32[::1]))
         def f(outx, outy):
             # Test creation
-            arr = cuda.local.array(10, dtype=test_struct_model_type)
+            arr = cuda.local.array(10, dtype=struct_model_type)
             # Test set to arr
             for i in range(len(arr)):
-                obj = TestStruct(int32(i), int32(i * 2))
+                obj = MyStruct(int32(i), int32(i * 2))
                 arr[i] = obj
             # Test get from arr
             for i in range(len(arr)):

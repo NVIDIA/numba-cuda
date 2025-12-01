@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-2-Clause
 from functools import cached_property
-from numba.core import ir, analysis
+from numba.cuda.core import analysis, ir
 from numba.cuda.core import ir_utils, transforms
 
 

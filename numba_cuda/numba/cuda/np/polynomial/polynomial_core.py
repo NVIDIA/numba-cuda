@@ -10,10 +10,13 @@ from numba.cuda.extending import (
     make_attribute_wrapper,
     box,
 )
-from numba.core import types
+from numba.cuda import types
 from numba.cuda import cgutils
 import warnings
-from numba.core.errors import NumbaExperimentalFeatureWarning, NumbaValueError
+from numba.cuda.core.errors import (
+    NumbaExperimentalFeatureWarning,
+    NumbaValueError,
+)
 from numpy.polynomial.polynomial import Polynomial
 from contextlib import ExitStack
 import numpy as np

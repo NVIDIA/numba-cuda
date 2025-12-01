@@ -7,8 +7,8 @@ from functools import wraps
 import numpy as np
 from collections import namedtuple
 
-from numba import cuda, types
-from numba.cuda import config
+from numba import cuda
+from numba.cuda import config, types
 
 from numba.cuda.cudadrv.driver import (
     _Linker,

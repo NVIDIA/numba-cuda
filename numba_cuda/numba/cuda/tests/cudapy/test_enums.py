@@ -7,11 +7,20 @@ Test cases adapted from numba/tests/test_enums.py
 
 import numpy as np
 
-from numba import int16, int32
-from numba import cuda, vectorize, njit
-from numba.core import types
-from numba.cuda.testing import unittest, CUDATestCase, skip_on_cudasim
-from numba.cuda.tests.enum_usecases import (
+from numba.cuda import int16, int32
+from numba.cuda import vectorize, HAS_NUMBA
+
+if HAS_NUMBA:
+    from numba import njit
+from numba import cuda
+from numba.cuda import types
+from numba.cuda.testing import (
+    unittest,
+    CUDATestCase,
+    skip_on_cudasim,
+    skip_on_standalone_numba_cuda,
+)
+from numba.cuda.tests.cudapy.enum_usecases import (
     Color,
     Shape,
     Planet,
@@ -57,6 +66,7 @@ class EnumTest(CUDATestCase):
         f(expected)
         self.assertPreciseEqual(expected, got)
 
+    @skip_on_standalone_numba_cuda
     def test_return_from_device_func(self):
         @njit
         def inner(pred):

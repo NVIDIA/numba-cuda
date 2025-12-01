@@ -18,10 +18,10 @@ import operator
 
 import numba
 from llvmlite import ir
-from numba import types
+from numba.cuda import types
 from numba.cuda.cudadrv.driver import _have_nvjitlink
-from numba.core.datamodel import PrimitiveModel, StructModel
-from numba.core.errors import NumbaPerformanceWarning
+from numba.cuda.datamodel import PrimitiveModel, StructModel
+from numba.cuda.core.errors import NumbaPerformanceWarning
 from numba.cuda.extending import (
     lower_cast,
     make_attribute_wrapper,
@@ -40,7 +40,7 @@ from numba.cuda.typing.templates import (
 from numba.cuda.typing.templates import Registry as TypingRegistry
 from numba.cuda.vector_types import vector_types
 from numba.cuda.extending import as_numba_type
-from numba.types import (
+from numba.cuda.types import (
     CPointer,
     Function,
     Number,
@@ -221,7 +221,7 @@ class _ctor_template_unnamed1362180(ConcreteTemplate):
 
 register_global(unnamed1362180, Function(_ctor_template_unnamed1362180))
 
-__half = _type___half = numba.core.types.float16
+__half = _type___half = numba.cuda.types.float16
 setattr(__half, "alignof_", 2)
 setattr(__half, "align", 2)
 

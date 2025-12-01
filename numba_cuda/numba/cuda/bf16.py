@@ -1,5 +1,6 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-2-Clause
+import sys
 
 from numba.cuda._internal.cuda_bf16 import (
     typing_registry,
@@ -191,14 +192,12 @@ def exp_ol(a):
     return _make_unary(a, hexp)
 
 
-try:
-    from math import exp2
+if sys.version_info >= (3, 11):
 
-    @overload(exp2, target="cuda")
+    @overload(math.exp2, target="cuda")
     def exp2_ol(a):
         return _make_unary(a, hexp2)
-except ImportError:
-    pass
+
 
 ## Public aliases using Numba/Numpy-style type names
 # Floating-point

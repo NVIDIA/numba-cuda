@@ -8,6 +8,14 @@ import warnings
 import sys
 
 
+# Re-export types itself
+import numba.cuda.types as types
+
+# Re-export all type names
+from numba.cuda.types import *
+
+HAS_NUMBA = importlib.util.find_spec("numba") is not None
+
 # Require NVIDIA CUDA bindings at import time
 if not (
     importlib.util.find_spec("cuda")

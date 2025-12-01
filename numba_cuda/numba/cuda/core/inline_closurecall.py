@@ -4,9 +4,12 @@
 import types as pytypes  # avoid confusion with numba.types
 import copy
 import ctypes
-import numba.core.analysis
-from numba.core import types, ir, errors
-from numba.cuda import utils, cgutils, typing, config
+import numba.cuda.core.analysis
+from numba.cuda import HAS_NUMBA
+from numba.cuda import types, config, cgutils
+from numba.cuda.core import ir
+from numba.cuda.core import errors
+from numba.cuda import typing, utils
 from numba.cuda.core.ir_utils import (
     next_label,
     add_offset_to_labels,
@@ -28,7 +31,7 @@ from numba.cuda.core.ir_utils import (
     dead_code_elimination,
 )
 
-from numba.core.analysis import (
+from numba.cuda.core.analysis import (
     compute_cfg_from_blocks,
     compute_use_defs,
     compute_live_variables,
@@ -41,7 +44,6 @@ from numba.cuda.core import postproc, rewrites
 from numba.cuda.np.unsafe.ndarray import empty_inferred as unsafe_empty_inferred
 import numpy as np
 import operator
-from numba.cuda.misc.special import prange
 
 """
 Variable enable_inline_arraycall is only used for testing purpose.
@@ -83,7 +85,6 @@ class InlineClosureCallPass(object):
         self.func_ir = func_ir
         self.parallel_options = parallel_options
         self.swapped = swapped
-        self._processed_stencils = []
         self.typed = typed
 
     def run(self):
@@ -123,11 +124,6 @@ class InlineClosureCallPass(object):
                         ):
                             modified = True
                             break  # because block structure changed
-
-                        if guard(
-                            self._inline_stencil, instr, call_name, func_def
-                        ):
-                            modified = True
 
         if enable_inline_arraycall:
             # Identify loop structure
@@ -214,91 +210,6 @@ class InlineClosureCallPass(object):
         )
         return True
 
-    def _inline_stencil(self, instr, call_name, func_def):
-        from numba.stencils.stencil import StencilFunc
-
-        lhs = instr.target
-        expr = instr.value
-        # We keep the escaping variables of the stencil kernel
-        # alive by adding them to the actual kernel call as extra
-        # keyword arguments, which is ignored anyway.
-        if (
-            isinstance(func_def, ir.Global)
-            and func_def.name == "stencil"
-            and isinstance(func_def.value, StencilFunc)
-        ):
-            if expr.kws:
-                expr.kws += func_def.value.kws
-            else:
-                expr.kws = func_def.value.kws
-            return True
-        # Otherwise we proceed to check if it is a call to numba.stencil
-        require(
-            call_name == ("stencil", "numba.stencils.stencil")
-            or call_name == ("stencil", "numba")
-        )
-        require(expr not in self._processed_stencils)
-        self._processed_stencils.append(expr)
-        if not len(expr.args) == 1:
-            raise ValueError(
-                "As a minimum Stencil requires a kernel as an argument"
-            )
-        stencil_def = guard(get_definition, self.func_ir, expr.args[0])
-        require(
-            isinstance(stencil_def, ir.Expr)
-            and stencil_def.op == "make_function"
-        )
-        kernel_ir = get_ir_of_code(
-            self.func_ir.func_id.func.__globals__, stencil_def.code
-        )
-        options = dict(expr.kws)
-        if "neighborhood" in options:
-            fixed = guard(self._fix_stencil_neighborhood, options)
-            if not fixed:
-                raise ValueError(
-                    "stencil neighborhood option should be a tuple"
-                    " with constant structure such as ((-w, w),)"
-                )
-        if "index_offsets" in options:
-            fixed = guard(self._fix_stencil_index_offsets, options)
-            if not fixed:
-                raise ValueError(
-                    "stencil index_offsets option should be a tuple"
-                    " with constant structure such as (offset, )"
-                )
-        sf = StencilFunc(kernel_ir, "constant", options)
-        sf.kws = expr.kws  # hack to keep variables live
-        sf_global = ir.Global("stencil", sf, expr.loc)
-        self.func_ir._definitions[lhs.name] = [sf_global]
-        instr.value = sf_global
-        return True
-
-    def _fix_stencil_neighborhood(self, options):
-        """
-        Extract the two-level tuple representing the stencil neighborhood
-        from the program IR to provide a tuple to StencilFunc.
-        """
-        # build_tuple node with neighborhood for each dimension
-        dims_build_tuple = get_definition(self.func_ir, options["neighborhood"])
-        require(hasattr(dims_build_tuple, "items"))
-        res = []
-        for window_var in dims_build_tuple.items:
-            win_build_tuple = get_definition(self.func_ir, window_var)
-            require(hasattr(win_build_tuple, "items"))
-            res.append(tuple(win_build_tuple.items))
-        options["neighborhood"] = tuple(res)
-        return True
-
-    def _fix_stencil_index_offsets(self, options):
-        """
-        Extract the tuple representing the stencil index offsets
-        from the program IR to provide to StencilFunc.
-        """
-        offset_tuple = get_definition(self.func_ir, options["index_offsets"])
-        require(hasattr(offset_tuple, "items"))
-        options["index_offsets"] = tuple(offset_tuple.items)
-        return True
-
     def _inline_closure(self, work_list, block, i, func_def):
         require(
             isinstance(func_def, ir.Expr) and func_def.op == "make_function"
@@ -325,13 +236,11 @@ def check_reduce_func(func_ir, func_var):
                             analysis"
         )
     if isinstance(reduce_func, (ir.FreeVar, ir.Global)):
-        try:
+        if HAS_NUMBA:
             from numba.core.registry import CPUDispatcher
 
             if not isinstance(reduce_func.value, CPUDispatcher):
                 raise ValueError("Invalid reduction function")
-        except ImportError:
-            pass
 
         # pull out the python function for inlining
         reduce_func = reduce_func.value.py_func
@@ -616,7 +525,7 @@ class InlineWorker(object):
 
         # call branch pruning to simplify IR and avoid inference errors
         callee_ir._definitions = ir_utils.build_definitions(callee_ir.blocks)
-        numba.core.analysis.dead_branch_prune(callee_ir, arg_typs)
+        numba.cuda.core.analysis.dead_branch_prune(callee_ir, arg_typs)
         # callee's typing may require SSA
         callee_ir = reconstruct_ssa(callee_ir)
         callee_ir._definitions = ir_utils.build_definitions(callee_ir.blocks)
@@ -1058,10 +967,7 @@ def _find_iter_range(func_ir, range_iter_var, swapped):
     func_var = range_def.func
     func_def = get_definition(func_ir, func_var)
     debug_print("func_var = ", func_var, " func_def = ", func_def)
-    require(
-        isinstance(func_def, ir.Global)
-        and (func_def.value is range or func_def.value == prange)
-    )
+    require(isinstance(func_def, ir.Global) and func_def.value is range)
     nargs = len(range_def.args)
     swapping = [('"array comprehension"', "closure of"), range_def.func.loc]
     if nargs == 1:
@@ -1135,17 +1041,6 @@ def length_of_iterator(typingctx, val):
             intp_t = context.get_value_type(types.intp)
             count_const = intp_t(tuplety.count)
             return impl_ret_untracked(context, builder, intp_t, count_const)
-
-        return signature(types.intp, val), codegen
-    elif isinstance(val, types.ListTypeIteratorType):
-
-        def codegen(context, builder, sig, args):
-            (value,) = args
-            intp_t = context.get_value_type(types.intp)
-            from numba.typed.listobject import ListIterInstance
-
-            iterobj = ListIterInstance(context, builder, sig.args[0], value)
-            return impl_ret_untracked(context, builder, intp_t, iterobj.size)
 
         return signature(types.intp, val), codegen
     else:

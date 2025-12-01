@@ -18,6 +18,7 @@ from typing import Iterable, Union
 from io import StringIO
 import unittest
 import numpy as np
+from numba.cuda import HAS_NUMBA
 
 if PYVERSION >= (3, 10):
     from filecheck.matcher import Matcher
@@ -186,39 +187,52 @@ class CUDATestCase(TestCase):
 
 def skip_on_cudasim(reason):
     """Skip this test if running on the CUDA simulator"""
+    assert isinstance(reason, str)
     return unittest.skipIf(config.ENABLE_CUDASIM, reason)
+
+
+skip_on_standalone_numba_cuda = unittest.skipUnless(
+    HAS_NUMBA, "requires base numba install"
+)
 
 
 def skip_unless_cudasim(reason):
     """Skip this test if running on CUDA hardware"""
+    assert isinstance(reason, str)
     return unittest.skipUnless(config.ENABLE_CUDASIM, reason)
 
 
 def skip_unless_conda_cudatoolkit(reason):
     """Skip test if the CUDA toolkit was not installed by Conda"""
+    assert isinstance(reason, str)
     return unittest.skipUnless(get_conda_ctk_libdir() is not None, reason)
 
 
 def skip_if_external_memmgr(reason):
     """Skip test if an EMM Plugin is in use"""
+    assert isinstance(reason, str)
     return unittest.skipIf(config.CUDA_MEMORY_MANAGER != "default", reason)
 
 
 def skip_under_cuda_memcheck(reason):
+    assert isinstance(reason, str)
     return unittest.skipIf(os.environ.get("CUDA_MEMCHECK") is not None, reason)
 
 
 def skip_without_nvdisasm(reason):
+    assert isinstance(reason, str)
     nvdisasm_path = shutil.which("nvdisasm")
     return unittest.skipIf(nvdisasm_path is None, reason)
 
 
 def skip_with_nvdisasm(reason):
+    assert isinstance(reason, str)
     nvdisasm_path = shutil.which("nvdisasm")
     return unittest.skipIf(nvdisasm_path is not None, reason)
 
 
 def skip_on_arm(reason):
+    assert isinstance(reason, str)
     cpu = platform.processor()
     is_arm = cpu.startswith("arm") or cpu.startswith("aarch")
     return unittest.skipIf(is_arm, reason)
@@ -230,6 +244,7 @@ def skip_on_wsl2(reason):
     Detection is based on the kernel release string, which typically contains
     "microsoft-standard-WSL2" on WSL2 systems.
     """
+    assert isinstance(reason, str)
     rel = platform.release().lower()
     is_wsl2 = ("microsoft-standard-wsl2" in rel) or ("wsl2" in rel)
     return unittest.skipIf(is_wsl2, reason)
@@ -263,6 +278,7 @@ def skip_if_curand_kernel_missing(fn):
 
 def skip_if_mvc_enabled(reason):
     """Skip a test if Minor Version Compatibility is enabled"""
+    assert isinstance(reason, str)
     return unittest.skipIf(
         config.CUDA_ENABLE_MINOR_VERSION_COMPATIBILITY, reason
     )
@@ -315,6 +331,7 @@ def skip_if_cudadevrt_missing(fn):
 
 
 def skip_if_nvjitlink_missing(reason):
+    assert isinstance(reason, str)
     return unittest.skipIf(not driver._have_nvjitlink(), reason)
 
 

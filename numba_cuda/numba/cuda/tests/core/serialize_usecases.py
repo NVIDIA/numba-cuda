@@ -11,11 +11,11 @@ from math import sqrt
 import numpy as np
 import numpy.random as nprand
 
+# This does not need a guard, it's already guarded at the import site
 from numba import jit
-from numba.core import types
 
 
-@jit((types.int32, types.int32))
+@jit("int32(int32, int32)")
 def add_with_sig(a, b):
     return a + b
 

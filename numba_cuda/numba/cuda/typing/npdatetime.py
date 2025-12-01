@@ -3,7 +3,8 @@
 
 import operator
 
-from numba.core import types, errors
+from numba.cuda import types
+from numba.cuda.core import errors
 from numba.cuda.typing.templates import (
     AbstractTemplate,
     Registry,

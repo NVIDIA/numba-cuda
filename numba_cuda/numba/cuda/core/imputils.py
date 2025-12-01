@@ -10,7 +10,7 @@ import contextlib
 from enum import Enum
 
 from numba.cuda import typing, cgutils
-from numba.core import types
+from numba.cuda import types
 from numba.cuda.typing.templates import BaseRegistryLoader
 
 
@@ -492,7 +492,7 @@ def force_error_model(context, model_name="numpy"):
     """
     Temporarily change the context's error model.
     """
-    from numba.core import callconv
+    from numba.cuda.core import callconv
 
     old_error_model = context.error_model
     context.error_model = callconv.create_error_model(model_name, context)

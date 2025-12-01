@@ -5,7 +5,7 @@ import numpy as np
 import operator
 from collections import namedtuple
 
-from numba.core import types
+from numba.cuda import types
 from numba.cuda import utils
 from numba.cuda.typing.templates import (
     AttributeTemplate,
@@ -17,7 +17,7 @@ from numba.cuda.typing.templates import (
 
 # import time side effect: array operations requires typing support of sequence
 # defined in collections: e.g. array.shape[i]
-from numba.core.errors import (
+from numba.cuda.core.errors import (
     TypingError,
     RequireLiteralValue,
     NumbaTypeError,
@@ -29,7 +29,6 @@ from numba.core.errors import (
 from numba.cuda.cgutils import is_nonelike
 
 numpy_version = tuple(map(int, np.__version__.split(".")[:2]))
-
 
 registry = Registry()
 infer = registry.register
@@ -518,27 +517,6 @@ class ArrayAttribute(AttributeTemplate):
         assert not args
         assert not kws
         return signature(types.none)
-
-    @bound_function("array.argsort")
-    def resolve_argsort(self, ary, args, kws):
-        assert not args
-        kwargs = dict(kws)
-        kind = kwargs.pop("kind", types.StringLiteral("quicksort"))
-        if not isinstance(kind, types.StringLiteral):
-            raise TypingError('"kind" must be a string literal')
-        if kwargs:
-            msg = "Unsupported keywords: {!r}"
-            raise TypingError(msg.format([k for k in kwargs.keys()]))
-        if ary.ndim == 1:
-
-            def argsort_stub(kind="quicksort"):
-                pass
-
-            pysig = utils.pysignature(argsort_stub)
-            sig = signature(types.Array(types.intp, 1, "C"), kind).replace(
-                pysig=pysig
-            )
-            return sig
 
     @bound_function("array.view")
     def resolve_view(self, ary, args, kws):

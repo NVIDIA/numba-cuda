@@ -28,7 +28,7 @@ class CUDATarget:
     @property
     def target_context(self):
         if self._targetctx is None:
-            self._targetctx = CUDATargetContext(self._typingctx)
+            self._targetctx = CUDATargetContext(self.typing_context)
         return self._targetctx
 
 

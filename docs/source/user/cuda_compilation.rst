@@ -129,8 +129,8 @@ placed in the return value:
 
 .. code:: text
 
-   add.s32 	%r3, %r2, %r1;
-   st.param.b32 	[func_retval0+0], %r3;
+   add.s32        %r3, %r2, %r1;
+   st.param.b32   [func_retval0+0], %r3;
 
 To distinguish one variant of the compiled ``add()`` function from another, the
 following example specifies its ABI name in the ``abi_info`` dict:

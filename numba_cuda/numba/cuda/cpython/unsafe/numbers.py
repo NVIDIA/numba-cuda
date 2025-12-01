@@ -3,7 +3,8 @@
 
 """This module provides the unsafe things for targets/numbers.py"""
 
-from numba.core import types, errors
+from numba.cuda import types
+from numba.cuda.core import errors
 from numba.cuda.extending import intrinsic
 
 from llvmlite import ir

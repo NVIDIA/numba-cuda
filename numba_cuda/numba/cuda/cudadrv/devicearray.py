@@ -18,21 +18,14 @@ import numpy as np
 from numba.cuda.cext import _devicearray
 from numba.cuda.cudadrv import devices, dummyarray
 from numba.cuda.cudadrv import driver as _driver
-from numba.core import types
+from numba.cuda import types
 from numba.cuda.core import config
 from numba.cuda.np.unsafe.ndarray import to_fixed_tuple
 from numba.cuda.np.numpy_support import numpy_version
 from numba.cuda.np import numpy_support
 from numba.cuda.api_util import prepare_shape_strides_dtype
-from numba.core.errors import NumbaPerformanceWarning
+from numba.cuda.core.errors import NumbaPerformanceWarning
 from warnings import warn
-
-try:
-    lru_cache = getattr(functools, "lru_cache")(None)
-except AttributeError:
-    # Python 3.1 or lower
-    def lru_cache(func):
-        return func
 
 
 def is_cuda_ndarray(obj):
@@ -86,8 +79,13 @@ class DeviceNDArrayBase(_devicearray.DeviceArray):
         """
         if isinstance(shape, int):
             shape = (shape,)
+        else:
+            shape = tuple(shape)
         if isinstance(strides, int):
             strides = (strides,)
+        else:
+            if strides:
+                strides = tuple(strides)
         dtype = np.dtype(dtype)
         itemsize = dtype.itemsize
         self.ndim = ndim = len(shape)
@@ -96,9 +94,6 @@ class DeviceNDArrayBase(_devicearray.DeviceArray):
         self._dummy = dummy = dummyarray.Array.from_desc(
             0, shape, strides, itemsize
         )
-        # confirm that all elements of shape are ints
-        if not all(isinstance(dim, (int, np.integer)) for dim in shape):
-            raise TypeError("all elements of shape must be ints")
         self.shape = shape = dummy.shape
         self.strides = strides = dummy.strides
         self.dtype = dtype
@@ -113,7 +108,9 @@ class DeviceNDArrayBase(_devicearray.DeviceArray):
         else:
             # Make NULL pointer for empty allocation
             null = _driver.binding.CUdeviceptr(0)
-            gpu_data = _driver.MemoryPointer(pointer=null, size=0)
+            gpu_data = _driver.MemoryPointer(
+                context=devices.get_context(), pointer=null, size=0
+            )
             self.alloc_size = 0
 
         self.gpu_data = gpu_data
@@ -121,17 +118,17 @@ class DeviceNDArrayBase(_devicearray.DeviceArray):
 
     @property
     def __cuda_array_interface__(self):
-        if self.device_ctypes_pointer.value is not None:
-            ptr = self.device_ctypes_pointer.value
+        if (value := self.device_ctypes_pointer.value) is not None:
+            ptr = value
         else:
             ptr = 0
 
         return {
-            "shape": tuple(self.shape),
+            "shape": self.shape,
             "strides": None if is_contiguous(self) else tuple(self.strides),
             "data": (ptr, False),
             "typestr": self.dtype.str,
-            "stream": int(self.stream) if self.stream != 0 else None,
+            "stream": int(stream) if (stream := self.stream) != 0 else None,
             "version": 3,
         }
 
@@ -183,7 +180,8 @@ class DeviceNDArrayBase(_devicearray.DeviceArray):
         # of which will be 0, will not match those hardcoded in for 'C' or 'F'
         # layouts.
 
-        broadcast = 0 in self.strides
+        broadcast = 0 in self.strides and (self.size != 0)
+
         if self.flags["C_CONTIGUOUS"] and not broadcast:
             layout = "C"
         elif self.flags["F_CONTIGUOUS"] and not broadcast:
@@ -508,7 +506,7 @@ class DeviceRecord(DeviceNDArrayBase):
             stream.synchronize()
 
 
-@lru_cache
+@functools.lru_cache
 def _assign_kernel(ndim):
     """
     A separate method so we don't need to compile code every assignment (!).

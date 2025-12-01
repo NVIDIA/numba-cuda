@@ -5,8 +5,8 @@ import collections
 import functools
 import sys
 
-from numba.core.ir import Loc
-from numba.core.errors import UnsupportedError
+from numba.cuda.core.ir import Loc
+from numba.cuda.core.errors import UnsupportedError
 from numba.cuda.utils import PYVERSION
 
 # List of bytecodes creating a new block in the control flow graph

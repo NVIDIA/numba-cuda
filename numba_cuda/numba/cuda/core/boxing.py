@@ -7,10 +7,9 @@ Boxing and unboxing of native Numba values to / from CPython objects.
 
 from llvmlite import ir
 
-from numba.core import types
-from numba.cuda import cgutils
+from numba.cuda import types, cgutils
 from numba.cuda.core.pythonapi import box, unbox, reflect, NativeValue
-from numba.core.errors import NumbaNotImplementedError, TypingError
+from numba.cuda.core.errors import NumbaNotImplementedError, TypingError
 from numba.cuda.typing.typeof import typeof, Purpose
 
 from numba.cuda.cpython import setobj, listobj

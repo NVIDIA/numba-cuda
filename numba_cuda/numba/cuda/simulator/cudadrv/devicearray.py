@@ -8,6 +8,8 @@ stubs to allow tests to import correctly.
 
 from contextlib import contextmanager
 from numba.cuda.np.numpy_support import numpy_version
+from numba.cuda.np import numpy_support
+from numba.cuda import types
 
 import numpy as np
 
@@ -57,8 +59,8 @@ class FakeWithinKernelCUDAArray(object):
             return item
 
     def __getattr__(self, attrname):
-        if attrname in dir(self._item._ary):  # For e.g. array size.
-            return self.__wrap_if_fake(getattr(self._item._ary, attrname))
+        if (value := getattr(self._item, attrname, None)) is not None:
+            return self.__wrap_if_fake(value)
         else:
             return self.__wrap_if_fake(self._item.__getitem__(attrname))
 
@@ -108,6 +110,23 @@ class FakeCUDAArray(object):
     def __init__(self, ary, stream=0):
         self._ary = ary
         self.stream = stream
+
+    @property
+    def _numba_type_(self):
+        """
+        Magic attribute expected by Numba to get the numba type that
+        represents this object.
+        """
+        broadcast = 0 in self.strides
+        if self.is_c_contiguous() and not broadcast:
+            layout = "C"
+        elif self.is_f_contiguous() and not broadcast:
+            layout = "F"
+        else:
+            layout = "A"
+
+        dtype = numpy_support.from_dtype(self._ary.dtype)
+        return types.Array(dtype, self._ary.ndim, layout)
 
     @property
     def alloc_size(self):

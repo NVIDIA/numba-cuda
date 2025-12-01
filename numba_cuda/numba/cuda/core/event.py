@@ -43,7 +43,7 @@ import threading
 from timeit import default_timer as timer
 from contextlib import contextmanager, ExitStack
 from collections import defaultdict
-from numba.core import config
+from numba.cuda.core import config
 from numba.cuda import utils
 
 

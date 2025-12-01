@@ -22,7 +22,6 @@ from .cudadrv.linkable_code import (
 from .kernel import FakeCUDAKernel
 from numba.cuda.core import config
 from numba.cuda.core.sigutils import is_signature
-from warnings import warn
 from ..args import In, Out, InOut  # noqa: F401
 
 
@@ -111,8 +110,8 @@ class Event(object):
         pass
 
     def elapsed_time(self, event):
-        warn("Simulator timings are bogus")
-        return 0.0
+        """This is here to preserve the API; the output is meaningless."""
+        return -1.0
 
 
 event = Event
@@ -161,3 +160,20 @@ def jit(
 def defer_cleanup():
     # No effect for simulator
     yield
+
+
+def is_supported_version():
+    return True
+
+
+# cache hints operations
+ldca = None
+ldcg = None
+ldcs = None
+ldlu = None
+ldcv = None
+
+stcg = None
+stcs = None
+stwb = None
+stwt = None

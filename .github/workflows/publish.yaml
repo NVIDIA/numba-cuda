@@ -46,32 +46,38 @@ jobs:
       build_type: release
       script: "ci/build_wheel.sh"
       matrix: ${{ needs.compute-matrix.outputs.BUILD_MATRIX }}
+  build-wheels-windows:
+    uses: ./.github/workflows/wheel-windows-build.yaml
+    secrets: inherit
   publish-wheels:
-    needs: build-wheels
+    name: Publish wheels to PyPi
+    needs: [build-wheels, build-wheels-windows]
+    permissions:
+      id-token: write
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
+      - name: Download wheels
+        uses: actions/download-artifact@v4
+        with:
+          pattern: wheel-py*
+          path: dist/
+          merge-multiple: true
       - name: Download sdist
-        if: "!cancelled()"
         uses: actions/download-artifact@v4
         with:
-          name: sdist
-          path: dist
-      - name: Download wheel
-        if: "!cancelled()"
-        uses: actions/download-artifact@v4
-        with:
-          name: wheel
-          path: dist
-      - name: Publish wheel
+          name: sdist-py3.13-amd64
+          path: sdist/
+      - name: Move sdist to dist
+        run: mv sdist/*.tar.gz dist/
+      - name: Display structure of downloaded files
+        run: ls -R
+      - name: Publish to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
-          password: ${{ secrets.RAPIDSAI_PYPI_TOKEN }}
+          verbose: true
   build-docs:
-    needs:
-      - build-conda
     uses: ./.github/workflows/docs-build.yaml
-    with:
-      build_type: release
   deploy-docs:
     needs: build-docs
     permissions:

@@ -7,8 +7,9 @@ import cffi
 import numpy as np
 
 from io import StringIO
-from numba import cuda, float32, float64, int32, intp
-from numba.types import float16, CPointer
+from numba import cuda
+from numba.cuda import float32, float64, int32, intp
+from numba.cuda.types import float16, CPointer
 from numba.cuda import declare_device
 from numba.cuda.testing import unittest, CUDATestCase
 from numba.cuda.testing import (

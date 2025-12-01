@@ -25,6 +25,16 @@ class TestCudaDetect(CUDATestCase):
         self.assertIn("CUDA devices", output)
 
 
+class TestSupportedVersion(CUDATestCase):
+    def test_is_supported_version(self):
+        # Exercise the `cuda.is_supported_version()` API.
+        #
+        # Assume for the purpose of the test that we're running on a supported
+        # toolkit version; if not, there's not much point in running the test
+        # suite.
+        self.assertTrue(cuda.is_supported_version())
+
+
 @skip_under_cuda_memcheck("Hangs cuda-memcheck")
 class TestCUDAFindLibs(CUDATestCase):
     def run_cmd(self, cmdline, env):

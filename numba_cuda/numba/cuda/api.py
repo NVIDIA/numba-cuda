@@ -21,6 +21,7 @@ current_context = devices.get_context
 gpus = devices.gpus
 
 
+@require_context
 def from_cuda_array_interface(desc, owner=None, sync=True):
     """Create a DeviceNDArray from a cuda-array-interface description.
     The ``owner`` is the owner of the underlying memory.
@@ -39,16 +40,17 @@ def from_cuda_array_interface(desc, owner=None, sync=True):
 
     shape = desc["shape"]
     strides = desc.get("strides")
-    dtype = np.dtype(desc["typestr"])
 
     shape, strides, dtype = prepare_shape_strides_dtype(
-        shape, strides, dtype, order="C"
+        shape, strides, desc["typestr"], order="C"
     )
     size = driver.memory_size_from_info(shape, strides, dtype.itemsize)
 
     cudevptr_class = driver.binding.CUdeviceptr
     devptr = cudevptr_class(desc["data"][0])
-    data = driver.MemoryPointer(devptr, size=size, owner=owner)
+    data = driver.MemoryPointer(
+        current_context(), devptr, size=size, owner=owner
+    )
     stream_ptr = desc.get("stream", None)
     if stream_ptr is not None:
         stream = external_stream(stream_ptr)

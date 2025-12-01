@@ -4,6 +4,17 @@
 # Re export
 import sys
 from numba.cuda import cg
+from numba.cuda.cache_hints import (
+    ldca,
+    ldcg,
+    ldcs,
+    ldlu,
+    ldcv,
+    stcg,
+    stcs,
+    stwb,
+    stwt,
+)
 from .stubs import (
     threadIdx,
     blockIdx,
@@ -16,7 +27,6 @@ from .stubs import (
     local,
     const,
     atomic,
-    vote_sync_intrinsic,
     match_any_sync,
     match_all_sync,
     threadfence_block,
@@ -45,6 +55,10 @@ from .intrinsics import (
     shfl_up_sync,
     shfl_down_sync,
     shfl_xor_sync,
+    all_sync,
+    any_sync,
+    eq_sync,
+    ballot_sync,
 )
 from .cudadrv.error import CudaSupportError
 from numba.cuda.cudadrv.driver import (
@@ -68,12 +82,6 @@ from .api import *
 from .api import _auto_device
 from .args import In, Out, InOut
 
-from .intrinsic_wrapper import (
-    all_sync,
-    any_sync,
-    eq_sync,
-    ballot_sync,
-)
 
 from .kernels import reduction
 from numba.cuda.cudadrv.linkable_code import (
@@ -86,6 +94,9 @@ from numba.cuda.cudadrv.linkable_code import (
     Object,
     PTXSource,
 )
+
+from numba.cuda.misc.special import literal_unroll
+from numba.cuda.misc import literal
 
 reduce = Reduce = reduction.Reduce
 

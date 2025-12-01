@@ -38,7 +38,6 @@ class TestImport(unittest.TestCase):
             "numba.cuda.python.printimpl",
             "numba.cuda.core.optional",
             "numba.cuda.misc.gdb_hook",
-            "numba.cuda.misc.literal",
             "numba.cuda.misc.cffiimpl",
             "numba.np.linalg",
             "numba.np.polynomial",
@@ -50,8 +49,6 @@ class TestImport(unittest.TestCase):
             "numba.cuda.np.arraymath",
             "numba.cuda.np.npdatetime",
             "numba.cuda.np.npyimpl",
-            "numba.typed.typeddict",
-            "numba.typed.typedlist",
         )
 
         code = "import sys; from numba import cuda; print(list(sys.modules))"

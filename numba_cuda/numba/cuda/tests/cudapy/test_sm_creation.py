@@ -2,11 +2,17 @@
 # SPDX-License-Identifier: BSD-2-Clause
 
 import numpy as np
-from numba import cuda, float32, int32, void
-from numba.core.errors import TypingError
+from numba import cuda
+from numba.cuda import float32, int32, void
+from numba.cuda import HAS_NUMBA
+
+if HAS_NUMBA:
+    from numba.core.errors import TypingError
+else:
+    from numba.cuda.core.errors import TypingError
 from numba.cuda.testing import unittest, CUDATestCase
 from numba.cuda.testing import skip_on_cudasim
-from .extensions_usecases import test_struct_model_type
+from .extensions_usecases import struct_model_type
 
 GLOBAL_CONSTANT = 5
 GLOBAL_CONSTANT_2 = 6
@@ -214,13 +220,13 @@ class TestSharedMemoryCreation(CUDATestCase):
 
     @skip_on_cudasim("Can't check typing in simulator")
     def test_type_with_struct_data_model(self):
-        @cuda.jit(void(test_struct_model_type[::1]))
+        @cuda.jit(void(struct_model_type[::1]))
         def f(x):
-            s = cuda.shared.array(10, dtype=test_struct_model_type)
+            s = cuda.shared.array(10, dtype=struct_model_type)
             s[0] = x[0]
             x[0] = s[0]
 
-        self.check_dtype(f, test_struct_model_type)
+        self.check_dtype(f, struct_model_type)
 
 
 if __name__ == "__main__":

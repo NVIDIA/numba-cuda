@@ -1,21 +1,18 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-2-Clause
 
+import concurrent.futures
 import multiprocessing
 import os
 from numba.cuda.testing import unittest
 
 
-def set_visible_devices_and_check(q):
-    try:
-        from numba import cuda
-        import os
+def set_visible_devices_and_check():
+    from numba import cuda
+    import os
 
-        os.environ["CUDA_VISIBLE_DEVICES"] = "0"
-        q.put(len(cuda.gpus.lst))
-    except:  # noqa: E722
-        # Sentinel value for error executing test code
-        q.put(-1)
+    os.environ["CUDA_VISIBLE_DEVICES"] = "0"
+    return len(cuda.gpus.lst)
 
 
 class TestVisibleDevices(unittest.TestCase):
@@ -38,22 +35,13 @@ class TestVisibleDevices(unittest.TestCase):
             msg = "Cannot test when CUDA_VISIBLE_DEVICES already set"
             self.skipTest(msg)
 
-        ctx = multiprocessing.get_context("spawn")
-        q = ctx.Queue()
-        p = ctx.Process(target=set_visible_devices_and_check, args=(q,))
-        p.start()
-        try:
-            visible_gpu_count = q.get()
-        finally:
-            p.join()
+        with concurrent.futures.ProcessPoolExecutor(
+            mp_context=multiprocessing.get_context("spawn")
+        ) as exe:
+            future = exe.submit(set_visible_devices_and_check)
 
-        # Make an obvious distinction between an error running the test code
-        # and an incorrect number of GPUs in the list
-        msg = "Error running set_visible_devices_and_check"
-        self.assertNotEqual(visible_gpu_count, -1, msg=msg)
-
-        # The actual check that we see only one GPU
-        self.assertEqual(visible_gpu_count, 1)
+        visible_gpu_count = future.result()
+        assert visible_gpu_count == 1
 
 
 if __name__ == "__main__":

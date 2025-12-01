@@ -1,16 +1,11 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-2-Clause
 
-from numba.core import errors, types
+from numba.cuda.core import errors
+from numba.cuda import types
 from numba.cuda.typing.npydecl import (
     parse_dtype,
     parse_shape,
-    register_number_classes,
-    register_numpy_ufunc,
-    trigonometric_functions,
-    comparison_functions,
-    math_operations,
-    bit_twiddling_functions,
 )
 from numba.cuda.typing.templates import (
     AttributeTemplate,
@@ -20,15 +15,13 @@ from numba.cuda.typing.templates import (
     signature,
     Registry,
 )
-from numba.cuda.types import dim3
+from numba.cuda.types.ext_types import dim3
 from numba import cuda
 
 registry = Registry()
 register = registry.register
 register_attr = registry.register_attr
 register_global = registry.register_global
-
-register_number_classes(register_global)
 
 
 class Cuda_array_decl(CallableTemplate):
@@ -108,16 +101,6 @@ class Cuda_threadfence_system(ConcreteTemplate):
 class Cuda_syncwarp(ConcreteTemplate):
     key = cuda.syncwarp
     cases = [signature(types.none), signature(types.none, types.i4)]
-
-
-@register
-class Cuda_vote_sync_intrinsic(ConcreteTemplate):
-    key = cuda.vote_sync_intrinsic
-    cases = [
-        signature(
-            types.Tuple((types.i4, types.b1)), types.i4, types.i4, types.b1
-        )
-    ]
 
 
 @register
@@ -529,9 +512,6 @@ class CudaModuleTemplate(AttributeTemplate):
     def resolve_syncwarp(self, mod):
         return types.Function(Cuda_syncwarp)
 
-    def resolve_vote_sync_intrinsic(self, mod):
-        return types.Function(Cuda_vote_sync_intrinsic)
-
     def resolve_match_any_sync(self, mod):
         return types.Function(Cuda_match_any_sync)
 
@@ -561,19 +541,3 @@ class CudaModuleTemplate(AttributeTemplate):
 
 
 register_global(cuda, types.Module(cuda))
-
-
-# NumPy
-
-for func in trigonometric_functions:
-    register_numpy_ufunc(func, register_global)
-
-for func in comparison_functions:
-    register_numpy_ufunc(func, register_global)
-
-for func in bit_twiddling_functions:
-    register_numpy_ufunc(func, register_global)
-
-for func in math_operations:
-    if func in ("log", "log2", "log10"):
-        register_numpy_ufunc(func, register_global)

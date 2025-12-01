@@ -5,19 +5,18 @@ from numba.cuda.cudadrv.driver import CudaAPIError
 import numpy as np
 import threading
 
-from numba import (
+from numba.cuda.types import (
     boolean,
-    cuda,
     float32,
     float64,
     int32,
     int64,
-    types,
     uint32,
     void,
 )
-from numba.cuda import config
-from numba.core.errors import TypingError
+from numba import cuda
+from numba.cuda import config, types
+from numba.cuda.core.errors import TypingError
 from numba.cuda.testing import (
     cc_X_or_above,
     skip_on_cudasim,
@@ -774,7 +773,9 @@ class TestLaunchBounds(CUDATestCase):
 
         sig = f.signatures[0]
         ptx = f.inspect_asm(sig)
-        self.assertRegex(ptx, r".maxntid\s+128,\s+1,\s+1")
+        # Match either `.maxntid, 128, 1, 1` or `.maxntid 128` on a line by
+        # itself:
+        self.assertRegex(ptx, r".maxntid\s+128(?:,\s+1,\s+1)?\s*\n")
 
         return ptx
 

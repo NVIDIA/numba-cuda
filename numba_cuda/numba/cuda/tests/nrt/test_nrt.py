@@ -10,7 +10,7 @@ from numba.cuda.testing import CUDATestCase, skip_on_cudasim
 from numba.cuda.tests.support import run_in_subprocess, override_config
 from numba.cuda import get_current_device
 from numba.cuda.cudadrv.nvrtc import compile
-from numba import types
+from numba.cuda import types
 from numba.cuda.typing import signature
 from numba import cuda
 from numba.cuda import config
@@ -128,11 +128,11 @@ class TestNrtBasic(CUDATestCase):
         match = re.search(p1, ptx)
         assert match is not None
 
-        p2 = r"call\.uni.*\n.*NRT_incref"
+        p2 = r"call\.uni.*\n?.*NRT_incref"
         match = re.search(p2, ptx)
         assert match is not None
 
-        p3 = r"call\.uni.*\n.*NRT_decref"
+        p3 = r"call\.uni.*\n?.*NRT_decref"
         match = re.search(p3, ptx)
         assert match is not None
 

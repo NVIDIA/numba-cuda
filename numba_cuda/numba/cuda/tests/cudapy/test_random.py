@@ -7,7 +7,11 @@ import numpy as np
 
 from numba import cuda
 from numba.cuda.testing import unittest
-from numba.cuda.testing import skip_on_cudasim, CUDATestCase
+from numba.cuda.testing import (
+    skip_on_cudasim,
+    CUDATestCase,
+    skip_on_standalone_numba_cuda,
+)
 
 from numba.cuda.random import (
     xoroshiro128p_uniform_float32,
@@ -48,6 +52,7 @@ def rng_kernel_float64(states, out, count, distribution):
             out[idx] = xoroshiro128p_normal_float64(states, thread_id)
 
 
+@skip_on_standalone_numba_cuda
 class TestCudaRandomXoroshiro128p(CUDATestCase):
     def test_create(self):
         states = cuda.random.create_xoroshiro128p_states(10, seed=1)

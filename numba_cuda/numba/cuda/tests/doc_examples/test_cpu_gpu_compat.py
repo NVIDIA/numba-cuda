@@ -3,7 +3,11 @@
 
 import unittest
 
-from numba.cuda.testing import CUDATestCase, skip_on_cudasim
+from numba.cuda.testing import (
+    CUDATestCase,
+    skip_on_cudasim,
+    skip_on_standalone_numba_cuda,
+)
 from numba.cuda.tests.support import captured_stdout
 import numpy as np
 
@@ -25,6 +29,7 @@ class TestCpuGpuCompat(CUDATestCase):
         self._captured_stdout.__exit__(None, None, None)
         super().tearDown()
 
+    @skip_on_standalone_numba_cuda
     def test_ex_cpu_gpu_compat(self):
         # ex_cpu_gpu_compat.import.begin
         from math import pi

@@ -682,4 +682,65 @@ def ufunc_db():
         "D->D": npyfuncs.np_complex_log10_impl,
     }
 
+    db[np.isnan] = {
+        "f->?": npyfuncs.np_real_isnan_impl,
+        "d->?": npyfuncs.np_real_isnan_impl,
+        "F->?": npyfuncs.np_complex_isnan_impl,
+        "D->?": npyfuncs.np_complex_isnan_impl,
+        # int8
+        "b->?": npyfuncs.np_int_isnan_impl,
+        "B->?": npyfuncs.np_int_isnan_impl,
+        # int16
+        "h->?": npyfuncs.np_int_isnan_impl,
+        "H->?": npyfuncs.np_int_isnan_impl,
+        # int32
+        "i->?": npyfuncs.np_int_isnan_impl,
+        "I->?": npyfuncs.np_int_isnan_impl,
+        # int64
+        "l->?": npyfuncs.np_int_isnan_impl,
+        "L->?": npyfuncs.np_int_isnan_impl,
+        # intp
+        "q->?": npyfuncs.np_int_isnan_impl,
+        "Q->?": npyfuncs.np_int_isnan_impl,
+        # boolean
+        "?->?": npyfuncs.np_int_isnan_impl,
+        # datetime & timedelta
+        "m->?": npyfuncs.np_datetime_isnat_impl,
+        "M->?": npyfuncs.np_datetime_isnat_impl,
+    }
+
+    db[np.conjugate] = {
+        "b->b": numbers.real_conjugate_impl,
+        "B->B": numbers.real_conjugate_impl,
+        "h->h": numbers.real_conjugate_impl,
+        "H->H": numbers.real_conjugate_impl,
+        "i->i": numbers.real_conjugate_impl,
+        "I->I": numbers.real_conjugate_impl,
+        "l->l": numbers.real_conjugate_impl,
+        "L->L": numbers.real_conjugate_impl,
+        "q->q": numbers.real_conjugate_impl,
+        "Q->Q": numbers.real_conjugate_impl,
+        "f->f": numbers.real_conjugate_impl,
+        "d->d": numbers.real_conjugate_impl,
+        "F->F": numbers.complex_conjugate_impl,
+        "D->D": numbers.complex_conjugate_impl,
+    }
+
+    db[np.divide] = {
+        "bb->b": npyfuncs.np_int_truediv_impl,
+        "BB->B": npyfuncs.np_int_truediv_impl,
+        "hh->h": npyfuncs.np_int_truediv_impl,
+        "HH->H": npyfuncs.np_int_truediv_impl,
+        "ii->i": npyfuncs.np_int_truediv_impl,
+        "II->I": npyfuncs.np_int_truediv_impl,
+        "ll->l": npyfuncs.np_int_truediv_impl,
+        "LL->L": npyfuncs.np_int_truediv_impl,
+        "qq->q": npyfuncs.np_int_truediv_impl,
+        "QQ->Q": npyfuncs.np_int_truediv_impl,
+        "ff->f": npyfuncs.np_real_div_impl,
+        "dd->d": npyfuncs.np_real_div_impl,
+        "FF->F": npyfuncs.np_complex_div_impl,
+        "DD->D": npyfuncs.np_complex_div_impl,
+    }
+
     return db
