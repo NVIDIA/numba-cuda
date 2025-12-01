@@ -163,4 +163,8 @@ jobs:
           CUDA_VER: ${{ matrix.CUDA_VER }}
           LOCAL_CTK: ${{ matrix.LOCAL_CTK }}
         shell: bash --noprofile --norc -xeuo pipefail {0}
-        run: run-tests
+        run: |
+          if [[ "${LOCAL_CTK}" != 1 ]]; then
+            export NUMBA_CUDA_TEST_WHEEL_ONLY=1
+          fi
+          run-tests
