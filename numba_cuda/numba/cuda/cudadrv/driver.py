@@ -814,13 +814,14 @@ class HostOnlyCUDAMemoryManager(BaseCUDAMemoryManager):
         alloc_key = pointer
 
         finalizer = _hostalloc_finalizer(self, pointer, alloc_key, size, mapped)
+        ctx = weakref.proxy(self.context)
 
         if mapped:
-            mem = MappedMemory(pointer, size, finalizer=finalizer)
+            mem = MappedMemory(ctx, pointer, size, finalizer=finalizer)
             self.allocations[alloc_key] = mem
             return mem.own()
         else:
-            return PinnedMemory(pointer, size, finalizer=finalizer)
+            return PinnedMemory(ctx, pointer, size, finalizer=finalizer)
 
     def mempin(self, owner, pointer, size, mapped=False):
         """Implements the pinning of host memory.
@@ -847,13 +848,18 @@ class HostOnlyCUDAMemoryManager(BaseCUDAMemoryManager):
             allocator()
 
         finalizer = _pin_finalizer(self, pointer, alloc_key, mapped)
+        ctx = weakref.proxy(self.context)
 
         if mapped:
-            mem = MappedMemory(pointer, size, owner=owner, finalizer=finalizer)
+            mem = MappedMemory(
+                ctx, pointer, size, owner=owner, finalizer=finalizer
+            )
             self.allocations[alloc_key] = mem
             return mem.own()
         else:
-            return PinnedMemory(pointer, size, owner=owner, finalizer=finalizer)
+            return PinnedMemory(
+                ctx, pointer, size, owner=owner, finalizer=finalizer
+            )
 
     def memallocmanaged(self, size, attach_global):
         def allocator():
@@ -871,7 +877,8 @@ class HostOnlyCUDAMemoryManager(BaseCUDAMemoryManager):
         alloc_key = ptr
 
         finalizer = _alloc_finalizer(self, ptr, alloc_key, size)
-        mem = ManagedMemory(ptr, size, finalizer=finalizer)
+        ctx = weakref.proxy(self.context)
+        mem = ManagedMemory(ctx, ptr, size, finalizer=finalizer)
         self.allocations[alloc_key] = mem
         return mem.own()
 
@@ -934,7 +941,8 @@ class NumbaCUDAMemoryManager(GetIpcHandleMixin, HostOnlyCUDAMemoryManager):
         alloc_key = ptr
 
         finalizer = _alloc_finalizer(self, ptr, alloc_key, size)
-        mem = AutoFreePointer(ptr, size, finalizer=finalizer)
+        ctx = weakref.proxy(self.context)
+        mem = AutoFreePointer(ctx, ptr, size, finalizer=finalizer)
         self.allocations[alloc_key] = mem
         return mem.own()
 
@@ -1265,7 +1273,9 @@ class Context(object):
         dptr = driver.cuIpcOpenMemHandle(handle, flags)
 
         # wrap it
-        return MemoryPointer(pointer=dptr, size=size)
+        return MemoryPointer(
+            context=weakref.proxy(self), pointer=dptr, size=size
+        )
 
     def enable_peer_access(self, peer_context, flags=0):
         """Enable peer access between the current context and the peer context"""
@@ -1751,7 +1761,7 @@ class IpcHandle(object):
         )
 
 
-class MemoryPointer:
+class MemoryPointer(object):
     """A memory pointer that owns a buffer, with an optional finalizer. Memory
     pointers provide reference counting, and instances are initialized with a
     reference count of 1.
@@ -1767,6 +1777,8 @@ class MemoryPointer:
     tie the buffer lifetime to the reference count, so that the buffer is freed
     when there are no more references.
 
+    :param context: The context in which the pointer was allocated.
+    :type context: Context
     :param pointer: The address of the buffer.
     :type pointer: ctypes.c_void_p
     :param size: The size of the allocation in bytes.
@@ -1783,10 +1795,11 @@ class MemoryPointer:
 
     __cuda_memory__ = True
 
-    def __init__(self, pointer, size, owner=None, finalizer=None):
+    def __init__(self, context, pointer, size, owner=None, finalizer=None):
         if isinstance(pointer, ctypes.c_void_p):
             pointer = binding.CUdeviceptr(pointer.value)
 
+        self.context = context
         self.device_pointer = pointer
         self.size = size
         self._cuda_memsize_ = size
@@ -1842,7 +1855,7 @@ class MemoryPointer:
             pointer = binding.CUdeviceptr()
             ctypes_ptr = drvapi.cu_device_ptr.from_address(pointer.getPtr())
             ctypes_ptr.value = base
-            view = MemoryPointer(pointer, size, owner=self.owner)
+            view = MemoryPointer(self.context, pointer, size, owner=self.owner)
 
         if isinstance(self.owner, (MemoryPointer, OwnedPointer)):
             # Owned by a numba-managed memory segment, take an owned reference
@@ -1871,7 +1884,7 @@ class AutoFreePointer(MemoryPointer):
 
     def __init__(self, *args, **kwargs):
         super(AutoFreePointer, self).__init__(*args, **kwargs)
-        # Release the self reference to the buffer, so that the finalizer
+        # Releease the self reference to the buffer, so that the finalizer
         # is invoked if all the derived pointers are gone.
         self.refct -= 1
 
@@ -1898,7 +1911,7 @@ class MappedMemory(AutoFreePointer):
 
     __cuda_memory__ = True
 
-    def __init__(self, pointer, size, owner=None, finalizer=None):
+    def __init__(self, context, pointer, size, owner=None, finalizer=None):
         self.owned = owner
         self.host_pointer = pointer
 
@@ -1906,7 +1919,9 @@ class MappedMemory(AutoFreePointer):
         self._bufptr_ = self.host_pointer
 
         self.device_pointer = devptr
-        super(MappedMemory, self).__init__(devptr, size, finalizer=finalizer)
+        super(MappedMemory, self).__init__(
+            context, devptr, size, finalizer=finalizer
+        )
         self.handle = self.host_pointer
 
         # For buffer interface
@@ -1935,7 +1950,8 @@ class PinnedMemory(mviewbuf.MemAlloc):
     :type finalizer: function
     """
 
-    def __init__(self, pointer, size, owner=None, finalizer=None):
+    def __init__(self, context, pointer, size, owner=None, finalizer=None):
+        self.context = context
         self.owned = owner
         self.size = size
         self.host_pointer = pointer
@@ -1975,10 +1991,10 @@ class ManagedMemory(AutoFreePointer):
 
     __cuda_memory__ = True
 
-    def __init__(self, pointer, size, owner=None, finalizer=None):
+    def __init__(self, context, pointer, size, owner=None, finalizer=None):
         self.owned = owner
         devptr = pointer
-        super().__init__(devptr, size, finalizer=finalizer)
+        super().__init__(context, devptr, size, finalizer=finalizer)
 
         # For buffer interface
         self._buflen_ = self.size
@@ -2302,7 +2318,7 @@ class CtypesModule(Module):
         driver.cuModuleGetGlobal(
             byref(ptr), byref(size), self.handle, name.encode("utf8")
         )
-        return MemoryPointer(ptr, size), size.value
+        return MemoryPointer(self.context, ptr, size), size.value
 
 
 class CudaPythonModule(Module):
@@ -2312,7 +2328,7 @@ class CudaPythonModule(Module):
 
     def get_global_symbol(self, name):
         ptr, size = driver.cuModuleGetGlobal(self.handle, name.encode("utf8"))
-        return MemoryPointer(ptr, size), size
+        return MemoryPointer(self.context, ptr, size), size
 
 
 FuncAttr = namedtuple(

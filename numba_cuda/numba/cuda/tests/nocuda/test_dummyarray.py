@@ -387,5 +387,66 @@ class TestIterate(unittest.TestCase):
             x = val  # noqa: F841
 
 
+@skip_on_cudasim("Tests internals of the CUDA driver device array")
+class TestEmptyArrays(unittest.TestCase):
+    def test_empty_array_flags(self):
+        test_shapes = [
+            (0,),
+            (10, 0),
+            (0, 10),
+            (0, 0),
+            (5, 0, 3),
+            (0, 5, 3),
+            (5, 3, 0),
+            (0, 0, 0),
+        ]
+        for shape in test_shapes:
+            with self.subTest(shape=shape):
+                nparr = np.empty(shape)
+                arr = Array.from_desc(
+                    0, nparr.shape, nparr.strides, nparr.dtype.itemsize
+                )
+                # Empty arrays should be both C and F contiguous
+                self.assertEqual(
+                    arr.flags["C_CONTIGUOUS"],
+                    nparr.flags["C_CONTIGUOUS"],
+                    f"C_CONTIGUOUS mismatch for shape {shape}",
+                )
+                self.assertEqual(
+                    arr.flags["F_CONTIGUOUS"],
+                    nparr.flags["F_CONTIGUOUS"],
+                    f"F_CONTIGUOUS mismatch for shape {shape}",
+                )
+                self.assertTrue(arr.flags["C_CONTIGUOUS"])
+                self.assertTrue(arr.flags["F_CONTIGUOUS"])
+
+
+@skip_on_cudasim("Tests CUDA device array type inference")
+class TestEmptyArrayTypeInference(unittest.TestCase):
+    def test_empty_array_typeof(self):
+        from numba import cuda, typeof
+
+        test_cases = [
+            ((0,), np.int64),
+            ((10, 0), np.int64),
+            ((0, 10), np.int64),
+            ((0, 0), np.float32),
+            ((5, 0, 3), np.float32),
+            ((0, 5, 3), np.int32),
+            ((5, 3, 0), np.float64),
+        ]
+
+        for shape, dtype in test_cases:
+            with self.subTest(shape=shape, dtype=dtype):
+                h_values = np.empty(shape, dtype=dtype)
+                d_values = cuda.to_device(h_values)
+                self.assertEqual(
+                    typeof(h_values),
+                    typeof(d_values),
+                    f"Type mismatch for shape {shape}, dtype {dtype}: "
+                    f"host={typeof(h_values)}, device={typeof(d_values)}",
+                )
+
+
 if __name__ == "__main__":
     unittest.main()
