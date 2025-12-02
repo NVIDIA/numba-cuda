@@ -6,6 +6,7 @@ from numba.cuda.tests.support import override_config, captured_stdout
 from numba.cuda.testing import skip_on_cudasim
 from numba import cuda
 from numba.cuda import types
+from numba.cuda.np import numpy_support
 from numba.cuda.testing import CUDATestCase
 from numba.cuda.core import config
 from textwrap import dedent
@@ -884,50 +885,93 @@ class TestCudaDebugInfo(CUDATestCase):
         """,
         )
 
-    def test_shared_memory_address_class(self):
+    # shared_arr -> composite -> elements[4] (data field at index 4) -> pointer with dwarfAddressSpace: 8
+    # local_arr -> composite -> elements[4] (data field at index 4) -> pointer without dwarfAddressSpace: 8
+    address_class_filechecks = r"""
+        CHECK-DAG: [[SHARED_VAR:![0-9]+]] = !DILocalVariable({{.*}}name: "shared_arr"{{.*}}type: [[SHARED_COMPOSITE:![0-9]+]]
+        CHECK-DAG: [[SHARED_COMPOSITE]] = {{.*}}!DICompositeType(elements: [[SHARED_ELEMENTS:![0-9]+]]
+        CHECK-DAG: [[SHARED_ELEMENTS]] = !{{{.*}}, {{.*}}, {{.*}}, {{.*}}, [[SHARED_DATA:![0-9]+]], {{.*}}, {{.*}}}
+        CHECK-DAG: [[SHARED_DATA]] = !DIDerivedType(baseType: [[SHARED_PTR:![0-9]+]], name: "data"
+        CHECK-DAG: [[SHARED_PTR]] = !DIDerivedType({{.*}}dwarfAddressSpace: 8{{.*}}tag: DW_TAG_pointer_type
+
+        CHECK-DAG: [[LOCAL_VAR:![0-9]+]] = !DILocalVariable({{.*}}name: "local_arr"{{.*}}type: [[LOCAL_COMPOSITE:![0-9]+]]
+        CHECK-DAG: [[LOCAL_COMPOSITE]] = {{.*}}!DICompositeType(elements: [[LOCAL_ELEMENTS:![0-9]+]]
+        CHECK-DAG: [[LOCAL_ELEMENTS]] = !{{{.*}}, {{.*}}, {{.*}}, {{.*}}, [[LOCAL_DATA:![0-9]+]], {{.*}}, {{.*}}}
+        CHECK-DAG: [[LOCAL_DATA]] = !DIDerivedType(baseType: [[LOCAL_PTR:![0-9]+]], name: "data"
+        CHECK-DAG: [[LOCAL_PTR]] = !DIDerivedType(baseType: {{.*}}tag: DW_TAG_pointer_type
+        CHECK-NOT: [[LOCAL_PTR]]{{.*}}dwarfAddressSpace: 8
+    """
+
+    def _test_shared_memory_address_class(self, dtype):
         """Test that shared memory arrays have correct DWARF address class.
 
         Shared memory pointers should have addressClass: 8 (DW_AT_address_class
         for CUDA shared memory) in their debug metadata, while regular local
         arrays should not have this annotation.
         """
-        sig = (types.int32,)
+        sig = (numpy_support.from_dtype(dtype),)
 
         @cuda.jit(sig, debug=True, opt=False)
         def kernel_with_shared(data):
-            shared_arr = cuda.shared.array(32, dtype=np.int32)
-            local_arr = cuda.local.array(32, dtype=np.int32)
+            shared_arr = cuda.shared.array(32, dtype=dtype)
+            local_arr = cuda.local.array(32, dtype=dtype)
             idx = cuda.grid(1)
             if idx < 32:
                 shared_arr[idx] = data + idx
                 local_arr[idx] = data * 2 + idx
             cuda.syncthreads()
             if idx == 0:
-                result = np.int32(0)
+                result = dtype(0)
                 for i in range(32):
                     result += shared_arr[i] + local_arr[i]
 
         llvm_ir = kernel_with_shared.inspect_llvm(sig)
 
-        # shared_arr -> composite -> elements[4] (data field at index 4) -> pointer with dwarfAddressSpace: 8
-        # local_arr -> composite -> elements[4] (data field at index 4) -> pointer without dwarfAddressSpace: 8
-        self.assertFileCheckMatches(
-            llvm_ir,
-            r"""
-            CHECK-DAG: [[SHARED_VAR:![0-9]+]] = !DILocalVariable({{.*}}name: "shared_arr"{{.*}}type: [[SHARED_COMPOSITE:![0-9]+]]
-            CHECK-DAG: [[SHARED_COMPOSITE]] = {{.*}}!DICompositeType(elements: [[SHARED_ELEMENTS:![0-9]+]]
-            CHECK-DAG: [[SHARED_ELEMENTS]] = !{{{.*}}, {{.*}}, {{.*}}, {{.*}}, [[SHARED_DATA:![0-9]+]], {{.*}}, {{.*}}}
-            CHECK-DAG: [[SHARED_DATA]] = !DIDerivedType(baseType: [[SHARED_PTR:![0-9]+]], name: "data"
-            CHECK-DAG: [[SHARED_PTR]] = !DIDerivedType({{.*}}dwarfAddressSpace: 8{{.*}}tag: DW_TAG_pointer_type
+        self.assertFileCheckMatches(llvm_ir, self.address_class_filechecks)
 
-            CHECK-DAG: [[LOCAL_VAR:![0-9]+]] = !DILocalVariable({{.*}}name: "local_arr"{{.*}}type: [[LOCAL_COMPOSITE:![0-9]+]]
-            CHECK-DAG: [[LOCAL_COMPOSITE]] = {{.*}}!DICompositeType(elements: [[LOCAL_ELEMENTS:![0-9]+]]
-            CHECK-DAG: [[LOCAL_ELEMENTS]] = !{{{.*}}, {{.*}}, {{.*}}, {{.*}}, [[LOCAL_DATA:![0-9]+]], {{.*}}, {{.*}}}
-            CHECK-DAG: [[LOCAL_DATA]] = !DIDerivedType(baseType: [[LOCAL_PTR:![0-9]+]], name: "data"
-            CHECK-DAG: [[LOCAL_PTR]] = !DIDerivedType(baseType: {{.*}}tag: DW_TAG_pointer_type
-            CHECK-NOT: [[LOCAL_PTR]]{{.*}}dwarfAddressSpace: 8
-        """,
+    def test_shared_memory_address_class_int32(self):
+        self._test_shared_memory_address_class(np.int32)
+
+    def test_shared_memory_address_class_complex64(self):
+        self._test_shared_memory_address_class(np.complex64)
+
+    def test_shared_memory_address_class_boolean(self):
+        self._test_shared_memory_address_class(np.bool)
+
+    def test_shared_memory_address_class_float16(self):
+        self._test_shared_memory_address_class(np.float16)
+
+    def test_shared_memory_address_class_record(self):
+        dtype = np.dtype(
+            [
+                ("a", np.int32),
+                ("b", np.float32),
+            ]
         )
+        sig = (numpy_support.from_dtype(dtype),)
+
+        @cuda.jit(sig, debug=True, opt=False)
+        def kernel_with_shared(data):
+            shared_arr = cuda.shared.array(32, dtype=dtype)
+            local_arr = cuda.local.array(32, dtype=dtype)
+            result = cuda.local.array(1, dtype=dtype)
+            idx = cuda.grid(1)
+            if idx < 32:
+                shared_arr[idx].a = data.a + idx
+                local_arr[idx].a = data.a * 2 + idx
+                shared_arr[idx].b = data.b + idx
+                local_arr[idx].b = data.b * 2 + idx
+            cuda.syncthreads()
+            if idx == 0:
+                result[0].a = 0
+                result[0].b = 0.0
+                for i in range(32):
+                    result[0].a += shared_arr[i].a + local_arr[i].a
+                    result[0].b += shared_arr[i].b + local_arr[i].b
+
+        llvm_ir = kernel_with_shared.inspect_llvm(sig)
+
+        self.assertFileCheckMatches(llvm_ir, self.address_class_filechecks)
 
 
 if __name__ == "__main__":
