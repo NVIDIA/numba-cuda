@@ -2362,8 +2362,8 @@ class Function(metaclass=ABCMeta):
         """Set the cache configuration for this function."""
 
     @abstractmethod
-    def set_shared_memory_carveout(self, percent):
-        """Set the shared memory carveout percentage (0-100)"""
+    def set_shared_memory_carveout(self, carveout):
+        """Set the shared memory carveout percentage (-1-100)"""
 
     @abstractmethod
     def read_func_attr(self, attrid):
@@ -2390,12 +2390,14 @@ class CtypesFunction(Function):
             flag = enums.CU_FUNC_CACHE_PREFER_NONE
         driver.cuFuncSetCacheConfig(self.handle, flag)
 
-    def set_shared_memory_carveout(self, percent):
-        if not (0 <= percent <= 100):
-            raise ValueError("Carveout must be between 0 and 100")
+    def set_shared_memory_carveout(self, carveout):
+        carveout = int(carveout)
+
+        if not (-1 <= carveout <= 100):
+            raise ValueError("Carveout must be between -1 and 100")
 
         attr = enums.CU_FUNC_ATTRIBUTE_PREFERRED_SHARED_MEMORY_CARVEOUT
-        driver.cuFuncSetAttribute(self.handle, attr, percent)
+        driver.cuFuncSetAttribute(self.handle, attr, carveout)
 
     def read_func_attr(self, attrid):
         retval = c_int()
@@ -2431,12 +2433,14 @@ class CudaPythonFunction(Function):
             flag = attr.CU_FUNC_CACHE_PREFER_NONE
         driver.cuFuncSetCacheConfig(self.handle, flag)
 
-    def set_shared_memory_carveout(self, percent):
-        if not (0 <= percent <= 100):
-            raise ValueError("Carveout must be between 0 and 100")
+    def set_shared_memory_carveout(self, carveout):
+        carveout = int(carveout)
+
+        if not (-1 <= carveout <= 100):
+            raise ValueError("Carveout must be between -1 and 100")
 
         attr = binding.CUfunction_attribute.CU_FUNC_ATTRIBUTE_PREFERRED_SHARED_MEMORY_CARVEOUT
-        driver.cuFuncSetAttribute(self.handle, attr, percent)
+        driver.cuFuncSetAttribute(self.handle, attr, carveout)
 
     def read_func_attr(self, attrid):
         return driver.cuFuncGetAttribute(attrid, self.handle)

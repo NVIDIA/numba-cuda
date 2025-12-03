@@ -300,6 +300,7 @@ class TestCudaDriver(CUDATestCase):
         kernel = add_one.overloads[sig]
         cufunc = kernel._codelibrary.get_cufunc()
 
+        # valid carveout values
         carveout_values = [0, 50, 100]
         for value in carveout_values:
             with self.subTest(carveout=value):
@@ -310,6 +311,14 @@ class TestCudaDriver(CUDATestCase):
                         f"set_shared_memory_carveout({value}) failed: {e}"
                     )
 
+        # invalid carveout values
+        invalid_values = [-2, 101, 150]
+        for value in invalid_values:
+            with self.subTest(invalid_carveout=value):
+                with self.assertRaises(ValueError):
+                    cufunc.set_shared_memory_carveout(value)
+
+        # test the kernel
         x = np.array([1.0, 2.0, 3.0, 4.0, 5.0], dtype=np.float32)
         r = np.zeros_like(x)
 
