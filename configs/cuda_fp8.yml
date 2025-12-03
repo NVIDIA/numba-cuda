@@ -1,0 +1,36 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: BSD-2-Clause
+Name: Numba FP8
+Version: 0.0.1
+GPU Arch:
+    - sm_90 # sm_90 is the first CUDA architecture that supports
+Entry Point: ./numba_cuda/numba/cuda/include/13/cuda_fp8.h
+File List:
+    - ./numba_cuda/numba/cuda/include/13/cuda_fp8.h
+    - ./numba_cuda/numba/cuda/include/13/cuda_fp8.hpp
+Exclude: {}
+Types:
+    __nv_fp8_e5m2: Number
+    __nv_fp8_e4m3: Number
+    __nv_fp8_e8m0: Number
+    __nv_fp8x2_e5m2: Type
+    __nv_fp8x2_e4m3: Type
+    __nv_fp8x2_e8m0: Type
+Data Models:
+    __nv_fp8_e5m2: PrimitiveModel
+    __nv_fp8_e4m3: PrimitiveModel
+    __nv_fp8_e8m0: PrimitiveModel
+    __nv_fp8x2_e5m2: StructModel
+    __nv_fp8x2_e4m3: StructModel
+    __nv_fp8x2_e8m0: StructModel
+API Prefix Removal:
+    Function:
+        - __nv_
+    Struct:
+        - __nv_
+    Enum:
+        - __nv_
+        - __NV_
+Skip Prefix: "__internal"
+Shim Include Override: "\"cuda_fp8.h\""
+Use Separate Registry: True
