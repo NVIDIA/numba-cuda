@@ -285,6 +285,49 @@ class TestCudaDriver(CUDATestCase):
         self.assertTrue(grid > 0)
         self.assertTrue(block > 0)
 
+    def test_cuda_set_shared_memory_carveout(self):
+        from numba import types
+        import numpy as np
+
+        sig = (types.float32[::1], types.float32[::1])
+
+        @cuda.jit(sig)
+        def add_one(r, x):
+            i = cuda.grid(1)
+            if i < len(r):
+                r[i] = x[i] + 1
+
+        kernel = add_one.overloads[sig]
+        cufunc = kernel._codelibrary.get_cufunc()
+
+        carveout_values = [0, 50, 100]
+        for value in carveout_values:
+            with self.subTest(carveout=value):
+                try:
+                    cufunc.set_shared_memory_carveout(value)
+                except Exception as e:
+                    self.fail(
+                        f"set_shared_memory_carveout({value}) failed: {e}"
+                    )
+
+        x = np.array([1.0, 2.0, 3.0, 4.0, 5.0], dtype=np.float32)
+        r = np.zeros_like(x)
+
+        d_x = cuda.to_device(x)
+        d_r = cuda.to_device(r)
+
+        cufunc.set_shared_memory_carveout(75)
+        add_one[1, 5](d_r, d_x)
+
+        result = d_r.copy_to_host()
+        expected = x + 1
+
+        np.testing.assert_array_almost_equal(
+            result,
+            expected,
+            err_msg="Kernel produced incorrect results after set_shared_memory_carveout",
+        )
+
 
 class TestDevice(CUDATestCase):
     def test_device_get_uuid(self):
