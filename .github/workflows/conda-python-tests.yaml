@@ -120,6 +120,7 @@ jobs:
       - name: Setup pixi
         uses: prefix-dev/setup-pixi@fef5c9568ca6c4ff7707bf840ab0692ba3f08293
         with:
+          pixi-version: "0.59.0"
           environments: ${{ env.PIXI_ENV }}
           cache: false
       - name: Python tests
