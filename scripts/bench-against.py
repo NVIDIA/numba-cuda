@@ -6,7 +6,6 @@ import contextlib
 import os
 import subprocess
 import tempfile
-import shutil
 
 
 @contextlib.contextmanager
@@ -32,32 +31,27 @@ def git_worktree():
     ).stdout.rstrip()
 
     # Create a temporary directory for the worktree
-    temp_dir = tempfile.mkdtemp(prefix="bench-against-")
-    worktree_path = os.path.join(temp_dir, "worktree")
+    with tempfile.TemporaryDirectory(prefix="bench-against-") as worktree_path:
+        # Create the worktree starting from the current HEAD
+        # We'll checkout different commits within this worktree
+        # Do this before the try block so cleanup only happens if creation succeeds
+        subprocess.run(
+            ["git", "worktree", "add", "--detach", worktree_path, "HEAD"],
+            check=True,
+            cwd=git_dir,
+        )
 
-    # Create the worktree starting from the current HEAD
-    # We'll checkout different commits within this worktree
-    # Do this before the try block so cleanup only happens if creation succeeds
-    subprocess.run(
-        ["git", "worktree", "add", "--detach", worktree_path, "HEAD"],
-        check=True,
-        cwd=git_dir,
-    )
-
-    try:
-        with chdir(worktree_path):
-            yield
-    finally:
-        # Remove the worktree
-        with contextlib.suppress(subprocess.CalledProcessError):
-            subprocess.run(
-                ["git", "worktree", "remove", "--force", worktree_path],
-                check=True,
-                cwd=git_dir,
-            )
-
-        # Remove the temporary directory
-        shutil.rmtree(temp_dir, ignore_errors=True)
+        try:
+            with chdir(worktree_path):
+                yield
+        finally:
+            # Remove the worktree
+            with contextlib.suppress(subprocess.CalledProcessError):
+                subprocess.run(
+                    ["git", "worktree", "remove", "--force", worktree_path],
+                    check=True,
+                    cwd=git_dir,
+                )
 
 
 def main(args):
