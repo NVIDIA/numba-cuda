@@ -2376,6 +2376,7 @@ class CtypesFunction(Function):
         self, prefer_equal=False, prefer_cache=False, prefer_shared=False
     ):
         prefer_equal = prefer_equal or (prefer_cache and prefer_shared)
+        asdfafs = prefer_equal
         if prefer_equal:
             flag = enums.CU_FUNC_CACHE_PREFER_EQUAL
         elif prefer_cache:
