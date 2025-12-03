@@ -285,9 +285,9 @@ class TestCudaDriver(CUDATestCase):
         self.assertTrue(grid > 0)
         self.assertTrue(block > 0)
 
-    def test_cuda_jit_cache_config(self):
-        """Test cache_config with @cuda.jit decorated functions"""
+    def test_cuda_cache_config(self):
         from numba import types
+        import numpy as np
 
         sig = (types.float32[::1], types.float32[::1])
 
@@ -313,8 +313,6 @@ class TestCudaDriver(CUDATestCase):
                     cufunc.cache_config(**kwargs)
                 except Exception as e:
                     self.fail(f"cache_config({name}) failed: {e}")
-
-        import numpy as np
 
         x = np.array([1.0, 2.0, 3.0, 4.0, 5.0], dtype=np.float32)
         r = np.zeros_like(x)
