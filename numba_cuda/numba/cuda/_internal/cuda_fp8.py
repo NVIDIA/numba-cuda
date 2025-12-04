@@ -15,6 +15,7 @@
 import io
 from enum import IntEnum
 
+import numba
 from llvmlite import ir
 from numba import types
 from numba.core.datamodel import PrimitiveModel, StructModel
@@ -24,14 +25,19 @@ from numba.core.extending import (
     register_model,
 )
 from numba.core.imputils import Registry as TargetRegistry
+from numba.core.imputils import lower_cast
 from numba.core.typing import signature
 from numba.cuda import CUSource, declare_device
+from numba.cuda._internal.cuda_bf16 import (
+    _type_unnamed1405307 as bfloat16_raw_type,
+)
 from numba.cuda.types import bfloat16
 from numba.cuda.typing.templates import AttributeTemplate, ConcreteTemplate
 from numba.cuda.typing.templates import Registry as TypingRegistry
 from numba.cuda.vector_types import vector_types
 from numba.extending import as_numba_type
 from numba.types import (
+    BoundFunction,
     CPointer,
     Function,
     IntEnumMember,
@@ -121,6 +127,11 @@ class _type_class_fp8_e5m2(Number):
 
         if other in []:
             return Conversion.safe
+
+    def can_convert_to(self, typingctx, other):
+        from numba.core.typeconv import Conversion
+
+        return Conversion.unsafe
 
 
 _type_fp8_e5m2 = _type_class_fp8_e5m2()
@@ -5883,6 +5894,113 @@ _lower__ZL24__nv_cvt_float2_to_fp8x26float217__nv_saturation_t25__nv_fp8_interpr
 )
 
 
+def cvt_bfloat16raw_to_fp8():
+    pass
+
+
+def _lower__ZL27__nv_cvt_bfloat16raw_to_fp817__nv_bfloat16_raw17__nv_saturation_t25__nv_fp8_interpretation_t_nbst(
+    shim_stream, shim_obj
+):
+    shim_raw_str = """
+    extern "C" __device__ int
+    _ZL27__nv_cvt_bfloat16raw_to_fp817__nv_bfloat16_raw17__nv_saturation_t25__nv_fp8_interpretation_t_nbst(unsigned char &retval , __nv_bfloat16_raw* x, __nv_saturation_t* saturate, __nv_fp8_interpretation_t* fp8_interpretation) {
+        retval = __nv_cvt_bfloat16raw_to_fp8(*x, *saturate, *fp8_interpretation);
+        return 0;
+    }
+        """
+
+    _ZL27__nv_cvt_bfloat16raw_to_fp817__nv_bfloat16_raw17__nv_saturation_t25__nv_fp8_interpretation_t_nbst = declare_device(
+        "_ZL27__nv_cvt_bfloat16raw_to_fp817__nv_bfloat16_raw17__nv_saturation_t25__nv_fp8_interpretation_t_nbst",
+        uint8(
+            CPointer(bfloat16_raw_type),
+            CPointer(IntEnumMember(saturation_t, int64)),
+            CPointer(IntEnumMember(fp8_interpretation_t, int64)),
+        ),
+    )
+
+    def _ZL27__nv_cvt_bfloat16raw_to_fp817__nv_bfloat16_raw17__nv_saturation_t25__nv_fp8_interpretation_t_nbst_caller(
+        arg_0, arg_1, arg_2
+    ):
+        return _ZL27__nv_cvt_bfloat16raw_to_fp817__nv_bfloat16_raw17__nv_saturation_t25__nv_fp8_interpretation_t_nbst(
+            arg_0, arg_1, arg_2
+        )
+
+    @lower(
+        cvt_bfloat16raw_to_fp8,
+        bfloat16_raw_type,
+        IntEnumMember(saturation_t, int64),
+        IntEnumMember(fp8_interpretation_t, int64),
+    )
+    def impl(context, builder, sig, args):
+        context.active_code_library.add_linking_file(shim_obj)
+        shim_stream.write_with_key(
+            "_ZL27__nv_cvt_bfloat16raw_to_fp817__nv_bfloat16_raw17__nv_saturation_t25__nv_fp8_interpretation_t_nbst",
+            shim_raw_str,
+        )
+        ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
+        for ptr, ty, arg in zip(ptrs, sig.args, args):
+            builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
+
+        return context.compile_internal(
+            builder,
+            _ZL27__nv_cvt_bfloat16raw_to_fp817__nv_bfloat16_raw17__nv_saturation_t25__nv_fp8_interpretation_t_nbst_caller,
+            signature(
+                uint8,
+                CPointer(bfloat16_raw_type),
+                CPointer(IntEnumMember(saturation_t, int64)),
+                CPointer(IntEnumMember(fp8_interpretation_t, int64)),
+            ),
+            ptrs,
+        )
+
+
+_lower__ZL27__nv_cvt_bfloat16raw_to_fp817__nv_bfloat16_raw17__nv_saturation_t25__nv_fp8_interpretation_t_nbst(
+    shim_stream, shim_obj
+)
+
+
+def cvt_e8m0_to_bf16raw():
+    pass
+
+
+def _lower__ZL24__nv_cvt_e8m0_to_bf16rawh_nbst(shim_stream, shim_obj):
+    shim_raw_str = """
+    extern "C" __device__ int
+    _ZL24__nv_cvt_e8m0_to_bf16rawh_nbst(__nv_bfloat16_raw &retval , unsigned char* x) {
+        retval = __nv_cvt_e8m0_to_bf16raw(*x);
+        return 0;
+    }
+        """
+
+    _ZL24__nv_cvt_e8m0_to_bf16rawh_nbst = declare_device(
+        "_ZL24__nv_cvt_e8m0_to_bf16rawh_nbst",
+        bfloat16_raw_type(CPointer(uint8)),
+    )
+
+    def _ZL24__nv_cvt_e8m0_to_bf16rawh_nbst_caller(arg_0):
+        return _ZL24__nv_cvt_e8m0_to_bf16rawh_nbst(arg_0)
+
+    @lower(cvt_e8m0_to_bf16raw, uint8)
+    def impl(context, builder, sig, args):
+        context.active_code_library.add_linking_file(shim_obj)
+        shim_stream.write_with_key(
+            "_ZL24__nv_cvt_e8m0_to_bf16rawh_nbst", shim_raw_str
+        )
+        ptrs = [builder.alloca(context.get_value_type(arg)) for arg in sig.args]
+        for ptr, ty, arg in zip(ptrs, sig.args, args):
+            builder.store(arg, ptr, align=getattr(ty, "alignof_", None))
+
+        return context.compile_internal(
+            builder,
+            _ZL24__nv_cvt_e8m0_to_bf16rawh_nbst_caller,
+            signature(bfloat16_raw_type, CPointer(uint8)),
+            ptrs,
+        )
+
+
+_lower__ZL24__nv_cvt_e8m0_to_bf16rawh_nbst(shim_stream, shim_obj)
+
+
 @register
 class _typing_cvt_double_to_fp8(ConcreteTemplate):
     key = globals()["cvt_double_to_fp8"]
@@ -5951,6 +6069,35 @@ register_global(
 )
 
 
+@register
+class _typing_cvt_bfloat16raw_to_fp8(ConcreteTemplate):
+    key = globals()["cvt_bfloat16raw_to_fp8"]
+    cases = [
+        signature(
+            uint8,
+            bfloat16_raw_type,
+            IntEnumMember(saturation_t, int64),
+            IntEnumMember(fp8_interpretation_t, int64),
+        )
+    ]
+
+
+register_global(
+    cvt_bfloat16raw_to_fp8, types.Function(_typing_cvt_bfloat16raw_to_fp8)
+)
+
+
+@register
+class _typing_cvt_e8m0_to_bf16raw(ConcreteTemplate):
+    key = globals()["cvt_e8m0_to_bf16raw"]
+    cases = [signature(bfloat16_raw_type, uint8)]
+
+
+register_global(
+    cvt_e8m0_to_bf16raw, types.Function(_typing_cvt_e8m0_to_bf16raw)
+)
+
+
 # Aliases:
 
 
@@ -5988,6 +6135,8 @@ _FUNCTION_SYMBOLS = [
     "cvt_double2_to_fp8x2",
     "cvt_float_to_fp8",
     "cvt_float2_to_fp8x2",
+    "cvt_bfloat16raw_to_fp8",
+    "cvt_e8m0_to_bf16raw",
 ]
 
 
