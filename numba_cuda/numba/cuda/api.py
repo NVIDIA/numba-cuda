@@ -102,6 +102,15 @@ def is_bfloat16_supported():
     return current_context().device.supports_bfloat16
 
 
+def is_fp8_supported():
+    """Whether FP8 types are supported.
+
+    FP8 types (fp8_e5m2, fp8_e4m3, fp8_e8m0) are only supported on devices
+    with compute capability >= 9.0 (Hopper architecture and later).
+    """
+    return current_context().device.supports_fp8
+
+
 @require_context
 def to_device(obj, stream=0, copy=True, to=None):
     """to_device(obj, stream=0, copy=True, to=None)

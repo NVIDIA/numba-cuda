@@ -37,6 +37,10 @@ def is_bfloat16_supported():
     return False
 
 
+def is_fp8_supported():
+    return False
+
+
 class stream(object):
     """
     The stream API is supported in the simulator - however, all execution
