@@ -15,6 +15,8 @@ from collections import defaultdict
 from functools import wraps
 from abc import abstractmethod
 
+from numba.cuda import HAS_NUMBA
+
 import numba_cuda
 
 # Filled at the end
@@ -496,7 +498,7 @@ def deprecated(arg):
     if not subst:
         return decorator(arg)
     else:
-        return decorator
+        return decorator()
 
 
 class WarningsFixer(object):
@@ -908,10 +910,32 @@ def new_error_context(fmt_, *args, **kwargs):
         raise
 
 
-__all__ += [
-    name
-    for (name, value) in globals().items()
-    if not name.startswith("_")
-    and isinstance(value, type)
-    and issubclass(value, (Exception, Warning))
-]
+def _local_all():
+    return [
+        name
+        for (name, value) in globals.items()
+        if not name.startswith("_")
+        and isinstance(value, type)
+        and issubclass(value, (Exception, Warning))
+    ]
+
+
+# use core errors if numba upstream is present
+if HAS_NUMBA:
+    try:
+        import numba.core.errors as _core_errors
+
+        core_names = list(_core_errors.__all__)
+
+        for name in core_names:
+            globals()[name] = getattr(_core_errors, name)
+
+        if core_names:
+            __all__ = list(core_names)
+        else:
+            __all__ = _local_all()
+
+    except Exception:
+        __all__ = _local_all()
+else:
+    __all__ = _local_all()
