@@ -19,13 +19,8 @@ import numba
 from llvmlite import ir
 from numba import types
 from numba.core.datamodel import PrimitiveModel, StructModel
-from numba.core.extending import (
-    lower_cast,
-    make_attribute_wrapper,
-    register_model,
-)
+from numba.core.extending import make_attribute_wrapper, register_model
 from numba.core.imputils import Registry as TargetRegistry
-from numba.core.imputils import lower_cast
 from numba.core.typing import signature
 from numba.cuda import CUSource, declare_device
 from numba.cuda._internal.cuda_bf16 import (
@@ -71,6 +66,7 @@ target_registry = TargetRegistry()
 lower = target_registry.lower
 lower_attr = target_registry.lower_getattr
 lower_constant = target_registry.lower_constant
+lower_cast = target_registry.lower_cast
 
 # Shim Stream:
 
@@ -127,11 +123,6 @@ class _type_class_fp8_e5m2(Number):
 
         if other in []:
             return Conversion.safe
-
-    def can_convert_to(self, typingctx, other):
-        from numba.core.typeconv import Conversion
-
-        return Conversion.unsafe
 
 
 _type_fp8_e5m2 = _type_class_fp8_e5m2()
