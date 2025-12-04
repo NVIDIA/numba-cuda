@@ -548,6 +548,12 @@ def detect():
         if os.name == "nt":
             attrs += [("Compute Mode", "TCC" if tcc else "WDDM")]
         attrs += [("FP32/FP64 Performance Ratio", fp32_to_fp64_ratio)]
+        attrs += [
+            (
+                "FP8 Hardware Acceleration",
+                "Yes" if dev.accelerates_fp8 else "No",
+            )
+        ]
         if cc < (3, 5):
             support = "[NOT SUPPORTED: CC < 3.5]"
         elif cc < (5, 0):
