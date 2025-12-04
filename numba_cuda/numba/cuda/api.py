@@ -102,13 +102,17 @@ def is_bfloat16_supported():
     return current_context().device.supports_bfloat16
 
 
-def is_fp8_supported():
-    """Whether FP8 types are supported.
+def is_fp8_accelerated():
+    """Whether FP8 types have hardware acceleration.
 
-    FP8 types (fp8_e5m2, fp8_e4m3, fp8_e8m0) are only supported on devices
-    with compute capability >= 9.0 (Hopper architecture and later).
+    Returns True if the current device has native hardware support for FP8
+    operations (compute capability >= 8.9, Ada Lovelace, Hopper and later).
+
+    When False, FP8 types will still work but will use software emulation,
+    which may be significantly slower. See cuda_fp8.hpp for performance
+    implications of different architecture levels.
     """
-    return current_context().device.supports_fp8
+    return current_context().device.accelerates_fp8
 
 
 @require_context

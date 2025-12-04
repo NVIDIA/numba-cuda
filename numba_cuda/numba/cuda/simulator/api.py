@@ -37,7 +37,8 @@ def is_bfloat16_supported():
     return False
 
 
-def is_fp8_supported():
+def is_fp8_accelerated():
+    """FP8 is not hardware-accelerated in the simulator."""
     return False
 
 

@@ -631,8 +631,13 @@ class Device:
         return self.compute_capability >= (8, 0)
 
     @property
-    def supports_fp8(self):
-        return self.compute_capability >= (9, 0)
+    def accelerates_fp8(self):
+        """Whether the device has hardware acceleration for FP8 operations.
+
+        Returns True for compute capability >= 8.9 (Ada Lovelace, Hopper and later).
+        FP8 operations will still work on older devices via software emulation.
+        """
+        return self.compute_capability >= (8, 9)
 
 
 class BaseCUDAMemoryManager(object, metaclass=ABCMeta):
