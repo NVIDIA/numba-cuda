@@ -65,7 +65,7 @@ def _from_cuda_array_interface(desc, owner=None, sync=True):
             stream.synchronize()
     else:
         stream = 0  # No "Numba default stream", not the CUDA default stream
-    da = devicearray.DeviceNDArray(
+    da = devicearray.DeviceNDArray._create_nowarn(
         shape=shape, strides=strides, dtype=dtype, gpu_data=data, stream=stream
     )
     return da
@@ -84,7 +84,7 @@ def _as_cuda_array(obj, sync=True):
     if (
         interface := getattr(obj, "__cuda_array_interface__", None)
     ) is not None:
-        return from_cuda_array_interface(interface, owner=obj, sync=sync)
+        return _from_cuda_array_interface(interface, owner=obj, sync=sync)
     raise TypeError("*obj* doesn't implement the cuda array interface.")
 
 

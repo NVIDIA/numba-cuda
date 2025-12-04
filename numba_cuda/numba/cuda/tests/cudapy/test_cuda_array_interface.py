@@ -228,7 +228,7 @@ class TestCudaArrayInterface(CUDATestCase):
 
     def test_zero_size_array(self):
         # for #4175
-        c_arr = cuda.device_array(0)
+        c_arr = cp.asarray(0)
         self.assertEqual(c_arr.__cuda_array_interface__["data"][0], 0)
 
         @cuda.jit

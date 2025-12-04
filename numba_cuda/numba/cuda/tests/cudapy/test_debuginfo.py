@@ -461,7 +461,7 @@ class TestCudaDebugInfo(CUDATestCase):
         with captured_stdout() as out:
             results = cp.zeros(16, dtype=np.int64)
             a_union_use_case[1, 1](100, results)
-            print(results.copy_to_host())
+            print(results.get())
         expected = "[1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0]"
         self.assertIn(expected, out.getvalue())
 
@@ -685,7 +685,7 @@ class TestCudaDebugInfo(CUDATestCase):
         with override_config("DEBUGINFO_DEFAULT", 1):
             result = cp.ones(1, dtype=np.float32)
             foo[1, 1](result, np.pi)
-            result.copy_to_host()
+            result = result.get()
 
         result_host = math.sin(np.pi) + math.cos(np.pi)
         self.assertPreciseEqual(result[0], result_host)

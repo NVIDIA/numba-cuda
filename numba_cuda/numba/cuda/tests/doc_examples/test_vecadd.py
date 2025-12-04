@@ -51,7 +51,7 @@ class TestVecAdd(CUDATestCase):
         N = 100000
         a = cp.random.random(N)
         b = cp.random.random(N)
-        c = cuda.device_array_like(a)
+        c = cp.asarray(a)
         # ex_vecadd.allocate.end
 
         # ex_vecadd.forall.begin

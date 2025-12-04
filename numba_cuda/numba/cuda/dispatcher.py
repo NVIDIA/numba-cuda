@@ -1632,7 +1632,7 @@ class CUDADispatcher(serialize.ReduceMixin, _MemoMixin, _DispatcherBase):
                 # stream - this is done when the kernel is launched.
 
                 return typeof(
-                    cuda.from_cuda_array_interface(interface, sync=False),
+                    cuda._api._from_cuda_array_interface(interface, sync=False),
                     Purpose.argument,
                 )
             else:

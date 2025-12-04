@@ -643,7 +643,7 @@ class DeviceNDArray(DeviceNDArrayBase):
         cls = type(self)
         if newshape == self.shape:
             # nothing to do
-            return cls(
+            return cls._create_nowarn(
                 shape=self.shape,
                 strides=self.strides,
                 dtype=self.dtype,
@@ -653,7 +653,7 @@ class DeviceNDArray(DeviceNDArrayBase):
         newarr, extents = self._dummy.reshape(*newshape, **kws)
 
         if extents == [self._dummy.extent]:
-            return cls(
+            return cls._create_nowarn(
                 shape=newarr.shape,
                 strides=newarr.strides,
                 dtype=self.dtype,
@@ -949,9 +949,9 @@ def auto_device(obj, stream=0, copy=True, user_explicit=False):
     elif (
         interface := getattr(obj, "__cuda_array_interface__", None)
     ) is not None:
-        from numba.cuda.api import from_cuda_array_interface
+        from numba.cuda._api import _from_cuda_array_interface
 
-        return from_cuda_array_interface(interface, owner=obj), False
+        return _from_cuda_array_interface(interface, owner=obj), False
     else:
         if isinstance(obj, np.void):
             devobj = from_record_like(obj, stream=stream)

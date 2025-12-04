@@ -31,6 +31,7 @@ def from_cuda_array_interface(desc, owner=None, sync=True):
     If ``sync`` is ``True``, then the imported stream (if present) will be
     synchronized.
     """
+    assert False
     warnings.warn(
         "Constructing DeviceNDArray objects via the __cuda_array_interface__ "
         "is now deprecated. Please prefer cupy for constructing device arrays."
@@ -61,6 +62,11 @@ def is_cuda_array(obj):
 
     Does not verify the validity of the interface.
     """
+    warnings.warn(
+        "is_cuda_array is deprecated. Please prefer cupy for device array operations.",
+        DeprecatedDeviceArrayApiWarning,
+    )
+    return _api._is_cuda_array(obj)
     return hasattr(obj, "__cuda_array_interface__")
 
 
@@ -111,6 +117,7 @@ def to_device(obj, stream=0, copy=True, to=None):
 
         hary = d_ary.copy_to_host(stream=stream)
     """
+    assert False
     warnings.warn(
         "to_device is deprecated. Please prefer cupy for moving numpy arrays to the device.",
         DeprecatedDeviceArrayApiWarning,
@@ -131,6 +138,7 @@ def device_array(shape, dtype=np.float64, strides=None, order="C", stream=0):
 
     Allocate an empty device ndarray. Similar to :meth:`numpy.empty`.
     """
+    breakpoint()
     warnings.warn(
         "device_array is deprecated. Please prefer cupy for moving numpy arrays to the device.",
         DeprecatedDeviceArrayApiWarning,

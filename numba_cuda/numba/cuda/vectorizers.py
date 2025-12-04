@@ -108,7 +108,7 @@ class _CUDAGUFuncCallSteps(GUFuncCallSteps):
         # Producer then importing it as a Consumer, which causes a
         # synchronization on the array's stream (if it has one) by default.
         # When we have a Numba device array, we can simply return it.
-        if _api.is_cuda_ndarray(obj):
+        if _api._is_cuda_array(obj):
             return obj
         return _api._as_cuda_array(obj)
 
@@ -120,10 +120,7 @@ class _CUDAGUFuncCallSteps(GUFuncCallSteps):
         return out
 
     def allocate_device_array(self, shape, dtype):
-        shape, strides, dtype = prepare_shape_strides_dtype(
-            shape, strides, dtype, "C"
-        )
-        return DeviceNDArray._legacy_ctor(shape, strides, dtype, stream=self._stream)
+        return cuda._api._device_array(shape=shape, dtype=dtype, stream=self._stream)
 
     def launch_kernel(self, kernel, nelem, args):
         kernel.forall(nelem, stream=self._stream)(*args)

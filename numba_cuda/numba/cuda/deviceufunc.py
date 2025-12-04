@@ -805,7 +805,7 @@ class GeneralizedUFunc(object):
 
         newretvals = []
         for retval, oshape in zip(retvals, schedule.oshapes):
-            newretvals.append(retval._reshape(odim, *oshape))
+            newretvals.append(retval.reshape(odim, *oshape))
         return tuple(newparams) + tuple(newretvals)
 
     def _broadcast_array(self, ary, newdim, innerdim):
