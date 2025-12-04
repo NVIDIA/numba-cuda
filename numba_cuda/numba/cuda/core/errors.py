@@ -498,7 +498,7 @@ def deprecated(arg):
     if not subst:
         return decorator(arg)
     else:
-        return decorator()
+        return decorator
 
 
 class WarningsFixer(object):
@@ -913,7 +913,7 @@ def new_error_context(fmt_, *args, **kwargs):
 def _local_all():
     return [
         name
-        for (name, value) in globals.items()
+        for (name, value) in globals().items()
         if not name.startswith("_")
         and isinstance(value, type)
         and issubclass(value, (Exception, Warning))
