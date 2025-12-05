@@ -35,9 +35,11 @@ if not config.ENABLE_CUDASIM:
         fp8_e8m0,
     )
 
+FE8_TYPES = [fp8_e5m2, fp8_e4m3, fp8_e8m0]
 
-class FP8BasicTest(CUDATestCase):
-    """Basic constructor and cast tests for FP8 types."""
+
+class FP8ConstructorTests(CUDATestCase):
+    """Basic constructor for FP8 types."""
 
     def test_fp8_e5m2_constructors(self):
         """Test fp8_e5m2 construction from all numeric types (floats and ints)."""
@@ -138,6 +140,174 @@ class FP8BasicTest(CUDATestCase):
         # Check integer conversions - should be exactly 4.0
         for i in range(4, 12):
             self.assertEqual(result[i], 4.0)
+
+
+class FP8ConversionTests(CUDATestCase):
+    """Test FP8 conversion operators to various types."""
+
+    def test_fp8_to_float_types(self):
+        """Test FP8 conversion to float types (__half, float, double, bfloat16)."""
+
+        # Test data: (fp8_type, test_value, expected, tolerance_places)
+        test_cases = [
+            (fp8_e5m2, 1.5, 1.5, 2),
+            (fp8_e4m3, 2.5, 2.5, 2),
+            (fp8_e8m0, 8.0, 8.0, None),  # Power of 2, exact
+        ]
+
+        for fp8_type, test_val, expected, places in test_cases:
+            with self.subTest(fp8_type=fp8_type.__name__, value=test_val):
+
+                @cuda.jit
+                def kernel(result):
+                    fp8_val = fp8_type(float32(test_val))
+
+                    result[0] = float32(float16(fp8_val))  # to __half
+                    result[1] = float32(fp8_val)  # to float
+                    result[2] = float32(float64(fp8_val))  # to double
+                    result[3] = float32(bfloat16(fp8_val))  # to bfloat16
+
+                result = np.zeros(4, dtype=np.float32)
+                kernel[1, 1](result)
+
+                if places is None:
+                    self.assertTrue(np.all(result == expected))
+                else:
+                    self.assertTrue(
+                        np.allclose(
+                            result, expected, rtol=0, atol=10 ** (-places)
+                        )
+                    )
+
+    def test_fp8_to_unsigned_integers(self):
+        """Test FP8 conversion to unsigned integer types."""
+
+        # Test data: (fp8_type, test_value, expected)
+        test_cases = [
+            (fp8_e5m2, 10.0, 10),
+            (fp8_e4m3, 12.0, 12),
+            (fp8_e8m0, 16.0, 16),
+        ]
+
+        for fp8_type, test_val, expected in test_cases:
+            with self.subTest(fp8_type=fp8_type.__name__, value=test_val):
+
+                @cuda.jit
+                def kernel(result):
+                    fp8_val = fp8_type(float32(test_val))
+
+                    result[0] = uint64(uint8(fp8_val))
+                    result[1] = uint64(uint16(fp8_val))
+                    result[2] = uint64(uint32(fp8_val))
+                    result[3] = uint64(fp8_val)
+
+                result = np.zeros(4, dtype=np.uint64)
+                kernel[1, 1](result)
+
+                self.assertTrue(np.all(result == expected))
+
+    def test_fp8_to_signed_integers(self):
+        """Test FP8 conversion to signed integer types."""
+
+        # Test data: (fp8_type, positive_value, negative_value)
+        test_cases = [
+            # (fp8_e5m2, 15.0, -8.0),
+            # (fp8_e4m3, 20.0, -6.0),
+            (
+                fp8_e8m0,
+                32.0,
+                16.0,
+            ),  # Because fp8_e8m0 is an exponent only type, it does not represent negative values.
+        ]
+
+        for fp8_type, pos_val, neg_val in test_cases:
+            with self.subTest(fp8_type=fp8_type.__name__):
+
+                @cuda.jit
+                def kernel(result):
+                    fp8_pos = fp8_type(float32(pos_val))
+                    fp8_neg = fp8_type(float32(neg_val))
+
+                    result[0] = int64(int8(fp8_pos))
+                    result[1] = int64(int16(fp8_pos))
+                    result[2] = int64(int32(fp8_pos))
+                    result[3] = int64(fp8_pos)
+                    result[4] = int64(int8(fp8_neg))
+                    result[5] = int64(int16(fp8_neg))
+                    result[6] = int64(int32(fp8_neg))
+                    result[7] = int64(fp8_neg)
+
+                result = np.zeros(8, dtype=np.int64)
+                kernel[1, 1](result)
+
+                # Check positive conversions
+                np.testing.assert_array_equal(
+                    result[:4], np.array([int(pos_val)] * 4)
+                )
+
+                # Check negative conversions
+                np.testing.assert_array_equal(
+                    result[4:], np.array([int(neg_val)] * 4)
+                )
+
+    def test_fp8_conversion_edge_cases_zero(self):
+        """Test conversion of zero values for all FP8 types."""
+
+        for fp8_type in FE8_TYPES:
+            with self.subTest(fp8_type=fp8_type.__name__):
+
+                @cuda.jit
+                def kernel(result):
+                    zero = fp8_type(float32(0.0))
+                    result[0] = float32(zero)
+                    result[1] = int64(zero)
+
+                result = np.zeros(2, dtype=np.uint64)
+                kernel[1, 1](result)
+
+                self.assertTrue(np.all(result == 0))
+
+    def test_fp8_conversion_negative_values(self):
+        """Test conversion of negative values for all FP8 types.
+        Because fp8_e8m0 is an exponent only type, it does not represent negative values.
+        """
+
+        # Test data: (fp8_type, test_value)
+        test_cases = [(fp8_e5m2, -3.0), (fp8_e4m3, -4.0)]
+
+        for fp8_type, neg_val in test_cases:
+            with self.subTest(fp8_type=fp8_type.__name__, value=neg_val):
+
+                @cuda.jit
+                def kernel(result_float, result_int):
+                    fp8_neg = fp8_type(float32(neg_val))
+
+                    result_float[0] = float32(fp8_neg)
+                    result_int[0] = int64(int32(fp8_neg))
+
+                result_float = np.zeros(1, dtype=np.float32)
+                result_int = np.zeros(1, dtype=np.int64)
+                kernel[1, 1](result_float, result_int)
+
+                self.assertAlmostEqual(result_float[0], neg_val, places=1)
+                self.assertAlmostEqual(result_int[0], int(neg_val), delta=1)
+
+    def test_fp8_conversion_roundtrip(self):
+        """Test roundtrip conversions: fp8 -> float -> fp8 -> float."""
+
+        for fp8_type in FE8_TYPES:
+            with self.subTest(fp8_type=fp8_type.__name__):
+
+                @cuda.jit
+                def kernel(result):
+                    float_val = float32(4.0)
+                    fp8_val2 = fp8_type(float_val)
+                    result[0] = float32(fp8_val2)
+
+                result = np.zeros(1, dtype=np.float32)
+                kernel[1, 1](result)
+
+                self.assertTrue(np.all(result == 4.0))
 
 
 if __name__ == "__main__":
