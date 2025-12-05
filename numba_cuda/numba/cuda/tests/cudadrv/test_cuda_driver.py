@@ -285,6 +285,53 @@ class TestCudaDriver(CUDATestCase):
         self.assertTrue(grid > 0)
         self.assertTrue(block > 0)
 
+    def test_cuda_cache_config(self):
+        from numba import types
+        import numpy as np
+
+        sig = (types.float32[::1], types.float32[::1])
+
+        @cuda.jit(sig)
+        def add_one(r, x):
+            i = cuda.grid(1)
+            if i < len(r):
+                r[i] = x[i] + 1
+
+        kernel = add_one.overloads[sig]
+        cufunc = kernel._codelibrary.get_cufunc()
+
+        configs_to_test = [
+            ("prefer_shared", dict(prefer_shared=True)),
+            ("prefer_cache", dict(prefer_cache=True)),
+            ("prefer_equal", dict(prefer_equal=True)),
+            ("default", dict()),
+        ]
+
+        for name, kwargs in configs_to_test:
+            with self.subTest(config=name):
+                try:
+                    cufunc.cache_config(**kwargs)
+                except Exception as e:
+                    self.fail(f"cache_config({name}) failed: {e}")
+
+        x = np.array([1.0, 2.0, 3.0, 4.0, 5.0], dtype=np.float32)
+        r = np.zeros_like(x)
+
+        d_x = cuda.to_device(x)
+        d_r = cuda.to_device(r)
+
+        cufunc.cache_config(prefer_shared=True)
+        add_one[1, 5](d_r, d_x)
+
+        result = d_r.copy_to_host()
+        expected = x + 1
+
+        np.testing.assert_array_almost_equal(
+            result,
+            expected,
+            err_msg="Kernel produced incorrect results after cache_config",
+        )
+
 
 class TestDevice(CUDATestCase):
     def test_device_get_uuid(self):
