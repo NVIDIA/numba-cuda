@@ -18,26 +18,24 @@ from enum import IntEnum
 import numba
 from llvmlite import ir
 from numba import types
-from numba.core.datamodel import PrimitiveModel, StructModel
-from numba.core.extending import make_attribute_wrapper, register_model
-from numba.core.imputils import Registry as TargetRegistry
 from numba.core.typing import signature
 from numba.cuda import CUSource, declare_device
 from numba.cuda._internal.cuda_bf16 import (
     _type_unnamed1405307 as bfloat16_raw_type,
 )
-from numba.cuda.types import bfloat16
-from numba.cuda.typing.templates import AttributeTemplate, ConcreteTemplate
-from numba.cuda.typing.templates import Registry as TypingRegistry
-from numba.cuda.vector_types import vector_types
-from numba.extending import as_numba_type
-from numba.types import (
-    BoundFunction,
+from numba.cuda.core.imputils import Registry as TargetRegistry
+from numba.cuda.datamodel import PrimitiveModel, StructModel
+from numba.cuda.extending import (
+    as_numba_type,
+    make_attribute_wrapper,
+    register_model,
+)
+from numba.cuda.types import (
     CPointer,
     Function,
-    IntEnumMember,
     Number,
     Type,
+    bfloat16,
     bool_,
     float16,
     float32,
@@ -51,6 +49,11 @@ from numba.types import (
     uint32,
     uint64,
 )
+from numba.cuda.typing import signature
+from numba.cuda.typing.templates import AttributeTemplate, ConcreteTemplate
+from numba.cuda.typing.templates import Registry as TypingRegistry
+from numba.cuda.vector_types import vector_types
+from numba.types import BoundFunction, IntEnumMember, int64
 
 float32x2 = vector_types["float32x2"]
 float64x2 = vector_types["float64x2"]
@@ -119,7 +122,7 @@ class _type_class_fp8_e5m2(Number):
         self.bitwidth = 1 * 8
 
     def can_convert_from(self, typingctx, other):
-        from numba.core.typeconv import Conversion
+        from numba.cuda.typeconv import Conversion
 
         if other in []:
             return Conversion.safe
@@ -1462,7 +1465,7 @@ class _type_class_fp8x2_e5m2(Type):
         self.bitwidth = 2 * 8
 
     def can_convert_from(self, typingctx, other):
-        from numba.core.typeconv import Conversion
+        from numba.cuda.typeconv import Conversion
 
         if other in []:
             return Conversion.safe
@@ -1709,7 +1712,7 @@ class _type_class_fp8x4_e5m2(Type):
         self.bitwidth = 4 * 8
 
     def can_convert_from(self, typingctx, other):
-        from numba.core.typeconv import Conversion
+        from numba.cuda.typeconv import Conversion
 
         if other in []:
             return Conversion.safe
@@ -1956,7 +1959,7 @@ class _type_class_fp8_e4m3(Number):
         self.bitwidth = 1 * 8
 
     def can_convert_from(self, typingctx, other):
-        from numba.core.typeconv import Conversion
+        from numba.cuda.typeconv import Conversion
 
         if other in []:
             return Conversion.safe
@@ -3299,7 +3302,7 @@ class _type_class_fp8x2_e4m3(Type):
         self.bitwidth = 2 * 8
 
     def can_convert_from(self, typingctx, other):
-        from numba.core.typeconv import Conversion
+        from numba.cuda.typeconv import Conversion
 
         if other in []:
             return Conversion.safe
@@ -3546,7 +3549,7 @@ class _type_class_fp8x4_e4m3(Type):
         self.bitwidth = 4 * 8
 
     def can_convert_from(self, typingctx, other):
-        from numba.core.typeconv import Conversion
+        from numba.cuda.typeconv import Conversion
 
         if other in []:
             return Conversion.safe
@@ -3793,7 +3796,7 @@ class _type_class_fp8_e8m0(Number):
         self.bitwidth = 1 * 8
 
     def can_convert_from(self, typingctx, other):
-        from numba.core.typeconv import Conversion
+        from numba.cuda.typeconv import Conversion
 
         if other in []:
             return Conversion.safe
@@ -5136,7 +5139,7 @@ class _type_class_fp8x2_e8m0(Type):
         self.bitwidth = 2 * 8
 
     def can_convert_from(self, typingctx, other):
-        from numba.core.typeconv import Conversion
+        from numba.cuda.typeconv import Conversion
 
         if other in []:
             return Conversion.safe
@@ -5383,7 +5386,7 @@ class _type_class_fp8x4_e8m0(Type):
         self.bitwidth = 4 * 8
 
     def can_convert_from(self, typingctx, other):
-        from numba.core.typeconv import Conversion
+        from numba.cuda.typeconv import Conversion
 
         if other in []:
             return Conversion.safe
