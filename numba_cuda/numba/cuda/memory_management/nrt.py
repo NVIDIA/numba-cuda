@@ -187,7 +187,7 @@ class _Runtime:
             cooperative_launch=False,
         )
         exp_stream = drvmod._to_experimental_stream(stream)
-        cufunction = drvmod._to_cufunction(func.handle)
+        cufunction = func.handle
         norm_args = drvmod._normalize_kernel_args(params)
         drvmod._core_launch(exp_stream, config, cufunction, *norm_args)
 

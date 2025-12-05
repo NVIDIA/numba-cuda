@@ -2428,7 +2428,7 @@ CudaPythonFunction = Function
 
 def _to_experimental_stream(stream):
     # stream can be: int (0 for default), Stream (shim), or ExperimentalStream
-    if stream == 0 or stream is None:
+    if not stream:
         return ExperimentalStream.from_handle(0)
     elif isinstance(stream, Stream):
         # Our shim wraps a cuda.core Stream - just return it!
@@ -2452,13 +2452,6 @@ def _normalize_kernel_args(args):
     ]
 
 
-def _to_cufunction(cufunc_handle):
-    # Ensure handle is a binding.CUfunction
-    if isinstance(cufunc_handle, binding.CUfunction):
-        return cufunc_handle
-    return binding.CUfunction(int(cufunc_handle))
-
-
 # Internal cache for Kernel objects created from CUfunction handles
 _kernel_cache = {}
 
@@ -2479,7 +2472,7 @@ def _core_launch(stream, config, cufunction, *args):
     """
     Internal helper to launch via cuda.core.experimental.launch ensuring a Kernel object.
     """
-    kernel = _get_or_create_kernel(_to_cufunction(cufunction))
+    kernel = _get_or_create_kernel(cufunction)
     return launch(stream, config, kernel, *args)
 
 
