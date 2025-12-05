@@ -1324,7 +1324,9 @@ class Context(object):
         return Stream(core_stream)
 
     def get_per_thread_default_stream(self):
-        core_stream = ExperimentalStream.from_handle(binding.CU_STREAM_PER_THREAD)
+        core_stream = ExperimentalStream.from_handle(
+            binding.CU_STREAM_PER_THREAD
+        )
         return Stream(core_stream)
 
     def create_stream(self):
@@ -1334,15 +1336,16 @@ class Context(object):
         flags = binding.CUstream_flags.CU_STREAM_DEFAULT.value
         cu_stream_handle = driver.cuStreamCreate(flags)
         core_stream = ExperimentalStream.from_handle(int(cu_stream_handle))
-        
+
         # Wrap in our shim
         stream_wrapper = Stream(core_stream)
-        
+
         # Set up finalizer on the wrapper (not on core_stream which doesn't support weakref)
         def stream_finalizer(handle):
             self.deallocations.add_item(driver.cuStreamDestroy, handle)
+
         weakref.finalize(stream_wrapper, stream_finalizer, cu_stream_handle)
-        
+
         return stream_wrapper
 
     def create_external_stream(self, ptr):
@@ -2015,18 +2018,18 @@ class ManagedOwnedPointer(OwnedPointer, mviewbuf.MemAlloc):
 class Stream:
     """
     Compatibility shim for cuda.core.experimental.Stream.
-    
+
     This class wraps cuda.core.experimental.Stream to provide backward
     compatibility with the legacy numba Stream API while using cuda.core
     internally.
-    
+
     The underlying cuda.core Stream is accessible via the `_core_stream` attribute.
     """
-    
+
     def __init__(self, core_stream, external=False):
         self._core_stream = core_stream
         self.external = external
-        
+
     @property
     def handle(self):
         class _HandleCompat:
@@ -2036,8 +2039,9 @@ class Stream:
                     self.value = stream_handle
                 else:
                     self.value = int(stream_handle) if stream_handle else 0
+
         return _HandleCompat(self._core_stream.handle)
-    
+
     def __int__(self):
         handle = self._core_stream.handle
         # Handle can be CUstream object or int
@@ -2046,7 +2050,7 @@ class Stream:
         else:
             # It's a binding.CUstream object
             return int(handle) if handle else drvapi.CU_STREAM_DEFAULT
-    
+
     def __cuda_stream__(self):
         handle = self._core_stream.handle
         # Convert to int if needed
@@ -2055,7 +2059,7 @@ class Stream:
         if not handle:
             return (0, drvapi.CU_STREAM_DEFAULT)
         return (0, handle)
-    
+
     def __repr__(self):
         default_streams = {
             0: "<Default CUDA stream>",
@@ -2069,21 +2073,21 @@ class Stream:
             ptr = int(handle) if handle else drvapi.CU_STREAM_DEFAULT
         else:
             ptr = handle if handle else drvapi.CU_STREAM_DEFAULT
-        
+
         if ptr in default_streams:
             return default_streams[ptr]
         elif self.external:
             return f"<External CUDA stream {ptr:d}>"
         else:
             return f"<CUDA stream {ptr:d}>"
-    
+
     def synchronize(self):
         """
         Wait for all commands in this stream to execute. This will commit any
         pending memory transfers.
         """
         self._core_stream.sync()
-    
+
     @contextlib.contextmanager
     def auto_synchronize(self):
         """
@@ -2092,7 +2096,7 @@ class Stream:
         """
         yield self
         self.synchronize()
-    
+
     def add_callback(self, callback, arg=None):
         """
         Add a callback to a compute stream.
@@ -2134,7 +2138,7 @@ class Stream:
         if not isinstance(handle, int):
             handle = int(handle)
         driver.cuStreamAddCallback(handle, stream_callback, data, 0)
-    
+
     @staticmethod
     @cu_stream_callback_pyobj
     def _stream_callback(handle, status, data):
@@ -2145,7 +2149,7 @@ class Stream:
             warnings.warn(f"Exception in stream callback: {e}")
         finally:
             _py_decref(data)
-    
+
     def async_done(self) -> asyncio.futures.Future:
         """
         Return an awaitable that resolves once all preceding stream operations
