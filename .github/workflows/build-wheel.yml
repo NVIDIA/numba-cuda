@@ -235,9 +235,9 @@ jobs:
 
           # TODO: move this list to json
           if [[ "${CUDA_MAJOR}" == 12 ]]; then
-            CC_LIST=(70 75 80 86 89 90)
+            CC_LIST=(70 75 80 86 89 90 120)
           elif [[ "${CUDA_MAJOR}" == 13 ]]; then
-            CC_LIST=(75 80 86 89 90)
+            CC_LIST=(75 80 86 89 90 120)
           fi
 
           for cc in ${CC_LIST[*]}; do
