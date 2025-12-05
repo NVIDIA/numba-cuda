@@ -15,7 +15,6 @@ from ctypes import c_void_p
 
 import numpy as np
 
-from numba.cuda.cext import _devicearray
 from numba.cuda.cudadrv import devices, dummyarray
 from numba.cuda.cudadrv import driver as _driver
 from numba.cuda import types
@@ -55,7 +54,7 @@ def require_cuda_ndarray(obj):
         raise ValueError("require an cuda ndarray object")
 
 
-class DeviceNDArrayBase(_devicearray.DeviceArray):
+class DeviceNDArrayBase:
     """A on GPU NDArray representation"""
 
     __cuda_memory__ = True
@@ -115,6 +114,7 @@ class DeviceNDArrayBase(_devicearray.DeviceArray):
 
         self.gpu_data = gpu_data
         self.stream = stream
+        self._numba_type = None
 
     @property
     def __cuda_array_interface__(self):
@@ -180,17 +180,21 @@ class DeviceNDArrayBase(_devicearray.DeviceArray):
         # of which will be 0, will not match those hardcoded in for 'C' or 'F'
         # layouts.
 
-        broadcast = 0 in self.strides and (self.size != 0)
+        if (numba_type := self._numba_type) is None:
+            broadcast = 0 in self.strides and (self.size != 0)
 
-        if self.flags["C_CONTIGUOUS"] and not broadcast:
-            layout = "C"
-        elif self.flags["F_CONTIGUOUS"] and not broadcast:
-            layout = "F"
-        else:
-            layout = "A"
+            if self.flags["C_CONTIGUOUS"] and not broadcast:
+                layout = "C"
+            elif self.flags["F_CONTIGUOUS"] and not broadcast:
+                layout = "F"
+            else:
+                layout = "A"
 
-        dtype = numpy_support.from_dtype(self.dtype)
-        return types.Array(dtype, self.ndim, layout)
+            dtype = numpy_support.from_dtype(self.dtype)
+            self._numba_type = numba_type = types.Array(
+                dtype, self.ndim, layout
+            )
+        return numba_type
 
     @property
     def device_ctypes_pointer(self):
