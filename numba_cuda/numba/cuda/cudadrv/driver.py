@@ -2041,7 +2041,8 @@ class Stream:
         return _HandleCompat(self._core_stream.handle)
 
     def __int__(self):
-        # Handle can be CUstream object or int
+        # Handle can be CUstream object or int; both are handled by the `int`
+        # constructor
         return int(self._core_stream.handle or drvapi.CU_STREAM_DEFAULT)
 
     def __cuda_stream__(self):
