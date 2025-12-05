@@ -50,12 +50,12 @@ class TestRandom(CUDATestCase):
         rng_states = create_xoroshiro128p_states(nthreads, seed=1)
 
         # Generate random numbers
-        arr = cuda.device_array((X, Y, Z), dtype=np.float32)
+        arr = cp.asarray((X, Y, Z), dtype=np.float32)
         random_3d[(gx, gy, gz), (bx, by, bz)](arr, rng_states)
         # magictoken.ex_3d_grid.end
 
         # Some basic tests of the randomly-generated numbers
-        host_arr = arr.copy_to_host()
+        host_arr = arr.get()
         self.assertGreater(np.mean(host_arr), 0.49)
         self.assertLess(np.mean(host_arr), 0.51)
         self.assertTrue(np.all(host_arr <= 1.0))

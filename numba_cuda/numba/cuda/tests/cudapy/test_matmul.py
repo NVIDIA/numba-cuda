@@ -7,6 +7,7 @@ from numba import cuda
 from numba.cuda import float32, void
 from numba.cuda.testing import unittest, CUDATestCase
 from numba.cuda.core import config
+import cupy as cp
 
 # Ensure the test takes a reasonable amount of time in the simulator
 if config.ENABLE_CUDASIM:
@@ -53,20 +54,16 @@ class TestCudaMatMul(CUDATestCase):
                 C[y, x] = acc
 
         np.random.seed(42)
-        A = np.array(np.random.random((n, n)), dtype=np.float32)
-        B = np.array(np.random.random((n, n)), dtype=np.float32)
-        C = np.empty_like(A)
+        dA = cp.array(np.random.random((n, n)), dtype=np.float32)
+        dB = cp.array(np.random.random((n, n)), dtype=np.float32)
+        dC = cp.empty_like(dA)
 
-        stream = cuda.stream()
-        with stream.auto_synchronize():
-            dA = cuda.to_device(A, stream)
-            dB = cuda.to_device(B, stream)
-            dC = cuda.to_device(C, stream)
-            cu_square_matrix_mul[(bpg, bpg), (tpb, tpb), stream](dA, dB, dC)
-            dC.copy_to_host(C, stream)
+
+        cu_square_matrix_mul[(bpg, bpg), (tpb, tpb)](dA, dB, dC)
+        C = dC.get()
 
         # Host compute
-        Cans = np.dot(A, B)
+        Cans = np.dot(dA.get(), dB.get())
 
         # Check result
         np.testing.assert_allclose(C, Cans, rtol=1e-5)

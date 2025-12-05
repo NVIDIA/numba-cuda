@@ -5,6 +5,7 @@ from numba import cuda
 from numba.cuda.cudadrv.driver import driver
 import math
 from numba.cuda.np import numpy_support as nps
+from numba.cuda.cudadrv.devicearray import DeprecatedDeviceArrayApiWarning
 
 
 def transpose(a, b=None):
@@ -19,14 +20,20 @@ def transpose(a, b=None):
         the device its stream will be used to perform the transpose (and to copy
         `b` to the device if necessary).
     """
+    warnings.warn(
+        "The DeviceNDArray class and its transpose method are deprecated. "
+        "Please prefer cupy for device array operations."
+    )
+    return _transpose(a, b=b)
 
+def _transpose(a, b=None):
     # prefer `a`'s stream if
     stream = getattr(a, "stream", 0)
 
     if not b:
         cols, rows = a.shape
         strides = a.dtype.itemsize * cols, a.dtype.itemsize
-        b = cuda.cudadrv.devicearray.DeviceNDArray(
+        b = cuda.cudadrv.devicearray._DeviceNDArray(
             (rows, cols), strides, dtype=a.dtype, stream=stream
         )
 

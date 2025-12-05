@@ -19,7 +19,7 @@ from numba.cuda.random import (
     xoroshiro128p_uniform_float64,
     xoroshiro128p_normal_float64,
 )
-
+import cupy as cp
 
 # Distributions
 UNIFORM = 1
