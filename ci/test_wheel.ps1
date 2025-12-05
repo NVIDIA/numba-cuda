@@ -50,6 +50,6 @@ rapids-logger "Show Numba system info"
 python -m numba --sysinfo
 
 rapids-logger "Run Tests"
-python -m pytest -v
+python -m pytest -v -n auto --dist loadscope --loadscope-reorder
 
 popd
