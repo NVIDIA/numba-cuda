@@ -372,7 +372,7 @@ else:
     def termcolor():
         global _termcolor_inst
         if _termcolor_inst is None:
-            scheme = themes[numba.core.config.COLOR_SCHEME]
+            scheme = themes[numba.cuda.core.config.COLOR_SCHEME]
             _termcolor_inst = HighlightColorScheme(scheme)
         return _termcolor_inst
 
@@ -560,7 +560,7 @@ class WarningsFixer(object):
         self.flush()
 
 
-class NumbaError(numba.core.errors.NumbaError):
+class NumbaError(Exception):
     def __init__(self, msg, loc=None, highlighting=True):
         self.msg = msg
         self.loc = loc
