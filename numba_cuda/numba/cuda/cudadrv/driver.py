@@ -2450,10 +2450,7 @@ def _normalize_kernel_args(args):
     # cuda.core.launch can handle ctypes scalars directly, but for pointers
     # ensure c_void_p is converted to integer (0 if None)
     return [
-        (arg.value if arg.value is not None else 0)
-        if isinstance(arg, c_void_p)
-        else arg
-        for arg in args
+        arg.value or 0 if isinstance(arg, c_void_p) else arg for arg in args
     ]
 
 
