@@ -141,6 +141,23 @@ class FP8ConstructorTests(CUDATestCase):
         for i in range(4, 12):
             self.assertEqual(result[i], 4.0)
 
+    def test_fp8_nan_constructors(self):
+        """Test fp8 construction from NaN."""
+
+        @cuda.jit
+        def kernel(result):
+            nan = float32(float("nan"))
+            result[0] = float32(fp8_e5m2(nan))
+            result[1] = float32(fp8_e4m3(nan))
+            result[2] = float32(fp8_e8m0(nan))
+
+        result = np.zeros(3, dtype=np.float32)
+        kernel[1, 1](result)
+
+        self.assertTrue(np.isnan(result[0]))
+        self.assertTrue(np.isnan(result[1]))
+        self.assertTrue(np.isnan(result[2]))
+
 
 class FP8ConversionTests(CUDATestCase):
     """Test FP8 conversion operators to various types."""
@@ -265,7 +282,7 @@ class FP8ConversionTests(CUDATestCase):
                 result = np.zeros(2, dtype=np.uint64)
                 kernel[1, 1](result)
 
-                self.assertTrue(np.all(result == 0))
+                np.testing.assert_array_equal(result, np.array([0, 0]))
 
     def test_fp8_conversion_negative_values(self):
         """Test conversion of negative values for all FP8 types.
@@ -307,7 +324,36 @@ class FP8ConversionTests(CUDATestCase):
                 result = np.zeros(1, dtype=np.float32)
                 kernel[1, 1](result)
 
-                self.assertTrue(np.all(result == 4.0))
+                np.testing.assert_array_equal(result, np.array([4.0]))
+
+    def test_fp8_nan_conversions(self):
+        """Test FP8 NaN conversion to other types."""
+
+        @cuda.jit
+        def kernel(result):
+            nan = float32(float("nan"))
+            # Create FP8 NaNs
+            nan_e5m2 = fp8_e5m2(nan)
+            nan_e4m3 = fp8_e4m3(nan)
+            nan_e8m0 = fp8_e8m0(nan)
+
+            # Convert back to float types
+            result[0] = float32(float16(nan_e5m2))
+            result[1] = float32(nan_e5m2)
+            result[2] = float32(float64(nan_e5m2))
+
+            result[3] = float32(float16(nan_e4m3))
+            result[4] = float32(nan_e4m3)
+            result[5] = float32(float64(nan_e4m3))
+
+            result[6] = float32(float16(nan_e8m0))
+            result[7] = float32(nan_e8m0)
+            result[8] = float32(float64(nan_e8m0))
+
+        result = np.zeros(9, dtype=np.float32)
+        kernel[1, 1](result)
+
+        np.testing.assert_array_equal(result, np.array([float("nan")] * 9))
 
 
 if __name__ == "__main__":
