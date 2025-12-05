@@ -2034,31 +2034,16 @@ class Stream:
     def handle(self):
         class _HandleCompat:
             def __init__(self, stream_handle):
-                # Convert to int if CUstream object
-                if isinstance(stream_handle, int):
-                    self.value = stream_handle
-                else:
-                    self.value = int(stream_handle) if stream_handle else 0
+                self.value = int(stream_handle or 0)
 
         return _HandleCompat(self._core_stream.handle)
 
     def __int__(self):
-        handle = self._core_stream.handle
         # Handle can be CUstream object or int
-        if isinstance(handle, int):
-            return handle if handle else drvapi.CU_STREAM_DEFAULT
-        else:
-            # It's a binding.CUstream object
-            return int(handle) if handle else drvapi.CU_STREAM_DEFAULT
+        return int(self._core_stream.handle or drvapi.CU_STREAM_DEFAULT)
 
     def __cuda_stream__(self):
-        handle = self._core_stream.handle
-        # Convert to int if needed
-        if not isinstance(handle, int):
-            handle = int(handle) if handle else 0
-        if not handle:
-            return (0, drvapi.CU_STREAM_DEFAULT)
-        return (0, handle)
+        return (0, int(self))
 
     def __repr__(self):
         default_streams = {
@@ -2067,14 +2052,8 @@ class Stream:
             drvapi.CU_STREAM_LEGACY: "<Legacy default CUDA stream>",
             drvapi.CU_STREAM_PER_THREAD: "<Per-thread default CUDA stream>",
         }
-        handle = self._core_stream.handle
-        # Convert to int if needed
-        if not isinstance(handle, int):
-            ptr = int(handle) if handle else drvapi.CU_STREAM_DEFAULT
-        else:
-            ptr = handle if handle else drvapi.CU_STREAM_DEFAULT
 
-        if ptr in default_streams:
+        if (ptr := int(self)) in default_streams:
             return default_streams[ptr]
         elif self.external:
             return f"<External CUDA stream {ptr:d}>"
@@ -2133,11 +2112,7 @@ class Stream:
         stream_callback = binding.CUstreamCallback(ptr)
         # The callback needs to receive a pointer to the data PyObject
         data = id(data)
-        handle = self._core_stream.handle
-        # Convert to int if needed
-        if not isinstance(handle, int):
-            handle = int(handle)
-        driver.cuStreamAddCallback(handle, stream_callback, data, 0)
+        driver.cuStreamAddCallback(int(self), stream_callback, data, 0)
 
     @staticmethod
     @cu_stream_callback_pyobj
