@@ -55,16 +55,22 @@ def git_worktree():
 
 
 def main(args):
+    baseline = subprocess.check_output(
+        ["git", "rev-parse", args.baseline], text=True
+    ).strip()
+    proposed = subprocess.check_output(
+        ["git", "rev-parse", args.proposed], text=True
+    ).strip()
     with git_worktree():
         # Checkout baseline and run benchmarks
-        subprocess.run(["git", "checkout", args.baseline], check=True)
+        subprocess.run(["git", "checkout", baseline], check=True)
         subprocess.run(
             ["pixi", "reinstall", "-e", args.env, "numba-cuda"], check=True
         )
         subprocess.run(["pixi", "run", "-e", args.env, "bench"], check=True)
 
         # Checkout proposed and run comparison
-        subprocess.run(["git", "checkout", args.proposed], check=True)
+        subprocess.run(["git", "checkout", proposed], check=True)
         subprocess.run(
             ["pixi", "reinstall", "-e", args.env, "numba-cuda"], check=True
         )
