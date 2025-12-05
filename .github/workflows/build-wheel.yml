@@ -189,7 +189,10 @@ jobs:
           HOST_PLATFORM: ${{ inputs.host-platform }}
           PY_VER: ${{ matrix.python-version }}
           SHA: ${{ github.sha }}
-        run: ./ci/tools/env-vars build
+        run: |
+          ./ci/tools/env-vars build
+          CUDA_MAJOR="$(cut -d '.' -f 1 <<< ${{ matrix.cuda-version }})"
+          echo "CUDA_MAJOR=${CUDA_MAJOR}" >> ${GITHUB_ENV}
 
       - name: Dump environment
         run: |
@@ -210,7 +213,7 @@ jobs:
       - name: Install numba-cuda
         run: |
           # used in testing/Makefile
-          pip install ${{ env.NUMBA_CUDA_ARTIFACTS_DIR }}/*.whl
+          pip install ${{ env.NUMBA_CUDA_ARTIFACTS_DIR }}/*.whl "cuda-bindings==${CUDA_MAJOR}.*"
 
       - name: Set up mini CTK ${{ matrix.cuda-version }}
         uses: ./.github/actions/fetch_ctk
@@ -227,10 +230,7 @@ jobs:
             PATH=$(dirname ${SCCACHE_PATH}):${PATH}
             SCCACHE_GHA_ENABLED=true
           fi
-          CUDA_MAJOR="$(cut -d '.' -f 1 <<< ${{ matrix.cuda-version }})"
-          echo "CUDA_MAJOR=${CUDA_MAJOR}" >> ${GITHUB_ENV}
-          # used in testing/Makefile
-          pip install --force-reinstall "cuda-bindings==${CUDA_MAJOR}.*"
+
           nvcc --version
 
           # TODO: move this list to json
