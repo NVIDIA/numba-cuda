@@ -2033,6 +2033,8 @@ class Stream:
     @property
     def handle(self):
         class _HandleCompat:
+            __slots__ = ("value",)
+
             def __init__(self, stream_handle):
                 self.value = int(stream_handle or 0)
 
