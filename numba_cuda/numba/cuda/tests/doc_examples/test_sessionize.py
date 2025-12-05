@@ -43,39 +43,40 @@ class TestSessionization(CUDATestCase):
 
         # ex_sessionize.allocate.begin
         # Generate data
-        cp.array(
-                [
-                    1,
-                    1,
-                    1,
-                    1,
-                    1,
-                    1,
-                    2,
-                    2,
-                    2,
-                    3,
-                    3,
-                    3,
-                    3,
-                    3,
-                    3,
-                    3,
-                    3,
-                    3,
-                    3,
-                    4,
-                    4,
-                    4,
-                    4,
-                    4,
-                    4,
-                    4,
-                    4,
-                    4,
-                ]
-            )
-        sec = cp.array(
+        ids = cp.array(
+            [
+                1,
+                1,
+                1,
+                1,
+                1,
+                1,
+                2,
+                2,
+                2,
+                3,
+                3,
+                3,
+                3,
+                3,
+                3,
+                3,
+                3,
+                3,
+                3,
+                4,
+                4,
+                4,
+                4,
+                4,
+                4,
+                4,
+                4,
+                4,
+            ]
+        )
+        sec = cp.asarray(
+            np.array(
                 [
                     1,
                     2,
@@ -107,7 +108,8 @@ class TestSessionization(CUDATestCase):
                     25003,
                 ],
                 dtype="datetime64[ns]",
-            ).astype("int64")  # Cast to int64 for compatibility
+            ).astype("int64")
+        )
 
         # Create a vector to hold the results
         results = cp.zeros(len(ids))

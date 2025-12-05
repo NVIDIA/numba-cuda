@@ -394,9 +394,9 @@ class TestSharedMemory(CUDATestCase):
                     y[bd * bx + j] = sm1[j]
                     y[bd * bx + j + chunksize] = sm2[j]
 
-        d_result = cuda.device_array_like(arr)
+        d_result = cp.asarray(arr)
         sm_slice_copy[nblocks, nthreads, 0, nshared](arr, d_result, chunksize)
-        host_result = d_result.copy_to_host()
+        host_result = d_result.get()
         np.testing.assert_array_equal(arr, host_result)
 
     @skip_on_cudasim("Can't check typing in simulator")

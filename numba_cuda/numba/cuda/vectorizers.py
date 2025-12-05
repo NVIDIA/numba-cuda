@@ -10,8 +10,6 @@ from numba.cuda.deviceufunc import (
     GUFuncCallSteps,
 )
 from numba.cuda import _api
-from numba.cuda.cudadrv.devicearray import DeviceNDArray
-from numba.cuda.api_util import prepare_shape_strides_dtype
 
 
 class CUDAUFuncDispatcher(object):
@@ -120,7 +118,9 @@ class _CUDAGUFuncCallSteps(GUFuncCallSteps):
         return out
 
     def allocate_device_array(self, shape, dtype):
-        return cuda._api._device_array(shape=shape, dtype=dtype, stream=self._stream)
+        return cuda._api._device_array(
+            shape=shape, dtype=dtype, stream=self._stream
+        )
 
     def launch_kernel(self, kernel, nelem, args):
         kernel.forall(nelem, stream=self._stream)(*args)
@@ -163,7 +163,7 @@ class CUDAUFuncMechanism(UFuncMechanism):
         func.forall(count, stream=stream)(*args)
 
     def is_device_array(self, obj):
-        return cuda.is_cuda_array(obj)
+        return cuda._api._is_cuda_array(obj)
 
     def as_device_array(self, obj):
         # We don't want to call as_cuda_array on objects that are already Numba
@@ -183,7 +183,7 @@ class CUDAUFuncMechanism(UFuncMechanism):
 
     def allocate_device_array(self, shape, dtype, stream):
         # want to return a deprecated DeviceNDArray without warning
-        # 
+        #
         return _api._device_array(shape=shape, dtype=dtype, stream=stream)
 
     def broadcast_device(self, ary, shape):

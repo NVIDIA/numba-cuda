@@ -117,7 +117,6 @@ def to_device(obj, stream=0, copy=True, to=None):
 
         hary = d_ary.copy_to_host(stream=stream)
     """
-    assert False
     warnings.warn(
         "to_device is deprecated. Please prefer cupy for moving numpy arrays to the device.",
         DeprecatedDeviceArrayApiWarning,
@@ -138,7 +137,6 @@ def device_array(shape, dtype=np.float64, strides=None, order="C", stream=0):
 
     Allocate an empty device ndarray. Similar to :meth:`numpy.empty`.
     """
-    breakpoint()
     warnings.warn(
         "device_array is deprecated. Please prefer cupy for moving numpy arrays to the device.",
         DeprecatedDeviceArrayApiWarning,
