@@ -484,7 +484,7 @@ class _Kernel(serialize.ReduceMixin):
             cooperative_launch=self.cooperative,
         )
         exp_stream = driver._to_experimental_stream(stream)
-        cufunction = driver._to_cufunction(cufunc.handle)
+        cufunction = cufunc.handle
         args2 = driver._normalize_kernel_args(kernelargs)
         driver._core_launch(exp_stream, config, cufunction, *args2)
 
