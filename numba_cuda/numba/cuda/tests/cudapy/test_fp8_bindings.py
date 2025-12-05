@@ -33,6 +33,12 @@ if not config.ENABLE_CUDASIM:
         fp8_e5m2,
         fp8_e4m3,
         fp8_e8m0,
+        cvt_float_to_fp8,
+        cvt_double_to_fp8,
+        cvt_bfloat16raw_to_fp8,
+        cvt_e8m0_to_bf16raw,
+        saturation_t,
+        fp8_interpretation_t,
     )
 
 FE8_TYPES = [fp8_e5m2, fp8_e4m3, fp8_e8m0]
@@ -354,6 +360,78 @@ class FP8ConversionTests(CUDATestCase):
         kernel[1, 1](result)
 
         np.testing.assert_array_equal(result, np.array([float("nan")] * 9))
+
+
+class FP8Storage_CVT_Intrinsics_Tests(CUDATestCase):
+    """Test raw conversion intrinsics operating on storage types."""
+
+    def test_cvt_float_to_fp8(self):
+        @cuda.jit
+        def kernel(result, x):
+            # E5M2, No Saturation
+            result[0] = cvt_float_to_fp8(
+                x[0], saturation_t.NOSAT, fp8_interpretation_t.E5M2
+            )
+            # E4M3, No Saturation
+            result[1] = cvt_float_to_fp8(
+                x[0], saturation_t.NOSAT, fp8_interpretation_t.E4M3
+            )
+
+        result = np.zeros(2, dtype=np.uint8)
+        x = np.array([1.5], dtype=np.float32)
+        kernel[1, 1](result, x)
+
+        # 1.5 in E5M2 (0 01111 10) -> 0x3E = 62
+        self.assertEqual(result[0], 62)
+        # 1.5 in E4M3 (0 0111 100) -> 0x3C = 60
+        self.assertEqual(result[1], 60)
+
+    def test_cvt_double_to_fp8(self):
+        @cuda.jit
+        def kernel(result, x):
+            # E5M2
+            result[0] = cvt_double_to_fp8(
+                x[0], saturation_t.NOSAT, fp8_interpretation_t.E5M2
+            )
+
+        result = np.zeros(1, dtype=np.uint8)
+        x = np.array([1.5], dtype=np.float64)
+        kernel[1, 1](result, x)
+        self.assertEqual(result[0], 62)
+
+    def test_cvt_e8m0_to_bf16raw(self):
+        @cuda.jit
+        def kernel(result, x):
+            raw = cvt_e8m0_to_bf16raw(x[0])
+            result[0] = raw.x
+
+        result = np.zeros(1, dtype=np.uint16)
+        # 1.0 in E8M0 is 127 (bias 127)
+        x = np.array([127], dtype=np.uint8)
+        kernel[1, 1](result, x)
+
+        # 1.0 in BF16 is 0x3F80
+        self.assertEqual(result[0], 0x3F80)
+
+    def test_cvt_bfloat16raw_roundtrip(self):
+        @cuda.jit
+        def kernel(result, x):
+            # x is uint8 (e8m0)
+            # Convert e8m0 to bfloat16_raw
+            raw = cvt_e8m0_to_bf16raw(x[0])
+
+            # Convert back to fp8 (E5M2)
+            result[0] = cvt_bfloat16raw_to_fp8(
+                raw, saturation_t.NOSAT, fp8_interpretation_t.E5M2
+            )
+
+        result = np.zeros(1, dtype=np.uint8)
+        # 1.0 in E8M0
+        x = np.array([127], dtype=np.uint8)
+        kernel[1, 1](result, x)
+
+        # 1.0 in E5M2 is 0x3C = 60
+        self.assertEqual(result[0], 60)
 
 
 if __name__ == "__main__":
