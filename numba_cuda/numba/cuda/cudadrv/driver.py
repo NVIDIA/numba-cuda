@@ -2015,6 +2015,14 @@ class ManagedOwnedPointer(OwnedPointer, mviewbuf.MemAlloc):
     pass
 
 
+_DEFAULT_STREAM_REPRS = {
+    0: "<Default CUDA stream>",
+    drvapi.CU_STREAM_DEFAULT: "<Default CUDA stream>",
+    drvapi.CU_STREAM_LEGACY: "<Legacy default CUDA stream>",
+    drvapi.CU_STREAM_PER_THREAD: "<Per-thread default CUDA stream>",
+}
+
+
 class Stream:
     """
     Compatibility shim for cuda.core.experimental.Stream.
@@ -2049,15 +2057,9 @@ class Stream:
         return (0, int(self))
 
     def __repr__(self):
-        default_streams = {
-            0: "<Default CUDA stream>",
-            drvapi.CU_STREAM_DEFAULT: "<Default CUDA stream>",
-            drvapi.CU_STREAM_LEGACY: "<Legacy default CUDA stream>",
-            drvapi.CU_STREAM_PER_THREAD: "<Per-thread default CUDA stream>",
-        }
-
-        if (ptr := int(self)) in default_streams:
-            return default_streams[ptr]
+        ptr = int(self)
+        if (default_stream_repr := _DEFAULT_STREAM_REPRS.get(ptr)) is not None:
+            return default_stream_repr
         elif self.external:
             return f"<External CUDA stream {ptr:d}>"
         else:
