@@ -25,6 +25,7 @@ jobs:
           - "3.11"
           - "3.12"
           - "3.13"
+          - "3.14"
     runs-on: windows-2022
     timeout-minutes: 60
     steps:
