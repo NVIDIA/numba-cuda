@@ -487,9 +487,9 @@ class _Kernel(serialize.ReduceMixin):
         )
         handle = getattr(stream, "handle", stream)
         value = getattr(handle, "value", handle)
-        launch(
-            Stream.from_handle(int(value)), config, cufunc.kernel, *kernelargs
-        )
+        stream = Stream.from_handle(value)
+        kernel = cufunc.kernel
+        launch(stream, config, kernel, *kernelargs)
 
         if self.debug:
             driver.device_to_host(ctypes.addressof(excval), excmem, excsz)
