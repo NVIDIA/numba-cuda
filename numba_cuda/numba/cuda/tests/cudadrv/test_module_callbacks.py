@@ -15,9 +15,9 @@ from numba.cuda.testing import (
 )
 
 if not config.ENABLE_CUDASIM:
-    from cuda.bindings.driver import cuModuleGetGlobal, cuMemcpyHtoD
+    from cuda.bindings.driver import cuLibraryGetGlobal, cuMemcpyHtoD
 
-    from cuda.bindings.driver import CUmodule as cu_module_type
+    from cuda.bindings.driver import CUlibrary as cu_module_type
 
 
 def wipe_all_modules_in_context():
@@ -185,7 +185,7 @@ __device__ int get_num(int &retval) {
 
         def set_forty_two(handle):
             # Initialize 42 to global variable `num`
-            res, dptr, size = cuModuleGetGlobal(
+            res, dptr, size = cuLibraryGetGlobal(
                 get_hashable_handle_value(handle), "num".encode()
             )
 
