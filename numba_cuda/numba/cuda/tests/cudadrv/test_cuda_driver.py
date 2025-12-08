@@ -301,7 +301,7 @@ class TestCudaDriver(CUDATestCase):
         cufunc = kernel._codelibrary.get_cufunc()
 
         # valid carveout values
-        carveout_values = [0, 50, 100]
+        carveout_values = [-1, 0, 50, 100]
         for value in carveout_values:
             with self.subTest(carveout=value):
                 try:
