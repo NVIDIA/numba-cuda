@@ -30,6 +30,7 @@ def jit(
     cache=False,
     launch_bounds=None,
     lto=None,
+    shared_memory_carveout=None,
     **kws,
 ):
     """
@@ -186,6 +187,7 @@ def jit(
             targetoptions["extensions"] = extensions
             targetoptions["launch_bounds"] = launch_bounds
             targetoptions["lto"] = lto
+            targetoptions["shared_memory_carveout"] = shared_memory_carveout
 
             disp = CUDADispatcher(func, targetoptions=targetoptions)
 
@@ -234,6 +236,7 @@ def jit(
                         link=link,
                         cache=cache,
                         launch_bounds=launch_bounds,
+                        shared_memory_carveout=shared_memory_carveout,
                         **kws,
                     )
 
@@ -257,6 +260,7 @@ def jit(
                 targetoptions["extensions"] = extensions
                 targetoptions["launch_bounds"] = launch_bounds
                 targetoptions["lto"] = lto
+                targetoptions["shared_memory_carveout"] = shared_memory_carveout
                 disp = CUDADispatcher(func_or_sig, targetoptions=targetoptions)
 
                 if cache:
