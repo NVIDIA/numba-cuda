@@ -581,8 +581,7 @@ class _Kernel(serialize.ReduceMixin):
             kernelargs.append(cval)
 
         elif ty == types.boolean:
-            cval = ctypes.c_uint8(int(val))
-            kernelargs.append(cval)
+            kernelargs.append(val)
 
         elif ty == types.complex64:
             kernelargs.append(ctypes.c_float(val.real))
