@@ -2225,8 +2225,6 @@ class Module(metaclass=ABCMeta):
         if self.setup_functions is None:
             return
 
-        # get a pointer to the library as a module to avoid breaking
-        # external setup/teardown functions
         for f in self.setup_functions:
             f(self.handle)
 
