@@ -55,8 +55,8 @@ def _extract_loop_lifting_candidates(cfg, blocks):
         insiders = set(loop.body) | set(loop.entries) | set(loop.exits)
         for blk in map(blocks.__getitem__, insiders):
             for inst in blk.body:
-                if isinstance(inst, ir.Assign):
-                    if isinstance(inst.value, ir.Yield):
+                if isinstance(inst, ir.assign_types):
+                    if isinstance(inst.value, ir.yield_types):
                         _logger.debug("has yield")
                         return False
         _logger.debug("no yield")
@@ -347,14 +347,14 @@ def canonicalize_cfg_single_backedge(blocks):
         def replace(target):
             return dst if target == src else target
 
-        if isinstance(term, ir.Branch):
+        if isinstance(term, ir.branch_types):
             return ir.Branch(
                 cond=term.cond,
                 truebr=replace(term.truebr),
                 falsebr=replace(term.falsebr),
                 loc=term.loc,
             )
-        elif isinstance(term, ir.Jump):
+        elif isinstance(term, ir.jump_types):
             return ir.Jump(target=replace(term.target), loc=term.loc)
         else:
             assert not term.get_targets()
@@ -477,7 +477,7 @@ def _get_with_contextmanager(func_ir, blocks, blk_start):
         """
         # If the contextmanager used as a Call
         dfn = func_ir.get_definition(var_ref)
-        if isinstance(dfn, ir.Expr) and dfn.op == "call":
+        if isinstance(dfn, ir.expr_types) and dfn.op == "call":
             args = [get_var_dfn(x) for x in dfn.args]
             kws = {k: get_var_dfn(v) for k, v in dfn.kws}
             extra = {"args": args, "kwargs": kws}
@@ -501,7 +501,7 @@ def _get_with_contextmanager(func_ir, blocks, blk_start):
 
     # Scan the start of the with-region for the contextmanager
     for stmt in blocks[blk_start].body:
-        if isinstance(stmt, ir.EnterWith):
+        if isinstance(stmt, ir.enterwith_types):
             var_ref = stmt.contextmanager
             ctxobj, extra = get_ctxmgr_obj(var_ref)
             if not hasattr(ctxobj, "mutate_with_body"):
@@ -747,7 +747,7 @@ def _rewrite_return(func_ir, target_block_label):
     pop_blocks = [*target_block.find_insts(ir.PopBlock)]
     assert len(pop_blocks) == 1
     assert len([*target_block.find_insts(ir.Jump)]) == 1
-    assert isinstance(target_block.body[-1], ir.Jump)
+    assert isinstance(target_block.body[-1], ir.jump_types)
     pb_marker = pop_blocks[0]
     pb_is = target_block.body.index(pb_marker)
     top_body.extend(target_block.body[:pb_is])

@@ -635,14 +635,14 @@ class MakeFunctionToJitFunction(FunctionPass):
         for idx, blk in func_ir.blocks.items():
             for stmt in blk.body:
                 if isinstance(stmt, ir.assign_types):
-                    if isinstance(stmt.value, ir.Expr):
+                    if isinstance(stmt.value, ir.expr_types):
                         if stmt.value.op == "make_function":
                             node = stmt.value
                             getdef = func_ir.get_definition
                             kw_default = getdef(node.defaults)
                             ok = False
                             if kw_default is None or isinstance(
-                                kw_default, ir.Const
+                                kw_default, ir.const_types
                             ):
                                 ok = True
                             elif isinstance(kw_default, tuple):

@@ -1813,6 +1813,7 @@ if HAS_NUMBA:
     assign_types = (Assign, numba.core.ir.Assign)
     setitem_types = (SetItem, numba.core.ir.SetItem)
     setattr_types = (SetAttr, numba.core.ir.SetAttr)
+    delattr_types = (DelAttr, numba.core.ir.DelAttr)
     staticsetitem_types = (StaticSetItem, numba.core.ir.StaticSetItem)
     delitem_types = (DelItem, numba.core.ir.DelItem)
     print_types = (Print, numba.core.ir.Print)
@@ -1837,6 +1838,10 @@ if HAS_NUMBA:
     scope_types = (Scope, numba.core.ir.Scope)
     var_types = (Var, numba.core.ir.Var)
     stmt_types = (Stmt, numba.core.ir.Stmt)
+    inst_types = (Inst, numba.core.ir.Inst)
+    raise_types = (Raise, numba.core.ir.Raise)
+    enterwith_types = (EnterWith, numba.core.ir.EnterWith)
+    with_types = (With, numba.core.ir.With)
     abstractrhs_types = (AbstractRHS, numba.core.ir.AbstractRHS)
 else:
     loc_types = (Loc,)
