@@ -16,7 +16,9 @@ system to freeze in some cases.
 
 import sys
 import os
+import contextlib
 import ctypes
+import importlib
 import weakref
 import functools
 import warnings
@@ -27,8 +29,10 @@ import pathlib
 import subprocess
 import tempfile
 import re
+
 from itertools import product
 from abc import ABCMeta, abstractmethod
+from collections import deque
 from ctypes import (
     c_int,
     byref,
@@ -39,11 +43,9 @@ from ctypes import (
     c_void_p,
     c_uint8,
 )
-import contextlib
-import importlib
-import numpy as np
-from collections import namedtuple, deque
+from typing import NamedTuple
 
+import numpy as np
 
 from numba.cuda.cext import mviewbuf
 from numba.cuda.core import config
@@ -1092,17 +1094,20 @@ class _PendingDeallocs(object):
         return len(self._cons)
 
 
-MemoryInfo = namedtuple("MemoryInfo", "free,total")
-"""Free and total memory for a device.
+class MemoryInfo(NamedTuple):
+    """Free and total memory for a device.
 
-.. py:attribute:: free
+    .. py:attribute:: free
 
-   Free device memory in bytes.
+       Free device memory in bytes.
 
-.. py:attribute:: total
+    .. py:attribute:: total
 
-    Total device memory in bytes.
-"""
+        Total device memory in bytes.
+    """
+
+    free: int
+    total: int
 
 
 class Context(object):
@@ -2300,9 +2305,12 @@ class CudaPythonModule(Module):
         return MemoryPointer(self.context, ptr, size), size
 
 
-FuncAttr = namedtuple(
-    "FuncAttr", ["regs", "shared", "local", "const", "maxthreads"]
-)
+class FuncAttr(NamedTuple):
+    regs: int
+    shared: int
+    local: int
+    const: int
+    maxthreads: int
 
 
 class Function:
