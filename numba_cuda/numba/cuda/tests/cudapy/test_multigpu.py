@@ -6,6 +6,7 @@ import numpy as np
 from numba.cuda.testing import skip_on_cudasim, CUDATestCase
 import threading
 import unittest
+import cupy as cp
 
 
 class TestMultiGPUContext(CUDATestCase):
@@ -55,7 +56,7 @@ class TestMultiGPUContext(CUDATestCase):
         def work(gpu, dA, results, ridx):
             try:
                 with gpu:
-                    arr = dA.copy_to_host()
+                    arr = dA.get()
 
             except Exception as e:
                 results[ridx] = e
@@ -63,7 +64,7 @@ class TestMultiGPUContext(CUDATestCase):
             else:
                 results[ridx] = np.all(arr == np.arange(10))
 
-        dA = cuda.to_device(np.arange(10))
+        dA = cp.asarray(np.arange(10))
 
         nthreads = 10
         results = [None] * nthreads

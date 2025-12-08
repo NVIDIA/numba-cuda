@@ -503,7 +503,7 @@ class TestDispatcher(CUDATestCase):
         hy = np.arange(10, dtype=np.int32) * 2
         dx = cp.array(hx)
         dy = cp.array(hy)
-        dr = cuda.device_array_like(dx)
+        dr = cp.asarray(dx)
 
         r_ptr = dr.__cuda_array_interface__["data"][0]
         x_ptr = dx.__cuda_array_interface__["data"][0]
@@ -512,7 +512,7 @@ class TestDispatcher(CUDATestCase):
         axpy[1, 32](r_ptr, a, x_ptr, y_ptr, N)
 
         expected = a * hx + hy
-        actual = dr.copy_to_host()
+        actual = dr.get()
         np.testing.assert_equal(expected, actual)
 
 

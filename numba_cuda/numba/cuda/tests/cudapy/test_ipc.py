@@ -16,6 +16,7 @@ from numba.cuda.testing import (
     skip_on_cudasim,
     skip_under_cuda_memcheck,
     skip_on_wsl2,
+    CUDATestCase,
     DeprecatedDeviceArrayApiTest,
     ForeignArray,
 )
@@ -64,11 +65,18 @@ def ipc_array_test(ipcarr, parent_pid):
     return arr
 
 
+def _suppress_deprecated_warnings():
+    import warnings
+    # adjust the import path to the actual warning class
+    from numba.cuda import DeprecatedDeviceArrayApiWarning
+    warnings.filterwarnings("ignore", category=DeprecatedDeviceArrayApiWarning)
+
 class CUDAIpcTestCase(DeprecatedDeviceArrayApiTest):
     @classmethod
     def setUpClass(cls) -> None:
         cls.exe = concurrent.futures.ProcessPoolExecutor(
-            mp_context=mp.get_context("spawn")
+            mp_context=mp.get_context("spawn"),
+            initializer=_suppress_deprecated_warnings
         )
 
     @classmethod

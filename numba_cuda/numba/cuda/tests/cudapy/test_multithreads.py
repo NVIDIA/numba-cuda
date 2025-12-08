@@ -11,6 +11,7 @@ from numba.cuda.testing import (
     CUDATestCase,
 )
 import unittest
+import cupy as cp
 
 from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor
 
@@ -27,12 +28,12 @@ def check_concurrent_compiling():
         foo[1, 1](x)
         return x
 
-    arrays = [cuda.to_device(np.arange(10)) for i in range(10)]
+    arrays = [cp.arange(10) for i in range(10)]
     expected = np.arange(10)
     expected[0] += 1
     with ThreadPoolExecutor(max_workers=4) as e:
         for ary in e.map(use_foo, arrays):
-            np.testing.assert_equal(ary, expected)
+            np.testing.assert_equal(ary.get(), expected)
 
 
 @skip_under_cuda_memcheck("Hangs cuda-memcheck")
