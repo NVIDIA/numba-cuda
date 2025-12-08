@@ -547,13 +547,16 @@ class _Kernel(serialize.ReduceMixin):
             meminfo = 0
             parent = 0
 
-            data = driver.device_pointer(devary)
-
             kernelargs.append(meminfo)
             kernelargs.append(parent)
+
+            # non-pointer-arguments-without-ctypes might be dicey, since we're
+            # assuming shape, strides, size, and itemsize fit into intptr_t
+            # however, this saves a noticeable amount of overhead in kernel
+            # invocation
             kernelargs.append(devary.size)
             kernelargs.append(devary.dtype.itemsize)
-            kernelargs.append(data)
+            kernelargs.append(devary.device_ctypes_pointer.value)
             kernelargs.extend(devary.shape)
             kernelargs.extend(devary.strides)
 
