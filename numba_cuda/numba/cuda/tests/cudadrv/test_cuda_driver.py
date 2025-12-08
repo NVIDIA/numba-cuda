@@ -9,7 +9,11 @@ from numba.cuda.cudadrv.driver import (
     driver,
 )
 import numba.cuda.cudadrv.driver as drvmod
-from cuda.core.experimental import LaunchConfig, Stream as ExperimentalStream
+from cuda.core.experimental import (
+    LaunchConfig,
+    Stream as ExperimentalStream,
+    launch,
+)
 
 from numba import cuda
 from numba.cuda.cudadrv import devices
@@ -107,7 +111,7 @@ class TestCudaDriver(CUDATestCase):
             cooperative_launch=False,
         )
         exp_stream = ExperimentalStream.from_handle(0)
-        drvmod._core_launch(exp_stream, config, function.handle, ptr)
+        launch(exp_stream, config, function.kernel, ptr)
 
         device_to_host(array, memory, sizeof(array))
         for i, v in enumerate(array):
@@ -137,7 +141,7 @@ class TestCudaDriver(CUDATestCase):
             )
             # Convert numba Stream to ExperimentalStream
             exp_stream = drvmod._to_experimental_stream(stream)
-            drvmod._core_launch(exp_stream, config, function.handle, ptr)
+            launch(exp_stream, config, function.kernel, ptr)
 
         device_to_host(array, memory, sizeof(array), stream=stream)
 
@@ -171,7 +175,7 @@ class TestCudaDriver(CUDATestCase):
                 shmem_size=0,
                 cooperative_launch=False,
             )
-            drvmod._core_launch(stream, config, function.handle, ptr)
+            launch(stream, config, function.kernel, ptr)
 
             device_to_host(array, memory, sizeof(array), stream=stream)
         for i, v in enumerate(array):
