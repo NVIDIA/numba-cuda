@@ -480,8 +480,8 @@ class _Kernel(serialize.ReduceMixin):
 
         # Invoke kernel
         config = LaunchConfig(
-            grid=tuple(griddim),
-            block=tuple(blockdim),
+            grid=griddim,
+            block=blockdim,
             shmem_size=sharedmem,
             cooperative_launch=self.cooperative,
         )
