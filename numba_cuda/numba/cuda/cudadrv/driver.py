@@ -59,14 +59,7 @@ from numba.cuda.utils import cached_file_read
 from numba.cuda.cudadrv import enums, drvapi, nvrtc
 
 from cuda.bindings import driver as binding
-from cuda.core.experimental import (
-    Linker,
-    LinkerOptions,
-    ObjectCode,
-    launch,
-)
-from cuda.core.experimental._module import Kernel, _lazy_init
-
+from cuda.core.experimental import Linker, LinkerOptions, ObjectCode
 from cuda.bindings.utils import get_cuda_native_handle
 from cuda.core.experimental import (
     Stream as ExperimentalStream,
@@ -1391,55 +1384,15 @@ class Context(object):
 
 
 def load_module_image(
-    context, image, setup_callbacks=None, teardown_callbacks=None
+    context, object_code, setup_callbacks=None, teardown_callbacks=None
 ):
     """
     image must be a pointer
     """
-    return load_module_image_cuda_python(
-        context, image, setup_callbacks, teardown_callbacks
-    )
-
-
-def load_module_image_cuda_python(
-    context, image, setup_callbacks, teardown_callbacks
-):
-    """
-    image must be a pointer
-    """
-    logsz = config.CUDA_LOG_SIZE
-
-    jitinfo = bytearray(logsz)
-    jiterrors = bytearray(logsz)
-
-    jit_option = binding.CUjit_option
-    options = {
-        jit_option.CU_JIT_INFO_LOG_BUFFER: jitinfo,
-        jit_option.CU_JIT_INFO_LOG_BUFFER_SIZE_BYTES: logsz,
-        jit_option.CU_JIT_ERROR_LOG_BUFFER: jiterrors,
-        jit_option.CU_JIT_ERROR_LOG_BUFFER_SIZE_BYTES: logsz,
-        jit_option.CU_JIT_LOG_VERBOSE: config.CUDA_VERBOSE_JIT_LOG,
-    }
-
-    option_keys = [k for k in options.keys()]
-    option_vals = [v for v in options.values()]
-
-    try:
-        handle = driver.cuModuleLoadDataEx(
-            image.code, len(options), option_keys, option_vals
-        )
-    except CudaAPIError as e:
-        err_string = jiterrors.decode("utf-8")
-        msg = "cuModuleLoadDataEx error:\n%s" % err_string
-        raise CudaAPIError(e.code, msg)
-
-    info_log = jitinfo.decode("utf-8")
-
     return CudaPythonModule(
         weakref.proxy(context),
-        handle,
-        info_log,
-        _module_finalizer(context, handle),
+        object_code,
+        _module_finalizer(context, object_code),
         setup_callbacks,
         teardown_callbacks,
     )
@@ -1517,12 +1470,12 @@ def _stream_finalizer(deallocs, handle):
     return core
 
 
-def _module_finalizer(context, handle):
+def _module_finalizer(context, object_code):
     dealloc = context.deallocations
     modules = context.modules
-    key = handle
+    key = object_code.handle
 
-    def core():
+    def core(key=key):
         shutting_down = utils.shutting_down  # early bind
 
         def module_unload(handle):
@@ -1530,9 +1483,9 @@ def _module_finalizer(context, handle):
             # Context.reset() of Context.unload_module().  Both must have
             # cleared the module reference from the context.
             assert shutting_down() or key not in modules
-            driver.cuModuleUnload(handle)
+            driver.cuLibraryUnload(handle)
 
-        dealloc.add_item(module_unload, handle)
+        dealloc.add_item(module_unload, key)
 
     return core
 
@@ -2235,15 +2188,14 @@ class Module(metaclass=ABCMeta):
     def __init__(
         self,
         context,
-        handle,
-        info_log,
+        object_code,
         finalizer=None,
         setup_callbacks=None,
         teardown_callbacks=None,
     ):
         self.context = context
-        self.handle = handle
-        self.info_log = info_log
+        self.object_code = object_code
+        self.handle = object_code.handle
         if finalizer is not None:
             self._finalizer = weakref.finalize(self, finalizer)
 
@@ -2273,6 +2225,8 @@ class Module(metaclass=ABCMeta):
         if self.setup_functions is None:
             return
 
+        # get a pointer to the library as a module to avoid breaking
+        # external setup/teardown functions
         for f in self.setup_functions:
             f(self.handle)
 
@@ -2297,11 +2251,11 @@ class Module(metaclass=ABCMeta):
 
 class CudaPythonModule(Module):
     def get_function(self, name):
-        handle = driver.cuModuleGetFunction(self.handle, name.encode("utf8"))
-        return Function(weakref.proxy(self), handle, name)
+        kernel = self.object_code.get_kernel(name)
+        return Function(weakref.proxy(self), kernel, name)
 
     def get_global_symbol(self, name):
-        ptr, size = driver.cuModuleGetGlobal(self.handle, name.encode("utf8"))
+        ptr, size = driver.cuLibraryGetGlobal(self.handle, name.encode("utf8"))
         return MemoryPointer(self.context, ptr, size), size
 
 
@@ -2319,11 +2273,19 @@ class Function:
     stream = 0
     sharedmem = 0
 
-    def __init__(self, module, handle, name):
+    def __init__(self, module, kernel, name):
         self.module = module
-        self.handle = handle
+        self.kernel = kernel
+        self.handle = kernel._handle
         self.name = name
-        self.attrs = self.read_func_attr_all()
+        attrs = self.kernel.attributes
+        self.attrs = FuncAttr(
+            regs=attrs.num_regs(),
+            const=attrs.const_size_bytes(),
+            local=attrs.local_size_bytes(),
+            shared=attrs.shared_size_bytes(),
+            maxthreads=attrs.max_threads_per_block(),
+        )
 
     def __repr__(self):
         return "<CUDA function %s>" % self.name
@@ -2407,7 +2369,7 @@ class CudaPythonFunction(Function):
             flag = attr.CU_FUNC_CACHE_PREFER_SHARED
         else:
             flag = attr.CU_FUNC_CACHE_PREFER_NONE
-        driver.cuFuncSetCacheConfig(self.handle, flag)
+        driver.cuKernelSetCacheConfig(self.handle, flag, self.device.id)
 
     def set_shared_memory_carveout(self, carveout):
         carveout = int(carveout)
@@ -2417,22 +2379,6 @@ class CudaPythonFunction(Function):
 
         attr = binding.CUfunction_attribute.CU_FUNC_ATTRIBUTE_PREFERRED_SHARED_MEMORY_CARVEOUT
         driver.cuFuncSetAttribute(self.handle, attr, carveout)
-
-    def read_func_attr(self, attrid):
-        return driver.cuFuncGetAttribute(attrid, self.handle)
-
-    def read_func_attr_all(self):
-        attr = binding.CUfunction_attribute
-        nregs = self.read_func_attr(attr.CU_FUNC_ATTRIBUTE_NUM_REGS)
-        cmem = self.read_func_attr(attr.CU_FUNC_ATTRIBUTE_CONST_SIZE_BYTES)
-        lmem = self.read_func_attr(attr.CU_FUNC_ATTRIBUTE_LOCAL_SIZE_BYTES)
-        smem = self.read_func_attr(attr.CU_FUNC_ATTRIBUTE_SHARED_SIZE_BYTES)
-        maxtpb = self.read_func_attr(
-            attr.CU_FUNC_ATTRIBUTE_MAX_THREADS_PER_BLOCK
-        )
-        return FuncAttr(
-            regs=nregs, const=cmem, local=lmem, shared=smem, maxthreads=maxtpb
-        )
 
 
 # Alias for backward compatibility
@@ -2460,30 +2406,6 @@ def _normalize_kernel_args(args):
     return [
         arg.value or 0 if isinstance(arg, c_void_p) else arg for arg in args
     ]
-
-
-# Internal cache for Kernel objects created from CUfunction handles
-_kernel_cache = {}
-
-
-def _get_or_create_kernel(cufunction):
-    key = int(cufunction)
-    kernel = _kernel_cache.get(key)
-    if kernel is not None:
-        return kernel
-    _lazy_init()
-    objcode_stub = object.__new__(ObjectCode)
-    kernel = Kernel._from_obj(cufunction, objcode_stub)
-    _kernel_cache[key] = kernel
-    return kernel
-
-
-def _core_launch(stream, config, cufunction, *args):
-    """
-    Internal helper to launch via cuda.core.experimental.launch ensuring a Kernel object.
-    """
-    kernel = _get_or_create_kernel(cufunction)
-    return launch(stream, config, kernel, *args)
 
 
 class _LinkerBase(metaclass=ABCMeta):
