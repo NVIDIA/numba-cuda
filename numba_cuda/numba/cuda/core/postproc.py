@@ -111,9 +111,9 @@ class PostProcessor(object):
         assert not dct, "rerunning _populate_generator_info"
         for block in self.func_ir.blocks.values():
             for inst in block.body:
-                if isinstance(inst, ir.Assign):
+                if isinstance(inst, ir.assign_types):
                     yieldinst = inst.value
-                    if isinstance(yieldinst, ir.Yield):
+                    if isinstance(yieldinst, ir.yield_types):
                         index = len(dct) + 1
                         yieldinst.index = index
                         yp = YieldPoint(block, yieldinst)
@@ -133,18 +133,18 @@ class PostProcessor(object):
             weak_live_vars = set()
             stmts = iter(yp.block.body)
             for stmt in stmts:
-                if isinstance(stmt, ir.Assign):
+                if isinstance(stmt, ir.assign_types):
                     if stmt.value is yp.inst:
                         break
                     live_vars.add(stmt.target.name)
-                elif isinstance(stmt, ir.Del):
+                elif isinstance(stmt, ir.del_types):
                     live_vars.remove(stmt.value)
             else:
                 assert 0, "couldn't find yield point"
             # Try to optimize out any live vars that are deleted immediately
             # after the yield point.
             for stmt in stmts:
-                if isinstance(stmt, ir.Del):
+                if isinstance(stmt, ir.del_types):
                     name = stmt.value
                     if name in live_vars:
                         live_vars.remove(name)
