@@ -15,7 +15,7 @@ import uuid
 import re
 from warnings import warn
 
-from cuda.core.experimental import launch
+from cuda.core.experimental import launch, Stream
 
 from numba.cuda.core import errors
 from numba.cuda import serialize, utils
@@ -485,12 +485,10 @@ class _Kernel(serialize.ReduceMixin):
             shmem_size=sharedmem,
             cooperative_launch=self.cooperative,
         )
-        exp_stream = driver._to_experimental_stream(stream)
+        handle = getattr(stream, "handle", stream)
+        value = getattr(handle, "value", handle)
         launch(
-            exp_stream,
-            config,
-            cufunc.kernel,
-            *driver._normalize_kernel_args(kernelargs),
+            Stream.from_handle(int(value)), config, cufunc.kernel, *kernelargs
         )
 
         if self.debug:
@@ -545,30 +543,23 @@ class _Kernel(serialize.ReduceMixin):
 
         if isinstance(ty, types.Array):
             devary = wrap_arg(val).to_device(retr, stream)
-            c_intp = ctypes.c_ssize_t
 
-            meminfo = ctypes.c_void_p(0)
-            parent = ctypes.c_void_p(0)
-            nitems = c_intp(devary.size)
-            itemsize = c_intp(devary.dtype.itemsize)
+            meminfo = 0
+            parent = 0
 
-            ptr = driver.device_pointer(devary)
-
-            ptr = int(ptr)
-
-            data = ctypes.c_void_p(ptr)
+            data = driver.device_pointer(devary)
 
             kernelargs.append(meminfo)
             kernelargs.append(parent)
-            kernelargs.append(nitems)
-            kernelargs.append(itemsize)
+            kernelargs.append(devary.size)
+            kernelargs.append(devary.dtype.itemsize)
             kernelargs.append(data)
-            kernelargs.extend(map(c_intp, devary.shape))
-            kernelargs.extend(map(c_intp, devary.strides))
+            kernelargs.extend(devary.shape)
+            kernelargs.extend(devary.strides)
 
         elif isinstance(ty, types.CPointer):
             # Pointer arguments should be a pointer-sized integer
-            kernelargs.append(ctypes.c_uint64(val))
+            kernelargs.append(val)
 
         elif isinstance(ty, types.Integer):
             cval = getattr(ctypes, "c_%s" % ty)(val)

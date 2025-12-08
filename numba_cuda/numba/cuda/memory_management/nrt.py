@@ -15,8 +15,7 @@ from numba.cuda.cudadrv.driver import (
     driver,
     _have_nvjitlink,
 )
-import numba.cuda.cudadrv.driver as drvmod
-from cuda.core.experimental import LaunchConfig, launch
+from cuda.core.experimental import LaunchConfig, Stream, launch
 from numba.cuda.cudadrv import devices
 from numba.cuda.api import get_current_device
 from numba.cuda.utils import _readenv, cached_file_read
@@ -186,13 +185,10 @@ class _Runtime:
             shmem_size=0,
             cooperative_launch=False,
         )
-        exp_stream = drvmod._to_experimental_stream(stream)
-        launch(
-            exp_stream,
-            config,
-            func.kernel,
-            *drvmod._normalize_kernel_args(params),
-        )
+
+        handle = getattr(stream, "handle", stream)
+        value = getattr(handle, "value", handle)
+        launch(Stream.from_handle(int(value)), config, func.kernel, *params)
 
     def ensure_initialized(self, stream=None):
         """
