@@ -114,7 +114,6 @@ class DeviceNDArrayBase:
 
         self.gpu_data = gpu_data
         self.stream = stream
-        self._numba_type = None
 
     @property
     def __cuda_array_interface__(self):
@@ -160,7 +159,7 @@ class DeviceNDArrayBase:
     def _default_stream(self, stream):
         return self.stream if not stream else stream
 
-    @property
+    @functools.cached_property
     def _numba_type_(self):
         """
         Magic attribute expected by Numba to get the numba type that
@@ -179,22 +178,17 @@ class DeviceNDArrayBase:
         # or 'F' does not apply for broadcast arrays, because the strides, some
         # of which will be 0, will not match those hardcoded in for 'C' or 'F'
         # layouts.
+        broadcast = 0 in self.strides and (self.size != 0)
 
-        if (numba_type := self._numba_type) is None:
-            broadcast = 0 in self.strides and (self.size != 0)
+        if self.flags["C_CONTIGUOUS"] and not broadcast:
+            layout = "C"
+        elif self.flags["F_CONTIGUOUS"] and not broadcast:
+            layout = "F"
+        else:
+            layout = "A"
 
-            if self.flags["C_CONTIGUOUS"] and not broadcast:
-                layout = "C"
-            elif self.flags["F_CONTIGUOUS"] and not broadcast:
-                layout = "F"
-            else:
-                layout = "A"
-
-            dtype = numpy_support.from_dtype(self.dtype)
-            self._numba_type = numba_type = types.Array(
-                dtype, self.ndim, layout
-            )
-        return numba_type
+        dtype = numpy_support.from_dtype(self.dtype)
+        return types.Array(dtype, self.ndim, layout)
 
     @property
     def device_ctypes_pointer(self):
