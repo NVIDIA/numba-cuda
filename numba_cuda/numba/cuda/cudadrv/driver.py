@@ -1331,9 +1331,9 @@ class Context(object):
         # Create a cuda.core Stream directly
         # Note: cuda.core doesn't have direct stream creation from context,
         # so we use the NVIDIA bindings directly
-        flags = binding.CUstream_flags.CU_STREAM_DEFAULT.value
+        flags = binding.CUstream_flags.CU_STREAM_DEFAULT
         cu_stream_handle = driver.cuStreamCreate(flags)
-        core_stream = ExperimentalStream.from_handle(int(cu_stream_handle))
+        core_stream = ExperimentalStream.from_handle(cu_stream_handle)
 
         # Wrap in our shim
         stream_wrapper = Stream(core_stream)
