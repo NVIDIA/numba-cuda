@@ -13,11 +13,10 @@ from numba.cuda.testing import (
     CUDATestCase,
     skip_on_cudasim,
 )
+from cuda.core.experimental import ObjectCode
 
 if not config.ENABLE_CUDASIM:
     from cuda.bindings.driver import cuLibraryGetGlobal, cuMemcpyHtoD
-
-    from cuda.bindings.driver import CUlibrary as cu_module_type
 
 
 def wipe_all_modules_in_context():
@@ -31,8 +30,8 @@ def wipe_all_modules_in_context():
     ctx.reset()
 
 
-def get_hashable_handle_value(handle):
-    return handle
+def get_hashable_handle_value(object_code):
+    return object_code.handle
 
 
 @skip_on_cudasim("Module loading not implemented in the simulator")
@@ -40,13 +39,13 @@ class TestModuleCallbacksBasic(CUDATestCase):
     def test_basic(self):
         counter = 0
 
-        def setup(handle):
-            self.assertTrue(isinstance(handle, cu_module_type))
+        def setup(object_code):
+            self.assertIsInstance(object_code, ObjectCode)
             nonlocal counter
             counter += 1
 
-        def teardown(handle):
-            self.assertTrue(isinstance(handle, cu_module_type))
+        def teardown(object_code):
+            self.assertIsInstance(object_code, ObjectCode)
             nonlocal counter
             counter -= 1
 
@@ -183,10 +182,10 @@ __device__ int get_num(int &retval) {
 }
 """
 
-        def set_forty_two(handle):
+        def set_forty_two(object_code):
             # Initialize 42 to global variable `num`
             res, dptr, size = cuLibraryGetGlobal(
-                get_hashable_handle_value(handle), "num".encode()
+                get_hashable_handle_value(object_code), b"num"
             )
 
             arr = np.array([42], np.int32)

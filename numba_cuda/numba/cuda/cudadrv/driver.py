@@ -2216,7 +2216,7 @@ class CudaPythonModule:
             return
 
         for f in self.setup_functions:
-            f(self.handle)
+            f(self.object_code)
 
         self.initialized = True
 
@@ -2225,15 +2225,15 @@ class CudaPythonModule:
         if self.teardown_functions is None:
             return
 
-        def _teardown(teardowns, handle):
+        def _teardown(teardowns, object_code):
             for f in teardowns:
-                f(handle)
+                f(object_code)
 
         weakref.finalize(
             self,
             _teardown,
             self.teardown_functions,
-            self.handle,
+            self.object_code,
         )
 
     def get_function(self, name):
