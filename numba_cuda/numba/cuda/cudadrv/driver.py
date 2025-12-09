@@ -2325,9 +2325,7 @@ class CudaPythonFunction:
 Function = CudaPythonFunction
 
 
-class _LinkerBase(metaclass=ABCMeta):
-    """Abstract base class for linkers"""
-
+class _Linker:
     @classmethod
     def new(
         cls,
@@ -2348,47 +2346,139 @@ class _LinkerBase(metaclass=ABCMeta):
 
         return linker(*params)
 
-    @abstractmethod
-    def __init__(self, max_registers, lineinfo, cc):
-        # LTO unsupported in Numba at present, but the pynvjitlink linker
-        # (https://github.com/rapidsai/pynvjitlink) supports it,
-        self.lto = False
+    def __init__(
+        self,
+        max_registers=None,
+        lineinfo=False,
+        cc=None,
+        lto=None,
+        additional_flags=None,
+    ):
+        arch = f"sm_{cc[0]}{cc[1]}"
+        self.max_registers = max_registers if max_registers else None
+        self.lineinfo = lineinfo
+        self.cc = cc
+        self.arch = arch
+        if lto is False:
+            # WAR for apparent nvjitlink issue
+            lto = None
+        self.lto = lto
+        self.additional_flags = additional_flags
+
+        self.options = LinkerOptions(
+            max_register_count=self.max_registers,
+            lineinfo=lineinfo,
+            arch=arch,
+            link_time_optimization=lto,
+        )
+        self._complete = False
+        self._object_codes = []
+        self.linker = None  # need at least one program
 
     @property
-    @abstractmethod
     def info_log(self):
         """Return the info log from the linker invocation"""
+        if not self.linker:
+            raise ValueError("Not Initialized")
+        if self._complete:
+            return self._info_log
+        raise RuntimeError("Link not yet complete.")
 
     @property
-    @abstractmethod
     def error_log(self):
         """Return the error log from the linker invocation"""
+        if not self.linker:
+            raise ValueError("Not Initialized")
+        if self._complete:
+            return self._error_log
+        raise RuntimeError("Link not yet complete.")
 
-    @abstractmethod
-    def add_ptx(self, ptx, name):
+    def add_ptx(self, ptx, name="<cudapy-ptx>"):
         """Add PTX source in a string to the link"""
+        obj = ObjectCode.from_ptx(ptx, name=name)
+        self._object_codes.append(obj)
 
-    def add_cu(self, cu, name):
-        """Add CUDA source in a string to the link. The name of the source
-        file should be specified in `name`."""
-        ptx, log = nvrtc.compile(cu, name, self.cc)
+    def add_cu(self, cu, name="<cudapy-cu>"):
+        obj, log = nvrtc.compile(cu, name, self.cc, ltoir=self.lto)
 
-        if config.DUMP_ASSEMBLY:
+        if not self.lto and config.DUMP_ASSEMBLY:
             print(("ASSEMBLY %s" % name).center(80, "-"))
-            print(ptx)
-            print("=" * 80)
+            print(obj.code)
 
-        # Link the program's PTX using the normal linker mechanism
-        ptx_name = os.path.splitext(name)[0] + ".ptx"
-        self.add_ptx(ptx.encode(), ptx_name)
+        self._object_codes.append(obj)
 
-    @abstractmethod
-    def add_data(self, data, kind, name):
-        """Add in-memory data to the link"""
+    def add_cubin(self, cubin, name="<cudapy-cubin>"):
+        obj = ObjectCode.from_cubin(cubin, name=name)
+        self._object_codes.append(obj)
 
-    @abstractmethod
+    def add_ltoir(self, ltoir, name="<cudapy-ltoir>"):
+        obj = ObjectCode.from_ltoir(ltoir, name=name)
+        self._object_codes.append(obj)
+
+    def add_fatbin(self, fatbin, name="<cudapy-fatbin>"):
+        obj = ObjectCode.from_fatbin(fatbin, name=name)
+        self._object_codes.append(obj)
+
+    def add_object(self, obj, name="<cudapy-object>"):
+        obj = ObjectCode.from_object(obj, name=name)
+        self._object_codes.append(obj)
+
+    def add_library(self, lib, name="<cudapy-lib>"):
+        obj = ObjectCode.from_library(lib, name=name)
+        self._object_codes.append(obj)
+
     def add_file(self, path, kind):
         """Add code from a file to the link"""
+        try:
+            data = cached_file_read(path, how="rb")
+        except FileNotFoundError:
+            raise LinkerError(f"{path} not found")
+        name = pathlib.Path(path).name
+        self.add_data(data, kind, name)
+
+    def add_data(self, data, kind, name):
+        """Add in-memory data to the link"""
+        if kind == FILE_EXTENSION_MAP["ptx"]:
+            fn = self.add_ptx
+        elif kind == FILE_EXTENSION_MAP["cubin"]:
+            fn = self.add_cubin
+        elif kind == "cu":
+            fn = self.add_cu
+        elif (
+            kind == FILE_EXTENSION_MAP["lib"] or kind == FILE_EXTENSION_MAP["a"]
+        ):
+            fn = self.add_library
+        elif kind == FILE_EXTENSION_MAP["fatbin"]:
+            fn = self.add_fatbin
+        elif kind == FILE_EXTENSION_MAP["o"]:
+            fn = self.add_object
+        elif kind == FILE_EXTENSION_MAP["ltoir"]:
+            fn = self.add_ltoir
+        else:
+            raise LinkerError(f"Don't know how to link {kind}")
+
+        fn(data, name)
+
+    def get_linked_ptx(self):
+        options = LinkerOptions(
+            max_register_count=self.max_registers,
+            lineinfo=self.lineinfo,
+            arch=self.arch,
+            link_time_optimization=True,
+            ptx=True,
+        )
+
+        self.linker = Linker(*self._object_codes, options=options)
+
+        result = self.linker.link("ptx")
+        self.close()
+        self._complete = True
+        return result.code
+
+    def close(self):
+        self._info_log = self.linker.get_info_log()
+        self._error_log = self.linker.get_error_log()
+        self.linker.close()
 
     def add_cu_file(self, path):
         cu = cached_file_read(path, how="rb")
@@ -2475,146 +2565,12 @@ class _LinkerBase(metaclass=ABCMeta):
                     path_or_code.data, path_or_code.kind, path_or_code.name
                 )
 
-    @abstractmethod
     def complete(self):
         """Complete the link. Returns (cubin, size)
 
         cubin is a pointer to a internal buffer of cubin owned by the linker;
         thus, it should be loaded before the linker is destroyed.
         """
-
-
-class _Linker(_LinkerBase):
-    def __init__(
-        self,
-        max_registers=None,
-        lineinfo=False,
-        cc=None,
-        lto=None,
-        additional_flags=None,
-    ):
-        arch = f"sm_{cc[0]}{cc[1]}"
-        self.max_registers = max_registers if max_registers else None
-        self.lineinfo = lineinfo
-        self.cc = cc
-        self.arch = arch
-        if lto is False:
-            # WAR for apparent nvjitlink issue
-            lto = None
-        self.lto = lto
-        self.additional_flags = additional_flags
-
-        self.options = LinkerOptions(
-            max_register_count=self.max_registers,
-            lineinfo=lineinfo,
-            arch=arch,
-            link_time_optimization=lto,
-        )
-        self._complete = False
-        self._object_codes = []
-        self.linker = None  # need at least one program
-
-    @property
-    def info_log(self):
-        if not self.linker:
-            raise ValueError("Not Initialized")
-        if self._complete:
-            return self._info_log
-        raise RuntimeError("Link not yet complete.")
-
-    @property
-    def error_log(self):
-        if not self.linker:
-            raise ValueError("Not Initialized")
-        if self._complete:
-            return self._error_log
-        raise RuntimeError("Link not yet complete.")
-
-    def add_ptx(self, ptx, name="<cudapy-ptx>"):
-        obj = ObjectCode.from_ptx(ptx, name=name)
-        self._object_codes.append(obj)
-
-    def add_cu(self, cu, name="<cudapy-cu>"):
-        obj, log = nvrtc.compile(cu, name, self.cc, ltoir=self.lto)
-
-        if not self.lto and config.DUMP_ASSEMBLY:
-            print(("ASSEMBLY %s" % name).center(80, "-"))
-            print(obj.code)
-
-        self._object_codes.append(obj)
-
-    def add_cubin(self, cubin, name="<cudapy-cubin>"):
-        obj = ObjectCode.from_cubin(cubin, name=name)
-        self._object_codes.append(obj)
-
-    def add_ltoir(self, ltoir, name="<cudapy-ltoir>"):
-        obj = ObjectCode.from_ltoir(ltoir, name=name)
-        self._object_codes.append(obj)
-
-    def add_fatbin(self, fatbin, name="<cudapy-fatbin>"):
-        obj = ObjectCode.from_fatbin(fatbin, name=name)
-        self._object_codes.append(obj)
-
-    def add_object(self, obj, name="<cudapy-object>"):
-        obj = ObjectCode.from_object(obj, name=name)
-        self._object_codes.append(obj)
-
-    def add_library(self, lib, name="<cudapy-lib>"):
-        obj = ObjectCode.from_library(lib, name=name)
-        self._object_codes.append(obj)
-
-    def add_file(self, path, kind):
-        try:
-            data = cached_file_read(path, how="rb")
-        except FileNotFoundError:
-            raise LinkerError(f"{path} not found")
-        name = pathlib.Path(path).name
-        self.add_data(data, kind, name)
-
-    def add_data(self, data, kind, name):
-        if kind == FILE_EXTENSION_MAP["ptx"]:
-            fn = self.add_ptx
-        elif kind == FILE_EXTENSION_MAP["cubin"]:
-            fn = self.add_cubin
-        elif kind == "cu":
-            fn = self.add_cu
-        elif (
-            kind == FILE_EXTENSION_MAP["lib"] or kind == FILE_EXTENSION_MAP["a"]
-        ):
-            fn = self.add_library
-        elif kind == FILE_EXTENSION_MAP["fatbin"]:
-            fn = self.add_fatbin
-        elif kind == FILE_EXTENSION_MAP["o"]:
-            fn = self.add_object
-        elif kind == FILE_EXTENSION_MAP["ltoir"]:
-            fn = self.add_ltoir
-        else:
-            raise LinkerError(f"Don't know how to link {kind}")
-
-        fn(data, name)
-
-    def get_linked_ptx(self):
-        options = LinkerOptions(
-            max_register_count=self.max_registers,
-            lineinfo=self.lineinfo,
-            arch=self.arch,
-            link_time_optimization=True,
-            ptx=True,
-        )
-
-        self.linker = Linker(*self._object_codes, options=options)
-
-        result = self.linker.link("ptx")
-        self.close()
-        self._complete = True
-        return result.code
-
-    def close(self):
-        self._info_log = self.linker.get_info_log()
-        self._error_log = self.linker.get_error_log()
-        self.linker.close()
-
-    def complete(self):
         self.linker = Linker(*self._object_codes, options=self.options)
         result = self.linker.link("cubin")
         self.close()
