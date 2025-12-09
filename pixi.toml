@@ -273,5 +273,6 @@ numpy = ">=2.1"
 [package.run-dependencies]
 python = "*"
 numba = ">=0.60"
+cuda-core = ">=0.3,<1"
 cuda-bindings = ">=12.9,<14"
 cuda-python = ">=12.9,<14"
