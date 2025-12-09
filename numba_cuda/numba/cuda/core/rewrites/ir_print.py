@@ -16,7 +16,7 @@ class RewritePrintCalls(Rewrite):
         self.prints = prints = {}
         self.block = block
         # Find all assignments with a right-hand print() call
-        for inst in block.find_insts(ir.Assign):
+        for inst in block.find_insts(ir.assign_types):
             if (
                 isinstance(inst.value, ir.expr_types)
                 and inst.value.op == "call"
@@ -71,7 +71,7 @@ class DetectConstPrintArguments(Rewrite):
     def match(self, func_ir, block, typemap, calltypes):
         self.consts = consts = {}
         self.block = block
-        for inst in block.find_insts(ir.Print):
+        for inst in block.find_insts(ir.print_types):
             if inst.consts:
                 # Already rewritten
                 continue

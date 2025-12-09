@@ -561,7 +561,7 @@ class CanonicalizeLoopEntry(FunctionPass):
 
         # Find the start of loop entry statement that needs to be included.
         startpt = None
-        list_of_insts = list(entry_block.find_insts(ir.Assign))
+        list_of_insts = list(entry_block.find_insts(ir.assign_types))
         for assign in reversed(list_of_insts):
             if assign.target in deps:
                 rhs = assign.value
@@ -1522,7 +1522,7 @@ class IterLoopCanonicalization(FunctionPass):
                     func_var = guard(get_definition, func_ir, call.func)
                     func = guard(get_definition, func_ir, func_var)
                     if func is None or not isinstance(
-                        func, (ir.Global, ir.FreeVar)
+                        func, ir.global_types + ir.freevar_types
                     ):
                         return False
                     if (
@@ -1679,7 +1679,7 @@ class PropagateLiterals(FunctionPass):
         changed = False
 
         for block in func_ir.blocks.values():
-            for assign in block.find_insts(ir.Assign):
+            for assign in block.find_insts(ir.assign_types):
                 value = assign.value
                 if (
                     isinstance(value, ir.arg_types)
@@ -1800,7 +1800,7 @@ class LiteralPropagationSubPipelinePass(FunctionPass):
         found = False
         func_ir = state.func_ir
         for blk in func_ir.blocks.values():
-            for asgn in blk.find_insts(ir.Assign):
+            for asgn in blk.find_insts(ir.assign_types):
                 if isinstance(asgn.value, ir.global_types) or isinstance(
                     asgn.value, ir.freevar_types
                 ):
@@ -1849,7 +1849,7 @@ class LiteralUnroll(FunctionPass):
         found = False
         func_ir = state.func_ir
         for blk in func_ir.blocks.values():
-            for asgn in blk.find_insts(ir.Assign):
+            for asgn in blk.find_insts(ir.assign_types):
                 if isinstance(asgn.value, ir.global_types) or isinstance(
                     asgn.value, ir.freevar_types
                 ):
@@ -1969,7 +1969,7 @@ class RewriteDynamicRaises(FunctionPass):
         changed = False
 
         for block in func_ir.blocks.values():
-            for raise_ in block.find_insts((ir.Raise, ir.TryRaise)):
+            for raise_ in block.find_insts(ir.raise_types + ir.tryraise_types):
                 call_inst = guard(get_definition, func_ir, raise_.exception)
                 if call_inst is None:
                     continue

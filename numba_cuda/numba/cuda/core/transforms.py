@@ -523,7 +523,22 @@ def _legalize_with_head(blk):
     """
     counters = defaultdict(int)
     for stmt in blk.body:
-        counters[type(stmt)] += 1
+        # The counters dict is keyed on the IR node type. As the rest of the
+        # function pops out specific node types, we normalize these node types
+        # to be the Numba-CUDA versions of them so that we don't have to have
+        # more complicated logic looking for both Numba and Numba-CUDA IR nodes
+        # of the same kind.
+        if isinstance(stmt, ir.enterwith_types):
+            stmt_type = ir.EnterWith
+        elif isinstance(stmt, ir.jump_types):
+            stmt_type = ir.Jump
+        elif isinstance(stmt, ir.del_types):
+            stmt_type = ir.Del
+        else:
+            stmt_type = type(stmt)
+
+        counters[stmt_type] += 1
+
     if counters.pop(ir.EnterWith) != 1:
         raise errors.CompilerError(
             "with's head-block must have exactly 1 ENTER_WITH",
@@ -744,9 +759,9 @@ def _rewrite_return(func_ir, target_block_label):
     # JUMP
     # -----------------
     top_body, bottom_body = [], []
-    pop_blocks = [*target_block.find_insts(ir.PopBlock)]
+    pop_blocks = [*target_block.find_insts(ir.popblock_types)]
     assert len(pop_blocks) == 1
-    assert len([*target_block.find_insts(ir.Jump)]) == 1
+    assert len([*target_block.find_insts(ir.jump_types)]) == 1
     assert isinstance(target_block.body[-1], ir.jump_types)
     pb_marker = pop_blocks[0]
     pb_is = target_block.body.index(pb_marker)

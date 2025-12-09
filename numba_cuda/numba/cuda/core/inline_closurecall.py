@@ -54,7 +54,7 @@ enable_inline_arraycall = True
 def callee_ir_validator(func_ir):
     """Checks the IR of a callee is supported for inlining"""
     for blk in func_ir.blocks.values():
-        for stmt in blk.find_insts(ir.Assign):
+        for stmt in blk.find_insts(ir.assign_types):
             if isinstance(stmt.value, ir.yield_types):
                 msg = "The use of yield in a closure is unsupported."
                 raise errors.UnsupportedError(msg, loc=stmt.loc)
@@ -845,7 +845,7 @@ def _replace_args_with(blocks, args):
     Replace ir.Arg(...) with real arguments from call site
     """
     for label, block in blocks.items():
-        assigns = block.find_insts(ir.Assign)
+        assigns = block.find_insts(ir.assign_types)
         for stmt in assigns:
             if isinstance(stmt.value, ir.arg_types):
                 idx = stmt.value.index
@@ -858,7 +858,7 @@ def _replace_freevars(blocks, args):
     Replace ir.FreeVar(...) with real variables from parent function
     """
     for label, block in blocks.items():
-        assigns = block.find_insts(ir.Assign)
+        assigns = block.find_insts(ir.assign_types)
         for stmt in assigns:
             if isinstance(stmt.value, ir.freevar_types):
                 idx = stmt.value.index
@@ -898,7 +898,7 @@ def _add_definitions(func_ir, block):
     Add variable definitions found in a block to parent func_ir.
     """
     definitions = func_ir._definitions
-    assigns = block.find_insts(ir.Assign)
+    assigns = block.find_insts(ir.assign_types)
     for stmt in assigns:
         definitions[stmt.target.name].append(stmt.value)
 
@@ -1122,7 +1122,7 @@ def _inline_arraycall(
             continue
         block = func_ir.blocks[label]
         debug_print("check loop body block ", label)
-        for stmt in block.find_insts(ir.Assign):
+        for stmt in block.find_insts(ir.assign_types):
             expr = stmt.value
             if isinstance(expr, ir.expr_types) and expr.op == "call":
                 func_def = get_definition(func_ir, expr.func)
@@ -1156,7 +1156,7 @@ def _inline_arraycall(
     iter_vars = []
     iter_first_vars = []
     loop_header = func_ir.blocks[loop.header]
-    for stmt in loop_header.find_insts(ir.Assign):
+    for stmt in loop_header.find_insts(ir.assign_types):
         expr = stmt.value
         if isinstance(expr, ir.expr_types):
             if expr.op == "iternext":

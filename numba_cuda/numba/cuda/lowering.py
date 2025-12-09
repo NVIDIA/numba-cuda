@@ -442,7 +442,9 @@ class Lower(BaseLower):
                         # Ensure that the variable is not defined multiple times
                         # in the block
                         [defblk] = var_assign_map[var]
-                        assign_stmts = self.blocks[defblk].find_insts(ir.Assign)
+                        assign_stmts = self.blocks[defblk].find_insts(
+                            ir.assign_types
+                        )
                         assigns = [
                             stmt
                             for stmt in assign_stmts
@@ -469,7 +471,7 @@ class Lower(BaseLower):
             self.builder.position_at_end(bb)
             all_names = set()
             for block in self.blocks.values():
-                for x in block.find_insts(ir.Del):
+                for x in block.find_insts(ir.del_types):
                     if x.value not in all_names:
                         all_names.add(x.value)
             for name in all_names:
@@ -1818,7 +1820,7 @@ class CUDALower(Lower):
         self.dbg_val_names = set()
 
         if self.context.enable_debuginfo and self._disable_sroa_like_opt:
-            for x in block.find_insts(ir.Assign):
+            for x in block.find_insts(ir.assign_types):
                 if x.target.name.startswith("$"):
                     continue
                 ssa_name = x.target.name
@@ -1851,7 +1853,7 @@ class CUDALower(Lower):
             poly_map = {}
             # pre-scan all blocks
             for block in self.blocks.values():
-                for x in block.find_insts(ir.Assign):
+                for x in block.find_insts(ir.assign_types):
                     if x.target.name.startswith("$"):
                         continue
                     ssa_name = x.target.name

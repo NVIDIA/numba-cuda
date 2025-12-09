@@ -1306,10 +1306,14 @@ def _build_new_build_map(func_ir, name, old_body, old_lineno, new_items):
     for pair in new_items:
         k, v = pair
         key_def = ir_utils.guard(ir_utils.get_definition, func_ir, k)
-        if isinstance(key_def, (ir.Const, ir.Global, ir.FreeVar)):
+        if isinstance(
+            key_def, ir.const_types + ir.global_types + ir.freevar_types
+        ):
             literal_keys.append(key_def.value)
         value_def = ir_utils.guard(ir_utils.get_definition, func_ir, v)
-        if isinstance(value_def, (ir.Const, ir.Global, ir.FreeVar)):
+        if isinstance(
+            value_def, ir.const_types + ir.global_types + ir.freevar_types
+        ):
             values.append(value_def.value)
         else:
             # Append unknown value if not a literal.
@@ -1689,7 +1693,7 @@ class Interpreter(object):
             # like a = b[i] = 1, so need to handle replaced temporaries in
             # later setitem/setattr nodes
             if (
-                isinstance(inst, (ir.SetItem, ir.SetAttr))
+                isinstance(inst, ir.setitem_types + ir.setattr_types)
                 and inst.value.name in replaced_var
             ):
                 inst.value = replaced_var[inst.value.name]

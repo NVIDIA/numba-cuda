@@ -1447,7 +1447,7 @@ https://numba.readthedocs.io/en/stable/user/troubleshoot.html#my-code-has-an-unt
                     returns = {}
                     for x in reversed(lst):
                         for block in self.func_ir.blocks.values():
-                            for instr in block.find_insts(ir.Return):
+                            for instr in block.find_insts(ir.return_types):
                                 value = instr.value
                                 if isinstance(value, ir.var_types):
                                     name = value.name

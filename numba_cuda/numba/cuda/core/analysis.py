@@ -394,7 +394,7 @@ def find_literally_calls(func_ir, argtypes):
     for blk in func_ir.blocks.values():
         for assign in blk.find_exprs(op="call"):
             var = ir_utils.guard(ir_utils.get_definition, func_ir, assign.func)
-            if isinstance(var, (ir.Global, ir.FreeVar)):
+            if isinstance(var, ir.global_types + ir.freevar_types):
                 fnobj = var.value
             else:
                 fnobj = ir_utils.guard(
@@ -542,7 +542,9 @@ def dead_branch_prune(func_ir, called_args):
         try:
             # Just to prevent accidents, whilst already guarded, ensure this
             # is an ir.Const
-            if not isinstance(pred, (ir.Const, ir.FreeVar, ir.Global)):
+            if not isinstance(
+                pred, ir.const_types + ir.freevar_types + ir.global_types
+            ):
                 raise TypeError("Expected constant Numba IR node")
             take_truebr = bool(pred.value)
         except TypeError:

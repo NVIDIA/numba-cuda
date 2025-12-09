@@ -1259,7 +1259,7 @@ def fix_setitem_type(stmt, typemap, calltypes):
     with 'A' layout. The replaced variable can be 'C' or 'F', so we update
     setitem call type reflect this (from matrix power test)
     """
-    if not isinstance(stmt, (ir.SetItem, ir.StaticSetItem)):
+    if not isinstance(stmt, ir.setitem_types + ir.staticsetitem_types):
         return
     t_typ = typemap[stmt.target.name]
     s_typ = calltypes[stmt].args[0]
@@ -1428,7 +1428,9 @@ def get_tuple_table(blocks, tuple_table=None):
 
 def get_stmt_writes(stmt):
     writes = set()
-    if isinstance(stmt, (ir.Assign, ir.SetItem, ir.StaticSetItem)):
+    if isinstance(
+        stmt, ir.assign_types + ir.setitem_types + ir.staticsetitem_types
+    ):
         writes.add(stmt.target.name)
     return writes
 
@@ -1796,7 +1798,7 @@ def find_callname(
     attrs = []
     obj = None
     while True:
-        if isinstance(callee_def, (ir.Global, ir.FreeVar)):
+        if isinstance(callee_def, ir.global_types + ir.freevar_types):
             # require(callee_def.value == numpy)
             # these checks support modules like numpy, numpy.random as well as
             # calls like len() and intrinsics like assertEquiv
@@ -1886,7 +1888,9 @@ def find_const(func_ir, var):
     """
     require(isinstance(var, ir.var_types))
     var_def = get_definition(func_ir, var)
-    require(isinstance(var_def, (ir.Const, ir.Global, ir.FreeVar)))
+    require(
+        isinstance(var_def, ir.const_types + ir.global_types + ir.freevar_types)
+    )
     return var_def.value
 
 
@@ -2139,7 +2143,7 @@ def is_getitem(stmt):
 
 def is_setitem(stmt):
     """true if stmt is a SetItem or StaticSetItem node"""
-    return isinstance(stmt, (ir.SetItem, ir.StaticSetItem))
+    return isinstance(stmt, ir.setitem_types + ir.staticsetitem_types)
 
 
 def index_var_of_get_setitem(stmt):
@@ -2265,7 +2269,7 @@ def find_outer_value(func_ir, var):
     or raise GuardException otherwise.
     """
     dfn = get_definition(func_ir, var)
-    if isinstance(dfn, (ir.Global, ir.FreeVar)):
+    if isinstance(dfn, ir.global_types + ir.freevar_types):
         return dfn.value
 
     if isinstance(dfn, ir.expr_types) and dfn.op == "getattr":
@@ -2311,7 +2315,7 @@ def raise_on_unsupported_feature(func_ir, typemap):
             raise UnsupportedError(msg, func_ir.loc)
 
     for blk in func_ir.blocks.values():
-        for stmt in blk.find_insts(ir.Assign):
+        for stmt in blk.find_insts(ir.assign_types):
             # This raises on finding `make_function`
             if isinstance(stmt.value, ir.expr_types):
                 if stmt.value.op == "make_function":
@@ -2344,7 +2348,7 @@ def raise_on_unsupported_feature(func_ir, typemap):
                     raise UnsupportedError(msg, stmt.value.loc)
 
             # this checks for gdb initialization calls, only one is permitted
-            if isinstance(stmt.value, (ir.Global, ir.FreeVar)):
+            if isinstance(stmt.value, ir.global_types + ir.freevar_types):
                 val = stmt.value
                 val = getattr(val, "value", None)
                 if val is None:
@@ -2469,7 +2473,7 @@ def resolve_func_from_module(func_ir, node):
             except KeyError:  # multiple definitions
                 return None
             return resolve_mod(mod)
-        elif isinstance(mod, (ir.Global, ir.FreeVar)):
+        elif isinstance(mod, ir.global_types + ir.freevar_types):
             if isinstance(mod.value, pytypes.ModuleType):
                 return mod
         return None
@@ -2492,7 +2496,7 @@ def enforce_no_dels(func_ir):
     Enforce there being no ir.Del nodes in the IR.
     """
     for blk in func_ir.blocks.values():
-        dels = [x for x in blk.find_insts(ir.Del)]
+        dels = [x for x in blk.find_insts(ir.del_types)]
         if dels:
             msg = "Illegal IR, del found at: %s" % dels[0]
             raise CompilerError(msg, loc=dels[0].loc)

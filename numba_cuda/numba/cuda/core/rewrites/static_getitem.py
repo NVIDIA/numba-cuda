@@ -119,7 +119,7 @@ class RewriteStringLiteralSetitems(Rewrite):
         self.setitems = setitems = {}
         self.block = block
         self.calltypes = calltypes
-        for inst in block.find_insts(ir.SetItem):
+        for inst in block.find_insts(ir.setitem_types):
             index_ty = typemap[inst.index.name]
             if isinstance(index_ty, types.StringLiteral):
                 setitems[inst] = (inst.index, index_ty.literal_value)
@@ -162,7 +162,7 @@ class RewriteConstSetitems(Rewrite):
         self.block = block
         # Detect all setitem statements and find which ones can be
         # rewritten
-        for inst in block.find_insts(ir.SetItem):
+        for inst in block.find_insts(ir.setitem_types):
             try:
                 const = func_ir.infer_constant(inst.index)
             except errors.ConstantInferenceError:

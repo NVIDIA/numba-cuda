@@ -56,7 +56,7 @@ class RewriteConstRaises(Rewrite):
         self.block = block
         # Detect all raise statements and find which ones can be
         # rewritten
-        for inst in block.find_insts((ir.Raise, ir.TryRaise)):
+        for inst in block.find_insts(ir.raise_types + ir.tryraise_types):
             if inst.exception is None:
                 # re-reraise
                 exc_type, exc_args = None, None

@@ -1385,7 +1385,7 @@ class Block(EqualityCheckMixin):
         Returns the assignment inst associated with variable "name", None if
         it cannot be found.
         """
-        for x in self.find_insts(cls=Assign):
+        for x in self.find_insts(cls=assign_types):
             if x.target.name == name:
                 return x
         return None
@@ -1693,7 +1693,7 @@ class FunctionIR(object):
         assert isinstance(rhs_value, abstractrhs_types)
 
         for blk in blocks:
-            for assign in blk.find_insts(Assign):
+            for assign in blk.find_insts(assign_types):
                 if assign.value == rhs_value:
                     return assign.target
 
@@ -1840,6 +1840,7 @@ if HAS_NUMBA:
     stmt_types = (Stmt, numba.core.ir.Stmt)
     inst_types = (Inst, numba.core.ir.Inst)
     raise_types = (Raise, numba.core.ir.Raise)
+    tryraise_types = (TryRaise, numba.core.ir.TryRaise)
     enterwith_types = (EnterWith, numba.core.ir.EnterWith)
     with_types = (With, numba.core.ir.With)
     abstractrhs_types = (AbstractRHS, numba.core.ir.AbstractRHS)

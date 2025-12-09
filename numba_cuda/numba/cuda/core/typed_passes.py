@@ -822,7 +822,7 @@ class PreLowerStripPhis(FunctionPass):
         phis = set()
         # Find all variables that needs to be exported
         for label, block in func_ir.blocks.items():
-            for assign in block.find_insts(ir.Assign):
+            for assign in block.find_insts(ir.assign_types):
                 if isinstance(assign.value, ir.expr_types):
                     if assign.value.op == "phi":
                         phis.add(assign)
@@ -854,7 +854,7 @@ class PreLowerStripPhis(FunctionPass):
                 # last assignment to rhs
                 assignments = [
                     stmt
-                    for stmt in newblk.find_insts(ir.Assign)
+                    for stmt in newblk.find_insts(ir.assign_types)
                     if stmt.target == rhs
                 ]
                 if assignments:
