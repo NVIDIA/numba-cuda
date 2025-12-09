@@ -1981,6 +1981,21 @@ _DEFAULT_STREAM_REPRS = {
 }
 
 
+def _to_core_stream(stream):
+    # stream can be: int (0 for default), Stream (shim), or ExperimentalStream
+    if not stream:
+        return ExperimentalStream.from_handle(0)
+    elif isinstance(stream, Stream):
+        # Our shim wraps a cuda.core Stream - just return it!
+        return stream._core_stream
+    elif isinstance(stream, ExperimentalStream):
+        return stream
+    else:
+        raise TypeError(
+            f"Expected a Stream object, ExperimentalStream, or 0, got {type(stream).__name__}"
+        )
+
+
 class Stream:
     """
     Compatibility shim for cuda.core.experimental.Stream.

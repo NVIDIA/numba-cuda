@@ -15,7 +15,7 @@ import uuid
 import re
 from warnings import warn
 
-from cuda.core.experimental import launch, Stream
+from cuda.core.experimental import launch
 
 from numba.cuda.core import errors
 from numba.cuda import serialize, utils
@@ -485,11 +485,8 @@ class _Kernel(serialize.ReduceMixin):
             shmem_size=sharedmem,
             cooperative_launch=self.cooperative,
         )
-        handle = getattr(stream, "handle", stream)
-        value = getattr(handle, "value", handle)
-        stream = Stream.from_handle(value)
         kernel = cufunc.kernel
-        launch(stream, config, kernel, *kernelargs)
+        launch(driver._to_core_stream(stream), config, kernel, *kernelargs)
 
         if self.debug:
             driver.device_to_host(ctypes.addressof(excval), excmem, excsz)

@@ -15,8 +15,9 @@ from numba.cuda.cudadrv.driver import (
     driver,
     _have_nvjitlink,
 )
-from cuda.core.experimental import LaunchConfig, Stream, launch
+from cuda.core.experimental import LaunchConfig, launch
 from numba.cuda.cudadrv import devices
+from numba.cuda.cudadrv.driver import _to_core_stream
 from numba.cuda.api import get_current_device
 from numba.cuda.utils import _readenv, cached_file_read
 from numba.cuda.cudadrv.linkable_code import CUSource
@@ -186,9 +187,7 @@ class _Runtime:
             cooperative_launch=False,
         )
 
-        handle = getattr(stream, "handle", stream)
-        value = getattr(handle, "value", handle)
-        launch(Stream.from_handle(int(value)), config, func.kernel, *params)
+        launch(_to_core_stream(stream), config, func.kernel, *params)
 
     def ensure_initialized(self, stream=None):
         """

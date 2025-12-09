@@ -8,6 +8,9 @@ import numpy as np
 import pytest
 from pytest import param
 
+from cuda.core.experimental import Stream as ExperimentalStream
+from numba.cuda.cudadrv.driver import Stream, _to_core_stream
+
 
 pytestmark = pytest.mark.skipif(
     condition=config.ENABLE_CUDASIM,
