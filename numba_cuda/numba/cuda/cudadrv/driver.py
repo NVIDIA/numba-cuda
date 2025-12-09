@@ -2265,7 +2265,7 @@ class FuncAttr(NamedTuple):
     maxthreads: int
 
 
-class Function:
+class CudaPythonFunction:
     griddim = 1, 1, 1
     blockdim = 1, 1, 1
     stream = 0
@@ -2295,68 +2295,6 @@ class Function:
     def cache_config(
         self, prefer_equal=False, prefer_cache=False, prefer_shared=False
     ):
-        """Set the cache configuration for this function."""
-
-    @abstractmethod
-    def set_shared_memory_carveout(self, carveout):
-        """Set the shared memory carveout percentage (-1-100)"""
-
-    @abstractmethod
-    def read_func_attr(self, attrid):
-        """Return the value of the attribute with given ID."""
-
-    @abstractmethod
-    def read_func_attr_all(self):
-        """Return a FuncAttr object with the values of various function
-        attributes."""
-
-
-class CtypesFunction(Function):
-    def cache_config(
-        self, prefer_equal=False, prefer_cache=False, prefer_shared=False
-    ):
-        prefer_equal = prefer_equal or (prefer_cache and prefer_shared)
-        if prefer_equal:
-            flag = enums.CU_FUNC_CACHE_PREFER_EQUAL
-        elif prefer_cache:
-            flag = enums.CU_FUNC_CACHE_PREFER_L1
-        elif prefer_shared:
-            flag = enums.CU_FUNC_CACHE_PREFER_SHARED
-        else:
-            flag = enums.CU_FUNC_CACHE_PREFER_NONE
-        driver.cuFuncSetCacheConfig(self.handle, flag)
-
-    def set_shared_memory_carveout(self, carveout):
-        carveout = int(carveout)
-
-        if not (-1 <= carveout <= 100):
-            raise ValueError("Carveout must be between -1 and 100")
-
-        attr = enums.CU_FUNC_ATTRIBUTE_PREFERRED_SHARED_MEMORY_CARVEOUT
-        driver.cuFuncSetAttribute(self.handle, attr, carveout)
-
-    def read_func_attr(self, attrid):
-        retval = c_int()
-        driver.cuFuncGetAttribute(byref(retval), attrid, self.handle)
-        return retval.value
-
-    def read_func_attr_all(self):
-        nregs = self.read_func_attr(enums.CU_FUNC_ATTRIBUTE_NUM_REGS)
-        cmem = self.read_func_attr(enums.CU_FUNC_ATTRIBUTE_CONST_SIZE_BYTES)
-        lmem = self.read_func_attr(enums.CU_FUNC_ATTRIBUTE_LOCAL_SIZE_BYTES)
-        smem = self.read_func_attr(enums.CU_FUNC_ATTRIBUTE_SHARED_SIZE_BYTES)
-        maxtpb = self.read_func_attr(
-            enums.CU_FUNC_ATTRIBUTE_MAX_THREADS_PER_BLOCK
-        )
-        return FuncAttr(
-            regs=nregs, const=cmem, local=lmem, shared=smem, maxthreads=maxtpb
-        )
-
-
-class CudaPythonFunction(Function):
-    def cache_config(
-        self, prefer_equal=False, prefer_cache=False, prefer_shared=False
-    ):
         prefer_equal = prefer_equal or (prefer_cache and prefer_shared)
         attr = binding.CUfunc_cache
         if prefer_equal:
@@ -2376,26 +2314,11 @@ class CudaPythonFunction(Function):
             raise ValueError("Carveout must be between -1 and 100")
 
         attr = binding.CUfunction_attribute.CU_FUNC_ATTRIBUTE_PREFERRED_SHARED_MEMORY_CARVEOUT
-        driver.cuFuncSetAttribute(self.handle, attr, carveout)
+        driver.cuKernelSetAttribute(attr, carveout, self.handle, self.device.id)
 
 
 # Alias for backward compatibility
-CudaPythonFunction = Function
-
-
-def _to_experimental_stream(stream):
-    # stream can be: int (0 for default), Stream (shim), or ExperimentalStream
-    if not stream:
-        return ExperimentalStream.from_handle(0)
-    elif isinstance(stream, Stream):
-        # Our shim wraps a cuda.core Stream - just return it!
-        return stream._core_stream
-    elif isinstance(stream, ExperimentalStream):
-        return stream
-    else:
-        raise TypeError(
-            f"Expected a Stream object, ExperimentalStream, or 0, got {type(stream).__name__}"
-        )
+Function = CudaPythonFunction
 
 
 class _LinkerBase(metaclass=ABCMeta):
