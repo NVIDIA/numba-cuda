@@ -212,7 +212,8 @@ class InlineClosureCallPass(object):
 
     def _inline_closure(self, work_list, block, i, func_def):
         require(
-            isinstance(func_def, ir.expr_types) and func_def.op == "make_function"
+            isinstance(func_def, ir.expr_types)
+            and func_def.op == "make_function"
         )
         inline_closure_call(
             self.func_ir,
@@ -235,7 +236,9 @@ def check_reduce_func(func_ir, func_var):
             "Reduce function cannot be found for njit \
                             analysis"
         )
-    if isinstance(reduce_func, (ir.FreeVar, ir.Global)):
+    if isinstance(reduce_func, ir.freevar_types) or isinstance(
+        reduce_func, ir.global_types
+    ):
         if HAS_NUMBA:
             from numba.core.registry import CPUDispatcher
 
@@ -658,7 +661,10 @@ def inline_closure_call(
             cellget.argtypes = (ctypes.py_object,)
             items = tuple(cellget(x) for x in closure)
         else:
-            assert isinstance(closure, ir.expr_types) and closure.op == "build_tuple"
+            assert (
+                isinstance(closure, ir.expr_types)
+                and closure.op == "build_tuple"
+            )
             items = closure.items
         assert len(callee_code.co_freevars) == len(items)
         _replace_freevars(callee_blocks, items)
@@ -958,7 +964,8 @@ def _find_iter_range(func_ir, range_iter_var, swapped):
     range_iter_def = get_definition(func_ir, range_iter_var)
     debug_print("range_iter_var = ", range_iter_var, " def = ", range_iter_def)
     require(
-        isinstance(range_iter_def, ir.expr_types) and range_iter_def.op == "getiter"
+        isinstance(range_iter_def, ir.expr_types)
+        and range_iter_def.op == "getiter"
     )
     range_var = range_iter_def.value
     range_def = get_definition(func_ir, range_var)
@@ -1086,7 +1093,9 @@ def _inline_arraycall(
         # We require that dtype argument to be a constant of getattr Expr, and
         # we'll remember its definition for later use.
         dtype_def = get_definition(func_ir, array_kws["dtype"])
-        require(isinstance(dtype_def, ir.expr_types) and dtype_def.op == "getattr")
+        require(
+            isinstance(dtype_def, ir.expr_types) and dtype_def.op == "getattr"
+        )
         dtype_mod_def = get_definition(func_ir, dtype_def.value)
 
     list_var_def = get_definition(func_ir, list_var)
@@ -1095,7 +1104,8 @@ def _inline_arraycall(
         list_var_def = get_definition(func_ir, list_var_def.value)
     # Check if the definition is a build_list
     require(
-        isinstance(list_var_def, ir.expr_types) and list_var_def.op == "build_list"
+        isinstance(list_var_def, ir.expr_types)
+        and list_var_def.op == "build_list"
     )
     # The build_list must be empty
     require(len(list_var_def.items) == 0)
@@ -1377,7 +1387,9 @@ def _inline_arraycall(
     # replace array call, by changing "a = array(b)" to "a = b"
     stmt = func_ir.blocks[exit_block].body[array_call_index]
     # stmt can be either array call or SetItem, we only replace array call
-    if isinstance(stmt, ir.assign_types) and isinstance(stmt.value, ir.expr_types):
+    if isinstance(stmt, ir.assign_types) and isinstance(
+        stmt.value, ir.expr_types
+    ):
         stmt.value = array_var
         func_ir._definitions[stmt.target.name] = [stmt.value]
 
@@ -1492,7 +1504,9 @@ def _fix_nested_array(func_ir):
         require(_find_unsafe_empty_inferred(func_ir, rhs_def))
         # Find the array dimension of rhs
         dim_def = get_definition(func_ir, rhs_def.args[0])
-        require(isinstance(dim_def, ir.expr_types) and dim_def.op == "build_tuple")
+        require(
+            isinstance(dim_def, ir.expr_types) and dim_def.op == "build_tuple"
+        )
         debug_print("dim_def = ", dim_def)
         extra_dims = [
             get_definition(func_ir, x, lhs_only=True) for x in dim_def.items

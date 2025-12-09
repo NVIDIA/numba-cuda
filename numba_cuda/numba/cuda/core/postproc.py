@@ -7,8 +7,8 @@ from numba.cuda.core import ir_utils, transforms
 
 class YieldPoint(object):
     def __init__(self, block, inst):
-        assert isinstance(block, ir.Block)
-        assert isinstance(inst, ir.Yield)
+        assert isinstance(block, ir.block_types)
+        assert isinstance(inst, ir.yield_types)
         self.block = block
         self.inst = inst
         self.live_vars = None
@@ -222,7 +222,7 @@ class PostProcessor(object):
                 else:
                     lastloc = stmt.loc
                 # Ignore dels (assuming no user inserted deletes)
-                if not isinstance(stmt, ir.Del):
+                if not isinstance(stmt, ir.del_types):
                     body.append(stmt)
                 # note: the reverse sort is not necessary for correctness
                 #       it is just to minimize changes to test for now
