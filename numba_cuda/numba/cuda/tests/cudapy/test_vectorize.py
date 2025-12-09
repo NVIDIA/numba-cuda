@@ -13,6 +13,7 @@ from numba.cuda.cudadrv.driver import CudaAPIError, driver
 from numba.cuda.testing import skip_on_cudasim
 from numba.cuda.testing import CUDATestCase
 import unittest
+import cupy as cp
 
 
 # Signatures to test with - these are all homogeneous in dtype, so the output
@@ -89,9 +90,13 @@ class TestCUDAVectorize(CUDATestCase):
 
             for ty in dtypes:
                 data = np.array(np.random.random(self.N), dtype=ty)
-                device_data = cuda.to_device(data, stream)
 
-                dresult = vector_add(device_data, device_data, stream=stream)
+                stream = cp.cuda.Stream()
+                nb_stream = cuda.api.external_stream(stream.ptr)
+                with stream:
+                    device_data = cp.asarray(data)
+
+                dresult = vector_add(device_data, device_data, stream=nb_stream)
                 actual = dresult.copy_to_host()
 
                 expected = np.add(data, data)
@@ -160,14 +165,16 @@ class TestCUDAVectorize(CUDATestCase):
             def vector_add(a, b):
                 return a + b
 
-            stream = cuda.stream()
+            stream = cp.cuda.Stream()
+            nb_stream = cuda.api.external_stream(stream.ptr)
             dtype = np.int32
 
             for n in input_sizes:
                 x = np.arange(n, dtype=dtype)
                 expected = np.add.reduce(x)
-                dx = cuda.to_device(x, stream)
-                actual = vector_add.reduce(dx, stream=stream)
+                with stream:
+                    dx = cp.asarray(x)
+                actual = vector_add.reduce(dx, stream=nb_stream)
                 np.testing.assert_allclose(expected, actual)
                 # Compare against the input dtype as in test_reduce().
                 self.assertEqual(dtype, actual.dtype)

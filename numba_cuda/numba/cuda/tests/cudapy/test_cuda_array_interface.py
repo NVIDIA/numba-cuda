@@ -5,7 +5,7 @@ import numpy as np
 
 from numba.cuda import vectorize, guvectorize
 from numba import cuda
-from numba.cuda.testing import unittest, CUDATestCase, ForeignArray
+from numba.cuda.testing import unittest, CUDATestCase, ForeignArray, DeprecatedDeviceArrayApiTest
 from numba.cuda.testing import skip_on_cudasim, skip_if_external_memmgr
 from numba.cuda.tests.support import linux_only, override_config
 from unittest.mock import call, patch
@@ -13,7 +13,7 @@ import cupy as cp
 
 
 @skip_on_cudasim("CUDA Array Interface is not supported in the simulator")
-class TestCudaArrayInterface(CUDATestCase):
+class TestCudaArrayInterface(DeprecatedDeviceArrayApiTest):
     def assertPointersEqual(self, a, b):
         self.assertEqual(
             a.device_ctypes_pointer.value, b.device_ctypes_pointer.value
@@ -228,7 +228,7 @@ class TestCudaArrayInterface(CUDATestCase):
 
     def test_zero_size_array(self):
         # for #4175
-        c_arr = cp.asarray(0)
+        c_arr = cuda.device_array(0)
         self.assertEqual(c_arr.__cuda_array_interface__["data"][0], 0)
 
         @cuda.jit

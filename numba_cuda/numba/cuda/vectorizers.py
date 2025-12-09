@@ -10,6 +10,8 @@ from numba.cuda.deviceufunc import (
     GUFuncCallSteps,
 )
 from numba.cuda import _api
+import warnings
+from numba.cuda.cudadrv.devicearray import DeprecatedDeviceArrayApiWarning
 
 
 class CUDAUFuncDispatcher(object):
@@ -55,7 +57,7 @@ class CUDAUFuncDispatcher(object):
             if cuda.cudadrv.devicearray.is_cuda_ndarray(arg):
                 mem = arg
             else:
-                mem = cuda.to_device(arg, stream)
+                mem = cuda._api._to_device(arg, stream)
                 # do reduction
             out = self.__reduce(mem, gpu_mems, stream)
             # use a small buffer to store the result element
@@ -67,7 +69,9 @@ class CUDAUFuncDispatcher(object):
     def __reduce(self, mem, gpu_mems, stream):
         n = mem.shape[0]
         if n % 2 != 0:  # odd?
-            fatcut, thincut = mem.split(n - 1)
+            with warnings.catch_warnings():
+                warnings.filterwarnings("ignore", category=DeprecatedDeviceArrayApiWarning)
+                fatcut, thincut = mem.split(n - 1)
             # prevent freeing during async mode
             gpu_mems.append(fatcut)
             gpu_mems.append(thincut)
@@ -76,7 +80,9 @@ class CUDAUFuncDispatcher(object):
             gpu_mems.append(out)
             return self(out, thincut, out=out, stream=stream)
         else:  # even?
-            left, right = mem.split(n // 2)
+            with warnings.catch_warnings():
+                warnings.filterwarnings("ignore", category=DeprecatedDeviceArrayApiWarning)
+                left, right = mem.split(n // 2)
             # prevent freeing during async mode
             gpu_mems.append(left)
             gpu_mems.append(right)
@@ -173,7 +179,7 @@ class CUDAUFuncMechanism(UFuncMechanism):
         # When we have a Numba device array, we can simply return it.
         if cuda.cudadrv.devicearray.is_cuda_ndarray(obj):
             return obj
-        return cuda.as_cuda_array(obj)
+        return _api._as_cuda_array(obj)
 
     def to_device(self, hostary, stream):
         return _api._to_device(hostary, stream=stream)

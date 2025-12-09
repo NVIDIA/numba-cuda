@@ -9,6 +9,7 @@ from numba.cuda.testing import (
     skip_on_cudasim,
     skip_under_cuda_memcheck,
     CUDATestCase,
+    DeprecatedDeviceArrayApiTest,
 )
 import unittest
 import cupy as cp
@@ -38,7 +39,7 @@ def check_concurrent_compiling():
 
 @skip_under_cuda_memcheck("Hangs cuda-memcheck")
 @skip_on_cudasim("disabled for cudasim")
-class TestMultiThreadCompiling(CUDATestCase):
+class TestMultiThreadCompiling(DeprecatedDeviceArrayApiTest):
     def test_concurrent_compiling(self):
         check_concurrent_compiling()
 

@@ -312,6 +312,9 @@ class DeviceNDArrayBase(_devicearray.DeviceArray):
         If the array cannot be equally divided, the last section will be
         smaller.
         """
+        return self._split(section, stream)
+
+    def _split(self, section, stream=0):
         stream = self._default_stream(stream)
         if self.ndim != 1:
             raise ValueError("only support 1d array")
