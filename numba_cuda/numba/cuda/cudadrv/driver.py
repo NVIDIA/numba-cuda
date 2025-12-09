@@ -2182,9 +2182,7 @@ def event_elapsed_time(evtstart, evtend):
     return driver.cuEventElapsedTime(evtstart.handle.value, evtend.handle.value)
 
 
-class Module(metaclass=ABCMeta):
-    """Abstract base class for modules"""
-
+class CudaPythonModule:
     def __init__(
         self,
         context,
@@ -2208,14 +2206,6 @@ class Module(metaclass=ABCMeta):
     def unload(self):
         """Unload this module from the context"""
         self.context.unload_module(self)
-
-    @abstractmethod
-    def get_function(self, name):
-        """Returns a Function object encapsulating the named function"""
-
-    @abstractmethod
-    def get_global_symbol(self, name):
-        """Return a MemoryPointer referring to the named symbol"""
 
     def setup(self):
         """Call the setup functions for the module"""
@@ -2246,15 +2236,18 @@ class Module(metaclass=ABCMeta):
             self.handle,
         )
 
-
-class CudaPythonModule(Module):
     def get_function(self, name):
+        """Returns a Function object encapsulating the named function"""
         kernel = self.object_code.get_kernel(name)
         return Function(weakref.proxy(self), kernel, name)
 
     def get_global_symbol(self, name):
+        """Return a MemoryPointer referring to the named symbol"""
         ptr, size = driver.cuLibraryGetGlobal(self.handle, name.encode("utf8"))
         return MemoryPointer(self.context, ptr, size), size
+
+
+Module = CudaPythonModule
 
 
 class FuncAttr(NamedTuple):
