@@ -1241,7 +1241,6 @@ class Scope(EqualityCheckMixin):
     """
 
     def __init__(self, parent, loc):
-        assert parent is None or isinstance(parent, Scope)
         if parent is not None:
             assert isinstance(parent, scope_types)
         assert isinstance(loc, loc_types)
