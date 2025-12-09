@@ -1386,9 +1386,6 @@ class Context(object):
 def load_module_image(
     context, object_code, setup_callbacks=None, teardown_callbacks=None
 ):
-    """
-    image must be a pointer
-    """
     return CudaPythonModule(
         weakref.proxy(context),
         object_code,
@@ -2278,6 +2275,8 @@ class CudaPythonFunction:
     blockdim = 1, 1, 1
     stream = 0
     sharedmem = 0
+
+    __slots__ = "module", "kernel", "handle", "name", "attrs"
 
     def __init__(self, module, kernel, name):
         self.module = module
