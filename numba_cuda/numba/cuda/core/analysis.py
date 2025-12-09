@@ -43,8 +43,11 @@ def compute_use_defs(blocks):
                     rhs_set = set(var.name for var in stmt.value.list_vars())
                 elif isinstance(stmt.value, ir.var_types):
                     rhs_set = set([stmt.value.name])
-                elif isinstance(
-                    stmt.value, (ir.Arg, ir.Const, ir.Global, ir.FreeVar)
+                elif (
+                    isinstance(stmt.value, ir.arg_types)
+                    or isinstance(stmt.value, ir.const_types)
+                    or isinstance(stmt.value, ir.global_types)
+                    or isinstance(stmt.value, ir.freevar_types)
                 ):
                     rhs_set = ()
                 else:
