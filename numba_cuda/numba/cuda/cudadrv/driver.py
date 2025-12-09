@@ -814,13 +814,14 @@ class HostOnlyCUDAMemoryManager(BaseCUDAMemoryManager):
         alloc_key = pointer
 
         finalizer = _hostalloc_finalizer(self, pointer, alloc_key, size, mapped)
+        ctx = weakref.proxy(self.context)
 
         if mapped:
-            mem = MappedMemory(pointer, size, finalizer=finalizer)
+            mem = MappedMemory(ctx, pointer, size, finalizer=finalizer)
             self.allocations[alloc_key] = mem
             return mem.own()
         else:
-            return PinnedMemory(pointer, size, finalizer=finalizer)
+            return PinnedMemory(ctx, pointer, size, finalizer=finalizer)
 
     def mempin(self, owner, pointer, size, mapped=False):
         """Implements the pinning of host memory.
@@ -847,13 +848,18 @@ class HostOnlyCUDAMemoryManager(BaseCUDAMemoryManager):
             allocator()
 
         finalizer = _pin_finalizer(self, pointer, alloc_key, mapped)
+        ctx = weakref.proxy(self.context)
 
         if mapped:
-            mem = MappedMemory(pointer, size, owner=owner, finalizer=finalizer)
+            mem = MappedMemory(
+                ctx, pointer, size, owner=owner, finalizer=finalizer
+            )
             self.allocations[alloc_key] = mem
             return mem.own()
         else:
-            return PinnedMemory(pointer, size, owner=owner, finalizer=finalizer)
+            return PinnedMemory(
+                ctx, pointer, size, owner=owner, finalizer=finalizer
+            )
 
     def memallocmanaged(self, size, attach_global):
         def allocator():
@@ -871,7 +877,8 @@ class HostOnlyCUDAMemoryManager(BaseCUDAMemoryManager):
         alloc_key = ptr
 
         finalizer = _alloc_finalizer(self, ptr, alloc_key, size)
-        mem = ManagedMemory(ptr, size, finalizer=finalizer)
+        ctx = weakref.proxy(self.context)
+        mem = ManagedMemory(ctx, ptr, size, finalizer=finalizer)
         self.allocations[alloc_key] = mem
         return mem.own()
 
@@ -934,7 +941,8 @@ class NumbaCUDAMemoryManager(GetIpcHandleMixin, HostOnlyCUDAMemoryManager):
         alloc_key = ptr
 
         finalizer = _alloc_finalizer(self, ptr, alloc_key, size)
-        mem = AutoFreePointer(ptr, size, finalizer=finalizer)
+        ctx = weakref.proxy(self.context)
+        mem = AutoFreePointer(ctx, ptr, size, finalizer=finalizer)
         self.allocations[alloc_key] = mem
         return mem.own()
 
@@ -1265,7 +1273,9 @@ class Context(object):
         dptr = driver.cuIpcOpenMemHandle(handle, flags)
 
         # wrap it
-        return MemoryPointer(pointer=dptr, size=size)
+        return MemoryPointer(
+            context=weakref.proxy(self), pointer=dptr, size=size
+        )
 
     def enable_peer_access(self, peer_context, flags=0):
         """Enable peer access between the current context and the peer context"""
@@ -1305,19 +1315,19 @@ class Context(object):
 
     def get_default_stream(self):
         handle = drvapi.cu_stream(int(binding.CUstream(CU_STREAM_DEFAULT)))
-        return Stream(weakref.proxy(self), handle, None)
+        return Stream(handle)
 
     def get_legacy_default_stream(self):
         handle = drvapi.cu_stream(
             int(binding.CUstream(binding.CU_STREAM_LEGACY))
         )
-        return Stream(weakref.proxy(self), handle, None)
+        return Stream(handle)
 
     def get_per_thread_default_stream(self):
         handle = drvapi.cu_stream(
             int(binding.CUstream(binding.CU_STREAM_PER_THREAD))
         )
-        return Stream(weakref.proxy(self), handle, None)
+        return Stream(handle)
 
     def create_stream(self):
         # The default stream creation flag, specifying that the created
@@ -1327,16 +1337,14 @@ class Context(object):
         flags = binding.CUstream_flags.CU_STREAM_DEFAULT.value
         handle = drvapi.cu_stream(int(driver.cuStreamCreate(flags)))
         return Stream(
-            weakref.proxy(self),
-            handle,
-            _stream_finalizer(self.deallocations, handle),
+            handle, finalizer=_stream_finalizer(self.deallocations, handle)
         )
 
     def create_external_stream(self, ptr):
         if not isinstance(ptr, int):
             raise TypeError("ptr for external stream must be an int")
         handle = drvapi.cu_stream(int(binding.CUstream(ptr)))
-        return Stream(weakref.proxy(self), handle, None, external=True)
+        return Stream(handle, external=True)
 
     def create_event(self, timing=True):
         flags = 0
@@ -1344,9 +1352,7 @@ class Context(object):
             flags |= enums.CU_EVENT_DISABLE_TIMING
         handle = drvapi.cu_event(int(driver.cuEventCreate(flags)))
         return Event(
-            weakref.proxy(self),
-            handle,
-            finalizer=_event_finalizer(self.deallocations, handle),
+            handle, finalizer=_event_finalizer(self.deallocations, handle)
         )
 
     def synchronize(self):
@@ -1359,7 +1365,7 @@ class Context(object):
                 yield
 
     def __repr__(self):
-        return "<CUDA context %s of device %d>" % (self.handle, self.device.id)
+        return f"<CUDA context {self.handle} of device {self.device.id:d}>"
 
     def __eq__(self, other):
         if isinstance(other, Context):
@@ -1755,7 +1761,7 @@ class IpcHandle(object):
         )
 
 
-class MemoryPointer:
+class MemoryPointer(object):
     """A memory pointer that owns a buffer, with an optional finalizer. Memory
     pointers provide reference counting, and instances are initialized with a
     reference count of 1.
@@ -1771,6 +1777,8 @@ class MemoryPointer:
     tie the buffer lifetime to the reference count, so that the buffer is freed
     when there are no more references.
 
+    :param context: The context in which the pointer was allocated.
+    :type context: Context
     :param pointer: The address of the buffer.
     :type pointer: ctypes.c_void_p
     :param size: The size of the allocation in bytes.
@@ -1787,10 +1795,11 @@ class MemoryPointer:
 
     __cuda_memory__ = True
 
-    def __init__(self, pointer, size, owner=None, finalizer=None):
+    def __init__(self, context, pointer, size, owner=None, finalizer=None):
         if isinstance(pointer, ctypes.c_void_p):
             pointer = binding.CUdeviceptr(pointer.value)
 
+        self.context = context
         self.device_pointer = pointer
         self.size = size
         self._cuda_memsize_ = size
@@ -1846,7 +1855,7 @@ class MemoryPointer:
             pointer = binding.CUdeviceptr()
             ctypes_ptr = drvapi.cu_device_ptr.from_address(pointer.getPtr())
             ctypes_ptr.value = base
-            view = MemoryPointer(pointer, size, owner=self.owner)
+            view = MemoryPointer(self.context, pointer, size, owner=self.owner)
 
         if isinstance(self.owner, (MemoryPointer, OwnedPointer)):
             # Owned by a numba-managed memory segment, take an owned reference
@@ -1875,7 +1884,7 @@ class AutoFreePointer(MemoryPointer):
 
     def __init__(self, *args, **kwargs):
         super(AutoFreePointer, self).__init__(*args, **kwargs)
-        # Release the self reference to the buffer, so that the finalizer
+        # Releease the self reference to the buffer, so that the finalizer
         # is invoked if all the derived pointers are gone.
         self.refct -= 1
 
@@ -1902,7 +1911,7 @@ class MappedMemory(AutoFreePointer):
 
     __cuda_memory__ = True
 
-    def __init__(self, pointer, size, owner=None, finalizer=None):
+    def __init__(self, context, pointer, size, owner=None, finalizer=None):
         self.owned = owner
         self.host_pointer = pointer
 
@@ -1910,7 +1919,9 @@ class MappedMemory(AutoFreePointer):
         self._bufptr_ = self.host_pointer
 
         self.device_pointer = devptr
-        super(MappedMemory, self).__init__(devptr, size, finalizer=finalizer)
+        super(MappedMemory, self).__init__(
+            context, devptr, size, finalizer=finalizer
+        )
         self.handle = self.host_pointer
 
         # For buffer interface
@@ -1939,7 +1950,8 @@ class PinnedMemory(mviewbuf.MemAlloc):
     :type finalizer: function
     """
 
-    def __init__(self, pointer, size, owner=None, finalizer=None):
+    def __init__(self, context, pointer, size, owner=None, finalizer=None):
+        self.context = context
         self.owned = owner
         self.size = size
         self.host_pointer = pointer
@@ -1979,10 +1991,10 @@ class ManagedMemory(AutoFreePointer):
 
     __cuda_memory__ = True
 
-    def __init__(self, pointer, size, owner=None, finalizer=None):
+    def __init__(self, context, pointer, size, owner=None, finalizer=None):
         self.owned = owner
         devptr = pointer
-        super().__init__(devptr, size, finalizer=finalizer)
+        super().__init__(context, devptr, size, finalizer=finalizer)
 
         # For buffer interface
         self._buflen_ = self.size
@@ -2034,9 +2046,8 @@ class ManagedOwnedPointer(OwnedPointer, mviewbuf.MemAlloc):
     pass
 
 
-class Stream(object):
-    def __init__(self, context, handle, finalizer, external=False):
-        self.context = context
+class Stream:
+    def __init__(self, handle, finalizer=None, external=False):
         self.handle = handle
         self.external = external
         if finalizer is not None:
@@ -2053,18 +2064,18 @@ class Stream(object):
 
     def __repr__(self):
         default_streams = {
-            drvapi.CU_STREAM_DEFAULT: "<Default CUDA stream on %s>",
-            drvapi.CU_STREAM_LEGACY: "<Legacy default CUDA stream on %s>",
-            drvapi.CU_STREAM_PER_THREAD: "<Per-thread default CUDA stream on %s>",
+            drvapi.CU_STREAM_DEFAULT: "<Default CUDA stream>",
+            drvapi.CU_STREAM_LEGACY: "<Legacy default CUDA stream>",
+            drvapi.CU_STREAM_PER_THREAD: "<Per-thread default CUDA stream>",
         }
         ptr = self.handle.value or drvapi.CU_STREAM_DEFAULT
 
         if ptr in default_streams:
-            return default_streams[ptr] % self.context
+            return default_streams[ptr]
         elif self.external:
-            return "<External CUDA stream %d on %s>" % (ptr, self.context)
+            return f"<External CUDA stream {ptr:d}>"
         else:
-            return "<CUDA stream %d on %s>" % (ptr, self.context)
+            return f"<CUDA stream {ptr:d}>"
 
     def synchronize(self):
         """
@@ -2166,9 +2177,8 @@ class Stream(object):
         return future
 
 
-class Event(object):
-    def __init__(self, context, handle, finalizer=None):
-        self.context = context
+class Event:
+    def __init__(self, handle, finalizer=None):
         self.handle = handle
         if finalizer is not None:
             weakref.finalize(self, finalizer)
@@ -2308,7 +2318,7 @@ class CtypesModule(Module):
         driver.cuModuleGetGlobal(
             byref(ptr), byref(size), self.handle, name.encode("utf8")
         )
-        return MemoryPointer(ptr, size), size.value
+        return MemoryPointer(self.context, ptr, size), size.value
 
 
 class CudaPythonModule(Module):
@@ -2318,7 +2328,7 @@ class CudaPythonModule(Module):
 
     def get_global_symbol(self, name):
         ptr, size = driver.cuModuleGetGlobal(self.handle, name.encode("utf8"))
-        return MemoryPointer(ptr, size), size
+        return MemoryPointer(self.context, ptr, size), size
 
 
 FuncAttr = namedtuple(
@@ -2399,7 +2409,7 @@ class CudaPythonFunction(Function):
         self, prefer_equal=False, prefer_cache=False, prefer_shared=False
     ):
         prefer_equal = prefer_equal or (prefer_cache and prefer_shared)
-        attr = binding.CUfunction_attribute
+        attr = binding.CUfunc_cache
         if prefer_equal:
             flag = attr.CU_FUNC_CACHE_PREFER_EQUAL
         elif prefer_cache:

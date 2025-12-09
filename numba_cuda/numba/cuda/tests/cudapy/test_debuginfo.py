@@ -6,7 +6,9 @@ from numba.cuda.tests.support import override_config, captured_stdout
 from numba.cuda.testing import skip_on_cudasim
 from numba import cuda
 from numba.cuda import types
+from numba.cuda.np import numpy_support
 from numba.cuda.testing import CUDATestCase
+from numba.cuda.core import config
 from textwrap import dedent
 import math
 import itertools
@@ -403,6 +405,9 @@ class TestCudaDebugInfo(CUDATestCase):
         match = re.compile(pat).search(llvm_ir)
         self.assertIsNone(match, msg=llvm_ir)
 
+    @unittest.skipIf(
+        config.CUDA_DEBUG_POLY, "Uses old union format, not variant_part"
+    )
     def test_union_poly_types(self):
         sig = (types.int32, types.int32)
 
@@ -459,6 +464,46 @@ class TestCudaDebugInfo(CUDATestCase):
             print(results.copy_to_host())
         expected = "[1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0]"
         self.assertIn(expected, out.getvalue())
+
+    @unittest.skipUnless(config.CUDA_DEBUG_POLY, "CUDA_DEBUG_POLY not enabled")
+    def test_poly_variant_part(self):
+        """Test polymorphic variables with DW_TAG_variant_part.
+
+        This test verifies that when CUDA_DEBUG_POLY is enabled,
+        polymorphic variables generate proper DWARF5 variant_part
+        debug information with discriminator and variant members.
+        """
+        # Typed constant: i8 0, i8 1, etc. | Node reference: !123, !456
+        if config.CUDA_DEBUG_POLY_USE_TYPED_CONST:
+            extradata_pattern = "i8 {{[0-9]+}}"
+        else:
+            extradata_pattern = "{{![0-9]+}}"
+
+        @cuda.jit("void()", debug=True, opt=False)
+        def f():
+            foo = 100  # noqa: F841
+            foo = 3.14  # noqa: F841
+            foo = True  # noqa: F841
+            foo = np.int32(42)  # noqa: F841
+
+        llvm_ir = f.inspect_llvm()[tuple()]
+
+        # Build FileCheck pattern dynamically based on config
+        # Capture node IDs and verify the hierarchical structure
+        check_pattern = """
+            CHECK-DAG: !DILocalVariable({{.*}}name: "foo"{{.*}}type: [[WRAPPER:![0-9]+]]
+            CHECK-DAG: [[WRAPPER]] = !DICompositeType({{.*}}elements: [[ELEMENTS:![0-9]+]]{{.*}}name: "variant_wrapper_struct"{{.*}}size: 128{{.*}}tag: DW_TAG_structure_type)
+            CHECK-DAG: [[ELEMENTS]] = !{ [[DISC:![0-9]+]], [[VPART:![0-9]+]] }
+            CHECK-DAG: [[DISC]] = !DIDerivedType({{.*}}name: "discriminator-{{[0-9]+}}"{{.*}}size: 8{{.*}}tag: DW_TAG_member)
+            CHECK-DAG: [[VPART]] = !DICompositeType({{.*}}discriminator: [[DISC]]{{.*}}elements: [[VMEMBERS:![0-9]+]]{{.*}}tag: DW_TAG_variant_part)
+            CHECK-DAG: [[VMEMBERS]] = !{ [[VM1:![0-9]+]], [[VM2:![0-9]+]], [[VM3:![0-9]+]], [[VM4:![0-9]+]] }
+            CHECK-DAG: [[VM1]] = !DIDerivedType({{.*}}extraData: EXTRADATA{{.*}}name: "_bool"{{.*}}offset: 8{{.*}}tag: DW_TAG_member)
+            CHECK-DAG: [[VM2]] = !DIDerivedType({{.*}}extraData: EXTRADATA{{.*}}name: "_float64"{{.*}}offset: 64{{.*}}tag: DW_TAG_member)
+            CHECK-DAG: [[VM3]] = !DIDerivedType({{.*}}extraData: EXTRADATA{{.*}}name: "_int32"{{.*}}offset: 32{{.*}}tag: DW_TAG_member)
+            CHECK-DAG: [[VM4]] = !DIDerivedType({{.*}}extraData: EXTRADATA{{.*}}name: "_int64"{{.*}}offset: 64{{.*}}tag: DW_TAG_member)
+        """.replace("EXTRADATA", extradata_pattern)
+
+        self.assertFileCheckMatches(llvm_ir, check_pattern)
 
     def test_DW_LANG(self):
         @cuda.jit(debug=True, opt=False)
@@ -839,6 +884,94 @@ class TestCudaDebugInfo(CUDATestCase):
             CHECK-NOT: .section{{.+}}.debug
         """,
         )
+
+    # shared_arr -> composite -> elements[4] (data field at index 4) -> pointer with dwarfAddressSpace: 8
+    # local_arr -> composite -> elements[4] (data field at index 4) -> pointer without dwarfAddressSpace: 8
+    address_class_filechecks = r"""
+        CHECK-DAG: [[SHARED_VAR:![0-9]+]] = !DILocalVariable({{.*}}name: "shared_arr"{{.*}}type: [[SHARED_COMPOSITE:![0-9]+]]
+        CHECK-DAG: [[SHARED_COMPOSITE]] = {{.*}}!DICompositeType(elements: [[SHARED_ELEMENTS:![0-9]+]]
+        CHECK-DAG: [[SHARED_ELEMENTS]] = !{{{.*}}, {{.*}}, {{.*}}, {{.*}}, [[SHARED_DATA:![0-9]+]], {{.*}}, {{.*}}}
+        CHECK-DAG: [[SHARED_DATA]] = !DIDerivedType(baseType: [[SHARED_PTR:![0-9]+]], name: "data"
+        CHECK-DAG: [[SHARED_PTR]] = !DIDerivedType({{.*}}dwarfAddressSpace: 8{{.*}}tag: DW_TAG_pointer_type
+
+        CHECK-DAG: [[LOCAL_VAR:![0-9]+]] = !DILocalVariable({{.*}}name: "local_arr"{{.*}}type: [[LOCAL_COMPOSITE:![0-9]+]]
+        CHECK-DAG: [[LOCAL_COMPOSITE]] = {{.*}}!DICompositeType(elements: [[LOCAL_ELEMENTS:![0-9]+]]
+        CHECK-DAG: [[LOCAL_ELEMENTS]] = !{{{.*}}, {{.*}}, {{.*}}, {{.*}}, [[LOCAL_DATA:![0-9]+]], {{.*}}, {{.*}}}
+        CHECK-DAG: [[LOCAL_DATA]] = !DIDerivedType(baseType: [[LOCAL_PTR:![0-9]+]], name: "data"
+        CHECK-DAG: [[LOCAL_PTR]] = !DIDerivedType(baseType: {{.*}}tag: DW_TAG_pointer_type
+        CHECK-NOT: [[LOCAL_PTR]]{{.*}}dwarfAddressSpace: 8
+    """
+
+    def _test_shared_memory_address_class(self, dtype):
+        """Test that shared memory arrays have correct DWARF address class.
+
+        Shared memory pointers should have addressClass: 8 (DW_AT_address_class
+        for CUDA shared memory) in their debug metadata, while regular local
+        arrays should not have this annotation.
+        """
+        sig = (numpy_support.from_dtype(dtype),)
+
+        @cuda.jit(sig, debug=True, opt=False)
+        def kernel_with_shared(data):
+            shared_arr = cuda.shared.array(32, dtype=dtype)
+            local_arr = cuda.local.array(32, dtype=dtype)
+            idx = cuda.grid(1)
+            if idx < 32:
+                shared_arr[idx] = data + idx
+                local_arr[idx] = data * 2 + idx
+            cuda.syncthreads()
+            if idx == 0:
+                result = dtype(0)
+                for i in range(32):
+                    result += shared_arr[i] + local_arr[i]
+
+        llvm_ir = kernel_with_shared.inspect_llvm(sig)
+
+        self.assertFileCheckMatches(llvm_ir, self.address_class_filechecks)
+
+    def test_shared_memory_address_class_int32(self):
+        self._test_shared_memory_address_class(np.int32)
+
+    def test_shared_memory_address_class_complex64(self):
+        self._test_shared_memory_address_class(np.complex64)
+
+    def test_shared_memory_address_class_boolean(self):
+        self._test_shared_memory_address_class(np.bool)
+
+    def test_shared_memory_address_class_float16(self):
+        self._test_shared_memory_address_class(np.float16)
+
+    def test_shared_memory_address_class_record(self):
+        dtype = np.dtype(
+            [
+                ("a", np.int32),
+                ("b", np.float32),
+            ]
+        )
+        sig = (numpy_support.from_dtype(dtype),)
+
+        @cuda.jit(sig, debug=True, opt=False)
+        def kernel_with_shared(data):
+            shared_arr = cuda.shared.array(32, dtype=dtype)
+            local_arr = cuda.local.array(32, dtype=dtype)
+            result = cuda.local.array(1, dtype=dtype)
+            idx = cuda.grid(1)
+            if idx < 32:
+                shared_arr[idx].a = data.a + idx
+                local_arr[idx].a = data.a * 2 + idx
+                shared_arr[idx].b = data.b + idx
+                local_arr[idx].b = data.b * 2 + idx
+            cuda.syncthreads()
+            if idx == 0:
+                result[0].a = 0
+                result[0].b = 0.0
+                for i in range(32):
+                    result[0].a += shared_arr[i].a + local_arr[i].a
+                    result[0].b += shared_arr[i].b + local_arr[i].b
+
+        llvm_ir = kernel_with_shared.inspect_llvm(sig)
+
+        self.assertFileCheckMatches(llvm_ir, self.address_class_filechecks)
 
 
 if __name__ == "__main__":

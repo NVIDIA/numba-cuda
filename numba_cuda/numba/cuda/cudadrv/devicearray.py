@@ -27,13 +27,6 @@ from numba.cuda.api_util import prepare_shape_strides_dtype
 from numba.cuda.core.errors import NumbaPerformanceWarning
 from warnings import warn
 
-try:
-    lru_cache = getattr(functools, "lru_cache")(None)
-except AttributeError:
-    # Python 3.1 or lower
-    def lru_cache(func):
-        return func
-
 
 def is_cuda_ndarray(obj):
     "Check if an object is a CUDA ndarray"
@@ -115,7 +108,9 @@ class DeviceNDArrayBase(_devicearray.DeviceArray):
         else:
             # Make NULL pointer for empty allocation
             null = _driver.binding.CUdeviceptr(0)
-            gpu_data = _driver.MemoryPointer(pointer=null, size=0)
+            gpu_data = _driver.MemoryPointer(
+                context=devices.get_context(), pointer=null, size=0
+            )
             self.alloc_size = 0
 
         self.gpu_data = gpu_data
@@ -185,7 +180,8 @@ class DeviceNDArrayBase(_devicearray.DeviceArray):
         # of which will be 0, will not match those hardcoded in for 'C' or 'F'
         # layouts.
 
-        broadcast = 0 in self.strides
+        broadcast = 0 in self.strides and (self.size != 0)
+
         if self.flags["C_CONTIGUOUS"] and not broadcast:
             layout = "C"
         elif self.flags["F_CONTIGUOUS"] and not broadcast:
@@ -510,7 +506,7 @@ class DeviceRecord(DeviceNDArrayBase):
             stream.synchronize()
 
 
-@lru_cache
+@functools.lru_cache
 def _assign_kernel(ndim):
     """
     A separate method so we don't need to compile code every assignment (!).
