@@ -1749,8 +1749,9 @@ class MemoryPointer(object):
     def memset(self, byte, count=None, stream=0):
         count = self.size if count is None else count
         if stream:
-            handle = stream.handle.value
-            driver.cuMemsetD8Async(self.device_pointer, byte, count, handle)
+            driver.cuMemsetD8Async(
+                self.device_pointer, byte, count, stream.handle
+            )
         else:
             driver.cuMemsetD8(self.device_pointer, byte, count)
 
