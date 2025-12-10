@@ -39,17 +39,6 @@ def get_ext_modules():
             "m",
         ]
 
-    ext_devicearray = Extension(
-        name="numba_cuda.numba.cuda.cext._devicearray",
-        sources=["numba_cuda/numba/cuda/cext/_devicearray.cpp"],
-        depends=[
-            "numba_cuda/numba/cuda/cext/_pymodule.h",
-            "numba_cuda/numba/cuda/cext/_devicearray.h",
-        ],
-        include_dirs=["numba_cuda/numba/cuda/cext"],
-        extra_compile_args=["-std=c++11"],
-    )
-
     install_name_tool_fixer = []
     if sys.platform == "darwin":
         install_name_tool_fixer = ["-headerpad_max_install_names"]
@@ -106,7 +95,6 @@ def get_ext_modules():
         ext_typeconv,
         ext_helperlib,
         ext_mviewbuf,
-        ext_devicearray,
     ]
 
 
