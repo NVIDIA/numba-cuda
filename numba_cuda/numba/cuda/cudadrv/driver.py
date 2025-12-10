@@ -33,6 +33,9 @@ from ctypes import (
     c_int,
     byref,
     c_size_t,
+    c_char,
+    c_char_p,
+    addressof,
     c_void_p,
     c_uint8,
 )
@@ -2590,6 +2593,150 @@ class _Linker(_LinkerBase):
         self.close()
         self._complete = True
         return result
+
+
+class CtypesLinker(_LinkerBase):
+    """
+    Links for current device if no CC given
+    """
+
+    def __init__(self, max_registers=0, lineinfo=False, cc=None):
+        super().__init__(max_registers, lineinfo, cc)
+
+        logsz = config.CUDA_LOG_SIZE
+        linkerinfo = (c_char * logsz)()
+        linkererrors = (c_char * logsz)()
+
+        options = {
+            enums.CU_JIT_INFO_LOG_BUFFER: addressof(linkerinfo),
+            enums.CU_JIT_INFO_LOG_BUFFER_SIZE_BYTES: c_void_p(logsz),
+            enums.CU_JIT_ERROR_LOG_BUFFER: addressof(linkererrors),
+            enums.CU_JIT_ERROR_LOG_BUFFER_SIZE_BYTES: c_void_p(logsz),
+            enums.CU_JIT_LOG_VERBOSE: c_void_p(1),
+        }
+        if max_registers:
+            options[enums.CU_JIT_MAX_REGISTERS] = c_void_p(max_registers)
+        if lineinfo:
+            options[enums.CU_JIT_GENERATE_LINE_INFO] = c_void_p(1)
+
+        self.cc = cc
+        if cc is None:
+            # No option value is needed, but we need something as a placeholder
+            options[enums.CU_JIT_TARGET_FROM_CUCONTEXT] = 1
+        else:
+            cc_val = cc[0] * 10 + cc[1]
+            options[enums.CU_JIT_TARGET] = c_void_p(cc_val)
+
+        raw_keys = list(options.keys())
+        raw_values = list(options.values())
+
+        option_keys = (drvapi.cu_jit_option * len(raw_keys))(*raw_keys)
+        option_vals = (c_void_p * len(raw_values))(*raw_values)
+
+        self.handle = handle = drvapi.cu_link_state()
+        driver.cuLinkCreate(
+            len(raw_keys), option_keys, option_vals, byref(self.handle)
+        )
+
+        weakref.finalize(self, driver.cuLinkDestroy, handle)
+
+        self.linker_info_buf = linkerinfo
+        self.linker_errors_buf = linkererrors
+
+        self._keep_alive = [linkerinfo, linkererrors, option_keys, option_vals]
+
+    @property
+    def info_log(self):
+        return self.linker_info_buf.value.decode("utf8")
+
+    @property
+    def error_log(self):
+        return self.linker_errors_buf.value.decode("utf8")
+
+    def add_cubin(self, cubin, name="<unnamed-cubin>"):
+        return self._add_data(enums.CU_JIT_INPUT_CUBIN, cubin, name)
+
+    def add_ptx(self, ptx, name="<unnamed-ptx>"):
+        return self._add_data(enums.CU_JIT_INPUT_PTX, ptx, name)
+
+    def add_object(self, object_, name="<unnamed-object>"):
+        return self._add_data(enums.CU_JIT_INPUT_OBJECT, object_, name)
+
+    def add_fatbin(self, fatbin, name="<unnamed-fatbin>"):
+        return self._add_data(enums.CU_JIT_INPUT_FATBINARY, fatbin, name)
+
+    def add_library(self, library, name="<unnamed-library>"):
+        return self._add_data(enums.CU_JIT_INPUT_LIBRARY, library, name)
+
+    def _add_data(self, input_type, data, name):
+        data_buffer = c_char_p(data)
+        name_buffer = c_char_p(name.encode("utf8"))
+        self._keep_alive += [data_buffer, name_buffer]
+        try:
+            driver.cuLinkAddData(
+                self.handle,
+                input_type,
+                data_buffer,
+                len(data),
+                name_buffer,
+                0,
+                None,
+                None,
+            )
+        except CudaAPIError as e:
+            raise LinkerError("%s\n%s" % (e, self.error_log))
+
+    def add_data(self, data, kind, name=None):
+        # We pass the name as **kwargs to ensure the default name for the input
+        # type is used if none is supplied
+        kws = {}
+        if name is not None:
+            kws["name"] = name
+
+        if kind == FILE_EXTENSION_MAP["cubin"]:
+            self.add_cubin(data, **kws)
+        elif kind == FILE_EXTENSION_MAP["fatbin"]:
+            self.add_fatbin(data, **kws)
+        elif kind == FILE_EXTENSION_MAP["a"]:
+            self.add_library(data, **kws)
+        elif kind == FILE_EXTENSION_MAP["ptx"]:
+            self.add_ptx(data, **kws)
+        elif kind == FILE_EXTENSION_MAP["o"]:
+            self.add_object(data, **kws)
+        elif kind == FILE_EXTENSION_MAP["ltoir"]:
+            raise LinkerError("Ctypes linker cannot link LTO-IR")
+        else:
+            raise LinkerError(f"Don't know how to link {kind}")
+
+    def add_file(self, path, kind):
+        pathbuf = c_char_p(path.encode("utf8"))
+        self._keep_alive.append(pathbuf)
+
+        try:
+            driver.cuLinkAddFile(self.handle, kind, pathbuf, 0, None, None)
+        except CudaAPIError as e:
+            if e.code == enums.CUDA_ERROR_FILE_NOT_FOUND:
+                msg = f"{path} not found"
+            else:
+                msg = "%s\n%s" % (e, self.error_log)
+            raise LinkerError(msg)
+
+    def complete(self):
+        cubin_buf = c_void_p(0)
+        size = c_size_t(0)
+
+        try:
+            driver.cuLinkComplete(self.handle, byref(cubin_buf), byref(size))
+        except CudaAPIError as e:
+            raise LinkerError("%s\n%s" % (e, self.error_log))
+
+        size = size.value
+        assert size > 0, "linker returned a zero sized cubin"
+        del self._keep_alive[:]
+
+        # We return a copy of the cubin because it's owned by the linker
+        cubin_ptr = ctypes.cast(cubin_buf, ctypes.POINTER(ctypes.c_char))
+        return bytes(np.ctypeslib.as_array(cubin_ptr, shape=(size,)))
 
 
 # -----------------------------------------------------------------------------
