@@ -486,7 +486,7 @@ class _Kernel(serialize.ReduceMixin):
             cooperative_launch=self.cooperative,
         )
         kernel = cufunc.kernel
-        launch(driver._to_core_stream(stream), config, kernel, *kernelargs)
+        launch(stream, config, kernel, *kernelargs)
 
         if self.debug:
             driver.device_to_host(ctypes.addressof(excval), excmem, excsz)
@@ -665,7 +665,7 @@ class _LaunchConfiguration:
         self.dispatcher = dispatcher
         self.griddim = griddim
         self.blockdim = blockdim
-        self.stream = stream
+        self.stream = driver._to_core_stream(stream)
         self.sharedmem = sharedmem
 
         if (
