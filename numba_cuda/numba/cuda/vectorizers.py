@@ -70,7 +70,9 @@ class CUDAUFuncDispatcher(object):
         n = mem.shape[0]
         if n % 2 != 0:  # odd?
             with warnings.catch_warnings():
-                warnings.filterwarnings("ignore", category=DeprecatedDeviceArrayApiWarning)
+                warnings.filterwarnings(
+                    "ignore", category=DeprecatedDeviceArrayApiWarning
+                )
                 fatcut, thincut = mem.split(n - 1)
             # prevent freeing during async mode
             gpu_mems.append(fatcut)
@@ -81,7 +83,9 @@ class CUDAUFuncDispatcher(object):
             return self(out, thincut, out=out, stream=stream)
         else:  # even?
             with warnings.catch_warnings():
-                warnings.filterwarnings("ignore", category=DeprecatedDeviceArrayApiWarning)
+                warnings.filterwarnings(
+                    "ignore", category=DeprecatedDeviceArrayApiWarning
+                )
                 left, right = mem.split(n // 2)
             # prevent freeing during async mode
             gpu_mems.append(left)
@@ -112,9 +116,9 @@ class _CUDAGUFuncCallSteps(GUFuncCallSteps):
         # Producer then importing it as a Consumer, which causes a
         # synchronization on the array's stream (if it has one) by default.
         # When we have a Numba device array, we can simply return it.
-        if _api._is_cuda_array(obj):
+        if cuda.cudadrv.devicearray.is_cuda_ndarray(obj):
             return obj
-        return _api._as_cuda_array(obj)
+        return cuda.as_cuda_array(obj)
 
     def to_device(self, hostary):
         return _api._to_device(hostary, stream=self._stream)
