@@ -337,9 +337,9 @@ class Inst(EqualityCheckMixin, AbstractRHS):
         """
         A recursive helper used to implement list_vars() in subclasses.
         """
-        if isinstance(val, Var):
+        if isinstance(val, var_types):
             return [val]
-        elif isinstance(val, Inst):
+        elif isinstance(val, inst_types):
             return val.list_vars()
         elif isinstance(val, (list, tuple)):
             lst = []
@@ -568,7 +568,7 @@ class Expr(Inst):
     @classmethod
     def static_getitem(cls, value, index, index_var, loc):
         assert isinstance(value, var_types)
-        assert index_var is None or isinstance(index_var, Var)
+        assert index_var is None or isinstance(index_var, var_types)
         assert isinstance(loc, loc_types)
         op = "static_getitem"
         fn = operator.getitem
@@ -792,7 +792,7 @@ class Raise(Terminator):
     is_exit = True
 
     def __init__(self, exception, loc):
-        assert exception is None or isinstance(exception, Var)
+        assert exception is None or isinstance(exception, var_types)
         assert isinstance(loc, loc_types)
         self.exception = exception
         self.loc = loc
@@ -874,7 +874,7 @@ class TryRaise(Stmt):
     """
 
     def __init__(self, exception, loc):
-        assert exception is None or isinstance(exception, Var)
+        assert exception is None or isinstance(exception, var_types)
         assert isinstance(loc, loc_types)
         self.exception = exception
         self.loc = loc
@@ -1365,9 +1365,9 @@ class Block(EqualityCheckMixin):
         Iterate over exprs of the given *op* in this block.
         """
         for inst in self.body:
-            if isinstance(inst, Assign):
+            if isinstance(inst, assign_types):
                 expr = inst.value
-                if isinstance(expr, Expr):
+                if isinstance(expr, expr_types):
                     if op is None or expr.op == op:
                         yield expr
 
@@ -1524,8 +1524,12 @@ class FunctionIR(object):
                 if block != other_blk:
                     msg.append(("Block %s differs" % label).center(80, "-"))
                     # see if the instructions are just a permutation
-                    block_del = [x for x in block.body if isinstance(x, Del)]
-                    oth_del = [x for x in other_blk.body if isinstance(x, Del)]
+                    block_del = [
+                        x for x in block.body if isinstance(x, del_types)
+                    ]
+                    oth_del = [
+                        x for x in other_blk.body if isinstance(x, del_types)
+                    ]
                     if block_del != oth_del:
                         # this is a common issue, dels are all present, but
                         # order shuffled.
@@ -1650,7 +1654,7 @@ class FunctionIR(object):
         """
         Try to infer the constant value of a given variable.
         """
-        if isinstance(name, Var):
+        if isinstance(name, var_types):
             name = name.name
         return self._consts.infer_constant(name)
 
@@ -1662,7 +1666,7 @@ class FunctionIR(object):
         """
         lhs = value
         while True:
-            if isinstance(value, Var):
+            if isinstance(value, var_types):
                 lhs = value
                 name = value.name
             elif isinstance(value, str):
@@ -1809,43 +1813,70 @@ class UndefinedType(EqualityCheckMixin):
 UNDEFINED = UndefinedType()
 
 if HAS_NUMBA:
+    abstractrhs_types = (AbstractRHS, numba.core.ir.AbstractRHS)
+    arg_types = (Arg, numba.core.ir.Arg)
     assign_types = (Assign, numba.core.ir.Assign)
-    setitem_types = (SetItem, numba.core.ir.SetItem)
-    setattr_types = (SetAttr, numba.core.ir.SetAttr)
-    delattr_types = (DelAttr, numba.core.ir.DelAttr)
-    staticsetitem_types = (StaticSetItem, numba.core.ir.StaticSetItem)
-    delitem_types = (DelItem, numba.core.ir.DelItem)
-    print_types = (Print, numba.core.ir.Print)
-    storemap_types = (StoreMap, numba.core.ir.StoreMap)
-    jump_types = (Jump, numba.core.ir.Jump)
     branch_types = (Branch, numba.core.ir.Branch)
+    const_types = (Const, numba.core.ir.Const)
     del_types = (Del, numba.core.ir.Del)
-    return_types = (Return, numba.core.ir.Return)
+    delattr_types = (DelAttr, numba.core.ir.DelAttr)
+    delitem_types = (DelItem, numba.core.ir.DelItem)
     dynamicraise_types = (DynamicRaise, numba.core.ir.DynamicRaise)
     dynamictryraise_types = (DynamicTryRaise, numba.core.ir.DynamicTryRaise)
-    staticraise_types = (StaticRaise, numba.core.ir.StaticRaise)
-    statictryraise_types = (StaticTryRaise, numba.core.ir.StaticTryRaise)
-    popblock_types = (PopBlock, numba.core.ir.PopBlock)
-    freevar_types = (FreeVar, numba.core.ir.FreeVar)
-    arg_types = (Arg, numba.core.ir.Arg)
-    expr_types = (Expr, numba.core.ir.Expr)
-    yield_types = (Yield, numba.core.ir.Yield)
-    global_types = (Global, numba.core.ir.Global)
-    const_types = (Const, numba.core.ir.Const)
-    popblock_types = (PopBlock, numba.core.ir.PopBlock)
-    loc_types = (Loc, numba.core.ir.Loc)
-    scope_types = (Scope, numba.core.ir.Scope)
-    var_types = (Var, numba.core.ir.Var)
-    stmt_types = (Stmt, numba.core.ir.Stmt)
-    inst_types = (Inst, numba.core.ir.Inst)
-    raise_types = (Raise, numba.core.ir.Raise)
-    tryraise_types = (TryRaise, numba.core.ir.TryRaise)
     enterwith_types = (EnterWith, numba.core.ir.EnterWith)
+    expr_types = (Expr, numba.core.ir.Expr)
+    freevar_types = (FreeVar, numba.core.ir.FreeVar)
+    global_types = (Global, numba.core.ir.Global)
+    inst_types = (Inst, numba.core.ir.Inst)
+    jump_types = (Jump, numba.core.ir.Jump)
+    loc_types = (Loc, numba.core.ir.Loc)
+    popblock_types = (PopBlock, numba.core.ir.PopBlock)
+    print_types = (Print, numba.core.ir.Print)
+    raise_types = (Raise, numba.core.ir.Raise)
+    return_types = (Return, numba.core.ir.Return)
+    scope_types = (Scope, numba.core.ir.Scope)
+    setattr_types = (SetAttr, numba.core.ir.SetAttr)
+    setitem_types = (SetItem, numba.core.ir.SetItem)
+    staticraise_types = (StaticRaise, numba.core.ir.StaticRaise)
+    staticsetitem_types = (StaticSetItem, numba.core.ir.StaticSetItem)
+    statictryraise_types = (StaticTryRaise, numba.core.ir.StaticTryRaise)
+    stmt_types = (Stmt, numba.core.ir.Stmt)
+    storemap_types = (StoreMap, numba.core.ir.StoreMap)
+    tryraise_types = (TryRaise, numba.core.ir.TryRaise)
+    var_types = (Var, numba.core.ir.Var)
     with_types = (With, numba.core.ir.With)
-    abstractrhs_types = (AbstractRHS, numba.core.ir.AbstractRHS)
+    yield_types = (Yield, numba.core.ir.Yield)
 else:
-    loc_types = (Loc,)
-    scope_types = (Scope,)
-    var_types = (Var,)
-    stmt_types = (Stmt,)
     abstractrhs_types = (AbstractRHS,)
+    arg_types = (Arg,)
+    assign_types = (Assign,)
+    branch_types = (Branch,)
+    const_types = (Const,)
+    del_types = (Del,)
+    delattr_types = (DelAttr,)
+    delitem_types = (DelItem,)
+    dynamicraise_types = (DynamicRaise,)
+    dynamictryraise_types = (DynamicTryRaise,)
+    enterwith_types = (EnterWith,)
+    expr_types = (Expr,)
+    freevar_types = (FreeVar,)
+    global_types = (Global,)
+    inst_types = (Inst,)
+    jump_types = (Jump,)
+    loc_types = (Loc,)
+    popblock_types = (PopBlock,)
+    print_types = (Print,)
+    raise_types = (Raise,)
+    return_types = (Return,)
+    scope_types = (Scope,)
+    setattr_types = (SetAttr,)
+    setitem_types = (SetItem,)
+    staticraise_types = (StaticRaise,)
+    staticsetitem_types = (StaticSetItem,)
+    statictryraise_types = (StaticTryRaise,)
+    stmt_types = (Stmt,)
+    storemap_types = (StoreMap,)
+    tryraise_types = (TryRaise,)
+    var_types = (Var,)
+    with_types = (With,)
+    yield_types = (Yield,)
