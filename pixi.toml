@@ -52,15 +52,20 @@ cuda = "13"
 
 [feature.cu-13.dependencies]
 cuda-version = "13.*"
+ipython = "*"
+pyinstrument = "*"
 
 [feature.cu-13-0.dependencies]
 cuda-version = "13.0.*"
+ipython = "*"
+pyinstrument = "*"
 
 [feature.bench.dependencies]
 pytorch = ">=2.8"
 pytorch-gpu = ">=2.8"
 libtorch = ">=2.8"
 cupy = "*"
+pyinstrument = "*"
 
 [feature.test.dependencies]
 # for building cuda artifacts for testing
