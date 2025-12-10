@@ -41,8 +41,8 @@ if [[ "${1}" == "build" ]]; then
   echo "SCCACHE_CACHE_SIZE=1G" >> $GITHUB_ENV
 elif [[ "${1}" == "test" ]]; then
   TEST_CUDA_MAJOR="$(cut -d '.' -f 1 <<< ${CUDA_VER})"
+  TEST_CUDA_MINOR="$(cut -d '.' -f 2 <<< ${CUDA_VER})"
   NUMBA_CUDA_ARTIFACT_BASENAME="numba-cuda-python${PYTHON_VERSION_FORMATTED}-${HOST_PLATFORM}"
-#  TEST_CUDA_MINOR="$(cut -d '.' -f 2 <<< ${CUDA_VER})"
 #  # We don't test compute-sanitizer on CTK<12 because backporting fixes is too much effort
 #  # We only test compute-sanitizer on python 3.12 arbitrarily; we don't need to use sanitizer on the entire matrix
 #  # Only local ctk installs have compute-sanitizer; there is no wheel for it
@@ -58,6 +58,7 @@ elif [[ "${1}" == "test" ]]; then
 #    echo "SKIP_NUMBA_CUDA_TEST=${SKIP_NUMBA_CUDA_TEST}"
     echo "SANITIZER_CMD="
     echo "TEST_CUDA_MAJOR=${TEST_CUDA_MAJOR}"
+    echo "TEST_CUDA_MINOR=${TEST_CUDA_MINOR}"
   } >> $GITHUB_ENV
 fi
 
