@@ -51,7 +51,7 @@ test = [
     "pre-commit",
     "psutil",
     "cffi",
-    "pytest",
+    "pytest>=8,<9",
     "pytest-xdist",
     "pytest-benchmark",
     "filecheck",

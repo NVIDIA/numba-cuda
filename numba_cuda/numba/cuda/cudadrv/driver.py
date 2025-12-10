@@ -2362,6 +2362,10 @@ class Function(metaclass=ABCMeta):
         """Set the cache configuration for this function."""
 
     @abstractmethod
+    def set_shared_memory_carveout(self, carveout):
+        """Set the shared memory carveout percentage (-1-100)"""
+
+    @abstractmethod
     def read_func_attr(self, attrid):
         """Return the value of the attribute with given ID."""
 
@@ -2386,6 +2390,15 @@ class CtypesFunction(Function):
             flag = enums.CU_FUNC_CACHE_PREFER_NONE
         driver.cuFuncSetCacheConfig(self.handle, flag)
 
+    def set_shared_memory_carveout(self, carveout):
+        carveout = int(carveout)
+
+        if not (-1 <= carveout <= 100):
+            raise ValueError("Carveout must be between -1 and 100")
+
+        attr = enums.CU_FUNC_ATTRIBUTE_PREFERRED_SHARED_MEMORY_CARVEOUT
+        driver.cuFuncSetAttribute(self.handle, attr, carveout)
+
     def read_func_attr(self, attrid):
         retval = c_int()
         driver.cuFuncGetAttribute(byref(retval), attrid, self.handle)
@@ -2409,7 +2422,7 @@ class CudaPythonFunction(Function):
         self, prefer_equal=False, prefer_cache=False, prefer_shared=False
     ):
         prefer_equal = prefer_equal or (prefer_cache and prefer_shared)
-        attr = binding.CUfunction_attribute
+        attr = binding.CUfunc_cache
         if prefer_equal:
             flag = attr.CU_FUNC_CACHE_PREFER_EQUAL
         elif prefer_cache:
@@ -2419,6 +2432,15 @@ class CudaPythonFunction(Function):
         else:
             flag = attr.CU_FUNC_CACHE_PREFER_NONE
         driver.cuFuncSetCacheConfig(self.handle, flag)
+
+    def set_shared_memory_carveout(self, carveout):
+        carveout = int(carveout)
+
+        if not (-1 <= carveout <= 100):
+            raise ValueError("Carveout must be between -1 and 100")
+
+        attr = binding.CUfunction_attribute.CU_FUNC_ATTRIBUTE_PREFERRED_SHARED_MEMORY_CARVEOUT
+        driver.cuFuncSetAttribute(self.handle, attr, carveout)
 
     def read_func_attr(self, attrid):
         return driver.cuFuncGetAttribute(attrid, self.handle)

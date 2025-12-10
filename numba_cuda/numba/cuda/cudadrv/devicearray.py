@@ -16,7 +16,6 @@ import warnings
 
 import numpy as np
 
-from numba.cuda.cext import _devicearray
 from numba.cuda.cudadrv import devices, dummyarray
 from numba.cuda.cudadrv import driver as _driver
 from numba.cuda import types
@@ -72,7 +71,7 @@ def require_cuda_ndarray(obj):
         raise ValueError("require an cuda ndarray object")
 
 
-class DeviceNDArrayBase(_devicearray.DeviceArray):
+class DeviceNDArrayBase:
     """A on GPU NDArray representation"""
 
     __cuda_memory__ = True
@@ -177,7 +176,7 @@ class DeviceNDArrayBase(_devicearray.DeviceArray):
     def _default_stream(self, stream):
         return self.stream if not stream else stream
 
-    @property
+    @functools.cached_property
     def _numba_type_(self):
         """
         Magic attribute expected by Numba to get the numba type that
@@ -196,7 +195,6 @@ class DeviceNDArrayBase(_devicearray.DeviceArray):
         # or 'F' does not apply for broadcast arrays, because the strides, some
         # of which will be 0, will not match those hardcoded in for 'C' or 'F'
         # layouts.
-
         broadcast = 0 in self.strides and (self.size != 0)
 
         if self.flags["C_CONTIGUOUS"] and not broadcast:
