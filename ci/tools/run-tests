@@ -12,7 +12,7 @@ echo "Installing numba-cuda wheel"
 if [[ "${LOCAL_CTK}" == 1 ]]; then
   pip install "${NUMBA_CUDA_ARTIFACTS_DIR}"/*.whl "cuda-bindings==${TEST_CUDA_MAJOR}.*" --group test
 else
-  pip install $(ls "${NUMBA_CUDA_ARTIFACTS_DIR}"/*.whl)["cu${TEST_CUDA_MAJOR}"] --group test
+  pip install $(ls "${NUMBA_CUDA_ARTIFACTS_DIR}"/*.whl)["cu${TEST_CUDA_MAJOR}"] "cuda-toolkit==${TEST_CUDA_MAJOR}.${TEST_CUDA_MINOR}.*" --group test
 fi
 echo "Running numba-cuda tests"
 export NUMBA_CUDA_TEST_BIN_DIR=`pwd`/testing
