@@ -751,6 +751,7 @@ class GeneralizedUFunc(object):
         return callsteps.post_process_outputs(outputs)
 
     def _schedule(self, inputs, outs):
+        breakpoint()
         input_shapes = [a.shape for a in inputs]
         schedule = self.engine.schedule(input_shapes)
 

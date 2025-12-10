@@ -6,7 +6,6 @@ import math
 from numba import cuda
 from numba.cuda import double, void
 from numba.cuda.testing import unittest, CUDATestCase
-import cupy as cp
 
 
 RISKFREE = 0.02
@@ -128,15 +127,18 @@ class TestBlackScholes(CUDATestCase):
         # numba
         blockdim = 512, 1
         griddim = int(math.ceil(float(OPT_N) / blockdim[0])), 1
-        stream = cuda.stream()
-        d_callResult = cp.asarray(callResultNumba, stream)
-        d_putResult = cp.asarray(putResultNumba, stream)
-        d_stockPrice = cp.asarray(stockPrice, stream)
-        d_optionStrike = cp.asarray(optionStrike, stream)
-        d_optionYears = cp.asarray(optionYears, stream)
+        stream = cp.cuda.Stream()
+        nb_stream = cuda.api.external_stream(stream.ptr)
+
+        with stream:
+            d_callResult = cp.asarray(callResultNumba)
+            d_putResult = cp.asarray(putResultNumba)
+            d_stockPrice = cp.asarray(stockPrice)
+            d_optionStrike = cp.asarray(optionStrike)
+            d_optionYears = cp.asarray(optionYears)
 
         for i in range(iterations):
-            black_scholes_cuda[griddim, blockdim, stream](
+            black_scholes_cuda[griddim, blockdim, nb_stream](
                 d_callResult,
                 d_putResult,
                 d_stockPrice,
@@ -145,8 +147,11 @@ class TestBlackScholes(CUDATestCase):
                 RISKFREE,
                 VOLATILITY,
             )
-        d_callResult.get(callResultNumba, stream)
-        d_putResult.get(putResultNumba, stream)
+
+        with stream:
+            callResultNumba = d_callResult.get()
+            putResultNumba = d_putResult.get()
+
         stream.synchronize()
 
         delta = np.abs(callResultNumpy - callResultNumba)
