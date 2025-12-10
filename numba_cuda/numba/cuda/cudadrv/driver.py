@@ -2326,26 +2326,6 @@ class _Linker:
         self._object_codes = []
         self.linker = None  # need at least one program
 
-    @classmethod
-    def new(
-        cls,
-        max_registers=0,
-        lineinfo=False,
-        cc=None,
-        lto=None,
-        additional_flags=None,
-    ):
-        linker = _Linker
-
-        params = (max_registers, lineinfo, cc)
-        if linker is _Linker:
-            params = (*params, lto, additional_flags)
-        else:
-            if lto or additional_flags:
-                raise ValueError("LTO and additional flags require nvjitlink")
-
-        return linker(*params)
-
     def add_cu_file(self, path):
         cu = cached_file_read(path, how="rb")
         self.add_cu(cu, os.path.basename(path))
