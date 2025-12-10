@@ -30,28 +30,19 @@ def _get_nvrtc_version():
     return (major, minor)
 
 
-def compile(src, name, cc, ltoir=False, lineinfo=False, debug=False):
-    """
-    Compile a CUDA C/C++ source to PTX or LTOIR for a given compute capability.
-
-    :param src: The source code to compile
-    :type src: str
-    :param name: The filename of the source (for information only)
-    :type name: str
-    :param cc: A tuple ``(major, minor)`` of the compute capability
-    :type cc: tuple
-    :param ltoir: Compile into LTOIR if True, otherwise into PTX
-    :type ltoir: bool
-    :param lineinfo: Whether to include line information in the compiled code
-    :type lineinfo: bool
-    :param debug: Whether to include debug information in the compiled code
-    :type debug: bool
-    :return: The compiled PTX or LTOIR and compilation log
-    :rtype: tuple
-    """
+def _verify_cc_tuple(cc):
     version = _get_nvrtc_version()
-
     ver_str = lambda version: ".".join(str(v) for v in version)
+
+    if len(cc) == 3:
+        cc, arch = (cc[0], cc[1]), cc[2]
+
+    if arch not in ("", "a", "f"):
+        raise ValueError(
+            f"Invalid architecture suffix '{arch}' in compute capability "
+            f"{ver_str(cc)}{arch}. Expected '', 'a', or 'f'."
+        )
+
     supported_ccs = get_supported_ccs()
     try:
         found = max(filter(lambda v: v <= cc, [v for v in supported_ccs]))
@@ -64,19 +55,49 @@ def compile(src, name, cc, ltoir=False, lineinfo=False, debug=False):
         )
 
     if found != cc:
+        found = (found[0], found[1], arch)
         warnings.warn(
             f"Device compute capability {ver_str(cc)} is not supported by "
             f"NVRTC {ver_str(version)}. Using {ver_str(found)} instead."
         )
+    else:
+        found = (cc[0], cc[1], arch)
+
+    return found
+
+
+def compile(src, name, cc, ltoir=False, lineinfo=False, debug=False):
+    """
+    Compile a CUDA C/C++ source to PTX or LTOIR for a given compute capability.
+
+    :param src: The source code to compile
+    :type src: str
+    :param name: The filename of the source (for information only)
+    :type name: str
+    :param cc: A tuple ``(major, minor)`` or ``(major, minor, arch)`` of the
+        compute capability
+    :type cc: tuple
+    :param ltoir: Compile into LTOIR if True, otherwise into PTX
+    :type ltoir: bool
+    :param lineinfo: Whether to include line information in the compiled code
+    :type lineinfo: bool
+    :param debug: Whether to include debug information in the compiled code
+    :type debug: bool
+    :return: The compiled PTX or LTOIR and compilation log
+    :rtype: tuple
+    """
+    found = _verify_cc_tuple(cc)
+    version = _get_nvrtc_version()
 
     # Compilation options:
     # - Compile for the current device's compute capability.
     # - The CUDA include path is added.
     # - Relocatable Device Code (rdc) is needed to prevent device functions
     #   being optimized away.
-    major, minor = found
+    major, minor = found[0], found[1]
+    cc_arch = found[2] if len(found) == 3 else ""
 
-    arch = f"sm_{major}{minor}"
+    arch = f"sm_{major}{minor}{cc_arch}"
 
     cuda_include_dir = get_cuda_paths()["include_dir"].info
     cuda_includes = [f"{cuda_include_dir}"]
@@ -140,7 +161,7 @@ def compile(src, name, cc, ltoir=False, lineinfo=False, debug=False):
     return result, log
 
 
-def find_closest_arch(mycc):
+def find_closest_arch(cc):
     """
     Given a compute capability, return the closest compute capability supported
     by the CUDA toolkit.
@@ -150,17 +171,17 @@ def find_closest_arch(mycc):
     """
     supported_ccs = get_supported_ccs()
 
-    for i, cc in enumerate(supported_ccs):
-        if cc == mycc:
+    for i, supported_cc in enumerate(supported_ccs):
+        if supported_cc == cc:
             # Matches
-            return cc
-        elif cc > mycc:
+            return supported_cc
+        elif supported_cc > cc:
             # Exceeded
             if i == 0:
                 # CC lower than supported
                 msg = (
                     "GPU compute capability %d.%d is not supported"
-                    "(requires >=%d.%d)" % (mycc + cc)
+                    "(requires >=%d.%d)" % (cc + supported_cc)
                 )
                 raise CCSupportError(msg)
             else:
@@ -171,13 +192,13 @@ def find_closest_arch(mycc):
     return supported_ccs[-1]  # Choose the highest
 
 
-def get_arch_option(major, minor):
+def get_arch_option(major, minor, arch=""):
     """Matches with the closest architecture option"""
     if config.FORCE_CUDA_CC:
-        arch = config.FORCE_CUDA_CC
+        major, minor = config.FORCE_CUDA_CC
     else:
-        arch = find_closest_arch((major, minor))
-    return "compute_%d%d" % arch
+        major, minor = find_closest_arch((major, minor))
+    return f"compute_{major}{minor}{arch}"
 
 
 def get_lowest_supported_cc():
