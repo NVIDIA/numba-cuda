@@ -3,12 +3,7 @@
 
 from ctypes import c_int, sizeof
 
-from numba.cuda.cudadrv.driver import (
-    host_to_device,
-    device_to_host,
-    driver,
-    _to_core_stream,
-)
+from numba.cuda.cudadrv.driver import host_to_device, device_to_host, driver
 from cuda.core.experimental import (
     LaunchConfig,
     Stream as ExperimentalStream,
@@ -120,6 +115,8 @@ class TestCudaDriver(CUDATestCase):
         module.unload()
 
     def test_cuda_driver_stream_operations(self):
+        from numba.cuda.cudadrv.driver import _to_core_stream
+
         module = self.context.create_module_ptx(self.ptx)
         function = module.get_function("_Z10helloworldPi")
 
