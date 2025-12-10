@@ -141,7 +141,7 @@ class TestMatMul(CUDATestCase):
         blockspergrid = (blockspergrid_x, blockspergrid_y)
 
         fast_matmul[blockspergrid, threadsperblock](x_d, y_d, z_d)
-        z_h = z_d.copy_to_host()
+        z_h = z_d.get()
         print(z_h)
         print(x_h @ y_h)
         # magictoken.ex_run_fast_matmul.end

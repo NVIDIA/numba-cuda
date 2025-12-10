@@ -71,13 +71,14 @@ class TestCudaJitNoTypes(CUDATestCase):
         a = np.zeros(1)
         b = np.zeros(1)
 
-        stream = cp.cuda.stream()
+        stream = cp.cuda.Stream()
+        nb_stream = cuda.api.external_stream(stream.ptr)
         with stream:
             d_a = cp.asarray(a)
             d_b = cp.asarray(b)
 
-            outer[1, 1, stream](d_a, d_b)
-        
+            outer[1, 1, nb_stream](d_a, d_b)
+
             b = d_b.get()
 
         self.assertEqual(b[0], (a[0] + 1) + (2 + 1))

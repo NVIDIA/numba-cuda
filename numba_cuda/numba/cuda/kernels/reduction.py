@@ -259,7 +259,9 @@ class Reduce(object):
 
         # handle return value
         if res is not None:
-            res[:1].copy_to_device(partials[:1], stream=stream)
+            cuda._api._from_cuda_array_interface(res.__cuda_array_interface__)[
+                :1
+            ].copy_to_device(partials[:1], stream=stream)
             return
         else:
             return partials[0]

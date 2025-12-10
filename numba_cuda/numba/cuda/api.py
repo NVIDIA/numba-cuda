@@ -31,7 +31,6 @@ def from_cuda_array_interface(desc, owner=None, sync=True):
     If ``sync`` is ``True``, then the imported stream (if present) will be
     synchronized.
     """
-    assert False
     warnings.warn(
         "Constructing DeviceNDArray objects via the __cuda_array_interface__ "
         "is now deprecated. Please prefer cupy for constructing device arrays."
@@ -453,7 +452,7 @@ def mapped(*arylist, **kws):
             mapped=True,
         )
         pmlist.append(pm)
-        devary = devicearray.from_array_like(ary, gpu_data=pm, stream=stream)
+        devary = devicearray._from_array_like(ary, gpu_data=pm, stream=stream)
         devarylist.append(devary)
     try:
         if len(devarylist) == 1:

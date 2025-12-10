@@ -5,12 +5,11 @@ import numpy as np
 
 from numba import cuda, vectorize, guvectorize
 from numba.cuda.np.numpy_support import from_dtype
-from numba.cuda.testing import CUDATestCase, skip_on_cudasim
+from numba.cuda.testing import skip_on_cudasim, DeprecatedDeviceArrayApiTest
 import unittest
-import cupy as cp
 
 
-class TestCudaDateTime(CUDATestCase):
+class TestCudaDateTime(DeprecatedDeviceArrayApiTest):
     def test_basic_datetime_kernel(self):
         @cuda.jit
         def foo(start, end, delta):
@@ -81,26 +80,20 @@ class TestCudaDateTime(CUDATestCase):
     @skip_on_cudasim("no .copy_to_host() in the simulator")
     def test_datetime_view_as_int64(self):
         arr = np.arange("2005-02", "2006-02", dtype="datetime64[D]")
-        darr = cp.asarray(arr)
+        darr = cuda.to_device(arr)
         viewed = darr.view(np.int64)
         self.assertPreciseEqual(arr.view(np.int64), viewed.copy_to_host())
-        self.assertEqual(
-            viewed.__cuda_array_interface__["descr"][0],
-            darr.__cuda_array_interface__["descr"][0],
-        )
+        self.assertEqual(viewed.gpu_data, darr.gpu_data)
 
     @skip_on_cudasim("no .copy_to_host() in the simulator")
     def test_timedelta_view_as_int64(self):
         arr = np.arange("2005-02", "2006-02", dtype="datetime64[D]")
         arr = arr - (arr - 1)
         self.assertEqual(arr.dtype, np.dtype("timedelta64[D]"))
-        darr = cp.asarray(arr)
+        darr = cuda.to_device(arr)
         viewed = darr.view(np.int64)
         self.assertPreciseEqual(arr.view(np.int64), viewed.copy_to_host())
-        self.assertEqual(
-            viewed.__cuda_array_interface__["descr"][0],
-            darr.__cuda_array_interface__["descr"][0],
-        )
+        self.assertEqual(viewed.gpu_data, darr.gpu_data)
 
 
 if __name__ == "__main__":
