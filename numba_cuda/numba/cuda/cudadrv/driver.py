@@ -16,9 +16,7 @@ system to freeze in some cases.
 
 import sys
 import os
-import contextlib
 import ctypes
-import importlib
 import weakref
 import functools
 import warnings
@@ -29,10 +27,8 @@ import pathlib
 import subprocess
 import tempfile
 import re
-
 from itertools import product
 from abc import ABCMeta, abstractmethod
-from collections import deque, namedtuple
 from ctypes import (
     c_int,
     byref,
@@ -40,8 +36,11 @@ from ctypes import (
     c_void_p,
     c_uint8,
 )
-
+import contextlib
+import importlib
 import numpy as np
+from collections import namedtuple, deque
+
 
 from numba.cuda.cext import mviewbuf
 from numba.cuda.core import config
@@ -55,7 +54,12 @@ from numba.cuda.utils import cached_file_read
 from numba.cuda.cudadrv import enums, drvapi, nvrtc
 
 from cuda.bindings import driver as binding
-from cuda.core.experimental import Linker, LinkerOptions, ObjectCode
+from cuda.core.experimental import (
+    Linker,
+    LinkerOptions,
+    ObjectCode,
+)
+
 from cuda.bindings.utils import get_cuda_native_handle
 from cuda.core.experimental import (
     Stream as ExperimentalStream,
