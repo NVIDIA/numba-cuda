@@ -694,6 +694,16 @@ class _LaunchConfiguration:
             args, self.griddim, self.blockdim, self.stream, self.sharedmem
         )
 
+    def __getstate__(self):
+        state = self.__dict__.copy()
+        state["stream"] = int(state["stream"].handle)
+        return state
+
+    def __setstate__(self, state):
+        handle = state.pop("stream")
+        self.__dict__.update(state)
+        self.stream = driver._to_core_stream(handle)
+
 
 class CUDACacheImpl(CacheImpl):
     def reduce(self, kernel):
