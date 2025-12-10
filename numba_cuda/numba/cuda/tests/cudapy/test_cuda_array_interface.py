@@ -9,6 +9,7 @@ from numba.cuda.testing import unittest, CUDATestCase, ForeignArray
 from numba.cuda.testing import skip_on_cudasim, skip_if_external_memmgr
 from numba.cuda.tests.support import linux_only, override_config
 from unittest.mock import call, patch
+import cupy as cp
 
 
 @skip_on_cudasim("CUDA Array Interface is not supported in the simulator")
@@ -87,7 +88,7 @@ class TestCudaArrayInterface(CUDATestCase):
 
         # Case 1: use custom array as argument
         h_arr = np.random.random(10)
-        arr = ForeignArray(cuda.to_device(h_arr))
+        arr = ForeignArray(cp.asarray(h_arr))
         val = 6
         out = vadd(arr, val)
         np.testing.assert_array_equal(out.copy_to_host(), h_arr + val)

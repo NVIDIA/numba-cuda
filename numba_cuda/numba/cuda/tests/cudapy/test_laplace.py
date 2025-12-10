@@ -6,6 +6,7 @@ from numba import cuda
 from numba.cuda import float64, void
 from numba.cuda.testing import unittest, CUDATestCase
 from numba.cuda.core import config
+import cupy as cp
 
 # NOTE: CUDA kernel does not return any value
 
@@ -93,30 +94,32 @@ class TestCudaLaplace(CUDATestCase):
 
         error_grid = np.zeros(griddim)
 
-        stream = cuda.stream()
+        stream = cupy.cuda.stream()
 
-        dA = cuda.to_device(A, stream)  # to device and don't come back
-        dAnew = cuda.to_device(Anew, stream)  # to device and don't come back
-        derror_grid = cuda.to_device(error_grid, stream)
+        with stream:
+            dA = cp.asarray(A)  # to device and don't come back
+            dAnew = cp.asarray(Anew)  # to device and don't come back
+        
+            derror_grid = cp.asarray(error_grid)
 
-        while error > tol and iter < iter_max:
-            self.assertTrue(error_grid.dtype == np.float64)
+            while error > tol and iter < iter_max:
+                self.assertTrue(error_grid.dtype == np.float64)
 
-            jocabi_relax_core[griddim, blockdim, stream](dA, dAnew, derror_grid)
+                jocabi_relax_core[griddim, blockdim, stream](dA, dAnew, derror_grid)
 
-            derror_grid.copy_to_host(error_grid, stream=stream)
+                error_grid = derror_grid.get()
 
-            # error_grid is available on host
-            stream.synchronize()
+                # error_grid is available on host
+                stream.synchronize()
 
-            error = np.abs(error_grid).max()
+                error = np.abs(error_grid).max()
 
-            # swap dA and dAnew
-            tmp = dA
-            dA = dAnew
-            dAnew = tmp
+                # swap dA and dAnew
+                tmp = dA
+                dA = dAnew
+                dAnew = tmp
 
-            iter += 1
+                iter += 1
 
 
 if __name__ == "__main__":

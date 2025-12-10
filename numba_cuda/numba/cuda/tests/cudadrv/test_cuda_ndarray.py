@@ -5,12 +5,12 @@ import itertools
 import numpy as np
 from numba.cuda.cudadrv import devicearray
 from numba import cuda
-from numba.cuda.testing import unittest, CUDATestCase
+from numba.cuda.testing import unittest, DeprecatedDeviceArrayApiTest
 from numba.cuda.testing import skip_on_cudasim
 from numba.cuda.tests.support import IS_NUMPY_2
 
 
-class TestCudaNDArray(CUDATestCase):
+class TestCudaNDArray(DeprecatedDeviceArrayApiTest):
     def test_device_array_interface(self):
         dary = cuda.device_array(shape=100)
         devicearray.verify_cuda_ndarray_interface(dary)
@@ -496,7 +496,7 @@ class TestCudaNDArray(CUDATestCase):
         dev_array_from_host.copy_to_device(dev_array)
 
 
-class TestArrayMethod(CUDATestCase):
+class TestArrayMethod(DeprecatedDeviceArrayApiTest):
     """Tests of the __array__() method via np.array"""
 
     def test_np_array(self):
@@ -527,7 +527,7 @@ class TestArrayMethod(CUDATestCase):
         np.testing.assert_equal(dev_array.copy_to_host(), host_array)
 
 
-class TestRecarray(CUDATestCase):
+class TestRecarray(DeprecatedDeviceArrayApiTest):
     def test_recarray(self):
         # From issue #4111
         a = np.recarray(
@@ -557,7 +557,7 @@ class TestRecarray(CUDATestCase):
         np.testing.assert_array_equal(expect2, got2)
 
 
-class TestCoreContiguous(CUDATestCase):
+class TestCoreContiguous(DeprecatedDeviceArrayApiTest):
     def _test_against_array_core(self, view):
         self.assertEqual(
             devicearray.is_contiguous(view),

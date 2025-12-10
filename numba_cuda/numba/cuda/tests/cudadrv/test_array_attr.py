@@ -3,10 +3,14 @@
 
 import numpy as np
 from numba import cuda
-from numba.cuda.testing import unittest, CUDATestCase, skip_on_cudasim
+from numba.cuda.testing import (
+    unittest,
+    DeprecatedDeviceArrayApiTest,
+    skip_on_cudasim,
+)
 
 
-class TestArrayAttr(CUDATestCase):
+class TestArrayAttr(DeprecatedDeviceArrayApiTest):
     def test_contigous_2d(self):
         ary = np.arange(10)
         cary = ary.reshape(2, 5)
