@@ -7,6 +7,7 @@ from numba.cuda.cudadrv.driver import (
     host_to_device,
     device_to_host,
     driver,
+    _to_core_stream,
 )
 from cuda.core.experimental import (
     LaunchConfig,
@@ -139,10 +140,7 @@ class TestCudaDriver(CUDATestCase):
                 cooperative_launch=False,
             )
             # Convert numba Stream to ExperimentalStream
-            handle = getattr(stream, "handle", stream)
-            value = getattr(handle, "value", handle)
-            stream = ExperimentalStream.from_handle(value)
-            launch(stream, config, function.kernel, ptr)
+            launch(_to_core_stream(stream), config, function.kernel, ptr)
 
         device_to_host(array, memory, sizeof(array), stream=stream)
 
