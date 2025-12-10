@@ -2241,7 +2241,7 @@ FuncAttr = namedtuple(
 )
 
 
-class Function:
+class CudaPythonFunction:
     griddim = 1, 1, 1
     blockdim = 1, 1, 1
     stream = 0
@@ -2296,7 +2296,7 @@ class Function:
 
 
 # Alias for backward compatibility
-CudaPythonFunction = Function
+Function = CudaPythonFunction
 
 
 class _LinkerBase(metaclass=ABCMeta):
