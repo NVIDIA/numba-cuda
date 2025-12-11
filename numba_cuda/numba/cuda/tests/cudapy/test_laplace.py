@@ -94,32 +94,30 @@ class TestCudaLaplace(CUDATestCase):
 
         error_grid = np.zeros(griddim)
 
-        stream = cupy.cuda.stream()
+        cp_stream = cp.cuda.Stream()
+        stream = cuda.api.external_stream(cp_stream.ptr)
 
-        with stream:
+        with cp_stream:
             dA = cp.asarray(A)  # to device and don't come back
             dAnew = cp.asarray(Anew)  # to device and don't come back
-        
             derror_grid = cp.asarray(error_grid)
 
-            while error > tol and iter < iter_max:
-                self.assertTrue(error_grid.dtype == np.float64)
+        while error > tol and iter < iter_max:
+            self.assertTrue(error_grid.dtype == np.float64)
 
-                jocabi_relax_core[griddim, blockdim, stream](dA, dAnew, derror_grid)
+            jocabi_relax_core[griddim, blockdim, stream](dA, dAnew, derror_grid)
 
+            with cp_stream:
                 error_grid = derror_grid.get()
 
-                # error_grid is available on host
-                stream.synchronize()
+            error = np.abs(error_grid).max()
 
-                error = np.abs(error_grid).max()
+            # swap dA and dAnew
+            tmp = dA
+            dA = dAnew
+            dAnew = tmp
 
-                # swap dA and dAnew
-                tmp = dA
-                dA = dAnew
-                dAnew = tmp
-
-                iter += 1
+            iter += 1
 
 
 if __name__ == "__main__":

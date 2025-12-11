@@ -6,7 +6,7 @@ import math
 from numba import cuda
 from numba.cuda import double, void
 from numba.cuda.testing import unittest, CUDATestCase
-
+import cupy as cp
 
 RISKFREE = 0.02
 VOLATILITY = 0.30

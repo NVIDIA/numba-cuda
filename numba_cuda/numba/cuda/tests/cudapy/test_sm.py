@@ -4,7 +4,6 @@
 from numba import cuda
 from numba.cuda import int32, float64, void
 from numba.cuda import HAS_NUMBA
-import cupy as cp
 
 if HAS_NUMBA:
     from numba.core.errors import TypingError as NumbaTypingError
@@ -14,7 +13,7 @@ from numba.cuda.testing import unittest, CUDATestCase, skip_on_cudasim
 
 import numpy as np
 from numba.cuda.np import numpy_support as nps
-
+import cupy as cp
 from .extensions_usecases import struct_model_type, MyStruct
 
 recordwith2darray = np.dtype([("i", np.int32), ("j", np.float32, (3, 2))])
@@ -92,7 +91,7 @@ class TestSharedMemoryIssue(CUDATestCase):
             d_block_costs[0] = s_initialcost[0] + prediction
 
         block_costs = np.zeros(num_blocks, dtype=np.float64)
-        d_block_costs = cp.asarray(block_costs)
+        d_block_costs = cuda.to_device(block_costs)
 
         costs_func[num_blocks, threads_per_block](d_block_costs)
 

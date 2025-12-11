@@ -51,7 +51,7 @@ class TestRandom(CUDATestCase):
         rng_states = create_xoroshiro128p_states(nthreads, seed=1)
 
         # Generate random numbers
-        arr = cp.asarray((X, Y, Z), dtype=np.float32)
+        arr = cp.zeros((X, Y, Z), dtype=np.float32)
         random_3d[(gx, gy, gz), (bx, by, bz)](arr, rng_states)
         # magictoken.ex_3d_grid.end
 
