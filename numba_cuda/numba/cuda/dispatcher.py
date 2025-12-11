@@ -96,8 +96,6 @@ class _Kernel(serialize.ReduceMixin):
         "NRT_incref",
     ]
 
-    _LINKED_NRT = False
-
     @global_compiler_lock
     def __init__(
         self,
@@ -237,7 +235,8 @@ class _Kernel(serialize.ReduceMixin):
         that was compiled with NRT from being launched without NRT being added
         to the link.
         """
-        if not tgt_ctx.enable_nrt and not self._LINKED_NRT:
+
+        if not tgt_ctx.enable_nrt:
             return
 
         all_nrt = "|".join(self.NRT_functions)
@@ -259,12 +258,6 @@ class _Kernel(serialize.ReduceMixin):
 
         if link_nrt:
             link.append(NRT_LIBRARY)
-
-            # In case NRT is toggled off, we could still have
-            # cached functions that include references to NRT
-            # Therefore we need to record the occurrence and
-            # check again going forward
-            self.__class__._LINKED_NRT = True
 
     @property
     def library(self):
