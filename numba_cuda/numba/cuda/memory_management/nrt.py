@@ -127,7 +127,7 @@ class _Runtime:
         cc = get_current_device().compute_capability
 
         # Create a new linker instance and add the cu file
-        linker = _Linker.new(cc=cc, lto=_have_nvjitlink())
+        linker = _Linker(max_registers=0, cc=cc, lto=_have_nvjitlink())
         linker.add_cu_file(memsys_mod)
 
         # Complete the linker and create a module from it

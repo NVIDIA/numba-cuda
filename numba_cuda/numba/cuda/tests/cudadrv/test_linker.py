@@ -114,7 +114,7 @@ class TestLinker(CUDATestCase):
     @require_context
     def test_linker_basic(self):
         """Simply go through the constructor and destructor"""
-        linker = _Linker.new(cc=(7, 5))
+        linker = _Linker(max_registers=0, cc=(7, 5))
         del linker
 
     def _test_linking(self, eager):
@@ -332,7 +332,7 @@ class TestLinker(CUDATestCase):
 
     @skip_if_nvjitlink_missing("nvJitLink not installed or new enough (>12.3)")
     def test_link_for_different_cc(self):
-        linker = _Linker.new(cc=(7, 5), lto=True)
+        linker = _Linker(max_registers=0, cc=(7, 5), lto=True)
         code = """
 __device__ int foo(int x) {
     return x + 1;
