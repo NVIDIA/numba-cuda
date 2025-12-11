@@ -383,8 +383,6 @@ class TestNrtStatistics(CUDATestCase):
             self.assertEqual(stats.mi_free, stats_mi_free)
 
     def test_nrt_toggle_enabled(self):
-        cuda.dispatcher._Kernel._LINKED_NRT = False
-
         def array_reshape1d(arr, newshape, got):
             y = arr.reshape(newshape)
             for i in range(y.shape[0]):
@@ -393,26 +391,25 @@ class TestNrtStatistics(CUDATestCase):
         def array_reshape(arr, newshape):
             return arr.reshape(newshape)
 
-        config.CUDA_ENABLE_NRT = 1
+        with override_config("CUDA_ENABLE_NRT", True):
+            # compile a kernel that caches an NRT enabled reshape primitive
+            @cuda.jit
+            def kernel(out):
+                out = out.reshape(out.shape)
+                out[0] = 1
 
-        # compile a kernel that caches an NRT enabled reshape primitive
-        @cuda.jit
-        def kernel(out):
-            out = out.reshape(out.shape)
-            out[0] = 1
+            out = cuda.to_device(np.zeros(1, dtype=np.float64))
+            kernel[1, 1](out)
 
-        out = cuda.to_device(np.zeros(1, dtype=np.float64))
-        kernel[1, 1](out)
-        config.CUDA_ENABLE_NRT = 0
-
-        # compile and launch a new kernel that gets a cache hit on the
-        # NRT enabled reshape, but tries to launch with NRT disabled
-        # globally
-        new_kernel = cuda.jit(array_reshape1d)
-        arr = np.arange(24)
-        expected = array_reshape(arr, (24,))
-        got = np.zeros(expected.shape, dtype=arr.dtype)
-        new_kernel[1, 1](arr, (24,), got)
+        with override_config("CUDA_ENABLE_NRT", False):
+            # compile and launch a new kernel that gets a cache hit on the
+            # NRT enabled reshape, but tries to launch with NRT disabled
+            # globally
+            new_kernel = cuda.jit(array_reshape1d)
+            arr = np.arange(24)
+            expected = array_reshape(arr, (24,))
+            got = np.zeros(expected.shape, dtype=arr.dtype)
+            new_kernel[1, 1](arr, (24,), got)
 
         self.assertTrue(np.array_equal(expected, got))
 
