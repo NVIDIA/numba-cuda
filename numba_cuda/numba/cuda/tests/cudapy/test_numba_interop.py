@@ -5,12 +5,13 @@ import numpy as np
 
 from numba import cuda
 from numba.cuda import HAS_NUMBA
-from numba.cuda.testing import unittest, CUDATestCase
+from numba.cuda.testing import unittest, CUDATestCase, skip_on_cudasim
 
 if HAS_NUMBA:
     from numba.extending import overload
 
 
+@skip_on_cudasim("Simulator does not support the extension API")
 @unittest.skipUnless(HAS_NUMBA, "Tests interoperability with Numba")
 class TestNumbaInterop(CUDATestCase):
     def test_overload_inline_always(self):
