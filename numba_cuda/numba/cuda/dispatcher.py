@@ -230,10 +230,7 @@ class _Kernel(serialize.ReduceMixin):
         Add the NRT source code to the link if the neccesary conditions are met.
         NRT must be enabled for the CUDATargetContext, and either NRT functions
         must be detected in the kernel asm or an NRT enabled LinkableCode object
-        must be passed. If NRT is detected for a compilation, we'll check again
-        going forward even if it's disabled later to prevent a cached function
-        that was compiled with NRT from being launched without NRT being added
-        to the link.
+        must be passed.
         """
 
         if not tgt_ctx.enable_nrt:
