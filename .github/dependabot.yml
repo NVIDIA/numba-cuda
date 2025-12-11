@@ -9,6 +9,14 @@ updates:
     directory: "/"
     schedule:
       # Check for updates to GitHub Actions every week
-      interval: "weekly"
+      interval: "monthly"
     labels:
       - CI
+
+    open-pull-requests-limit: 1
+
+    groups:
+      actions-monthly:
+        applies-to: version-updates
+        patterns: ["*"]
+        update-types: ["minor", "patch"]
