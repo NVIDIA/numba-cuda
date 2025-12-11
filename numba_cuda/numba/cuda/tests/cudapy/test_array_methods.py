@@ -34,21 +34,19 @@ class TestCudaArrayMethods(NRTEnablingCUDATestCase):
             self.assertEqual(expect, got)
 
     def test_array_copy(self):
-        ary = np.array([1.0, 2.0, 3.0])
-        out = cuda.to_device(np.zeros(3))
+        val = np.array([1, 2, 3])[::-1]
 
         @cuda.jit
         def kernel(out):
-            gid = cuda.grid(1)
-            if gid < 1:
-                cpy = ary.copy()
-                for i in range(len(out)):
-                    out[i] = cpy[i]
+            q = val.copy()
+            for i in range(len(out)):
+                out[i] = q[i]
+
+        out = cuda.to_device(np.zeros(len(val), dtype="float64"))
 
         kernel[1, 1](out)
-
-        result = out.copy_to_host()
-        np.testing.assert_array_equal(result, ary)
+        for i, j in zip(out.copy_to_host(), val):
+            self.assertEqual(i, j)
 
 
 if __name__ == "__main__":

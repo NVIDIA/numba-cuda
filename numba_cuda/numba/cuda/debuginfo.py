@@ -4,13 +4,82 @@
 import abc
 import os
 from contextlib import contextmanager
+from enum import IntEnum
 
+import llvmlite
 from llvmlite import ir
 from numba.cuda import types
 from numba.cuda.core import config
 from numba.cuda import cgutils
 from numba.cuda.datamodel.models import ComplexModel, UnionModel, UniTupleModel
 from numba.cuda.types.ext_types import GridGroup
+from cuda.bindings import runtime
+
+
+# Check if CUDA Toolkit and llvmlite support polymorphic debug info
+def _get_llvmlite_version():
+    """Get llvmlite version as tuple (major, minor)."""
+    try:
+        version_str = llvmlite.__version__
+        # Parse version string like "0.46.0" or "0.46.0dev"
+        parts = version_str.split(".")
+        if len(parts) < 2:
+            return (0, 0)
+        major = int(parts[0])
+        minor = int(parts[1])
+        return (major, minor)
+    except (IndexError, AttributeError, ValueError):
+        return (0, 0)
+
+
+def _check_polymorphic_debug_info_support():
+    """Check if CTK and llvmlite support polymorphic debug info.
+
+    Returns:
+        tuple: (supported: bool, use_typed_const: bool)
+        - supported: Whether feature is supported at all
+        - use_typed_const: True for typed constant,
+                           False for node reference
+    """
+    # runtime.getLocalRuntimeVersion() returns (cudaError_t, version_int)
+    # Example: 13010 = CTK 13.1, 13020 = CTK 13.2
+    _, ctk_version_number = runtime.getLocalRuntimeVersion()
+    ctk_major = ctk_version_number // 1000
+    ctk_minor = (ctk_version_number % 1000) // 10
+    ctk_version = (ctk_major, ctk_minor)
+
+    llvmlite_version = _get_llvmlite_version()
+
+    # Support not available with CTK 13.1 or older
+    if ctk_version <= (13, 1):
+        return (False, False)
+
+    # llvmlite > 0.45: use typed constant
+    # llvmlite <= 0.45: use node reference
+    use_typed_const = llvmlite_version > (0, 45)
+    return (True, use_typed_const)
+
+
+# Check support and determine mode
+(DEBUG_POLY_SUPPORTED, DEBUG_POLY_USE_TYPED_CONST) = (
+    _check_polymorphic_debug_info_support()
+)
+
+# Set config based on polymorphic debug info support
+if not hasattr(config, "CUDA_DEBUG_POLY"):
+    config.CUDA_DEBUG_POLY = DEBUG_POLY_SUPPORTED
+if not hasattr(config, "CUDA_DEBUG_POLY_USE_TYPED_CONST"):
+    config.CUDA_DEBUG_POLY_USE_TYPED_CONST = DEBUG_POLY_USE_TYPED_CONST
+
+
+class DwarfAddressClass(IntEnum):
+    GENERIC = 0x00
+    GLOBAL = 0x01
+    REGISTER = 0x02
+    CONSTANT = 0x05
+    LOCAL = 0x06
+    PARAMETER = 0x07
+    SHARED = 0x08
 
 
 @contextmanager
@@ -120,6 +189,19 @@ class DIBuilder(AbstractDIBuilder):
         # Create the compile unit now because it is referenced when
         # constructing subprograms
         self.dicompileunit = self._di_compile_unit()
+
+    def get_dwarf_address_class(self, addrspace):
+        # Map NVVM address space to DWARF address class.
+        from numba.cuda.cudadrv import nvvm
+
+        addrspace_to_addrclass_dict = {
+            nvvm.ADDRSPACE_GENERIC: None,
+            nvvm.ADDRSPACE_GLOBAL: DwarfAddressClass.GLOBAL,
+            nvvm.ADDRSPACE_SHARED: DwarfAddressClass.SHARED,
+            nvvm.ADDRSPACE_CONSTANT: DwarfAddressClass.CONSTANT,
+            nvvm.ADDRSPACE_LOCAL: DwarfAddressClass.LOCAL,
+        }
+        return addrspace_to_addrclass_dict.get(addrspace)
 
     def _var_type(self, lltype, size, datamodel=None):
         if self._DEBUG:
@@ -564,6 +646,11 @@ class CUDADIBuilder(DIBuilder):
         super().__init__(module, filepath, cgctx, directives_only)
         # Cache for local variable metadata type and line deduplication
         self._vartypelinemap = {}
+        # Variable address space dictionary
+        self._var_addrspace_map = {}
+
+    def _set_addrspace_map(self, map):
+        self._var_addrspace_map = map
 
     def _var_type(self, lltype, size, datamodel=None):
         is_bool = False
@@ -619,7 +706,10 @@ class CUDADIBuilder(DIBuilder):
                 # Ignore the "tag" field, focus on the "payload" field which
                 # contains the data types in memory
                 if field == "payload":
-                    for mod in model.inner_models():
+                    # Store metadata dictionaries to create members later
+                    member_metadata_dicts = []
+
+                    for index, mod in enumerate(model.inner_models()):
                         dtype = mod.get_value_type()
                         membersize = self.cgctx.get_abi_sizeof(dtype)
                         basetype = self._var_type(
@@ -632,30 +722,165 @@ class CUDADIBuilder(DIBuilder):
                         # Use a prefix "_" on type names as field names
                         membername = "_" + typename
                         memberwidth = _BYTE_SIZE * membersize
-                        derived_type = m.add_debug_info(
-                            "DIDerivedType",
-                            {
-                                "tag": ir.DIToken("DW_TAG_member"),
-                                "name": membername,
-                                "baseType": basetype,
-                                # DW_TAG_member size is in bits
-                                "size": memberwidth,
-                            },
-                        )
-                        meta.append(derived_type)
+                        # Build the metadata dictionary
+                        metadata_dict = {
+                            "tag": ir.DIToken("DW_TAG_member"),
+                            "name": membername,
+                            "baseType": basetype,
+                            # DW_TAG_member size is in bits
+                            "size": memberwidth,
+                        }
+                        if config.CUDA_DEBUG_POLY:
+                            # Polymorphic debug info with DW_TAG_variant
+                            # extraData depends on llvmlite version
+                            if config.CUDA_DEBUG_POLY_USE_TYPED_CONST:
+                                metadata_dict["extraData"] = ir.IntType(8)(
+                                    index
+                                )
+                            else:
+                                # Use metadata node reference
+                                metadata_dict["extraData"] = m.add_metadata(
+                                    [ir.IntType(8)(index)]
+                                )
+                            # Add offset to each variant member
+                            # Offset equals the element's own width
+                            metadata_dict["offset"] = memberwidth
+                        member_metadata_dicts.append(metadata_dict)
                         if memberwidth > maxwidth:
                             maxwidth = memberwidth
 
-            fake_union_name = "dbg_poly_union"
+                    # Create the member DIDerivedTypes
+                    for metadata_dict in member_metadata_dicts:
+                        derived_type = m.add_debug_info(
+                            "DIDerivedType", metadata_dict
+                        )
+                        meta.append(derived_type)
+
+            if config.CUDA_DEBUG_POLY:
+                # Polymorphic variable debug info generation
+                wrapper_struct_size = 2 * maxwidth
+                # Generate unique discriminator name based on composite type
+                variant_elements_metadata = m.add_metadata(meta)
+                discriminator_unique_id = str(id(variant_elements_metadata))
+                discriminator_name = f"discriminator-{discriminator_unique_id}"
+                discriminator = m.add_debug_info(
+                    "DIDerivedType",
+                    {
+                        "tag": ir.DIToken("DW_TAG_member"),
+                        "name": discriminator_name,
+                        "baseType": m.add_debug_info(
+                            "DIBasicType",
+                            {
+                                "name": "int",
+                                "size": _BYTE_SIZE,
+                                "encoding": ir.DIToken("DW_ATE_unsigned"),
+                            },
+                        ),
+                        "size": _BYTE_SIZE,
+                        "flags": ir.DIToken("DIFlagArtificial"),
+                    },
+                )
+                # Create the final variant_part with actual members
+                variant_unique_identifier = discriminator_unique_id
+                variant_part_type = m.add_debug_info(
+                    "DICompositeType",
+                    {
+                        "file": self.difile,
+                        "tag": ir.DIToken("DW_TAG_variant_part"),
+                        "name": "variant_part",
+                        "identifier": variant_unique_identifier,
+                        "elements": variant_elements_metadata,
+                        "size": maxwidth,
+                        "discriminator": discriminator,
+                    },
+                )
+                # Create elements metadata for wrapper struct
+                elements_metadata = m.add_metadata(
+                    [discriminator, variant_part_type]
+                )
+                unique_identifier = str(id(elements_metadata))
+                wrapper_struct = m.add_debug_info(
+                    "DICompositeType",
+                    {
+                        "file": self.difile,
+                        "tag": ir.DIToken("DW_TAG_structure_type"),
+                        "name": "variant_wrapper_struct",
+                        "identifier": unique_identifier,
+                        "elements": elements_metadata,
+                        "size": wrapper_struct_size,
+                    },
+                )
+                return wrapper_struct
+            else:
+                fake_union_name = "dbg_poly_union"
+                return m.add_debug_info(
+                    "DICompositeType",
+                    {
+                        "file": self.difile,
+                        "tag": ir.DIToken("DW_TAG_union_type"),
+                        "name": fake_union_name,
+                        "identifier": str(lltype),
+                        "elements": m.add_metadata(meta),
+                        "size": maxwidth,
+                    },
+                    is_distinct=True,
+                )
+
+        # Check if there's actually address space info to handle
+        addrspace = getattr(self, "_addrspace", None)
+        if (
+            isinstance(lltype, ir.LiteralStructType)
+            and datamodel is not None
+            and datamodel.inner_models()
+            and addrspace not in (None, 0)
+        ):
+            # Process struct with datamodel that has address space info
+            meta = []
+            offset = 0
+            for element, field, model in zip(
+                lltype.elements, datamodel._fields, datamodel.inner_models()
+            ):
+                size_field = self.cgctx.get_abi_sizeof(element)
+                if isinstance(element, ir.PointerType) and field == "data":
+                    # Create pointer type with correct address space
+                    pointee_size = self.cgctx.get_abi_sizeof(element.pointee)
+                    pointee_model = getattr(model, "_pointee_model", None)
+                    pointee_type = self._var_type(
+                        element.pointee, pointee_size, datamodel=pointee_model
+                    )
+                    meta_ptr = {
+                        "tag": ir.DIToken("DW_TAG_pointer_type"),
+                        "baseType": pointee_type,
+                        "size": _BYTE_SIZE * size_field,
+                    }
+                    dwarf_addrclass = self.get_dwarf_address_class(addrspace)
+                    if dwarf_addrclass is not None:
+                        meta_ptr["dwarfAddressSpace"] = int(dwarf_addrclass)
+                    basetype = m.add_debug_info("DIDerivedType", meta_ptr)
+                else:
+                    basetype = self._var_type(
+                        element, size_field, datamodel=model
+                    )
+                derived_type = m.add_debug_info(
+                    "DIDerivedType",
+                    {
+                        "tag": ir.DIToken("DW_TAG_member"),
+                        "name": field,
+                        "baseType": basetype,
+                        "size": _BYTE_SIZE * size_field,
+                        "offset": offset,
+                    },
+                )
+                meta.append(derived_type)
+                offset += _BYTE_SIZE * size_field
+
             return m.add_debug_info(
                 "DICompositeType",
                 {
-                    "file": self.difile,
-                    "tag": ir.DIToken("DW_TAG_union_type"),
-                    "name": fake_union_name,
-                    "identifier": str(lltype),
+                    "tag": ir.DIToken("DW_TAG_structure_type"),
+                    "name": f"{datamodel.fe_type}",
                     "elements": m.add_metadata(meta),
-                    "size": maxwidth,
+                    "size": offset,
                 },
                 is_distinct=True,
             )
@@ -711,16 +936,22 @@ class CUDADIBuilder(DIBuilder):
                 # to llvm.dbg.value
                 return
             else:
-                return super().mark_variable(
-                    builder,
-                    allocavalue,
-                    name,
-                    lltype,
-                    size,
-                    line,
-                    datamodel,
-                    argidx,
-                )
+                # Look up address space for this variable
+                self._addrspace = self._var_addrspace_map.get(name)
+                try:
+                    return super().mark_variable(
+                        builder,
+                        allocavalue,
+                        name,
+                        lltype,
+                        size,
+                        line,
+                        datamodel,
+                        argidx,
+                    )
+                finally:
+                    # Clean up address space info
+                    self._addrspace = None
 
     def update_variable(
         self,
