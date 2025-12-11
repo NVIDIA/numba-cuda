@@ -90,8 +90,8 @@ class Test3rdPartyContext(CUDATestCase):
         dev = driver.binding.CUdevice(0)
         binding_hctx = the_driver.cuDevicePrimaryCtxRetain(dev)
         hctx = driver.drvapi.cu_context(int(binding_hctx))
+        ctx = driver.Context(weakref.proxy(self), hctx)
         try:
-            ctx = driver.Context(weakref.proxy(self), hctx)
             ctx.push()
             # Check that the context from numba matches the created primary
             # context.
