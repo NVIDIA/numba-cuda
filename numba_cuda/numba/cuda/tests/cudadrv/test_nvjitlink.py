@@ -105,13 +105,39 @@ class TestLinker(CUDATestCase):
                     kernel[1, 1](result)
                     assert result[0] == 3
 
+    def test_nvjitlink_jit_with_invalid_linkable_code(self):
+        with open(test_device_functions_cubin, "rb") as f:
+            content = f.read()
+        with self.assertRaisesRegex(
+            TypeError, "Expected path to file or a LinkableCode"
+        ):
+
+            @cuda.jit("void()", link=[content])
+            def kernel():
+                pass
+
+
+@unittest.skipIf(
+    not TEST_BIN_DIR or not _have_nvjitlink(),
+    "nvJitLink not installed or new enough (>12.3)",
+)
+@skip_on_cudasim("Linking unsupported in the simulator")
+class TestLinkerDumpAssembly(CUDATestCase):
+    def setUp(self):
+        super().setUp()
+        self._prev_dump_assembly = config.DUMP_ASSEMBLY
+        config.DUMP_ASSEMBLY = True
+
+    def tearDown(self):
+        config.DUMP_ASSEMBLY = self._prev_dump_assembly
+        super().tearDown()
+
     def test_nvjitlink_jit_with_linkable_code_lto_dump_assembly(self):
         files = (
             test_device_functions_cu,
             test_device_functions_ltoir,
             test_device_functions_fatbin_multi,
-        )
-        config.DUMP_ASSEMBLY = True
+        ]
 
         for file in files:
             with self.subTest(file=file):
@@ -133,8 +159,6 @@ class TestLinker(CUDATestCase):
 
                 self.assertTrue("ASSEMBLY (AFTER LTO)" in f.getvalue())
 
-        config.DUMP_ASSEMBLY = False
-
     def test_nvjitlink_jit_with_linkable_code_lto_dump_assembly_warn(self):
         files = (
             test_device_functions_a,
@@ -142,8 +166,7 @@ class TestLinker(CUDATestCase):
             test_device_functions_fatbin,
             test_device_functions_o,
             test_device_functions_ptx,
-        )
-        config.DUMP_ASSEMBLY = True
+        ]
 
         for file in files:
             with self.subTest(file=file):
@@ -165,19 +188,6 @@ class TestLinker(CUDATestCase):
                 ):
                     func(result)
                 assert result[0] == 3
-
-        config.DUMP_ASSEMBLY = False
-
-    def test_nvjitlink_jit_with_invalid_linkable_code(self):
-        with open(test_device_functions_cubin, "rb") as f:
-            content = f.read()
-        with self.assertRaisesRegex(
-            TypeError, "Expected path to file or a LinkableCode"
-        ):
-
-            @cuda.jit("void()", link=[content])
-            def kernel():
-                pass
 
 
 if __name__ == "__main__":

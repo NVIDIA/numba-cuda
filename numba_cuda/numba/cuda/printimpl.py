@@ -32,6 +32,20 @@ def print_item(ty, context, builder, val):
     )
 
 
+@print_item.register(types.UniTuple)
+def tuple_print_impl(ty, context, builder, val):
+    if ty.dtype != types.int64:
+        raise NotImplementedError(
+            "printing unimplemented for tuples with elements of type %s" % (ty,)
+        )
+
+    nelements = val.type.count
+    argsfmt = ", ".join(["%lld"] * nelements)
+    rawfmt = f"({argsfmt})"
+    values = [builder.extract_value(val, i) for i in range(nelements)]
+    return rawfmt, values
+
+
 @print_item.register(types.Integer)
 @print_item.register(types.IntegerLiteral)
 def int_print_impl(ty, context, builder, val):

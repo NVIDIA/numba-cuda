@@ -933,7 +933,12 @@ class BaseContext(object):
         If *caching* evaluates True, the function keeps the compiled function
         for reuse in *.cached_internal_func*.
         """
-        cache_key = (impl.__code__, sig, type(self.error_model))
+        cache_key = (
+            impl.__code__,
+            sig,
+            type(self.error_model),
+            self.enable_nrt,
+        )
         if not caching:
             cached = None
         else:
