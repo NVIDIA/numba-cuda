@@ -816,5 +816,51 @@ class TestLaunchBounds(CUDATestCase):
             cuda.jit("void()", launch_bounds=launch_bounds)(lambda: None)
 
 
+@skip_on_cudasim("Simulator does not support shared memory carveout")
+class TestSharedMemoryCarveout(CUDATestCase):
+    def test_shared_memory_carveout_invalid_values(self):
+        """Test that invalid carveout values raise appropriate errors"""
+        test_cases = [
+            (150, ValueError, "must be between -1 and 100"),
+            (-2, ValueError, "must be between -1 and 100"),
+            (101, ValueError, "must be between -1 and 100"),
+            ("InvalidOption", ValueError, "Invalid carveout value"),
+        ]
+
+        for carveout, exc_type, msg_pattern in test_cases:
+            with self.subTest(carveout=carveout):
+
+                @cuda.jit(shared_memory_carveout=carveout)
+                def add_one(x):
+                    i = cuda.grid(1)
+                    if i < len(x):
+                        x[i] = i + 1
+
+                x = np.zeros(10, dtype=np.int32)
+                d_x = cuda.to_device(x)
+
+                with self.assertRaisesRegex(exc_type, msg_pattern):
+                    add_one[1, 10](d_x)
+
+    def test_shared_memory_carveout_valid_values(self):
+        carveout_values = ["MaxL1", "MaxShared", "default", 0, 50, 100, -1]
+
+        x = np.zeros(10, dtype=np.int32)
+        expected = np.arange(1, 11)
+
+        for carveout in carveout_values:
+            with self.subTest(carveout=carveout):
+
+                @cuda.jit(shared_memory_carveout=carveout)
+                def add_one(x):
+                    i = cuda.grid(1)
+                    if i < x.size:
+                        x[i] = i + 1
+
+                d_x = cuda.to_device(x)
+                add_one[1, 10](d_x)
+                np.testing.assert_array_equal(d_x.copy_to_host(), expected)
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -129,6 +129,7 @@ def jit(
     boundscheck=None,
     opt=None,
     cache=None,
+    shared_memory_carveout=None,
 ):
     # Here for API compatibility
     if boundscheck:
