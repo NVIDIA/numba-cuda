@@ -21,6 +21,7 @@ User guide
    random.rst
    device-management.rst
    examples.rst
+   debugging.rst
    simulator.rst
    reduction.rst
    ufunc.rst

@@ -1,0 +1,72 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Numba: hello.py Example",
+            "type": "cuda-gdb",
+            "request": "launch",
+            "cwd": "${workspaceFolder}",
+
+            // Use cuda-gdb to debug the python interpreter executable
+            // The "${command:python.interpreterPath}" variable is provided by the Python extension
+            // for VS Code, and can be set by selecting the Python interpreter in the VS Code
+            // status bar. This allows the user to select the Python virtual environment to use for
+            // the debugging session.
+            "program": "${command:python.interpreterPath}",
+
+            // The Numba CUDA Python script to debug
+            "args": "${workspaceFolder}/hello.py",
+
+            // Break on kernel launch - we have explicit breakpoint() calls in the code,
+            // but this is a convenient shortcut to start the program running and stop on the first
+            // source line of any launched kernel.
+
+            // Setting "breakOnLaunch" to true in the launch.json file is equivalent to
+            // running "set cuda break_on_launch application" from the cuda-gdb command line.
+            "breakOnLaunch": true,
+
+            // Load the Numba CUDA cuda-gdb pretty-printer extension (if available).
+            // This is used to format Numba CUDA arrays in the debugger.
+            "setupCommands": [
+                {
+                    "description": "Load the Numba CUDA cuda-gdb pretty-printer extension",
+                    "text": "python import gdb_print_extension",
+                    // Don't raise an error if the extension cannot be found. This is usually
+                    // due to the directory holding the extension not being in the PYTHONPATH
+                    // environment variable, but should not cause the debugging session to fail.
+                    "ignoreFailures": true
+                }
+            ],
+            "environment": [
+                {
+                    // Add the path where to find the Numba CUDA cuda-gdb pretty-printer extension
+                    // to the PYTHONPATH environment variable. This is usually ``numba-cuda/misc`` and
+                    // is required for proper array formatting in the debugger.
+                    // By default we add the workspace folder to the PYTHONPATH environment variable.
+                    "name": "PYTHONPATH",
+                    "value": "${workspaceFolder}:${env:PYTHONPATH}"
+                },
+                {
+                    // Don't buffer stdout and stderr - we want to see the output immediately.
+                    "name": "PYTHONUNBUFFERED",
+                    "value": "1"
+                },
+                {
+                    // Add the CUDA tools bin directory to the PATH environment variable.
+                    // This is used to find the cuda-gdb executable.
+                    "name": "PATH",
+                    "value": "/usr/local/cuda/bin:${env:PATH}"
+                },
+                {
+                    // Add the CUDA libraries lib64 directory to the LD_LIBRARY_PATH environment variable.
+                    // This is used to find the CUDA libraries used by the Numba CUDA program.
+                    "name": "LD_LIBRARY_PATH",
+                    "value": "/usr/local/cuda/lib64:${env:LD_LIBRARY_PATH}"
+                }
+            ]
+        },
+    ]
+}
