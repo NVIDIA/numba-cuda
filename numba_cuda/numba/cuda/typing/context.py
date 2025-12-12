@@ -460,7 +460,9 @@ class BaseContext(object):
         def is_external(obj):
             """Check if obj is from outside numba.* namespace."""
             try:
-                return not obj.__module__.startswith("numba.")
+                is_numba_module = obj.__module__.startswith("numba.")
+                is_test_module = obj.__module__.startswith("numba.cuda.tests.")
+                return not is_numba_module or is_test_module
             except AttributeError:
                 return True
 
