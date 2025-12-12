@@ -136,7 +136,7 @@ jobs:
         GH_TOKEN: ${{ github.token }}
         RAPIDS_AUX_SECRET_1: ${{ secrets.RAPIDS_AUX_SECRET_1 }}
     - name: Generate test report
-      uses: test-summary/action@v2.3
+      uses: test-summary/action@v2.4
       with:
         paths: "${{ env.RAPIDS_TESTS_DIR }}/*.xml"
         show: ${{ inputs.test_summary_show }}
