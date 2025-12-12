@@ -25,7 +25,7 @@ if not (
 ):
     raise ImportError(
         "NVIDIA CUDA Python bindings not found. Install the 'cuda' package "
-        "(e.g. pip install \"cuda-bindings==XY.*\" or \"numba-cuda[cuXY]\", "
+        '(e.g. pip install "cuda-bindings==XY.*" or "numba-cuda[cuXY]", '
         "with XY=12 or XY=13)."
     )
 
