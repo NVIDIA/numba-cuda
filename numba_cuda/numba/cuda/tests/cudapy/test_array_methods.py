@@ -3,9 +3,8 @@
 
 import numpy as np
 from numba import cuda
-from numba.cuda.testing import CUDATestCase
+from numba.cuda.testing import NRTEnablingCUDATestCase
 import unittest
-from numba.cuda import config
 
 
 def reinterpret_array_type(byte_arr, start, stop, output):
@@ -14,16 +13,7 @@ def reinterpret_array_type(byte_arr, start, stop, output):
     output[0] = val
 
 
-class TestCudaArrayMethods(CUDATestCase):
-    def setUp(self):
-        self.old_nrt_setting = config.CUDA_ENABLE_NRT
-        config.CUDA_ENABLE_NRT = True
-        super(TestCudaArrayMethods, self).setUp()
-
-    def tearDown(self):
-        config.CUDA_ENABLE_NRT = self.old_nrt_setting
-        super(TestCudaArrayMethods, self).tearDown()
-
+class TestCudaArrayMethods(NRTEnablingCUDATestCase):
     def test_reinterpret_array_type(self):
         """
         Reinterpret byte array as int32 in the GPU.
