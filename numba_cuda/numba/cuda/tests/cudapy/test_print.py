@@ -63,6 +63,18 @@ cuda.synchronize()
 """
 
 
+printstring_in_tuple_usecase = """\
+from numba import cuda
+
+@cuda.jit
+def printstring():
+    print(("a", "b"))
+
+printstring[1, 3]()
+cuda.synchronize()
+"""
+
+
 printdim3_usecase = """\
 from numba import cuda
 
@@ -128,6 +140,28 @@ print_tuple[1, 1]((1, 2, 3, 4, 5))
 cuda.synchronize()
 """
 
+print_nested_mixed_type_tuple_usecase = """\
+from numba import cuda
+
+@cuda.jit
+def print_tuple(tup):
+    print(tup)
+
+print_tuple[1, 1]((1, ((2, 4), 3.0), (4,), 5))
+cuda.synchronize()
+"""
+
+print_single_element_tuple_usecase = """\
+from numba import cuda
+
+@cuda.jit
+def print_tuple(tup):
+    print(tup)
+
+print_tuple[1, 1]((1,))
+cuda.synchronize()
+"""
+
 
 class TestPrint(CUDATestCase):
     # Note that in these tests we generally strip the output to avoid dealing
@@ -178,6 +212,18 @@ class TestPrint(CUDATestCase):
         output, _ = self.run_code(print_int64_tuple_usecase)
         lines = [line.strip() for line in output.splitlines(True)]
         expected = ["(1, 2, 3, 4, 5)"]
+        self.assertEqual(lines, expected)
+
+    def test_nested_mixed_type_tuple(self):
+        output, _ = self.run_code(print_nested_mixed_type_tuple_usecase)
+        lines = [line.strip() for line in output.splitlines(True)]
+        expected = ["(1, ((2, 4), 3.0), (4,), 5)"]
+        self.assertEqual(lines, expected)
+
+    def test_single_element_tuple(self):
+        output, _ = self.run_code(print_single_element_tuple_usecase)
+        lines = [line.strip() for line in output.splitlines(True)]
+        expected = ["(1,)"]
         self.assertEqual(lines, expected)
 
     @skip_on_cudasim("bfloat16 on host is not yet supported.")
