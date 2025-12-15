@@ -1738,8 +1738,11 @@ https://numba.readthedocs.io/en/stable/user/troubleshoot.html#my-code-has-an-unt
                 )
 
         if isinstance(typ, types.Array):
-            # Global array in nopython mode is constant
-            typ = typ.copy(readonly=True)
+            # Global array in nopython mode is constant, except for device
+            # arrays implementing __cuda_array_interface__ which are references
+            # to mutable device memory
+            if not hasattr(gvar.value, "__cuda_array_interface__"):
+                typ = typ.copy(readonly=True)
 
         if isinstance(typ, types.BaseAnonymousTuple):
             # if it's a tuple of literal types, swap the type for the more

@@ -3642,8 +3642,73 @@ def record_static_setitem_int(context, builder, sig, args):
 def constant_array(context, builder, ty, pyval):
     """
     Create a constant array (mechanism is target-dependent).
+
+    For objects implementing __cuda_array_interface__,
+    the device pointer is embedded directly as a constant. For other arrays,
+    the target-specific mechanism is used.
     """
+    # Check if this is a device array (implements __cuda_array_interface__)
+    if hasattr(pyval, "__cuda_array_interface__"):
+        return _lower_constant_device_array(context, builder, ty, pyval)
+
     return context.make_constant_array(builder, ty, pyval)
+
+
+def _lower_constant_device_array(context, builder, ty, pyval):
+    """
+    Lower objects with __cuda_array_interface__ by embedding the device
+    pointer as a constant.
+
+    This allows device arrays captured from globals to be used in CUDA
+    kernels and device functions.
+    """
+    interface = pyval.__cuda_array_interface__
+
+    # Hold on to the device-array-like object to prevent garbage collection.
+    # The code library maintains a dictionary of referenced objects.
+    lib = context.active_code_library
+    referenced_objects = getattr(lib, "referenced_objects", None)
+    if referenced_objects is None:
+        lib.referenced_objects = referenced_objects = {}
+    referenced_objects[id(pyval)] = pyval
+
+    shape = interface["shape"]
+    strides = interface.get("strides")
+    data_ptr = interface["data"][0]
+    typestr = interface["typestr"]
+
+    # Calculate strides if not provided (C-contiguous)
+    if strides is None:
+        itemsize = np.dtype(typestr).itemsize
+        ndim = len(shape)
+        strides = []
+        stride = itemsize
+        for i in range(ndim - 1, -1, -1):
+            strides.insert(0, stride)
+            stride *= shape[i]
+        strides = tuple(strides)
+
+    # Embed device pointer as constant
+    llvoidptr = context.get_value_type(types.voidptr)
+    data = context.get_constant(types.uintp, data_ptr).inttoptr(llvoidptr)
+
+    # Build array structure
+    ary = context.make_array(ty)(context, builder)
+    kshape = [context.get_constant(types.intp, s) for s in shape]
+    kstrides = [context.get_constant(types.intp, s) for s in strides]
+    itemsize = np.dtype(typestr).itemsize
+
+    context.populate_array(
+        ary,
+        data=builder.bitcast(data, ary.data.type),
+        shape=kshape,
+        strides=kstrides,
+        itemsize=context.get_constant(types.intp, itemsize),
+        parent=None,
+        meminfo=None,
+    )
+
+    return ary._getvalue()
 
 
 @lower_constant(types.Record)

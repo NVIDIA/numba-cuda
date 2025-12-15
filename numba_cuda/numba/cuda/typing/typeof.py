@@ -55,6 +55,14 @@ def typeof_impl(val, c):
     if tp is not None:
         return tp
 
+    # Check for __cuda_array_interface__ objects (third-party device arrays)
+
+    # Numba's own DeviceNDArray is handled above via _numba_type_.
+    if hasattr(val, "__cuda_array_interface__"):
+        tp = _typeof_cuda_array_interface(val, c)
+        if tp is not None:
+            return tp
+
     # cffi is handled here as it does not expose a public base class
     # for exported functions or CompiledFFI instances.
     from numba.cuda.typing import cffi_utils
@@ -299,3 +307,54 @@ def typeof_numpy_polynomial(val, c):
     domain = typeof(val.domain)
     window = typeof(val.window)
     return types.PolynomialType(coef, domain, window)
+
+
+def _typeof_cuda_array_interface(val, c):
+    """
+    Determine the type of a __cuda_array_interface__ object.
+
+    This handles third-party device arrays that implement the CUDA
+    Array Interface. These are typed as regular Array types, with lowering
+    handled in numba.cuda.np.arrayobj.
+    """
+    # Only handle constants, not arguments (arguments use regular array typing)
+    if c.purpose == Purpose.argument:
+        return None
+
+    interface = val.__cuda_array_interface__
+
+    dtype = numpy_support.from_dtype(np.dtype(interface["typestr"]))
+    shape = interface["shape"]
+    ndim = len(shape)
+    strides = interface.get("strides")
+
+    # Determine layout
+    if ndim == 0:
+        layout = "C"
+    elif strides is None:
+        layout = "C"
+    else:
+        itemsize = np.dtype(interface["typestr"]).itemsize
+        # Check C-contiguous
+        c_strides = []
+        stride = itemsize
+        for i in range(ndim - 1, -1, -1):
+            c_strides.insert(0, stride)
+            stride *= shape[i]
+
+        if tuple(strides) == tuple(c_strides):
+            layout = "C"
+        else:
+            # Check F-contiguous
+            f_strides = []
+            stride = itemsize
+            for i in range(ndim):
+                f_strides.append(stride)
+                stride *= shape[i]
+            if tuple(strides) == tuple(f_strides):
+                layout = "F"
+            else:
+                layout = "A"
+
+    readonly = interface["data"][1]
+    return types.Array(dtype, ndim, layout, readonly=readonly)
