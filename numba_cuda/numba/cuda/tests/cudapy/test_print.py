@@ -217,7 +217,7 @@ class TestPrint(CUDATestCase):
     def test_nested_mixed_type_tuple(self):
         output, _ = self.run_code(print_nested_mixed_type_tuple_usecase)
         lines = [line.strip() for line in output.splitlines(True)]
-        expected = ["(1, ((2, 4), 3.0), (4,), 5)"]
+        expected = ["(1, ((2, 4), 3.000000), (4,), 5)"]
         self.assertEqual(lines, expected)
 
     def test_single_element_tuple(self):
