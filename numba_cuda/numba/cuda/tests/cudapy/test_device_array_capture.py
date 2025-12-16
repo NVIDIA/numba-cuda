@@ -17,11 +17,6 @@ from numba.cuda.testing import unittest, CUDATestCase, ForeignArray
 from numba.cuda.testing import skip_on_cudasim
 
 
-# =============================================================================
-# Array factory functions
-# =============================================================================
-
-
 def make_numba_array(host_arr):
     """Create a Numba device array from host array."""
     return cuda.to_device(host_arr)
@@ -44,11 +39,6 @@ ARRAY_FACTORIES = [
     ("numba_device", make_numba_array),
     ("foreign", make_foreign_array),
 ]
-
-
-# =============================================================================
-# Test classes
-# =============================================================================
 
 
 @skip_on_cudasim("Global device array capture not supported in simulator")
