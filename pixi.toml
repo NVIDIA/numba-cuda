@@ -52,15 +52,20 @@ cuda = "13"
 
 [feature.cu-13.dependencies]
 cuda-version = "13.*"
+ipython = "*"
+pyinstrument = "*"
 
 [feature.cu-13-0.dependencies]
 cuda-version = "13.0.*"
+ipython = "*"
+pyinstrument = "*"
 
 [feature.bench.dependencies]
 pytorch = ">=2.8"
 pytorch-gpu = ">=2.8"
 libtorch = ">=2.8"
 cupy = "*"
+pyinstrument = "*"
 
 [feature.test.dependencies]
 # for building cuda artifacts for testing
@@ -68,7 +73,7 @@ make = "*"
 pre-commit = ">=4.3"
 psutil = ">=6"
 cffi = ">=1"
-pytest = ">=8"
+pytest = ">=8,<9"
 pytest-xdist = ">=3.8"
 pytest-benchmark = ">=5.1"
 
@@ -99,6 +104,7 @@ numpydoc = ">=1.9.0"
 nvidia-sphinx-theme = "*"
 
 [environments]
+bench-against = { features = ["test"], no-default-feature = true }
 # CUDA 12
 cu-12-0-py310 = { features = [
     "cu-12-0",
@@ -227,6 +233,9 @@ benchcmp = { cmd = [
     "--benchmark-compare",
 ] }
 
+[target.linux.tasks.bench-against]
+cmd = ["python", "$PIXI_PROJECT_ROOT/scripts/bench-against.py"]
+
 [target.linux.tasks.build-docs]
 cmd = ["make", "-C", "$PIXI_PROJECT_ROOT/docs", "html"]
 
@@ -244,7 +253,7 @@ NUMBA_ENABLE_CUDASIM = "1"
 
 [package]
 name = "numba-cuda"
-version = "0.20.1"
+version = "0.22.1"
 
 [package.build]
 backend = { name = "pixi-build-python", version = "*" }

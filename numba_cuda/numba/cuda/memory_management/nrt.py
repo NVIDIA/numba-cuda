@@ -13,9 +13,10 @@ from numba.cuda import config, types
 from numba.cuda.cudadrv.driver import (
     _Linker,
     driver,
-    launch_kernel,
+    _to_core_stream,
     _have_nvjitlink,
 )
+from cuda.core.experimental import LaunchConfig, launch
 from numba.cuda.cudadrv import devices
 from numba.cuda.api import get_current_device
 from numba.cuda.utils import _readenv, cached_file_read
@@ -126,7 +127,7 @@ class _Runtime:
         cc = get_current_device().compute_capability
 
         # Create a new linker instance and add the cu file
-        linker = _Linker.new(cc=cc, lto=_have_nvjitlink())
+        linker = _Linker(max_registers=0, cc=cc, lto=_have_nvjitlink())
         linker.add_cu_file(memsys_mod)
 
         # Complete the linker and create a module from it
@@ -179,19 +180,14 @@ class _Runtime:
             stream = cuda.default_stream()
 
         func = module.get_function(name)
-        launch_kernel(
-            func.handle,
-            1,
-            1,
-            1,
-            1,
-            1,
-            1,
-            0,
-            stream.handle.value,
-            params,
-            cooperative=False,
+        config = LaunchConfig(
+            grid=(1, 1, 1),
+            block=(1, 1, 1),
+            shmem_size=0,
+            cooperative_launch=False,
         )
+
+        launch(_to_core_stream(stream), config, func.kernel, *params)
 
     def ensure_initialized(self, stream=None):
         """

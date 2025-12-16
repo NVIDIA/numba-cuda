@@ -254,7 +254,7 @@ class CUDACodeLibrary(serialize.ReduceMixin, CodeLibrary):
 
         cc = self._ensure_cc(cc)
 
-        linker = driver._Linker.new(
+        linker = driver._Linker(
             max_registers=self._max_registers,
             cc=cc,
             additional_flags=["-ptx"],
@@ -316,7 +316,7 @@ class CUDACodeLibrary(serialize.ReduceMixin, CodeLibrary):
             print(ptx)
             print("=" * 80)
 
-        linker = driver._Linker.new(
+        linker = driver._Linker(
             max_registers=self._max_registers, cc=cc, lto=self._lto
         )
         self._link_all(linker, cc, ignore_nonlto=False)
