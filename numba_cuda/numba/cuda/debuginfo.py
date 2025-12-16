@@ -854,8 +854,10 @@ class CUDADIBuilder(DIBuilder):
                         "size": _BYTE_SIZE * size_field,
                     }
                     dwarf_addrclass = self.get_dwarf_address_class(addrspace)
+                    # Skip dwarfAddressSpace emission, pointers are cast to
+                    # generic address space via addrspacecast.
                     if dwarf_addrclass is not None:
-                        meta_ptr["dwarfAddressSpace"] = int(dwarf_addrclass)
+                        pass
                     basetype = m.add_debug_info("DIDerivedType", meta_ptr)
                 else:
                     basetype = self._var_type(
