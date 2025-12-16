@@ -3649,7 +3649,7 @@ def constant_array(context, builder, ty, pyval):
     the target-specific mechanism is used.
     """
     # Check if this is a device array (implements __cuda_array_interface__)
-    if hasattr(pyval, "__cuda_array_interface__"):
+    if getattr(pyval, "__cuda_array_interface__", None) is not None:
         return _lower_constant_device_array(context, builder, ty, pyval)
 
     return context.make_constant_array(builder, ty, pyval)
@@ -3665,7 +3665,7 @@ def _lower_constant_device_array(context, builder, ty, pyval):
     """
     interface = pyval.__cuda_array_interface__
 
-    # Hold on to the device-array-like object to prevent garbage collection.
+    # Hold on to the device array to prevent garbage collection.
     context.active_code_library.referenced_objects[id(pyval)] = pyval
 
     shape = interface["shape"]
