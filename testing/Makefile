@@ -74,7 +74,7 @@ $(OUTPUT_DIR)/test_device_functions.o: test_device_functions.cu
 	$(SCCACHE) nvcc $(NVCC_FLAGS) $(OBJECT_FLAGS) -o $@ $<
 
 $(OUTPUT_DIR)/test_device_functions.a: test_device_functions.cu
-	$(SCCACHE) nvcc $(NVCC_FLAGS) $(LIBRARY_FLAGS) -o $@ $<
+	nvcc $(NVCC_FLAGS) $(LIBRARY_FLAGS) -o $@ $<
 
 $(OUTPUT_DIR)/test_device_functions.ltoir.o: test_device_functions.cu
 	nvcc $(NVCC_FLAGS) $(LTOIR_FLAGS) -o $@ $<
@@ -108,7 +108,7 @@ $(OUTPUT_DIR)/nrt_extern.o: nrt_extern.cu
 	$(SCCACHE) nvcc $(NVCC_FLAGS) $(OBJECT_FLAGS) -o $@ $< -I$(NRT_INCLUDE_DIR)
 
 $(OUTPUT_DIR)/nrt_extern.a: nrt_extern.cu
-	$(SCCACHE) nvcc $(NVCC_FLAGS) $(LIBRARY_FLAGS) -o $@ $< -I$(NRT_INCLUDE_DIR)
+	nvcc $(NVCC_FLAGS) $(LIBRARY_FLAGS) -o $@ $< -I$(NRT_INCLUDE_DIR)
 
 $(OUTPUT_DIR)/nrt_extern.ltoir.o: nrt_extern.cu
 	nvcc $(NVCC_FLAGS) $(LTOIR_FLAGS) -o $@ $< -I$(NRT_INCLUDE_DIR)
