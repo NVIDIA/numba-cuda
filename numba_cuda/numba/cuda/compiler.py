@@ -1023,9 +1023,10 @@ def compile_all(
     )
 
     if lto:
-        codes = [lib.get_ltoir(cc=cc)]
+        code = lib.get_ltoir(cc=cc)
     else:
-        codes = lib.get_asm_strs(cc=cc)
+        code = lib.get_asm_str(cc=cc)
+    codes = [code]
 
     # linking_files
     is_ltoir = output == "ltoir"
@@ -1240,14 +1241,7 @@ def compile(
     if lto:
         code = lib.get_ltoir(cc=cc)
     else:
-        codes = lib.get_asm_strs(cc=cc)
-        if len(codes) == 1:
-            code = codes[0]
-        else:
-            raise RuntimeError(
-                "Compiling this function results in multiple "
-                "PTX files. Use compile_all() instead"
-            )
+        code = lib.get_asm_str(cc=cc)
     return code, resty
 
 
