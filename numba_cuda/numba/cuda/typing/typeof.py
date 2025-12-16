@@ -58,8 +58,9 @@ def typeof_impl(val, c):
     # Check for __cuda_array_interface__ objects (third-party device arrays)
 
     # Numba's own DeviceNDArray is handled above via _numba_type_.
-    if hasattr(val, "__cuda_array_interface__"):
-        tp = _typeof_cuda_array_interface(val, c)
+    cai = getattr(val, "__cuda_array_interface__", None)
+    if cai is not None:
+        tp = _typeof_cuda_array_interface(cai, c)
         if tp is not None:
             return tp
 
@@ -321,12 +322,10 @@ def _typeof_cuda_array_interface(val, c):
     if c.purpose == Purpose.argument:
         return None
 
-    interface = val.__cuda_array_interface__
-
-    dtype = numpy_support.from_dtype(np.dtype(interface["typestr"]))
-    shape = interface["shape"]
+    dtype = numpy_support.from_dtype(np.dtype(val["typestr"]))
+    shape = val["shape"]
     ndim = len(shape)
-    strides = interface.get("strides")
+    strides = val.get("strides")
 
     # Determine layout
     if ndim == 0:
@@ -334,27 +333,19 @@ def _typeof_cuda_array_interface(val, c):
     elif strides is None:
         layout = "C"
     else:
-        itemsize = np.dtype(interface["typestr"]).itemsize
-        # Check C-contiguous
-        c_strides = []
-        stride = itemsize
-        for i in range(ndim - 1, -1, -1):
-            c_strides.insert(0, stride)
-            stride *= shape[i]
-
-        if tuple(strides) == tuple(c_strides):
-            layout = "C"
+        itemsize = np.dtype(val["typestr"]).itemsize
+        # Quick rejection: C-contiguous has strides[-1] == itemsize,
+        # F-contiguous has strides[0] == itemsize. If neither, it's "A".
+        if strides[-1] == itemsize:
+            c_strides = tuple(
+                itemsize * np.prod(shape[i + 1 :]) for i in range(ndim)
+            )
+            layout = "C" if strides == c_strides else "A"
+        elif strides[0] == itemsize:
+            f_strides = tuple(itemsize * np.prod(shape[:i]) for i in range(ndim))
+            layout = "F" if strides == f_strides else "A"
         else:
-            # Check F-contiguous
-            f_strides = []
-            stride = itemsize
-            for i in range(ndim):
-                f_strides.append(stride)
-                stride *= shape[i]
-            if tuple(strides) == tuple(f_strides):
-                layout = "F"
-            else:
-                layout = "A"
+            layout = "A"
 
-    readonly = interface["data"][1]
+    readonly = val["data"][1]
     return types.Array(dtype, ndim, layout, readonly=readonly)

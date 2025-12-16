@@ -3676,17 +3676,12 @@ def _lower_constant_device_array(context, builder, ty, pyval):
     strides = interface.get("strides")
     data_ptr = interface["data"][0]
     typestr = interface["typestr"]
+    itemsize = np.dtype(typestr).itemsize
 
     # Calculate strides if not provided (C-contiguous)
     if strides is None:
-        itemsize = np.dtype(typestr).itemsize
         ndim = len(shape)
-        strides = []
-        stride = itemsize
-        for i in range(ndim - 1, -1, -1):
-            strides.insert(0, stride)
-            stride *= shape[i]
-        strides = tuple(strides)
+        strides = tuple(itemsize * np.prod(shape[i + 1 :]) for i in range(ndim))
 
     # Embed device pointer as constant
     llvoidptr = context.get_value_type(types.voidptr)
@@ -3696,7 +3691,6 @@ def _lower_constant_device_array(context, builder, ty, pyval):
     ary = context.make_array(ty)(context, builder)
     kshape = [context.get_constant(types.intp, s) for s in shape]
     kstrides = [context.get_constant(types.intp, s) for s in strides]
-    itemsize = np.dtype(typestr).itemsize
 
     context.populate_array(
         ary,
