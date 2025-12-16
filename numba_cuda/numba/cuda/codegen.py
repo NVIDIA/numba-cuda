@@ -232,7 +232,7 @@ class CUDACodeLibrary(serialize.ReduceMixin, CodeLibrary):
 
         self._ptx_cache[cc] = ptx
 
-        return ptxes
+        return ptx
 
     def get_lto_ptx(self, cc=None):
         """
