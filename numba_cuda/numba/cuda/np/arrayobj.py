@@ -3666,12 +3666,7 @@ def _lower_constant_device_array(context, builder, ty, pyval):
     interface = pyval.__cuda_array_interface__
 
     # Hold on to the device-array-like object to prevent garbage collection.
-    # The code library maintains a dictionary of referenced objects.
-    lib = context.active_code_library
-    referenced_objects = getattr(lib, "referenced_objects", None)
-    if referenced_objects is None:
-        lib.referenced_objects = referenced_objects = {}
-    referenced_objects[id(pyval)] = pyval
+    context.active_code_library.referenced_objects[id(pyval)] = pyval
 
     shape = interface["shape"]
     strides = interface.get("strides")
