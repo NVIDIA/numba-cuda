@@ -70,7 +70,7 @@ def runtime_build_excinfo_struct(static_exc, exc_args):
     real_args = []
     exc_args_iter = iter(exc_args)
     for arg in static_args:
-        if isinstance(arg, ir.value_types):
+        if isinstance(arg, ir.Value):
             real_args.append(next(exc_args_iter))
         else:
             real_args.append(arg)
