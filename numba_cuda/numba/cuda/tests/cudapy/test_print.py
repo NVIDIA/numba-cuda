@@ -63,18 +63,6 @@ cuda.synchronize()
 """
 
 
-printstring_in_tuple_usecase = """\
-from numba import cuda
-
-@cuda.jit
-def printstring():
-    print(("a", "b"))
-
-printstring[1, 3]()
-cuda.synchronize()
-"""
-
-
 printdim3_usecase = """\
 from numba import cuda
 
