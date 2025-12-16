@@ -13,7 +13,6 @@ from numba.cuda import types
 from numba.cuda.core import errors
 from numba.cuda import utils
 from numba.cuda.np import numpy_support
-from numba.cuda.np.numpy_support import strides_from_shape
 
 
 # terminal color markup
@@ -338,10 +337,14 @@ def _typeof_cuda_array_interface(val, c):
         # Quick rejection: C-contiguous has strides[-1] == itemsize,
         # F-contiguous has strides[0] == itemsize. If neither, it's "A".
         if strides[-1] == itemsize:
-            c_strides = strides_from_shape(shape, itemsize, order="C")
+            c_strides = numpy_support.strides_from_shape(
+                shape, itemsize, order="C"
+            )
             layout = "C" if strides == c_strides else "A"
         elif strides[0] == itemsize:
-            f_strides = strides_from_shape(shape, itemsize, order="F")
+            f_strides = numpy_support.strides_from_shape(
+                shape, itemsize, order="F"
+            )
             layout = "F" if strides == f_strides else "A"
         else:
             layout = "A"
