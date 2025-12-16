@@ -31,6 +31,7 @@ from numba.cuda.np.numpy_support import (
     type_is_scalar,
     lt_complex,
     lt_floats,
+    strides_from_shape,
 )
 from numba.cuda.np.numpy_support import (
     type_can_asarray,
@@ -3680,8 +3681,7 @@ def _lower_constant_device_array(context, builder, ty, pyval):
 
     # Calculate strides if not provided (C-contiguous)
     if strides is None:
-        ndim = len(shape)
-        strides = tuple(itemsize * np.prod(shape[i + 1 :]) for i in range(ndim))
+        strides = strides_from_shape(shape, itemsize, order="C")
 
     # Embed device pointer as constant
     llvoidptr = context.get_value_type(types.voidptr)
