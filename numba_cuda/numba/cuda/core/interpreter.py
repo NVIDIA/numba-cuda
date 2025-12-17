@@ -2377,7 +2377,7 @@ class Interpreter(object):
     else:
         raise NotImplementedError(PYVERSION)
 
-    if PYVERSION in ((3, 12), (3, 13)):
+    if PYVERSION in ((3, 12), (3, 13), (3, 14)):
         op_LOAD_FAST_CHECK = op_LOAD_FAST
 
         def op_LOAD_FAST_AND_CLEAR(self, inst, res):
