@@ -202,9 +202,9 @@ class NumbaPickler(cloudpickle.CloudPickler):
         # These contain device pointers that would become stale after unpickling
         if getattr(obj, "__cuda_array_interface__", None) is not None:
             raise pickle.PicklingError(
-                "Cannot cache kernels or device functions referencing "
+                "Cannot serialize kernels or device functions referencing "
                 "global device arrays. Pass the array(s) as arguments "
-                "to the kernel instead, or use cache=False."
+                "to the kernel instead."
             )
 
         return super().reducer_override(obj)

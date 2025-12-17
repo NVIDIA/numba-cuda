@@ -458,9 +458,9 @@ class CUDACodeLibrary(serialize.ReduceMixin, CodeLibrary):
                 for obj in self.referenced_objects.values()
             ):
                 raise pickle.PicklingError(
-                    "Cannot cache kernels or device functions referencing "
+                    "Cannot serialize kernels or device functions referencing "
                     "global device arrays. Pass the array(s) as arguments "
-                    "to the kernel instead, or use cache=False."
+                    "to the kernel instead."
                 )
 
         nrt = False
