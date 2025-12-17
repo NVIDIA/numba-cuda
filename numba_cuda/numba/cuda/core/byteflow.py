@@ -1863,7 +1863,7 @@ class TraceRunner(object):
         state.push(res)
 
     def op_SET_FUNCTION_ATTRIBUTE(self, state, inst):
-        assert PYVERSION in ((3, 13),)
+        assert PYVERSION in ((3, 13), (3, 14))
         make_func_stack = state.pop()
         data = state.pop()
         if inst.arg == 0x1:
