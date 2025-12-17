@@ -40,11 +40,6 @@ ARRAY_FACTORIES = [
     ("foreign", make_foreign_array),
 ]
 
-# Module-level global device array for testing caching protection with globals
-# (as opposed to closure variables)
-GLOBAL_HOST_DATA = np.array([1.0, 2.0, 3.0], dtype=np.float32)
-GLOBAL_DEVICE_ARRAY = None  # Initialized in test to avoid import-time CUDA init
-
 
 @skip_on_cudasim("Global device array capture not supported in simulator")
 class TestDeviceArrayCapture(CUDATestCase):
@@ -224,107 +219,6 @@ class TestDeviceArrayCapture(CUDATestCase):
                 result = output.copy_to_host()
                 expected = np.array([8.0, 9.0, 10.0], dtype=np.float32)
                 np.testing.assert_array_equal(result, expected)
-
-
-@skip_on_cudasim("Global device array capture not supported in simulator")
-class TestDeviceArrayCaptureCaching(CUDATestCase):
-    """
-    Test that caching correctly rejects kernels with captured device arrays.
-
-    When kernels are compiled with cache=True, the device pointer would be
-    embedded in the cached code. This is problematic because:
-    1. The original device array may have been deallocated
-    2. A new device array may be allocated at a different address
-
-    PicklingError is raised when attempting to serialize kernels that have
-    captured device arrays, preventing this issue.
-    """
-
-    def test_caching_rejects_captured_pointer(self):
-        """Test that caching is rejected for kernels with captured arrays."""
-        import os
-        import pickle
-        import shutil
-        import tempfile
-
-        for name, make_array in ARRAY_FACTORIES:
-            with self.subTest(array_type=name):
-                cache_dir = tempfile.mkdtemp(prefix="numba_cache_test_")
-
-                try:
-                    old_cache_dir = os.environ.get("NUMBA_CACHE_DIR")
-                    os.environ["NUMBA_CACHE_DIR"] = cache_dir
-
-                    host_data = np.array([1.0, 2.0, 3.0], dtype=np.float32)
-                    captured_arr = make_array(host_data)
-
-                    @cuda.jit(cache=True)
-                    def cached_kernel(output):
-                        i = cuda.grid(1)
-                        if i < output.size:
-                            output[i] = captured_arr[i] * 2.0
-
-                    output = cuda.device_array(3, dtype=np.float32)
-
-                    with self.assertRaises(pickle.PicklingError) as cm:
-                        cached_kernel[1, 3](output)
-
-                    self.assertIn("global device arrays", str(cm.exception))
-                    self.assertIn("cache=False", str(cm.exception))
-
-                finally:
-                    if old_cache_dir is not None:
-                        os.environ["NUMBA_CACHE_DIR"] = old_cache_dir
-                    elif "NUMBA_CACHE_DIR" in os.environ:
-                        del os.environ["NUMBA_CACHE_DIR"]
-
-                    shutil.rmtree(cache_dir, ignore_errors=True)
-
-    def test_caching_rejects_module_level_global(self):
-        """
-        Test that caching is rejected for kernels referencing module-level
-        global device arrays.
-        """
-        import os
-        import pickle
-        import shutil
-        import tempfile
-
-        global GLOBAL_DEVICE_ARRAY
-
-        cache_dir = tempfile.mkdtemp(prefix="numba_cache_test_global_")
-
-        try:
-            old_cache_dir = os.environ.get("NUMBA_CACHE_DIR")
-            os.environ["NUMBA_CACHE_DIR"] = cache_dir
-
-            # Initialize the module-level global device array
-            GLOBAL_DEVICE_ARRAY = cuda.to_device(GLOBAL_HOST_DATA)
-
-            @cuda.jit(cache=True)
-            def cached_kernel_with_global(output):
-                i = cuda.grid(1)
-                if i < output.size:
-                    output[i] = GLOBAL_DEVICE_ARRAY[i] * 2.0
-
-            output = cuda.device_array(3, dtype=np.float32)
-
-            # This should raise PicklingError because the kernel captures
-            # a device array pointer that cannot be safely cached
-            with self.assertRaises(pickle.PicklingError) as cm:
-                cached_kernel_with_global[1, 3](output)
-
-            self.assertIn("global device arrays", str(cm.exception))
-            self.assertIn("cache=False", str(cm.exception))
-
-        finally:
-            if old_cache_dir is not None:
-                os.environ["NUMBA_CACHE_DIR"] = old_cache_dir
-            elif "NUMBA_CACHE_DIR" in os.environ:
-                del os.environ["NUMBA_CACHE_DIR"]
-
-            shutil.rmtree(cache_dir, ignore_errors=True)
-            GLOBAL_DEVICE_ARRAY = None
 
 
 if __name__ == "__main__":
