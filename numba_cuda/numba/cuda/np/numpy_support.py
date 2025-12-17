@@ -3,7 +3,10 @@
 
 import collections
 import ctypes
+import itertools
+import operator
 import re
+
 import numpy as np
 
 from numba.cuda import types
@@ -16,6 +19,29 @@ from numba.cuda.core.errors import TypingError
 from numba.cuda.cgutils import is_nonelike  # noqa: F401
 
 numpy_version = tuple(map(int, np.__version__.split(".")[:2]))
+
+
+def strides_from_shape(
+    shape: tuple[int, ...], itemsize: int, *, order: str
+) -> tuple[int, ...]:
+    """Compute strides for a contiguous array with given shape and order."""
+    if len(shape) == 0:
+        # 0-D arrays have empty strides
+        return ()
+    limits = slice(1, None) if order == "C" else slice(None, -1)
+    transform = reversed if order == "C" else lambda x: x
+    strides = tuple(
+        map(
+            itemsize.__mul__,
+            itertools.accumulate(
+                transform(shape[limits]), operator.mul, initial=1
+            ),
+        )
+    )
+    if order == "F":
+        return strides
+    return strides[::-1]
+
 
 FROM_DTYPE = {
     np.dtype("bool"): types.boolean,
