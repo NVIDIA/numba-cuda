@@ -283,10 +283,7 @@ class TestDeviceArrayCaptureCaching(CUDATestCase):
     def test_caching_rejects_module_level_global(self):
         """
         Test that caching is rejected for kernels referencing module-level
-        global device arrays (not closure variables).
-
-        This is a regression test for a bug where the caching protection
-        only checked closure variables but not module-level globals.
+        global device arrays.
         """
         import os
         import pickle
@@ -304,8 +301,6 @@ class TestDeviceArrayCaptureCaching(CUDATestCase):
             # Initialize the module-level global device array
             GLOBAL_DEVICE_ARRAY = cuda.to_device(GLOBAL_HOST_DATA)
 
-            # Define a kernel that references the module-level global
-            # (NOT a closure variable)
             @cuda.jit(cache=True)
             def cached_kernel_with_global(output):
                 i = cuda.grid(1)
