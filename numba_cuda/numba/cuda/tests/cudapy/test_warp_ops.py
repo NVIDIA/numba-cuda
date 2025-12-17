@@ -287,16 +287,17 @@ class TestCudaWarpOperations(CUDATestCase):
         valid_cases = [
             # mask: unsigned/signed integer
             # predicate: unsigned/signed integer, boolean
-            ("void(uint32[:], uint32[:], int32[:])", np.uint32, np.uint32, 1),
-            ("void(int64[:], int64[:], int32[:])", np.int64, np.int64, 1),
-            ("void(uint64[:], uint64[:], int32[:])", np.uint64, np.uint64, 1),
-            ("void(int32[:], int32[:], int32[:])", np.int32, np.int32, 1),
-            ("void(uint32[:], boolean[:], int32[:])", np.uint32, np.bool_, 1),
-            ("void(uint64[:], boolean[:], int32[:])", np.uint64, np.bool_, 1),
+            ("void(uint32[:], uint32[:], int32[:])", np.uint32, np.uint32),
+            ("void(int64[:], int64[:], int32[:])", np.int64, np.int64),
+            ("void(uint64[:], uint64[:], int32[:])", np.uint64, np.uint64),
+            ("void(int32[:], int32[:], int32[:])", np.int32, np.int32),
+            ("void(uint32[:], boolean[:], int32[:])", np.uint32, np.bool_),
+            ("void(uint64[:], boolean[:], int32[:])", np.uint64, np.bool_),
         ]
 
-        for sig, mask_dtype, pred_dtype, mask_val in valid_cases:
+        for sig, mask_dtype, pred_dtype in valid_cases:
             with self.subTest(sig=sig):
+                mask_val = (~np.array(0, dtype=mask_dtype)).item()
                 compiled = cuda.jit(sig)(use_vote_sync_all_with_mask)
                 ary_mask = np.full(nelem, mask_val, dtype=mask_dtype)
                 ary_pred = np.ones(nelem, dtype=pred_dtype)
