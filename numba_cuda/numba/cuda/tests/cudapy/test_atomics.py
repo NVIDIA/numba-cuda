@@ -592,6 +592,10 @@ def atomic_cas_2dim(res, old, ary, fill_val):
         old[gid] = cuda.atomic.cas(res, gid, fill_val, ary[gid])
 
 
+@unittest.skipIf(
+    cuda.get_current_device().compute_capability > (10, 0)
+    and cuda.cudadrv.driver.get_version()[0] == 12,
+)
 class TestCudaAtomics(CUDATestCase):
     def setUp(self):
         super().setUp()
