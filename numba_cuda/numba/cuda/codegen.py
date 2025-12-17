@@ -12,6 +12,7 @@ from numba.cuda.cudadrv.linkable_code import LinkableCode
 from numba.cuda.memory_management.nrt import NRT_LIBRARY
 
 import os
+import pickle
 import subprocess
 import tempfile
 
@@ -450,6 +451,18 @@ class CUDACodeLibrary(serialize.ReduceMixin, CodeLibrary):
         but loaded functions are discarded. They are recreated when needed
         after deserialization.
         """
+        # Check for captured device arrays that cannot be safely cached.
+        if self.referenced_objects:
+            if any(
+                getattr(obj, "__cuda_array_interface__", None) is not None
+                for obj in self.referenced_objects.values()
+            ):
+                raise pickle.PicklingError(
+                    "Cannot cache kernels or device functions referencing "
+                    "global device arrays. Pass the array(s) as arguments "
+                    "to the kernel instead, or use cache=False."
+                )
+
         nrt = False
         if self._linking_files:
             if (

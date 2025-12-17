@@ -200,13 +200,11 @@ class NumbaPickler(cloudpickle.CloudPickler):
 
         # Prevent pickling of objects implementing __cuda_array_interface__
         # These contain device pointers that would become stale after unpickling
-        if hasattr(obj, "__cuda_array_interface__"):
+        if getattr(obj, "__cuda_array_interface__", None) is not None:
             raise pickle.PicklingError(
-                f"Cannot pickle {type(obj).__name__} object: objects "
-                f"implementing __cuda_array_interface__ contain device "
-                f"pointers that cannot be safely serialized. "
-                f"Disable caching (cache=False) for kernels that capture "
-                f"device arrays from global scope."
+                "Cannot cache kernels or device functions referencing "
+                "global device arrays. Pass the array(s) as arguments "
+                "to the kernel instead, or use cache=False."
             )
 
         return super().reducer_override(obj)
