@@ -94,6 +94,19 @@ def jit(
                 default when nvjitlink is available, except for kernels where
                 ``debug=True``.
     :type lto: bool
+    :param shared_memory_carveout: Controls the partitioning of shared memory and L1
+                                   cache on the GPU. Accepts either a string or an integer:
+
+                                   - String values: ``"MaxL1"`` (maximize L1 cache), ``"MaxShared"``
+                                     (maximize shared memory), or ``"default"`` (use driver default).
+                                   - Integer values: 0-100 representing the percentage of shared
+                                     memory to carve out from the unified memory pool, or -1 for
+                                     the default carveout preference.
+
+                                   This parameter is only effective on devices with a unified L1/shared memory
+                                   architecture. If unspecified, the CUDA driver uses the default carveout
+                                   preference.
+    :type shared_memory_carveout: str | int
     """
 
     if link and config.ENABLE_CUDASIM:
@@ -111,6 +124,9 @@ def jit(
     if kws.get("bind") is not None:
         msg = _msg_deprecated_signature_arg.format("bind")
         raise DeprecationError(msg)
+
+    if shared_memory_carveout is not None:
+        _validate_shared_memory_carveout(shared_memory_carveout)
 
     if isinstance(inline, bool):
         DeprecationWarning(
@@ -296,3 +312,20 @@ def declare_device(name, sig, link=None, use_cooperative=False):
     )
 
     return template.key
+
+
+def _validate_shared_memory_carveout(carveout):
+    if isinstance(carveout, str):
+        valid_strings = ["default", "maxl1", "maxshared"]
+        if carveout.lower() not in valid_strings:
+            raise ValueError(
+                f"Invalid carveout value: {carveout}. "
+                f"Must be -1 to 100 or one of {valid_strings}"
+            )
+    elif isinstance(carveout, int):
+        if not (-1 <= carveout <= 100):
+            raise ValueError("Carveout must be between -1 and 100")
+    else:
+        raise TypeError(
+            f"shared_memory_carveout must be str or int, got {type(carveout).__name__}"
+        )

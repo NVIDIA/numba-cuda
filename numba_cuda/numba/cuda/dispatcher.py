@@ -337,20 +337,9 @@ class _Kernel(serialize.ReduceMixin):
 
     def _parse_carveout(self, carveout):
         if isinstance(carveout, int):
-            if not (-1 <= carveout <= 100):
-                raise ValueError("Carveout must be between -1 and 100")
             return carveout
-
         carveout_map = {"default": -1, "maxl1": 0, "maxshared": 100}
-
-        key = str(carveout).lower()
-        if key in carveout_map:
-            return carveout_map[key]
-
-        raise ValueError(
-            f"Invalid carveout value: {carveout}. "
-            f"Must be -1 to 100 or one of {list(carveout_map.keys())}"
-        )
+        return carveout_map[str(carveout).lower()]
 
     @module_init_lock
     def initialize_once(self, mod):

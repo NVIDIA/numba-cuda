@@ -829,18 +829,23 @@ class TestSharedMemoryCarveout(CUDATestCase):
 
         for carveout, exc_type, msg_pattern in test_cases:
             with self.subTest(carveout=carveout):
-
-                @cuda.jit(shared_memory_carveout=carveout)
-                def add_one(x):
-                    i = cuda.grid(1)
-                    if i < len(x):
-                        x[i] = i + 1
-
-                x = np.zeros(10, dtype=np.int32)
-                d_x = cuda.to_device(x)
-
+                # without signature
                 with self.assertRaisesRegex(exc_type, msg_pattern):
-                    add_one[1, 10](d_x)
+
+                    @cuda.jit(shared_memory_carveout=carveout)
+                    def add_one(x):
+                        i = cuda.grid(1)
+                        if i < len(x):
+                            x[i] = i + 1
+
+                # with signature
+                with self.assertRaisesRegex(exc_type, msg_pattern):
+
+                    @cuda.jit("void(int32[:])", shared_memory_carveout=carveout)
+                    def add_one_sig(x):
+                        i = cuda.grid(1)
+                        if i < len(x):
+                            x[i] = i + 1
 
     def test_shared_memory_carveout_valid_values(self):
         carveout_values = ["MaxL1", "MaxShared", "default", 0, 50, 100, -1]
@@ -850,7 +855,7 @@ class TestSharedMemoryCarveout(CUDATestCase):
 
         for carveout in carveout_values:
             with self.subTest(carveout=carveout):
-
+                # without signature
                 @cuda.jit(shared_memory_carveout=carveout)
                 def add_one(x):
                     i = cuda.grid(1)
@@ -859,6 +864,17 @@ class TestSharedMemoryCarveout(CUDATestCase):
 
                 d_x = cuda.to_device(x)
                 add_one[1, 10](d_x)
+                np.testing.assert_array_equal(d_x.copy_to_host(), expected)
+
+                # with signature
+                @cuda.jit("void(int32[:])", shared_memory_carveout=carveout)
+                def add_one_sig(x):
+                    i = cuda.grid(1)
+                    if i < x.size:
+                        x[i] = i + 1
+
+                d_x = cuda.to_device(x)
+                add_one_sig[1, 10](d_x)
                 np.testing.assert_array_equal(d_x.copy_to_host(), expected)
 
 
