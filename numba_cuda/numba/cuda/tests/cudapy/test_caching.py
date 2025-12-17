@@ -25,6 +25,11 @@ from numba.cuda.tests.support import (
     temp_directory,
     import_dynamic,
 )
+import numpy as np
+from pickle import PicklingError
+
+# Module-level global for testing that caching rejects global device arrays
+GLOBAL_DEVICE_ARRAY = None
 
 
 class BaseCacheTest(TestCase):
@@ -367,6 +372,48 @@ class CUDACachingTest(DispatcherCacheUsecasesTest):
             @cuda.jit("void()", cache=True, link=[link])
             def f():
                 pass
+
+    def test_cannot_cache_captured_device_array(self):
+        # Test that kernels capturing device arrays from closures cannot
+        # be cached. The error can come from either NumbaPickler (for closure
+        # variables) or CUDACodeLibrary._reduce_states (for referenced objects).
+        host_data = np.array([1.0, 2.0, 3.0], dtype=np.float32)
+        captured_arr = cuda.to_device(host_data)
+
+        msg = "global device arrays"
+        with self.assertRaisesRegex(PicklingError, msg):
+
+            @cuda.jit(cache=True)
+            def cached_kernel(output):
+                i = cuda.grid(1)
+                if i < output.size:
+                    output[i] = captured_arr[i] * 2.0
+
+            output = cuda.device_array(3, dtype=np.float32)
+            cached_kernel[1, 3](output)
+
+    def test_cannot_cache_global_device_array(self):
+        # Test that kernels referencing module-level global device arrays
+        # cannot be cached.
+        global GLOBAL_DEVICE_ARRAY
+
+        host_data = np.array([1.0, 2.0, 3.0], dtype=np.float32)
+        GLOBAL_DEVICE_ARRAY = cuda.to_device(host_data)
+
+        try:
+            msg = "global device arrays"
+            with self.assertRaisesRegex(PicklingError, msg):
+
+                @cuda.jit(cache=True)
+                def cached_kernel_global(output):
+                    i = cuda.grid(1)
+                    if i < output.size:
+                        output[i] = GLOBAL_DEVICE_ARRAY[i] * 2.0
+
+                output = cuda.device_array(3, dtype=np.float32)
+                cached_kernel_global[1, 3](output)
+        finally:
+            GLOBAL_DEVICE_ARRAY = None
 
 
 @skip_on_cudasim("Simulator does not implement caching")

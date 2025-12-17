@@ -197,6 +197,16 @@ class NumbaPickler(cloudpickle.CloudPickler):
         # Overridden to disable pickling of certain types
         if type(obj) in self.disabled_types:
             _no_pickle(obj)  # noreturn
+
+        # Prevent pickling of objects implementing __cuda_array_interface__
+        # These contain device pointers that would become stale after unpickling
+        if getattr(obj, "__cuda_array_interface__", None) is not None:
+            raise pickle.PicklingError(
+                "Cannot serialize kernels or device functions referencing "
+                "global device arrays. Pass the array(s) as arguments "
+                "to the kernel instead."
+            )
+
         return super().reducer_override(obj)
 
 

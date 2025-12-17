@@ -169,6 +169,16 @@ class TestCompile(unittest.TestCase):
         # ending in the filename of this module.
         self.assertRegex(ptx, '\\.file.*test_compiler.py"')
 
+    # We did test for the presence of debuginfo here, but in practice it made
+    # no sense - the C ABI wrapper generates a call instruction that has
+    # nothing to correlate with the DWARF, so it would confuse the debugger
+    # immediately anyway. With the resolution of Issue #588 (using separate
+    # translation of each IR module when debuginfo is enabled) the debuginfo
+    # isn't even produced for the ABI wrapper, because there was none present
+    # in that module anyway. So this test can only be expected to fail until we
+    # have a proper way of generating device functions with the C ABI without
+    # requiring the hack of generating a wrapper.
+    @unittest.expectedFailure
     def test_device_function_with_debug(self):
         # See Issue #6719 - this ensures that compilation with debug succeeds
         # with CUDA 11.2 / NVVM 7.0 onwards. Previously it failed because NVVM
