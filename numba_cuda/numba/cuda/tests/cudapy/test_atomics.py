@@ -593,16 +593,14 @@ def atomic_cas_2dim(res, old, ary, fill_val):
 
 
 @unittest.skipIf(
-    cuda.get_current_device().compute_capability >= (12, 0)
-    and cuda.cudadrv.driver.get_version()[0] == 12,
+    not config.ENABLE_CUDASIM
+    and cuda.get_current_device().compute_capability >= (12, 0)
+    and cuda.cudadrv.runtime.get_version()[0] == 12,
     reason="NVVM 12.9 Bugged on CC 10+",
 )
 class TestCudaAtomics(CUDATestCase):
     def setUp(self):
         super().setUp()
-        assert False, (
-            f"cc={cuda.get_current_device().compute_capability}, drvver={cuda.cudadrv.driver.get_version()[0]}"
-        )
         np.random.seed(0)
 
     def test_atomic_add(self):
