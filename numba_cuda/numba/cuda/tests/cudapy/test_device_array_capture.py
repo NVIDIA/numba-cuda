@@ -220,6 +220,24 @@ class TestDeviceArrayCapture(CUDATestCase):
                 expected = np.array([8.0, 9.0, 10.0], dtype=np.float32)
                 np.testing.assert_array_equal(result, expected)
 
+    def test_zero_dimensional(self):
+        """Test capturing 0-D (scalar) device arrays."""
+        for name, make_array in ARRAY_FACTORIES:
+            with self.subTest(array_type=name):
+                host_0d = np.array(42.0, dtype=np.float32)
+                global_0d = make_array(host_0d)
+
+                @cuda.jit
+                def kernel_0d(output):
+                    output[()] = global_0d[()] * 2.0
+
+                output = cuda.device_array((), dtype=np.float32)
+                kernel_0d[1, 1](output)
+
+                result = output.copy_to_host()
+                expected = 84.0
+                self.assertEqual(result, expected)
+
 
 if __name__ == "__main__":
     unittest.main()

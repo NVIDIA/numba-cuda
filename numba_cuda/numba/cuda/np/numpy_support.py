@@ -25,6 +25,9 @@ def strides_from_shape(
     shape: tuple[int, ...], itemsize: int, *, order: str
 ) -> tuple[int, ...]:
     """Compute strides for a contiguous array with given shape and order."""
+    if len(shape) == 0:
+        # 0-D arrays have empty strides
+        return ()
     limits = slice(1, None) if order == "C" else slice(None, -1)
     transform = reversed if order == "C" else lambda x: x
     strides = tuple(
