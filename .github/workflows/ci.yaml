@@ -1,0 +1,148 @@
+# SPDX-FileCopyrightText: Copyright (c) 2024 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: BSD-2-Clause
+
+name: ci
+
+on:
+  push:
+    branches:
+      - "main"
+
+jobs:
+  pre-commit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@83679a892e2d95755f2dac6acb0bfd1e9ac5d548
+      - uses: pre-commit/action@2c7b3805fd2a0fd8c1884dcaebf91fc102a13ecd
+        with:
+          extra_args: --all-files --show-diff-on-failure
+  compute-matrix:
+    runs-on: ubuntu-latest
+    outputs:
+      BUILD_MATRIX: ${{ steps.compute-matrix.outputs.BUILD_MATRIX }}
+      SIMULATOR_MATRIX: ${{ steps.compute-matrix.outputs.SIMULATOR_MATRIX }}
+      TEST_MATRIX: ${{ steps.compute-matrix.outputs.TEST_MATRIX }}
+    steps:
+      - uses: actions/checkout@v5
+      - name: Compute Matrices
+        id: compute-matrix
+        run: |
+          BUILD_MATRIX="$(yq '.build-matrix' ci/matrix.yml)"
+          SIMULATOR_MATRIX="$(yq '.simulator-matrix' ci/matrix.yml)"
+          TEST_MATRIX="$(yq '.test-matrix' ci/matrix.yml)"
+          {
+            echo 'BUILD_MATRIX<<EOF'
+            echo "${BUILD_MATRIX}"
+            echo 'EOF'
+            echo 'SIMULATOR_MATRIX<<EOF'
+            echo "${SIMULATOR_MATRIX}"
+            echo 'EOF'
+            echo 'TEST_MATRIX<<EOF'
+            echo "${TEST_MATRIX}"
+            echo 'EOF'
+          } >> "${GITHUB_OUTPUT}"
+  build-conda:
+    needs:
+      - compute-matrix
+    uses: ./.github/workflows/conda-python-build.yaml
+    with:
+      build_type: pull-request
+      script: "ci/build_conda.sh"
+      matrix: ${{ needs.compute-matrix.outputs.BUILD_MATRIX }}
+  test-conda:
+    needs:
+      - compute-matrix
+    uses: ./.github/workflows/conda-python-tests.yaml
+    with:
+      build_type: pull-request
+      script: "ci/test_conda.sh"
+      run_codecov: false
+      matrix: ${{ needs.compute-matrix.outputs.TEST_MATRIX }}
+  test-simulator:
+    needs:
+      - compute-matrix
+    uses: ./.github/workflows/simulator-test.yaml
+    with:
+      build_type: pull-request
+      script: "ci/test_simulator.sh"
+      matrix: ${{ needs.compute-matrix.outputs.SIMULATOR_MATRIX }}
+  build-wheels:
+    needs:
+      - compute-matrix
+    uses: ./.github/workflows/wheels-build.yaml
+    with:
+      build_type: pull-request
+      script: "ci/build_wheel.sh"
+      matrix: ${{ needs.compute-matrix.outputs.BUILD_MATRIX }}
+  build-wheels-windows:
+    uses: ./.github/workflows/wheel-windows-build.yaml
+  test-wheels-windows:
+    needs:
+      - build-wheels-windows
+    uses: ./.github/workflows/wheel-windows-tests.yaml
+  test-wheels:
+    needs:
+      - build-wheels
+      - compute-matrix
+    uses: ./.github/workflows/wheels-test.yaml
+    with:
+      build_type: pull-request
+      script: "ci/test_wheel.sh false"
+      matrix: ${{ needs.compute-matrix.outputs.TEST_MATRIX }}
+  test-wheels-deps-wheels:
+    needs:
+      - build-wheels
+      - compute-matrix
+    uses: ./.github/workflows/wheels-test.yaml
+    with:
+      build_type: pull-request
+      script: "ci/test_wheel_deps_wheels.sh"
+      matrix: ${{ needs.compute-matrix.outputs.TEST_MATRIX }}
+      matrix_filter: map(select(.ARCH == "amd64" and (.CUDA_VER | split(".") | .[0] | tonumber >= 12))) | group_by(.CUDA_VER|split(".")|map(tonumber)|.[0]) | map(max_by([(.PY_VER|split(".")|map(tonumber)), (.CUDA_VER|split(".")|map(tonumber))]))
+  test-thirdparty-cudf:
+    needs:
+      - build-wheels
+      - compute-matrix
+    uses: ./.github/workflows/wheels-test.yaml
+    with:
+      build_type: pull-request
+      script: "ci/test_thirdparty_cudf.sh"
+      matrix: ${{ needs.compute-matrix.outputs.TEST_MATRIX }}
+      # TODO: Enable for CUDA 13 when a supporting version of cuDF is available
+      matrix_filter: map(select(.ARCH == "amd64" and (.CUDA_VER | split(".") | .[0] | tonumber == 12))) | group_by(.CUDA_VER|split(".")|map(tonumber)|.[0]) | map(max_by([(.PY_VER|split(".")|map(tonumber)), (.CUDA_VER|split(".")|map(tonumber))]))
+  test-thirdparty-nvmath:
+    needs:
+      - build-wheels
+      - compute-matrix
+    uses: ./.github/workflows/wheels-test.yaml
+    with:
+      build_type: pull-request
+      script: "ci/test_thirdparty_nvmath.sh"
+      matrix: ${{ needs.compute-matrix.outputs.TEST_MATRIX }}
+      # TODO: Enable for CUDA 13 when a supporting version of nvmath-python is available
+      matrix_filter: map(select(.ARCH == "amd64" and (.CUDA_VER | split(".") | .[0] | tonumber == 12))) | group_by(.CUDA_VER|split(".")|map(tonumber)|.[0]) | map(max_by([(.PY_VER|split(".")|map(tonumber)), (.CUDA_VER|split(".")|map(tonumber))]))
+  test-thirdparty-awkward:
+    needs:
+      - build-wheels
+      - compute-matrix
+    uses: ./.github/workflows/wheels-test.yaml
+    with:
+      build_type: pull-request
+      script: "ci/test_thirdparty_awkward.sh"
+      matrix: ${{ needs.compute-matrix.outputs.TEST_MATRIX }}
+      # TODO: Enable for CUDA 13 in future
+      matrix_filter: map(select(.ARCH == "amd64" and (.CUDA_VER | split(".") | .[0] | tonumber == 12))) | group_by(.CUDA_VER|split(".")|map(tonumber)|.[0]) | map(max_by([(.PY_VER|split(".")|map(tonumber)), (.CUDA_VER|split(".")|map(tonumber))]))
+
+  build-docs:
+    uses: ./.github/workflows/docs-build.yaml
+  coverage-report:
+    needs:
+      - build-wheels
+      - compute-matrix
+    uses: ./.github/workflows/wheels-test.yaml
+    with:
+      build_type: pull-request
+      script: "ci/coverage_report.sh"
+      matrix: ${{ needs.compute-matrix.outputs.TEST_MATRIX }}
+      matrix_filter: 'map(select(.ARCH == "amd64" and .CUDA_VER == "12.9.1" and .PY_VER == "3.12")) | .[0:1]'

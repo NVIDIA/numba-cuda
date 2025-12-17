@@ -15,7 +15,6 @@ from ctypes import c_void_p
 
 import numpy as np
 
-from numba.cuda.cext import _devicearray
 from numba.cuda.cudadrv import devices, dummyarray
 from numba.cuda.cudadrv import driver as _driver
 from numba.cuda import types
@@ -26,13 +25,6 @@ from numba.cuda.np import numpy_support
 from numba.cuda.api_util import prepare_shape_strides_dtype
 from numba.cuda.core.errors import NumbaPerformanceWarning
 from warnings import warn
-
-try:
-    lru_cache = getattr(functools, "lru_cache")(None)
-except AttributeError:
-    # Python 3.1 or lower
-    def lru_cache(func):
-        return func
 
 
 def is_cuda_ndarray(obj):
@@ -62,7 +54,7 @@ def require_cuda_ndarray(obj):
         raise ValueError("require an cuda ndarray object")
 
 
-class DeviceNDArrayBase(_devicearray.DeviceArray):
+class DeviceNDArrayBase:
     """A on GPU NDArray representation"""
 
     __cuda_memory__ = True
@@ -115,7 +107,9 @@ class DeviceNDArrayBase(_devicearray.DeviceArray):
         else:
             # Make NULL pointer for empty allocation
             null = _driver.binding.CUdeviceptr(0)
-            gpu_data = _driver.MemoryPointer(pointer=null, size=0)
+            gpu_data = _driver.MemoryPointer(
+                context=devices.get_context(), pointer=null, size=0
+            )
             self.alloc_size = 0
 
         self.gpu_data = gpu_data
@@ -165,7 +159,7 @@ class DeviceNDArrayBase(_devicearray.DeviceArray):
     def _default_stream(self, stream):
         return self.stream if not stream else stream
 
-    @property
+    @functools.cached_property
     def _numba_type_(self):
         """
         Magic attribute expected by Numba to get the numba type that
@@ -184,8 +178,8 @@ class DeviceNDArrayBase(_devicearray.DeviceArray):
         # or 'F' does not apply for broadcast arrays, because the strides, some
         # of which will be 0, will not match those hardcoded in for 'C' or 'F'
         # layouts.
+        broadcast = 0 in self.strides and (self.size != 0)
 
-        broadcast = 0 in self.strides
         if self.flags["C_CONTIGUOUS"] and not broadcast:
             layout = "C"
         elif self.flags["F_CONTIGUOUS"] and not broadcast:
@@ -510,7 +504,7 @@ class DeviceRecord(DeviceNDArrayBase):
             stream.synchronize()
 
 
-@lru_cache
+@functools.lru_cache
 def _assign_kernel(ndim):
     """
     A separate method so we don't need to compile code every assignment (!).

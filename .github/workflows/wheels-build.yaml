@@ -151,13 +151,16 @@ jobs:
         shell: bash -leo pipefail {0}
       - name: Upload sdist
         if: "!cancelled()"
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: sdist-py${{ matrix.PY_VER }}-${{ matrix.ARCH }}
           path: ${{ env.sdist_path }}
+      - name: Remove sdist
+        run: rm dist/*.tar.gz
+        if: ${{ !(matrix.ARCH == 'amd64' && matrix.PY_VER == '3.10' && matrix.CUDA_VER == '12.8.0') }}
       - name: Upload wheel
         if: "!cancelled()"
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
-          name: wheel-py${{ matrix.PY_VER }}-${{ matrix.ARCH }}
+          name: wheel-py${{ matrix.PY_VER }}-${{ matrix.ARCH }}-linux
           path: ${{ env.wheel_path }}
