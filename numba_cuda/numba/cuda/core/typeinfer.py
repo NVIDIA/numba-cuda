@@ -653,7 +653,7 @@ class CallConstraint(object):
             unsatisfied = set()
             for idx in e.requested_args:
                 maybe_arg = typeinfer.func_ir.get_definition(folded[idx])
-                if isinstance(maybe_arg, ir.Arg):
+                if isinstance(maybe_arg, ir.arg_types):
                     requested.add(maybe_arg.index)
                 else:
                     unsatisfied.add(idx)
@@ -1081,7 +1081,7 @@ class TypeInferer(object):
         rets = []
         for blk in self.blocks.values():
             inst = blk.terminator
-            if isinstance(inst, ir.Return):
+            if isinstance(inst, ir.return_types):
                 rets.append(inst.value)
         return rets
 
@@ -1241,7 +1241,7 @@ https://numba.readthedocs.io/en/stable/user/troubleshoot.html#my-code-has-an-unt
                                 call_name = offender.value.func.name
                                 # find the offender based on the call name
                                 offender = find_offender(call_name)
-                                if isinstance(offender.value, ir.Global):
+                                if isinstance(offender.value, ir.global_types):
                                     if offender.value.name == "list":
                                         return list_msg
                             except (AttributeError, KeyError):
@@ -1447,9 +1447,9 @@ https://numba.readthedocs.io/en/stable/user/troubleshoot.html#my-code-has-an-unt
                     returns = {}
                     for x in reversed(lst):
                         for block in self.func_ir.blocks.values():
-                            for instr in block.find_insts(ir.Return):
+                            for instr in block.find_insts(ir.return_types):
                                 value = instr.value
-                                if isinstance(value, ir.Var):
+                                if isinstance(value, ir.var_types):
                                     name = value.name
                                 else:
                                     pass
@@ -1497,27 +1497,37 @@ https://numba.readthedocs.io/en/stable/user/troubleshoot.html#my-code-has-an-unt
         return [tv.type for name, tv in sorted(self.typevars.items())]
 
     def constrain_statement(self, inst):
-        if isinstance(inst, ir.Assign):
+        if isinstance(inst, ir.assign_types):
             self.typeof_assign(inst)
-        elif isinstance(inst, ir.SetItem):
+        elif isinstance(inst, ir.setitem_types):
             self.typeof_setitem(inst)
-        elif isinstance(inst, ir.StaticSetItem):
+        elif isinstance(inst, ir.staticsetitem_types):
             self.typeof_static_setitem(inst)
-        elif isinstance(inst, ir.DelItem):
+        elif isinstance(inst, ir.delitem_types):
             self.typeof_delitem(inst)
-        elif isinstance(inst, ir.SetAttr):
+        elif isinstance(inst, ir.setattr_types):
             self.typeof_setattr(inst)
-        elif isinstance(inst, ir.Print):
+        elif isinstance(inst, ir.print_types):
             self.typeof_print(inst)
-        elif isinstance(inst, ir.StoreMap):
+        elif isinstance(inst, ir.storemap_types):
             self.typeof_storemap(inst)
-        elif isinstance(inst, (ir.Jump, ir.Branch, ir.Return, ir.Del)):
+        elif isinstance(inst, ir.jump_types):
             pass
-        elif isinstance(inst, (ir.DynamicRaise, ir.DynamicTryRaise)):
+        elif isinstance(inst, ir.branch_types):
             pass
-        elif isinstance(inst, (ir.StaticRaise, ir.StaticTryRaise)):
+        elif isinstance(inst, ir.return_types):
             pass
-        elif isinstance(inst, ir.PopBlock):
+        elif isinstance(inst, ir.del_types):
+            pass
+        elif isinstance(inst, ir.dynamicraise_types):
+            pass
+        elif isinstance(inst, ir.dynamictryraise_types):
+            pass
+        elif isinstance(inst, ir.staticraise_types):
+            pass
+        elif isinstance(inst, ir.statictryraise_types):
+            pass
+        elif isinstance(inst, ir.popblock_types):
             pass  # It's a marker statement
         elif type(inst) in typeinfer_extensions:
             # let external calls handle stmt if type matches
@@ -1575,19 +1585,21 @@ https://numba.readthedocs.io/en/stable/user/troubleshoot.html#my-code-has-an-unt
 
     def typeof_assign(self, inst):
         value = inst.value
-        if isinstance(value, ir.Const):
+        if isinstance(value, ir.const_types):
             self.typeof_const(inst, inst.target, value.value)
-        elif isinstance(value, ir.Var):
+        elif isinstance(value, ir.var_types):
             self.constraints.append(
                 Propagate(dst=inst.target.name, src=value.name, loc=inst.loc)
             )
-        elif isinstance(value, (ir.Global, ir.FreeVar)):
+        elif isinstance(value, ir.global_types) or isinstance(
+            value, ir.freevar_types
+        ):
             self.typeof_global(inst, inst.target, value)
-        elif isinstance(value, ir.Arg):
+        elif isinstance(value, ir.arg_types):
             self.typeof_arg(inst, inst.target, value)
-        elif isinstance(value, ir.Expr):
+        elif isinstance(value, ir.expr_types):
             self.typeof_expr(inst, inst.target, value)
-        elif isinstance(value, ir.Yield):
+        elif isinstance(value, ir.yield_types):
             self.typeof_yield(inst, inst.target, value)
         else:
             msg = "Unsupported assignment encountered: %s %s" % (
