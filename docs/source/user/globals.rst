@@ -20,35 +20,28 @@ Capture as constants
 By default, global variables referenced in kernels are captured as constants at
 compilation time. This applies to scalars and host arrays (e.g. NumPy arrays).
 
-.. code-block:: python
+The following example demonstrates this behavior. Both ``TAX_RATE`` and
+``PRICES`` are captured when the kernel is first compiled. Because they are
+embedded as constants, **modifications to these variables after compilation
+have no effect**—the second kernel call still uses the original values:
 
-   import numpy as np
-   from numba import cuda
+.. literalinclude:: ../../../numba_cuda/numba/cuda/tests/doc_examples/test_globals.py
+   :language: python
+   :caption: Demonstrating constant capture of global variables
+   :start-after: magictoken.ex_globals_constant_capture.begin
+   :end-before: magictoken.ex_globals_constant_capture.end
+   :dedent: 8
+   :linenos:
 
-   TAX_RATE = 0.08
-   PRICES = np.array([10.0, 25.0, 5.0, 15.0, 30.0], dtype=np.float64)
+Running the above code prints:
 
-   @cuda.jit
-   def compute_totals(quantities, totals):
-       i = cuda.grid(1)
-       if i < totals.size:
-           totals[i] = quantities[i] * PRICES[i] * (1 + TAX_RATE)
+.. code-block:: text
 
-Both ``TAX_RATE`` and ``PRICES`` are captured when the kernel is compiled.
-Because they are embedded as constants, **modifications to these variables
-after compilation have no effect**:
+   Value of d_totals: [ 10.8  54.   16.2  64.8 162. ]
+   Value of d_totals: [ 10.8  54.   16.2  64.8 162. ]
 
-.. code-block:: python
-
-   # First kernel call - compiles and captures values
-   compute_totals[1, 32](d_quantities, d_totals)
-
-   # These modifications have no effect on subsequent kernel calls
-   TAX_RATE = 0.10
-   PRICES[:] = [20.0, 50.0, 10.0, 30.0, 60.0]
-
-   # Second kernel call still uses the original values
-   compute_totals[1, 32](d_quantities, d_totals)
+Note that both outputs are identical—the modifications to ``TAX_RATE`` and
+``PRICES`` after the first kernel call have no effect.
 
 This behaviour is useful for small amounts of truly constant data like
 configuration values, lookup tables, or mathematical constants. For larger
@@ -62,33 +55,29 @@ Device arrays are an exception to the constant capture rule. When a kernel
 references a global device array—any object implementing
 ``__cuda_array_interface__``, such as CuPy arrays or Numba device arrays—the
 device pointer is captured rather than the data. No copy occurs, and
-modifications to the array **are** visible to subsequent kernel calls:
+modifications to the array **are** visible to subsequent kernel calls.
 
-.. code-block:: python
+The following example demonstrates this behavior. The global ``PRICES`` device
+array is mutated after the first kernel call, and the second kernel call sees
+the updated values:
 
-   import numpy as np
-   import cupy as cp
-   from numba import cuda
+.. literalinclude:: ../../../numba_cuda/numba/cuda/tests/doc_examples/test_globals.py
+   :language: python
+   :caption: Demonstrating device array capture by pointer
+   :start-after: magictoken.ex_globals_device_array_capture.begin
+   :end-before: magictoken.ex_globals_device_array_capture.end
+   :dedent: 8
+   :linenos:
 
-   # Global device array - pointer is captured, not data
-   PRICES = cp.array([10.0, 25.0, 5.0, 15.0, 30.0], dtype=np.float32)
+Running the above code prints:
 
-   @cuda.jit
-   def compute_totals(quantities, totals):
-       i = cuda.grid(1)
-       if i < totals.size:
-           totals[i] = quantities[i] * PRICES[i]
+.. code-block:: text
 
-   # First kernel call
-   compute_totals[1, 32](d_quantities, d_totals)
-   print(d_totals.copy_to_host())  # [10. 25.  5. 15. 30.]
+   [10. 25.  5. 15. 30.]
+   [20. 50. 10. 30. 60.]
 
-   # Mutate the device array
-   PRICES[:] = cp.array([20.0, 50.0, 10.0, 30.0, 60.0], dtype=np.float32)
-
-   # Second kernel call sees the updated values
-   compute_totals[1, 32](d_quantities, d_totals)
-   print(d_totals.copy_to_host())  # [20. 50. 10. 30. 60.]
+Note that the outputs are different—the mutation to ``PRICES`` after the first
+kernel call *is* visible to the second call, unlike with host arrays.
 
 This makes device arrays suitable for global state that needs to be updated
 between kernel calls without recompilation.
