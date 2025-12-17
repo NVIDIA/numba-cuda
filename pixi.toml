@@ -6,7 +6,7 @@ platforms = ["linux-64", "linux-aarch64", "win-64"]
 preview = ["pixi-build"]
 
 [workspace.build-variants]
-python = ["3.10.*", "3.11.*", "3.12.*", "3.13.*", "3.14.*"]
+python = ["3.10.*", "3.11.*", "3.12.*", "3.13.*"]
 
 [dependencies]
 # source
@@ -87,9 +87,6 @@ python = "3.12.*"
 
 [feature.py313.dependencies]
 python = "3.13.*"
-
-[feature.py314.dependencies]
-python = "3.14.*"
 
 [feature.docs.dependencies]
 make = "*"
