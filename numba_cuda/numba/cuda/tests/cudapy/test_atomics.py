@@ -600,6 +600,9 @@ def atomic_cas_2dim(res, old, ary, fill_val):
 class TestCudaAtomics(CUDATestCase):
     def setUp(self):
         super().setUp()
+        assert False, (
+            f"cc={cuda.get_current_device().compute_capability}, drvver={cuda.cudadrv.driver.get_version()[0]}"
+        )
         np.random.seed(0)
 
     def test_atomic_add(self):
