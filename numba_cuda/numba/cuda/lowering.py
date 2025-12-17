@@ -11,7 +11,6 @@ from llvmlite import ir as llvm_ir
 from numba.cuda import HAS_NUMBA
 from numba.cuda.core import ir
 from numba.cuda import debuginfo, cgutils, utils, typing, types
-from numba import cuda
 from numba.cuda.core import (
     ir_utils,
     targetconfig,
