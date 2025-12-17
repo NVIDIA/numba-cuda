@@ -646,11 +646,6 @@ class CUDADIBuilder(DIBuilder):
         super().__init__(module, filepath, cgctx, directives_only)
         # Cache for local variable metadata type and line deduplication
         self._vartypelinemap = {}
-        # Variable address space dictionary
-        self._var_addrspace_map = {}
-
-    def _set_addrspace_map(self, map):
-        self._var_addrspace_map = map
 
     def _var_type(self, lltype, size, datamodel=None):
         is_bool = False
@@ -826,66 +821,6 @@ class CUDADIBuilder(DIBuilder):
                     is_distinct=True,
                 )
 
-        # Check if there's actually address space info to handle
-        addrspace = getattr(self, "_addrspace", None)
-        if (
-            isinstance(lltype, ir.LiteralStructType)
-            and datamodel is not None
-            and datamodel.inner_models()
-            and addrspace not in (None, 0)
-        ):
-            # Process struct with datamodel that has address space info
-            meta = []
-            offset = 0
-            for element, field, model in zip(
-                lltype.elements, datamodel._fields, datamodel.inner_models()
-            ):
-                size_field = self.cgctx.get_abi_sizeof(element)
-                if isinstance(element, ir.PointerType) and field == "data":
-                    # Create pointer type with correct address space
-                    pointee_size = self.cgctx.get_abi_sizeof(element.pointee)
-                    pointee_model = getattr(model, "_pointee_model", None)
-                    pointee_type = self._var_type(
-                        element.pointee, pointee_size, datamodel=pointee_model
-                    )
-                    meta_ptr = {
-                        "tag": ir.DIToken("DW_TAG_pointer_type"),
-                        "baseType": pointee_type,
-                        "size": _BYTE_SIZE * size_field,
-                    }
-                    dwarf_addrclass = self.get_dwarf_address_class(addrspace)
-                    # Skip dwarfAddressSpace emission, pointers are cast to
-                    # generic address space via addrspacecast.
-                    if dwarf_addrclass is not None:
-                        pass
-                    basetype = m.add_debug_info("DIDerivedType", meta_ptr)
-                else:
-                    basetype = self._var_type(
-                        element, size_field, datamodel=model
-                    )
-                derived_type = m.add_debug_info(
-                    "DIDerivedType",
-                    {
-                        "tag": ir.DIToken("DW_TAG_member"),
-                        "name": field,
-                        "baseType": basetype,
-                        "size": _BYTE_SIZE * size_field,
-                        "offset": offset,
-                    },
-                )
-                meta.append(derived_type)
-                offset += _BYTE_SIZE * size_field
-
-            return m.add_debug_info(
-                "DICompositeType",
-                {
-                    "tag": ir.DIToken("DW_TAG_structure_type"),
-                    "name": f"{datamodel.fe_type}",
-                    "elements": m.add_metadata(meta),
-                    "size": offset,
-                },
-                is_distinct=True,
-            )
         # For other cases, use upstream Numba implementation
         return super()._var_type(lltype, size, datamodel=datamodel)
 
@@ -938,22 +873,16 @@ class CUDADIBuilder(DIBuilder):
                 # to llvm.dbg.value
                 return
             else:
-                # Look up address space for this variable
-                self._addrspace = self._var_addrspace_map.get(name)
-                try:
-                    return super().mark_variable(
-                        builder,
-                        allocavalue,
-                        name,
-                        lltype,
-                        size,
-                        line,
-                        datamodel,
-                        argidx,
-                    )
-                finally:
-                    # Clean up address space info
-                    self._addrspace = None
+                return super().mark_variable(
+                    builder,
+                    allocavalue,
+                    name,
+                    lltype,
+                    size,
+                    line,
+                    datamodel,
+                    argidx,
+                )
 
     def update_variable(
         self,
