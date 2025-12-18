@@ -233,8 +233,8 @@ jobs:
         run: |
           pushd testing
           if [[ "${{ inputs.host-platform }}" == linux* ]]; then
-            PATH=$(dirname ${SCCACHE_PATH}):${PATH}
-            SCCACHE_GHA_ENABLED=true
+            export PATH=$(dirname ${SCCACHE_PATH}):${PATH}
+            export SCCACHE_GHA_ENABLED=true
           fi
 
           nvcc --version
