@@ -215,11 +215,11 @@ def user_function(fndesc, libs):
     def imp(context, builder, sig, args):
         func = context.declare_function(builder.module, fndesc)
         # env=None assumes this is a nopython function
-        status, retval = context.call_conv.call_function(
+        status, retval = fndesc.call_conv.call_function(
             builder, func, fndesc.restype, fndesc.argtypes, args
         )
         with cgutils.if_unlikely(builder, status.is_error):
-            context.call_conv.return_status_propagate(builder, status)
+            fndesc.call_conv.return_status_propagate(builder, status)
         assert sig.return_type == fndesc.restype
         # Reconstruct optional return type
         retval = fix_returning_optional(context, builder, sig, status, retval)
@@ -243,7 +243,7 @@ def user_generator(gendesc, libs):
     def imp(context, builder, sig, args):
         func = context.declare_function(builder.module, gendesc)
         # env=None assumes this is a nopython function
-        status, retval = context.call_conv.call_function(
+        status, retval = gendesc.call_conv.call_function(
             builder, func, gendesc.restype, gendesc.argtypes, args
         )
         # Return raw status for caller to process StopIteration

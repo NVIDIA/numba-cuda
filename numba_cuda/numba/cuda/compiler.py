@@ -29,7 +29,7 @@ from numba.cuda.cudadrv import nvvm, nvrtc
 from numba.cuda.cudadrv.linkable_code import LinkableCode
 from numba.cuda.descriptor import cuda_target
 from numba.cuda.flags import CUDAFlags
-from numba.cuda.target import CUDACABICallConv
+from numba.cuda.core.callconv import CUDACABICallConv, CUDACallConv
 from numba.cuda.core.compiler import CompilerBase
 from numba.cuda.core.compiler_machinery import (
     FunctionPass,
@@ -699,6 +699,7 @@ def compile_cuda(
     cc=None,
     max_registers=None,
     lto=False,
+    abi="numba",
 ):
     if cc is None:
         raise ValueError("Compute Capability must be supplied")
@@ -740,6 +741,9 @@ def compile_cuda(
     flags.compute_capability = cc
     flags.max_registers = max_registers
     flags.lto = lto
+
+    if abi == "c":
+        flags.call_conv = CUDACABICallConv(targetctx)
 
     with utils.numba_target_override():
         cres = compile_extra(
@@ -1106,6 +1110,7 @@ def _compile_pyfunc_with_fixup(
 
     cc = _default_cc(cc)
 
+    wrapper_name = abi_info.get("abi_name", pyfunc.__name__)
     cres = compile_cuda(
         pyfunc,
         return_type,
@@ -1116,6 +1121,7 @@ def _compile_pyfunc_with_fixup(
         nvvm_options=nvvm_options,
         cc=cc,
         forceinline=forceinline,
+        abi=abi,
     )
     resty = cres.signature.return_type
 
@@ -1126,11 +1132,10 @@ def _compile_pyfunc_with_fixup(
 
     if device:
         lib = cres.library
-        if abi == "c":
-            wrapper_name = abi_info.get("abi_name", pyfunc.__name__)
-            lib = cabi_wrap_function(
-                tgt, lib, cres.fndesc, wrapper_name, nvvm_options
-            )
+        # if abi == "c":
+            # lib = cabi_wrap_function(
+            #     tgt, lib, cres.fndesc, wrapper_name, nvvm_options
+            # )
     else:
         lib = cres.library
         kernel = lib.get_function(cres.fndesc.llvm_func_name)
@@ -1376,7 +1381,7 @@ def declare_device_function(name, restype, argtypes, link, use_cooperative):
 
     # ExternalFunctionDescriptor provides a lowering implementation for calling
     # external functions
-    fndesc = funcdesc.ExternalFunctionDescriptor(name, restype, argtypes)
+    fndesc = funcdesc.ExternalFunctionDescriptor(name, restype, argtypes, CUDACallConv(targetctx))
     targetctx.insert_user_function(extfn, fndesc, libs=(lib,))
 
     return device_function_template

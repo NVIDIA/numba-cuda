@@ -12,6 +12,8 @@ from numba.cuda import types
 from numba.cuda import itanium_mangler
 from numba.cuda.utils import _dynamic_modname, _dynamic_module
 
+from numba.cuda.core.callconv import CUDACallConv
+
 
 def default_mangler(name, argtypes, *, abi_tags=(), uid=None):
     return itanium_mangler.mangle(name, argtypes, abi_tags=abi_tags, uid=uid)
@@ -54,6 +56,7 @@ class FunctionDescriptor(object):
         "noalias",
         "abi_tags",
         "uid",
+        "call_conv",
     )
 
     def __init__(
@@ -76,6 +79,7 @@ class FunctionDescriptor(object):
         global_dict=None,
         abi_tags=(),
         uid=None,
+        call_conv=None,
     ):
         self.native = native
         self.modname = modname
@@ -120,6 +124,7 @@ class FunctionDescriptor(object):
         self.inline = inline
         self.noalias = noalias
         self.abi_tags = abi_tags
+        self.call_conv = call_conv
 
     def lookup_globals(self):
         """
@@ -219,6 +224,7 @@ class FunctionDescriptor(object):
         inline=False,
         noalias=False,
         abi_tags=(),
+        call_conv=None,
     ):
         (
             qualname,
@@ -247,6 +253,7 @@ class FunctionDescriptor(object):
             global_dict=global_dict,
             abi_tags=abi_tags,
             uid=func_ir.func_id.unique_id,
+            call_conv=call_conv,
         )
         return self
 
@@ -269,6 +276,7 @@ class PythonFunctionDescriptor(FunctionDescriptor):
         inline,
         noalias,
         abi_tags,
+        call_conv,
     ):
         """
         Build a FunctionDescriptor for a given specialization of a Python
@@ -284,6 +292,7 @@ class PythonFunctionDescriptor(FunctionDescriptor):
             inline=inline,
             noalias=noalias,
             abi_tags=abi_tags,
+            call_conv=call_conv,
         )
 
     @classmethod
@@ -308,7 +317,7 @@ class ExternalFunctionDescriptor(FunctionDescriptor):
 
     __slots__ = ()
 
-    def __init__(self, name, restype, argtypes):
+    def __init__(self, name, restype, argtypes, call_conv):
         args = ["arg%d" % i for i in range(len(argtypes))]
 
         def mangler(a, x, abi_tags, uid=None):
@@ -327,4 +336,5 @@ class ExternalFunctionDescriptor(FunctionDescriptor):
             kws=None,
             mangler=mangler,
             argtypes=argtypes,
+            call_conv=call_conv
         )

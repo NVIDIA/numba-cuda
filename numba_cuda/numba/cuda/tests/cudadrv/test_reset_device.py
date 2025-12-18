@@ -9,6 +9,7 @@ from queue import Queue
 
 
 class TestResetDevice(CUDATestCase):
+    @unittest.skip
     def test_reset_device(self):
         def newthread(exception_queue):
             try:

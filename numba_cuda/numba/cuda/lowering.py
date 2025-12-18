@@ -100,7 +100,7 @@ class BaseLower(object):
 
     @property
     def call_conv(self):
-        return self.context.call_conv
+        return self.fndesc.call_conv
 
     def init(self):
         pass

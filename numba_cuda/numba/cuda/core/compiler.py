@@ -10,6 +10,8 @@ from numba.cuda.core import callconv, config, bytecode
 from numba.cuda.core.untyped_passes import ExtractByteCode, FixupArgs
 from numba.cuda.core.targetconfig import ConfigStack
 
+from numba.cuda.core.callconv import CUDACallConv
+
 
 class _CompileStatus(object):
     """
@@ -67,7 +69,10 @@ def _make_subtarget(targetctx, flags):
         subtargetoptions["enable_nrt"] = True
     if flags.fastmath:
         subtargetoptions["fastmath"] = flags.fastmath
-    error_model = callconv.create_error_model(flags.error_model, targetctx)
+    
+    # FIXME: should update everywhere uses error_model to use callconv from fundesc
+    call_conv = CUDACallConv(targetctx)
+    error_model = callconv.create_error_model(flags.error_model, call_conv)
     subtargetoptions["error_model"] = error_model
 
     return targetctx.subtarget(**subtargetoptions)
