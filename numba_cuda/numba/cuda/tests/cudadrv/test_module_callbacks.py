@@ -13,7 +13,7 @@ from numba.cuda.testing import (
     CUDATestCase,
     skip_on_cudasim,
 )
-from cuda.core.experimental import ObjectCode
+from numba.cuda._compat import ObjectCode
 
 if not config.ENABLE_CUDASIM:
     from cuda.bindings.driver import cuLibraryGetGlobal, cuMemcpyHtoD
