@@ -6,6 +6,36 @@ from cuda import core
 
 CUDA_CORE_VERSION = version.parse(core.__version__)
 if CUDA_CORE_VERSION < version.parse("0.5.0"):
-    pass
+    from cuda.core.experimental import (
+        Program,
+        ProgramOptions,
+        Linker,
+        LinkerOptions,
+        Stream,
+        Device,
+        launch,
+    )
+    from cuda.core.experimental._utils.cuda_utils import CUDAError, NVRTCError
 else:
-    pass
+    from cuda.core import (
+        Program,
+        ProgramOptions,
+        Linker,
+        LinkerOptions,
+        Stream,
+        Device,
+        launch,
+    )
+    from cuda.core._utils.cuda_utils import CUDAError, NVRTCError
+
+__all__ = [
+    "Program",
+    "ProgramOptions",
+    "Linker",
+    "LinkerOptions",
+    "Stream",
+    "Device",
+    "launch",
+    "CUDAError",
+    "NVRTCError",
+]
