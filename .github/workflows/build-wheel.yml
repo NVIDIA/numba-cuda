@@ -255,7 +255,9 @@ jobs:
           done
           popd
 
-          "${SCCACHE_PATH}" --show-adv-stats
+          if [[ "${{ inputs.host-platform }}" == linux* ]]; then
+            "${SCCACHE_PATH}" --show-adv-stats
+          fi
 
       - name: Upload numba-cuda test artifacts
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4.6.2
