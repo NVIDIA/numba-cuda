@@ -6,6 +6,7 @@ from ctypes import c_int, sizeof
 from numba.cuda.cudadrv.driver import host_to_device, device_to_host, driver
 from numba.cuda._compat import (
     LaunchConfig,
+    Device,
     Stream as ExperimentalStream,
     launch,
 )
@@ -15,8 +16,6 @@ from numba.cuda.cudadrv import devices
 from numba.cuda.testing import unittest, CUDATestCase
 from numba.cuda.testing import skip_on_cudasim
 import contextlib
-
-from cuda.core import Device
 
 ptx1 = """
     .version 1.4
