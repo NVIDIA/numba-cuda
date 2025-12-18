@@ -14,6 +14,8 @@ if CUDA_CORE_VERSION < version.parse("0.5.0"):
         Stream,
         Device,
         launch,
+        ObjectCode,
+        LaunchConfig,
     )
     from cuda.core.experimental._utils.cuda_utils import CUDAError, NVRTCError
 else:
@@ -25,6 +27,8 @@ else:
         Stream,
         Device,
         launch,
+        ObjectCode,
+        LaunchConfig,
     )
     from cuda.core._utils.cuda_utils import CUDAError, NVRTCError
 
@@ -38,4 +42,6 @@ __all__ = [
     "launch",
     "CUDAError",
     "NVRTCError",
+    "ObjectCode",
+    "LaunchConfig",
 ]
