@@ -4,7 +4,7 @@
 from ctypes import c_int, sizeof
 
 from numba.cuda.cudadrv.driver import host_to_device, device_to_host, driver
-from cuda.core import (
+from numba.cuda._compat import (
     LaunchConfig,
     Stream as ExperimentalStream,
     launch,

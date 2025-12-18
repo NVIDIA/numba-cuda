@@ -4,7 +4,7 @@
 import numpy as np
 from numba import cuda
 from numba.cuda.testing import unittest, CUDATestCase
-from cuda.core import Device
+from numba.cuda._compat import Device
 from numba.cuda.testing import skip_on_cudasim
 
 
