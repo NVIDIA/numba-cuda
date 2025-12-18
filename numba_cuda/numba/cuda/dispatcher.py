@@ -15,7 +15,7 @@ import uuid
 import re
 from warnings import warn
 
-from cuda.core.experimental import launch
+from cuda.core import launch
 
 from numba.cuda.core import errors
 from numba.cuda import serialize, utils

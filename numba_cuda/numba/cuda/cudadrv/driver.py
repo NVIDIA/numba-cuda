@@ -54,14 +54,14 @@ from numba.cuda.utils import cached_file_read
 from numba.cuda.cudadrv import enums, drvapi, nvrtc
 
 from cuda.bindings import driver as binding
-from cuda.core.experimental import (
+from cuda.core import (
     Linker,
     LinkerOptions,
     ObjectCode,
 )
 
 from cuda.bindings.utils import get_cuda_native_handle
-from cuda.core.experimental import (
+from cuda.core import (
     Stream as ExperimentalStream,
     Device as ExperimentalDevice,
 )
