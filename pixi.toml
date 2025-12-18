@@ -194,7 +194,15 @@ cu-13-0-py313 = { features = [
     "nvvm",
     "py313",
 ], solve-group = "cu-13-0-py313" }
-
+cu-13-0-py314 = { features = [
+    "cu-13-0",
+    "test",
+    "cu",
+    "cu-13",
+    "cu-rt",
+    "nvvm",
+    "py314",
+], solve-group = "cu-13-0-py314" }
 cu-13-1-py314 = { features = [
     "cu-13-1",
     "test",
