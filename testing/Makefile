@@ -31,7 +31,7 @@ MULTI_FATBIN_GENCODE := $(MULTI_GENCODE) -gencode arch=compute_$(ALT_CC),code=[s
 # LTO-IR tests need to generate for the LTO "architecture" instead
 LTOIR_GENCODE := -gencode arch=lto_$(GPU_CC),code=lto_$(GPU_CC)
 
-# In CI we use sccache. Note that sccache does not support generating fatbin or ltoir.
+# In CI we use sccache
 ifeq ($(shell command -v sccache 2>&1 >/dev/null; echo $$?),0)
     SCCACHE := sccache
 else
