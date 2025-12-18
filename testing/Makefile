@@ -62,10 +62,10 @@ $(OUTPUT_DIR)/test_device_functions.cubin: test_device_functions.cu
 	$(SCCACHE) nvcc $(NVCC_FLAGS) $(CUBIN_FLAGS) -o $@ $<
 
 $(OUTPUT_DIR)/test_device_functions.fatbin: test_device_functions.cu
-	nvcc $(NVCC_FLAGS) $(FATBIN_FLAGS) -o $@ $<
+	$(SCCACHE) nvcc $(NVCC_FLAGS) $(FATBIN_FLAGS) -o $@ $<
 
 $(OUTPUT_DIR)/test_device_functions_multi.fatbin: test_device_functions.cu
-	nvcc $(NVCC_FLAGS) $(MULTI_FATBIN_FLAGS) -o $@ $<
+	$(SCCACHE) nvcc $(NVCC_FLAGS) $(MULTI_FATBIN_FLAGS) -o $@ $<
 
 $(OUTPUT_DIR)/test_device_functions.ptx: test_device_functions.cu
 	$(SCCACHE) nvcc $(NVCC_FLAGS) $(PTX_FLAGS) -o $@ $<
@@ -77,7 +77,7 @@ $(OUTPUT_DIR)/test_device_functions.a: test_device_functions.cu
 	nvcc $(NVCC_FLAGS) $(LIBRARY_FLAGS) -o $@ $<
 
 $(OUTPUT_DIR)/test_device_functions.ltoir.o: test_device_functions.cu
-	nvcc $(NVCC_FLAGS) $(LTOIR_FLAGS) -o $@ $<
+	$(SCCACHE) nvcc $(NVCC_FLAGS) $(LTOIR_FLAGS) -o $@ $<
 
 $(OUTPUT_DIR)/test_device_functions.ltoir: test_device_functions.cu
 	# Generate LTO-IR in a "raw" LTO-IR container
@@ -96,10 +96,10 @@ $(OUTPUT_DIR)/nrt_extern.cubin: nrt_extern.cu
 	$(SCCACHE) nvcc $(NVCC_FLAGS) $(CUBIN_FLAGS) -o $@ $< -I$(NRT_INCLUDE_DIR)
 
 $(OUTPUT_DIR)/nrt_extern.fatbin: nrt_extern.cu
-	nvcc $(NVCC_FLAGS) $(FATBIN_FLAGS) -o $@ $< -I$(NRT_INCLUDE_DIR)
+	$(SCCACHE) nvcc $(NVCC_FLAGS) $(FATBIN_FLAGS) -o $@ $< -I$(NRT_INCLUDE_DIR)
 
 $(OUTPUT_DIR)/nrt_extern_multi.fatbin: nrt_extern.cu
-	nvcc $(NVCC_FLAGS) $(MULTI_FATBIN_FLAGS) -o $@ $< -I$(NRT_INCLUDE_DIR)
+	$(SCCACHE) nvcc $(NVCC_FLAGS) $(MULTI_FATBIN_FLAGS) -o $@ $< -I$(NRT_INCLUDE_DIR)
 
 $(OUTPUT_DIR)/nrt_extern.ptx: nrt_extern.cu
 	$(SCCACHE) nvcc $(NVCC_FLAGS) $(PTX_FLAGS) -o $@ $< -I$(NRT_INCLUDE_DIR)
@@ -111,7 +111,7 @@ $(OUTPUT_DIR)/nrt_extern.a: nrt_extern.cu
 	nvcc $(NVCC_FLAGS) $(LIBRARY_FLAGS) -o $@ $< -I$(NRT_INCLUDE_DIR)
 
 $(OUTPUT_DIR)/nrt_extern.ltoir.o: nrt_extern.cu
-	nvcc $(NVCC_FLAGS) $(LTOIR_FLAGS) -o $@ $< -I$(NRT_INCLUDE_DIR)
+	$(SCCACHE) nvcc $(NVCC_FLAGS) $(LTOIR_FLAGS) -o $@ $< -I$(NRT_INCLUDE_DIR)
 
 $(OUTPUT_DIR)/nrt_extern.ltoir: nrt_extern.cu
 	python generate_raw_ltoir.py --arch sm_$(GPU_CC) -o $@ $< --nrt
