@@ -112,7 +112,7 @@ jobs:
             SCCACHE_CACHE_SIZE=${{ env.SCCACHE_CACHE_SIZE }}
           # check cache stats before leaving cibuildwheel
           CIBW_BEFORE_TEST_LINUX: >
-            "/host/${{ env.SCCACHE_PATH }}" --show-stats
+            "/host/${{ env.SCCACHE_PATH }}" --show-adv-stats
           # force the test stage to be run (so that before-test is not skipped)
           # TODO: we might want to think twice on adding this, it does a lot of
           # things before reaching this command.
@@ -254,6 +254,8 @@ jobs:
             mv *.cubin *.fatbin *.ptx *.o *.a *.ltoir cu${CUDA_MAJOR}_cc${cc}
           done
           popd
+
+          "${SCCACHE_PATH}" --show-adv-stats
 
       - name: Upload numba-cuda test artifacts
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4.6.2
