@@ -9,14 +9,15 @@ from numba.cuda.cudadrv.driver import (
     driver,
     launch_kernel,
 )
+from numba.cuda._compat import (
+    Device,
+)
 
 from numba import cuda
 from numba.cuda.cudadrv import devices, driver as _driver
 from numba.cuda.testing import unittest, CUDATestCase
 from numba.cuda.testing import skip_on_cudasim
 import contextlib
-
-from cuda.core.experimental import Device
 
 ptx1 = """
     .version 1.4

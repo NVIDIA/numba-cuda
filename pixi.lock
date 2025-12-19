@@ -3918,6 +3918,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/linux-64/numba-0.62.1-py313h7afe1cf_1.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/numpy-2.3.5-py313hf6604e3_0.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/openssl-3.6.0-h26f9b46_0.conda
+      - conda: https://conda.anaconda.org/conda-forge/noarch/packaging-25.0-pyh29332c3_1.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/python-3.13.10-hc97d973_100_cp313.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/python_abi-3.13-8_cp313.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/rdma-core-60.0-hecca717_0.conda
@@ -3971,6 +3972,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/linux-aarch64/numba-0.62.1-py313hb8c150f_1.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-aarch64/numpy-2.3.5-py313h11e5ff7_0.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-aarch64/openssl-3.6.0-h8e36d6e_0.conda
+      - conda: https://conda.anaconda.org/conda-forge/noarch/packaging-25.0-pyh29332c3_1.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-aarch64/python-3.13.10-h4c0d347_100_cp313.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/python_abi-3.13-8_cp313.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-aarch64/rdma-core-60.0-he839754_0.conda
@@ -4011,6 +4013,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/win-64/numba-0.62.1-py313h7bbedcd_1.conda
       - conda: https://conda.anaconda.org/conda-forge/win-64/numpy-2.3.5-py313hce7ae62_0.conda
       - conda: https://conda.anaconda.org/conda-forge/win-64/openssl-3.6.0-h725018a_0.conda
+      - conda: https://conda.anaconda.org/conda-forge/noarch/packaging-25.0-pyh29332c3_1.conda
       - conda: https://conda.anaconda.org/conda-forge/win-64/python-3.13.10-h09917c8_100_cp313.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/python_abi-3.13-8_cp313.conda
       - conda: https://conda.anaconda.org/conda-forge/win-64/tbb-2022.3.0-hd094cb3_1.conda
@@ -4126,7 +4129,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/1a/39/47f9197bdd44df24d67ac8893641e16f386c984a0619ef2ee4c51fbbc019/beautifulsoup4-4.14.3-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/8c/79/017fab2f7167a9a9795665f894d04f77aafceca80821b51589bb4b23ff5c/nvidia_sphinx_theme-0.0.9.post1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/e2/0d/8ba33fa83a7dcde13eb3c1c2a0c1cc29950a048bfed6d9b0d8b6bd710b4c/pydata_sphinx_theme-0.16.1-py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/14/a0/bb38d3b76b8cae341dad93a2dd83ab7462e6dbcdd84d43f54ee60a8dc167/soupsieve-2.8-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/48/f3/b67d6ea49ca9154453b6d70b34ea22f3996b9fa55da105a79d8732227adc/soupsieve-2.8.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/18/67/36e9267722cc04a6b9f15c7f3441c2363321a3ea07da7ae0c0707beb2a9c/typing_extensions-4.15.0-py3-none-any.whl
       linux-aarch64:
       - conda: https://conda.anaconda.org/conda-forge/linux-aarch64/_openmp_mutex-4.5-2_gnu.tar.bz2
@@ -4224,7 +4227,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/1a/39/47f9197bdd44df24d67ac8893641e16f386c984a0619ef2ee4c51fbbc019/beautifulsoup4-4.14.3-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/8c/79/017fab2f7167a9a9795665f894d04f77aafceca80821b51589bb4b23ff5c/nvidia_sphinx_theme-0.0.9.post1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/e2/0d/8ba33fa83a7dcde13eb3c1c2a0c1cc29950a048bfed6d9b0d8b6bd710b4c/pydata_sphinx_theme-0.16.1-py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/14/a0/bb38d3b76b8cae341dad93a2dd83ab7462e6dbcdd84d43f54ee60a8dc167/soupsieve-2.8-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/48/f3/b67d6ea49ca9154453b6d70b34ea22f3996b9fa55da105a79d8732227adc/soupsieve-2.8.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/18/67/36e9267722cc04a6b9f15c7f3441c2363321a3ea07da7ae0c0707beb2a9c/typing_extensions-4.15.0-py3-none-any.whl
       win-64:
       - conda: https://conda.anaconda.org/conda-forge/win-64/_openmp_mutex-4.5-2_gnu.conda
@@ -4316,7 +4319,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/1a/39/47f9197bdd44df24d67ac8893641e16f386c984a0619ef2ee4c51fbbc019/beautifulsoup4-4.14.3-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/8c/79/017fab2f7167a9a9795665f894d04f77aafceca80821b51589bb4b23ff5c/nvidia_sphinx_theme-0.0.9.post1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/e2/0d/8ba33fa83a7dcde13eb3c1c2a0c1cc29950a048bfed6d9b0d8b6bd710b4c/pydata_sphinx_theme-0.16.1-py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/14/a0/bb38d3b76b8cae341dad93a2dd83ab7462e6dbcdd84d43f54ee60a8dc167/soupsieve-2.8-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/48/f3/b67d6ea49ca9154453b6d70b34ea22f3996b9fa55da105a79d8732227adc/soupsieve-2.8.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/18/67/36e9267722cc04a6b9f15c7f3441c2363321a3ea07da7ae0c0707beb2a9c/typing_extensions-4.15.0-py3-none-any.whl
 packages:
 - conda: https://conda.anaconda.org/conda-forge/linux-64/_libgcc_mutex-0.1-conda_forge.tar.bz2
@@ -15209,6 +15212,7 @@ packages:
     target_platform: linux-64
   depends:
   - python
+  - packaging
   - numba >=0.60
   - cuda-core >=0.3,<1
   - cuda-bindings >=12.9,<14
@@ -15219,7 +15223,7 @@ packages:
   - numpy >=1.21,<3
   license: BSD-2-Clause
   input:
-    hash: 617dd087871c08b164e905d047b9e1ac057acdf220387977bddd5dcb35c29990
+    hash: 776460650d724276b0ca31b256d9dc4fbf0f5eabf1b4fa718d1d6bfaa8cfef07
     globs:
     - pyproject.toml
 - conda: .
@@ -15232,6 +15236,7 @@ packages:
     target_platform: linux-aarch64
   depends:
   - python
+  - packaging
   - numba >=0.60
   - cuda-core >=0.3,<1
   - cuda-bindings >=12.9,<14
@@ -15242,7 +15247,7 @@ packages:
   - numpy >=1.21,<3
   license: BSD-2-Clause
   input:
-    hash: 617dd087871c08b164e905d047b9e1ac057acdf220387977bddd5dcb35c29990
+    hash: 776460650d724276b0ca31b256d9dc4fbf0f5eabf1b4fa718d1d6bfaa8cfef07
     globs:
     - pyproject.toml
 - conda: .
@@ -15255,6 +15260,7 @@ packages:
     target_platform: win-64
   depends:
   - python
+  - packaging
   - numba >=0.60
   - cuda-core >=0.3,<1
   - cuda-bindings >=12.9,<14
@@ -15265,7 +15271,7 @@ packages:
   - numpy >=1.21,<3
   license: BSD-2-Clause
   input:
-    hash: 617dd087871c08b164e905d047b9e1ac057acdf220387977bddd5dcb35c29990
+    hash: 776460650d724276b0ca31b256d9dc4fbf0f5eabf1b4fa718d1d6bfaa8cfef07
     globs:
     - pyproject.toml
 - conda: .
@@ -15278,6 +15284,7 @@ packages:
     target_platform: linux-aarch64
   depends:
   - python
+  - packaging
   - numba >=0.60
   - cuda-core >=0.3,<1
   - cuda-bindings >=12.9,<14
@@ -15288,7 +15295,7 @@ packages:
   - numpy >=1.23,<3
   license: BSD-2-Clause
   input:
-    hash: 617dd087871c08b164e905d047b9e1ac057acdf220387977bddd5dcb35c29990
+    hash: 776460650d724276b0ca31b256d9dc4fbf0f5eabf1b4fa718d1d6bfaa8cfef07
     globs:
     - pyproject.toml
 - conda: .
@@ -15301,6 +15308,7 @@ packages:
     target_platform: win-64
   depends:
   - python
+  - packaging
   - numba >=0.60
   - cuda-core >=0.3,<1
   - cuda-bindings >=12.9,<14
@@ -15311,7 +15319,7 @@ packages:
   - numpy >=1.23,<3
   license: BSD-2-Clause
   input:
-    hash: 617dd087871c08b164e905d047b9e1ac057acdf220387977bddd5dcb35c29990
+    hash: 776460650d724276b0ca31b256d9dc4fbf0f5eabf1b4fa718d1d6bfaa8cfef07
     globs:
     - pyproject.toml
 - conda: .
@@ -15324,6 +15332,7 @@ packages:
     target_platform: linux-64
   depends:
   - python
+  - packaging
   - numba >=0.60
   - cuda-core >=0.3,<1
   - cuda-bindings >=12.9,<14
@@ -15334,7 +15343,7 @@ packages:
   - numpy >=1.23,<3
   license: BSD-2-Clause
   input:
-    hash: 617dd087871c08b164e905d047b9e1ac057acdf220387977bddd5dcb35c29990
+    hash: 776460650d724276b0ca31b256d9dc4fbf0f5eabf1b4fa718d1d6bfaa8cfef07
     globs:
     - pyproject.toml
 - conda: .
@@ -15347,6 +15356,7 @@ packages:
     target_platform: linux-64
   depends:
   - python
+  - packaging
   - numba >=0.60
   - cuda-core >=0.3,<1
   - cuda-bindings >=12.9,<14
@@ -15357,7 +15367,7 @@ packages:
   - numpy >=1.23,<3
   license: BSD-2-Clause
   input:
-    hash: 617dd087871c08b164e905d047b9e1ac057acdf220387977bddd5dcb35c29990
+    hash: 776460650d724276b0ca31b256d9dc4fbf0f5eabf1b4fa718d1d6bfaa8cfef07
     globs:
     - pyproject.toml
 - conda: .
@@ -15370,6 +15380,7 @@ packages:
     target_platform: linux-aarch64
   depends:
   - python
+  - packaging
   - numba >=0.60
   - cuda-core >=0.3,<1
   - cuda-bindings >=12.9,<14
@@ -15380,7 +15391,7 @@ packages:
   - numpy >=1.23,<3
   license: BSD-2-Clause
   input:
-    hash: 617dd087871c08b164e905d047b9e1ac057acdf220387977bddd5dcb35c29990
+    hash: 776460650d724276b0ca31b256d9dc4fbf0f5eabf1b4fa718d1d6bfaa8cfef07
     globs:
     - pyproject.toml
 - conda: .
@@ -15393,6 +15404,7 @@ packages:
     target_platform: win-64
   depends:
   - python
+  - packaging
   - numba >=0.60
   - cuda-core >=0.3,<1
   - cuda-bindings >=12.9,<14
@@ -15403,7 +15415,7 @@ packages:
   - numpy >=1.23,<3
   license: BSD-2-Clause
   input:
-    hash: 617dd087871c08b164e905d047b9e1ac057acdf220387977bddd5dcb35c29990
+    hash: 776460650d724276b0ca31b256d9dc4fbf0f5eabf1b4fa718d1d6bfaa8cfef07
     globs:
     - pyproject.toml
 - conda: .
@@ -15416,6 +15428,7 @@ packages:
     target_platform: linux-aarch64
   depends:
   - python
+  - packaging
   - numba >=0.60
   - cuda-core >=0.3,<1
   - cuda-bindings >=12.9,<14
@@ -15426,7 +15439,7 @@ packages:
   - numpy >=1.23,<3
   license: BSD-2-Clause
   input:
-    hash: 617dd087871c08b164e905d047b9e1ac057acdf220387977bddd5dcb35c29990
+    hash: 776460650d724276b0ca31b256d9dc4fbf0f5eabf1b4fa718d1d6bfaa8cfef07
     globs:
     - pyproject.toml
 - conda: .
@@ -15439,6 +15452,7 @@ packages:
     target_platform: win-64
   depends:
   - python
+  - packaging
   - numba >=0.60
   - cuda-core >=0.3,<1
   - cuda-bindings >=12.9,<14
@@ -15449,7 +15463,7 @@ packages:
   - numpy >=1.23,<3
   license: BSD-2-Clause
   input:
-    hash: 617dd087871c08b164e905d047b9e1ac057acdf220387977bddd5dcb35c29990
+    hash: 776460650d724276b0ca31b256d9dc4fbf0f5eabf1b4fa718d1d6bfaa8cfef07
     globs:
     - pyproject.toml
 - conda: .
@@ -15462,6 +15476,7 @@ packages:
     target_platform: linux-64
   depends:
   - python
+  - packaging
   - numba >=0.60
   - cuda-core >=0.3,<1
   - cuda-bindings >=12.9,<14
@@ -15472,7 +15487,7 @@ packages:
   - numpy >=1.23,<3
   license: BSD-2-Clause
   input:
-    hash: 617dd087871c08b164e905d047b9e1ac057acdf220387977bddd5dcb35c29990
+    hash: 776460650d724276b0ca31b256d9dc4fbf0f5eabf1b4fa718d1d6bfaa8cfef07
     globs:
     - pyproject.toml
 - pypi: https://files.pythonhosted.org/packages/5e/a6/9ca0eecc489640615642a6cbc0ca9e10df70df38c4d43f5a928ff18d8827/numpy-2.3.5-cp314-cp314-manylinux_2_27_aarch64.manylinux_2_28_aarch64.whl
@@ -17421,10 +17436,10 @@ packages:
   - pkg:pypi/snowballstemmer?source=hash-mapping
   size: 73009
   timestamp: 1747749529809
-- pypi: https://files.pythonhosted.org/packages/14/a0/bb38d3b76b8cae341dad93a2dd83ab7462e6dbcdd84d43f54ee60a8dc167/soupsieve-2.8-py3-none-any.whl
+- pypi: https://files.pythonhosted.org/packages/48/f3/b67d6ea49ca9154453b6d70b34ea22f3996b9fa55da105a79d8732227adc/soupsieve-2.8.1-py3-none-any.whl
   name: soupsieve
-  version: '2.8'
-  sha256: 0cc76456a30e20f5d7f2e14a98a4ae2ee4e5abdc7c5ea0aafe795f344bc7984c
+  version: 2.8.1
+  sha256: a11fe2a6f3d76ab3cf2de04eb339c1be5b506a8a47f2ceb6d139803177f85434
   requires_python: '>=3.9'
 - conda: https://conda.anaconda.org/conda-forge/noarch/sphinx-8.2.3-pyhd8ed1ab_0.conda
   sha256: 995f58c662db0197d681fa345522fd9e7ac5f05330d3dff095ab2f102e260ab0

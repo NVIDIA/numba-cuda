@@ -16,6 +16,7 @@ from numba import cuda
 from numba.cuda import void, float64, int64, int32, float32
 from numba.cuda.typing.typeof import typeof
 
+
 CONST1D = np.arange(10, dtype=np.float64)
 
 
@@ -195,7 +196,7 @@ class TestLinker(CUDATestCase):
 
         link = str(test_data_dir / "error.cu")
 
-        from cuda.core.experimental._utils.cuda_utils import NVRTCError
+        from numba.cuda._compat import NVRTCError
 
         errty = NVRTCError
         with self.assertRaises(errty) as e:

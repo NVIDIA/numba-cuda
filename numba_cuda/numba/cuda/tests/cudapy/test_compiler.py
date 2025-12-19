@@ -547,7 +547,7 @@ class TestCompile(unittest.TestCase):
                 link_obj = LinkableCode.from_path(link)
                 if link_obj.kind == "cu":
                     # if link is a cu file, result contains a compiled object code
-                    from cuda.core.experimental import ObjectCode
+                    from numba.cuda._compat import ObjectCode
 
                     assert isinstance(code_list[1], ObjectCode)
                 else:
