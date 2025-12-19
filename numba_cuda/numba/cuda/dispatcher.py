@@ -15,7 +15,6 @@ import uuid
 import re
 from warnings import warn
 
-
 from numba.cuda.core import errors
 from numba.cuda import serialize, utils
 from numba import cuda
@@ -40,8 +39,6 @@ from numba.cuda.compiler import (
 from numba.cuda.core import sigutils, config, entrypoints
 from numba.cuda.flags import Flags
 from numba.cuda.cudadrv import driver, nvvm
-
-
 from numba.cuda.locks import module_init_lock
 from numba.cuda.core.caching import Cache, CacheImpl, NullCache
 from numba.cuda.descriptor import cuda_target
