@@ -431,7 +431,15 @@ compute_fingerprint(string_writer_t *w, PyObject *val)
             return -1;
         }
         TRY(string_writer_put_char, w, OP_SET);
-        TRY(compute_fingerprint, w, item);
+        if (compute_fingerprint(w, item)) {
+#if PY_MAJOR_VERSION >= 3 && PY_MINOR_VERSION >= 13
+            Py_XDECREF(item);
+#endif
+            return -1;
+        }
+#if PY_MAJOR_VERSION >= 3 && PY_MINOR_VERSION >= 13
+        Py_XDECREF(item);
+#endif
         return 0;
     }
     if (PyObject_CheckBuffer(val)) {
