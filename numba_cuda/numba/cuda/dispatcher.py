@@ -116,6 +116,7 @@ class _Kernel(serialize.ReduceMixin):
         opt=True,
         device=False,
         launch_bounds=None,
+        shared_memory_carveout=None,
     ):
         if device:
             raise RuntimeError("Cannot compile a device function as a kernel")
@@ -170,6 +171,12 @@ class _Kernel(serialize.ReduceMixin):
         lib._entry_name = cres.fndesc.llvm_func_name
         kernel_fixup(kernel, self.debug)
         nvvm.set_launch_bounds(kernel, launch_bounds)
+        if shared_memory_carveout is not None:
+            self.shared_memory_carveout = self._parse_carveout(
+                shared_memory_carveout
+            )
+        else:
+            self.shared_memory_carveout = None
 
         if not link:
             link = []
@@ -289,6 +296,7 @@ class _Kernel(serialize.ReduceMixin):
         lineinfo,
         call_helper,
         extensions,
+        shared_memory_carveout=None,
     ):
         """
         Rebuild an instance.
@@ -307,6 +315,7 @@ class _Kernel(serialize.ReduceMixin):
         instance.lineinfo = lineinfo
         instance.call_helper = call_helper
         instance.extensions = extensions
+        instance.shared_memory_carveout = shared_memory_carveout
         return instance
 
     def _reduce_states(self):
@@ -326,7 +335,14 @@ class _Kernel(serialize.ReduceMixin):
             lineinfo=self.lineinfo,
             call_helper=self.call_helper,
             extensions=self.extensions,
+            shared_memory_carveout=self.shared_memory_carveout,
         )
+
+    def _parse_carveout(self, carveout):
+        if isinstance(carveout, int):
+            return carveout
+        carveout_map = {"default": -1, "maxl1": 0, "maxshared": 100}
+        return carveout_map[str(carveout).lower()]
 
     @module_init_lock
     def initialize_once(self, mod):
@@ -340,6 +356,9 @@ class _Kernel(serialize.ReduceMixin):
         cufunc = self._codelibrary.get_cufunc()
 
         self.initialize_once(cufunc.module)
+
+        if self.shared_memory_carveout is not None:
+            cufunc.set_shared_memory_carveout(self.shared_memory_carveout)
 
         if (
             hasattr(self, "target_context")
