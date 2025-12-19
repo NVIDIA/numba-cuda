@@ -875,7 +875,10 @@ class PythonAPI(object):
                 self.py_hash_t.as_pointer(),
             ],
         )
-        fn = self._get_function(fnty, name="_PySet_NextEntry")
+        name = "_PySet_NextEntry"
+        if sys.version_info[:2] >= (3, 13):
+            name += "Ref"
+        fn = self._get_function(fnty, name=name)
         return self.builder.call(fn, (set, posptr, keyptr, hashptr))
 
     @contextlib.contextmanager

@@ -17,11 +17,24 @@
     #include <numpy/npy_2_compat.h>
 #endif
 
-#if (PY_MAJOR_VERSION >= 3) && ((PY_MINOR_VERSION == 13) || (PY_MINOR_VERSION == 14))
-    #ifndef Py_BUILD_CORE
-        #define Py_BUILD_CORE 1
+#ifndef Py_BUILD_CORE
+#define Py_BUILD_CORE 1
+#endif
+
+#include "internal/pycore_setobject.h"
+
+#ifdef Py_BUILD_CORE
+#undef Py_BUILD_CORE
+#endif
+
+#if (PY_MAJOR_VERSION >= 3) && (PY_MINOR_VERSION >= 13)
+    #ifndef PySet_NextEntry
+    #define PySet_NextEntry _PySet_NextEntryRef
     #endif
-    #include "internal/pycore_setobject.h"  // _PySet_NextEntry()
+#else
+    #ifndef PySet_NextEntry
+    #define PySet_NextEntry _PySet_NextEntry
+    #endif
 #endif
 
 
@@ -411,7 +424,7 @@ compute_fingerprint(string_writer_t *w, PyObject *val)
         PyObject *item;
         Py_ssize_t pos = 0;
         /* Only one item is considered, as in typeof.py */
-        if (!_PySet_NextEntry(val, &pos, &item, &h)) {
+        if (!PySet_NextEntry(val, &pos, &item, &h)) {
             /* Empty set */
             PyErr_SetString(PyExc_ValueError,
                             "cannot compute fingerprint of empty set");
