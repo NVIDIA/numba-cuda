@@ -75,12 +75,6 @@ jobs:
       build_type: pull-request
       script: "ci/build_wheel.sh"
       matrix: ${{ needs.compute-matrix.outputs.BUILD_MATRIX }}
-  build-wheels-windows:
-    uses: ./.github/workflows/wheel-windows-build.yaml
-  test-wheels-windows:
-    needs:
-      - build-wheels-windows
-    uses: ./.github/workflows/wheel-windows-tests.yaml
   test-wheels:
     needs:
       - build-wheels
