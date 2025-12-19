@@ -18,6 +18,7 @@ from llvmlite import ir
 from .error import NvvmError, NvvmSupportError, NvvmWarning
 from .libs import get_libdevice, open_libdevice, open_cudalib
 from numba.cuda import cgutils
+from cuda.bindings import runtime
 
 
 logger = logging.getLogger(__name__)
@@ -242,6 +243,18 @@ class CompilationUnit(object):
                 v = int(v)
 
             return f"-{k}={v}".encode("utf-8")
+
+        # Starting in r13.1, we must pass in the -numba-debug flag to the
+        # compiler when compiling with a debug build.
+        if 'g' in options:
+            # runtime.getLocalRuntimeVersion() returns (cudaError_t, version_int)
+            # Example: 13010 = CTK 13.1, 13020 = CTK 13.2
+            _, ctk_version_number = runtime.getLocalRuntimeVersion()
+            ctk_major = ctk_version_number // 1000
+            ctk_minor = (ctk_version_number % 1000) // 10
+            ctk_version = (ctk_major, ctk_minor)
+            if ctk_version >= (13, 1):
+                options['numba-debug'] = None
 
         options = [stringify_option(k, v) for k, v in options.items()]
         option_ptrs = (c_char_p * len(options))(*[c_char_p(x) for x in options])
