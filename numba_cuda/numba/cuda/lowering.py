@@ -1683,9 +1683,6 @@ class Lower(BaseLower):
 
 
 class CUDALower(Lower):
-    def _lower_call_normal(self, fnty, expr, signature):
-        return super()._lower_call_normal(fnty, expr, signature)
-
     def storevar(self, value, name, argidx=None):
         """
         Store the value into the given variable.
