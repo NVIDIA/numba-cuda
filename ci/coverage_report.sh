@@ -7,7 +7,7 @@ set -euo pipefail
 CUDA_VER_MAJOR_MINOR=${CUDA_VER%.*}
 
 rapids-logger "Install wheel with test dependencies and coverage tools"
-package=$(realpath wheel/numba_cuda*.whl)
+package=$(realpath "${NUMBA_CUDA_ARTIFACTS_DIR}"/*.whl)
 echo "Package path: ${package}"
 python -m pip install \
     "${package}" \
