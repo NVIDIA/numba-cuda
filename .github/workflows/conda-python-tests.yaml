@@ -86,7 +86,7 @@ jobs:
       NUMBA_VERSION: ${{ matrix.NUMBA_VERSION }}
       RAPIDS_TESTS_DIR: ${{ github.workspace }}/test-results
     container:
-      image: rapidsai/ci-conda:cuda${{ matrix.CUDA_VER }}-${{ matrix.LINUX_VER }}-py${{ matrix.PY_VER }}
+      image: ubuntu:22.04
       options: ${{ inputs.container-options }}
       env:
         RAPIDS_BUILD_TYPE: ${{ inputs.build_type }}

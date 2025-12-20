@@ -100,7 +100,7 @@ jobs:
     env:
       RAPIDS_ARTIFACTS_DIR: ${{ github.workspace }}/artifacts
     container:
-      image: "rapidsai/ci-wheel:cuda${{ matrix.CUDA_VER }}-${{ matrix.LINUX_VER }}-py${{ matrix.PY_VER }}"
+      image: ubuntu:22.04
       env:
         RAPIDS_BUILD_TYPE: ${{ inputs.build_type }}
     timeout-minutes: 60
