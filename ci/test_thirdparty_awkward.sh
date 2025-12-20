@@ -12,7 +12,7 @@ rapids-logger "Install awkward and related libraries"
 pip install awkward==${AWKWARD_VERSION} cupy-cuda12x pyarrow pandas nox
 
 rapids-logger "Install wheel with test dependencies"
-package=$(realpath wheel/numba_cuda*.whl)
+package=$(realpath "${NUMBA_CUDA_ARTIFACTS_DIR}"/*.whl)
 echo "Package path: ${package}"
 python -m pip install \
     "${package}" \
