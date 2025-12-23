@@ -1,0 +1,268 @@
+# SPDX-FileCopyrightText: Copyright (c) 2024-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+on:
+  workflow_call:
+    inputs:
+      host-platform:
+        required: true
+        type: string
+      cuda-version:
+        required: true
+        type: string
+      prev-cuda-version:
+        required: true
+        type: string
+
+defaults:
+  run:
+    shell: bash --noprofile --norc -xeuo pipefail {0}
+
+permissions:
+  contents: read  # This is required for actions/checkout
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version:
+          - "3.10"
+          - "3.11"
+          - "3.12"
+          - "3.13"
+          - "3.14"
+          # - "3.14t"
+    name: py${{ matrix.python-version }}
+    runs-on: ${{ (inputs.host-platform == 'linux-64' && 'linux-amd64-cpu8') ||
+                 (inputs.host-platform == 'linux-aarch64' && 'linux-arm64-cpu8') ||
+                 (inputs.host-platform == 'win-64' && 'windows-2022') }}
+    steps:
+      - name: Checkout ${{ github.event.repository.name }}
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8  # v5.0.0
+        with:
+          fetch-depth: 0
+
+      - name: Install latest rapidsai/sccache
+        if: ${{ startsWith(inputs.host-platform, 'linux') }}
+        run: |
+          curl -fsSL "https://github.com/rapidsai/sccache/releases/latest/download/sccache-$(uname -m)-unknown-linux-musl.tar.gz" \
+            | sudo tar -C /usr/local/bin -xvzf - --wildcards --strip-components=1 -x '*/sccache'
+          echo "SCCACHE_PATH=/usr/local/bin/sccache" >> "$GITHUB_ENV"
+          echo "SCCACHE_GHA_USE_PREPROCESSOR_CACHE_MODE=true" >> "$GITHUB_ENV"
+
+      # xref: https://github.com/orgs/community/discussions/42856#discussioncomment-7678867
+      - name: Adding addtional GHA cache-related env vars
+        uses: actions/github-script@v8
+        with:
+          script: |
+            core.exportVariable('ACTIONS_CACHE_SERVICE_V2', 'on');
+            core.exportVariable('ACTIONS_CACHE_URL', process.env['ACTIONS_CACHE_URL'] || '');
+            core.exportVariable('ACTIONS_RESULTS_URL', process.env['ACTIONS_RESULTS_URL'] || '');
+            core.exportVariable('ACTIONS_RUNTIME_URL', process.env['ACTIONS_RUNTIME_URL'] || '');
+            core.exportVariable('ACTIONS_RUNTIME_TOKEN', process.env['ACTIONS_RUNTIME_TOKEN'] || '');
+
+      - name: Setup proxy cache
+        uses: nv-gha-runners/setup-proxy-cache@main
+        continue-on-error: true
+        # Skip the cache on Windows nodes outside of our org.
+        if: ${{ inputs.host-platform != 'win-64' }}
+
+      - name: Set up Python
+        id: setup-python1
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065  # v5.6.0
+        with:
+          # WAR: setup-python is not relocatable, and cibuildwheel hard-wires to 3.12...
+          # see https://github.com/actions/setup-python/issues/871
+          python-version: "3.12"
+
+      - name: Set up MSVC
+        if: ${{ startsWith(inputs.host-platform, 'win') }}
+        uses: ilammy/msvc-dev-cmd@v1  # TODO: ask admin to allow pinning commits
+
+      - name: Set environment variables
+        env:
+          HOST_PLATFORM: ${{ inputs.host-platform }}
+          PY_VER: ${{ matrix.python-version }}
+          SHA: ${{ github.sha }}
+        run: ./ci/tools/env-vars build
+
+      - name: Dump environment
+        run: |
+          env
+
+      - name: Build numba-cuda wheel
+        uses: pypa/cibuildwheel@9c00cb4f6b517705a3794b22395aedc36257242c  # v3.2.1
+        with:
+          package-dir: .
+          output-dir: ${{ env.NUMBA_CUDA_ARTIFACTS_DIR }}
+        env:
+          CIBW_BUILD: ${{ env.CIBW_BUILD }}
+          # CIBW mounts the host filesystem under /host
+          CIBW_ENVIRONMENT_LINUX: >
+            CC="/host/${{ env.SCCACHE_PATH }} cc"
+            CXX="/host/${{ env.SCCACHE_PATH }} c++"
+            SCCACHE_GHA_ENABLED=true
+            ACTIONS_RUNTIME_TOKEN=${{ env.ACTIONS_RUNTIME_TOKEN }}
+            ACTIONS_RUNTIME_URL=${{ env.ACTIONS_RUNTIME_URL }}
+            ACTIONS_RESULTS_URL=${{ env.ACTIONS_RESULTS_URL }}
+            ACTIONS_CACHE_URL=${{ env.ACTIONS_CACHE_URL }}
+            ACTIONS_CACHE_SERVICE_V2=${{ env.ACTIONS_CACHE_SERVICE_V2 }}
+            SCCACHE_GHA_USE_PREPROCESSOR_CACHE_MODE=${{ env.SCCACHE_GHA_USE_PREPROCESSOR_CACHE_MODE }}
+          # check cache stats before leaving cibuildwheel
+          CIBW_BEFORE_TEST_LINUX: >
+            "/host/${{ env.SCCACHE_PATH }}" --show-adv-stats
+          # force the test stage to be run (so that before-test is not skipped)
+          # TODO: we might want to think twice on adding this, it does a lot of
+          # things before reaching this command.
+          CIBW_TEST_COMMAND_LINUX: >
+            echo "ok!"
+
+      - name: List the numba-cuda artifacts directory
+        run: |
+          if [[ "${{ inputs.host-platform }}" == win* ]]; then
+            export CHOWN=chown
+          else
+            export CHOWN="sudo chown"
+          fi
+          $CHOWN -R $(whoami) ${{ env.NUMBA_CUDA_ARTIFACTS_DIR }}
+          ls -lahR ${{ env.NUMBA_CUDA_ARTIFACTS_DIR }}
+
+      - name: Upload numba-cuda build artifacts
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4.6.2
+        with:
+          name: ${{ env.NUMBA_CUDA_ARTIFACT_NAME }}
+          path: ${{ env.NUMBA_CUDA_ARTIFACTS_DIR }}/*.whl
+          if-no-files-found: error
+
+  build-tests:
+    needs:
+      - build
+    strategy:
+      fail-fast: false
+      matrix:
+        # We just need 1 Python version because the artifacts are Python agnostic.
+        python-version:
+          - "3.10"
+        cuda-version:
+          - ${{ inputs.cuda-version }}
+          - ${{ inputs.prev-cuda-version }}
+    name: py${{ matrix.python-version }} CUDA ${{ matrix.cuda-version }}
+    runs-on: ${{ (inputs.host-platform == 'linux-64' && 'linux-amd64-cpu8') ||
+                 (inputs.host-platform == 'linux-aarch64' && 'linux-arm64-cpu8') ||
+                 (inputs.host-platform == 'win-64' && 'windows-2022') }}
+    steps:
+      - name: Checkout ${{ github.event.repository.name }}
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8  # v5.0.0
+        with:
+          fetch-depth: 0
+
+      - name: Install latest rapidsai/sccache
+        if: ${{ startsWith(inputs.host-platform, 'linux') }}
+        run: |
+          curl -fsSL "https://github.com/rapidsai/sccache/releases/latest/download/sccache-$(uname -m)-unknown-linux-musl.tar.gz" \
+            | sudo tar -C /usr/local/bin -xvzf - --wildcards --strip-components=1 -x '*/sccache'
+          echo "SCCACHE_PATH=/usr/local/bin/sccache" >> "$GITHUB_ENV"
+          echo "SCCACHE_GHA_USE_PREPROCESSOR_CACHE_MODE=true" >> "$GITHUB_ENV"
+
+      # xref: https://github.com/orgs/community/discussions/42856#discussioncomment-7678867
+      - name: Adding addtional GHA cache-related env vars
+        uses: actions/github-script@v8
+        with:
+          script: |
+            core.exportVariable('ACTIONS_CACHE_SERVICE_V2', 'on');
+            core.exportVariable('ACTIONS_CACHE_URL', process.env['ACTIONS_CACHE_URL'] || '');
+            core.exportVariable('ACTIONS_RESULTS_URL', process.env['ACTIONS_RESULTS_URL'] || '');
+            core.exportVariable('ACTIONS_RUNTIME_URL', process.env['ACTIONS_RUNTIME_URL'] || '');
+            core.exportVariable('ACTIONS_RUNTIME_TOKEN', process.env['ACTIONS_RUNTIME_TOKEN'] || '');
+
+      - name: Setup proxy cache
+        uses: nv-gha-runners/setup-proxy-cache@main
+        continue-on-error: true
+        # Skip the cache on Windows nodes outside of our org.
+        if: ${{ inputs.host-platform != 'win-64' }}
+
+      - name: Set up Python
+        id: setup-python
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065  # v5.6.0
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Set up MSVC
+        if: ${{ startsWith(inputs.host-platform, 'win') }}
+        uses: ilammy/msvc-dev-cmd@v1  # TODO: ask admin to allow pinning commits
+
+      - name: Set environment variables
+        env:
+          HOST_PLATFORM: ${{ inputs.host-platform }}
+          PY_VER: ${{ matrix.python-version }}
+          SHA: ${{ github.sha }}
+        run: |
+          ./ci/tools/env-vars build
+          CUDA_MAJOR="$(cut -d '.' -f 1 <<< ${{ matrix.cuda-version }})"
+          echo "CUDA_MAJOR=${CUDA_MAJOR}" >> ${GITHUB_ENV}
+
+      - name: Dump environment
+        run: |
+          env
+
+      - name: Download numba-cuda build artifacts
+        if: ${{ env.SKIP_NUMBA_CUDA_TEST == '0'}}
+        uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0  # v5.0.0
+        with:
+          name: ${{ env.NUMBA_CUDA_ARTIFACT_NAME }}
+          path: ${{ env.NUMBA_CUDA_ARTIFACTS_DIR }}
+
+      - name: Display structure of downloaded numba-cuda artifacts
+        run: |
+          pwd
+          ls -lahR ${NUMBA_CUDA_ARTIFACTS_DIR}
+
+      - name: Install numba-cuda
+        run: |
+          # used in testing/Makefile
+          pip install ${{ env.NUMBA_CUDA_ARTIFACTS_DIR }}/*.whl "cuda-bindings==${CUDA_MAJOR}.*"
+
+      - name: Set up mini CTK ${{ matrix.cuda-version }}
+        uses: ./.github/actions/fetch_ctk
+        continue-on-error: false
+        with:
+          host-platform: ${{ inputs.host-platform }}
+          cuda-version: ${{ matrix.cuda-version }}
+          cuda-components: "cuda_nvcc,cuda_cudart,cuda_crt,libnvvm,cuda_nvrtc,cuda_cccl,libnvjitlink,cuda_cuobjdump"
+
+      - name: Build numba-cuda test artifacts aginst CUDA ${{ matrix.cuda-version }}
+        run: |
+          pushd testing
+          if [[ "${{ inputs.host-platform }}" == linux* ]]; then
+            export PATH=$(dirname ${SCCACHE_PATH}):${PATH}
+            export SCCACHE_GHA_ENABLED=true
+          fi
+
+          nvcc --version
+
+          # TODO: move this list to json
+          if [[ "${CUDA_MAJOR}" == 12 ]]; then
+            CC_LIST=(70 75 80 86 89 90 120)
+          elif [[ "${CUDA_MAJOR}" == 13 ]]; then
+            CC_LIST=(75 80 86 89 90 120)
+          fi
+
+          for cc in ${CC_LIST[*]}; do
+            make -j $(nproc) GPU_CC=${cc}
+            mkdir cu${CUDA_MAJOR}_cc${cc}
+            mv *.cubin *.fatbin *.ptx *.o *.a *.ltoir cu${CUDA_MAJOR}_cc${cc}
+          done
+          popd
+
+          if [[ "${{ inputs.host-platform }}" == linux* ]]; then
+            "${SCCACHE_PATH}" --show-adv-stats
+          fi
+
+      - name: Upload numba-cuda test artifacts
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4.6.2
+        with:
+          name: ${{ env.NUMBA_CUDA_TEST_ARTIFACT_NAME }}-cu${{ env.CUDA_MAJOR }}
+          path: testing/cu*
+          if-no-files-found: error

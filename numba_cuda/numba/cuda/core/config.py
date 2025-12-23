@@ -494,10 +494,6 @@ class _EnvReloader(object):
             "NUMBA_CUDA_PER_THREAD_DEFAULT_STREAM", int, 0
         )
 
-        CUDA_ENABLE_MINOR_VERSION_COMPATIBILITY = _readenv(
-            "NUMBA_CUDA_ENABLE_MINOR_VERSION_COMPATIBILITY", int, 0
-        )
-
         # Location of the CUDA include files
         if IS_WIN32:
             cuda_path = os.environ.get("CUDA_PATH")

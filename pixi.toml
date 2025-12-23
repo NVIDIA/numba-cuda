@@ -6,7 +6,7 @@ platforms = ["linux-64", "linux-aarch64", "win-64"]
 preview = ["pixi-build"]
 
 [workspace.build-variants]
-python = ["3.10.*", "3.11.*", "3.12.*", "3.13.*"]
+python = ["3.10.*", "3.11.*", "3.12.*", "3.13.*", "3.14.*"]
 
 [dependencies]
 # source
@@ -52,20 +52,18 @@ cuda = "13"
 
 [feature.cu-13.dependencies]
 cuda-version = "13.*"
-ipython = "*"
-pyinstrument = "*"
 
 [feature.cu-13-0.dependencies]
 cuda-version = "13.0.*"
-ipython = "*"
-pyinstrument = "*"
+
+[feature.cu-13-1.dependencies]
+cuda-version = "13.1.*"
 
 [feature.bench.dependencies]
 pytorch = ">=2.8"
 pytorch-gpu = ">=2.8"
 libtorch = ">=2.8"
 cupy = "*"
-pyinstrument = "*"
 
 [feature.test.dependencies]
 # for building cuda artifacts for testing
@@ -92,6 +90,9 @@ python = "3.12.*"
 
 [feature.py313.dependencies]
 python = "3.13.*"
+
+[feature.py314.dependencies]
+python = "3.14.*"
 
 [feature.docs.dependencies]
 make = "*"
@@ -193,6 +194,24 @@ cu-13-0-py313 = { features = [
     "nvvm",
     "py313",
 ], solve-group = "cu-13-0-py313" }
+cu-13-0-py314 = { features = [
+    "cu-13-0",
+    "test",
+    "cu",
+    "cu-13",
+    "cu-rt",
+    "nvvm",
+    "py314",
+], solve-group = "cu-13-0-py314" }
+cu-13-1-py314 = { features = [
+    "cu-13-1",
+    "test",
+    "cu",
+    "cu-13",
+    "cu-rt",
+    "nvvm",
+    "py314",
+], solve-group = "cu-13-1-py314" }
 
 docs = { features = ["docs"], solve-group = "docs" }
 
@@ -272,6 +291,7 @@ numpy = ">=2.1"
 
 [package.run-dependencies]
 python = "*"
+packaging = "*"
 numba = ">=0.60"
 cuda-core = ">=0.3,<1"
 cuda-bindings = ">=12.9,<14"

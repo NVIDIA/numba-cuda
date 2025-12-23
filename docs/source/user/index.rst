@@ -14,6 +14,7 @@ User guide
    kernels.rst
    memory.rst
    device-functions.rst
+   globals.rst
    cudapysupported.rst
    fastmath.rst
    intrinsics.rst
