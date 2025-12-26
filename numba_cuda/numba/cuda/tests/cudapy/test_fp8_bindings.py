@@ -36,10 +36,14 @@ if not config.ENABLE_CUDASIM:
         cvt_float_to_fp8,
         cvt_double_to_fp8,
         cvt_bfloat16raw_to_fp8,
+        cvt_bfloat16raw_to_e8m0,
+        cvt_float_to_e8m0,
+        cvt_double_to_e8m0,
         cvt_e8m0_to_bf16raw,
         saturation_t,
         fp8_interpretation_t,
     )
+    from cuda.bindings.runtime import cudaRoundMode
 
 FE8_TYPES = [fp8_e5m2, fp8_e4m3, fp8_e8m0]
 
@@ -393,11 +397,18 @@ class FP8Storage_CVT_Intrinsics_Tests(CUDATestCase):
             result[0] = cvt_double_to_fp8(
                 x[0], saturation_t.NOSAT, fp8_interpretation_t.E5M2
             )
+            # E4M3
+            result[1] = cvt_double_to_fp8(
+                x[0], saturation_t.NOSAT, fp8_interpretation_t.E4M3
+            )
 
-        result = np.zeros(1, dtype=np.uint8)
+        result = np.zeros(2, dtype=np.uint8)
         x = np.array([1.5], dtype=np.float64)
         kernel[1, 1](result, x)
+        # 1.5 in E5M2 (0 01111 10) -> 0x3E = 62
         self.assertEqual(result[0], 62)
+        # 1.5 in E4M3 (0 0111 100) -> 0x3C = 60
+        self.assertEqual(result[1], 60)
 
     def test_cvt_e8m0_to_bf16raw(self):
         @cuda.jit
@@ -432,6 +443,62 @@ class FP8Storage_CVT_Intrinsics_Tests(CUDATestCase):
 
         # 1.0 in E5M2 is 0x3C = 60
         self.assertEqual(result[0], 60)
+
+    def test_cvt_float_to_e8m0(self):
+        @cuda.jit
+        def kernel(result, x):
+            result[0] = cvt_float_to_e8m0(
+                x[0], saturation_t.NOSAT, cudaRoundMode.cudaRoundZero
+            )
+            result[1] = cvt_float_to_e8m0(
+                x[0], saturation_t.NOSAT, cudaRoundMode.cudaRoundPosInf
+            )
+
+        # Use an exact power-of-two input so rounding mode doesn't matter.
+        x = np.array([1.0], dtype=np.float32)
+        result = np.zeros(2, dtype=np.uint8)
+        kernel[1, 1](result, x)
+
+        # 1.0 in E8M0 is 127 (bias 127)
+        self.assertEqual(result[0], 127)
+        self.assertEqual(result[1], 127)
+
+    def test_cvt_double_to_e8m0(self):
+        @cuda.jit
+        def kernel(result, x):
+            result[0] = cvt_double_to_e8m0(
+                x[0], saturation_t.NOSAT, cudaRoundMode.cudaRoundZero
+            )
+            result[1] = cvt_double_to_e8m0(
+                x[0], saturation_t.NOSAT, cudaRoundMode.cudaRoundPosInf
+            )
+
+        # Use an exact power-of-two input so rounding mode doesn't matter.
+        x = np.array([2.0], dtype=np.float64)
+        result = np.zeros(2, dtype=np.uint8)
+        kernel[1, 1](result, x)
+
+        # 2.0 in E8M0 is 128 (127 + 1)
+        self.assertEqual(result[0], 128)
+        self.assertEqual(result[1], 128)
+
+    def test_cvt_bfloat16raw_to_e8m0(self):
+        @cuda.jit
+        def kernel(result, exponent):
+            raw = cvt_e8m0_to_bf16raw(exponent[0])
+            result[0] = cvt_bfloat16raw_to_e8m0(
+                raw, saturation_t.NOSAT, cudaRoundMode.cudaRoundZero
+            )
+            result[1] = cvt_bfloat16raw_to_e8m0(
+                raw, saturation_t.NOSAT, cudaRoundMode.cudaRoundPosInf
+            )
+
+        exponent = np.array([126], dtype=np.uint8)  # 0.5
+        result = np.zeros(2, dtype=np.uint8)
+        kernel[1, 1](result, exponent)
+
+        self.assertEqual(result[0], 126)
+        self.assertEqual(result[1], 126)
 
 
 if __name__ == "__main__":
