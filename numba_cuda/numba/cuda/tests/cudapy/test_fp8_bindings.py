@@ -7,6 +7,8 @@ Comprehensive test suite for CUDA FP8 types and conversion functions.
 Tests cover:
 - fp8_e5m2, fp8_e4m3, fp8_e8m0 types
 - Constructors from various numeric types
+- Conversion operators to various types
+- Conversion intrinsics
 """
 
 from numba import cuda
