@@ -372,43 +372,63 @@ class FP8Storage_CVT_Intrinsics_Tests(CUDATestCase):
     def test_cvt_float_to_fp8(self):
         @cuda.jit
         def kernel(result, x):
-            # E5M2, No Saturation
+            # Use an out-of-range value so NOSAT and SATFINITE differ.
+            # For overflow:
+            # - E5M2: NOSAT -> Inf (0x7C), SATFINITE -> MAXNORM (0x7B)
+            # - E4M3: NOSAT -> NaN (0x7F), SATFINITE -> MAXNORM (0x7E)
             result[0] = cvt_float_to_fp8(
                 x[0], saturation_t.NOSAT, fp8_interpretation_t.E5M2
             )
-            # E4M3, No Saturation
             result[1] = cvt_float_to_fp8(
+                x[0], saturation_t.SATFINITE, fp8_interpretation_t.E5M2
+            )
+            result[2] = cvt_float_to_fp8(
                 x[0], saturation_t.NOSAT, fp8_interpretation_t.E4M3
             )
+            result[3] = cvt_float_to_fp8(
+                x[0], saturation_t.SATFINITE, fp8_interpretation_t.E4M3
+            )
 
-        result = np.zeros(2, dtype=np.uint8)
-        x = np.array([1.5], dtype=np.float32)
+        result = np.zeros(4, dtype=np.uint8)
+        x = np.array([1e20], dtype=np.float32)
         kernel[1, 1](result, x)
 
-        # 1.5 in E5M2 (0 01111 10) -> 0x3E = 62
-        self.assertEqual(result[0], 62)
-        # 1.5 in E4M3 (0 0111 100) -> 0x3C = 60
-        self.assertEqual(result[1], 60)
+        self.assertEqual(result[0], 0x7C)  # E5M2 overflow -> Inf (NOSAT)
+        self.assertEqual(
+            result[1], 0x7B
+        )  # E5M2 overflow -> MAXNORM (SATFINITE)
+        self.assertEqual(result[2], 0x7F)  # E4M3 overflow -> NaN (NOSAT)
+        self.assertEqual(
+            result[3], 0x7E
+        )  # E4M3 overflow -> MAXNORM (SATFINITE)
 
     def test_cvt_double_to_fp8(self):
         @cuda.jit
         def kernel(result, x):
-            # E5M2
             result[0] = cvt_double_to_fp8(
                 x[0], saturation_t.NOSAT, fp8_interpretation_t.E5M2
             )
-            # E4M3
             result[1] = cvt_double_to_fp8(
+                x[0], saturation_t.SATFINITE, fp8_interpretation_t.E5M2
+            )
+            result[2] = cvt_double_to_fp8(
                 x[0], saturation_t.NOSAT, fp8_interpretation_t.E4M3
             )
+            result[3] = cvt_double_to_fp8(
+                x[0], saturation_t.SATFINITE, fp8_interpretation_t.E4M3
+            )
 
-        result = np.zeros(2, dtype=np.uint8)
-        x = np.array([1.5], dtype=np.float64)
+        result = np.zeros(4, dtype=np.uint8)
+        x = np.array([1e300], dtype=np.float64)
         kernel[1, 1](result, x)
-        # 1.5 in E5M2 (0 01111 10) -> 0x3E = 62
-        self.assertEqual(result[0], 62)
-        # 1.5 in E4M3 (0 0111 100) -> 0x3C = 60
-        self.assertEqual(result[1], 60)
+        self.assertEqual(result[0], 0x7C)  # E5M2 overflow -> Inf (NOSAT)
+        self.assertEqual(
+            result[1], 0x7B
+        )  # E5M2 overflow -> MAXNORM (SATFINITE)
+        self.assertEqual(result[2], 0x7F)  # E4M3 overflow -> NaN (NOSAT)
+        self.assertEqual(
+            result[3], 0x7E
+        )  # E4M3 overflow -> MAXNORM (SATFINITE)
 
     def test_cvt_e8m0_to_bf16raw(self):
         @cuda.jit
@@ -431,60 +451,83 @@ class FP8Storage_CVT_Intrinsics_Tests(CUDATestCase):
             # Convert e8m0 to bfloat16_raw
             raw = cvt_e8m0_to_bf16raw(x[0])
 
-            # Convert back to fp8 (E5M2)
+            # Convert bf16_raw to fp8 using both NOSAT and SATFINITE.
             result[0] = cvt_bfloat16raw_to_fp8(
                 raw, saturation_t.NOSAT, fp8_interpretation_t.E5M2
             )
+            result[1] = cvt_bfloat16raw_to_fp8(
+                raw, saturation_t.SATFINITE, fp8_interpretation_t.E5M2
+            )
+            result[2] = cvt_bfloat16raw_to_fp8(
+                raw, saturation_t.NOSAT, fp8_interpretation_t.E4M3
+            )
+            result[3] = cvt_bfloat16raw_to_fp8(
+                raw, saturation_t.SATFINITE, fp8_interpretation_t.E4M3
+            )
 
-        result = np.zeros(1, dtype=np.uint8)
-        # 1.0 in E8M0
-        x = np.array([127], dtype=np.uint8)
+        result = np.zeros(4, dtype=np.uint8)
+        # 2^127 in E8M0 (very out-of-range for fp8)
+        x = np.array([254], dtype=np.uint8)
         kernel[1, 1](result, x)
 
-        # 1.0 in E5M2 is 0x3C = 60
-        self.assertEqual(result[0], 60)
+        self.assertEqual(result[0], 0x7C)  # E5M2 overflow -> Inf (NOSAT)
+        self.assertEqual(
+            result[1], 0x7B
+        )  # E5M2 overflow -> MAXNORM (SATFINITE)
+        self.assertEqual(result[2], 0x7F)  # E4M3 overflow -> NaN (NOSAT)
+        self.assertEqual(
+            result[3], 0x7E
+        )  # E4M3 overflow -> MAXNORM (SATFINITE)
 
     def test_cvt_float_to_e8m0(self):
         @cuda.jit
         def kernel(result, x):
+            # Use a value slightly larger than 2^127 and round up so the
+            # rounded scale would overflow. Then SATFINITE clips to 2^127 while
+            # NOSAT produces NaN (0xFF).
             result[0] = cvt_float_to_e8m0(
-                x[0], saturation_t.NOSAT, cudaRoundMode.cudaRoundZero
-            )
-            result[1] = cvt_float_to_e8m0(
                 x[0], saturation_t.NOSAT, cudaRoundMode.cudaRoundPosInf
             )
+            result[1] = cvt_float_to_e8m0(
+                x[0], saturation_t.SATFINITE, cudaRoundMode.cudaRoundPosInf
+            )
 
-        # Use an exact power-of-two input so rounding mode doesn't matter.
-        x = np.array([1.0], dtype=np.float32)
+        x_over = np.nextafter(np.float32(2.0**127), np.float32(np.inf))
+        x = np.array([x_over], dtype=np.float32)
         result = np.zeros(2, dtype=np.uint8)
         kernel[1, 1](result, x)
 
-        # 1.0 in E8M0 is 127 (bias 127)
-        self.assertEqual(result[0], 127)
-        self.assertEqual(result[1], 127)
+        self.assertEqual(result[0], 0xFF)  # NOSAT overflow -> NaN
+        self.assertEqual(
+            result[1], 0xFE
+        )  # SATFINITE overflow -> max finite (2^127)
 
     def test_cvt_double_to_e8m0(self):
         @cuda.jit
         def kernel(result, x):
             result[0] = cvt_double_to_e8m0(
-                x[0], saturation_t.NOSAT, cudaRoundMode.cudaRoundZero
-            )
-            result[1] = cvt_double_to_e8m0(
                 x[0], saturation_t.NOSAT, cudaRoundMode.cudaRoundPosInf
             )
+            result[1] = cvt_double_to_e8m0(
+                x[0], saturation_t.SATFINITE, cudaRoundMode.cudaRoundPosInf
+            )
 
-        # Use an exact power-of-two input so rounding mode doesn't matter.
-        x = np.array([2.0], dtype=np.float64)
+        x_over = np.nextafter(np.float64(2.0**127), np.float64(np.inf))
+        x = np.array([x_over], dtype=np.float64)
         result = np.zeros(2, dtype=np.uint8)
         kernel[1, 1](result, x)
 
-        # 2.0 in E8M0 is 128 (127 + 1)
-        self.assertEqual(result[0], 128)
-        self.assertEqual(result[1], 128)
+        self.assertEqual(result[0], 0xFF)  # NOSAT overflow -> NaN
+        self.assertEqual(
+            result[1], 0xFE
+        )  # SATFINITE overflow -> max finite (2^127)
 
     def test_cvt_bfloat16raw_to_e8m0(self):
         @cuda.jit
         def kernel(result, exponent):
+            # NOTE: We currently don't have a good way to construct/modify a
+            # bfloat16_raw value directly in kernels, so we skip SATFINITE vs
+            # NOSAT behavior testing for bf16raw here.
             raw = cvt_e8m0_to_bf16raw(exponent[0])
             result[0] = cvt_bfloat16raw_to_e8m0(
                 raw, saturation_t.NOSAT, cudaRoundMode.cudaRoundZero
