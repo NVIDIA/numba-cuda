@@ -3,8 +3,10 @@
 Name: Numba FP8
 Version: 0.0.1
 GPU Arch:
-    - sm_90 # sm_90 is the first CUDA architecture that supports
+    - sm_90
 Entry Point: ./numba_cuda/numba/cuda/include/13/cuda_fp8.h
+Clang Include Paths:
+    - ./numba_cuda/numba/cuda/include/13
 File List:
     - ./numba_cuda/numba/cuda/include/13/cuda_fp8.h
     - ./numba_cuda/numba/cuda/include/13/cuda_fp8.hpp
