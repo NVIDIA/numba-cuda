@@ -829,30 +829,6 @@ def _from___nv_fp8_e5m2_to_int8_lower(shim_stream, shim_obj):
 _from___nv_fp8_e5m2_to_int8_lower(shim_stream, shim_obj)
 
 
-def _from___nv_fp8_e5m2_to_int8_lower(shim_stream, shim_obj):
-    shim_raw_str = """
-    extern "C" __device__ int
-    _ZNK13__nv_fp8_e5m2cvcEv_nbst(char &retval, __nv_fp8_e5m2 *self) {
-        retval = self->operator char();
-        return 0;
-    }
-        """
-
-    @lower_cast(_type_fp8_e5m2, int8)
-    def impl(context, builder, fromty, toty, value):
-        context.active_code_library.add_linking_file(shim_obj)
-        callconv = FunctionCallConv(
-            itanium_mangled_name="_ZNK13__nv_fp8_e5m2cvcEv",
-            shim_writer=shim_writer,
-            shim_code=shim_raw_str,
-        )
-        sig = signature(toty, fromty)
-        return callconv(builder, context, sig, [value])
-
-
-_from___nv_fp8_e5m2_to_int8_lower(shim_stream, shim_obj)
-
-
 def _from___nv_fp8_e5m2_to_int16_lower(shim_stream, shim_obj):
     shim_raw_str = """
     extern "C" __device__ int
