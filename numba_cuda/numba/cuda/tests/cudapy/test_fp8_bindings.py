@@ -291,7 +291,7 @@ class FP8ConversionTests(CUDATestCase):
                     result[0] = float32(zero)
                     result[1] = int64(zero)
 
-                result = np.zeros(2, dtype=np.uint64)
+                result = np.zeros(2, dtype=np.int64)
                 kernel[1, 1](result)
 
                 np.testing.assert_array_equal(result, np.array([0, 0]))
