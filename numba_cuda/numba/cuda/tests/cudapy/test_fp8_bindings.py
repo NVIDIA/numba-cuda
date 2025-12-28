@@ -240,8 +240,8 @@ class FP8ConversionTests(CUDATestCase):
 
         # Test data: (fp8_type, positive_value, negative_value)
         test_cases = [
-            # (fp8_e5m2, 15.0, -8.0),
-            # (fp8_e4m3, 20.0, -6.0),
+            (fp8_e5m2, 16.0, -8.0),
+            (fp8_e4m3, 20.0, -6.0),
             (
                 fp8_e8m0,
                 32.0,
