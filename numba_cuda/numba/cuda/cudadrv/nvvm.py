@@ -234,6 +234,7 @@ class NVVM(object):
         !1 = !{{i32 {major}, i32 {minor}, i32 {debug_major}, i32 {debug_minor}}}
         """
 
+        program = None
         try:
             program = c_void_p()
             err = self.nvvmCreateProgram(byref(program))
@@ -252,9 +253,10 @@ class NVVM(object):
             self.check_error(err, "Failed to add module.")
 
             options = ["-arch=compute_90"]
-            err = self.nvvmVerifyProgram(program, len(options), options)
+            option_ptrs = (c_char_p * len(options))(*[c_char_p(x) for x in options])
+            err = self.nvvmVerifyProgram(program, len(options), option_ptrs)
             self.check_error(err, "Failed to verify program.")
-            err = self.nvvmCompileProgram(program, len(options), options)
+            err = self.nvvmCompileProgram(program, len(options), option_ptrs)
             self.check_error(err, "Failed to compile program.")
 
             ptx_size = c_int()
@@ -272,7 +274,9 @@ class NVVM(object):
             self._libnvvm_cuda_version = None
             return self._libnvvm_cuda_version
         finally:
-            self.nvvmDestroyProgram(byref(program))
+            if program is not None:
+                err = self.nvvmDestroyProgram(byref(program))
+                self.check_error(err, "Failed to destroy program.")
 
 
     def check_error(self, error, msg, exit=False):
