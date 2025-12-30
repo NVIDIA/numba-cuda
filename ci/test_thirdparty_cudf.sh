@@ -8,9 +8,7 @@ CUDA_VER_MAJOR_MINOR=${CUDA_VER%.*}
 
 rapids-logger "Install cuDF Wheel"
 
-pip install \
-    --extra-index-url=https://pypi.nvidia.com \
-    "cudf-cu12==25.10.*"
+pip install "cudf-cu12==25.12.*"
 
 
 rapids-logger "Remove Extraneous numba-cuda"
@@ -29,7 +27,7 @@ python -m pip install \
 
 
 rapids-logger "Shallow clone cuDF repository"
-git clone --single-branch --branch 'branch-25.10' https://github.com/rapidsai/cudf.git
+git clone --single-branch --branch 'release/25.12' https://github.com/rapidsai/cudf.git
 
 pushd cudf
 
@@ -44,7 +42,8 @@ rapids-logger "Run Scalar UDF tests"
 python -m pytest python/cudf/cudf/tests/dataframe/methods/test_apply.py -W ignore::UserWarning
 
 rapids-logger "Run GroupBy UDF tests"
-python -m pytest python/cudf/cudf/tests/groupby/test_apply.py -k test_groupby_apply_jit -W ignore::UserWarning
+# Run JIT engine tests and tests that check jittability before falling back
+python -m pytest python/cudf/cudf/tests/groupby/test_apply.py -k test_groupby_apply -W ignore::UserWarning
 
 rapids-logger "Run NRT Stats Counting tests"
 python -m pytest python/cudf/cudf/tests/private_objects/test_nrt_stats.py  -W ignore::UserWarning
