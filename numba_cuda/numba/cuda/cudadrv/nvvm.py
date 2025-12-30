@@ -18,7 +18,6 @@ from llvmlite import ir
 from .error import NvvmError, NvvmSupportError, NvvmWarning
 from .libs import get_libdevice, open_libdevice, open_cudalib
 from numba.cuda import cgutils
-from cuda.bindings import runtime
 
 
 logger = logging.getLogger(__name__)
@@ -75,6 +74,9 @@ _nvvm_lock = threading.Lock()
 
 class NVVM(object):
     """Process-wide singleton."""
+
+    _libnvvm_cuda_version = None
+    _libnvvm_cuda_version_attempted = False
 
     _PROTOTYPES = {
         # nvvmResult nvvmVersion(int *major, int *minor)
@@ -196,6 +198,83 @@ class NVVM(object):
         self.check_error(err, "Failed to get IR version.")
         return majorIR.value, minorIR.value, majorDbg.value, minorDbg.value
 
+    def get_cuda_version(self):
+        """
+        Detect the libNVVM CUDA version by compiling dummy IR and analyzing the PTX output.
+
+        Workaround for the lack of direct CUDA version API (nvbugs 5312315).
+        The approach:
+        - Compile a small dummy NVVM IR to PTX
+        - Use PTX version analysis APIs if available to infer CUDA version
+        - Cache the result for future use
+        """
+
+        if self._libnvvm_cuda_version_attempted:
+            return self._libnvvm_cuda_version
+        self._libnvvm_cuda_version_attempted = True
+
+        try:
+            from cuda.bindings.utils import get_minimal_required_cuda_ver_from_ptx_ver, get_ptx_ver
+        except ImportError:
+            self._libnvvm_cuda_version = None
+            return self._libnvvm_cuda_version
+
+        precheck_nvvm_ir = """target triple = "nvptx64-unknown-cuda"
+        target datalayout = "e-p:64:64:64-i1:8:8-i8:8:8-i16:16:16-i32:32:32-i64:64:64-i128:128:128-f32:32:32-f64:64:64-v16:16:16-v32:32:32-v64:64:64-v128:128:128-n16:32:64"
+
+        define void @dummy_kernel() {{
+        entry:
+        ret void
+        }}
+
+        !nvvm.annotations = !{{!0}}
+        !0 = !{{void ()* @dummy_kernel, !"kernel", i32 1}}
+
+        !nvvmir.version = !{{!1}}
+        !1 = !{{i32 {major}, i32 {minor}, i32 {debug_major}, i32 {debug_minor}}}
+        """
+
+        try:
+            program = c_void_p()
+            err = self.nvvmCreateProgram(byref(program))
+            self.check_error(err, "Failed to create program.")
+            major = c_int()
+            minor = c_int()
+            debug_major = c_int()
+            debug_minor = c_int()
+            err = self.nvvmIRVersion(byref(major), byref(minor), byref(debug_major), byref(debug_minor))
+            self.check_error(err, "Failed to get IR version.")
+            precheck_nvvm_ir = precheck_nvvm_ir.format(
+                major=major, minor=minor, debug_major=debug_major, debug_minor=debug_minor
+            )
+            precheck_ir_bytes = precheck_nvvm_ir.encode("utf-8")
+            err = self.nvvmAddModuleToProgram(program, precheck_ir_bytes, len(precheck_ir_bytes), "precheck.ll")
+            self.check_error(err, "Failed to add module.")
+
+            options = ["-arch=compute_90"]
+            err = self.nvvmVerifyProgram(program, len(options), options)
+            self.check_error(err, "Failed to verify program.")
+            err = self.nvvmCompileProgram(program, len(options), options)
+            self.check_error(err, "Failed to compile program.")
+
+            ptx_size = c_int()
+            err = self.nvvmGetCompiledResultSize(program, byref(ptx_size))
+            self.check_error(err, "Failed to get compiled result size.")
+            ptx_data = bytearray(ptx_size.value)
+            err = self.nvvmGetCompiledResult(program, ptx_data)
+            self.check_error(err, "Failed to get compiled result.")
+            ptx_str = ptx_data.decode("utf-8")
+            ptx_version = get_ptx_ver(ptx_str)
+            cuda_version = get_minimal_required_cuda_ver_from_ptx_ver(ptx_version)
+            self._libnvvm_cuda_version = cuda_version
+            return self._libnvvm_cuda_version
+        except Exception:
+            self._libnvvm_cuda_version = None
+            return self._libnvvm_cuda_version
+        finally:
+            self.nvvmDestroyProgram(byref(program))
+
+
     def check_error(self, error, msg, exit=False):
         if error:
             exc = NvvmError(msg, RESULT_CODE_NAMES[error])
@@ -245,15 +324,12 @@ class CompilationUnit(object):
             return f"-{k}={v}".encode("utf-8")
 
         # Starting in r13.1, we must pass in the -numba-debug flag to the
-        # compiler when compiling with a debug build.
+        # compiler when compiling with a debug build. If the CUDA version
+        # cannot be determined, assume that a newer version is being used and
+        # pass in the -numba-debug flag.
         if 'g' in options:
-            # runtime.getLocalRuntimeVersion() returns (cudaError_t, version_int)
-            # Example: 13010 = CTK 13.1, 13020 = CTK 13.2
-            _, ctk_version_number = runtime.getLocalRuntimeVersion()
-            ctk_major = ctk_version_number // 1000
-            ctk_minor = (ctk_version_number % 1000) // 10
-            ctk_version = (ctk_major, ctk_minor)
-            if ctk_version >= (13, 1):
+            ctk_version = self.driver.get_cuda_version()
+            if ctk_version is None or ctk_version >= (13, 1):
                 options['numba-debug'] = None
 
         options = [stringify_option(k, v) for k, v in options.items()]
