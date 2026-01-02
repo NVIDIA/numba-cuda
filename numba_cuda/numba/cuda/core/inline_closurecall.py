@@ -340,6 +340,8 @@ class InlineWorker(object):
         instance was initialized with a typemap and calltypes then they will be
         appropriately updated based on the arg_typs.
         """
+        # save a reference to the unmutated input callee_ir to         # return
+        callee_ir_original = callee_ir
 
         # Always copy the callee IR, it gets mutated
         def copy_ir(the_ir):
@@ -357,8 +359,7 @@ class InlineWorker(object):
         if self.validator is not None:
             self.validator(callee_ir)
 
-        # save an unmutated copy of the callee_ir to return
-        callee_ir_original = copy_ir(callee_ir)
+
         scope = block.scope
         instr = block.body[i]
         call_expr = instr.value
