@@ -340,16 +340,27 @@ class InlineWorker:
         instance was initialized with a typemap and calltypes then they will be
         appropriately updated based on the arg_typs.
         """
-        # save a reference to the unmutated input callee_ir to         # return
+        # save a reference to the unmutated input callee_ir to return
         callee_ir_original = callee_ir
 
         # Always copy the callee IR, it gets mutated
         def copy_ir(the_ir):
             kernel_copy = the_ir.copy()
-            kernel_copy.blocks = {
-                block_label: copy.deepcopy(block)
-                for block_label, block in the_ir.blocks.items()
-            }
+            kernel_copy.blocks = {}
+            for block_label, block in the_ir.blocks.items():
+                new_block = block.copy()
+
+                # All tests pass on my machine without an extra shallow copy
+                # of statements in the block body. I'll leave the
+                # statement-copy commented until the PR is finalised in case
+                # it proves to be unsafe.
+
+                # new_body = block.body
+                # for idx, stmt in enumerate(new_block.body):
+                #     new_body[idx] = copy.copy(stmt)
+                # new_block.body = new_body
+
+                kernel_copy.blocks[block_label] = new_block
             return kernel_copy
 
         callee_ir = copy_ir(callee_ir)
