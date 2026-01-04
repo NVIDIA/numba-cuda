@@ -5,7 +5,7 @@
 Implements the cuda module as called from within an executing kernel
 (@cuda.jit-decorated function).
 """
-
+from collections import defaultdict
 from contextlib import contextmanager
 import sys
 import threading
@@ -490,39 +490,38 @@ class FakeCUDAModule(object):
 
         raise RuntimeError("Global grid has 1-3 dimensions. %d requested" % n)
 
-_swap_state_lock = threading.Lock()
-_swap_state = {}
+_globals_locks = defaultdict(threading.Lock)
+_swap_refcount = defaultdict(int)
+_swap_orig = {}
 
 @contextmanager
 def swapped_cuda_module(fn, fake_cuda_module):
     from numba import cuda
-
     fn_globs = fn.__globals__
-    globals_id = id(fn_globs)
-    with _swap_state_lock:
-        # Will be empty when called from an already-modified globals
-        keys_to_swap = [k for k, v in fn_globs.items() if v is cuda]
-        module_swaps = _swap_state.get(globals_id)
-        if module_swaps is None:
-            # First time into this module - swap and save the cuda references
-            _swap_state[globals_id] = (keys_to_swap, 0)
-            for name in keys_to_swap:
-                fn_globs[name] = fake_cuda_module
-        else:
-            # Cuda already fake, increment refcount
-            swapped_keys, refcount = module_swaps
-            _swap_state[globals_id] = (swapped_keys, refcount + 1)
+    gid = id(fn_globs)
 
+    # Use a lock per-modules to avoid cross-locking other modules
+    lock = _globals_locks[gid]
+
+    with lock:
+        # Scan and replace globals with fake module on first entrance only
+        if _swap_refcount[gid] == 0:
+            orig = {k: v for k, v in fn_globs.items() if v is cuda}
+            _swap_orig[gid] = orig
+            for k in orig:
+                fn_globs[k] = fake_cuda_module
+
+        # Increment the reference counter on every entrance
+        _swap_refcount[gid] += 1
     try:
         yield
     finally:
-        with _swap_state_lock:
-            swapped_keys, refcount = _swap_state.get(globals_id)
-            if refcount >= 1:
-                # Decrement counter on the way out
-                _swap_state[globals_id] = (swapped_keys, refcount - 1)
-            else:
-                # The last referrer to the fake module restores the real one.
-                for name in swapped_keys:
-                    fn_globs[name] = cuda
-                del _swap_state[globals_id]
+        with lock:
+            # Decrement "number of modules using fake CUDA" counter on exit
+            _swap_refcount[gid] -= 1
+
+            # Last thread to leave the context restores real cuda
+            if _swap_refcount[gid] == 0:
+                fn_globs.update(_swap_orig.pop(gid))
+                del _swap_refcount[gid]
+                del _globals_locks[gid]
