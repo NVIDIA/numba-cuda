@@ -490,20 +490,39 @@ class FakeCUDAModule(object):
 
         raise RuntimeError("Global grid has 1-3 dimensions. %d requested" % n)
 
+_swap_state_lock = threading.Lock()
+_swap_state = {}
 
 @contextmanager
 def swapped_cuda_module(fn, fake_cuda_module):
     from numba import cuda
 
     fn_globs = fn.__globals__
-    # get all globals that is the "cuda" module
-    orig = dict((k, v) for k, v in fn_globs.items() if v is cuda)
-    # build replacement dict
-    repl = dict((k, fake_cuda_module) for k, v in orig.items())
-    # replace
-    fn_globs.update(repl)
+    globals_id = id(fn_globs)
+    with _swap_state_lock:
+        # Will be empty when called from an already-modified globals
+        keys_to_swap = [k for k, v in fn_globs.items() if v is cuda]
+        module_swaps = _swap_state.get(globals_id)
+        if module_swaps is None:
+            # First time into this module - swap and save the cuda references
+            _swap_state[globals_id] = (keys_to_swap, 0)
+            for name in keys_to_swap:
+                fn_globs[name] = fake_cuda_module
+        else:
+            # Cuda already fake, increment refcount
+            swapped_keys, refcount = module_swaps
+            _swap_state[globals_id] = (swapped_keys, refcount + 1)
+
     try:
         yield
     finally:
-        # revert
-        fn_globs.update(orig)
+        with _swap_state_lock:
+            swapped_keys, refcount = _swap_state.get(globals_id)
+            if refcount >= 1:
+                # Decrement counter on the way out
+                _swap_state[globals_id] = (swapped_keys, refcount - 1)
+            else:
+                # The last referrer to the fake module restores the real one.
+                for name in swapped_keys:
+                    fn_globs[name] = cuda
+                del _swap_state[globals_id]
