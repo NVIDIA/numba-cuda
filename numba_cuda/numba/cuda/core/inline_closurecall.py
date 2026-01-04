@@ -340,30 +340,21 @@ class InlineWorker(object):
         `func.__code__.co_freevars`. If `arg_typs` is given and the InlineWorker
         instance was initialized with a typemap and calltypes then they will be
         appropriately updated based on the arg_typs. If `preserve_ir` is
-        True, the callee_ir object will copied before mutating, otherwise it
+        True, the callee_ir object will be copied before mutating, otherwise it
         will be mutated in place.
         """
         # Save a reference to the incoming callee_ir
         callee_ir_original = callee_ir
 
-        # Copy the IR if it should be preserved.
+        # When preserve_ir is True, create a copy of the FunctionIR object
+        # to mutate. Set preserve_ir to False if callee_ir does not persist
+        # between calls to inline_ir.
         if preserve_ir:
             def copy_ir(the_ir):
                 kernel_copy = the_ir.copy()
                 kernel_copy.blocks = {}
                 for block_label, block in the_ir.blocks.items():
-                    new_block = block.copy()
-
-                    # All tests pass on my machine without an extra shallow copy
-                    # of statements in the block body. I'll leave the
-                    # statement-copy commented until the PR is finalised in case
-                    # it proves to be unsafe.
-
-                    # new_body = block.body
-                    # for idx, stmt in enumerate(new_block.body):
-                    #     new_body[idx] = copy.copy(stmt)
-                    # new_block.body = new_body
-
+                    new_block = copy.deepcopy(the_ir.blocks[block_label])
                     kernel_copy.blocks[block_label] = new_block
                 return kernel_copy
 
@@ -373,7 +364,6 @@ class InlineWorker(object):
         # inlined if a validator is present
         if self.validator is not None:
             self.validator(callee_ir)
-
 
         scope = block.scope
         instr = block.body[i]
