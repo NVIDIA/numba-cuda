@@ -490,6 +490,7 @@ class FakeCUDAModule(object):
 
         raise RuntimeError("Global grid has 1-3 dimensions. %d requested" % n)
 
+_locks_register_lock = threading.Lock()
 _globals_locks = defaultdict(threading.Lock)
 _swap_refcount = defaultdict(int)
 _swap_orig = {}
@@ -500,8 +501,11 @@ def swapped_cuda_module(fn, fake_cuda_module):
     fn_globs = fn.__globals__
     gid = id(fn_globs)
 
-    # Use a lock per-modules to avoid cross-locking other modules
-    lock = _globals_locks[gid]
+    # Use a per-module lock to avoid cross-locking other modules. Protect
+    # creation of lock keys with a global lock to avoid multiple locks per
+    # module.
+    with _locks_register_lock:
+        lock = _globals_locks[gid]
 
     with lock:
         # Scan and replace globals with fake module on first entrance only
