@@ -12,13 +12,17 @@ import warnings
 from .cudadrv import devicearray, devices, driver
 from numba.cuda.core import config
 from numba.cuda.api_util import prepare_shape_strides_dtype
-from numba.cuda.cudadrv.devicearray import DeprecatedDeviceArrayApiWarning, DeviceNDArray
+from numba.cuda.cudadrv.devicearray import (
+    DeprecatedDeviceArrayApiWarning,
+    DeviceNDArray,
+)
 
 # NDarray device helper
 
 require_context = devices.require_context
 current_context = devices.get_context
 gpus = devices.gpus
+
 
 @require_context
 def external_stream(ptr):
@@ -28,6 +32,7 @@ def external_stream(ptr):
     :type ptr: int
     """
     return current_context().create_external_stream(ptr)
+
 
 def _from_cuda_array_interface(desc, owner=None, sync=True):
     """Create a _DeviceNDArray from a cuda-array-interface description.
@@ -321,7 +326,7 @@ def _device_array_like(ary, stream=0):
     """
     strides = _contiguous_strides_like_array(ary)
     order = _order_like_array(ary)
-    return device_array(
+    return _device_array(
         shape=ary.shape,
         dtype=ary.dtype,
         strides=strides,
@@ -337,7 +342,7 @@ def _mapped_array_like(ary, stream=0, portable=False, wc=False):
     """
     strides = _contiguous_strides_like_array(ary)
     order = _order_like_array(ary)
-    return mapped_array(
+    return _mapped_array(
         shape=ary.shape,
         dtype=ary.dtype,
         strides=strides,
@@ -355,6 +360,6 @@ def _pinned_array_like(ary):
     """
     strides = _contiguous_strides_like_array(ary)
     order = _order_like_array(ary)
-    return pinned_array(
+    return _pinned_array(
         shape=ary.shape, dtype=ary.dtype, strides=strides, order=order
     )

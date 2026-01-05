@@ -44,7 +44,7 @@ class TestGlobals(CUDATestCase):
                 totals[i] = quantities[i] * PRICES[i] * (1 + TAX_RATE)
 
         d_quantities = cp.asarray(np.array([1, 2, 3, 4, 5], dtype=np.float64))
-        d_totals = cp.asarray(5, dtype=np.float64)
+        d_totals = cp.zeros(5, dtype=np.float64)
 
         # First kernel call - compiles and captures values
         compute_totals[1, 32](d_quantities, d_totals)

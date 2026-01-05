@@ -86,8 +86,6 @@ class TestCUDAVectorize(CUDATestCase):
             def vector_add(a, b):
                 return a + b
 
-            stream = cuda.stream()
-
             for ty in dtypes:
                 data = np.array(np.random.random(self.N), dtype=ty)
 

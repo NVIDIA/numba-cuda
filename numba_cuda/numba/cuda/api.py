@@ -67,7 +67,6 @@ def is_cuda_array(obj):
         DeprecatedDeviceArrayApiWarning,
     )
     return _api._is_cuda_array(obj)
-    return hasattr(obj, "__cuda_array_interface__")
 
 
 def is_float16_supported():

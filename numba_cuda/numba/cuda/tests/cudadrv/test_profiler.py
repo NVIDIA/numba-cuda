@@ -16,7 +16,7 @@ class TestProfiler(CUDATestCase):
             del a
 
         with cuda.profiling():
-            a = cp.zeros(10)
+            a = cp.zeros(100)
             del a
 
 

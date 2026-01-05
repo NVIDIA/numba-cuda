@@ -8,6 +8,7 @@ from numba.cuda.np import numpy_support as nps
 from numba.cuda.cudadrv.devicearray import DeprecatedDeviceArrayApiWarning
 import warnings
 
+
 def transpose(a, b=None):
     """Compute the transpose of 'a' and store it into 'b', if given,
     and return it. If 'b' is not given, allocate a new array
@@ -21,10 +22,12 @@ def transpose(a, b=None):
         `b` to the device if necessary).
     """
     warnings.warn(
-        "The DeviceNDArray class and its transpose method are deprecated. "
-        "Please prefer cupy for device array operations.", DeprecatedDeviceArrayApiWarning
+        "The DeviceNDArray API for transposing device arrays is deprecated. "
+        "Please prefer cupy for device array operations.",
+        DeprecatedDeviceArrayApiWarning,
     )
     return _transpose(a, b=b)
+
 
 def _transpose(a, b=None):
     # prefer `a`'s stream if

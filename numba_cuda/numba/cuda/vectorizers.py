@@ -116,7 +116,7 @@ class _CUDAGUFuncCallSteps(GUFuncCallSteps):
         # Producer then importing it as a Consumer, which causes a
         # synchronization on the array's stream (if it has one) by default.
         # When we have a Numba device array, we can simply return it.
-        if cuda.cudadrv.devicearray.is_cuda_ndarray(obj):
+        if cuda._api._is_cuda_ndarray(obj):
             return obj
         return cuda.as_cuda_array(obj)
 

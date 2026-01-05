@@ -188,13 +188,15 @@ class CUDATestCase(TestCase):
 
 class DeprecatedDeviceArrayApiTest(CUDATestCase):
     def setUp(self):
+        self._warnings_filters = warnings.filters[:]
+
         warnings.filterwarnings(
             "ignore", category=DeprecatedDeviceArrayApiWarning
         )
         super().setUp()
 
     def tearDown(self):
-        warnings.resetwarnings()
+        warnings.filters = self._warnings_filters
         super().tearDown()
 
 
