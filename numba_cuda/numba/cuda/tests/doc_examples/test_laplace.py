@@ -64,7 +64,7 @@ class TestLaplace(CUDATestCase):
             fig, ax = plt.subplots(figsize=(16 * 0.66, 9 * 0.66))
             plt.plot(
                 np.arange(len(buf_0)),
-                buf_0.copy_to_host(),
+                buf_0.get(),
                 lw=3,
                 marker="*",
                 color="black",

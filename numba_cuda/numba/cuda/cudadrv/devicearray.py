@@ -770,7 +770,7 @@ class DeviceNDArray(DeviceNDArrayBase):
             shape = arr.shape
             strides = arr.strides
 
-        lhs = type(self)(
+        lhs = type(self)._create_nowarn(
             shape=shape,
             strides=strides,
             dtype=self.dtype,

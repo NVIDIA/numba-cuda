@@ -8,13 +8,15 @@ from collections import namedtuple
 from numba.cuda import void, int32, float32, float64
 from numba.cuda import guvectorize
 from numba import cuda
-from numba.cuda.testing import skip_on_cudasim, CUDATestCase, DeprecatedDeviceArrayApiWarning
+from numba.cuda.testing import (
+    skip_on_cudasim,
+    CUDATestCase,
+    DeprecatedDeviceArrayApiWarning,
+)
 import unittest
 from numba.cuda.core.errors import NumbaPerformanceWarning, TypingError
 from numba.cuda.tests.support import override_config
 import cupy as cp
-import warnings
-
 
 
 def _get_matmulcore_gufunc(dtype=float32):
@@ -127,9 +129,11 @@ class TestCUDAGufunc(CUDATestCase):
         with pytest.warns(DeprecatedDeviceArrayApiWarning):
             dB = cuda.to_device(B, stream)
 
-            dC = cuda.device_array(shape=(1001, 2, 5), dtype=A.dtype, stream=stream)
-        dC = gufunc(dA, dB, out=dC, stream=stream)
-        C = dC.copy_to_host(stream=stream)
+            dC = cuda.device_array(
+                shape=(1001, 2, 5), dtype=A.dtype, stream=stream
+            )
+            dC = gufunc(dA, dB, out=dC, stream=stream)
+            C = dC.copy_to_host(stream=stream)
         stream.synchronize()
 
         Gold = np.matmul(A, B)

@@ -118,7 +118,7 @@ class _CUDAGUFuncCallSteps(GUFuncCallSteps):
         # When we have a Numba device array, we can simply return it.
         if cuda._api._is_cuda_ndarray(obj):
             return obj
-        return cuda.as_cuda_array(obj)
+        return cuda._api._as_cuda_array(obj)
 
     def to_device(self, hostary):
         return _api._to_device(hostary, stream=self._stream)

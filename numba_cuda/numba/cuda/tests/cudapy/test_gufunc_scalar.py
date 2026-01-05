@@ -9,10 +9,15 @@ See Numpy documentation for detail about gufunc:
 
 import numpy as np
 from numba import cuda, guvectorize
-from numba.cuda.testing import skip_on_cudasim, CUDATestCase, DeprecatedDeviceArrayApiWarning
+from numba.cuda.testing import (
+    skip_on_cudasim,
+    CUDATestCase,
+    DeprecatedDeviceArrayApiWarning,
+)
 import unittest
 import cupy as cp
-import warnings
+import pytest
+
 
 @skip_on_cudasim("ufunc API unsupported in the simulator")
 class TestGUFuncScalar(CUDATestCase):
@@ -122,7 +127,7 @@ class TestGUFuncScalar(CUDATestCase):
         a = np.array(a)
 
         # As this test specifically tests the behavior of passing a DeviceNDArray,
-        # we'll catch the expected warning explicitly here. 
+        # we'll catch the expected warning explicitly here.
         with pytest.warns(DeprecatedDeviceArrayApiWarning):
             da = cuda.to_device(a)
         self.assertEqual(da.dtype, np.int64)
