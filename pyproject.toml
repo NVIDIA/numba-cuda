@@ -47,13 +47,14 @@ test = [
     "filecheck",
     "ml_dtypes",
     "statistics",
-    "cupy"
 ]
 test-cu12 = [
     "nvidia-curand-cu12",
+    "cupy-cuda12x",
     { include-group = "test" }
 ]
 test-cu13 = [
+    "cupy-cuda13x",
     "nvidia-curand==10.4.*",
     { include-group = "test" }
 ]
