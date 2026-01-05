@@ -21,20 +21,20 @@
 #define Py_BUILD_CORE 1
 #endif
 
+#if (PY_MAJOR_VERSION >= 3) && (PY_MINOR_VERSION >= 13)
+// required include from Python 3.13+
 #include "internal/pycore_setobject.h"
+#ifndef PySet_NextEntry
+#define PySet_NextEntry _PySet_NextEntryRef
+#endif
+#else
+#ifndef PySet_NextEntry
+#define PySet_NextEntry _PySet_NextEntry
+#endif
+#endif
 
 #ifdef Py_BUILD_CORE
 #undef Py_BUILD_CORE
-#endif
-
-#if (PY_MAJOR_VERSION >= 3) && (PY_MINOR_VERSION >= 13)
-    #ifndef PySet_NextEntry
-    #define PySet_NextEntry _PySet_NextEntryRef
-    #endif
-#else
-    #ifndef PySet_NextEntry
-    #define PySet_NextEntry _PySet_NextEntry
-    #endif
 #endif
 
 
