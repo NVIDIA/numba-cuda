@@ -7,6 +7,7 @@ from numba.cuda.testing import CUDATestCase, skip_on_cudasim
 from numba.cuda.tests.support import captured_stdout
 import cupy as cp
 
+
 @skip_on_cudasim("cudasim doesn't support cuda import at non-top-level")
 class TestReduction(CUDATestCase):
     """

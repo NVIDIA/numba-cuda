@@ -7,6 +7,7 @@ from numba.cuda.testing import CUDATestCase, skip_on_cudasim
 from numba.cuda.tests.support import captured_stdout
 import cupy as cp
 
+
 @skip_on_cudasim("cudasim doesn't support cuda import at non-top-level")
 class TestGlobals(CUDATestCase):
     """
@@ -42,9 +43,7 @@ class TestGlobals(CUDATestCase):
             if i < totals.size:
                 totals[i] = quantities[i] * PRICES[i] * (1 + TAX_RATE)
 
-        d_quantities = cp.asarray(
-            np.array([1, 2, 3, 4, 5], dtype=np.float64)
-        )
+        d_quantities = cp.asarray(np.array([1, 2, 3, 4, 5], dtype=np.float64))
         d_totals = cp.asarray(5, dtype=np.float64)
 
         # First kernel call - compiles and captures values

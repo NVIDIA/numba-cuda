@@ -263,10 +263,10 @@ class TestCUDAVectorize(CUDATestCase):
 
             self.assertEqual(bar.__name__, "bar")
 
+
 @skip_on_cudasim("ufunc API unsupported in the simulator")
 class TestCUDAVectorizeTransfers(DeprecatedDeviceArrayApiTest):
-
-    def setUp(self):    
+    def setUp(self):
         noise = np.random.randn(1, 3, 64, 64).astype(np.float32)
         self.noise = cuda._api._to_device(noise)
 
@@ -279,7 +279,6 @@ class TestCUDAVectorizeTransfers(DeprecatedDeviceArrayApiTest):
 
         setattr(driver, "cuMemcpyHtoD", raising_transfer)
         setattr(driver, "cuMemcpyDtoH", raising_transfer)
-
 
         super().setUp()
 
@@ -300,7 +299,6 @@ class TestCUDAVectorizeTransfers(DeprecatedDeviceArrayApiTest):
             # Initialize test data on the device prior to banning host <-> device
             # transfer
 
-
             # Ensure that the mock functions are working as expected
 
             with self.assertRaisesRegex(CudaAPIError, "Transfer not allowed"):
@@ -317,6 +315,7 @@ class TestCUDAVectorizeTransfers(DeprecatedDeviceArrayApiTest):
                 return noise + 1.0
 
             func(self.noise)
-        
+
+
 if __name__ == "__main__":
     unittest.main()

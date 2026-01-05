@@ -987,7 +987,9 @@ def auto_device(obj, stream=0, copy=True, user_explicit=False):
 
 def check_array_compatibility(ary1, ary2):
     with warnings.catch_warnings():
-        warnings.filterwarnings("ignore", category=DeprecatedDeviceArrayApiWarning)
+        warnings.filterwarnings(
+            "ignore", category=DeprecatedDeviceArrayApiWarning
+        )
         ary1sq = ary1.squeeze()
         ary2sq = ary2.squeeze()
 

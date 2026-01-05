@@ -197,9 +197,7 @@ class TestDeviceArrayCapture(CUDATestCase):
 
                     output = cp.zeros(len(host_data), dtype=dtype)
                     kernel[1, len(host_data)](output)
-                    np.testing.assert_array_equal(
-                        output.get(), host_data
-                    )
+                    np.testing.assert_array_equal(output.get(), host_data)
 
     def test_direct_kernel_access(self):
         """Test direct kernel access (not via device function)."""
