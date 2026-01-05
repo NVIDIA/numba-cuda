@@ -6,7 +6,6 @@ from numba import cuda
 from numba.cuda.kernels.transpose import transpose
 from numba.cuda.testing import unittest
 from numba.cuda.testing import skip_on_cudasim, DeprecatedDeviceArrayApiTest
-import cupy as cp
 
 
 recordwith2darray = np.dtype([("i", np.int32), ("j", np.float32, (3, 2))])

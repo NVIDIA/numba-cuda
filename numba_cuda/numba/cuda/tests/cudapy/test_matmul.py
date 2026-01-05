@@ -58,7 +58,6 @@ class TestCudaMatMul(CUDATestCase):
         dB = cp.array(np.random.random((n, n)), dtype=np.float32)
         dC = cp.empty_like(dA)
 
-
         cu_square_matrix_mul[(bpg, bpg), (tpb, tpb)](dA, dB, dC)
         C = dC.get()
 

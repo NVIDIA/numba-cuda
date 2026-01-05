@@ -7,6 +7,7 @@ import platform
 from numba import cuda
 from numba.cuda.testing import unittest, DeprecatedDeviceArrayApiTest
 
+
 # TODO
 class TestPinned(DeprecatedDeviceArrayApiTest):
     def _run_copies(self, A):

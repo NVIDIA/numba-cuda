@@ -8,7 +8,6 @@ from numba import cuda
 from numba.cuda.testing import (
     skip_on_cudasim,
     skip_under_cuda_memcheck,
-    CUDATestCase,
     DeprecatedDeviceArrayApiTest,
 )
 import unittest

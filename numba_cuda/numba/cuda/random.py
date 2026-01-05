@@ -3,7 +3,6 @@
 
 import math
 
-from numba import cuda
 from numba.cuda import (
     float32,
     float64,

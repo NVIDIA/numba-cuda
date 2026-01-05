@@ -16,7 +16,7 @@ class TestCudaEvent(CUDATestCase):
         evtend = cuda.event()
 
         evtstart.record()
-        dary = cp.array(np.arange(N, dtype=np.double))
+        dary = cp.array(np.arange(N, dtype=np.double))  # noqa: F841
         evtend.record()
         evtend.wait()
         evtend.synchronize()
@@ -39,7 +39,6 @@ class TestCudaEvent(CUDATestCase):
         def kernel():
             pass
 
-        N = 32
         evtstart = cuda.event()
         evtend = cuda.event()
 
