@@ -500,7 +500,7 @@ def swapped_cuda_module(fn, fake_cuda_module):
     fn_globs = fn.__globals__
     gid = id(fn_globs)
 
-    # Use a lock per-modules to avoid cross-locking other modules
+    # Use a lock per-module to avoid cross-locking other modules
     lock = _globals_locks[gid]
 
     with lock:
