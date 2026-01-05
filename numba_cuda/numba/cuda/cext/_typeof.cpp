@@ -430,17 +430,32 @@ compute_fingerprint(string_writer_t *w, PyObject *val)
                             "cannot compute fingerprint of empty set");
             return -1;
         }
-        TRY(string_writer_put_char, w, OP_SET);
-        int ret = 0;
-        if (compute_fingerprint(w, item)) {
-            ret = -1;
+
+        if (string_writer_put_char(w, OP_SET)) {
+            goto fingerprint_error;
         }
+
+        if (compute_fingerprint(w, item)) {
+            goto fingerprint_error;
+        }
+
+        goto fingerprint_success;
+
+fingerprint_error:
 #if PY_MAJOR_VERSION >= 3 && PY_MINOR_VERSION >= 13
         // extra ref if using python >= 3.13
         Py_XDECREF(item);
 #endif
-        return ret;
+        return -1;
+
+fingerprint_success:
+#if PY_MAJOR_VERSION >= 3 && PY_MINOR_VERSION >= 13
+        // extra ref if using python >= 3.13
+        Py_XDECREF(item);
+#endif
+        return 0;
     }
+
     if (PyObject_CheckBuffer(val)) {
         Py_buffer buf;
         int flags = PyBUF_ND | PyBUF_STRIDES | PyBUF_FORMAT;
