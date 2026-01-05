@@ -275,18 +275,18 @@ class TestCUDAVectorizeTransfers(DeprecatedDeviceArrayApiTest):
         self.old_HtoD = getattr(driver, "cuMemcpyHtoD", None)
         self.old_DtoH = getattr(driver, "cuMemcpyDtoH", None)
 
-        setattr(driver, "cuMemcpyHtoD", raising_transfer)
-        setattr(driver, "cuMemcpyDtoH", raising_transfer)
+        driver.cuMemcpyHtoD = raising_transfer
+        driver.cuMemcpyDtoH = raising_transfer
 
         super().setUp()
 
     def tearDown(self):
         if self.old_HtoD is not None:
-            setattr(driver, "cuMemcpyHtoD", self.old_HtoD)
+            driver.cuMemcpyHtoD = self.old_HtoD
         else:
             del driver.cuMemcpyHtoD
         if self.old_DtoH is not None:
-            setattr(driver, "cuMemcpyDtoH", self.old_DtoH)
+            driver.cuMemcpyDtoH = self.old_DtoH
         else:
             del driver.cuMemcpyDtoH
 

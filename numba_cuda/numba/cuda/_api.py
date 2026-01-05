@@ -8,12 +8,10 @@ API that are reported to numba.cuda
 import contextlib
 
 import numpy as np
-import warnings
 from .cudadrv import devicearray, devices, driver
 from numba.cuda.core import config
 from numba.cuda.api_util import prepare_shape_strides_dtype
 from numba.cuda.cudadrv.devicearray import (
-    DeprecatedDeviceArrayApiWarning,
     DeviceNDArray,
 )
 
@@ -202,10 +200,6 @@ def _pinned_array(shape, dtype=np.float64, strides=None, order="C"):
     Allocate an :class:`ndarray <numpy.ndarray>` with a buffer that is pinned
     (pagelocked).  Similar to :func:`np.empty() <numpy.empty>`.
     """
-    warnings.warn(
-        "pinned_array is deprecated. Please prefer cupy for moving numpy arrays to the device.",
-        DeprecatedDeviceArrayApiWarning,
-    )
     shape, strides, dtype = prepare_shape_strides_dtype(
         shape, strides, dtype, order
     )
@@ -238,10 +232,6 @@ def _mapped_array(
         to write by the host and to read by the device, but slower to
         write by the host and slower to write by the device.
     """
-    warnings.warn(
-        "mapped_array is deprecated. Please prefer cupy for moving numpy arrays to the device.",
-        DeprecatedDeviceArrayApiWarning,
-    )
     shape, strides, dtype = prepare_shape_strides_dtype(
         shape, strides, dtype, order
     )
