@@ -91,7 +91,7 @@ class TestSharedMemoryIssue(CUDATestCase):
             d_block_costs[0] = s_initialcost[0] + prediction
 
         block_costs = np.zeros(num_blocks, dtype=np.float64)
-        d_block_costs = cuda.to_device(block_costs)
+        d_block_costs = cp.asarray(block_costs)
 
         costs_func[num_blocks, threads_per_block](d_block_costs)
 

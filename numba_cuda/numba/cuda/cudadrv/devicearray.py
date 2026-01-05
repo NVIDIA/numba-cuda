@@ -674,7 +674,7 @@ class DeviceNDArray(DeviceNDArrayBase):
         newarr, extents = self._dummy.ravel(order=order)
 
         if extents == [self._dummy.extent]:
-            return cls(
+            return cls._create_nowarn(
                 shape=newarr.shape,
                 strides=newarr.strides,
                 dtype=self.dtype,

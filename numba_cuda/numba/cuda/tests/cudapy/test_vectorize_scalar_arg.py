@@ -7,6 +7,7 @@ from numba import cuda
 from numba.cuda import float64
 from numba.cuda.testing import skip_on_cudasim, CUDATestCase
 import unittest
+import cupy as cp
 
 sig = [float64(float64, float64)]
 
@@ -19,7 +20,7 @@ class TestCUDAVectorizeScalarArg(CUDATestCase):
             return a + b
 
         A = np.arange(10, dtype=np.float64)
-        dA = cuda.to_device(A)
+        dA = cp.asarray(A)
         v = vector_add(1.0, dA)
 
         np.testing.assert_array_almost_equal(

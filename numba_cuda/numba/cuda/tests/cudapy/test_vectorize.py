@@ -11,7 +11,7 @@ from numba import cuda, vectorize as numba_vectorize
 from numba.cuda.types import int32, float32, float64
 from numba.cuda.cudadrv.driver import CudaAPIError, driver
 from numba.cuda.testing import skip_on_cudasim
-from numba.cuda.testing import CUDATestCase
+from numba.cuda.testing import CUDATestCase, DeprecatedDeviceArrayApiTest
 import unittest
 import cupy as cp
 
@@ -188,7 +188,7 @@ class TestCUDAVectorize(CUDATestCase):
 
             n = 10
             x = np.arange(n, dtype=np.int32)
-            dx = cuda.to_device(x)
+            dx = cp.asarray(x)
             expected = x + x
             actual = vector_add(x, dx).copy_to_host()
             np.testing.assert_equal(expected, actual)
@@ -203,11 +203,11 @@ class TestCUDAVectorize(CUDATestCase):
 
             n = 10
             x = np.arange(n, dtype=np.int32).reshape(2, 5)
-            dx = cuda.to_device(x)
+            dx = cp.asarray(x)
             vector_add(dx, dx, out=dx)
 
             expected = x + x
-            actual = dx.copy_to_host()
+            actual = dx.get()
             np.testing.assert_equal(expected, actual)
             self.assertEqual(expected.dtype, actual.dtype)
 
@@ -263,57 +263,60 @@ class TestCUDAVectorize(CUDATestCase):
 
             self.assertEqual(bar.__name__, "bar")
 
+@skip_on_cudasim("ufunc API unsupported in the simulator")
+class TestCUDAVectorizeTransfers(DeprecatedDeviceArrayApiTest):
+
+    def setUp(self):    
+        noise = np.random.randn(1, 3, 64, 64).astype(np.float32)
+        self.noise = cuda._api._to_device(noise)
+
+        # A mock of a CUDA function that always raises a CudaAPIError
+        def raising_transfer(*args, **kwargs):
+            raise CudaAPIError(999, "Transfer not allowed")
+
+        self.old_HtoD = getattr(driver, "cuMemcpyHtoD", None)
+        self.old_DtoH = getattr(driver, "cuMemcpyDtoH", None)
+
+        setattr(driver, "cuMemcpyHtoD", raising_transfer)
+        setattr(driver, "cuMemcpyDtoH", raising_transfer)
+
+
+        super().setUp()
+
+    def tearDown(self):
+        if self.old_HtoD is not None:
+            setattr(driver, "cuMemcpyHtoD", self.old_HtoD)
+        else:
+            del driver.cuMemcpyHtoD
+        if self.old_DtoH is not None:
+            setattr(driver, "cuMemcpyDtoH", self.old_DtoH)
+        else:
+            del driver.cuMemcpyDtoH
+
+        super().tearDown()
+
     def test_no_transfer_for_device_data(self):
         for vectorize in vectorize_funcs:
             # Initialize test data on the device prior to banning host <-> device
             # transfer
 
-            noise = np.random.randn(1, 3, 64, 64).astype(np.float32)
-            noise = cuda.to_device(noise)
-
-            # A mock of a CUDA function that always raises a CudaAPIError
-
-            def raising_transfer(*args, **kwargs):
-                raise CudaAPIError(999, "Transfer not allowed")
-
-            # Use the mock for transfers between the host and device
-
-            old_HtoD = getattr(driver, "cuMemcpyHtoD", None)
-            old_DtoH = getattr(driver, "cuMemcpyDtoH", None)
-
-            setattr(driver, "cuMemcpyHtoD", raising_transfer)
-            setattr(driver, "cuMemcpyDtoH", raising_transfer)
 
             # Ensure that the mock functions are working as expected
 
             with self.assertRaisesRegex(CudaAPIError, "Transfer not allowed"):
-                noise.copy_to_host()
+                self.noise.copy_to_host()
 
             with self.assertRaisesRegex(CudaAPIError, "Transfer not allowed"):
                 cuda.to_device([1])
 
-            try:
-                # Check that defining and calling a ufunc with data on the device
-                # induces no transfers
+            # Check that defining and calling a ufunc with data on the device
+            # induces no transfers
 
-                @vectorize(["float32(float32)"])
-                def func(noise):
-                    return noise + 1.0
+            @vectorize(["float32(float32)"])
+            def func(noise):
+                return noise + 1.0
 
-                func(noise)
-            finally:
-                # Replace our mocks with the original implementations. If there was
-                # no original implementation, simply remove ours.
-
-                if old_HtoD is not None:
-                    setattr(driver, "cuMemcpyHtoD", old_HtoD)
-                else:
-                    del driver.cuMemcpyHtoD
-                if old_DtoH is not None:
-                    setattr(driver, "cuMemcpyDtoH", old_DtoH)
-                else:
-                    del driver.cuMemcpyDtoH
-
-
+            func(self.noise)
+        
 if __name__ == "__main__":
     unittest.main()

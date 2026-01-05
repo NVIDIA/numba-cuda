@@ -33,7 +33,8 @@ def from_cuda_array_interface(desc, owner=None, sync=True):
     """
     warnings.warn(
         "Constructing DeviceNDArray objects via the __cuda_array_interface__ "
-        "is now deprecated. Please prefer cupy for constructing device arrays."
+        "is now deprecated. Please prefer cupy for constructing device arrays.",
+        DeprecatedDeviceArrayApiWarning,
     )
     return _api._from_cuda_array_interface(desc, owner=owner, sync=sync)
 
@@ -116,7 +117,6 @@ def to_device(obj, stream=0, copy=True, to=None):
 
         hary = d_ary.copy_to_host(stream=stream)
     """
-    breakpoint()
     warnings.warn(
         "to_device is deprecated. Please prefer cupy for moving numpy arrays to the device.",
         DeprecatedDeviceArrayApiWarning,
