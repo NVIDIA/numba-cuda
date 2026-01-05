@@ -123,8 +123,7 @@ class TestGUFuncScalar(CUDATestCase):
 
         # As this test specifically tests the behavior of passing a DeviceNDArray,
         # we'll catch the expected warning explicitly here. 
-        with warnings.catch_warnings():
-            warnings.simplefilter('ignore', DeprecatedDeviceArrayApiWarning)
+        with pytest.warns(DeprecatedDeviceArrayApiWarning):
             da = cuda.to_device(a)
         self.assertEqual(da.dtype, np.int64)
         with self.assertRaises(TypeError) as raises:

@@ -122,9 +122,9 @@ class TestCUDAGufunc(CUDATestCase):
         )
 
         stream = cuda.stream()
-        with warnings.catch_warnings():
-            warnings.simplefilter('ignore', DeprecatedDeviceArrayApiWarning)
+        with pytest.warns(DeprecatedDeviceArrayApiWarning):
             dA = cuda.to_device(A, stream)
+        with pytest.warns(DeprecatedDeviceArrayApiWarning):
             dB = cuda.to_device(B, stream)
 
             dC = cuda.device_array(shape=(1001, 2, 5), dtype=A.dtype, stream=stream)
