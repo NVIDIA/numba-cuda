@@ -886,29 +886,34 @@ class TestCudaDebugInfo(CUDATestCase):
         """,
         )
 
-    # shared_arr -> composite -> elements[4] (data field at index 4) -> pointer with dwarfAddressSpace: 8
-    # local_arr -> composite -> elements[4] (data field at index 4) -> pointer without dwarfAddressSpace: 8
+    # shared_arr -> composite -> elements[4] (data field at index 4) -> pointer without dwarfAddressSpace
+    # local_arr -> composite -> elements[4] (data field at index 4) -> pointer without dwarfAddressSpace
+    # Note: Shared memory pointers don't have dwarfAddressSpace because they are
+    # cast to generic address space via addrspacecast in cudaimpl.py
     address_class_filechecks = r"""
         CHECK-DAG: [[SHARED_VAR:![0-9]+]] = !DILocalVariable({{.*}}name: "shared_arr"{{.*}}type: [[SHARED_COMPOSITE:![0-9]+]]
         CHECK-DAG: [[SHARED_COMPOSITE]] = {{.*}}!DICompositeType(elements: [[SHARED_ELEMENTS:![0-9]+]]
         CHECK-DAG: [[SHARED_ELEMENTS]] = !{{{.*}}, {{.*}}, {{.*}}, {{.*}}, [[SHARED_DATA:![0-9]+]], {{.*}}, {{.*}}}
         CHECK-DAG: [[SHARED_DATA]] = !DIDerivedType(baseType: [[SHARED_PTR:![0-9]+]], name: "data"
-        CHECK-DAG: [[SHARED_PTR]] = !DIDerivedType({{.*}}dwarfAddressSpace: 8{{.*}}tag: DW_TAG_pointer_type
+        CHECK-DAG: [[SHARED_PTR]] = !DIDerivedType({{.*}}tag: DW_TAG_pointer_type
+        CHECK-NOT: [[SHARED_PTR]]{{.*}}dwarfAddressSpace
 
         CHECK-DAG: [[LOCAL_VAR:![0-9]+]] = !DILocalVariable({{.*}}name: "local_arr"{{.*}}type: [[LOCAL_COMPOSITE:![0-9]+]]
         CHECK-DAG: [[LOCAL_COMPOSITE]] = {{.*}}!DICompositeType(elements: [[LOCAL_ELEMENTS:![0-9]+]]
         CHECK-DAG: [[LOCAL_ELEMENTS]] = !{{{.*}}, {{.*}}, {{.*}}, {{.*}}, [[LOCAL_DATA:![0-9]+]], {{.*}}, {{.*}}}
         CHECK-DAG: [[LOCAL_DATA]] = !DIDerivedType(baseType: [[LOCAL_PTR:![0-9]+]], name: "data"
         CHECK-DAG: [[LOCAL_PTR]] = !DIDerivedType(baseType: {{.*}}tag: DW_TAG_pointer_type
-        CHECK-NOT: [[LOCAL_PTR]]{{.*}}dwarfAddressSpace: 8
+        CHECK-NOT: [[LOCAL_PTR]]{{.*}}dwarfAddressSpace
     """
 
     def _test_shared_memory_address_class(self, dtype):
         """Test that shared memory arrays have correct DWARF address class.
 
-        Shared memory pointers should have addressClass: 8 (DW_AT_address_class
-        for CUDA shared memory) in their debug metadata, while regular local
-        arrays should not have this annotation.
+        Shared memory pointers should NOT have dwarfAddressSpace attribute
+        because they are cast to generic address space via addrspacecast.
+        The runtime pointer type is generic, not shared, so cuda-gdb can
+        correctly dereference them. Local arrays also should not have this
+        attribute.
         """
         sig = (numpy_support.from_dtype(dtype),)
 

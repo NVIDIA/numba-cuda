@@ -28,6 +28,7 @@ jobs:
       - name: Setup pixi
         uses: prefix-dev/setup-pixi@fef5c9568ca6c4ff7707bf840ab0692ba3f08293
         with:
+          pixi-version: "v0.61.0"
           environments: docs
           cache: false
       - name: Docs build
@@ -36,7 +37,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
       - name: Upload docs
         if: "!cancelled()"
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: docs
           path: ${{ github.workspace }}/docs/build/html

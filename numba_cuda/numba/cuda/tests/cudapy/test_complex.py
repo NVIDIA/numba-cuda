@@ -3,12 +3,15 @@
 
 import math
 import itertools
+import sys
 
 import numpy as np
+import pytest
 
 from numba.cuda.testing import unittest, CUDATestCase
 from numba.cuda import types
 from numba import cuda
+from numba.cuda import config
 from numba.cuda.tests.cudapy.complex_usecases import (
     real_usecase,
     imag_usecase,
@@ -275,6 +278,10 @@ class TestCMath(BaseComplexTest):
     def test_log(self):
         self.check_unary_func(log_usecase)
 
+    @pytest.mark.xfail(
+        sys.version_info[:2] >= (3, 14),
+        reason="python 3.14 cmath.log behavior is different than previous versions",
+    )
     def test_log_base(self):
         values = list(itertools.product(self.more_values(), self.more_values()))
         value_types = [
@@ -333,6 +340,12 @@ class TestCMath(BaseComplexTest):
         self.check_unary_func(tanh_usecase, ulps=2, ignore_sign_on_zero=True)
 
 
+@unittest.skipIf(
+    not config.ENABLE_CUDASIM
+    and cuda.get_current_device().compute_capability >= (12, 0)
+    and cuda.cudadrv.runtime.get_version()[0] == 12,
+    reason="NVVM 12.9 Bugged on CC 10+",
+)
 class TestAtomicOnComplexComponents(CUDATestCase):
     # Based on the reproducer from Issue #8309. array.real and array.imag could
     # not be used because they required returning an array from a generated

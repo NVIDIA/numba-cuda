@@ -3,21 +3,23 @@
 
 from ctypes import c_int, sizeof
 
-from numba.cuda.cudadrv.driver import (
-    host_to_device,
-    device_to_host,
-    driver,
-    launch_kernel,
+from numba.cuda.cudadrv.driver import host_to_device, device_to_host, driver
+from numba.cuda._compat import (
+    LaunchConfig,
+    Device,
+    Stream as ExperimentalStream,
+    launch,
 )
 
 from numba import cuda
-from numba.cuda.cudadrv import devices, driver as _driver
-from numba.cuda.testing import unittest, CUDATestCase, DeprecatedDeviceArrayApiTest
+from numba.cuda.cudadrv import devices
+from numba.cuda.testing import (
+    unittest,
+    CUDATestCase,
+    DeprecatedDeviceArrayApiTest,
+)
 from numba.cuda.testing import skip_on_cudasim
 import contextlib
-
-from cuda.core.experimental import Device
-import cupy as cp
 
 ptx1 = """
     .version 1.4
@@ -72,7 +74,6 @@ ptx2 = """
 """
 
 
-
 @skip_on_cudasim("CUDA Driver API unsupported in the simulator")
 class TestCudaDriver(DeprecatedDeviceArrayApiTest):
     def setUp(self):
@@ -100,22 +101,15 @@ class TestCudaDriver(DeprecatedDeviceArrayApiTest):
         host_to_device(memory, array, sizeof(array))
 
         ptr = memory.device_ctypes_pointer
-        stream = 0
 
-        stream = _driver.binding.CUstream(stream)
-
-        launch_kernel(
-            function.handle,  # Kernel
-            1,
-            1,
-            1,  # gx, gy, gz
-            100,
-            1,
-            1,  # bx, by, bz
-            0,  # dynamic shared mem
-            stream,  # stream
-            [ptr],
-        )  # arguments
+        config = LaunchConfig(
+            grid=(1, 1, 1),
+            block=(100, 1, 1),
+            shmem_size=0,
+            cooperative_launch=False,
+        )
+        exp_stream = ExperimentalStream.from_handle(0)
+        launch(exp_stream, config, function.kernel, ptr)
 
         device_to_host(array, memory, sizeof(array))
         for i, v in enumerate(array):
@@ -124,6 +118,8 @@ class TestCudaDriver(DeprecatedDeviceArrayApiTest):
         module.unload()
 
     def test_cuda_driver_stream_operations(self):
+        from numba.cuda.cudadrv.driver import _to_core_stream
+
         module = self.context.create_module_ptx(self.ptx)
         function = module.get_function("_Z10helloworldPi")
 
@@ -137,21 +133,14 @@ class TestCudaDriver(DeprecatedDeviceArrayApiTest):
 
             ptr = memory.device_ctypes_pointer
 
-            stream_handle = stream.handle
-            stream_handle = stream_handle.value
-
-            launch_kernel(
-                function.handle,  # Kernel
-                1,
-                1,
-                1,  # gx, gy, gz
-                100,
-                1,
-                1,  # bx, by, bz
-                0,  # dynamic shared mem
-                stream_handle,  # stream
-                [ptr],
-            )  # arguments
+            config = LaunchConfig(
+                grid=(1, 1, 1),
+                block=(100, 1, 1),
+                shmem_size=0,
+                cooperative_launch=False,
+            )
+            # Convert numba Stream to ExperimentalStream
+            launch(_to_core_stream(stream), config, function.kernel, ptr)
 
         device_to_host(array, memory, sizeof(array), stream=stream)
 
@@ -179,18 +168,13 @@ class TestCudaDriver(DeprecatedDeviceArrayApiTest):
 
             ptr = memory.device_ctypes_pointer
 
-            launch_kernel(
-                function.handle,  # Kernel
-                1,
-                1,
-                1,  # gx, gy, gz
-                100,
-                1,
-                1,  # bx, by, bz
-                0,  # dynamic shared mem
-                stream.handle,  # stream
-                [ptr],
+            config = LaunchConfig(
+                grid=(1, 1, 1),
+                block=(100, 1, 1),
+                shmem_size=0,
+                cooperative_launch=False,
             )
+            launch(stream, config, function.kernel, ptr)
 
             device_to_host(array, memory, sizeof(array), stream=stream)
         for i, v in enumerate(array):

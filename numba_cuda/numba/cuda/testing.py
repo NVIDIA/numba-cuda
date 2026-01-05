@@ -289,14 +289,6 @@ def skip_if_curand_kernel_missing(fn):
     return unittest.skipUnless(curand_kernel_h_file, reason)(fn)
 
 
-def skip_if_mvc_enabled(reason):
-    """Skip a test if Minor Version Compatibility is enabled"""
-    assert isinstance(reason, str)
-    return unittest.skipIf(
-        config.CUDA_ENABLE_MINOR_VERSION_COMPATIBILITY, reason
-    )
-
-
 def cc_X_or_above(major, minor):
     if not config.ENABLE_CUDASIM:
         cc = devices.get_context().device.compute_capability

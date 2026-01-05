@@ -12,7 +12,7 @@ import os
 import warnings
 import functools
 
-from cuda.core.experimental import Program, ProgramOptions
+from numba.cuda._compat import Program, ProgramOptions
 from cuda.bindings import nvrtc as bindings_nvrtc
 
 NVRTC_EXTRA_SEARCH_PATHS = _readenv(
@@ -108,6 +108,22 @@ def compile(src, name, cc, ltoir=False, lineinfo=False, debug=False):
     nrt_include = os.path.join(numba_cuda_path, "memory_management")
 
     includes = [numba_include, *cuda_includes, nrt_include, *extra_includes]
+
+    # TODO: move all this into Program/ProgramOptions
+    # logsz = config.CUDA_LOG_SIZE
+    #
+    # jitinfo = bytearray(logsz)
+    # jiterrors = bytearray(logsz)
+    #
+    # jit_option = binding.CUjit_option
+    # options = {
+    #     jit_option.CU_JIT_INFO_LOG_BUFFER: jitinfo,
+    #     jit_option.CU_JIT_INFO_LOG_BUFFER_SIZE_BYTES: logsz,
+    #     jit_option.CU_JIT_ERROR_LOG_BUFFER: jiterrors,
+    #     jit_option.CU_JIT_ERROR_LOG_BUFFER_SIZE_BYTES: logsz,
+    #     jit_option.CU_JIT_LOG_VERBOSE: config.CUDA_VERBOSE_JIT_LOG,
+    # }
+    # info_log = jitinfo.decode("utf-8")
 
     options = ProgramOptions(
         arch=arch,

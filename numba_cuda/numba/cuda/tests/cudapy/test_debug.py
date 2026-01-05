@@ -54,7 +54,7 @@ class TestDebugOutput(CUDATestCase):
                 self.assertRaises(AssertionError, check_meth, out)
 
     def _check_dump_bytecode(self, out):
-        if PYVERSION > (3, 10):
+        if PYVERSION in ((3, 11), (3, 12), (3, 13), (3, 14)):
             # binop with arg=0 is binary add, see CPython dis.py and opcode.py
             self.assertIn("BINARY_OP(arg=0", out)
         else:

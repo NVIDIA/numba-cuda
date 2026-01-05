@@ -116,6 +116,7 @@ def to_device(obj, stream=0, copy=True, to=None):
 
         hary = d_ary.copy_to_host(stream=stream)
     """
+    breakpoint()
     warnings.warn(
         "to_device is deprecated. Please prefer cupy for moving numpy arrays to the device.",
         DeprecatedDeviceArrayApiWarning,

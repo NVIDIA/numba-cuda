@@ -4,7 +4,7 @@
 import numpy as np
 from numba import cuda
 from numba.cuda.testing import unittest, CUDATestCase
-from cuda.core.experimental import Device
+from numba.cuda._compat import Device
 from numba.cuda.testing import skip_on_cudasim
 import cupy as cp
 
@@ -35,11 +35,9 @@ class TestCudaEvent(CUDATestCase):
         self.event_elapsed_inner(stream)
 
     def event_elapsed_inner(self, stream):
-        
         @cuda.jit
         def kernel():
             pass
-
 
         N = 32
         evtstart = cuda.event()
@@ -47,7 +45,7 @@ class TestCudaEvent(CUDATestCase):
 
         evtstart.record(stream=stream)
 
-        kernel[1,1, stream]()
+        kernel[1, 1, stream]()
 
         evtend.record(stream=stream)
         evtend.wait(stream=stream)

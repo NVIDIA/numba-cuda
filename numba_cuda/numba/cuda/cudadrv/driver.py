@@ -33,9 +33,6 @@ from ctypes import (
     c_int,
     byref,
     c_size_t,
-    c_char,
-    c_char_p,
-    addressof,
     c_void_p,
     c_uint8,
 )
@@ -57,17 +54,15 @@ from numba.cuda.utils import cached_file_read
 from numba.cuda.cudadrv import enums, drvapi, nvrtc
 
 from cuda.bindings import driver as binding
-from cuda.core.experimental import (
+from numba.cuda._compat import (
     Linker,
     LinkerOptions,
     ObjectCode,
-)
-
-from cuda.bindings.utils import get_cuda_native_handle
-from cuda.core.experimental import (
     Stream as ExperimentalStream,
     Device as ExperimentalDevice,
 )
+
+from cuda.bindings.utils import get_cuda_native_handle
 
 
 # There is no definition of the default stream in the Nvidia bindings (nor
@@ -1378,94 +1373,12 @@ class Context(object):
 
 
 def load_module_image(
-    context, image, setup_callbacks=None, teardown_callbacks=None
+    context, object_code, setup_callbacks=None, teardown_callbacks=None
 ):
-    """
-    image must be a pointer
-    """
-    return load_module_image_cuda_python(
-        context, image, setup_callbacks, teardown_callbacks
-    )
-
-
-def load_module_image_ctypes(
-    context, image, setup_callbacks, teardown_callbacks
-):
-    logsz = config.CUDA_LOG_SIZE
-
-    jitinfo = (c_char * logsz)()
-    jiterrors = (c_char * logsz)()
-
-    options = {
-        enums.CU_JIT_INFO_LOG_BUFFER: addressof(jitinfo),
-        enums.CU_JIT_INFO_LOG_BUFFER_SIZE_BYTES: c_void_p(logsz),
-        enums.CU_JIT_ERROR_LOG_BUFFER: addressof(jiterrors),
-        enums.CU_JIT_ERROR_LOG_BUFFER_SIZE_BYTES: c_void_p(logsz),
-        enums.CU_JIT_LOG_VERBOSE: c_void_p(config.CUDA_VERBOSE_JIT_LOG),
-    }
-
-    option_keys = (drvapi.cu_jit_option * len(options))(*options.keys())
-    option_vals = (c_void_p * len(options))(*options.values())
-    handle = drvapi.cu_module()
-    try:
-        driver.cuModuleLoadDataEx(
-            byref(handle), image, len(options), option_keys, option_vals
-        )
-    except CudaAPIError as e:
-        msg = "cuModuleLoadDataEx error:\n%s" % jiterrors.value.decode("utf8")
-        raise CudaAPIError(e.code, msg)
-
-    info_log = jitinfo.value
-
-    return CtypesModule(
-        weakref.proxy(context),
-        handle,
-        info_log,
-        _module_finalizer(context, handle),
-        setup_callbacks,
-        teardown_callbacks,
-    )
-
-
-def load_module_image_cuda_python(
-    context, image, setup_callbacks, teardown_callbacks
-):
-    """
-    image must be a pointer
-    """
-    logsz = config.CUDA_LOG_SIZE
-
-    jitinfo = bytearray(logsz)
-    jiterrors = bytearray(logsz)
-
-    jit_option = binding.CUjit_option
-    options = {
-        jit_option.CU_JIT_INFO_LOG_BUFFER: jitinfo,
-        jit_option.CU_JIT_INFO_LOG_BUFFER_SIZE_BYTES: logsz,
-        jit_option.CU_JIT_ERROR_LOG_BUFFER: jiterrors,
-        jit_option.CU_JIT_ERROR_LOG_BUFFER_SIZE_BYTES: logsz,
-        jit_option.CU_JIT_LOG_VERBOSE: config.CUDA_VERBOSE_JIT_LOG,
-    }
-
-    option_keys = [k for k in options.keys()]
-    option_vals = [v for v in options.values()]
-
-    try:
-        handle = driver.cuModuleLoadDataEx(
-            image.code, len(options), option_keys, option_vals
-        )
-    except CudaAPIError as e:
-        err_string = jiterrors.decode("utf-8")
-        msg = "cuModuleLoadDataEx error:\n%s" % err_string
-        raise CudaAPIError(e.code, msg)
-
-    info_log = jitinfo.decode("utf-8")
-
     return CudaPythonModule(
         weakref.proxy(context),
-        handle,
-        info_log,
-        _module_finalizer(context, handle),
+        object_code,
+        _module_finalizer(context, object_code),
         setup_callbacks,
         teardown_callbacks,
     )
@@ -1543,12 +1456,12 @@ def _stream_finalizer(deallocs, handle):
     return core
 
 
-def _module_finalizer(context, handle):
+def _module_finalizer(context, object_code):
     dealloc = context.deallocations
     modules = context.modules
-    key = handle
+    key = object_code.handle
 
-    def core():
+    def core(key=key):
         shutting_down = utils.shutting_down  # early bind
 
         def module_unload(handle):
@@ -1556,9 +1469,9 @@ def _module_finalizer(context, handle):
             # Context.reset() of Context.unload_module().  Both must have
             # cleared the module reference from the context.
             assert shutting_down() or key not in modules
-            driver.cuModuleUnload(handle)
+            driver.cuLibraryUnload(handle)
 
-        dealloc.add_item(module_unload, handle)
+        dealloc.add_item(module_unload, key)
 
     return core
 
@@ -1831,8 +1744,9 @@ class MemoryPointer(object):
     def memset(self, byte, count=None, stream=0):
         count = self.size if count is None else count
         if stream:
-            handle = stream.handle.value
-            driver.cuMemsetD8Async(self.device_pointer, byte, count, handle)
+            driver.cuMemsetD8Async(
+                self.device_pointer, byte, count, stream.handle
+            )
         else:
             driver.cuMemsetD8(self.device_pointer, byte, count)
 
@@ -2177,6 +2091,20 @@ class Stream:
         return future
 
 
+def _to_core_stream(stream):
+    # stream can be: int (0 for default), Stream (shim), or ExperimentalStream
+    if not stream:
+        return ExperimentalStream.from_handle(0)
+    elif isinstance(stream, Stream):
+        return ExperimentalStream.from_handle(stream.handle.value or 0)
+    elif isinstance(stream, ExperimentalStream):
+        return stream
+    else:
+        raise TypeError(
+            f"Expected a Stream object, ExperimentalStream, or 0, got {type(stream).__name__}"
+        )
+
+
 class Event:
     def __init__(self, handle, finalizer=None):
         self.handle = handle
@@ -2238,21 +2166,18 @@ def event_elapsed_time(evtstart, evtend):
     return driver.cuEventElapsedTime(evtstart.handle.value, evtend.handle.value)
 
 
-class Module(metaclass=ABCMeta):
-    """Abstract base class for modules"""
-
+class CudaPythonModule:
     def __init__(
         self,
         context,
-        handle,
-        info_log,
+        object_code,
         finalizer=None,
         setup_callbacks=None,
         teardown_callbacks=None,
     ):
         self.context = context
-        self.handle = handle
-        self.info_log = info_log
+        self.object_code = object_code
+        self.handle = object_code.handle
         if finalizer is not None:
             self._finalizer = weakref.finalize(self, finalizer)
 
@@ -2266,14 +2191,6 @@ class Module(metaclass=ABCMeta):
         """Unload this module from the context"""
         self.context.unload_module(self)
 
-    @abstractmethod
-    def get_function(self, name):
-        """Returns a Function object encapsulating the named function"""
-
-    @abstractmethod
-    def get_global_symbol(self, name):
-        """Return a MemoryPointer referring to the named symbol"""
-
     def setup(self):
         """Call the setup functions for the module"""
         if self.initialized:
@@ -2283,7 +2200,7 @@ class Module(metaclass=ABCMeta):
             return
 
         for f in self.setup_functions:
-            f(self.handle)
+            f(self.object_code)
 
         self.initialized = True
 
@@ -2292,42 +2209,25 @@ class Module(metaclass=ABCMeta):
         if self.teardown_functions is None:
             return
 
-        def _teardown(teardowns, handle):
+        def _teardown(teardowns, object_code):
             for f in teardowns:
-                f(handle)
+                f(object_code)
 
         weakref.finalize(
             self,
             _teardown,
             self.teardown_functions,
-            self.handle,
+            self.object_code,
         )
 
-
-class CtypesModule(Module):
     def get_function(self, name):
-        handle = drvapi.cu_function()
-        driver.cuModuleGetFunction(
-            byref(handle), self.handle, name.encode("utf8")
-        )
-        return CtypesFunction(weakref.proxy(self), handle, name)
+        """Returns a Function object encapsulating the named function"""
+        kernel = self.object_code.get_kernel(name)
+        return Function(weakref.proxy(self), kernel, name)
 
     def get_global_symbol(self, name):
-        ptr = drvapi.cu_device_ptr()
-        size = drvapi.c_size_t()
-        driver.cuModuleGetGlobal(
-            byref(ptr), byref(size), self.handle, name.encode("utf8")
-        )
-        return MemoryPointer(self.context, ptr, size), size.value
-
-
-class CudaPythonModule(Module):
-    def get_function(self, name):
-        handle = driver.cuModuleGetFunction(self.handle, name.encode("utf8"))
-        return CudaPythonFunction(weakref.proxy(self), handle, name)
-
-    def get_global_symbol(self, name):
-        ptr, size = driver.cuModuleGetGlobal(self.handle, name.encode("utf8"))
+        """Return a MemoryPointer referring to the named symbol"""
+        ptr, size = driver.cuLibraryGetGlobal(self.handle, name.encode("utf8"))
         return MemoryPointer(self.context, ptr, size), size
 
 
@@ -2336,17 +2236,27 @@ FuncAttr = namedtuple(
 )
 
 
-class Function(metaclass=ABCMeta):
+class CudaPythonFunction:
     griddim = 1, 1, 1
     blockdim = 1, 1, 1
     stream = 0
     sharedmem = 0
 
-    def __init__(self, module, handle, name):
+    __slots__ = "module", "kernel", "handle", "name", "attrs"
+
+    def __init__(self, module, kernel, name):
         self.module = module
-        self.handle = handle
+        self.kernel = kernel
+        self.handle = kernel._handle
         self.name = name
-        self.attrs = self.read_func_attr_all()
+        attrs = self.kernel.attributes
+        self.attrs = FuncAttr(
+            regs=attrs.num_regs(),
+            const=attrs.const_size_bytes(),
+            local=attrs.local_size_bytes(),
+            shared=attrs.shared_size_bytes(),
+            maxthreads=attrs.max_threads_per_block(),
+        )
 
     def __repr__(self):
         return "<CUDA function %s>" % self.name
@@ -2355,69 +2265,6 @@ class Function(metaclass=ABCMeta):
     def device(self):
         return self.module.context.device
 
-    @abstractmethod
-    def cache_config(
-        self, prefer_equal=False, prefer_cache=False, prefer_shared=False
-    ):
-        """Set the cache configuration for this function."""
-
-    @abstractmethod
-    def set_shared_memory_carveout(self, carveout):
-        """Set the shared memory carveout percentage (-1-100)"""
-
-    @abstractmethod
-    def read_func_attr(self, attrid):
-        """Return the value of the attribute with given ID."""
-
-    @abstractmethod
-    def read_func_attr_all(self):
-        """Return a FuncAttr object with the values of various function
-        attributes."""
-
-
-class CtypesFunction(Function):
-    def cache_config(
-        self, prefer_equal=False, prefer_cache=False, prefer_shared=False
-    ):
-        prefer_equal = prefer_equal or (prefer_cache and prefer_shared)
-        if prefer_equal:
-            flag = enums.CU_FUNC_CACHE_PREFER_EQUAL
-        elif prefer_cache:
-            flag = enums.CU_FUNC_CACHE_PREFER_L1
-        elif prefer_shared:
-            flag = enums.CU_FUNC_CACHE_PREFER_SHARED
-        else:
-            flag = enums.CU_FUNC_CACHE_PREFER_NONE
-        driver.cuFuncSetCacheConfig(self.handle, flag)
-
-    def set_shared_memory_carveout(self, carveout):
-        carveout = int(carveout)
-
-        if not (-1 <= carveout <= 100):
-            raise ValueError("Carveout must be between -1 and 100")
-
-        attr = enums.CU_FUNC_ATTRIBUTE_PREFERRED_SHARED_MEMORY_CARVEOUT
-        driver.cuFuncSetAttribute(self.handle, attr, carveout)
-
-    def read_func_attr(self, attrid):
-        retval = c_int()
-        driver.cuFuncGetAttribute(byref(retval), attrid, self.handle)
-        return retval.value
-
-    def read_func_attr_all(self):
-        nregs = self.read_func_attr(enums.CU_FUNC_ATTRIBUTE_NUM_REGS)
-        cmem = self.read_func_attr(enums.CU_FUNC_ATTRIBUTE_CONST_SIZE_BYTES)
-        lmem = self.read_func_attr(enums.CU_FUNC_ATTRIBUTE_LOCAL_SIZE_BYTES)
-        smem = self.read_func_attr(enums.CU_FUNC_ATTRIBUTE_SHARED_SIZE_BYTES)
-        maxtpb = self.read_func_attr(
-            enums.CU_FUNC_ATTRIBUTE_MAX_THREADS_PER_BLOCK
-        )
-        return FuncAttr(
-            regs=nregs, const=cmem, local=lmem, shared=smem, maxthreads=maxtpb
-        )
-
-
-class CudaPythonFunction(Function):
     def cache_config(
         self, prefer_equal=False, prefer_cache=False, prefer_shared=False
     ):
@@ -2431,7 +2278,7 @@ class CudaPythonFunction(Function):
             flag = attr.CU_FUNC_CACHE_PREFER_SHARED
         else:
             flag = attr.CU_FUNC_CACHE_PREFER_NONE
-        driver.cuFuncSetCacheConfig(self.handle, flag)
+        driver.cuKernelSetCacheConfig(self.handle, flag, self.device.id)
 
     def set_shared_memory_carveout(self, carveout):
         carveout = int(carveout)
@@ -2440,137 +2287,42 @@ class CudaPythonFunction(Function):
             raise ValueError("Carveout must be between -1 and 100")
 
         attr = binding.CUfunction_attribute.CU_FUNC_ATTRIBUTE_PREFERRED_SHARED_MEMORY_CARVEOUT
-        driver.cuFuncSetAttribute(self.handle, attr, carveout)
-
-    def read_func_attr(self, attrid):
-        return driver.cuFuncGetAttribute(attrid, self.handle)
-
-    def read_func_attr_all(self):
-        attr = binding.CUfunction_attribute
-        nregs = self.read_func_attr(attr.CU_FUNC_ATTRIBUTE_NUM_REGS)
-        cmem = self.read_func_attr(attr.CU_FUNC_ATTRIBUTE_CONST_SIZE_BYTES)
-        lmem = self.read_func_attr(attr.CU_FUNC_ATTRIBUTE_LOCAL_SIZE_BYTES)
-        smem = self.read_func_attr(attr.CU_FUNC_ATTRIBUTE_SHARED_SIZE_BYTES)
-        maxtpb = self.read_func_attr(
-            attr.CU_FUNC_ATTRIBUTE_MAX_THREADS_PER_BLOCK
-        )
-        return FuncAttr(
-            regs=nregs, const=cmem, local=lmem, shared=smem, maxthreads=maxtpb
-        )
+        driver.cuKernelSetAttribute(attr, carveout, self.handle, self.device.id)
 
 
-def launch_kernel(
-    cufunc_handle,
-    gx,
-    gy,
-    gz,
-    bx,
-    by,
-    bz,
-    sharedmem,
-    hstream,
-    args,
-    cooperative=False,
-):
-    param_ptrs = [addressof(arg) for arg in args]
-    params = (c_void_p * len(param_ptrs))(*param_ptrs)
-
-    params_for_launch = addressof(params)
-    extra = 0
-
-    if cooperative:
-        driver.cuLaunchCooperativeKernel(
-            cufunc_handle,
-            gx,
-            gy,
-            gz,
-            bx,
-            by,
-            bz,
-            sharedmem,
-            hstream,
-            params_for_launch,
-        )
-    else:
-        driver.cuLaunchKernel(
-            cufunc_handle,
-            gx,
-            gy,
-            gz,
-            bx,
-            by,
-            bz,
-            sharedmem,
-            hstream,
-            params_for_launch,
-            extra,
-        )
+# Alias for backward compatibility
+Function = CudaPythonFunction
 
 
-class _LinkerBase(metaclass=ABCMeta):
-    """Abstract base class for linkers"""
-
-    @classmethod
-    def new(
-        cls,
-        max_registers=0,
+class _Linker:
+    def __init__(
+        self,
+        max_registers=None,
         lineinfo=False,
         cc=None,
         lto=None,
         additional_flags=None,
     ):
-        linker = _Linker
+        arch = f"sm_{cc[0]}{cc[1]}"
+        self.max_registers = max_registers if max_registers else None
+        self.lineinfo = lineinfo
+        self.cc = cc
+        self.arch = arch
+        if lto is False:
+            # WAR for apparent nvjitlink issue
+            lto = None
+        self.lto = lto
+        self.additional_flags = additional_flags
 
-        params = (max_registers, lineinfo, cc)
-        if linker is _Linker:
-            params = (*params, lto, additional_flags)
-        else:
-            if lto or additional_flags:
-                raise ValueError("LTO and additional flags require nvjitlink")
-
-        return linker(*params)
-
-    @abstractmethod
-    def __init__(self, max_registers, lineinfo, cc):
-        # LTO unsupported in Numba at present, but the pynvjitlink linker
-        # (https://github.com/rapidsai/pynvjitlink) supports it,
-        self.lto = False
-
-    @property
-    @abstractmethod
-    def info_log(self):
-        """Return the info log from the linker invocation"""
-
-    @property
-    @abstractmethod
-    def error_log(self):
-        """Return the error log from the linker invocation"""
-
-    @abstractmethod
-    def add_ptx(self, ptx, name):
-        """Add PTX source in a string to the link"""
-
-    def add_cu(self, cu, name):
-        """Add CUDA source in a string to the link. The name of the source
-        file should be specified in `name`."""
-        ptx, log = nvrtc.compile(cu, name, self.cc)
-
-        if config.DUMP_ASSEMBLY:
-            print(("ASSEMBLY %s" % name).center(80, "-"))
-            print(ptx)
-            print("=" * 80)
-
-        # Link the program's PTX using the normal linker mechanism
-        ptx_name = os.path.splitext(name)[0] + ".ptx"
-        self.add_ptx(ptx.encode(), ptx_name)
-
-    @abstractmethod
-    def add_data(self, data, kind, name):
-        """Add in-memory data to the link"""
-
-    @abstractmethod
-    def add_file(self, path, kind):
-        """Add code from a file to the link"""
+        self.options = LinkerOptions(
+            max_register_count=self.max_registers,
+            lineinfo=lineinfo,
+            arch=arch,
+            link_time_optimization=lto,
+        )
+        self._complete = False
+        self._object_codes = []
+        self.linker = None  # need at least one program
 
     def add_cu_file(self, path):
         cu = cached_file_read(path, how="rb")
@@ -2657,47 +2409,9 @@ class _LinkerBase(metaclass=ABCMeta):
                     path_or_code.data, path_or_code.kind, path_or_code.name
                 )
 
-    @abstractmethod
-    def complete(self):
-        """Complete the link. Returns (cubin, size)
-
-        cubin is a pointer to a internal buffer of cubin owned by the linker;
-        thus, it should be loaded before the linker is destroyed.
-        """
-
-
-class _Linker(_LinkerBase):
-    def __init__(
-        self,
-        max_registers=None,
-        lineinfo=False,
-        cc=None,
-        lto=None,
-        additional_flags=None,
-    ):
-        arch = f"sm_{cc[0]}{cc[1]}"
-        self.max_registers = max_registers if max_registers else None
-        self.lineinfo = lineinfo
-        self.cc = cc
-        self.arch = arch
-        if lto is False:
-            # WAR for apparent nvjitlink issue
-            lto = None
-        self.lto = lto
-        self.additional_flags = additional_flags
-
-        self.options = LinkerOptions(
-            max_register_count=self.max_registers,
-            lineinfo=lineinfo,
-            arch=arch,
-            link_time_optimization=lto,
-        )
-        self._complete = False
-        self._object_codes = []
-        self.linker = None  # need at least one program
-
     @property
     def info_log(self):
+        """Return the info log from the linker invocation"""
         if not self.linker:
             raise ValueError("Not Initialized")
         if self._complete:
@@ -2706,6 +2420,7 @@ class _Linker(_LinkerBase):
 
     @property
     def error_log(self):
+        """Return the error log from the linker invocation"""
         if not self.linker:
             raise ValueError("Not Initialized")
         if self._complete:
@@ -2713,10 +2428,13 @@ class _Linker(_LinkerBase):
         raise RuntimeError("Link not yet complete.")
 
     def add_ptx(self, ptx, name="<cudapy-ptx>"):
+        """Add PTX source in a string to the link"""
         obj = ObjectCode.from_ptx(ptx, name=name)
         self._object_codes.append(obj)
 
     def add_cu(self, cu, name="<cudapy-cu>"):
+        """Add CUDA source in a string to the link. The name of the source
+        file should be specified in `name`."""
         obj, log = nvrtc.compile(cu, name, self.cc, ltoir=self.lto)
 
         if not self.lto and config.DUMP_ASSEMBLY:
@@ -2746,6 +2464,7 @@ class _Linker(_LinkerBase):
         self._object_codes.append(obj)
 
     def add_file(self, path, kind):
+        """Add code from a file to the link"""
         try:
             data = cached_file_read(path, how="rb")
         except FileNotFoundError:
@@ -2754,6 +2473,7 @@ class _Linker(_LinkerBase):
         self.add_data(data, kind, name)
 
     def add_data(self, data, kind, name):
+        """Add in-memory data to the link"""
         if kind == FILE_EXTENSION_MAP["ptx"]:
             fn = self.add_ptx
         elif kind == FILE_EXTENSION_MAP["cubin"]:
@@ -2797,155 +2517,16 @@ class _Linker(_LinkerBase):
         self.linker.close()
 
     def complete(self):
+        """Complete the link. Returns (cubin, size)
+
+        cubin is a pointer to a internal buffer of cubin owned by the linker;
+        thus, it should be loaded before the linker is destroyed.
+        """
         self.linker = Linker(*self._object_codes, options=self.options)
         result = self.linker.link("cubin")
         self.close()
         self._complete = True
         return result
-
-
-class CtypesLinker(_LinkerBase):
-    """
-    Links for current device if no CC given
-    """
-
-    def __init__(self, max_registers=0, lineinfo=False, cc=None):
-        super().__init__(max_registers, lineinfo, cc)
-
-        logsz = config.CUDA_LOG_SIZE
-        linkerinfo = (c_char * logsz)()
-        linkererrors = (c_char * logsz)()
-
-        options = {
-            enums.CU_JIT_INFO_LOG_BUFFER: addressof(linkerinfo),
-            enums.CU_JIT_INFO_LOG_BUFFER_SIZE_BYTES: c_void_p(logsz),
-            enums.CU_JIT_ERROR_LOG_BUFFER: addressof(linkererrors),
-            enums.CU_JIT_ERROR_LOG_BUFFER_SIZE_BYTES: c_void_p(logsz),
-            enums.CU_JIT_LOG_VERBOSE: c_void_p(1),
-        }
-        if max_registers:
-            options[enums.CU_JIT_MAX_REGISTERS] = c_void_p(max_registers)
-        if lineinfo:
-            options[enums.CU_JIT_GENERATE_LINE_INFO] = c_void_p(1)
-
-        self.cc = cc
-        if cc is None:
-            # No option value is needed, but we need something as a placeholder
-            options[enums.CU_JIT_TARGET_FROM_CUCONTEXT] = 1
-        else:
-            cc_val = cc[0] * 10 + cc[1]
-            options[enums.CU_JIT_TARGET] = c_void_p(cc_val)
-
-        raw_keys = list(options.keys())
-        raw_values = list(options.values())
-
-        option_keys = (drvapi.cu_jit_option * len(raw_keys))(*raw_keys)
-        option_vals = (c_void_p * len(raw_values))(*raw_values)
-
-        self.handle = handle = drvapi.cu_link_state()
-        driver.cuLinkCreate(
-            len(raw_keys), option_keys, option_vals, byref(self.handle)
-        )
-
-        weakref.finalize(self, driver.cuLinkDestroy, handle)
-
-        self.linker_info_buf = linkerinfo
-        self.linker_errors_buf = linkererrors
-
-        self._keep_alive = [linkerinfo, linkererrors, option_keys, option_vals]
-
-    @property
-    def info_log(self):
-        return self.linker_info_buf.value.decode("utf8")
-
-    @property
-    def error_log(self):
-        return self.linker_errors_buf.value.decode("utf8")
-
-    def add_cubin(self, cubin, name="<unnamed-cubin>"):
-        return self._add_data(enums.CU_JIT_INPUT_CUBIN, cubin, name)
-
-    def add_ptx(self, ptx, name="<unnamed-ptx>"):
-        return self._add_data(enums.CU_JIT_INPUT_PTX, ptx, name)
-
-    def add_object(self, object_, name="<unnamed-object>"):
-        return self._add_data(enums.CU_JIT_INPUT_OBJECT, object_, name)
-
-    def add_fatbin(self, fatbin, name="<unnamed-fatbin>"):
-        return self._add_data(enums.CU_JIT_INPUT_FATBINARY, fatbin, name)
-
-    def add_library(self, library, name="<unnamed-library>"):
-        return self._add_data(enums.CU_JIT_INPUT_LIBRARY, library, name)
-
-    def _add_data(self, input_type, data, name):
-        data_buffer = c_char_p(data)
-        name_buffer = c_char_p(name.encode("utf8"))
-        self._keep_alive += [data_buffer, name_buffer]
-        try:
-            driver.cuLinkAddData(
-                self.handle,
-                input_type,
-                data_buffer,
-                len(data),
-                name_buffer,
-                0,
-                None,
-                None,
-            )
-        except CudaAPIError as e:
-            raise LinkerError("%s\n%s" % (e, self.error_log))
-
-    def add_data(self, data, kind, name=None):
-        # We pass the name as **kwargs to ensure the default name for the input
-        # type is used if none is supplied
-        kws = {}
-        if name is not None:
-            kws["name"] = name
-
-        if kind == FILE_EXTENSION_MAP["cubin"]:
-            self.add_cubin(data, **kws)
-        elif kind == FILE_EXTENSION_MAP["fatbin"]:
-            self.add_fatbin(data, **kws)
-        elif kind == FILE_EXTENSION_MAP["a"]:
-            self.add_library(data, **kws)
-        elif kind == FILE_EXTENSION_MAP["ptx"]:
-            self.add_ptx(data, **kws)
-        elif kind == FILE_EXTENSION_MAP["o"]:
-            self.add_object(data, **kws)
-        elif kind == FILE_EXTENSION_MAP["ltoir"]:
-            raise LinkerError("Ctypes linker cannot link LTO-IR")
-        else:
-            raise LinkerError(f"Don't know how to link {kind}")
-
-    def add_file(self, path, kind):
-        pathbuf = c_char_p(path.encode("utf8"))
-        self._keep_alive.append(pathbuf)
-
-        try:
-            driver.cuLinkAddFile(self.handle, kind, pathbuf, 0, None, None)
-        except CudaAPIError as e:
-            if e.code == enums.CUDA_ERROR_FILE_NOT_FOUND:
-                msg = f"{path} not found"
-            else:
-                msg = "%s\n%s" % (e, self.error_log)
-            raise LinkerError(msg)
-
-    def complete(self):
-        cubin_buf = c_void_p(0)
-        size = c_size_t(0)
-
-        try:
-            driver.cuLinkComplete(self.handle, byref(cubin_buf), byref(size))
-        except CudaAPIError as e:
-            raise LinkerError("%s\n%s" % (e, self.error_log))
-
-        size = size.value
-        assert size > 0, "linker returned a zero sized cubin"
-        del self._keep_alive[:]
-
-        # We return a copy of the cubin because it's owned by the linker
-        cubin_ptr = ctypes.cast(cubin_buf, ctypes.POINTER(ctypes.c_char))
-        return bytes(np.ctypeslib.as_array(cubin_ptr, shape=(size,)))
 
 
 # -----------------------------------------------------------------------------
