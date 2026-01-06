@@ -386,7 +386,7 @@ class PassManager(object):
                     self._runPass(idx, pass_inst, state)
                 else:
                     raise BaseException("Legacy pass in use")
-            except _EarlyPipelineCompletion as e:
+            except _EarlyPipelineCompletion as e:  # noqa: PERF203
                 raise e
             except Exception as e:
                 if not isinstance(e, errors.NumbaError):
@@ -468,14 +468,14 @@ class PassRegistry(object):
         return self._registry[clazz]
 
     def _does_pass_name_alias(self, check):
-        for k, v in self._registry.items():
+        for v in self._registry.values():
             if v.pass_inst.name == check:
                 return True
         return False
 
     def find_by_name(self, class_name):
         assert isinstance(class_name, str)
-        for k, v in self._registry.items():
+        for v in self._registry.values():
             if v.pass_inst.name == class_name:
                 return v
         else:

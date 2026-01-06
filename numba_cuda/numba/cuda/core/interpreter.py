@@ -774,7 +774,7 @@ def peep_hole_list_to_tuple(func_ir):
     _DEBUG = False
 
     # For all blocks
-    for offset, blk in func_ir.blocks.items():
+    for blk in func_ir.blocks.values():
         # keep doing the peephole rewrite until nothing is left that matches
         while True:
             # first try and find a matching region
@@ -1003,11 +1003,12 @@ def peep_hole_delete_with_exit(func_ir):
                 if isinstance(stmt, ir.assign_types):
                     dead_vars.add(stmt.target)
 
-        new_body = []
-        for stmt in blk.body:
+        new_body = [
+            stmt
+            for stmt in blk.body
             # Skip any statements that uses anyone of the dead variable.
-            if not (set(stmt.list_vars()) & dead_vars):
-                new_body.append(stmt)
+            if not (set(stmt.list_vars()) & dead_vars)
+        ]
         blk.body.clear()
         blk.body.extend(new_body)
 
@@ -1323,8 +1324,7 @@ def _build_new_build_map(func_ir, name, old_body, old_lineno, new_items):
     if len(literal_keys) == len(new_items):
         # All keys must be literals to have any literal values.
         literal_value = {x: y for x, y in zip(literal_keys, values)}
-        for i, k in enumerate(literal_keys):
-            value_indexes[k] = i
+        value_indexes.update((k, i) for i, k in enumerate(literal_keys))
     else:
         literal_value = None
 
@@ -1390,7 +1390,7 @@ class Interpreter(object):
         self.current_block = None
         self.current_block_offset = None
         last_active_offset = 0
-        for _, inst_blocks in self.cfa.blocks.items():
+        for inst_blocks in self.cfa.blocks.values():
             if inst_blocks.body:
                 last_active_offset = max(
                     last_active_offset, max(inst_blocks.body)
@@ -2889,9 +2889,7 @@ class Interpreter(object):
         # store the index of the actual used value for a given key, this is
         # used when lowering to pull the right value out into the tuple repr
         # of a mixed value type dictionary.
-        value_indexes = {}
-        for i, k in enumerate(keytup):
-            value_indexes[k] = i
+        value_indexes = {k: i for i, k in enumerate(keytup)}
 
         expr = ir.Expr.build_map(
             items=items,
@@ -3045,12 +3043,10 @@ class Interpreter(object):
             literal_dict = {
                 x: _UNKNOWN_VALUE(y[1]) for x, y in zip(literal_keys, got_items)
             }
-            for i, k in enumerate(literal_keys):
-                value_indexes[k] = i
+            value_indexes.update((k, i) for i, k in enumerate(literal_keys))
         else:
             literal_dict = {x: y for x, y in zip(literal_keys, literal_values)}
-            for i, k in enumerate(literal_keys):
-                value_indexes[k] = i
+            value_indexes.update((k, i) for i, k in enumerate(literal_keys))
 
         expr = ir.Expr.build_map(
             items=got_items,
