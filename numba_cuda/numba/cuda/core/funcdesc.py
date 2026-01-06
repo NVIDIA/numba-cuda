@@ -12,8 +12,6 @@ from numba.cuda import types
 from numba.cuda import itanium_mangler
 from numba.cuda.utils import _dynamic_modname, _dynamic_module
 
-from numba.cuda.core.callconv import CUDACallConv
-
 
 def default_mangler(name, argtypes, *, abi_tags=(), uid=None):
     return itanium_mangler.mangle(name, argtypes, abi_tags=abi_tags, uid=uid)
@@ -336,5 +334,5 @@ class ExternalFunctionDescriptor(FunctionDescriptor):
             kws=None,
             mangler=mangler,
             argtypes=argtypes,
-            call_conv=call_conv
+            call_conv=call_conv,
         )

@@ -9,7 +9,8 @@ from numba.cuda.core.options import (
     InlineOptions,
 )
 
-from numba.cuda.core.callconv import BaseCallConv, CUDACallConv
+from numba.cuda.core.callconv import BaseCallConv
+
 
 class Flags(TargetConfig):
     __slots__ = ()
@@ -161,6 +162,7 @@ def _optional_int_type(x):
         assert isinstance(x, int)
         return x
 
+
 def _call_conv_options_type(x):
     if x is None:
         return None
@@ -168,6 +170,7 @@ def _call_conv_options_type(x):
     else:
         assert isinstance(x, BaseCallConv)
         return x
+
 
 class CUDAFlags(Flags):
     nvvm_options = Option(

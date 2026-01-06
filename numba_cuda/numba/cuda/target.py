@@ -274,6 +274,13 @@ class CUDATargetContext(BaseContext):
             name, argtypes, abi_tags=abi_tags, uid=uid
         )
 
+    def c_abi_mangler(self, name, argtypes, *, abi_tags=None, uid=None):
+        if name.startswith(".NumbaEnv."):
+            # return itanium_mangler.mangle(name, argtypes, abi_tags=abi_tags, uid=uid)
+            func_name = name.split(".")[-1]
+            return f"_ZN08NumbaEnv{func_name}"
+        return name.split(".")[-1]
+
     def make_constant_array(self, builder, aryty, arr):
         """
         Unlike the parent version.  This returns a a pointer in the constant
@@ -421,4 +428,3 @@ class CUDATargetContext(BaseContext):
             # Allow inlining the function inside callers
             self.active_code_library.add_linking_library(cres.library)
             return cres
-

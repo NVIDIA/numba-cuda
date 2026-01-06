@@ -936,7 +936,7 @@ def add_exception_store_helper(kernel):
     # Implement status check / exception store logic
 
     status_code = helper_func.args[0]
-    call_conv = cuda_target.target_context.call_conv
+    call_conv = CUDACallConv(cuda_target.target_context)
     status = call_conv._get_return_status(builder, status_code)
 
     # Check error status
@@ -1110,7 +1110,6 @@ def _compile_pyfunc_with_fixup(
 
     cc = _default_cc(cc)
 
-    wrapper_name = abi_info.get("abi_name", pyfunc.__name__)
     cres = compile_cuda(
         pyfunc,
         return_type,
@@ -1132,10 +1131,11 @@ def _compile_pyfunc_with_fixup(
 
     if device:
         lib = cres.library
+        # wrapper_name = abi_info.get("abi_name", pyfunc.__name__)
         # if abi == "c":
-            # lib = cabi_wrap_function(
-            #     tgt, lib, cres.fndesc, wrapper_name, nvvm_options
-            # )
+        #     lib = cabi_wrap_function(
+        #         tgt, lib, cres.fndesc, wrapper_name, nvvm_options
+        #     )
     else:
         lib = cres.library
         kernel = lib.get_function(cres.fndesc.llvm_func_name)
@@ -1381,7 +1381,9 @@ def declare_device_function(name, restype, argtypes, link, use_cooperative):
 
     # ExternalFunctionDescriptor provides a lowering implementation for calling
     # external functions
-    fndesc = funcdesc.ExternalFunctionDescriptor(name, restype, argtypes, CUDACallConv(targetctx))
+    fndesc = funcdesc.ExternalFunctionDescriptor(
+        name, restype, argtypes, CUDACallConv(targetctx)
+    )
     targetctx.insert_user_function(extfn, fndesc, libs=(lib,))
 
     return device_function_template

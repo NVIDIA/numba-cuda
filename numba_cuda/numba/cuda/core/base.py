@@ -469,9 +469,9 @@ class BaseContext(object):
         return fnty
 
     def declare_function(self, module, fndesc):
-        fnty = fndesc.call_conv.get_function_type(fndesc.restype, fndesc.argtypes)
+        fnty = self.call_conv.get_function_type(fndesc.restype, fndesc.argtypes)
         fn = cgutils.get_or_insert_function(module, fnty, fndesc.mangled_name)
-        fndesc.call_conv.decorate_function(
+        self.call_conv.decorate_function(
             fn, fndesc.args, fndesc.argtypes, noalias=fndesc.noalias
         )
         if fndesc.inline:
@@ -975,7 +975,7 @@ class BaseContext(object):
             builder, fndesc, sig, args
         )
         with cgutils.if_unlikely(builder, status.is_error):
-            fndesc.call_conv.return_status_propagate(builder, status)
+            self.call_conv.return_status_propagate(builder, status)
 
         res = imputils.fix_returning_optional(self, builder, sig, status, res)
         return res
@@ -987,7 +987,7 @@ class BaseContext(object):
         # Add call to the generated function
         llvm_mod = builder.module
         fn = self.declare_function(llvm_mod, fndesc)
-        status, res = fndesc.call_conv.call_function(
+        status, res = self.call_conv.call_function(
             builder, fn, sig.return_type, sig.args, args
         )
         return status, res

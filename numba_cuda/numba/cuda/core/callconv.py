@@ -422,7 +422,6 @@ class CUDACABICallConv(BaseCallConv):
         return self.context.data_model_manager[ty].get_return_type()
 
 
-
 class ErrorModel(object):
     def __init__(self, call_conv):
         self.call_conv = call_conv

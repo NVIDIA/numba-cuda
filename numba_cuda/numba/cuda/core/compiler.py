@@ -69,7 +69,7 @@ def _make_subtarget(targetctx, flags):
         subtargetoptions["enable_nrt"] = True
     if flags.fastmath:
         subtargetoptions["fastmath"] = flags.fastmath
-    
+
     # FIXME: should update everywhere uses error_model to use callconv from fundesc
     call_conv = CUDACallConv(targetctx)
     error_model = callconv.create_error_model(flags.error_model, call_conv)
