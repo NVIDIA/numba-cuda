@@ -528,4 +528,3 @@ def swapped_cuda_module(fn, fake_cuda_module):
             if _swap_refcount[gid] == 0:
                 fn_globs.update(_swap_orig.pop(gid))
                 del _swap_refcount[gid]
-                del _globals_locks[gid]
