@@ -2308,18 +2308,9 @@ class _Linker:
         self.lineinfo = lineinfo
         self.cc = cc
         self.arch = arch
-        if lto is False:
-            # WAR for apparent nvjitlink issue
-            lto = None
         self.lto = lto
         self.additional_flags = additional_flags
-
-        self.options = LinkerOptions(
-            max_register_count=self.max_registers,
-            lineinfo=lineinfo,
-            arch=arch,
-            link_time_optimization=lto,
-        )
+        self._has_ltoir = False
         self._complete = False
         self._object_codes = []
         self.linker = None  # need at least one program
@@ -2442,6 +2433,8 @@ class _Linker:
             print(obj.code)
 
         self._object_codes.append(obj)
+        if self.lto:
+            self._has_ltoir = True
 
     def add_cubin(self, cubin, name="<cudapy-cubin>"):
         obj = ObjectCode.from_cubin(cubin, name=name)
@@ -2450,6 +2443,7 @@ class _Linker:
     def add_ltoir(self, ltoir, name="<cudapy-ltoir>"):
         obj = ObjectCode.from_ltoir(ltoir, name=name)
         self._object_codes.append(obj)
+        self._has_ltoir = True
 
     def add_fatbin(self, fatbin, name="<cudapy-fatbin>"):
         obj = ObjectCode.from_fatbin(fatbin, name=name)
@@ -2495,15 +2489,19 @@ class _Linker:
 
         fn(data, name)
 
-    def get_linked_ptx(self):
+    def _get_linker_options(self, ptx):
+        # Some linker flags are only valid/required if LTOIR object code is present.
         options = LinkerOptions(
             max_register_count=self.max_registers,
             lineinfo=self.lineinfo,
             arch=self.arch,
-            link_time_optimization=True,
-            ptx=True,
+            link_time_optimization=self._has_ltoir,
+            ptx=self._has_ltoir and ptx,
         )
+        return options
 
+    def get_linked_ptx(self):
+        options = self._get_linker_options(ptx=True)
         self.linker = Linker(*self._object_codes, options=options)
 
         result = self.linker.link("ptx")
@@ -2522,7 +2520,8 @@ class _Linker:
         cubin is a pointer to a internal buffer of cubin owned by the linker;
         thus, it should be loaded before the linker is destroyed.
         """
-        self.linker = Linker(*self._object_codes, options=self.options)
+        options = self._get_linker_options(ptx=False)
+        self.linker = Linker(*self._object_codes, options=options)
         result = self.linker.link("cubin")
         self.close()
         self._complete = True

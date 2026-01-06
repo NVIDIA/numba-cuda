@@ -109,6 +109,18 @@ def simple_lmem(A, B, dty):
         B[i] = C[i]
 
 
+add_from_numba = cuda.declare_device(
+    "add_from_numba",
+    "int32(int32, int32)",
+    link=["testing/test_device_functions.ltoir"],
+)
+
+
+def debuggable_kernel(result):
+    i = cuda.grid(1)
+    result[i] = add_from_numba(i, i)
+
+
 @skip_on_cudasim("Linking unsupported in the simulator")
 class TestLinker(CUDATestCase):
     @require_context
@@ -329,6 +341,9 @@ class TestLinker(CUDATestCase):
         local_mem_size = compiled_specialized.get_local_mem_per_thread()
         calc_size = np.dtype(np.float64).itemsize * LMEM_SIZE
         self.assertGreaterEqual(local_mem_size, calc_size)
+
+    def test_debug_kernel_with_lto(self):
+        cuda.jit("void(int32[::1])", debug=True, opt=False)(debuggable_kernel)
 
     @skip_if_nvjitlink_missing("nvJitLink not installed or new enough (>12.3)")
     def test_link_for_different_cc(self):
