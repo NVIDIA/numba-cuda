@@ -48,10 +48,6 @@ def typeof_impl(val, c):
     """
     Generic typeof() implementation.
     """
-    tp = _typeof_buffer(val, c)
-    if tp is not None:
-        return tp
-
     tp = getattr(val, "_numba_type_", None)
     if tp is not None:
         return tp
@@ -64,6 +60,10 @@ def typeof_impl(val, c):
         tp = _typeof_cuda_array_interface(cai, c)
         if tp is not None:
             return tp
+
+    tp = _typeof_buffer(val, c)
+    if tp is not None:
+        return tp
 
     # cffi is handled here as it does not expose a public base class
     # for exported functions or CompiledFFI instances.
