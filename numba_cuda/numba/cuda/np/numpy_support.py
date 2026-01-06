@@ -120,16 +120,11 @@ def from_dtype(dtype):
     elif getattr(dtype, "fields", None) is not None:
         return from_struct_dtype(dtype)
 
-    try:
-        return FROM_DTYPE[dtype]
-    except KeyError:
-        pass
+    result = FROM_DTYPE.get(dtype)
+    if result is not None:
+        return result
 
-    try:
-        char = dtype.char
-    except AttributeError:
-        pass
-    else:
+    if (char := getattr(dtype, "char", None)) is not None:
         if char in "SU":
             return _from_str_dtype(dtype)
         if char in "mM":
