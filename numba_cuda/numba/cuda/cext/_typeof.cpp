@@ -423,8 +423,21 @@ compute_fingerprint(string_writer_t *w, PyObject *val)
         Py_hash_t h;
         PyObject *item;
         Py_ssize_t pos = 0;
+        int rc;
+
+#if PY_MAJOR_VERSION >= 3 && PY_MINOR_VERSION >= 13
+        // needed when using _PySet_NextEntryRef
+        Py_BEGIN_CRITICAL_SECTION(val);
+#endif
         /* Only one item is considered, as in typeof.py */
-        if (!PySet_NextEntry(val, &pos, &item, &h)) {
+        rc = PySet_NextEntry(val, &pos, &item, &h);
+
+#if PY_MAJOR_VERSION >= 3 && PY_MINOR_VERSION >= 13
+        // needed when using _PySet_NextEntryRef
+        Py_END_CRITICAL_SECTION();
+#endif
+
+        if (!rc) {
             /* Empty set */
             PyErr_SetString(PyExc_ValueError,
                             "cannot compute fingerprint of empty set");
