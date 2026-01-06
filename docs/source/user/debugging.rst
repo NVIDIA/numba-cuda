@@ -111,7 +111,7 @@ The program is stopped on line 18, which is indicated by the yellow arrow to the
    :alt: Stopped at kernel entry
 
 Controlling Execution, Setting Breakpoints, and Inspecting Variables
----------------------------------------------------------------------
+--------------------------------------------------------------------
 
 After the program is stopped in the kernel, the user can use the buttons near the top center of the ``VSCode`` window to control program execution.
 From left to right these icons are: ``Continue`` / ``Step Over`` / ``Step Into`` / ``Step Out`` / ``Restart`` / ``Stop`` program execution.
@@ -304,12 +304,31 @@ Known Issues and Limitations
 ----------------------------
 
 Polymorphic Variables
-^^^^^^^^^^^^^^^^^^^^^
+---------------------
 
-Unlike statically typed languages such as C or C++, Python variables are inherently polymorphic in nature. Any assignment to the variable can change its type as well as changing its value. Polymorphic variables are handled by Numba CUDA by creating a union. This union is exposed to the debugger as a single variable with the different types being the different members of the union. With this beta release, the user will have to manually determine which member of the union is the current one based on the code context. This limitation will be addressed in a future release.
+The beta release has minimal support for polymorphic variables, which will be improved in a future release.
+
+Unlike statically typed languages such as C or C++, Python variables are inherently polymorphic in nature. Any assignment to the variable can change its type as well as changing its value. Polymorphic variables are handled by Numba CUDA by creating a union. This union is exposed to the debugger as a single variable with members for each of the different types the variable can be. With this beta release, the user will have to manually determine which member of the union is the current one based on the code context.
+
+From the cuda-gdb command line, the user can inspect the union member types by using the ``ptype`` command. In ``VSCode`` this information is available in
+the ``Variables`` window.
+
+.. code-block:: none
+
+    [Switching focus to CUDA kernel 0, grid 1, block (0,0,0), thread (0,0,0), device 0, sm 0, warp 0, lane 0]
+
+    CUDA thread hit application kernel entry function breakpoint, test_kernel_poly1<<<(1,1,1),(1,1,1)>>> (
+        gid_poly1_arg=9223372036854775807, size_poly1_arg=2147483647, results64=...) at polymorphism.py:10
+    10    gid_poly1 =  0x5a5a5a5a5a5a5a5a  # Should be type int64
+
+    (cuda-gdb) ptype gid_poly1
+    type = @local struct variant_wrapper_struct {
+        @local int64 _int64;
+        @local uint64 _uint64;
+    }
 
 CUDA GDB Pretty Printer Requirements
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+------------------------------------
 
 CUDA GDB supports extensions to the debugger written in Python. The Numba CUDA cuda-gdb pretty printer is such an extension. This is used to provide a more readable representation of Numba CUDA arrays in the debugger.
 
@@ -326,7 +345,7 @@ The Numba CUDA pretty printer extension is located in the ``numba-cuda/misc/gdb_
         ]
     }
 
-The ``CUDA GDB`` pretty printer optionallyuses the Python ``numpy`` package to inspect and print numpy arrays. The ``launch.json`` file sets up the environment necessary for debugging. However, the pretty printer runs inside of cuda-gdb and not as part of the Python program being debugged. This means that the ``numpy`` package must be installed in both:
+The ``CUDA GDB`` pretty printer optionally uses the Python ``numpy`` package to inspect and print numpy arrays. The ``launch.json`` file sets up the environment necessary for debugging. However, the pretty printer runs inside of cuda-gdb and not as part of the Python program being debugged. This means that the ``numpy`` package must be installed in both:
 
 * The Python environment where ``VSCode`` was started in (required by the Numba CUDA ``CUDA GDB`` pretty printer).
 * The Python environment where the Numba CUDA program is being debugged (required by Numba CUDA).
@@ -348,7 +367,7 @@ Automatic loading of the pretty printer extension is done by the following in th
     }
 
 Debugging Host Python Code
-^^^^^^^^^^^^^^^^^^^^^^^^^^
+--------------------------
 
 Debugging host Python code using the ``debugpy`` package is not supported when also debugging with ``CUDA GDB``. Numba CUDA programs are executed within the Python interpreter, which is the program that ``CUDA GDB`` controls during the debugging session. The ``debugpy`` python module also executes in the Python interpreter, which means that it requires that the interpreter be actively running in order for the VSCode Python debugger to communicate with it. However, ``CUDA GDB`` will stop both the CUDA host application and any code executing on the GPU while debugging, which prevents the ``debugpy`` package from running.
 
