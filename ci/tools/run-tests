@@ -2,7 +2,7 @@
 
 # SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 #
-# SPDX-License-Identifier: Apache-2.0
+# SPDX-License-Identifier: BSD-2-Clause
 
 # A utility script to install the correct packages and run the tests.
 
