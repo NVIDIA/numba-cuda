@@ -23,7 +23,6 @@
             // Break on kernel launch - we have explicit breakpoint() calls in the code,
             // but this is a convenient shortcut to start the program running and stop on the first
             // source line of any launched kernel.
-
             // Setting "breakOnLaunch" to true in the launch.json file is equivalent to
             // running "set cuda break_on_launch application" from the cuda-gdb command line.
             "breakOnLaunch": true,
@@ -45,9 +44,8 @@
                     // Add the path where to find the Numba CUDA cuda-gdb pretty-printer extension
                     // to the PYTHONPATH environment variable. This is usually ``numba-cuda/misc`` and
                     // is required for proper array formatting in the debugger.
-                    // By default we add the workspace folder to the PYTHONPATH environment variable.
                     "name": "PYTHONPATH",
-                    "value": "${workspaceFolder}:${env:PYTHONPATH}"
+                    "value": "${workspaceFolder}/../../misc:${env:PYTHONPATH}"
                 },
                 {
                     // Don't buffer stdout and stderr - we want to see the output immediately.
