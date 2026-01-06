@@ -998,6 +998,7 @@ class TestCudaDebugInfo(CUDATestCase):
             # on purpose
             x[0] = 1
 
+        # fmt: off
         # Multi-line decorator without comment between def and first statement
         @cuda.jit(
             "void(int32[:])",
@@ -1018,6 +1019,7 @@ class TestCudaDebugInfo(CUDATestCase):
             # and spans multiple lines
             # on purpose
             x[0] = 1
+        # fmt: on
 
         kernels = [
             kernel_single_line_decorator_without_comment,
@@ -1033,7 +1035,7 @@ class TestCudaDebugInfo(CUDATestCase):
 
                 # Find the actual 'def' line offset within the source
                 for def_offset, line in enumerate(source_lines):
-                    if line.strip().startswith('def '):
+                    if line.strip().startswith("def "):
                         break
                 actual_def_lineno = start_lineno + def_offset
 
