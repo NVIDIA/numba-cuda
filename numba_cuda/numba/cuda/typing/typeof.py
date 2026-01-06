@@ -325,7 +325,7 @@ def _typeof_cuda_array_interface(val, c):
     strides = val.get("strides")
 
     # Determine layout
-    if ndim == 0:
+    if not ndim:
         layout = "C"
     elif strides is None:
         layout = "C"
