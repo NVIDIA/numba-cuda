@@ -1628,7 +1628,7 @@ class CUDADispatcher(serialize.ReduceMixin, _MemoMixin, _DispatcherBase):
         # the CUDA Array Interface.
         try:
             return typeof(val, Purpose.argument)
-        except ValueError:
+        except (errors.NumbaValueError, ValueError):
             if (
                 interface := getattr(val, "__cuda_array_interface__")
             ) is not None:
