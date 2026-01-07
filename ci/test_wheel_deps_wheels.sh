@@ -36,10 +36,17 @@ pushd "${RAPIDS_TESTS_DIR}"
 rapids-logger "Show Numba system info"
 python -m numba --sysinfo
 
-# remove cuda-nvvm-12-5 leaving libnvvm.so from nvidia-cuda-nvcc-cu12 only
 apt-get update
-apt remove --purge `dpkg --get-selections | grep cuda-nvvm | awk '{print $1}'` -y
-apt remove --purge `dpkg --get-selections | grep cuda-nvrtc | awk '{print $1}'` -y
+nvvm_pkgs=$(dpkg --get-selections | awk '/nvvm/ {print $1}')
+nvrtc_pkgs=$(dpkg --get-selections | awk '/nvrtc/ {print $1}')
+
+if [[ -z "$nvvm_pkgs" || -z "$nvrtc_pkgs" ]]; then
+    echo "Expected both nvvm and nvrtc packages to be present, but at least one was missing"
+    exit 1
+fi
+
+apt remove --purge -y $nvvm_pkgs
+apt remove --purge -y $nvrtc_pkgs
 
 rapids-logger "Run Tests"
 NUMBA_CUDA_TEST_BIN_DIR=$NUMBA_CUDA_TEST_BIN_DIR python -m pytest --pyargs numba.cuda.tests -v

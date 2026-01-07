@@ -12,6 +12,7 @@ from numba.core.config import IS_WIN32
 from numba.misc.findlib import find_lib
 from numba import config
 import ctypes
+import importlib
 
 _env_path_tuple = namedtuple("_env_path_tuple", ["by", "info"])
 
@@ -113,25 +114,53 @@ def _get_nvrtc_path_decision():
     return _find_first_valid_lazy(options)
 
 
+def _get_distribution(distribution_name):
+    """Get the distribution path using importlib.metadata, returning None if not found."""
+    try:
+        dist = importlib.metadata.distribution(distribution_name)
+        return dist
+    except importlib.metadata.PackageNotFoundError:
+        return None
+
+
 def _get_nvvm_wheel():
-    platform_map = {
-        "linux": ("lib64", "libnvvm.so"),
-        "win32": ("bin", "nvvm64_40_0.dll"),
-    }
+    dso_path = None
+    # CUDA 12
+    nvcc_distribution = _get_distribution("nvidia-cuda-nvcc-cu12")
+    if nvcc_distribution is not None:
+        site_packages_path = nvcc_distribution.locate_file("")
+        nvvm_lib_dir = os.path.join(
+            site_packages_path,
+            "nvidia",
+            "cuda_nvcc",
+            "nvvm",
+            "bin" if IS_WIN32 else "lib64",
+        )
+        dso_path = os.path.join(
+            nvvm_lib_dir, "nvvm64_40_0.dll" if IS_WIN32 else "libnvvm.so"
+        )
 
-    for plat, (dso_dir, dso_path) in platform_map.items():
-        if sys.platform.startswith(plat):
-            break
-    else:
-        raise NotImplementedError("Unsupported platform")
+    # CUDA 13
+    if dso_path is None:
+        nvcc_distribution = _get_distribution("nvidia-nvvm")
+        if (
+            nvcc_distribution is not None
+            and nvcc_distribution.version.startswith("13.")
+        ):
+            site_packages_path = nvcc_distribution.locate_file("")
+            nvvm_lib_dir = os.path.join(
+                site_packages_path,
+                "nvidia",
+                "cu13",
+                "bin" if IS_WIN32 else "lib",
+                "x86_64" if IS_WIN32 else "",
+            )
+            dso_path = os.path.join(
+                nvvm_lib_dir, "nvvm64_40_0.dll" if IS_WIN32 else "libnvvm.so.4"
+            )
 
-    site_paths = [site.getusersitepackages()] + site.getsitepackages()
-
-    for sp in filter(None, site_paths):
-        nvvm_path = Path(sp, "nvidia", "cuda_nvcc", "nvvm", dso_dir, dso_path)
-        if nvvm_path.exists():
-            return str(nvvm_path.parent)
-
+    if dso_path and os.path.isfile(dso_path):
+        return dso_path
     return None
 
 
@@ -199,11 +228,10 @@ def _get_nvrtc_wheel():
         return Path(dso_path)
 
 
-def _get_libdevice_paths():
-    by, libdir = _get_libdevice_path_decision()
-    if not libdir:
+def _get_libdevice_path():
+    by, out = _get_libdevice_path_decision()
+    if not out:
         return _env_path_tuple(by, None)
-    out = os.path.join(libdir, "libdevice.10.bc")
     return _env_path_tuple(by, out)
 
 
@@ -366,25 +394,10 @@ def get_cuda_home(*subdirs):
 
 
 def _get_nvvm_path():
-    by, path = _get_nvvm_path_decision()
-
-    if by == "NVIDIA NVCC Wheel":
-        platform_map = {
-            "linux": "libnvvm.so",
-            "win32": "nvvm64_40_0.dll",
-        }
-
-        for plat, dso_name in platform_map.items():
-            if sys.platform.startswith(plat):
-                break
-        else:
-            raise NotImplementedError("Unsupported platform")
-
-        path = os.path.join(path, dso_name)
-    else:
-        candidates = find_lib("nvvm", path)
-        path = max(candidates) if candidates else None
-    return _env_path_tuple(by, path)
+    by, out = _get_nvvm_path_decision()
+    if not out:
+        return _env_path_tuple(by, None)
+    return _env_path_tuple(by, out)
 
 
 def _get_nvrtc_path():
@@ -418,7 +431,7 @@ def get_cuda_paths():
         d = {
             "nvvm": _get_nvvm_path(),
             "nvrtc": _get_nvrtc_path(),
-            "libdevice": _get_libdevice_paths(),
+            "libdevice": _get_libdevice_path(),
             "cudalib_dir": _get_cudalib_dir(),
             "static_cudalib_dir": _get_static_cudalib_dir(),
             "include_dir": _get_include_dir(),
@@ -440,13 +453,39 @@ def get_debian_pkg_libdevice():
 
 
 def get_libdevice_wheel():
-    nvvm_path = _get_nvvm_wheel()
-    if nvvm_path is None:
-        return None
-    nvvm_path = Path(nvvm_path)
-    libdevice_path = nvvm_path.parent / "libdevice"
+    libdevice_path = None
+    # CUDA 12
+    nvvm_distribution = _get_distribution("nvidia-cuda-nvcc-cu12")
+    if nvvm_distribution is not None:
+        site_packages_path = nvvm_distribution.locate_file("")
+        libdevice_path = os.path.join(
+            site_packages_path,
+            "nvidia",
+            "cuda_nvcc",
+            "nvvm",
+            "libdevice",
+            "libdevice.10.bc",
+        )
 
-    return str(libdevice_path)
+    # CUDA 13
+    if libdevice_path is None:
+        nvvm_distribution = _get_distribution("nvidia-nvvm")
+        if (
+            nvvm_distribution is not None
+            and nvvm_distribution.version.startswith("13.")
+        ):
+            site_packages_path = nvvm_distribution.locate_file("")
+            libdevice_path = os.path.join(
+                site_packages_path,
+                "nvidia",
+                "cu13",
+                "nvvm",
+                "libdevice",
+                "libdevice.10.bc",
+            )
+    if libdevice_path and os.path.isfile(libdevice_path):
+        return libdevice_path
+    return None
 
 
 def get_current_cuda_target_name():
