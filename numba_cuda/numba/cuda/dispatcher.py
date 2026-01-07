@@ -858,7 +858,7 @@ class _DispatcherBase(_dispatcher.Dispatcher):
             for cres in overloads.values():
                 try:
                     targetctx.remove_user_function(cres.entry_point)
-                except KeyError:
+                except KeyError:  # noqa: PERF203
                     pass
 
         return finalizer
@@ -2104,7 +2104,7 @@ class CUDADispatcher(serialize.ReduceMixin, _MemoMixin, _DispatcherBase):
         if file is None:
             file = sys.stdout
 
-        for _, defn in self.overloads.items():
+        for defn in self.overloads.values():
             defn.inspect_types(file=file)
 
     @classmethod

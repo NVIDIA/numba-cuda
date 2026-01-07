@@ -69,8 +69,7 @@ def libdevice_implement_multiple_returns(func, retty, prototype_args):
         tuple_args = []
         if retty != types.void:
             tuple_args.append(ret)
-        for arg in virtual_args:
-            tuple_args.append(builder.load(arg))
+        tuple_args.extend(map(builder.load, virtual_args))
 
         if isinstance(nb_retty, types.UniTuple):
             return cgutils.pack_array(builder, tuple_args)
