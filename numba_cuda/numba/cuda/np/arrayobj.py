@@ -1564,12 +1564,8 @@ def _numpy_broadcast_to(typingctx, array, shape):
         )
 
         # Hack to get np.broadcast_to to return a read-only array
-        setattr(
-            dest,
-            "parent",
-            Constant(
-                context.get_value_type(dest._datamodel.get_type("parent")), None
-            ),
+        dest.parent = Constant(
+            context.get_value_type(dest._datamodel.get_type("parent")), None
         )
 
         res = dest._getvalue()

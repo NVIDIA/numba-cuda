@@ -1270,11 +1270,9 @@ def unbox_numpy_random_bitgenerator(typ, obj, c):
         ):
             handle_failure()
 
-        setattr(
-            struct_ptr,
-            "state_address",
-            c.unbox(types.uintp, interface_state_address).value,
-        )
+        struct_ptr.state_address = c.unbox(
+            types.uintp, interface_state_address
+        ).value
 
         # Look up the "state" member and wire it into the struct
         interface_state = object_getattr_safely(ctypes_binding, "state")
@@ -1286,11 +1284,7 @@ def unbox_numpy_random_bitgenerator(typ, obj, c):
             c.builder, stack, interface_state_value
         ):
             handle_failure()
-        setattr(
-            struct_ptr,
-            "state",
-            c.unbox(types.uintp, interface_state_value).value,
-        )
+        struct_ptr.state = c.unbox(types.uintp, interface_state_value).value
 
         # Want to store callable function pointers to these CFunctionTypes, so
         # import ctypes and use it to cast the CFunctionTypes to c_void_p and
