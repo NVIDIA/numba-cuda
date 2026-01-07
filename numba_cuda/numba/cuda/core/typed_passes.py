@@ -12,7 +12,7 @@ try:
     from llvmlite.binding import passmanagers
 except ImportError:
     # llvmlite >= 0.45
-    pass
+    from llvmlite.binding import newpassmanagers as passmanagers
 
 
 @contextmanager
