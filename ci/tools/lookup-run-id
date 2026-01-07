@@ -2,7 +2,7 @@
 
 # SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 #
-# SPDX-License-Identifier: Apache-2.0
+# SPDX-License-Identifier: BSD-2-Clause
 
 # A utility script to find the GitHub Actions workflow run ID for a given git tag.
 # This script looks for the CI workflow run that corresponds to the commit of the given tag.
