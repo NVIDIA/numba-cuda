@@ -1464,9 +1464,9 @@ https://numba.readthedocs.io/en/stable/user/troubleshoot.html#my-code-has-an-unt
                         interped = msg % (name, atype, loc.strformat())
                     return interped
 
-                problem_str = []
-                for xtype in rettypes:
-                    problem_str.append(_termcolor.errmsg(check_type(xtype)))
+                problem_str = [
+                    _termcolor.errmsg(check_type(xtype)) for xtype in rettypes
+                ]
 
                 raise TypingError(
                     "Can't unify return type from the "

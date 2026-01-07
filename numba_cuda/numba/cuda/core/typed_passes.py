@@ -164,7 +164,7 @@ class BaseTypeInference(FunctionPass):
                 retstmts = []
                 caststmts = {}
                 argvars = set()
-                for bid, blk in interp.blocks.items():
+                for blk in interp.blocks.values():
                     for inst in blk.body:
                         if isinstance(inst, ir.return_types):
                             retstmts.append(inst.value.name)
