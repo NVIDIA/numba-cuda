@@ -12,6 +12,9 @@ python = ["3.10.*", "3.11.*", "3.12.*", "3.13.*", "3.14.*"]
 # source
 numba-cuda = { path = "." }
 
+[feature.ruff.dependencies]
+ruff = ">=0.14.10"
+
 [feature.cu.dependencies]
 cuda-nvcc = "*"
 cuda-nvcc-impl = "*"
@@ -106,6 +109,7 @@ nvidia-sphinx-theme = "*"
 
 [environments]
 default = { features = ["cu-13-1", "test", "cu", "cu-13", "cu-rt", "nvvm", "py314"], solve-group = "default" }
+dev = { features = ["ruff"], no-default-feature = true }
 bench-against = { features = ["test"], no-default-feature = true }
 # CUDA 12
 cu-12-0-py310 = { features = [
@@ -252,9 +256,10 @@ benchcmp = { cmd = [
     "--benchmark-group-by=name",
     "--benchmark-compare",
 ] }
-
-[target.linux.tasks.bench-against]
-cmd = ["python", "$PIXI_PROJECT_ROOT/scripts/bench-against.py"]
+bench-against = { cmd = [
+    "python",
+    "$PIXI_PROJECT_ROOT/scripts/bench-against.py",
+] }
 
 [target.linux.tasks.build-docs]
 cmd = ["make", "-C", "$PIXI_PROJECT_ROOT/docs", "html"]
