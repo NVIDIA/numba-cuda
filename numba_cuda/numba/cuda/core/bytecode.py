@@ -182,9 +182,10 @@ OPCODE_NOP = dis.opname.index("NOP")
 if PYVERSION in ((3, 13), (3, 14)):
 
     def _unpack_opargs(code):
-        buf = []
-        for i, start_offset, op, arg in dis._unpack_opargs(code):
-            buf.append((start_offset, op, arg))
+        buf = [
+            (start_offset, op, arg)
+            for _, start_offset, op, arg in dis._unpack_opargs(code)
+        ]
         for i, (start_offset, op, arg) in enumerate(buf):
             if i + 1 < len(buf):
                 next_offset = buf[i + 1][0]

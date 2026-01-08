@@ -928,11 +928,11 @@ def _generic_array(
 
     # Compute strides
     laststride = itemsize
-    rstrides = []
-    for i, lastsize in enumerate(reversed(shape)):
-        rstrides.append(laststride)
+    strides = []
+    for lastsize in reversed(shape):
+        strides.append(laststride)
         laststride *= lastsize
-    strides = [s for s in reversed(rstrides)]
+    strides.reverse()
     kstrides = [context.get_constant(types.intp, s) for s in strides]
 
     # Compute shape

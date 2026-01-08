@@ -133,7 +133,7 @@ class EnvironmentManager(object):
         # All constants are frozen inside the environment
         if isinstance(const, str):
             const = sys.intern(const)
-        for index, val in enumerate(self.env.consts):
+        for val in self.env.consts:
             if val is const:
                 break
         else:

@@ -159,10 +159,9 @@ class Loc(object):
         if lines and use_line > 0:
 
             def count_spaces(string):
-                spaces = 0
-                for x in itertools.takewhile(str.isspace, str(string)):
-                    spaces += 1
-                return spaces
+                return sum(
+                    1 for _ in itertools.takewhile(str.isspace, str(string))
+                )
 
             # A few places in the code still use no `loc` or default to line 1
             # this is often in places where exceptions are used for the purposes

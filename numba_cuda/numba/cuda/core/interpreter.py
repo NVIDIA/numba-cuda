@@ -1493,7 +1493,7 @@ class Interpreter(object):
                 inc_bs = self.dfa.infos[inc].blockstack
 
                 # find first diff in the blockstack
-                for i, (x, y) in enumerate(zip(cur_bs, inc_bs)):
+                for i, (x, y) in enumerate(zip(cur_bs, inc_bs)):  # noqa: B007
                     if x != y:
                         break
                 else:

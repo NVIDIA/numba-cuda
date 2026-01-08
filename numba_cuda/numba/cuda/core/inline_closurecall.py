@@ -137,7 +137,7 @@ class InlineClosureCallPass(object):
             sized_loops = [(k, len(loops[k].body)) for k in loops.keys()]
             visited = []
             # We go over all loops, bigger loops first (outer first)
-            for k, s in sorted(
+            for k, _ in sorted(
                 sized_loops, key=lambda tup: tup[1], reverse=True
             ):
                 visited.append(k)

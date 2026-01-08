@@ -422,7 +422,7 @@ class BenchmarkResult(object):
 def format_time(tm):
     units = "s ms us ns ps".split()
     base = 1
-    for unit in units[:-1]:
+    for _ in units[:-1]:
         if tm >= base:
             break
         base /= 1000

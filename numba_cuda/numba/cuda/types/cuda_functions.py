@@ -145,7 +145,7 @@ class _ResolutionFailures(object):
             source_kind = src_info.get("kind", "Unknown template")
             return source_name, source_file, source_lines, source_kind
 
-        for i, (k, err_list) in enumerate(self._failures.items()):
+        for err_list in self._failures.values():
             err = err_list[0]
             nduplicates = len(err_list)
             template, error = err.template, err.error

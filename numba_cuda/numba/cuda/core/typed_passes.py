@@ -821,7 +821,7 @@ class PreLowerStripPhis(FunctionPass):
         exporters = defaultdict(list)
         phis = set()
         # Find all variables that needs to be exported
-        for label, block in func_ir.blocks.items():
+        for block in func_ir.blocks.values():
             for assign in block.find_insts(ir.assign_types):
                 if isinstance(assign.value, ir.expr_types):
                     if assign.value.op == "phi":

@@ -230,7 +230,7 @@ class PassManager(object):
         assert self.passes
         self._validate_pass(pass_cls)
         self._validate_pass(location)
-        for idx, (x, _) in enumerate(self.passes):
+        for idx, (x, _) in enumerate(self.passes):  # noqa: B007
             if x == location:
                 break
         else:

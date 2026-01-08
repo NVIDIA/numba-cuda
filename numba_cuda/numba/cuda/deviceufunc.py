@@ -128,10 +128,10 @@ def _multi_broadcast(*shapelist):
     result = shapelist[0]
     others = shapelist[1:]
     try:
-        for i, each in enumerate(others, start=1):
+        for i, each in enumerate(others, start=1):  # noqa: B007
             result = _pairwise_broadcast(result, each)
     except ValueError:
-        raise ValueError("failed to broadcast argument #{0}".format(i))
+        raise ValueError("failed to broadcast argument #{i:d}")
     else:
         return result
 

@@ -824,7 +824,7 @@ def kernel_fixup(kernel, debug):
     #    ret void
 
     for block in kernel.blocks:
-        for i, inst in enumerate(block.instructions):
+        for inst in block.instructions:
             if isinstance(inst, ir.Ret):
                 old_ret = block.instructions.pop()
                 block.terminator = None

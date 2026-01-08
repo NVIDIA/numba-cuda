@@ -452,7 +452,7 @@ def basic_indexing(
         if idxty is types.ellipsis:
             # Fill up missing dimensions at the middle
             n_missing = aryty.ndim - len(indices) + 1 + num_newaxes
-            for i in range(n_missing):
+            for _ in range(n_missing):
                 output_indices.append(zero)
                 output_shapes.append(shapes[ax])
                 output_strides.append(strides[ax])
@@ -1084,7 +1084,7 @@ class FancyIndexer(object):
             if idxty is types.ellipsis:
                 # Fill up missing dimensions at the middle
                 n_missing = aryty.ndim - len(indices) + 1 + num_newaxes
-                for i in range(n_missing):
+                for _ in range(n_missing):
                     indexer = EntireIndexer(context, builder, aryty, ary, ax)
                     indexers.append(indexer)
                     ax += 1
@@ -1769,7 +1769,7 @@ def numpy_broadcast_arrays(*args):
 
     # number of dimensions
     m = 0
-    for idx, arg in enumerate(args):
+    for arg in args:
         if isinstance(arg, types.ArrayCompatible):
             m = max(m, arg.ndim)
         elif isinstance(arg, (types.Number, types.Boolean, types.BaseTuple)):
@@ -2502,7 +2502,7 @@ def numpy_resize(a, new_shape):
 
         repeats = -(-new_size // a.size)  # ceil division
         res = a
-        for i in range(repeats - 1):
+        for _ in range(repeats - 1):
             res = np.concatenate((res, a))
         res = res[:new_size]
 
