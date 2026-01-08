@@ -23,7 +23,7 @@ def jit(
     device=False,
     inline="never",
     forceinline=False,
-    link=[],
+    link=(),
     debug=None,
     opt=None,
     lineinfo=False,

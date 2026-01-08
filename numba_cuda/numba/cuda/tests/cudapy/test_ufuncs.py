@@ -111,8 +111,8 @@ class BasicUFuncTest(BaseUFuncTest):
     def basic_ufunc_test(
         self,
         ufunc,
-        skip_inputs=[],
-        additional_inputs=[],
+        skip_inputs=(),
+        additional_inputs=(),
         int_output_type=None,
         float_output_type=None,
         kinds="ifc",
