@@ -105,6 +105,7 @@ def get_ltoir(source, name, arch):
         "-dlto",
         "-rdc",
         "true",
+        "-std=c++17",
         *cuda_include_flags,
     ]
     options = [o.encode() for o in options]

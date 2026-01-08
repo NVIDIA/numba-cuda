@@ -122,9 +122,10 @@ def polyutils_as_series(alist, trim=True):
 
     def impl(alist, trim=True):
         if tuple_input:
-            arrays = []
-            for item in literal_unroll(alist):
-                arrays.append(np.atleast_1d(np.asarray(item)).astype(res_dtype))
+            arrays = [
+                np.atleast_1d(np.asarray(item)).astype(res_dtype)
+                for item in literal_unroll(alist)
+            ]
 
         elif list_input:
             arrays = [

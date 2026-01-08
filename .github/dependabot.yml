@@ -1,22 +1,21 @@
-# SPDX-FileCopyrightText: Copyright (c) 2025-2025 NVIDIA CORPORATION & AFFILIATES.
-#                         All rights reserved.
-# SPDX-License-Identifier: Apache-2.0
----
+# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+#
+# SPDX-License-Identifier: BSD-2-Clause
+
 version: 2
 updates:
-
-  - package-ecosystem: "github-actions"
-    directory: "/"
+  - package-ecosystem: github-actions
+    directory: /
     schedule:
-      # Check for updates to GitHub Actions every month
       interval: "monthly"
-    labels:
-      - CI
+      time: "09:00"
+      timezone: "America/Los_Angeles"
 
+    # Keep churn down: only one open PR from this ecosystem at a time
     open-pull-requests-limit: 1
 
     groups:
       actions-monthly:
         applies-to: version-updates
         patterns: ["*"]
-        update-types: ["minor", "patch"]
+        update-types: ["major", "minor", "patch"]
