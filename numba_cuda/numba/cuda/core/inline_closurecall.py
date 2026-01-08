@@ -1398,7 +1398,7 @@ def _inline_arraycall(
 
 
 def _find_unsafe_empty_inferred(func_ir, expr):
-    unsafe_empty_inferred
+    unsafe_empty_inferred  # noqa: B018
     require(isinstance(expr, ir.expr_types) and expr.op == "call")
     callee = expr.func
     callee_def = get_definition(func_ir, callee)

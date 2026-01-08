@@ -189,9 +189,7 @@ class PythonAPI(object):
 
         self.module = builder.basic_block.function.module
         # A unique mapping of serialized objects in this module
-        try:
-            self.module.__serialized
-        except AttributeError:
+        if not hasattr(self.module, "__serialized"):
             self.module.__serialized = {}
 
         # Initialize types

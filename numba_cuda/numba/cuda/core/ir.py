@@ -1546,15 +1546,15 @@ class FunctionIR(object):
                         msg.append("Other block contains more statements")
 
                     # find the indexes where they don't match
-                    tmp = []
+                    tmp = set()
                     for idx, stmts in enumerate(
                         zip(block.body, other_blk.body)
                     ):
                         b_s, o_s = stmts
                         if b_s != o_s:
-                            tmp.append(idx)
+                            tmp.add(idx)
 
-                    def get_pad(ablock, l):
+                    def get_pad(ablock, l, tmp=tmp):
                         pointer = "-> "
                         sp = len(pointer) * " "
                         pad = []

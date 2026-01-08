@@ -101,9 +101,8 @@ class CompilerPass(metaclass=ABCMeta):
         """
         return False
 
-    def get_analysis_usage(self, AU):
+    def get_analysis_usage(self, AU):  # noqa: B027
         """Override to set analysis usage"""
-        pass
 
     def get_analysis(self, pass_name):
         """
