@@ -48,14 +48,8 @@ test = [
     "ml_dtypes",
     "statistics",
 ]
-test-cu12 = [
-    "cuda-toolkit[curand]==12.*",
-    { include-group = "test" }
-]
-test-cu13 = [
-    "cuda-toolkit[curand]==13.*",
-    { include-group = "test" }
-]
+test-cu12 = ["cuda-toolkit[curand]==12.*", { include-group = "test" }]
+test-cu13 = ["cuda-toolkit[curand]==13.*", { include-group = "test" }]
 
 [project.urls]
 Homepage = "https://nvidia.github.io/numba-cuda/"
@@ -100,8 +94,9 @@ ignore = [
     "B028",
     "B904",
     "B905",
+    "B019",
 ]
-select = ["B007"]
+select = ["B"]
 extend-select = ["PERF"]
 fixable = ["ALL"]
 
