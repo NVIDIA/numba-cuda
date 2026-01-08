@@ -13,9 +13,9 @@ python -m pip install \
     "${package}[test]" \
     "cuda-python==${CUDA_VER_MAJOR_MINOR%.*}.*" \
     "cuda-core==0.3.*" \
+    "numba<0.62.0" \
     pytest-cov \
     coverage \
-    numba<0.62.0 \
 
 GET_TEST_BINARY_DIR="
 import numba_cuda
