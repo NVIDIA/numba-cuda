@@ -97,7 +97,11 @@ ignore = [
     "E731",
     # Ambiguous variable names
     "E741",
+    "B028",
+    "B904",
+    "B905",
 ]
+select = ["B007"]
 extend-select = ["PERF"]
 fixable = ["ALL"]
 
@@ -117,7 +121,7 @@ exclude = [
 
 [tool.ruff.lint.per-file-ignores]
 # Slightly long line in the standard version file
-"**/test*.py" = ["PERF"]
+"**/test*.py" = ["PERF", "B007", "B018", "B023"]
 "**/simulator/*" = ["PERF"]
 "numba_cuda/_version.py" = ["E501"]
 # "Unused" imports / potentially undefined names in init files
