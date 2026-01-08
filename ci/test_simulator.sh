@@ -15,6 +15,7 @@ DEPENDENCIES=(
     "cffi"
     "python=${RAPIDS_PY_VERSION}"
     "numba-cuda"
+    "numba<0.62.0"
 )
 rapids-mamba-retry create \
     -n test \

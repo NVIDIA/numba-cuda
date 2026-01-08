@@ -12,6 +12,7 @@ echo "Package path: $package"
 python -m pip install \
     "${package}[test]" \
     cuda-python \
+    "numba<0.62.0" \
 
 # FIXME: Find a way to build the tests that does not depend on the CUDA Python bindings
 #rapids-logger "Build tests"

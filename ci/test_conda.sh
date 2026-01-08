@@ -42,7 +42,7 @@ DEPENDENCIES=(
 if [ "${RAPIDS_DEPENDENCIES:-}" = "oldest" ]; then
     DEPENDENCIES+=("numba==0.60.0")
 else
-    DEPENDENCIES+=("numba<0.63.0")
+    DEPENDENCIES+=("numba<0.62.0")
 fi
 
 rapids-mamba-retry create \
