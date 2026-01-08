@@ -6,13 +6,7 @@ import warnings
 from contextlib import contextmanager
 from numba.core import errors, types, funcdesc
 from numba.core.compiler_machinery import LoweringPass
-
-try:
-    # llvmlite < 0.45
-    from llvmlite.binding import passmanagers
-except ImportError:
-    # llvmlite >= 0.45
-    from llvmlite.binding import newpassmanagers as passmanagers
+from llvmlite import binding as llvm
 
 
 @contextmanager
@@ -77,7 +71,7 @@ class BaseNativeLowering(abc.ABC, LoweringPass):
         calltypes = state.calltypes
         flags = state.flags
         metadata = state.metadata
-        pre_stats = passmanagers.dump_refprune_stats()
+        pre_stats = llvm.passmanagers.dump_refprune_stats()
 
         msg = "Function %s failed at nopython mode lowering" % (
             state.func_id.func_name,
@@ -140,7 +134,7 @@ class BaseNativeLowering(abc.ABC, LoweringPass):
                 )
 
             # capture pruning stats
-            post_stats = passmanagers.dump_refprune_stats()
+            post_stats = llvm.passmanagers.dump_refprune_stats()
             metadata["prune_stats"] = post_stats - pre_stats
 
             # Save the LLVM pass timings

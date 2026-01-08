@@ -18,7 +18,6 @@ import functools
 import os
 import threading
 import warnings
-from cuda.bindings import nvrtc as bindings_nvrtc
 
 
 NVRTC_EXTRA_SEARCH_PATHS = _readenv(
@@ -54,14 +53,6 @@ class NvrtcResult(IntEnum):
 
 
 _nvrtc_lock = threading.Lock()
-
-
-@functools.cache
-def _get_nvrtc_version():
-    retcode, major, minor = bindings_nvrtc.nvrtcVersion()
-    if retcode != bindings_nvrtc.nvrtcResult.NVRTC_SUCCESS:
-        raise RuntimeError(f"{retcode.name} when calling nvrtcVersion()")
-    return (major, minor)
 
 
 class NvrtcProgram:
