@@ -17600,7 +17600,7 @@ packages:
   timestamp: 1765466860567
 - conda: .
   name: numba-cuda
-  version: 0.22.1
+  version: 0.23.0
   build: py310h04c9772_0
   subdir: linux-64
   variants:
@@ -17620,7 +17620,7 @@ packages:
   license: BSD-2-Clause
 - conda: .
   name: numba-cuda
-  version: 0.22.1
+  version: 0.23.0
   build: py310h3ca6f64_0
   subdir: linux-aarch64
   variants:
@@ -17640,7 +17640,7 @@ packages:
   license: BSD-2-Clause
 - conda: .
   name: numba-cuda
-  version: 0.22.1
+  version: 0.23.0
   build: py310h5d23e43_0
   subdir: win-64
   variants:
@@ -17660,7 +17660,7 @@ packages:
   license: BSD-2-Clause
 - conda: .
   name: numba-cuda
-  version: 0.22.1
+  version: 0.23.0
   build: py311h2894be0_0
   subdir: linux-aarch64
   variants:
@@ -17680,7 +17680,7 @@ packages:
   license: BSD-2-Clause
 - conda: .
   name: numba-cuda
-  version: 0.22.1
+  version: 0.23.0
   build: py311hb9e802a_0
   subdir: win-64
   variants:
@@ -17700,7 +17700,7 @@ packages:
   license: BSD-2-Clause
 - conda: .
   name: numba-cuda
-  version: 0.22.1
+  version: 0.23.0
   build: py311he8c1319_0
   subdir: linux-64
   variants:
@@ -17720,7 +17720,7 @@ packages:
   license: BSD-2-Clause
 - conda: .
   name: numba-cuda
-  version: 0.22.1
+  version: 0.23.0
   build: py312h3eebbd5_0
   subdir: linux-64
   variants:
@@ -17740,7 +17740,7 @@ packages:
   license: BSD-2-Clause
 - conda: .
   name: numba-cuda
-  version: 0.22.1
+  version: 0.23.0
   build: py312h8e85db0_0
   subdir: linux-aarch64
   variants:
@@ -17760,7 +17760,7 @@ packages:
   license: BSD-2-Clause
 - conda: .
   name: numba-cuda
-  version: 0.22.1
+  version: 0.23.0
   build: py312ha067a5a_0
   subdir: win-64
   variants:
@@ -17780,7 +17780,7 @@ packages:
   license: BSD-2-Clause
 - conda: .
   name: numba-cuda
-  version: 0.22.1
+  version: 0.23.0
   build: py313h66129c8_0
   subdir: linux-aarch64
   variants:
@@ -17800,7 +17800,7 @@ packages:
   license: BSD-2-Clause
 - conda: .
   name: numba-cuda
-  version: 0.22.1
+  version: 0.23.0
   build: py313he80dd91_0
   subdir: win-64
   variants:
@@ -17820,7 +17820,7 @@ packages:
   license: BSD-2-Clause
 - conda: .
   name: numba-cuda
-  version: 0.22.1
+  version: 0.23.0
   build: py313hf75ce08_0
   subdir: linux-64
   variants:
@@ -17840,7 +17840,7 @@ packages:
   license: BSD-2-Clause
 - conda: .
   name: numba-cuda
-  version: 0.22.1
+  version: 0.23.0
   build: py314h59f3c06_0
   subdir: linux-64
   variants:
@@ -17860,7 +17860,7 @@ packages:
   license: BSD-2-Clause
 - conda: .
   name: numba-cuda
-  version: 0.22.1
+  version: 0.23.0
   build: py314h625260f_0
   subdir: win-64
   variants:
@@ -17880,7 +17880,7 @@ packages:
   license: BSD-2-Clause
 - conda: .
   name: numba-cuda
-  version: 0.22.1
+  version: 0.23.0
   build: py314ha479ada_0
   subdir: linux-aarch64
   variants:
