@@ -36,6 +36,8 @@ def _verify_cc_tuple(cc):
 
     if len(cc) == 3:
         cc, arch = (cc[0], cc[1]), cc[2]
+    else:
+        arch = ""
 
     if arch not in ("", "a", "f"):
         raise ValueError(
