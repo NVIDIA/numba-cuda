@@ -334,8 +334,6 @@ def _get_nvvm_system_path():
     nvvm_path = os.path.join(
         nvvm_lib_dir, "nvvm64_40_0.dll" if IS_WIN32 else "libnvvm.so.4"
     )
-    # if os.path.isfile(nvvm_path):
-    #     return nvvm_path
     return nvvm_path
 
 
