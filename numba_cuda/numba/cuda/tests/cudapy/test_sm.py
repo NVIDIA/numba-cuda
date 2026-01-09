@@ -9,12 +9,18 @@ if HAS_NUMBA:
     from numba.core.errors import TypingError as NumbaTypingError
 from numba.cuda.core.errors import TypingError
 from numba.cuda import types
-from numba.cuda.testing import unittest, CUDATestCase, skip_on_cudasim
+from numba.cuda.testing import (
+    unittest,
+    CUDATestCase,
+    skip_on_cudasim,
+    DeprecatedDeviceArrayApiWarning,
+)
 
 import numpy as np
 from numba.cuda.np import numpy_support as nps
 import cupy as cp
 from .extensions_usecases import struct_model_type, MyStruct
+import pytest
 
 recordwith2darray = np.dtype([("i", np.int32), ("j", np.float32, (3, 2))])
 
@@ -130,9 +136,12 @@ class TestSharedMemory(CUDATestCase):
                 for j in range(nthreads):
                     y[bd * bx + j] = sm[j]
 
-        d_result = cp.asarray(arr)
+        with pytest.warns(DeprecatedDeviceArrayApiWarning):
+            # waiting on cupy support for record dtypes
+            d_result = cuda.to_device(arr)
+
         use_sm_chunk_copy[nblocks, nthreads](arr, d_result)
-        host_result = d_result.get()
+        host_result = d_result.copy_to_host()
         np.testing.assert_array_equal(arr, host_result)
 
     def test_shared_recarray(self):
