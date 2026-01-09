@@ -3,18 +3,8 @@
 
 import os
 from math import sqrt
-
-
-from numba import (
-    cuda,
-    float32,
-    int16,
-    int32,
-    int64,
-    types,
-    uint32,
-    void,
-)
+from numba import cuda
+from numba.cuda import float32, int16, int32, int64, types, uint32, void
 from numba.cuda import (
     compile,
     compile_for_current_device,
@@ -179,6 +169,16 @@ class TestCompile(unittest.TestCase):
         # ending in the filename of this module.
         self.assertRegex(ptx, '\\.file.*test_compiler.py"')
 
+    # We did test for the presence of debuginfo here, but in practice it made
+    # no sense - the C ABI wrapper generates a call instruction that has
+    # nothing to correlate with the DWARF, so it would confuse the debugger
+    # immediately anyway. With the resolution of Issue #588 (using separate
+    # translation of each IR module when debuginfo is enabled) the debuginfo
+    # isn't even produced for the ABI wrapper, because there was none present
+    # in that module anyway. So this test can only be expected to fail until we
+    # have a proper way of generating device functions with the C ABI without
+    # requiring the hack of generating a wrapper.
+    @unittest.expectedFailure
     def test_device_function_with_debug(self):
         # See Issue #6719 - this ensures that compilation with debug succeeds
         # with CUDA 11.2 / NVVM 7.0 onwards. Previously it failed because NVVM
@@ -557,7 +557,7 @@ class TestCompile(unittest.TestCase):
                 link_obj = LinkableCode.from_path(link)
                 if link_obj.kind == "cu":
                     # if link is a cu file, result contains a compiled object code
-                    from cuda.core.experimental import ObjectCode
+                    from numba.cuda._compat import ObjectCode
 
                     assert isinstance(code_list[1], ObjectCode)
                 else:
@@ -594,7 +594,13 @@ class TestCompile(unittest.TestCase):
 
         args = (float32[::1], float32, float32)
         code_list, resty = compile_all(
-            f, args, debug=True, output="ptx", device=False, abi="numba"
+            f,
+            args,
+            debug=True,
+            output="ptx",
+            device=False,
+            abi="numba",
+            opt=False,
         )
         assert len(code_list) == 2
 
@@ -665,7 +671,9 @@ class TestCompileWithLaunchBounds(unittest.TestCase):
         sig = "void()"
         ptx, resty = cuda.compile_ptx(f, sig, launch_bounds=launch_bounds)
         self.assertIsInstance(resty, types.NoneType)
-        self.assertRegex(ptx, r".maxntid\s+128,\s+1,\s+1")
+        # Match either `.maxntid, 128, 1, 1` or `.maxntid 128` on a line by
+        # itself:
+        self.assertRegex(ptx, r".maxntid\s+128(?:,\s+1,\s+1)?\s*\n")
         return ptx
 
     def test_launch_bounds_scalar(self):

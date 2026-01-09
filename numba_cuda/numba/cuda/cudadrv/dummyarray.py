@@ -5,6 +5,7 @@ from collections import namedtuple
 import itertools
 import functools
 import operator
+import numpy as np
 
 
 Extent = namedtuple("Extent", ["begin", "end"])
@@ -245,9 +246,12 @@ class Array(object):
     is_array = True
 
     @classmethod
+    @functools.cache
     def from_desc(cls, offset, shape, strides, itemsize):
         dims = []
         for ashape, astride in zip(shape, strides):
+            if not isinstance(ashape, (int, np.integer)):
+                raise TypeError("all elements of shape must be ints")
             dim = Dim(
                 offset, offset + ashape * astride, ashape, astride, single=False
             )
@@ -273,6 +277,10 @@ class Array(object):
 
         # Records have no dims, and we can treat them as contiguous
         if not self.dims:
+            return {"C_CONTIGUOUS": True, "F_CONTIGUOUS": True}
+
+        # All 0-size arrays are considered contiguous, even if they are multidimensional
+        if self.size == 0:
             return {"C_CONTIGUOUS": True, "F_CONTIGUOUS": True}
 
         # If this is a broadcast array then it is not contiguous
@@ -442,8 +450,8 @@ class Array(object):
 
         ret = self.from_desc(
             self.extent.begin,
-            shape=newdims,
-            strides=newstrides,
+            shape=tuple(newdims),
+            strides=tuple(newstrides),
             itemsize=self.itemsize,
         )
 
@@ -471,8 +479,8 @@ class Array(object):
                     newstrides.append(stride)
         newarr = self.from_desc(
             self.extent.begin,
-            shape=newshape,
-            strides=newstrides,
+            shape=tuple(newshape),
+            strides=tuple(newstrides),
             itemsize=self.itemsize,
         )
         return newarr, list(self.iter_contiguous_extent())

@@ -14,13 +14,13 @@ from enum import IntEnum
 import llvmlite.ir
 import numpy as np
 
-from numba.core import types
+from numba.cuda import types
 from numba.cuda import cgutils
 from numba.cuda.core.imputils import impl_ret_untracked
 
 from numba.cuda.extending import overload, register_jitable
 from numba.cuda.extending import intrinsic
-from numba.core.errors import TypingError
+from numba.cuda.core.errors import TypingError
 
 # This is equivalent to the struct `_PyUnicode_TypeRecord defined in CPython's
 # Objects/unicodectype.c
@@ -125,9 +125,7 @@ def _gettyperecord_impl(typingctx, codepoint):
 
         byref = [upper, lower, title, decimal, digit, flags]
         builder.call(fn, [args[0]] + byref)
-        buf = []
-        for x in byref:
-            buf.append(builder.load(x))
+        buf = list(map(builder.load, byref))
 
         res = context.make_tuple(builder, signature.return_type, tuple(buf))
         return impl_ret_untracked(context, builder, signature.return_type, res)

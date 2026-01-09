@@ -2,12 +2,12 @@
 # SPDX-License-Identifier: BSD-2-Clause
 
 from llvmlite import ir
-from numba.core import types
+from numba.cuda import types
 from numba.cuda import cgutils
 from numba.cuda.core.imputils import Registry
 from numba.cuda import libdevice, libdevicefuncs
 
-registry = Registry()
+registry = Registry("libdeviceimpl")
 lower = registry.lower
 
 
@@ -69,8 +69,7 @@ def libdevice_implement_multiple_returns(func, retty, prototype_args):
         tuple_args = []
         if retty != types.void:
             tuple_args.append(ret)
-        for arg in virtual_args:
-            tuple_args.append(builder.load(arg))
+        tuple_args.extend(map(builder.load, virtual_args))
 
         if isinstance(nb_retty, types.UniTuple):
             return cgutils.pack_array(builder, tuple_args)

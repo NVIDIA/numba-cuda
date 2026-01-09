@@ -16,7 +16,7 @@ import string
 import numpy as np
 
 from numba.cuda.np.ufunc.ufuncbuilder import _BaseUFuncBuilder, parse_identity
-from numba.core import types
+from numba.cuda import types
 from numba.cuda.typing import signature
 from numba.cuda.core import sigutils
 
@@ -682,12 +682,9 @@ class GUFuncEngine(object):
             inner_shapes.append(inner_shape)
 
         # solve output shape
-        oshapes = []
-        for outsig in self.sout:
-            oshape = []
-            for sym in outsig:
-                oshape.append(symbolmap[sym])
-            oshapes.append(tuple(oshape))
+        oshapes = [
+            tuple(map(symbolmap.__getitem__, outsig)) for outsig in self.sout
+        ]
 
         # find the biggest outershape as looping dimension
         sizes = [reduce(operator.mul, s, 1) for s in outer_shapes]

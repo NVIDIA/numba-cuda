@@ -19,3 +19,4 @@ testing/*.ptx
 .pixi/*
 !.pixi/config.toml
 *.log
+.benchmarks

@@ -1,7 +1,8 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-2-Clause
 
-from numba.core import errors, ir
+from numba.cuda.core import errors
+from numba.cuda.core import ir
 from numba.cuda.core.rewrites import register_rewrite, Rewrite
 
 
@@ -26,7 +27,7 @@ class DetectStaticBinops(Rewrite):
                     and expr.static_rhs is ir.UNDEFINED
                 ):
                     self.static_rhs[expr] = func_ir.infer_constant(expr.rhs)
-            except errors.ConstantInferenceError:
+            except errors.ConstantInferenceError:  # noqa: PERF203
                 continue
 
         return len(self.static_lhs) > 0 or len(self.static_rhs) > 0

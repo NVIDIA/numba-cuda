@@ -4,7 +4,8 @@
 # SPDX-License-Identifier: BSD-2-Clause
 #
 
-from numba.core import types, ir, config
+from numba.cuda import types, config
+from numba.cuda.core import ir
 from numba.cuda import compiler
 from numba.cuda.core.annotations import type_annotations
 from numba.cuda.core.ir_utils import (
@@ -47,7 +48,7 @@ def _in_list_var(list_var, var):
 
 
 def _find_assign(func_ir, var):
-    for label, block in func_ir.blocks.items():
+    for block in func_ir.blocks.values():
         for i, inst in enumerate(block.body):
             if isinstance(inst, ir.Assign) and inst.target.name != var:
                 all_var = inst.list_vars()

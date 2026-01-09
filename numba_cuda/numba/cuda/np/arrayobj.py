@@ -16,9 +16,9 @@ from llvmlite.ir import Constant
 
 import numpy as np
 
-from numba import pndindex, literal_unroll
-from numba.core import types, errors
-from numba.cuda import typing
+from numba.cuda.misc.special import literal_unroll
+from numba.cuda import types, typing
+from numba.cuda.core import errors
 from numba.cuda import cgutils, extending
 from numba.cuda.np.numpy_support import (
     as_dtype,
@@ -31,6 +31,7 @@ from numba.cuda.np.numpy_support import (
     type_is_scalar,
     lt_complex,
     lt_floats,
+    strides_from_shape,
 )
 from numba.cuda.np.numpy_support import (
     type_can_asarray,
@@ -46,7 +47,7 @@ from numba.cuda.core.imputils import (
     Registry,
 )
 from numba.cuda.typing import signature
-from numba.core.types import StringLiteral
+from numba.cuda.types import StringLiteral
 from numba.cuda.extending import (
     register_jitable,
     overload,
@@ -54,7 +55,6 @@ from numba.cuda.extending import (
     intrinsic,
     overload_attribute,
 )
-from numba.misc import quicksort, mergesort
 from numba.cuda.cpython import slicing
 from numba.cuda.cpython.unsafe.tuple import (
     tuple_setitem,
@@ -1798,10 +1798,10 @@ def numpy_broadcast_arrays(*args):
             tup = tuple_setitem(tup, i, shape[i])
 
         # numpy checks if the input arrays have the same shape as `shape`
-        outs = []
-        for array in literal_unroll(args):
-            outs.append(np.broadcast_to(np.asarray(array), tup))
-        return outs
+        return [
+            np.broadcast_to(np.asarray(array), tup)
+            for array in literal_unroll(args)
+        ]
 
     return impl
 
@@ -3643,8 +3643,61 @@ def record_static_setitem_int(context, builder, sig, args):
 def constant_array(context, builder, ty, pyval):
     """
     Create a constant array (mechanism is target-dependent).
+
+    For objects implementing __cuda_array_interface__,
+    the device pointer is embedded directly as a constant. For other arrays,
+    the target-specific mechanism is used.
     """
+    # Check if this is a device array (implements __cuda_array_interface__)
+    if getattr(pyval, "__cuda_array_interface__", None) is not None:
+        return _lower_constant_device_array(context, builder, ty, pyval)
+
     return context.make_constant_array(builder, ty, pyval)
+
+
+def _lower_constant_device_array(context, builder, ty, pyval):
+    """
+    Lower objects with __cuda_array_interface__ by embedding the device
+    pointer as a constant.
+
+    This allows device arrays captured from globals to be used in CUDA
+    kernels and device functions.
+    """
+    interface = pyval.__cuda_array_interface__
+
+    # Hold on to the device array to prevent garbage collection.
+    context.active_code_library.referenced_objects[id(pyval)] = pyval
+
+    shape = interface["shape"]
+    strides = interface.get("strides")
+    data_ptr = interface["data"][0]
+    typestr = interface["typestr"]
+    itemsize = np.dtype(typestr).itemsize
+
+    # Calculate strides if not provided (C-contiguous)
+    if strides is None:
+        strides = strides_from_shape(shape, itemsize, order="C")
+
+    # Embed device pointer as constant
+    llvoidptr = context.get_value_type(types.voidptr)
+    data = context.get_constant(types.uintp, data_ptr).inttoptr(llvoidptr)
+
+    # Build array structure
+    ary = context.make_array(ty)(context, builder)
+    kshape = [context.get_constant(types.intp, s) for s in shape]
+    kstrides = [context.get_constant(types.intp, s) for s in strides]
+
+    context.populate_array(
+        ary,
+        data=builder.bitcast(data, ary.data.type),
+        shape=kshape,
+        strides=kstrides,
+        itemsize=context.get_constant(types.intp, itemsize),
+        parent=None,
+        meminfo=None,
+    )
+
+    return ary._getvalue()
 
 
 @lower_constant(types.Record)
@@ -4529,7 +4582,6 @@ def iternext_numpy_nditer(context, builder, sig, args, result):
     nditer.iternext_specific(context, builder, arrty, arr, result)
 
 
-@lower(pndindex, types.VarArg(types.Integer))
 @lower(np.ndindex, types.VarArg(types.Integer))
 def make_array_ndindex(context, builder, sig, args):
     """ndindex(*shape)"""
@@ -4546,7 +4598,6 @@ def make_array_ndindex(context, builder, sig, args):
     return impl_ret_borrowed(context, builder, sig.return_type, res)
 
 
-@lower(pndindex, types.BaseTuple)
 @lower(np.ndindex, types.BaseTuple)
 def make_array_ndindex_tuple(context, builder, sig, args):
     """ndindex(shape)"""
@@ -4771,13 +4822,11 @@ def _parse_shape(context, builder, ty, val):
         ndim = ty.count
         passed_shapes = cgutils.unpack_tuple(builder, val, count=ndim)
 
-    shapes = []
-    for s in passed_shapes:
-        shapes.append(safecast_intp(context, builder, s.type, s))
+    shapes = [safecast_intp(context, builder, s.type, s) for s in passed_shapes]
 
     zero = context.get_constant_generic(builder, types.intp, 0)
-    for dim in range(ndim):
-        is_neg = builder.icmp_signed("<", shapes[dim], zero)
+    for shape in shapes:
+        is_neg = builder.icmp_signed("<", shape, zero)
         with cgutils.if_unlikely(builder, is_neg):
             context.call_conv.return_user_exc(
                 builder, ValueError, ("negative dimensions not allowed",)
@@ -7127,18 +7176,7 @@ def get_sort_func(kind, lt_impl, is_argsort=False):
     try:
         return _sorts[key]
     except KeyError:
-        if kind == "quicksort":
-            sort = quicksort.make_jit_quicksort(
-                lt=lt_impl, is_argsort=is_argsort, is_np_array=True
-            )
-            func = sort.run_quicksort
-        elif kind == "mergesort":
-            sort = mergesort.make_jit_mergesort(
-                lt=lt_impl, is_argsort=is_argsort
-            )
-            func = sort.run_mergesort
-        _sorts[key] = func
-        return func
+        raise errors.NumbaError("Sort kind %s not supported" % kind)
 
 
 def lt_implementation(dtype):
@@ -7148,21 +7186,6 @@ def lt_implementation(dtype):
         return lt_complex
     else:
         return default_lt
-
-
-@lower("array.sort", types.Array)
-def array_sort(context, builder, sig, args):
-    arytype = sig.args[0]
-
-    sort_func = get_sort_func(
-        kind="quicksort", lt_impl=lt_implementation(arytype.dtype)
-    )
-
-    def array_sort_impl(arr):
-        # Note we clobber the return value
-        sort_func(arr)
-
-    return context.compile_internal(builder, array_sort_impl, sig, args)
 
 
 @overload(np.sort)

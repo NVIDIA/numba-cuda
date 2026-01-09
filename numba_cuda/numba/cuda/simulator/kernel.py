@@ -11,7 +11,7 @@ import numpy as np
 from .cudadrv.devicearray import FakeCUDAArray, FakeWithinKernelCUDAArray
 from .kernelapi import Dim3, FakeCUDAModule, swapped_cuda_module
 from ..errors import normalize_kernel_dimensions
-from ..args import wrap_arg, ArgHint
+from ..args import ArgHint, InOut
 
 
 """
@@ -109,7 +109,7 @@ class FakeCUDAKernel(object):
                 )
 
                 if isinstance(arg, np.ndarray) and arg.ndim > 0:
-                    ret = wrap_arg(arg).to_device(retr)
+                    ret = InOut(arg).to_device(retr)
                 elif isinstance(arg, ArgHint):
                     ret = arg.to_device(retr)
                 elif isinstance(arg, np.void):

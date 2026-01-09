@@ -3,15 +3,15 @@
 
 from functools import singledispatch
 from llvmlite import ir
-from numba.core import types
+from numba.cuda import types
 from numba.cuda import cgutils
-from numba.core.errors import NumbaWarning
+from numba.cuda.core.errors import NumbaWarning
 from numba.cuda.core.imputils import Registry
 from numba.cuda import nvvmutils
-from numba.cuda.types import Dim3, Bfloat16
+from numba.cuda.types.ext_types import Dim3, Bfloat16
 from warnings import warn
 
-registry = Registry()
+registry = Registry("printimpl")
 lower = registry.lower
 
 voidptr = ir.PointerType(ir.IntType(8))
@@ -30,6 +30,26 @@ def print_item(ty, context, builder, val):
     raise NotImplementedError(
         "printing unimplemented for values of type %s" % (ty,)
     )
+
+
+@print_item.register(types.Tuple)
+@print_item.register(types.UniTuple)
+def tuple_print_impl(ty, context, builder, val):
+    formats = []
+    values = []
+
+    for i, argtyp in enumerate(ty.types):
+        argval = builder.extract_value(val, i)
+        argfmt, argvals = print_item(argtyp, context, builder, argval)
+        formats.append(argfmt)
+        values.extend(argvals)
+
+    if len(formats) == 1:
+        base = "({},)"
+    else:
+        base = "({})"
+    rawfmt = base.format(", ".join(formats))
+    return rawfmt, values
 
 
 @print_item.register(types.Integer)

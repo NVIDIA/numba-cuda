@@ -15,20 +15,22 @@ import uuid
 import re
 from warnings import warn
 
-from numba.core import types, errors
+from numba.cuda._compat import launch, LaunchConfig
+
+from numba.cuda.core import errors
 from numba.cuda import serialize, utils
 from numba import cuda
 
-from numba.core.compiler_lock import global_compiler_lock
-from numba.core.typeconv.rules import default_type_manager
+from numba.cuda.core.compiler_lock import global_compiler_lock
+from numba.cuda.typeconv.rules import default_type_manager
 from numba.cuda.typing.templates import fold_arguments
 from numba.cuda.typing.typeof import Purpose, typeof
 
-from numba.cuda import typing
-from numba.cuda import types as cuda_types
+from numba.cuda import typing, types
+from numba.cuda.types import ext_types
 from numba.cuda.api import get_current_device
 from numba.cuda.args import wrap_arg
-from numba.core.bytecode import get_code_object
+from numba.cuda.core.bytecode import get_code_object
 from numba.cuda.compiler import (
     compile_cuda,
     CUDACompiler,
@@ -39,6 +41,7 @@ from numba.cuda.compiler import (
 from numba.cuda.core import sigutils, config, entrypoints
 from numba.cuda.flags import Flags
 from numba.cuda.cudadrv import driver, nvvm
+
 from numba.cuda.locks import module_init_lock
 from numba.cuda.core.caching import Cache, CacheImpl, NullCache
 from numba.cuda.descriptor import cuda_target
@@ -475,18 +478,15 @@ class _Kernel(serialize.ReduceMixin):
         for t, v in zip(self.argument_types, args):
             self._prepare_args(t, v, stream, retr, kernelargs)
 
-        stream_handle = stream and stream.handle.value or 0
-
         # Invoke kernel
-        driver.launch_kernel(
-            cufunc.handle,
-            *griddim,
-            *blockdim,
-            sharedmem,
-            stream_handle,
-            kernelargs,
-            cooperative=self.cooperative,
+        config = LaunchConfig(
+            grid=griddim,
+            block=blockdim,
+            shmem_size=sharedmem,
+            cooperative_launch=self.cooperative,
         )
+        kernel = cufunc.kernel
+        launch(stream, config, kernel, *kernelargs)
 
         if self.debug:
             driver.device_to_host(ctypes.addressof(excval), excmem, excsz)
@@ -540,32 +540,26 @@ class _Kernel(serialize.ReduceMixin):
 
         if isinstance(ty, types.Array):
             devary = wrap_arg(val).to_device(retr, stream)
-            c_intp = ctypes.c_ssize_t
 
-            meminfo = ctypes.c_void_p(0)
-            parent = ctypes.c_void_p(0)
-            nitems = c_intp(devary.size)
-            itemsize = c_intp(devary.dtype.itemsize)
-
-            ptr = driver.device_pointer(devary)
-
-            ptr = int(ptr)
-
-            data = ctypes.c_void_p(ptr)
+            meminfo = 0
+            parent = 0
 
             kernelargs.append(meminfo)
             kernelargs.append(parent)
-            kernelargs.append(nitems)
-            kernelargs.append(itemsize)
-            kernelargs.append(data)
-            for ax in range(devary.ndim):
-                kernelargs.append(c_intp(devary.shape[ax]))
-            for ax in range(devary.ndim):
-                kernelargs.append(c_intp(devary.strides[ax]))
+
+            # non-pointer-arguments-without-ctypes might be dicey, since we're
+            # assuming shape, strides, size, and itemsize fit into intptr_t
+            # however, this saves a noticeable amount of overhead in kernel
+            # invocation
+            kernelargs.append(devary.size)
+            kernelargs.append(devary.dtype.itemsize)
+            kernelargs.append(devary.device_ctypes_pointer.value)
+            kernelargs.extend(devary.shape)
+            kernelargs.extend(devary.strides)
 
         elif isinstance(ty, types.CPointer):
             # Pointer arguments should be a pointer-sized integer
-            kernelargs.append(ctypes.c_uint64(val))
+            kernelargs.append(val)
 
         elif isinstance(ty, types.Integer):
             cval = getattr(ctypes, "c_%s" % ty)(val)
@@ -584,8 +578,7 @@ class _Kernel(serialize.ReduceMixin):
             kernelargs.append(cval)
 
         elif ty == types.boolean:
-            cval = ctypes.c_uint8(int(val))
-            kernelargs.append(cval)
+            kernelargs.append(val)
 
         elif ty == types.complex64:
             kernelargs.append(ctypes.c_float(val.real))
@@ -600,8 +593,7 @@ class _Kernel(serialize.ReduceMixin):
 
         elif isinstance(ty, types.Record):
             devrec = wrap_arg(val).to_device(retr, stream)
-            ptr = devrec.device_ctypes_pointer
-            kernelargs.append(ptr)
+            kernelargs.append(devrec.device_ctypes_pointer.value)
 
         elif isinstance(ty, types.BaseTuple):
             assert len(ty) == len(val)
@@ -673,7 +665,7 @@ class _LaunchConfiguration:
         self.dispatcher = dispatcher
         self.griddim = griddim
         self.blockdim = blockdim
-        self.stream = stream
+        self.stream = driver._to_core_stream(stream)
         self.sharedmem = sharedmem
 
         if (
@@ -702,6 +694,16 @@ class _LaunchConfiguration:
             args, self.griddim, self.blockdim, self.stream, self.sharedmem
         )
 
+    def __getstate__(self):
+        state = self.__dict__.copy()
+        state["stream"] = int(state["stream"].handle)
+        return state
+
+    def __setstate__(self, state):
+        handle = state.pop("stream")
+        self.__dict__.update(state)
+        self.stream = driver._to_core_stream(handle)
+
 
 class CUDACacheImpl(CacheImpl):
     def reduce(self, kernel):
@@ -729,12 +731,8 @@ class CUDACache(Cache):
     _impl_class = CUDACacheImpl
 
     def load_overload(self, sig, target_context):
-        # Loading an overload refreshes the context to ensure it is
-        # initialized. To initialize the correct (i.e. CUDA) target, we need to
-        # enforce that the current target is the CUDA target.
-        from numba.core.target_extension import target_override
-
-        with target_override("cuda"):
+        # Loading an overload refreshes the context to ensure it is initialized.
+        with utils.numba_target_override():
             return super().load_overload(sig, target_context)
 
 
@@ -860,7 +858,7 @@ class _DispatcherBase(_dispatcher.Dispatcher):
             for cres in overloads.values():
                 try:
                     targetctx.remove_user_function(cres.entry_point)
-                except KeyError:
+                except KeyError:  # noqa: PERF203
                     pass
 
         return finalizer
@@ -1539,7 +1537,7 @@ class CUDADispatcher(serialize.ReduceMixin, _MemoMixin, _DispatcherBase):
 
     @property
     def _numba_type_(self):
-        return cuda_types.CUDADispatcher(self)
+        return ext_types.CUDADispatcher(self)
 
     def enable_caching(self):
         self._cache = CUDACache(self.py_func)
@@ -1628,17 +1626,7 @@ class CUDADispatcher(serialize.ReduceMixin, _MemoMixin, _DispatcherBase):
     def typeof_pyval(self, val):
         # Based on _DispatcherBase.typeof_pyval, but differs from it to support
         # the CUDA Array Interface.
-        try:
-            return typeof(val, Purpose.argument)
-        except ValueError:
-            if cuda.is_cuda_array(val):
-                # When typing, we don't need to synchronize on the array's
-                # stream - this is done when the kernel is launched.
-                return typeof(
-                    cuda.as_cuda_array(val, sync=False), Purpose.argument
-                )
-            else:
-                raise
+        return typeof(val, Purpose.argument)
 
     def specialize(self, *args):
         """
@@ -2102,7 +2090,7 @@ class CUDADispatcher(serialize.ReduceMixin, _MemoMixin, _DispatcherBase):
         if file is None:
             file = sys.stdout
 
-        for _, defn in self.overloads.items():
+        for defn in self.overloads.values():
             defn.inspect_types(file=file)
 
     @classmethod

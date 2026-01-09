@@ -1,6 +1,7 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-2-Clause
 
+import pytest
 from numba.cuda.testing import unittest
 from numba.cuda.testing import skip_on_cudasim
 from numba.cuda.testing import CUDATestCase
@@ -13,7 +14,6 @@ from numba.cuda import config
 import os
 import io
 import contextlib
-import warnings
 
 
 TEST_BIN_DIR = os.getenv("NUMBA_CUDA_TEST_BIN_DIR")
@@ -41,6 +41,12 @@ if TEST_BIN_DIR:
     )
     test_device_functions_ltoir = os.path.join(
         TEST_BIN_DIR, "test_device_functions.ltoir"
+    )
+
+    require_cuobjdump = (
+        test_device_functions_fatbin_multi,
+        test_device_functions_fatbin,
+        test_device_functions_o,
     )
 
 
@@ -99,17 +105,50 @@ class TestLinker(CUDATestCase):
                     kernel[1, 1](result)
                     assert result[0] == 3
 
+    def test_nvjitlink_jit_with_invalid_linkable_code(self):
+        with open(test_device_functions_cubin, "rb") as f:
+            content = f.read()
+        with self.assertRaisesRegex(
+            TypeError, "Expected path to file or a LinkableCode"
+        ):
+
+            @cuda.jit("void()", link=[content])
+            def kernel():
+                pass
+
+
+@unittest.skipIf(
+    not TEST_BIN_DIR or not _have_nvjitlink(),
+    "nvJitLink not installed or new enough (>12.3)",
+)
+@skip_on_cudasim("Linking unsupported in the simulator")
+class TestLinkerDumpAssembly(CUDATestCase):
+    def setUp(self):
+        super().setUp()
+        self._prev_dump_assembly = config.DUMP_ASSEMBLY
+        config.DUMP_ASSEMBLY = True
+
+    def tearDown(self):
+        config.DUMP_ASSEMBLY = self._prev_dump_assembly
+        super().tearDown()
+
     def test_nvjitlink_jit_with_linkable_code_lto_dump_assembly(self):
-        files = [
+        files = (
             test_device_functions_cu,
             test_device_functions_ltoir,
             test_device_functions_fatbin_multi,
-        ]
-
-        config.DUMP_ASSEMBLY = True
+        )
 
         for file in files:
             with self.subTest(file=file):
+                if (
+                    file in require_cuobjdump
+                    and os.getenv("NUMBA_CUDA_TEST_WHEEL_ONLY") is not None
+                ):
+                    self.skipTest(
+                        "wheel-only environments do not have cuobjdump"
+                    )
+
                 f = io.StringIO()
                 with contextlib.redirect_stdout(f):
                     sig = "uint32(uint32, uint32)"
@@ -125,55 +164,40 @@ class TestLinker(CUDATestCase):
 
                 self.assertTrue("ASSEMBLY (AFTER LTO)" in f.getvalue())
 
-        config.DUMP_ASSEMBLY = False
-
     def test_nvjitlink_jit_with_linkable_code_lto_dump_assembly_warn(self):
-        files = [
+        files = (
             test_device_functions_a,
             test_device_functions_cubin,
             test_device_functions_fatbin,
             test_device_functions_o,
             test_device_functions_ptx,
-        ]
-
-        config.DUMP_ASSEMBLY = True
+        )
 
         for file in files:
             with self.subTest(file=file):
-                with warnings.catch_warnings(record=True) as w:
-                    with contextlib.redirect_stdout(None):  # suppress other PTX
-                        sig = "uint32(uint32, uint32)"
-                        add_from_numba = cuda.declare_device(
-                            "add_from_numba", sig
-                        )
+                if (
+                    file in require_cuobjdump
+                    and os.getenv("NUMBA_CUDA_TEST_WHEEL_ONLY") is not None
+                ):
+                    self.skipTest(
+                        "wheel-only environments do not have cuobjdump"
+                    )
 
-                        @cuda.jit(link=[file], lto=True)
-                        def kernel(result):
-                            result[0] = add_from_numba(1, 2)
+                sig = "uint32(uint32, uint32)"
+                add_from_numba = cuda.declare_device("add_from_numba", sig)
 
-                        result = cuda.device_array(1)
-                        kernel[1, 1](result)
-                        assert result[0] == 3
+                @cuda.jit(link=[file], lto=True)
+                def kernel(result):
+                    result[0] = add_from_numba(1, 2)
 
-                assert len(w) == 1
-                self.assertIn(
-                    "it is not optimizable at link time, and "
-                    "`ignore_nonlto == True`",
-                    str(w[0].message),
-                )
-
-        config.DUMP_ASSEMBLY = False
-
-    def test_nvjitlink_jit_with_invalid_linkable_code(self):
-        with open(test_device_functions_cubin, "rb") as f:
-            content = f.read()
-        with self.assertRaisesRegex(
-            TypeError, "Expected path to file or a LinkableCode"
-        ):
-
-            @cuda.jit("void()", link=[content])
-            def kernel():
-                pass
+                result = cuda.device_array(1)
+                func = kernel[1, 1]
+                with pytest.warns(
+                    UserWarning,
+                    match="it is not optimizable at link time, and `ignore_nonlto == True`",
+                ):
+                    func(result)
+                assert result[0] == 3
 
 
 if __name__ == "__main__":

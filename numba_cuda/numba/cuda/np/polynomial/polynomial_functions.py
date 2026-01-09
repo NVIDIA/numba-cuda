@@ -9,8 +9,9 @@ import numpy as np
 from numpy.polynomial import polynomial as poly
 from numpy.polynomial import polyutils as pu
 
-from numba import literal_unroll
-from numba.core import types, errors
+from numba.cuda.misc.special import literal_unroll
+from numba.cuda import types
+from numba.cuda.core import errors
 from numba.cuda.extending import overload
 from numba.cuda.np.numpy_support import type_can_asarray, as_dtype, from_dtype
 
@@ -121,9 +122,10 @@ def polyutils_as_series(alist, trim=True):
 
     def impl(alist, trim=True):
         if tuple_input:
-            arrays = []
-            for item in literal_unroll(alist):
-                arrays.append(np.atleast_1d(np.asarray(item)).astype(res_dtype))
+            arrays = [
+                np.atleast_1d(np.asarray(item)).astype(res_dtype)
+                for item in literal_unroll(alist)
+            ]
 
         elif list_input:
             arrays = [

@@ -40,10 +40,9 @@ def from_cuda_array_interface(desc, owner=None, sync=True):
 
     shape = desc["shape"]
     strides = desc.get("strides")
-    dtype = np.dtype(desc["typestr"])
 
     shape, strides, dtype = prepare_shape_strides_dtype(
-        shape, strides, dtype, order="C"
+        shape, strides, desc["typestr"], order="C"
     )
     size = driver.memory_size_from_info(shape, strides, dtype.itemsize)
 
@@ -75,12 +74,11 @@ def as_cuda_array(obj, sync=True):
     If ``sync`` is ``True``, then the imported stream (if present) will be
     synchronized.
     """
-    if not is_cuda_array(obj):
-        raise TypeError("*obj* doesn't implement the cuda array interface.")
-    else:
-        return from_cuda_array_interface(
-            obj.__cuda_array_interface__, owner=obj, sync=sync
-        )
+    if (
+        interface := getattr(obj, "__cuda_array_interface__", None)
+    ) is not None:
+        return from_cuda_array_interface(interface, owner=obj, sync=sync)
+    raise TypeError("*obj* doesn't implement the cuda array interface.")
 
 
 def is_cuda_array(obj):

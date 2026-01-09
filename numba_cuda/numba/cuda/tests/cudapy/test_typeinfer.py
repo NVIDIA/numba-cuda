@@ -3,11 +3,13 @@
 
 import itertools
 
-from numba.core import errors, types
-from numba.cuda import typing
+import pytest
+
+from numba.cuda.core import config, errors
+from numba.cuda import types, typing
 from numba.cuda.typeconv import Conversion
 
-from numba.cuda.testing import CUDATestCase, skip_on_cudasim
+from numba.cuda.testing import CUDATestCase
 from numba.cuda.tests.cudapy.test_typeconv import CompatibilityTestMixin
 from numba.cuda.core.untyped_passes import TranslateByteCode, IRProcessing
 from numba.cuda.core.typed_passes import PartialTypeInference
@@ -511,28 +513,25 @@ def get_func_typing_errs(func, arg_types):
     return pipeline.state.typing_errors
 
 
-@skip_on_cudasim
-class TestPartialTypingErrors(CUDATestCase):
+@pytest.mark.skipif(config.ENABLE_CUDASIM, reason="not enable in the simulator")
+def test_partial_typing_error():
     """
     Make sure partial typing stores type errors in compiler state properly
     """
 
-    def test_partial_typing_error(self):
-        # example with type unification error
-        def impl(flag):
-            if flag:
-                a = 1
-            else:
-                a = ""
-            return a
+    # example with type unification error
+    def impl(flag):
+        if flag:
+            a = 1
+        else:
+            a = ""
+        return a
 
-        self.assertRaisesRegex(
-            errors.TypingError,
-            r"Cannot unify Literal\[int]\(1\) and Literal\[str]\(\) for 'a'",
-            get_func_typing_errs,
-            impl,
-            (types.bool_,),
-        )
+    with pytest.raises(
+        errors.TypingError,
+        match=r"Cannot unify Literal\[int\]\(1\) and Literal\[str\]\(\) for 'a'",
+    ):
+        get_func_typing_errs(impl, (types.bool_,))
 
 
 if __name__ == "__main__":

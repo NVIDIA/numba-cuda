@@ -4,84 +4,30 @@
 
 set -euo pipefail
 
-. /opt/conda/etc/profile.d/conda.sh
-
-CTK_PACKAGE_DEPENDENCIES=(
-    "cuda-cccl"
-    "cuda-nvcc-impl"
-    "cuda-nvrtc"
-    "libcurand-dev"
-    "cuda-cuobjdump"
-)
-
-DISTRO=`cat /etc/os-release | grep "^ID=" | awk 'BEGIN {FS="="} { print $2 }'`
-
-if [ "$DISTRO" = "ubuntu" ]; then
-  apt-get update
-  apt remove --purge `dpkg --get-selections | grep cuda-nvvm | awk '{print $1}'` -y
-  apt remove --purge `dpkg --get-selections | grep cuda-nvrtc | awk '{print $1}'` -y
-fi
-
-rapids-logger "Install testing dependencies"
-# TODO: Replace with rapids-dependency-file-generator
-DEPENDENCIES=(
-    "c-compiler"
-    "cxx-compiler"
-    "${CTK_PACKAGE_DEPENDENCIES[@]}"
-    "cuda-python"
-    "cuda-version=${CUDA_VER%.*}"
-    "make"
-    "numba-cuda"
-    "psutil"
-    "pytest"
-    "pytest-xdist"
-    "cffi"
-    "ml_dtypes"
-    "python=${RAPIDS_PY_VERSION}"
-)
 # Constrain oldest supported dependencies for testing
-if [ "${RAPIDS_DEPENDENCIES:-}" = "oldest" ]; then
-    DEPENDENCIES+=("numba==0.60.0")
+if [ "${NUMBA_VERSION:-*}" != "*" ]; then
+    # add to the default environment's dependencies
+    pixi add --feature "${PY_VER_PART}" "numba=${NUMBA_VERSION}"
 fi
-
-rapids-mamba-retry create \
-    -n test \
-    --strict-channel-priority \
-    --channel "`pwd`/conda-repo" \
-    --channel conda-forge \
-    "${DEPENDENCIES[@]}"
-
-# Temporarily allow unbound variables for conda activation.
-set +u
-conda activate test
-set -u
-
-pip install filecheck
-
-rapids-print-env
 
 rapids-logger "Check GPU usage"
 nvidia-smi
-
-rapids-logger "Build test binaries"
-export NUMBA_CUDA_TEST_BIN_DIR=`pwd`/testing
-pushd $NUMBA_CUDA_TEST_BIN_DIR
-make -j $(nproc)
-
-rapids-logger "Show Numba system info"
-python -m numba --sysinfo
 
 EXITCODE=0
 trap "EXITCODE=1" ERR
 set +e
 
+rapids-logger "Show Numba system info"
+pixi run -e "${PIXI_ENV}" python -m numba --sysinfo
+
 rapids-logger "Test importing numba.cuda"
-python -c "from numba import cuda"
+pixi run -e "${PIXI_ENV}" python -c "from numba import cuda"
 
 rapids-logger "Run Tests"
-pytest -v
-
-popd
+pixi run -e "${PIXI_ENV}" test -n auto \
+  --dist loadscope \
+  --loadscope-reorder \
+  -v
 
 rapids-logger "Test script exiting with value: $EXITCODE"
 exit ${EXITCODE}

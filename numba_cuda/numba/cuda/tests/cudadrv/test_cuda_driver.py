@@ -3,16 +3,19 @@
 
 from ctypes import c_int, sizeof
 
-from numba.cuda.cudadrv.driver import (
-    host_to_device,
-    device_to_host,
-    driver,
-    launch_kernel,
+from numba.cuda.cudadrv.driver import host_to_device, device_to_host, driver
+from numba.cuda._compat import (
+    LaunchConfig,
+    Device,
+    Stream as ExperimentalStream,
+    launch,
 )
-from numba.cuda.cudadrv import devices, driver as _driver
+
+from numba import cuda
+from numba.cuda.cudadrv import devices
 from numba.cuda.testing import unittest, CUDATestCase
 from numba.cuda.testing import skip_on_cudasim
-
+import contextlib
 
 ptx1 = """
     .version 1.4
@@ -94,22 +97,15 @@ class TestCudaDriver(CUDATestCase):
         host_to_device(memory, array, sizeof(array))
 
         ptr = memory.device_ctypes_pointer
-        stream = 0
 
-        stream = _driver.binding.CUstream(stream)
-
-        launch_kernel(
-            function.handle,  # Kernel
-            1,
-            1,
-            1,  # gx, gy, gz
-            100,
-            1,
-            1,  # bx, by, bz
-            0,  # dynamic shared mem
-            stream,  # stream
-            [ptr],
-        )  # arguments
+        config = LaunchConfig(
+            grid=(1, 1, 1),
+            block=(100, 1, 1),
+            shmem_size=0,
+            cooperative_launch=False,
+        )
+        exp_stream = ExperimentalStream.from_handle(0)
+        launch(exp_stream, config, function.kernel, ptr)
 
         device_to_host(array, memory, sizeof(array))
         for i, v in enumerate(array):
@@ -118,6 +114,8 @@ class TestCudaDriver(CUDATestCase):
         module.unload()
 
     def test_cuda_driver_stream_operations(self):
+        from numba.cuda.cudadrv.driver import _to_core_stream
+
         module = self.context.create_module_ptx(self.ptx)
         function = module.get_function("_Z10helloworldPi")
 
@@ -131,25 +129,72 @@ class TestCudaDriver(CUDATestCase):
 
             ptr = memory.device_ctypes_pointer
 
-            stream_handle = stream.handle
-            stream_handle = stream_handle.value
-
-            launch_kernel(
-                function.handle,  # Kernel
-                1,
-                1,
-                1,  # gx, gy, gz
-                100,
-                1,
-                1,  # bx, by, bz
-                0,  # dynamic shared mem
-                stream_handle,  # stream
-                [ptr],
-            )  # arguments
+            config = LaunchConfig(
+                grid=(1, 1, 1),
+                block=(100, 1, 1),
+                shmem_size=0,
+                cooperative_launch=False,
+            )
+            # Convert numba Stream to ExperimentalStream
+            launch(_to_core_stream(stream), config, function.kernel, ptr)
 
         device_to_host(array, memory, sizeof(array), stream=stream)
 
         for i, v in enumerate(array):
+            self.assertEqual(i, v)
+
+    def test_cuda_core_stream_operations(self):
+        module = self.context.create_module_ptx(self.ptx)
+        function = module.get_function("_Z10helloworldPi")
+        array = (c_int * 100)()
+        dev = Device()
+        dev.set_current()
+        stream = dev.create_stream()
+
+        @contextlib.contextmanager
+        def auto_synchronize(stream):
+            try:
+                yield stream
+            finally:
+                stream.sync()
+
+        with auto_synchronize(stream):
+            memory = self.context.memalloc(sizeof(array))
+            host_to_device(memory, array, sizeof(array), stream=stream)
+
+            ptr = memory.device_ctypes_pointer
+
+            config = LaunchConfig(
+                grid=(1, 1, 1),
+                block=(100, 1, 1),
+                shmem_size=0,
+                cooperative_launch=False,
+            )
+            launch(stream, config, function.kernel, ptr)
+
+            device_to_host(array, memory, sizeof(array), stream=stream)
+        for i, v in enumerate(array):
+            self.assertEqual(i, v)
+
+    def test_cuda_core_stream_launch_user_facing(self):
+        @cuda.jit
+        def kernel(a):
+            idx = cuda.grid(1)
+            if idx < len(a):
+                a[idx] = idx
+
+        dev = Device()
+        dev.set_current()
+        stream = dev.create_stream()
+
+        ary = cuda.to_device([0] * 100, stream=stream)
+        stream.sync()
+
+        kernel[1, 100, stream](ary)
+        stream.sync()
+
+        result = ary.copy_to_host(stream=stream)
+        for i, v in enumerate(result):
             self.assertEqual(i, v)
 
     def test_cuda_driver_default_stream(self):
@@ -221,6 +266,105 @@ class TestCudaDriver(CUDATestCase):
         )
         self.assertTrue(grid > 0)
         self.assertTrue(block > 0)
+
+    def test_cuda_cache_config(self):
+        from numba import types
+        import numpy as np
+
+        sig = (types.float32[::1], types.float32[::1])
+
+        @cuda.jit(sig)
+        def add_one(r, x):
+            i = cuda.grid(1)
+            if i < len(r):
+                r[i] = x[i] + 1
+
+        kernel = add_one.overloads[sig]
+        cufunc = kernel._codelibrary.get_cufunc()
+
+        configs_to_test = [
+            ("prefer_shared", dict(prefer_shared=True)),
+            ("prefer_cache", dict(prefer_cache=True)),
+            ("prefer_equal", dict(prefer_equal=True)),
+            ("default", dict()),
+        ]
+
+        for name, kwargs in configs_to_test:
+            with self.subTest(config=name):
+                try:
+                    cufunc.cache_config(**kwargs)
+                except Exception as e:
+                    self.fail(f"cache_config({name}) failed: {e}")
+
+        x = np.array([1.0, 2.0, 3.0, 4.0, 5.0], dtype=np.float32)
+        r = np.zeros_like(x)
+
+        d_x = cuda.to_device(x)
+        d_r = cuda.to_device(r)
+
+        cufunc.cache_config(prefer_shared=True)
+        add_one[1, 5](d_r, d_x)
+
+        result = d_r.copy_to_host()
+        expected = x + 1
+
+        np.testing.assert_array_almost_equal(
+            result,
+            expected,
+            err_msg="Kernel produced incorrect results after cache_config",
+        )
+
+    def test_cuda_set_shared_memory_carveout(self):
+        from numba import types
+        import numpy as np
+
+        sig = (types.float32[::1], types.float32[::1])
+
+        @cuda.jit(sig)
+        def add_one(r, x):
+            i = cuda.grid(1)
+            if i < len(r):
+                r[i] = x[i] + 1
+
+        kernel = add_one.overloads[sig]
+        cufunc = kernel._codelibrary.get_cufunc()
+
+        # valid carveout values
+        carveout_values = [-1, 0, 50, 100]
+        for value in carveout_values:
+            with self.subTest(carveout=value):
+                try:
+                    cufunc.set_shared_memory_carveout(value)
+                except Exception as e:
+                    self.fail(
+                        f"set_shared_memory_carveout({value}) failed: {e}"
+                    )
+
+        # invalid carveout values
+        invalid_values = [-2, 101, 150]
+        for value in invalid_values:
+            with self.subTest(invalid_carveout=value):
+                with self.assertRaises(ValueError):
+                    cufunc.set_shared_memory_carveout(value)
+
+        # test the kernel
+        x = np.array([1.0, 2.0, 3.0, 4.0, 5.0], dtype=np.float32)
+        r = np.zeros_like(x)
+
+        d_x = cuda.to_device(x)
+        d_r = cuda.to_device(r)
+
+        cufunc.set_shared_memory_carveout(75)
+        add_one[1, 5](d_r, d_x)
+
+        result = d_r.copy_to_host()
+        expected = x + 1
+
+        np.testing.assert_array_almost_equal(
+            result,
+            expected,
+            err_msg="Kernel produced incorrect results after set_shared_memory_carveout",
+        )
 
 
 class TestDevice(CUDATestCase):

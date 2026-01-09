@@ -1,11 +1,13 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-2-Clause
 
+import sys
 from typing import List
 from dataclasses import dataclass, field
-from numba import cuda, float32
+from numba import cuda
+from numba.cuda import float32
 from numba.cuda.compiler import compile_ptx_for_current_device, compile_ptx
-from math import cos, sin, tan, exp, log, log10, log2, pow, tanh
+from math import cos, sin, tan, exp, log, log10, log2, pow, tanh, nextafter
 from operator import truediv
 import numpy as np
 from numba.cuda.testing import CUDATestCase, skip_on_cudasim, skip_unless_cc_75
@@ -141,6 +143,19 @@ class TestFastMathOption(CUDATestCase):
             ),
         )
 
+    @unittest.skipUnless(sys.version_info >= (3, 11), "Python 3.11+ required")
+    def test_exp2f(self):
+        from math import exp2
+
+        self._test_fast_math_unary(
+            exp2,
+            FastMathCriterion(
+                fast_expected=["ex2.approx.ftz.f32 "],
+                prec_expected=["ex2.approx.f32 "],
+                prec_unexpected=["ex2.approx.ftz.f32 "],
+            ),
+        )
+
     def test_logf(self):
         # Look for constant used to convert from log base 2 to log base e
         self._test_fast_math_unary(
@@ -176,6 +191,15 @@ class TestFastMathOption(CUDATestCase):
             FastMathCriterion(
                 fast_expected=["lg2.approx.ftz.f32 "],
                 prec_unexpected=["lg2.approx.ftz.f32 "],
+            ),
+        )
+
+    def test_nextafterf(self):
+        self._test_fast_math_binary(
+            nextafter,
+            FastMathCriterion(
+                fast_expected=[".ftz.f32 "],
+                prec_unexpected=[".ftz.f32 "],
             ),
         )
 

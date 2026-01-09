@@ -11,14 +11,10 @@ from llvmlite.ir import Constant
 
 import ctypes
 from numba.cuda.cext import _helperlib
-from numba.core import (
-    errors,
-    types,
-)
-from numba.cuda import cgutils, lowering, config, serialize
+from numba.cuda.core import errors
 from numba.cuda.core import imputils
 from numba.cuda.utils import PYVERSION
-
+from numba.cuda import config, types, lowering, cgutils, serialize
 
 PY_UNICODE_1BYTE_KIND = _helperlib.py_unicode_1byte_kind
 PY_UNICODE_2BYTE_KIND = _helperlib.py_unicode_2byte_kind
@@ -879,6 +875,9 @@ class PythonAPI(object):
                 self.py_hash_t.as_pointer(),
             ],
         )
+        # `_PySet_NextEntry` returns a borrowed reference to the key, which is
+        # generally not expected for iterators--which is the place where this
+        # is used internally. Perhaps we should revisit this at some point
         fn = self._get_function(fnty, name="_PySet_NextEntry")
         return self.builder.call(fn, (set, posptr, keyptr, hashptr))
 

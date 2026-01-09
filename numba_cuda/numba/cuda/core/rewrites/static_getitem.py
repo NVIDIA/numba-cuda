@@ -1,7 +1,9 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-2-Clause
 
-from numba.core import errors, types, ir
+from numba.cuda.core import errors
+from numba.cuda.core import ir
+from numba.cuda import types
 from numba.cuda.core.rewrites import register_rewrite, Rewrite
 
 
@@ -35,7 +37,7 @@ class RewriteConstGetitems(Rewrite):
         new_block = self.block.copy()
         new_block.clear()
         for inst in self.block.body:
-            if isinstance(inst, ir.Assign):
+            if isinstance(inst, ir.assign_types):
                 expr = inst.value
                 if expr in self.getitems:
                     const = self.getitems[expr]
@@ -83,7 +85,7 @@ class RewriteStringLiteralGetitems(Rewrite):
         """
         new_block = ir.Block(self.block.scope, self.block.loc)
         for inst in self.block.body:
-            if isinstance(inst, ir.Assign):
+            if isinstance(inst, ir.assign_types):
                 expr = inst.value
                 if expr in self.getitems:
                     const, lit_val = self.getitems[expr]
@@ -117,7 +119,7 @@ class RewriteStringLiteralSetitems(Rewrite):
         self.setitems = setitems = {}
         self.block = block
         self.calltypes = calltypes
-        for inst in block.find_insts(ir.SetItem):
+        for inst in block.find_insts(ir.setitem_types):
             index_ty = typemap[inst.index.name]
             if isinstance(index_ty, types.StringLiteral):
                 setitems[inst] = (inst.index, index_ty.literal_value)
@@ -131,7 +133,7 @@ class RewriteStringLiteralSetitems(Rewrite):
         """
         new_block = ir.Block(self.block.scope, self.block.loc)
         for inst in self.block.body:
-            if isinstance(inst, ir.SetItem):
+            if isinstance(inst, ir.setitem_types):
                 if inst in self.setitems:
                     const, lit_val = self.setitems[inst]
                     new_inst = ir.StaticSetItem(
@@ -160,7 +162,7 @@ class RewriteConstSetitems(Rewrite):
         self.block = block
         # Detect all setitem statements and find which ones can be
         # rewritten
-        for inst in block.find_insts(ir.SetItem):
+        for inst in block.find_insts(ir.setitem_types):
             try:
                 const = func_ir.infer_constant(inst.index)
             except errors.ConstantInferenceError:

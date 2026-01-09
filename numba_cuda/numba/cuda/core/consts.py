@@ -4,8 +4,8 @@ from types import ModuleType
 
 import weakref
 
-from numba.core.errors import ConstantInferenceError, NumbaError
-from numba.core import ir
+from numba.cuda.core.errors import ConstantInferenceError, NumbaError
+from numba.cuda.core import ir
 
 
 class ConstantInference(object):
@@ -68,7 +68,7 @@ class ConstantInference(object):
         try:
             const = defn.infer_constant()
         except ConstantInferenceError:
-            if isinstance(defn, ir.Expr):
+            if isinstance(defn, ir.expr_types):
                 return self._infer_expr(defn)
             self._fail(defn)
         return const

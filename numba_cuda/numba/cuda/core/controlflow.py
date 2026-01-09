@@ -5,15 +5,22 @@ import collections
 import functools
 import sys
 
-from numba.core.ir import Loc
-from numba.core.errors import UnsupportedError
+from numba.cuda.core.ir import Loc
+from numba.cuda.core.errors import UnsupportedError
 from numba.cuda.utils import PYVERSION
 
 # List of bytecodes creating a new block in the control flow graph
 # (in addition to explicit jump labels).
-NEW_BLOCKERS = frozenset(
-    ["SETUP_LOOP", "FOR_ITER", "SETUP_WITH", "BEFORE_WITH"]
-)
+if PYVERSION in ((3, 14),):
+    NEW_BLOCKERS = frozenset(
+        ["SETUP_LOOP", "FOR_ITER", "SETUP_WITH", "BEFORE_WITH", "LOAD_SPECIAL"]
+    )
+elif PYVERSION in ((3, 10), (3, 11), (3, 12), (3, 13)):
+    NEW_BLOCKERS = frozenset(
+        ["SETUP_LOOP", "FOR_ITER", "SETUP_WITH", "BEFORE_WITH"]
+    )
+else:
+    raise NotImplementedError(PYVERSION)
 
 
 class CFBlock(object):
@@ -400,8 +407,7 @@ class CFGraph(object):
             if node not in seen:
                 yield node
                 seen.add(node)
-                for succ in self._succs[node]:
-                    stack.append(succ)
+                stack.extend(self._succs[node])
 
     def _eliminate_dead_blocks(self):
         """
@@ -440,9 +446,11 @@ class CFGraph(object):
             if node not in seen:
                 seen.add(node)
                 stack.append((post_order.append, node))
-                for dest in succs[node]:
-                    if (node, dest) not in back_edges:
-                        stack.append((dfs_rec, dest))
+                stack.extend(
+                    (dfs_rec, dest)
+                    for dest in succs[node]
+                    if (node, dest) not in back_edges
+                )
 
         stack = [(dfs_rec, self._entry_point)]
         while stack:
@@ -970,7 +978,7 @@ class ControlFlowAnalysis(object):
         self._curblock.terminating = True
         self._force_new_block = True
 
-    if PYVERSION in ((3, 12), (3, 13)):
+    if PYVERSION in ((3, 12), (3, 13), (3, 14)):
 
         def op_RETURN_CONST(self, inst):
             self._curblock.terminating = True

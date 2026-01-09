@@ -153,9 +153,11 @@ class _EnvReloader(object):
                         new_environ["NUMBA_" + k.upper()] = v
 
         # clobber file based config with any locally defined env vars
-        for name, value in os.environ.items():
-            if name.startswith("NUMBA_"):
-                new_environ[name] = value
+        new_environ.update(
+            (name, value)
+            for name, value in os.environ.items()
+            if name.startswith("NUMBA_")
+        )
         # We update the config variables if at least one NUMBA environment
         # variable was modified.  This lets the user modify values
         # directly in the config module without having them when
@@ -211,11 +213,6 @@ class _EnvReloader(object):
 
         def optional_str(x):
             return str(x) if x is not None else None
-
-        # Type casting rules selection
-        USE_LEGACY_TYPE_SYSTEM = _readenv(
-            "NUMBA_USE_LEGACY_TYPE_SYSTEM", int, 1
-        )
 
         # developer mode produces full tracebacks, disables help instructions
         DEVELOPER_MODE = _readenv("NUMBA_DEVELOPER_MODE", int, 0)
@@ -497,10 +494,6 @@ class _EnvReloader(object):
         # Whether the default stream is the per-thread default stream
         CUDA_PER_THREAD_DEFAULT_STREAM = _readenv(
             "NUMBA_CUDA_PER_THREAD_DEFAULT_STREAM", int, 0
-        )
-
-        CUDA_ENABLE_MINOR_VERSION_COMPATIBILITY = _readenv(
-            "NUMBA_CUDA_ENABLE_MINOR_VERSION_COMPATIBILITY", int, 0
         )
 
         # Location of the CUDA include files

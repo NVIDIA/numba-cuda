@@ -3,6 +3,7 @@
 
 from collections import defaultdict
 import copy
+import importlib
 import sys
 from itertools import permutations, takewhile
 from contextlib import contextmanager
@@ -11,14 +12,10 @@ from functools import cached_property
 from llvmlite import ir as llvmir
 from llvmlite.ir import Constant
 
-from numba.core import (
-    types,
-    datamodel,
-)
-from numba.cuda import cgutils, debuginfo, utils, config
-from numba.core import errors
-from numba.cuda.core import targetconfig, funcdesc, imputils
-from numba.core.compiler_lock import global_compiler_lock
+from numba.cuda.core import imputils, targetconfig, funcdesc
+from numba.cuda import cgutils, debuginfo, types, utils, datamodel, config
+from numba.cuda.core import errors
+from numba.cuda.core.compiler_lock import global_compiler_lock
 from numba.cuda.core.pythonapi import PythonAPI
 from numba.cuda.core.imputils import (
     user_function,
@@ -66,11 +63,11 @@ class OverloadSelector(object):
         """
         Select all compatible signatures and their implementation.
         """
-        out = {}
-        for ver_sig, impl in self.versions:
-            if self._match_arglist(ver_sig, sig):
-                out[ver_sig] = impl
-        return out
+        return {
+            ver_sig: impl
+            for ver_sig, impl in self.versions
+            if self._match_arglist(ver_sig, sig)
+        }
 
     def _best_signature(self, candidates):
         """
@@ -216,10 +213,15 @@ class BaseContext(object):
     def __init__(self, typing_context, target):
         self.address_size = utils.MACHINE_BITS
         self.typing_context = typing_context
-        from numba.core.target_extension import target_registry
-
         self.target_name = target
-        self.target = target_registry[target]
+
+        if importlib.util.find_spec("numba"):
+            from numba.core.target_extension import CUDA
+
+            # Used only in Numba's target_extension implementation.
+            # Numba-CUDA has the target_extension implementation removed, and
+            # references to it hardcoded to values specific to the CUDA target.
+            self.target = CUDA
 
         # A mapping of installed registries to their loaders
         self._registries = {}
@@ -931,7 +933,12 @@ class BaseContext(object):
         If *caching* evaluates True, the function keeps the compiled function
         for reuse in *.cached_internal_func*.
         """
-        cache_key = (impl.__code__, sig, type(self.error_model))
+        cache_key = (
+            impl.__code__,
+            sig,
+            type(self.error_model),
+            self.enable_nrt,
+        )
         if not caching:
             cached = None
         else:
@@ -1315,11 +1322,7 @@ class _wrap_missing_loc(object):
             # ignore attributes if not available (i.e fix py2.7)
             attrs = "__name__", "libs"
             for attr in attrs:
-                try:
-                    val = getattr(fn, attr)
-                except AttributeError:
-                    pass
-                else:
+                if (val := getattr(fn, attr, None)) is not None:
                     setattr(wrapper, attr, val)
 
             return wrapper

@@ -1,23 +1,22 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-2-Clause
 
-from numba.cuda.cudadrv.driver import CudaAPIError
+from numba.cuda._compat import CUDAError
 import numpy as np
 import threading
 
-from numba import (
+from numba.cuda.types import (
     boolean,
-    cuda,
     float32,
     float64,
     int32,
     int64,
-    types,
     uint32,
     void,
 )
-from numba.cuda import config
-from numba.core.errors import TypingError
+from numba import cuda
+from numba.cuda import config, types
+from numba.cuda.core.errors import TypingError
 from numba.cuda.testing import (
     cc_X_or_above,
     skip_on_cudasim,
@@ -768,13 +767,15 @@ class TestLaunchBounds(CUDATestCase):
         f[1, 128]()
 
         # Test launch bound exceeded
-        msg = "Call to cuLaunchKernel results in CUDA_ERROR_INVALID_VALUE"
-        with self.assertRaisesRegex(CudaAPIError, msg):
+        msg = "CUDA_ERROR_INVALID_VALUE"
+        with self.assertRaisesRegex(CUDAError, msg):
             f[1, 256]()
 
         sig = f.signatures[0]
         ptx = f.inspect_asm(sig)
-        self.assertRegex(ptx, r".maxntid\s+128,\s+1,\s+1")
+        # Match either `.maxntid, 128, 1, 1` or `.maxntid 128` on a line by
+        # itself:
+        self.assertRegex(ptx, r".maxntid\s+128(?:,\s+1,\s+1)?\s*\n")
 
         return ptx
 

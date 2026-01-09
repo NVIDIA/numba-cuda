@@ -6,8 +6,8 @@ This file provides internal compiler utilities that support certain special
 operations with tuple and workarounds for limitations enforced in userland.
 """
 
-from numba.core import types, errors
-from numba.cuda import typing
+from numba.cuda import types, typing
+from numba.cuda.core import errors
 from numba.cuda.cgutils import alloca_once
 from numba.cuda.extending import intrinsic
 

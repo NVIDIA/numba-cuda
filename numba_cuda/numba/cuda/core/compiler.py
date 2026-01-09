@@ -3,8 +3,8 @@
 
 from numba.cuda.core.tracing import event
 
-from numba.core import errors
-from numba.core.errors import CompilerError
+from numba.cuda.core import errors
+from numba.cuda.core.errors import CompilerError
 
 from numba.cuda.core import callconv, config, bytecode
 from numba.cuda.core.untyped_passes import ExtractByteCode, FixupArgs
@@ -23,10 +23,9 @@ class _CompileStatus(object):
         self.can_fallback = can_fallback
 
     def __repr__(self):
-        vals = []
-        for k in self.__slots__:
-            vals.append("{k}={v}".format(k=k, v=getattr(self, k)))
-        return ", ".join(vals)
+        return ", ".join(
+            "{k}={v}".format(k=k, v=getattr(self, k)) for k in self.__slots__
+        )
 
 
 class StateDict(dict):

@@ -3,7 +3,11 @@
 
 import unittest
 
-from numba.cuda.testing import CUDATestCase, skip_on_cudasim
+from numba.cuda.testing import (
+    CUDATestCase,
+    skip_on_cudasim,
+    skip_on_standalone_numba_cuda,
+)
 from numba.cuda.tests.support import captured_stdout
 
 
@@ -24,6 +28,7 @@ class TestMonteCarlo(CUDATestCase):
         self._captured_stdout.__exit__(None, None, None)
         super().tearDown()
 
+    @skip_on_standalone_numba_cuda
     def test_ex_montecarlo(self):
         # ex_montecarlo.import.begin
         import numba

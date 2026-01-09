@@ -10,8 +10,8 @@ import weakref
 import collections
 import functools
 
-from numba.core import types, errors
-from numba.cuda import utils, config
+from numba.cuda.core import errors
+from numba.cuda import types, utils, config
 
 # # Exported symbols
 from numba.cuda.typing.typeof import typeof_impl  # noqa: F401
@@ -28,7 +28,7 @@ from numba.cuda.core.imputils import (  # noqa: F401
 )  # noqa: F401
 from numba.cuda.core.pythonapi import box, unbox, reflect, NativeValue  # noqa: F401
 from numba.cuda.serialize import ReduceMixin
-from numba.core.datamodel import models as core_models  # noqa: F401
+from numba.cuda.datamodel import models as core_models  # noqa: F401
 
 
 from numba.cuda.models import register_model  # noqa: F401
@@ -45,11 +45,9 @@ def make_attribute_wrapper(typeclass, struct_attr, python_attr):
     model manager.
     """
     from numba.cuda.typing.templates import AttributeTemplate
-
-    from numba.core.datamodel import default_manager
-    from numba.core.datamodel.models import StructModel
+    from numba.cuda.datamodel import default_manager
+    from numba.cuda.datamodel.models import StructModel
     from numba.cuda.core.imputils import impl_ret_borrowed
-    from numba.core import types
     from numba.cuda import cgutils
 
     from numba.cuda.models import cuda_data_manager
@@ -59,7 +57,9 @@ def make_attribute_wrapper(typeclass, struct_attr, python_attr):
     data_model_manager = cuda_data_manager.chain(default_manager)
 
     if not isinstance(typeclass, type) or not issubclass(typeclass, types.Type):
-        raise TypeError(f"typeclass should be a Type subclass, got {typeclass}")
+        raise TypeError(
+            "typeclass should be a Type subclass, got %s" % (typeclass,)
+        )
 
     def get_attr_fe_type(typ):
         """
@@ -68,7 +68,8 @@ def make_attribute_wrapper(typeclass, struct_attr, python_attr):
         model = data_model_manager.lookup(typ)
         if not isinstance(model, StructModel):
             raise TypeError(
-                f"make_attribute_wrapper() needs a type with a StructModel, but got {model}"
+                "make_struct_attribute_wrapper() needs a type "
+                "with a StructModel, but got %s" % (model,)
             )
         return model.get_member_fe_type(struct_attr)
 
@@ -223,6 +224,7 @@ def overload(
                     infer as core_infer,
                     infer_global as core_infer_global,
                 )
+                from numba.core import types as core_types
 
                 core_template = core_make_overload_template(
                     func,
@@ -235,7 +237,7 @@ def overload(
                 )
                 core_infer(core_template)
                 if callable(func):
-                    core_infer_global(func, types.Function(core_template))
+                    core_infer_global(func, core_types.Function(core_template))
             except ImportError:
                 pass
 

@@ -1,12 +1,22 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-2-Clause
 
+# delvewheel: patch
+
 import importlib
 from numba.cuda.core import config
 from .utils import _readenv
 import warnings
 import sys
 
+
+# Re-export types itself
+import numba.cuda.types as types
+
+# Re-export all type names
+from numba.cuda.types import *
+
+HAS_NUMBA = importlib.util.find_spec("numba") is not None
 
 # Require NVIDIA CUDA bindings at import time
 if not (
@@ -15,7 +25,8 @@ if not (
 ):
     raise ImportError(
         "NVIDIA CUDA Python bindings not found. Install the 'cuda' package "
-        "(e.g. pip install nvidia-cuda-python or numba-cuda[cuXY])."
+        '(e.g. pip install "cuda-bindings==XY.*" or "numba-cuda[cuXY]", '
+        "with XY=12 or XY=13)."
     )
 
 if config.ENABLE_CUDASIM:
@@ -58,3 +69,5 @@ if sys.platform.startswith("linux") and (sys.getdlopenflags() & 0x100) != 0:
         "sys.setdlopenflags() to disable RTLD_GLOBAL "
         "if you encounter symbol conflicts."
     )
+
+from numba.cuda.np.ufunc import vectorize, guvectorize

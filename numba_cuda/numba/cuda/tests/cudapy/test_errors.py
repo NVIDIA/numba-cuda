@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: BSD-2-Clause
 
 from numba import cuda
-from numba.core.errors import TypingError
+from numba.cuda.core.errors import TypingError
 from numba.cuda.testing import unittest, CUDATestCase, skip_on_cudasim
 from numba.cuda.cudadrv import driver
 

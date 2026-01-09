@@ -18,9 +18,10 @@ from copy import copy
 from collections import defaultdict
 
 from numba.cuda import config
-from numba.core import ir, errors
+from numba.cuda.core import ir
+from numba.cuda.core import errors
 from numba.cuda.core import ir_utils
-from numba.cuda.utils import OrderedSet, _lazy_pformat
+from numba.cuda.utils import _lazy_pformat
 from numba.cuda.core.analysis import compute_cfg_from_blocks
 
 
@@ -112,8 +113,8 @@ def _iterated_domfronts(cfg):
     keep_going = True
     while keep_going:
         keep_going = False
-        for k, vs in domfronts.items():
-            inner = reduce(operator.or_, [domfronts[v] for v in vs], set())
+        for vs in domfronts.values():
+            inner = reduce(operator.or_, map(domfronts.__getitem__, vs), set())
             if inner.difference(vs):
                 vs |= inner
                 keep_going = True
@@ -160,7 +161,7 @@ def _find_defs_violators(blocks, cfg):
     # Gather violators by number of definitions.
     # The violators are added by the order that they are seen and the algorithm
     # scan from the first to the last basic-block as they occur in bytecode.
-    violators = OrderedSet([k for k, vs in defs.items() if len(vs) > 1])
+    violators = {k: None for k, vs in defs.items() if len(vs) > 1}
     # Gather violators by uses not dominated by the one def
     doms = cfg.dominators()
     for k, use_blocks in uses.items():
@@ -169,9 +170,9 @@ def _find_defs_violators(blocks, cfg):
                 dom = doms[label]
                 def_labels = {label for _assign, label in defs[k]}
                 if not def_labels.intersection(dom):
-                    violators.add(k)
+                    violators[k] = None
                     break
-    _logger.debug("SSA violators %s", _lazy_pformat(violators))
+    _logger.debug("SSA violators %s", _lazy_pformat(list(violators)))
     return violators
 
 
@@ -210,7 +211,7 @@ def _run_ssa_block_pass(states, blk, handler):
     _logger.debug("Running %s", handler)
     for stmt in blk.body:
         _logger.debug("on stmt: %s", stmt)
-        if isinstance(stmt, ir.Assign):
+        if isinstance(stmt, ir.assign_types):
             ret = handler.on_assign(states, stmt)
         else:
             ret = handler.on_other(states, stmt)
@@ -334,7 +335,7 @@ class _FixSSAVars(_BaseHandler):
 
     def on_assign(self, states, assign):
         rhs = assign.value
-        if isinstance(rhs, ir.Inst):
+        if isinstance(rhs, ir.inst_types):
             newdef = self._fix_var(
                 states,
                 assign,
@@ -352,7 +353,7 @@ class _FixSSAVars(_BaseHandler):
                         value=rhs,
                         loc=assign.loc,
                     )
-        elif isinstance(rhs, ir.Var):
+        elif isinstance(rhs, ir.var_types):
             newdef = self._fix_var(states, assign, [rhs])
             # Has a replacement that is not the current variable
             if newdef is not None and newdef.target is not ir.UNDEFINED:

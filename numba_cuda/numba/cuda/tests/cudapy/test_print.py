@@ -110,10 +110,43 @@ from numba.cuda import config
 def print_bfloat16():
     # 0.9375 is a dyadic rational, it's integer significand can expand within 7 digits.
     # printing this should not give any rounding error.
-    a = cuda.types.bfloat16(0.9375)
+    a = cuda.bfloat16(0.9375)
     print(a, a, a)
 
 print_bfloat16[1, 1]()
+cuda.synchronize()
+"""
+
+print_int64_tuple_usecase = """\
+from numba import cuda
+
+@cuda.jit
+def print_tuple(tup):
+    print(tup)
+
+print_tuple[1, 1]((1, 2, 3, 4, 5))
+cuda.synchronize()
+"""
+
+print_nested_mixed_type_tuple_usecase = """\
+from numba import cuda
+
+@cuda.jit
+def print_tuple(tup):
+    print(tup)
+
+print_tuple[1, 1]((1, ((2, 4), 3.0), (4,), 5))
+cuda.synchronize()
+"""
+
+print_single_element_tuple_usecase = """\
+from numba import cuda
+
+@cuda.jit
+def print_tuple(tup):
+    print(tup)
+
+print_tuple[1, 1]((1,))
 cuda.synchronize()
 """
 
@@ -162,6 +195,24 @@ class TestPrint(CUDATestCase):
         lines = [line.strip() for line in output.splitlines(True)]
         expected = [str(i) for i in np.ndindex(2, 2, 2)]
         self.assertEqual(sorted(lines), expected)
+
+    def test_tuple(self):
+        output, _ = self.run_code(print_int64_tuple_usecase)
+        lines = [line.strip() for line in output.splitlines(True)]
+        expected = ["(1, 2, 3, 4, 5)"]
+        self.assertEqual(lines, expected)
+
+    def test_nested_mixed_type_tuple(self):
+        output, _ = self.run_code(print_nested_mixed_type_tuple_usecase)
+        (line,) = (line.strip() for line in output.splitlines(True))
+        expected = r"^\(1, \(\(2, 4\), 3\.0+\), \(4,\), 5\)$"
+        self.assertRegex(line, expected)
+
+    def test_single_element_tuple(self):
+        output, _ = self.run_code(print_single_element_tuple_usecase)
+        lines = [line.strip() for line in output.splitlines(True)]
+        expected = ["(1,)"]
+        self.assertEqual(lines, expected)
 
     @skip_on_cudasim("bfloat16 on host is not yet supported.")
     def test_bfloat16(self):
