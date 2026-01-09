@@ -9,6 +9,8 @@ from numba.cuda.testing import unittest, CUDATestCase
 from numba.cuda.testing import skip_on_cudasim
 from numba.cuda.tests.support import IS_NUMPY_2
 
+import pytest
+
 
 class TestCudaNDArray(CUDATestCase):
     def test_device_array_interface(self):
@@ -615,6 +617,23 @@ class TestCoreContiguous(CUDATestCase):
         shape = (10, 12)
         view = np.zeros(shape, order="F")[::2, ::2]
         self._test_against_array_core(view)
+
+    def test_kernel_with_buffer(self):
+        from cuda.core import Buffer
+
+        cp = pytest.importorskip("cupy")
+
+        @cuda.jit
+        def kernel(buf, n):
+            n[0] = len(buf)
+
+        n = 10
+        view = cp.ones(n, dtype="uint8")
+        out = cp.zeros(1, dtype="uint64")
+        buf = Buffer.from_handle(view.data.ptr, size=n)
+        func = kernel[1, 1]
+        func(buf, out)
+        assert out[0] == n
 
 
 if __name__ == "__main__":

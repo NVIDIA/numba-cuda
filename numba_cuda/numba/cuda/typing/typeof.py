@@ -16,6 +16,8 @@ from numba.cuda.core import errors
 from numba.cuda import utils
 from numba.cuda.np import numpy_support
 
+from cuda.core import Buffer
+
 
 # terminal color markup
 _termcolor = errors.termcolor()
@@ -370,4 +372,14 @@ def _typeof_cuda_array_interface(val, c):
         shape=shape,
         strides=strides,
         readonly=readonly,
+    )
+
+
+@typeof_impl.register(Buffer)
+def typeof_buffer(val, c):
+    return types.Array(
+        dtype=_numba_dtype_from_str("uint8"),
+        ndim=1,
+        layout="C",
+        readonly=False,
     )
