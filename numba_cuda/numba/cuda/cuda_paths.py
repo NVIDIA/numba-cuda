@@ -521,10 +521,9 @@ def _get_nvvm():
         nvvm = pathfinder.load_nvidia_dynamic_lib("nvvm")
         return nvvm
     except pathfinder.DynamicLibNotFoundError:
-        nvrtc = _get_nvrtc()
-        path = pathlib.Path(nvrtc.abs_path)
-        nvvm = path.parents[3] / "nvvm" / "lib64" / "libnvvm.so"
-
+        # Try system search
+        # TODO: remove after cuda-python/1157 is resolved
+        nvvm = pathlib.Path(_get_nvvm_system_path())
         if nvvm.exists():
             dl = pathfinder._dynamic_libs.load_nvidia_dynamic_lib.load_with_abs_path(
                 "nvvm", nvvm, "system-search"
@@ -546,3 +545,19 @@ def _get_nvrtc_path():
 def _get_nvvm_path():
     nvvm = _get_nvvm()
     return _env_path_tuple(nvvm.found_via, nvvm.abs_path)
+
+
+def _get_nvvm_system_path():
+    nvvm_lib_dir = get_system_ctk("nvvm")
+    if nvvm_lib_dir is None:
+        return None
+    nvvm_lib_dir = os.path.join(nvvm_lib_dir, "bin" if IS_WIN32 else "lib64")
+    if IS_WIN32 and os.path.isdir(os.path.join(nvvm_lib_dir, "x64")):
+        nvvm_lib_dir = os.path.join(nvvm_lib_dir, "x64")
+
+    nvvm_path = os.path.join(
+        nvvm_lib_dir, "nvvm64_40_0.dll" if IS_WIN32 else "libnvvm.so.4"
+    )
+    # if os.path.isfile(nvvm_path):
+    #     return nvvm_path
+    return nvvm_path
