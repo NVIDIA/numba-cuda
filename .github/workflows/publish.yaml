@@ -29,15 +29,6 @@ jobs:
             echo "${BUILD_MATRIX}"
             echo 'EOF'
           } >> "${GITHUB_OUTPUT}"
-  build-conda:
-    needs: compute-matrix
-    uses: ./.github/workflows/conda-python-build.yaml
-    secrets: inherit
-    with:
-      build_type: release
-      script: "ci/build_conda.sh"
-      matrix: ${{ needs.compute-matrix.outputs.BUILD_MATRIX }}
-      upload_to_anaconda: true
   build-wheels:
     needs: compute-matrix
     uses: ./.github/workflows/wheels-build.yaml
