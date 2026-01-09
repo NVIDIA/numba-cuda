@@ -1,6 +1,9 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.  
+# SPDX-License-Identifier: BSD-2-Clause
 import numpy as np
 
-from numba import cuda, float32, int32, uint32
+from numba import cuda
+from numba.cuda import float32, int32, uint32
 from numba.cuda.testing import CUDATestCase, skip_on_cudasim
 
 
@@ -46,7 +49,8 @@ def implicit_promotion_kernel(inp, out):
         out[i] = inp[i] + 0.5
 
 
-class TestCasting(CUDATestCase):
+
+class TestNumericCasting(CUDATestCase):
 
     def _launch_1d(self, kernel, d_inp, d_out) -> None:
         threadsperblock = 64
