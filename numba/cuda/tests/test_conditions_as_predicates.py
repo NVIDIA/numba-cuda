@@ -2,6 +2,9 @@
 # SPDX-License-Identifier: BSD-2-Clause
 
 import numpy as np
+# SPDX-License-Identifier: BSD-2-Clause
+
+import numpy as np
 
 from numba import cuda
 from numba.cuda.testing import CUDATestCase, skip_on_cudasim
