@@ -903,10 +903,10 @@ def array_core(ary):
     """
     if not ary.strides or not ary.size:
         return ary
-    core_index = []
-    for stride in ary.strides:
-        core_index.append(0 if stride == 0 else slice(None))
-    return ary[tuple(core_index)]
+    core_index = tuple(
+        0 if stride == 0 else slice(None) for stride in ary.strides
+    )
+    return ary[core_index]
 
 
 def is_contiguous(ary):

@@ -49,13 +49,13 @@ test = [
     "statistics",
 ]
 test-cu12 = [
-    "nvidia-curand-cu12",
+    "cuda-toolkit[curand]==12.*",
     "cupy-cuda12x",
     { include-group = "test" }
 ]
 test-cu13 = [
+    "cuda-toolkit[curand]==13.*",
     "cupy-cuda13x",
-    "nvidia-curand==10.4.*",
     { include-group = "test" }
 ]
 
@@ -100,6 +100,7 @@ ignore = [
     # Ambiguous variable names
     "E741",
 ]
+extend-select = ["PERF"]
 fixable = ["ALL"]
 
 exclude = [
@@ -118,6 +119,8 @@ exclude = [
 
 [tool.ruff.lint.per-file-ignores]
 # Slightly long line in the standard version file
+"**/test*.py" = ["PERF"]
+"**/simulator/*" = ["PERF"]
 "numba_cuda/_version.py" = ["E501"]
 # "Unused" imports / potentially undefined names in init files
 "numba_cuda/numba/cuda/__init__.py" = ["F401", "F403", "F405", "E402"]

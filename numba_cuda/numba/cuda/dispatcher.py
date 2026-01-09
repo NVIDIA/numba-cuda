@@ -858,7 +858,7 @@ class _DispatcherBase(_dispatcher.Dispatcher):
             for cres in overloads.values():
                 try:
                     targetctx.remove_user_function(cres.entry_point)
-                except KeyError:
+                except KeyError:  # noqa: PERF203
                     pass
 
         return finalizer
@@ -1626,21 +1626,7 @@ class CUDADispatcher(serialize.ReduceMixin, _MemoMixin, _DispatcherBase):
     def typeof_pyval(self, val):
         # Based on _DispatcherBase.typeof_pyval, but differs from it to support
         # the CUDA Array Interface.
-        try:
-            return typeof(val, Purpose.argument)
-        except ValueError:
-            if (
-                interface := getattr(val, "__cuda_array_interface__")
-            ) is not None:
-                # When typing, we don't need to synchronize on the array's
-                # stream - this is done when the kernel is launched.
-
-                return typeof(
-                    cuda._api._from_cuda_array_interface(interface, sync=False),
-                    Purpose.argument,
-                )
-            else:
-                raise
+        return typeof(val, Purpose.argument)
 
     def specialize(self, *args):
         """
@@ -2104,7 +2090,7 @@ class CUDADispatcher(serialize.ReduceMixin, _MemoMixin, _DispatcherBase):
         if file is None:
             file = sys.stdout
 
-        for _, defn in self.overloads.items():
+        for defn in self.overloads.values():
             defn.inspect_types(file=file)
 
     @classmethod

@@ -113,8 +113,8 @@ def _iterated_domfronts(cfg):
     keep_going = True
     while keep_going:
         keep_going = False
-        for k, vs in domfronts.items():
-            inner = reduce(operator.or_, [domfronts[v] for v in vs], set())
+        for vs in domfronts.values():
+            inner = reduce(operator.or_, map(domfronts.__getitem__, vs), set())
             if inner.difference(vs):
                 vs |= inner
                 keep_going = True

@@ -334,7 +334,7 @@ class BaseFunction(Callable):
                             k: _unlit_non_poison(v) for k, v in kws.items()
                         }
                         sig = temp.apply(nolitargs, nolitkws)
-                except Exception as e:
+                except Exception as e:  # noqa: PERF203
                     if not isinstance(e, errors.NumbaError):
                         raise e
                     sig = None
