@@ -37,11 +37,18 @@ rapids-logger "Show Numba system info"
 python -m numba --sysinfo
 
 apt-get update
+
+# Uninstall nvvm and nvrtc packages, if any exist
 nvvm_pkgs=$(dpkg --get-selections | awk '/nvvm/ {print $1}')
 nvrtc_pkgs=$(dpkg --get-selections | awk '/nvrtc/ {print $1}')
 
-if [[ -z "$nvvm_pkgs" || -z "$nvrtc_pkgs" ]]; then
-    echo "Expected both nvvm and nvrtc packages to be present, but at least one was missing"
+if [[ -z "$nvvm_pkgs" ]]; then
+    echo "Error: expected to remove nvvm packages but didn't find any installed"
+    exit 1
+fi
+
+if [[ -z "$nvrtc_pkgs" ]]; then
+    echo "Error: expected to remove nvrtc packages but didn't find any installed"
     exit 1
 fi
 
