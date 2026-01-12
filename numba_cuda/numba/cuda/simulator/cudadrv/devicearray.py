@@ -272,6 +272,13 @@ class FakeCUDAArray(object):
         ]
 
 
+DeviceNDArray = FakeCUDAArray
+
+
+class DeprecatedDeviceArrayApiWarning(Warning):
+    pass
+
+
 def array_core(ary):
     """
     Extract the repeated core of a broadcast array.
