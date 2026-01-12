@@ -19,6 +19,7 @@ import os
 import threading
 import warnings
 
+
 NVRTC_EXTRA_SEARCH_PATHS = _readenv(
     "NUMBA_CUDA_NVRTC_EXTRA_SEARCH_PATHS", str, ""
 ) or getattr(config, "NUMBA_CUDA_NVRTC_EXTRA_SEARCH_PATHS", "")
@@ -347,15 +348,26 @@ def compile(src, name, cc, ltoir=False):
         arch = f"--gpu-architecture=compute_{major}{minor}"
 
     cuda_include_dir = get_cuda_paths()["include_dir"].info
-    cuda_includes = [
-        f"{cuda_include_dir}",
-        f"{os.path.join(cuda_include_dir, 'cccl')}",
-    ]
+    cuda_includes = [f"{cuda_include_dir}"]
 
     cudadrv_path = os.path.dirname(os.path.abspath(__file__))
     numba_cuda_path = os.path.dirname(cudadrv_path)
 
-    numba_include = f"{os.path.join(numba_cuda_path, 'include', '12')}"
+    nvrtc_ver_major = version[0]
+    if nvrtc_ver_major == 12:
+        numba_include = f"{os.path.join(numba_cuda_path, 'include', '12')}"
+        # For CUDA 12 wheels, `cuda_include_dir` is `site-packages/nvidia/cuda_runtime/include`
+        # We need to find CCCL at `site-packages/nvidia/cuda_cccl/include`
+        # For CUDA 12 conda / system install, CCCL is just in the `include` directory
+        cuda_includes.append(
+            f"{os.path.join(cuda_include_dir, '..', '..', 'cuda_cccl', 'include')}"
+        )
+    elif nvrtc_ver_major == 13:
+        numba_include = f"{os.path.join(numba_cuda_path, 'include', '13')}"
+        # For CUDA 13 wheels, `cuda_include_dir` is `site-packages/nvidia/cu13/include`
+        # We need to find CCCL at `site-packages/nvidia/cu13/include/cccl`
+        # For CUDA 13 conda / system install, CCCL is in the `include/cccl` directory
+        cuda_includes.append(f"{os.path.join(cuda_include_dir, 'cccl')}")
 
     if config.CUDA_NVRTC_EXTRA_SEARCH_PATHS:
         extra_includes = config.CUDA_NVRTC_EXTRA_SEARCH_PATHS.split(":")
@@ -365,7 +377,6 @@ def compile(src, name, cc, ltoir=False):
     nrt_include = os.path.join(numba_cuda_path, "memory_management")
 
     includes = [numba_include, *cuda_includes, nrt_include, *extra_includes]
-
     if config.CUDA_USE_NVIDIA_BINDING:
         options = ProgramOptions(
             arch=arch,

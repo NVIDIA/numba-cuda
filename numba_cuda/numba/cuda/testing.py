@@ -7,7 +7,7 @@ import shutil
 import pytest
 from datetime import datetime
 from numba.core.utils import PYVERSION
-from numba.cuda.cuda_paths import get_conda_ctk
+from numba.cuda.cuda_paths import get_conda_ctk_libdir
 from numba.cuda.cudadrv import driver, devices, libs
 from numba.cuda.dispatcher import CUDADispatcher
 from numba.core import config
@@ -211,7 +211,7 @@ def skip_unless_cudasim(reason):
 
 def skip_unless_conda_cudatoolkit(reason):
     """Skip test if the CUDA toolkit was not installed by Conda"""
-    return unittest.skipUnless(get_conda_ctk() is not None, reason)
+    return unittest.skipUnless(get_conda_ctk_libdir() is not None, reason)
 
 
 def skip_if_external_memmgr(reason):

@@ -102,10 +102,12 @@ class TestLibDeviceLookUp(LibraryLookupBase):
         # Check that CUDA_HOME works by removing conda-env
         by, info, warns = self.remote_do(self.do_set_cuda_home)
         self.assertEqual(by, "CUDA_HOME")
-        self.assertEqual(info, os.path.join("mycudahome", "nvvm", "libdevice"))
+        self.assertTrue(
+            info.startswith(os.path.join("mycudahome", "nvvm", "libdevice"))
+        )
         self.assertFalse(warns)
 
-        if get_system_ctk() is None:
+        if get_system_ctk("nvvm", "libdevice") is None:
             # Fake remove conda environment so no cudatoolkit is available
             by, info, warns = self.remote_do(self.do_clear_envs)
             self.assertEqual(by, "<unknown>")
@@ -148,13 +150,16 @@ class TestNvvmLookUp(LibraryLookupBase):
         self.assertEqual(by, "CUDA_HOME")
         self.assertFalse(warns)
         if IS_WIN32:
-            self.assertEqual(info, os.path.join("mycudahome", "nvvm", "bin"))
-        elif IS_OSX:
-            self.assertEqual(info, os.path.join("mycudahome", "nvvm", "lib"))
+            self.assertEqual(
+                os.path.dirname(info), os.path.join("mycudahome", "nvvm", "bin")
+            )
         else:
-            self.assertEqual(info, os.path.join("mycudahome", "nvvm", "lib64"))
+            self.assertEqual(
+                os.path.dirname(info),
+                os.path.join("mycudahome", "nvvm", "lib64"),
+            )
 
-        if get_system_ctk() is None:
+        if get_system_ctk("nvvm") is None:
             # Fake remove conda environment so no cudatoolkit is available
             by, info, warns = self.remote_do(self.do_clear_envs)
             self.assertEqual(by, "<unknown>")

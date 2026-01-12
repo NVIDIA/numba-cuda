@@ -5,13 +5,15 @@
 set -euo pipefail
 
 CUDA_VER_MAJOR_MINOR=${CUDA_VER%.*}
+CUDA_VER_MAJOR=${CUDA_VER%.*.*}
+
 
 rapids-logger "Install wheel with test dependencies"
 package=$(realpath wheel/numba_cuda*.whl)
 echo "Package path: ${package}"
 
 DEPENDENCIES=(
-    "${package}[test]"
+    "${package}[cu${CUDA_VER_MAJOR},test-cu${CUDA_VER_MAJOR}]"
     "cuda-python==${CUDA_VER_MAJOR_MINOR%.*}.*"
     "cuda-core==0.3.*"
 )
@@ -19,6 +21,8 @@ DEPENDENCIES=(
 # Constrain oldest supported dependencies for testing
 if [ "${RAPIDS_DEPENDENCIES:-}" = "oldest" ]; then
     DEPENDENCIES+=("numba==0.60.0")
+else
+    DEPENDENCIES+=("numba<0.62.0")
 fi
 
 python -m pip install "${DEPENDENCIES[@]}"
