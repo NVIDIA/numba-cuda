@@ -116,10 +116,19 @@ jobs:
         ref: ${{ inputs.sha }}
         fetch-depth: 0 # unshallow fetch for setuptools-scm
         persist-credentials: false
+
+    - name: Set environment variables
+      env:
+        CUDA_VER: ${{ matrix.CUDA_VER }}
+        HOST_PLATFORM: linux-64
+        PY_VER: ${{ matrix.PY_VER }}
+        SHA: ${{ github.sha }}
+      run: ./ci/tools/env-vars test
+
     - uses: actions/download-artifact@v4
       with:
-        name: wheel-py${{ matrix.PY_VER }}-${{ matrix.ARCH }}-linux
-        path: wheel
+        name: ${{ env.NUMBA_CUDA_ARTIFACT_NAME }}
+        path: ${{ env.NUMBA_CUDA_ARTIFACTS_DIR }}
     - name: Display structure of downloaded files
       run: ls -R
     - name: Standardize repository information
