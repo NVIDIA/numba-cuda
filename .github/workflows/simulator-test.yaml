@@ -108,6 +108,7 @@ jobs:
           pixi-version: "v0.62.2"
           environments: ${{ env.PIXI_ENV }}
           cache: false
+          locked: false
       - name: Python tests
         run: ${{ inputs.script }}
         env:
