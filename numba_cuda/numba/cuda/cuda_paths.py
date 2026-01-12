@@ -531,8 +531,7 @@ def _get_nvvm():
                     "nvvm", nvvm, "system-search"
                 )
                 return dl
-        else:
-            raise pathfinder.DynamicLibNotFoundError("nvvm not found")
+        raise pathfinder.DynamicLibNotFoundError("nvvm not found")
 
 
 def _get_nvrtc():
