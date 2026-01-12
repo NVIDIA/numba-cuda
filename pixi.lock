@@ -17596,7 +17596,7 @@ packages:
   timestamp: 1765466860567
 - conda: .
   name: numba-cuda
-  version: 0.23.0
+  version: 0.24.0
   build: py310h04c9772_0
   subdir: linux-64
   variants:
@@ -17615,12 +17615,12 @@ packages:
   - numpy >=1.21,<3
   license: BSD-2-Clause
   input:
-    hash: fbf2aec967fc793f2faac9564bd83b483897225058f2e503c8dd8f00d416eda9
+    hash: 665eb9e0c3ad3375b5d13013b6174a4826f62bcec1d2e47c937ab4fe69316b3a
     globs:
     - pyproject.toml
 - conda: .
   name: numba-cuda
-  version: 0.23.0
+  version: 0.24.0
   build: py310h3ca6f64_0
   subdir: linux-aarch64
   variants:
@@ -17639,12 +17639,12 @@ packages:
   - numpy >=1.21,<3
   license: BSD-2-Clause
   input:
-    hash: fbf2aec967fc793f2faac9564bd83b483897225058f2e503c8dd8f00d416eda9
+    hash: 665eb9e0c3ad3375b5d13013b6174a4826f62bcec1d2e47c937ab4fe69316b3a
     globs:
     - pyproject.toml
 - conda: .
   name: numba-cuda
-  version: 0.23.0
+  version: 0.24.0
   build: py310h5d23e43_0
   subdir: win-64
   variants:
@@ -17663,12 +17663,12 @@ packages:
   - numpy >=1.21,<3
   license: BSD-2-Clause
   input:
-    hash: fbf2aec967fc793f2faac9564bd83b483897225058f2e503c8dd8f00d416eda9
+    hash: 665eb9e0c3ad3375b5d13013b6174a4826f62bcec1d2e47c937ab4fe69316b3a
     globs:
     - pyproject.toml
 - conda: .
   name: numba-cuda
-  version: 0.23.0
+  version: 0.24.0
   build: py311h2894be0_0
   subdir: linux-aarch64
   variants:
@@ -17687,12 +17687,12 @@ packages:
   - numpy >=1.23,<3
   license: BSD-2-Clause
   input:
-    hash: fbf2aec967fc793f2faac9564bd83b483897225058f2e503c8dd8f00d416eda9
+    hash: 665eb9e0c3ad3375b5d13013b6174a4826f62bcec1d2e47c937ab4fe69316b3a
     globs:
     - pyproject.toml
 - conda: .
   name: numba-cuda
-  version: 0.23.0
+  version: 0.24.0
   build: py311hb9e802a_0
   subdir: win-64
   variants:
@@ -17711,12 +17711,12 @@ packages:
   - numpy >=1.23,<3
   license: BSD-2-Clause
   input:
-    hash: fbf2aec967fc793f2faac9564bd83b483897225058f2e503c8dd8f00d416eda9
+    hash: 665eb9e0c3ad3375b5d13013b6174a4826f62bcec1d2e47c937ab4fe69316b3a
     globs:
     - pyproject.toml
 - conda: .
   name: numba-cuda
-  version: 0.23.0
+  version: 0.24.0
   build: py311he8c1319_0
   subdir: linux-64
   variants:
@@ -17735,12 +17735,12 @@ packages:
   - numpy >=1.23,<3
   license: BSD-2-Clause
   input:
-    hash: fbf2aec967fc793f2faac9564bd83b483897225058f2e503c8dd8f00d416eda9
+    hash: 665eb9e0c3ad3375b5d13013b6174a4826f62bcec1d2e47c937ab4fe69316b3a
     globs:
     - pyproject.toml
 - conda: .
   name: numba-cuda
-  version: 0.23.0
+  version: 0.24.0
   build: py312h3eebbd5_0
   subdir: linux-64
   variants:
@@ -17759,12 +17759,12 @@ packages:
   - numpy >=1.23,<3
   license: BSD-2-Clause
   input:
-    hash: fbf2aec967fc793f2faac9564bd83b483897225058f2e503c8dd8f00d416eda9
+    hash: 665eb9e0c3ad3375b5d13013b6174a4826f62bcec1d2e47c937ab4fe69316b3a
     globs:
     - pyproject.toml
 - conda: .
   name: numba-cuda
-  version: 0.23.0
+  version: 0.24.0
   build: py312h8e85db0_0
   subdir: linux-aarch64
   variants:
@@ -17783,12 +17783,12 @@ packages:
   - numpy >=1.23,<3
   license: BSD-2-Clause
   input:
-    hash: fbf2aec967fc793f2faac9564bd83b483897225058f2e503c8dd8f00d416eda9
+    hash: 665eb9e0c3ad3375b5d13013b6174a4826f62bcec1d2e47c937ab4fe69316b3a
     globs:
     - pyproject.toml
 - conda: .
   name: numba-cuda
-  version: 0.23.0
+  version: 0.24.0
   build: py312ha067a5a_0
   subdir: win-64
   variants:
@@ -17807,12 +17807,12 @@ packages:
   - numpy >=1.23,<3
   license: BSD-2-Clause
   input:
-    hash: fbf2aec967fc793f2faac9564bd83b483897225058f2e503c8dd8f00d416eda9
+    hash: 665eb9e0c3ad3375b5d13013b6174a4826f62bcec1d2e47c937ab4fe69316b3a
     globs:
     - pyproject.toml
 - conda: .
   name: numba-cuda
-  version: 0.23.0
+  version: 0.24.0
   build: py313h66129c8_0
   subdir: linux-aarch64
   variants:
@@ -17831,12 +17831,12 @@ packages:
   - numpy >=1.23,<3
   license: BSD-2-Clause
   input:
-    hash: fbf2aec967fc793f2faac9564bd83b483897225058f2e503c8dd8f00d416eda9
+    hash: 665eb9e0c3ad3375b5d13013b6174a4826f62bcec1d2e47c937ab4fe69316b3a
     globs:
     - pyproject.toml
 - conda: .
   name: numba-cuda
-  version: 0.23.0
+  version: 0.24.0
   build: py313he80dd91_0
   subdir: win-64
   variants:
@@ -17855,12 +17855,12 @@ packages:
   - numpy >=1.23,<3
   license: BSD-2-Clause
   input:
-    hash: fbf2aec967fc793f2faac9564bd83b483897225058f2e503c8dd8f00d416eda9
+    hash: 665eb9e0c3ad3375b5d13013b6174a4826f62bcec1d2e47c937ab4fe69316b3a
     globs:
     - pyproject.toml
 - conda: .
   name: numba-cuda
-  version: 0.23.0
+  version: 0.24.0
   build: py313hf75ce08_0
   subdir: linux-64
   variants:
@@ -17879,12 +17879,12 @@ packages:
   - numpy >=1.23,<3
   license: BSD-2-Clause
   input:
-    hash: fbf2aec967fc793f2faac9564bd83b483897225058f2e503c8dd8f00d416eda9
+    hash: 665eb9e0c3ad3375b5d13013b6174a4826f62bcec1d2e47c937ab4fe69316b3a
     globs:
     - pyproject.toml
 - conda: .
   name: numba-cuda
-  version: 0.23.0
+  version: 0.24.0
   build: py314h59f3c06_0
   subdir: linux-64
   variants:
@@ -17903,12 +17903,12 @@ packages:
   - numpy >=1.23,<3
   license: BSD-2-Clause
   input:
-    hash: fbf2aec967fc793f2faac9564bd83b483897225058f2e503c8dd8f00d416eda9
+    hash: 665eb9e0c3ad3375b5d13013b6174a4826f62bcec1d2e47c937ab4fe69316b3a
     globs:
     - pyproject.toml
 - conda: .
   name: numba-cuda
-  version: 0.23.0
+  version: 0.24.0
   build: py314h625260f_0
   subdir: win-64
   variants:
@@ -17927,12 +17927,12 @@ packages:
   - numpy >=1.23,<3
   license: BSD-2-Clause
   input:
-    hash: fbf2aec967fc793f2faac9564bd83b483897225058f2e503c8dd8f00d416eda9
+    hash: 665eb9e0c3ad3375b5d13013b6174a4826f62bcec1d2e47c937ab4fe69316b3a
     globs:
     - pyproject.toml
 - conda: .
   name: numba-cuda
-  version: 0.23.0
+  version: 0.24.0
   build: py314ha479ada_0
   subdir: linux-aarch64
   variants:
@@ -17951,7 +17951,7 @@ packages:
   - numpy >=1.23,<3
   license: BSD-2-Clause
   input:
-    hash: fbf2aec967fc793f2faac9564bd83b483897225058f2e503c8dd8f00d416eda9
+    hash: 665eb9e0c3ad3375b5d13013b6174a4826f62bcec1d2e47c937ab4fe69316b3a
     globs:
     - pyproject.toml
 - pypi: https://files.pythonhosted.org/packages/10/a7/cfbe475c35371cae1358e61f20c5f075badc18c4797ab4354140e1d283cf/numpy-2.4.1-cp314-cp314t-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl
