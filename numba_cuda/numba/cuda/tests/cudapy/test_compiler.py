@@ -661,6 +661,13 @@ class TestCompileOnlyTests(unittest.TestCase):
             ),
         )
 
+    def test_compile_ptx_arch_specific(self):
+        ptx, resty = cuda.compile_ptx(lambda: None, tuple(), cc=(9, 0, "a"))
+        self.assertIn(".target sm_90a", ptx)
+
+        ptx, resty = cuda.compile_ptx(lambda: None, tuple(), cc=(10, 0, "f"))
+        self.assertIn(".target sm_100f", ptx)
+
 
 @skip_on_cudasim("Compilation unsupported in the simulator")
 class TestCompileWithLaunchBounds(unittest.TestCase):
