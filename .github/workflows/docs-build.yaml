@@ -31,6 +31,7 @@ jobs:
           pixi-version: "v0.62.2"
           environments: docs
           cache: false
+          locked: false
       - name: Docs build
         run: pixi run -e docs build-docs
         env:
