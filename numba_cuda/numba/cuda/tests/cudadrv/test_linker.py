@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: BSD-2-Clause
 
 import numpy as np
+import os
 import pytest
 from numba.cuda.testing import unittest
 from numba.cuda.testing import (
@@ -109,10 +110,17 @@ def simple_lmem(A, B, dty):
         B[i] = C[i]
 
 
+TEST_BIN_DIR = os.getenv("NUMBA_CUDA_TEST_BIN_DIR")
+if TEST_BIN_DIR:
+    test_device_functions_ltoir = os.path.join(
+        TEST_BIN_DIR, "test_device_functions.ltoir"
+    )
+
+
 add_from_numba = cuda.declare_device(
     "add_from_numba",
     "int32(int32, int32)",
-    link=["testing/test_device_functions.ltoir"],
+    link=[test_device_functions_ltoir],
 )
 
 
