@@ -11,6 +11,7 @@ package:
 
 source:
   path: .
+  use_gitignore: true
 
 build:
   script: python -m pip install . -vv
@@ -35,6 +36,7 @@ requirements:
     - cuda-cudart-dev
     - cuda-version >=12
     - cuda-nvcc-impl
+    - packaging
 
 tests:
   - python:
