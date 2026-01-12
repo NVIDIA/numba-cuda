@@ -520,18 +520,19 @@ def _get_nvvm():
     try:
         nvvm = pathfinder.load_nvidia_dynamic_lib("nvvm")
         return nvvm
-    except pathfinder.DynamicLibNotFoundError:
+    except pathfinder.DynamicLibNotFoundError as e:
         # Try system search
         # TODO: remove after cuda-python/1157 is resolved
         path_or_none = _get_nvvm_system_path()
         if path_or_none is not None:
             nvvm = pathlib.Path(path_or_none)
             if nvvm.exists():
+                # TODO: Expose private cuda-python APIs
                 dl = pathfinder._dynamic_libs.load_nvidia_dynamic_lib.load_with_abs_path(
                     "nvvm", nvvm, "system-search"
                 )
                 return dl
-        raise pathfinder.DynamicLibNotFoundError("nvvm not found")
+        raise pathfinder.DynamicLibNotFoundError("nvvm not found") from e
 
 
 def _get_nvrtc():
