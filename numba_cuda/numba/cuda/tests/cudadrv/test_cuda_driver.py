@@ -14,9 +14,10 @@ from numba.cuda._compat import (
 )
 
 from numba import cuda
-from numba.cuda.cudadrv import devices
+from numba.cuda.cudadrv import devices, nvrtc
 from numba.cuda.testing import unittest, CUDATestCase, skip_unless_cc_90
 from numba.cuda.testing import skip_on_cudasim
+from numba.cuda.tests.support import override_config
 from numba.core import types
 import contextlib
 
@@ -394,9 +395,9 @@ class TestDevice(CUDATestCase):
         self.assertRegex(dev.uuid, uuid_format)
 
 
-@skip_unless_cc_90
 @skip_on_cudasim("CUDA asm unsupported in the simulator")
 class TestAcceleratedArchitecture(CUDATestCase):
+    @skip_unless_cc_90
     def test_device_arch_specific(self):
         set_desc = cuda.CUSource("""
         #include <cuda_fp16.h>
@@ -433,6 +434,23 @@ class TestAcceleratedArchitecture(CUDATestCase):
         kernel[1, 1](a)
 
         assert a[0] == 2
+
+    def test_get_arch_option_force_cc(self):
+        with override_config("FORCE_CUDA_CC", (8, 0)):
+            arch = nvrtc.get_arch_option(9, 0, "a")
+            self.assertEqual("compute_80", arch)
+
+    def test_get_arch_option_force_cc_arch_specific(self):
+        with override_config("FORCE_CUDA_CC", (9, 0, "a")):
+            arch = nvrtc.get_arch_option(9, 0)
+            self.assertEqual("compute_90a", arch)
+
+    def test_get_arch_option_illegal_arch_specific(self):
+        # Using a fictitious very high compute capability (major 99) for this
+        # test to ensure future toolkits are unlikely to provide an exact match
+        msg = "Can't use arch-specific compute_990a with"
+        with self.assertRaisesRegex(ValueError, msg):
+            nvrtc.get_arch_option(99, 0, "a")
 
 
 if __name__ == "__main__":

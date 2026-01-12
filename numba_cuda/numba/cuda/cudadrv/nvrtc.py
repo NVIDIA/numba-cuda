@@ -213,9 +213,25 @@ def find_closest_arch(cc):
 def get_arch_option(major, minor, arch=""):
     """Matches with the closest architecture option"""
     if config.FORCE_CUDA_CC:
-        major, minor = config.FORCE_CUDA_CC
+        fcc = config.FORCE_CUDA_CC
+        major, minor = fcc[0], fcc[1]
+        if len(fcc) == 3:
+            arch = fcc[2]
+        else:
+            arch = ""
     else:
-        major, minor = find_closest_arch((major, minor))
+        new_major, new_minor = find_closest_arch((major, minor))
+        if (new_major, new_minor) != (major, minor):
+            # If we picked a different major / minor, then using an
+            # arch-specific version is invalid
+            if arch != "":
+                raise ValueError(
+                    f"Can't use arch-specific compute_{major}{minor}{arch} with "
+                    "closest found compute capability "
+                    f"compute_{new_major}{new_minor}"
+                )
+        major, minor = new_major, new_minor
+
     return f"compute_{major}{minor}{arch}"
 
 
