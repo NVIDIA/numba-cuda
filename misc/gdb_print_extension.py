@@ -142,10 +142,8 @@ class NumbaTuplePrinter:
         self.val = val
 
     def to_string(self):
-        buf = []
         fields = self.val.type.fields()
-        for f in fields:
-            buf.append(str(self.val[f.name]))
+        buf = [str(self.val[f.name]) for f in fields]
         return "(%s)" % ", ".join(buf)
 
 
@@ -157,9 +155,7 @@ class NumbaUniTuplePrinter:
         # unituples are arrays
         fields = self.val.type.fields()
         lo, hi = fields[0].type.range()
-        buf = []
-        for i in range(lo, hi + 1):
-            buf.append(str(self.val[i]))
+        buf = [str(self.val[i]) for i in range(lo, hi + 1)]
         return "(%s)" % ", ".join(buf)
 
 
