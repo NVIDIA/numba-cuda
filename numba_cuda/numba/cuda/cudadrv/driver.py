@@ -2491,11 +2491,14 @@ class _Linker:
 
     def _get_linker_options(self, ptx):
         # Some linker flags are only valid/required if LTOIR object code is present.
+        # Passing None or True is a WAR for an issue in earlier versions of the
+        # 12.x CUDA toolkit
+        lto = True if self._has_ltoir else None
         options = LinkerOptions(
             max_register_count=self.max_registers,
             lineinfo=self.lineinfo,
             arch=self.arch,
-            link_time_optimization=self._has_ltoir,
+            link_time_optimization=lto,
             ptx=self._has_ltoir and ptx,
         )
         return options
