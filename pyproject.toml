@@ -21,7 +21,7 @@ authors = [
 license = "BSD-2-Clause"
 license-files = ["LICENSE", "LICENSE.numba"]
 requires-python = ">=3.9"
-dependencies = ["numba>=0.60.0", "cuda-bindings>=12.9.1,<14.0.0", "cuda-core>=0.3.2,<1.0.0"]
+dependencies = ["numba>=0.60.0", "cuda-bindings>=12.9.1,<14.0.0", "cuda-core>=0.3.2,<1.0.0", "packaging"]
 
 [project.optional-dependencies]
 cu12 = [
@@ -49,11 +49,11 @@ test = [
     "statistics",
 ]
 test-cu12 = [
-    "nvidia-curand-cu12",
+    "cuda-toolkit[curand]==12.*",
     { include-group = "test" }
 ]
 test-cu13 = [
-    "nvidia-curand==10.4.*",
+    "cuda-toolkit[curand]==13.*",
     { include-group = "test" }
 ]
 
@@ -98,6 +98,7 @@ ignore = [
     # Ambiguous variable names
     "E741",
 ]
+extend-select = ["PERF"]
 fixable = ["ALL"]
 
 exclude = [
@@ -116,6 +117,8 @@ exclude = [
 
 [tool.ruff.lint.per-file-ignores]
 # Slightly long line in the standard version file
+"**/test*.py" = ["PERF"]
+"**/simulator/*" = ["PERF"]
 "numba_cuda/_version.py" = ["E501"]
 # "Unused" imports / potentially undefined names in init files
 "numba_cuda/numba/cuda/__init__.py" = ["F401", "F403", "F405", "E402"]

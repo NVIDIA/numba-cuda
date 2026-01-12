@@ -3,8 +3,10 @@
 
 import math
 import itertools
+import sys
 
 import numpy as np
+import pytest
 
 from numba.cuda.testing import unittest, CUDATestCase
 from numba.cuda import types
@@ -276,6 +278,10 @@ class TestCMath(BaseComplexTest):
     def test_log(self):
         self.check_unary_func(log_usecase)
 
+    @pytest.mark.xfail(
+        sys.version_info[:2] >= (3, 14),
+        reason="python 3.14 cmath.log behavior is different than previous versions",
+    )
     def test_log_base(self):
         values = list(itertools.product(self.more_values(), self.more_values()))
         value_types = [

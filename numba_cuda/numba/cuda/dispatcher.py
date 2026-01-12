@@ -15,7 +15,7 @@ import uuid
 import re
 from warnings import warn
 
-from cuda.core.experimental import launch
+from numba.cuda._compat import launch, LaunchConfig
 
 from numba.cuda.core import errors
 from numba.cuda import serialize, utils
@@ -41,7 +41,7 @@ from numba.cuda.compiler import (
 from numba.cuda.core import sigutils, config, entrypoints
 from numba.cuda.flags import Flags
 from numba.cuda.cudadrv import driver, nvvm
-from cuda.core.experimental import LaunchConfig
+
 from numba.cuda.locks import module_init_lock
 from numba.cuda.core.caching import Cache, CacheImpl, NullCache
 from numba.cuda.descriptor import cuda_target
@@ -877,7 +877,7 @@ class _DispatcherBase(_dispatcher.Dispatcher):
             for cres in overloads.values():
                 try:
                     targetctx.remove_user_function(cres.entry_point)
-                except KeyError:
+                except KeyError:  # noqa: PERF203
                     pass
 
         return finalizer
@@ -1645,21 +1645,7 @@ class CUDADispatcher(serialize.ReduceMixin, _MemoMixin, _DispatcherBase):
     def typeof_pyval(self, val):
         # Based on _DispatcherBase.typeof_pyval, but differs from it to support
         # the CUDA Array Interface.
-        try:
-            return typeof(val, Purpose.argument)
-        except ValueError:
-            if (
-                interface := getattr(val, "__cuda_array_interface__")
-            ) is not None:
-                # When typing, we don't need to synchronize on the array's
-                # stream - this is done when the kernel is launched.
-
-                return typeof(
-                    cuda.from_cuda_array_interface(interface, sync=False),
-                    Purpose.argument,
-                )
-            else:
-                raise
+        return typeof(val, Purpose.argument)
 
     def specialize(self, *args):
         """
@@ -2123,7 +2109,7 @@ class CUDADispatcher(serialize.ReduceMixin, _MemoMixin, _DispatcherBase):
         if file is None:
             file = sys.stdout
 
-        for _, defn in self.overloads.items():
+        for defn in self.overloads.values():
             defn.inspect_types(file=file)
 
     @classmethod
