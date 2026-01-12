@@ -93,7 +93,7 @@ jobs:
         NVIDIA_VISIBLE_DEVICES: ${{ env.NVIDIA_VISIBLE_DEVICES }}
     timeout-minutes: 60
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           repository: ${{ inputs.repo }}
           ref: ${{ inputs.sha }}
@@ -118,7 +118,7 @@ jobs:
             echo "PIXI_ENV=${PIXI_ENV}"
           } >> "${GITHUB_ENV}"
       - name: Setup pixi
-        uses: prefix-dev/setup-pixi@fef5c9568ca6c4ff7707bf840ab0692ba3f08293
+        uses: prefix-dev/setup-pixi@82d477f15f3a381dbcc8adc1206ce643fe110fb7
         with:
           pixi-version: "v0.62.2"
           environments: ${{ env.PIXI_ENV }}
