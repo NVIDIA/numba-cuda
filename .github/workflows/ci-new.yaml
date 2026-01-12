@@ -206,15 +206,6 @@ jobs:
             echo 'EOF'
           } >> "${GITHUB_OUTPUT}"
 
-  build-conda:
-    needs:
-      - compute-matrix
-    uses: ./.github/workflows/conda-python-build.yaml
-    with:
-      build_type: pull-request
-      script: "ci/build_conda.sh"
-      matrix: ${{ needs.compute-matrix.outputs.BUILD_MATRIX }}
-
   test-conda:
     needs:
       - compute-matrix
