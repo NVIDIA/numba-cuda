@@ -11,7 +11,6 @@ from llvmlite import ir as llvm_ir
 from numba.cuda import HAS_NUMBA
 from numba.cuda.core import ir
 from numba.cuda import debuginfo, cgutils, utils, typing, types
-from numba import cuda
 from numba.cuda.core import (
     ir_utils,
     targetconfig,
@@ -1684,31 +1683,10 @@ class Lower(BaseLower):
 
 
 class CUDALower(Lower):
-    def _is_shared_array_call(self, fnty):
-        # Check if function type is a cuda.shared.array call
-        if not hasattr(fnty, "typing_key"):
-            return False
-        return fnty.typing_key is cuda.shared.array
-
-    def _lower_call_normal(self, fnty, expr, signature):
-        # Set flag for subsequent store to track shared address space
-        if self.context.enable_debuginfo and self._is_shared_array_call(fnty):
-            self._pending_shared_store = True
-
-        return super()._lower_call_normal(fnty, expr, signature)
-
     def storevar(self, value, name, argidx=None):
         """
         Store the value into the given variable.
         """
-        # Track address space for debug info
-        if self.context.enable_debuginfo and self._pending_shared_store:
-            from numba.cuda.cudadrv import nvvm
-
-            self._addrspace_map[name] = nvvm.ADDRSPACE_SHARED
-            if not name.startswith("$") and not name.startswith("."):
-                self._pending_shared_store = False
-
         # Handle polymorphic variables with CUDA_DEBUG_POLY enabled
         if config.CUDA_DEBUG_POLY:
             src_name = name.split(".")[0]
@@ -1833,12 +1811,6 @@ class CUDALower(Lower):
         Called before lowering all blocks.
         """
         super().pre_lower()
-
-        # Track address space for debug info
-        self._addrspace_map = {}
-        self._pending_shared_store = False
-        if self.context.enable_debuginfo:
-            self.debuginfo._set_addrspace_map(self._addrspace_map)
 
         # Track polymorphic variables for debug info
         self.poly_var_typ_map = {}

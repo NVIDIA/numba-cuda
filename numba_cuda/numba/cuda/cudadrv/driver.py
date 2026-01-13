@@ -54,17 +54,15 @@ from numba.cuda.utils import cached_file_read
 from numba.cuda.cudadrv import enums, drvapi, nvrtc
 
 from cuda.bindings import driver as binding
-from cuda.core.experimental import (
+from numba.cuda._compat import (
     Linker,
     LinkerOptions,
     ObjectCode,
-)
-
-from cuda.bindings.utils import get_cuda_native_handle
-from cuda.core.experimental import (
     Stream as ExperimentalStream,
     Device as ExperimentalDevice,
 )
+
+from cuda.bindings.utils import get_cuda_native_handle
 
 
 # There is no definition of the default stream in the Nvidia bindings (nor

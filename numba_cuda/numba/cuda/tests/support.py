@@ -38,6 +38,7 @@ from numba.cuda.datamodel.models import OpaqueModel
 from numba.cuda.np import numpy_support
 
 from numba.cuda import HAS_NUMBA
+from numba.cuda.utils import PYVERSION
 
 if HAS_NUMBA:
     from numba.core.extending import (
@@ -54,6 +55,16 @@ class EnableNRTStatsMixin(object):
 
     def tearDown(self):
         rtsys.memsys_disable_stats()
+
+
+skip_if_py314 = unittest.skipIf(PYVERSION == (3, 14), "Test unstable on 3.14")
+
+
+def expected_failure_py314(fn):
+    if PYVERSION == (3, 14):
+        return unittest.expectedFailure(fn)
+    else:
+        return fn
 
 
 skip_unless_cffi = unittest.skipUnless(cffi_utils.SUPPORTED, "requires cffi")
