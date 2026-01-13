@@ -37,7 +37,6 @@ def check_concurrent_compiling():
 
 @skip_under_cuda_memcheck("Hangs cuda-memcheck")
 @skip_on_cudasim("disabled for cudasim")
-@unittest.skip
 class TestMultiThreadCompiling(CUDATestCase):
     def test_concurrent_compiling(self):
         check_concurrent_compiling()
