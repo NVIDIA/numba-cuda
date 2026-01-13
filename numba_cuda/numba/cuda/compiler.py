@@ -767,57 +767,6 @@ def compile_cuda(
     return cres
 
 
-def cabi_wrap_function(
-    context, lib, fndesc, wrapper_function_name, nvvm_options
-):
-    """
-    Wrap a Numba ABI function in a C ABI wrapper at the NVVM IR level.
-
-    The C ABI wrapper will have the same name as the source Python function.
-    """
-    # The wrapper will be contained in a new library that links to the wrapped
-    # function's library
-    library = lib.codegen.create_library(
-        f"{lib.name}_function_",
-        entry_name=wrapper_function_name,
-        nvvm_options=nvvm_options,
-    )
-    library.add_linking_library(lib)
-
-    # Determine the caller (C ABI) and wrapper (Numba ABI) function types
-    argtypes = fndesc.argtypes
-    restype = fndesc.restype
-    c_call_conv = CUDACABICallConv(context)
-    wrapfnty = c_call_conv.get_function_type(restype, argtypes)
-    fnty = context.call_conv.get_function_type(fndesc.restype, argtypes)
-
-    # Create a new module and declare the callee
-    wrapper_module = context.create_module("cuda.cabi.wrapper")
-    func = ir.Function(wrapper_module, fnty, fndesc.llvm_func_name)
-
-    # Define the caller - populate it with a call to the callee and return
-    # its return value
-
-    wrapfn = ir.Function(wrapper_module, wrapfnty, wrapper_function_name)
-    builder = ir.IRBuilder(wrapfn.append_basic_block(""))
-
-    arginfo = context.get_arg_packer(argtypes)
-    callargs = arginfo.from_arguments(builder, wrapfn.args)
-    # We get (status, return_value), but we ignore the status since we
-    # can't propagate it through the C ABI anyway
-    _, return_value = context.call_conv.call_function(
-        builder, func, restype, argtypes, callargs
-    )
-    builder.ret(return_value)
-
-    if config.DUMP_LLVM:
-        utils.dump_llvm(fndesc, wrapper_module)
-
-    library.add_ir_module(wrapper_module)
-    library.finalize()
-    return library
-
-
 def kernel_fixup(kernel, debug):
     if debug:
         exc_helper = add_exception_store_helper(kernel)
