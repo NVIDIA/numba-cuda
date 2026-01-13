@@ -215,13 +215,18 @@ def user_function(fndesc, libs):
     def imp(context, builder, sig, args):
         func = context.declare_function(builder.module, fndesc)
         # env=None assumes this is a nopython function
-        status, retval = context.call_conv.call_function(
+        status, retval = fndesc.call_conv.call_function(
             builder, func, fndesc.restype, fndesc.argtypes, args
         )
-        with cgutils.if_unlikely(builder, status.is_error):
-            context.call_conv.return_status_propagate(builder, status)
+
+        if status is not None:
+            with cgutils.if_unlikely(builder, status.is_error):
+                context.call_conv.return_status_propagate(builder, status)
+
         assert sig.return_type == fndesc.restype
+
         # Reconstruct optional return type
+        # XXX: What do we do now when we use CABI?
         retval = fix_returning_optional(context, builder, sig, status, retval)
         # If the data representations don't match up
         if retval.type != context.get_value_type(sig.return_type):

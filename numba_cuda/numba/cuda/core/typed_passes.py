@@ -353,6 +353,7 @@ class BaseNativeLowering(abc.ABC, LoweringPass):
                     noalias=flags.noalias,
                     abi_tags=[flags.get_mangle_string()],
                     call_conv=call_conv,
+                    abi_info=flags.abi_info,
                 )
             )
 

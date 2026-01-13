@@ -700,6 +700,7 @@ def compile_cuda(
     max_registers=None,
     lto=False,
     abi="numba",
+    abi_info=None,
 ):
     if cc is None:
         raise ValueError("Compute Capability must be supplied")
@@ -744,6 +745,9 @@ def compile_cuda(
 
     if abi == "c":
         flags.call_conv = CUDACABICallConv(targetctx)
+
+    if abi_info is not None:
+        flags.abi_info = abi_info
 
     with utils.numba_target_override():
         cres = compile_extra(
@@ -1121,21 +1125,15 @@ def _compile_pyfunc_with_fixup(
         cc=cc,
         forceinline=forceinline,
         abi=abi,
+        abi_info=abi_info,
     )
     resty = cres.signature.return_type
 
     if resty and not device and resty != types.void:
         raise TypeError("CUDA kernel must have void return type.")
 
-    tgt = cres.target_context
-
     if device:
         lib = cres.library
-        # wrapper_name = abi_info.get("abi_name", pyfunc.__name__)
-        # if abi == "c":
-        #     lib = cabi_wrap_function(
-        #         tgt, lib, cres.fndesc, wrapper_name, nvvm_options
-        #     )
     else:
         lib = cres.library
         kernel = lib.get_function(cres.fndesc.llvm_func_name)
@@ -1358,7 +1356,9 @@ def compile_ptx_for_current_device(
     )
 
 
-def declare_device_function(name, restype, argtypes, link, use_cooperative):
+def declare_device_function(
+    name, restype, argtypes, link, use_cooperative, abi
+):
     from .descriptor import cuda_target
 
     typingctx = cuda_target.typing_context
@@ -1379,10 +1379,17 @@ def declare_device_function(name, restype, argtypes, link, use_cooperative):
         lib.add_linking_file(file)
     lib.use_cooperative = use_cooperative
 
+    if abi == "numba":
+        call_conv = CUDACallConv(targetctx)
+    elif abi == "c":
+        call_conv = CUDACABICallConv(targetctx)
+    else:
+        raise NotImplementedError(f"Unsupported ABI: {abi}")
+
     # ExternalFunctionDescriptor provides a lowering implementation for calling
     # external functions
     fndesc = funcdesc.ExternalFunctionDescriptor(
-        name, restype, argtypes, CUDACallConv(targetctx)
+        name, restype, argtypes, call_conv
     )
     targetctx.insert_user_function(extfn, fndesc, libs=(lib,))
 

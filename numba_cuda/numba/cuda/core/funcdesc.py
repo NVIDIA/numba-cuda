@@ -55,6 +55,7 @@ class FunctionDescriptor(object):
         "abi_tags",
         "uid",
         "call_conv",
+        "abi_info",
     )
 
     def __init__(
@@ -78,6 +79,7 @@ class FunctionDescriptor(object):
         abi_tags=(),
         uid=None,
         call_conv=None,
+        abi_info=None,
     ):
         self.native = native
         self.modname = modname
@@ -105,12 +107,17 @@ class FunctionDescriptor(object):
         # be chosen at link time.
         qualprefix = qualifying_prefix(self.modname, self.qualname)
         self.uid = uid
-        self.mangled_name = mangler(
-            qualprefix,
-            self.argtypes,
-            abi_tags=abi_tags,
-            uid=uid,
-        )
+
+        if abi_info is not None and "abi_name" in abi_info:
+            self.mangled_name = abi_info["abi_name"]
+        else:
+            self.mangled_name = mangler(
+                qualprefix,
+                self.argtypes,
+                abi_tags=abi_tags,
+                uid=uid,
+            )
+
         if env_name is None:
             env_name = mangler(
                 ".NumbaEnv.{}".format(qualprefix),
@@ -123,6 +130,7 @@ class FunctionDescriptor(object):
         self.noalias = noalias
         self.abi_tags = abi_tags
         self.call_conv = call_conv
+        self.abi_info = abi_info
 
     def lookup_globals(self):
         """
@@ -223,6 +231,7 @@ class FunctionDescriptor(object):
         noalias=False,
         abi_tags=(),
         call_conv=None,
+        abi_info=None,
     ):
         (
             qualname,
@@ -252,6 +261,7 @@ class FunctionDescriptor(object):
             abi_tags=abi_tags,
             uid=func_ir.func_id.unique_id,
             call_conv=call_conv,
+            abi_info=abi_info,
         )
         return self
 
@@ -275,6 +285,7 @@ class PythonFunctionDescriptor(FunctionDescriptor):
         noalias,
         abi_tags,
         call_conv,
+        abi_info,
     ):
         """
         Build a FunctionDescriptor for a given specialization of a Python
@@ -291,6 +302,7 @@ class PythonFunctionDescriptor(FunctionDescriptor):
             noalias=noalias,
             abi_tags=abi_tags,
             call_conv=call_conv,
+            abi_info=abi_info,
         )
 
     @classmethod

@@ -469,9 +469,11 @@ class BaseContext(object):
         return fnty
 
     def declare_function(self, module, fndesc):
-        fnty = self.call_conv.get_function_type(fndesc.restype, fndesc.argtypes)
+        fnty = fndesc.call_conv.get_function_type(
+            fndesc.restype, fndesc.argtypes
+        )
         fn = cgutils.get_or_insert_function(module, fnty, fndesc.mangled_name)
-        self.call_conv.decorate_function(
+        fndesc.call_conv.decorate_function(
             fn, fndesc.args, fndesc.argtypes, noalias=fndesc.noalias
         )
         if fndesc.inline:
