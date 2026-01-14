@@ -8,6 +8,12 @@ preview = ["pixi-build"]
 [workspace.build-variants]
 python = ["3.10.*", "3.11.*", "3.12.*", "3.13.*", "3.14.*"]
 
+[workspace.target.linux.build-variants]
+c_stdlib = ["sysroot"]
+
+[workspace.target.win-64.build-variants]
+c_stdlib = ["vs"]
+
 [dependencies]
 # source
 numba-cuda = { path = "." }
