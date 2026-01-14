@@ -8,12 +8,6 @@ preview = ["pixi-build"]
 [workspace.build-variants]
 python = ["3.10.*", "3.11.*", "3.12.*", "3.13.*", "3.14.*"]
 
-[workspace.target.linux.build-variants]
-c_stdlib = ["sysroot"]
-
-[workspace.target.win-64.build-variants]
-c_stdlib = ["vs"]
-
 [dependencies]
 # source
 numba-cuda = { path = "." }
@@ -281,4 +275,24 @@ name = "numba-cuda"
 version = "0.24.0"
 
 [package.build]
-backend = { name = "pixi-build-rattler-build", version = "*" }
+backend = { name = "pixi-build-python", version = "*" }
+# makes the package not noarch which is required for build-variants to work and
+# because numba-cuda has c(++) extensions
+config.compilers = ["cxx"]
+
+[package.build-dependencies]
+# this can't be in `config.compilers` otherwise CUDA_HOME isn't defined
+cuda-compiler = "*"
+
+[package.host-dependencies]
+python = "*"
+setuptools = "*"
+numpy = ">=2.1"
+
+[package.run-dependencies]
+python = "*"
+packaging = "*"
+numba = ">=0.60"
+cuda-core = ">=0.3,<1"
+cuda-bindings = ">=12.9,<14"
+cuda-python = ">=12.9,<14"
