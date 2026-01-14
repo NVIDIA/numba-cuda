@@ -1,0 +1,66 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: BSD-2-Clause
+context:
+  name: numba-cuda
+  sdist_name: numba_cuda
+  version: 0.24.0
+
+package:
+  name: ${{ name }}
+  version: ${{ version }}
+
+source:
+  path: .
+  use_gitignore: true
+
+build:
+  script: python -m pip install . -vv
+  number: 0
+  skip: [osx]
+
+requirements:
+  build:
+    - ${{ stdlib('c') }}
+    - ${{ compiler('c') }}
+    - ${{ compiler('cxx') }}
+  host:
+    - python
+    - pip
+    - setuptools
+    - numpy >=2.1.0
+  run:
+    - python
+    - numba >=0.60.0
+    - numpy >=1.22
+    - cuda-bindings >=12.9.1,<14.0.0
+    - cuda-core >=0.3.2,<1.0.0
+    - cuda-cudart-dev
+    - cuda-version >=12
+    - cuda-nvcc-impl
+    - packaging
+
+tests:
+  - python:
+      imports:
+        - numba_cuda
+      pip_check: true
+
+about:
+  homepage: https://github.com/NVIDIA/numba-cuda
+  summary: A CUDA target for Numba
+  description: |
+    A Numba target for compiling Python code to execute on CUDA GPUs.
+  license: BSD-2-Clause
+  license_file: LICENSE
+  documentation: https://nvidia.github.io/numba-cuda
+  repository: https://github.com/NVIDIA/numba-cuda
+
+extra:
+  recipe-maintainers:
+    - rparolin
+    - conda-forge/cuda-python
+    - leofang
+    - bdice
+    - gmarkall
+    - vyasr
+    - kkraus14
