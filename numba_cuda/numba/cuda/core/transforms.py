@@ -436,9 +436,7 @@ def with_lifting(func_ir, typingctx, targetctx, flags, locals):
     # the kind of contextmanager
     sub_irs = []
     for blk_start, blk_end in withs:
-        body_blocks = []
-        for node in _cfg_nodes_in_region(cfg, blk_start, blk_end):
-            body_blocks.append(node)
+        body_blocks = _cfg_nodes_in_region(cfg, blk_start, blk_end).copy()
         _legalize_with_head(blocks[blk_start])
         # Find the contextmanager
         cmkind, extra = _get_with_contextmanager(func_ir, blocks, blk_start)
@@ -631,9 +629,9 @@ def find_setupwiths(func_ir):
                     # add all its targets to the to_visit stack, unless we
                     # have seen them already
                     if ir_utils.is_terminator(stmt):
-                        for t in stmt.get_targets():
-                            if t not in seen:
-                                to_visit.append(t)
+                        to_visit.extend(
+                            t for t in stmt.get_targets() if t not in seen
+                        )
 
         return setup_with_to_pop_blocks_map
 
