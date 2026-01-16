@@ -328,7 +328,10 @@ def skip_if_nvjitlink_missing(reason):
 
 
 def _is_nvjitlink_13_1_and_sm_120():
-    """Check if nvjitlink version is 13.1 and compute capability is 120 (sm_120)."""
+    """Check if nvjitlink version is 13.1 and compute capability is 120 (sm_120).
+    
+    sm_120 refers to compute capability 12.0, represented as the tuple (12, 0).
+    """
     if config.ENABLE_CUDASIM:
         return False
     
@@ -339,13 +342,16 @@ def _is_nvjitlink_13_1_and_sm_120():
         if nvjitlink_ver[0] != 13 or nvjitlink_ver[1] != 1:
             return False
         
-        # Check if compute capability is 120 (12.0)
+        # Check if compute capability is 12.0 (sm_120)
         cc = devices.get_context().device.compute_capability
         if cc != (12, 0):
             return False
         
         return True
-    except Exception:
+    except (ImportError, AttributeError, RuntimeError):
+        # ImportError: nvjitlink not available
+        # AttributeError: version() method missing
+        # RuntimeError: device context issues
         return False
 
 
