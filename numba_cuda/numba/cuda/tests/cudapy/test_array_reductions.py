@@ -128,7 +128,6 @@ class TestArrayReductions(MemoryLeakMixin, TestCase):
         kernel[1, 1](out)
         self.assertPreciseEqual(expected, out.copy_to_host())
 
-    @skip_on_nvjitlink_13_1_sm_120("var fails at link time on sm_120 + CUDA 13.1")
     def test_var_basic(self):
         arrays = (
             np.float64([1.0, 2.0, 0.0, -0.0, 1.0, -1.5]),
@@ -156,7 +155,6 @@ class TestArrayReductions(MemoryLeakMixin, TestCase):
         kernel[1, 1](out)
         self.assertPreciseEqual(expected, out.copy_to_host(), prec="double")
 
-    @skip_on_nvjitlink_13_1_sm_120("std fails at link time on sm_120 + CUDA 13.1")
     def test_std_basic(self):
         arrays = (
             np.float64([1.0, 2.0, 0.0, -0.0, 1.0, -1.5]),
@@ -184,7 +182,6 @@ class TestArrayReductions(MemoryLeakMixin, TestCase):
         kernel[1, 1](out)
         self.assertPreciseEqual(expected, out.copy_to_host())
 
-    @skip_on_nvjitlink_13_1_sm_120("min fails at link time on sm_120 + CUDA 13.1")
     def test_min_basic(self):
         arrays = (
             np.float64([1.0, 2.0, 0.0, -0.0, 1.0, -1.5]),
@@ -212,7 +209,6 @@ class TestArrayReductions(MemoryLeakMixin, TestCase):
         kernel[1, 1](out)
         self.assertPreciseEqual(expected, out.copy_to_host())
 
-    @skip_on_nvjitlink_13_1_sm_120("max fails at link time on sm_120 + CUDA 13.1")
     def test_max_basic(self):
         arrays = (
             np.float64([1.0, 2.0, 0.0, -0.0, 1.0, -1.5]),
@@ -240,7 +236,6 @@ class TestArrayReductions(MemoryLeakMixin, TestCase):
         kernel[1, 1](out)
         self.assertPreciseEqual(expected, out.copy_to_host())
 
-    @skip_on_nvjitlink_13_1_sm_120("nanmin fails at link time on sm_120 + CUDA 13.1")
     def test_nanmin_basic(self):
         arrays = (
             np.float64([1.0, 2.0, 0.0, -0.0, 1.0, -1.5]),
@@ -266,7 +261,6 @@ class TestArrayReductions(MemoryLeakMixin, TestCase):
         kernel[1, 1](out)
         self.assertPreciseEqual(expected, out.copy_to_host())
 
-    @skip_on_nvjitlink_13_1_sm_120("nanmax fails at link time on sm_120 + CUDA 13.1")
     def test_nanmax_basic(self):
         arrays = (
             np.float64([1.0, 2.0, 0.0, -0.0, 1.0, -1.5]),
