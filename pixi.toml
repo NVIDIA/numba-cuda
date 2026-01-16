@@ -265,7 +265,7 @@ env = { NUMBA_CUDA_TEST_BIN_DIR = "$PIXI_PROJECT_ROOT/testing" }
 depends-on = [{ task = "build-tests" }]
 
 [target.linux.tasks.test-par]
-cmd = ["pytest", "-n", "auto", "$PIXI_PROJECT_ROOT/testing"]
+cmd = ["pytest", "-n", "auto", "--dist", "loadscope", "$PIXI_PROJECT_ROOT/testing"]
 env = { NUMBA_CUDA_TEST_BIN_DIR = "$PIXI_PROJECT_ROOT/testing" }
 depends-on = [{ task = "build-tests" }]
 
