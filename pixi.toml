@@ -105,6 +105,7 @@ numpydoc = ">=1.9.0"
 nvidia-sphinx-theme = "*"
 
 [environments]
+default = { features = ["cu-13-1", "test", "cu", "cu-13", "cu-rt", "nvvm", "py314"], solve-group = "default" }
 bench-against = { features = ["test"], no-default-feature = true }
 # CUDA 12
 cu-12-0-py310 = { features = [
@@ -260,6 +261,11 @@ cmd = ["make", "-C", "$PIXI_PROJECT_ROOT/docs", "html"]
 
 [target.linux.tasks.test]
 cmd = ["pytest", "$PIXI_PROJECT_ROOT/testing"]
+env = { NUMBA_CUDA_TEST_BIN_DIR = "$PIXI_PROJECT_ROOT/testing" }
+depends-on = [{ task = "build-tests" }]
+
+[target.linux.tasks.test-par]
+cmd = ["pytest", "-n", "auto", "--dist", "loadscope", "$PIXI_PROJECT_ROOT/testing"]
 env = { NUMBA_CUDA_TEST_BIN_DIR = "$PIXI_PROJECT_ROOT/testing" }
 depends-on = [{ task = "build-tests" }]
 
