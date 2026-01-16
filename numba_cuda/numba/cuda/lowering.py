@@ -31,7 +31,7 @@ from numba.cuda.core.errors import (
 from numba.cuda.core.funcdesc import default_mangler
 from numba.cuda.core.environment import Environment
 from numba.cuda.core.analysis import compute_use_defs, must_use_alloca
-from numba.cuda.misc.firstlinefinder import get_func_body_first_lineno
+from numba.cuda.misc.firstlinefinder import get_func_def_lineno
 from numba.cuda.misc.coverage_support import get_registered_loc_notify
 
 
@@ -125,11 +125,10 @@ class BaseLower(object):
         defn_loc = self.func_ir.loc.with_lineno(self.func_ir.loc.line + 1)
         if self.context.enable_debuginfo:
             fn = self.func_ir.func_id.func
-            optional_lno = get_func_body_first_lineno(fn)
+            optional_lno = get_func_def_lineno(fn)
             if optional_lno is not None:
-                # -1 as lines start at 1 and this is an offset.
-                offset = optional_lno - 1
-                defn_loc = self.func_ir.loc.with_lineno(offset)
+                # Use the def line directly from AST
+                defn_loc = self.func_ir.loc.with_lineno(optional_lno)
             else:
                 msg = (
                     "Could not find source for function: "
