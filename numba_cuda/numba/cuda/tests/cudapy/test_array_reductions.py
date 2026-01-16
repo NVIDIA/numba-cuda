@@ -72,7 +72,9 @@ class TestArrayReductions(MemoryLeakMixin, TestCase):
         kernel[1, 1](out)
         self.assertPreciseEqual(expected, out.copy_to_host())
 
-    @skip_on_nvjitlink_13_1_sm_120("sum fails at link time on sm_120 + CUDA 13.1")
+    @skip_on_nvjitlink_13_1_sm_120(
+        "sum fails at link time on sm_120 + CUDA 13.1"
+    )
     def test_sum_basic(self):
         arrays = (
             np.float64([1.0, 2.0, 0.0, -0.0, 1.0, -1.5]),
@@ -100,7 +102,9 @@ class TestArrayReductions(MemoryLeakMixin, TestCase):
         kernel[1, 1](out)
         self.assertPreciseEqual(expected, out.copy_to_host())
 
-    @skip_on_nvjitlink_13_1_sm_120("mean fails at link time on sm_120 + CUDA 13.1")
+    @skip_on_nvjitlink_13_1_sm_120(
+        "mean fails at link time on sm_120 + CUDA 13.1"
+    )
     def test_mean_basic(self):
         arrays = (
             np.float64([1.0, 2.0, 0.0, -0.0, 1.0, -1.5]),
@@ -286,7 +290,9 @@ class TestArrayReductions(MemoryLeakMixin, TestCase):
         kernel[1, 1](out)
         self.assertPreciseEqual(expected, out.copy_to_host())
 
-    @skip_on_nvjitlink_13_1_sm_120("nanmean fails at link time on sm_120 + CUDA 13.1")
+    @skip_on_nvjitlink_13_1_sm_120(
+        "nanmean fails at link time on sm_120 + CUDA 13.1"
+    )
     def test_nanmean_basic(self):
         arrays = (
             np.float64([1.0, 2.0, 0.0, -0.0, 1.0, -1.5]),
@@ -312,7 +318,9 @@ class TestArrayReductions(MemoryLeakMixin, TestCase):
         kernel[1, 1](out)
         self.assertPreciseEqual(expected, out.copy_to_host())
 
-    @skip_on_nvjitlink_13_1_sm_120("nansum fails at link time on sm_120 + CUDA 13.1")
+    @skip_on_nvjitlink_13_1_sm_120(
+        "nansum fails at link time on sm_120 + CUDA 13.1"
+    )
     def test_nansum_basic(self):
         arrays = (
             np.float64([1.0, 2.0, 0.0, -0.0, 1.0, -1.5]),
@@ -338,7 +346,9 @@ class TestArrayReductions(MemoryLeakMixin, TestCase):
         kernel[1, 1](out)
         self.assertPreciseEqual(expected, out.copy_to_host())
 
-    @skip_on_nvjitlink_13_1_sm_120("nanprod fails at link time on sm_120 + CUDA 13.1")
+    @skip_on_nvjitlink_13_1_sm_120(
+        "nanprod fails at link time on sm_120 + CUDA 13.1"
+    )
     def test_nanprod_basic(self):
         arrays = (
             np.float64([1.0, 2.0, 0.0, -0.0, 1.0, -1.5]),

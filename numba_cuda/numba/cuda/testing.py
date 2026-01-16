@@ -329,24 +329,25 @@ def skip_if_nvjitlink_missing(reason):
 
 def _is_nvjitlink_13_1_and_sm_120():
     """Check if nvjitlink version is 13.1 and compute capability is 120 (sm_120).
-    
+
     sm_120 refers to compute capability 12.0, represented as the tuple (12, 0).
     """
     if config.ENABLE_CUDASIM:
         return False
-    
+
     try:
         from cuda.bindings import nvjitlink
+
         nvjitlink_ver = nvjitlink.version()
         # Check if nvjitlink version is 13.1.x
         if nvjitlink_ver[0] != 13 or nvjitlink_ver[1] != 1:
             return False
-        
+
         # Check if compute capability is 12.0 (sm_120)
         cc = devices.get_context().device.compute_capability
         if cc != (12, 0):
             return False
-        
+
         return True
     except (ImportError, AttributeError, RuntimeError):
         # ImportError: nvjitlink not available
@@ -357,7 +358,7 @@ def _is_nvjitlink_13_1_and_sm_120():
 
 def skip_on_nvjitlink_13_1_sm_120(reason):
     """Skip test when nvjitlink version is 13.1 and compute capability is sm_120.
-    
+
     This is used to skip tests that fail at link time with nvjitlink 13.1 on sm_120
     GPUs (e.g., tests calling sum, mean, etc. in numba kernels).
     """
