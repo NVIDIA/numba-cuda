@@ -249,6 +249,7 @@ jobs:
       matrix_filter: map(select(.ARCH == "amd64" and (.CUDA_VER | split(".") | .[0] | tonumber == 12))) | group_by(.CUDA_VER|split(".")|map(tonumber)|.[0]) | map(max_by([(.PY_VER|split(".")|map(tonumber)), (.CUDA_VER|split(".")|map(tonumber))]))
 
   test-thirdparty-nvmath:
+    if: ${{ github.ref_name == 'main' }}
     needs:
       - build-linux-64
       - compute-matrix
