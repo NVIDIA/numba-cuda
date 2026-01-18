@@ -13,6 +13,7 @@ from numba.cuda import (
     compile_all,
     LinkableCode,
 )
+from numba.cuda.cudadrv import nvrtc
 from numba.cuda.testing import skip_on_cudasim, unittest, CUDATestCase
 
 TEST_BIN_DIR = os.getenv("NUMBA_CUDA_TEST_BIN_DIR")
@@ -660,6 +661,16 @@ class TestCompileOnlyTests(unittest.TestCase):
                 f"expected {expected}"
             ),
         )
+
+    def test_compile_ptx_arch_specific(self):
+        ptx, resty = cuda.compile_ptx(lambda: None, tuple(), cc=(9, 0, "a"))
+        self.assertIn(".target sm_90a", ptx)
+
+        if nvrtc._get_nvrtc_version() >= (12, 9):
+            ptx, resty = cuda.compile_ptx(
+                lambda: None, tuple(), cc=(10, 0, "f")
+            )
+            self.assertIn(".target sm_100f", ptx)
 
 
 @skip_on_cudasim("Compilation unsupported in the simulator")
