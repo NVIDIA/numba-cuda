@@ -100,13 +100,6 @@ jobs:
             echo "PY_VER_PART=${PY_VER_PART}"
             echo "PIXI_ENV=${PIXI_ENV}"
           } >> "${GITHUB_ENV}"
-      - name: Set up mini CTK
-        uses: ./.github/actions/fetch_ctk
-        continue-on-error: false
-        with:
-          host-platform: ${{ inputs.host-platform }}
-          cuda-version: ${{ matrix.CUDA_VER }}
-          cuda-components: "cuda_nvcc,cuda_cudart,cuda_crt,libnvvm,cuda_nvrtc,cuda_cccl,libnvjitlink,cuda_cuobjdump"
       - name: Setup pixi
         uses: prefix-dev/setup-pixi@fef5c9568ca6c4ff7707bf840ab0692ba3f08293  # v0.9.0
         with:
