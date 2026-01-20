@@ -567,30 +567,26 @@ def _get_nvvm():
     # If CUDA_HOME or CUDA_PATH is set, pathfinder would have found libnvvm
     # based on the environment variable(s) - nothing more we can do
     if os.environ.get("CUDA_HOME") or os.environ.get("CUDA_PATH"):
-        return None
+        raise pathfinder.DynamicLibNotFoundError
 
     # Try to locate nvrtc - this library is almost certainly needed if nvvm is needed (in the context of numba-cuda)
-    try:
-        loaded_nvrtc = _get_nvrtc()
-    except pathfinder.DynamicLibNotFoundError:
-        return None
+    loaded_nvrtc = _get_nvrtc()
 
     # If nvrtc was not found via system-search, we can't reliably determine
     # the CUDA installation structure
     if loaded_nvrtc.found_via != "system-search":
-        return None
-
+        raise pathfinder.DynamicLibNotFoundError
     # Search backward from nvrtc's location to find a directory with "nvvm" subdirectory
     cuda_home = _find_cuda_home_from_lib_path(loaded_nvrtc.abs_path)
     if cuda_home is None:
-        return None
+        raise pathfinder.DynamicLibNotFoundError
 
     # Temporarily set CUDA_HOME and retry pathfinder
     with temporary_env_var("CUDA_HOME", cuda_home):
-        try:
-            return pathfinder.load_nvidia_dynamic_lib("nvvm")
-        except pathfinder.DynamicLibNotFoundError:
-            return None
+        library = pathfinder.load_nvidia_dynamic_lib("nvvm")
+        library.found_via = "system-search"
+        return library
+    raise pathfinder.DynamicLibNotFoundError
 
 
 def _get_nvrtc():
