@@ -23,7 +23,7 @@ with pytest.warns(DeprecatedDeviceArrayApiWarning):
     "array_func",
     [
         param(
-            devary_arg,
+            lambda: devary_arg,
             id="device_array",
         ),
         param(

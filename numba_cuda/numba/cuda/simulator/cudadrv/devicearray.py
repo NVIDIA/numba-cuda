@@ -111,6 +111,10 @@ class FakeCUDAArray(object):
         self._ary = ary
         self.stream = stream
 
+    @classmethod
+    def _create_nowarn(ary, stream):
+        return FakeCUDAArray(ary, stream)
+
     @property
     def _numba_type_(self):
         """

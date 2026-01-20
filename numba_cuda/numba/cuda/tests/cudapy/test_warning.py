@@ -21,6 +21,7 @@ from numba.cuda.core.errors import (
 )
 from numba.cuda.core import config
 import warnings
+from numba.cuda.testing import DeprecatedDeviceArrayApiWarning
 
 
 @skip_on_cudasim("cudasim does not raise performance warnings")
@@ -89,7 +90,8 @@ kernel[1,1]()
             r[0] = x + 1
 
         N = 10
-        ary = cuda.pinned_array(N, dtype=np.float32)
+        with pytest.warns(DeprecatedDeviceArrayApiWarning):
+            ary = cuda.pinned_array(N, dtype=np.float32)
 
         func = foo[1, N]
         with override_config("CUDA_WARN_ON_IMPLICIT_COPY", 1):
@@ -105,7 +107,8 @@ kernel[1,1]()
             r[0] = x + 1
 
         N = 10
-        ary = cuda.mapped_array(N, dtype=np.float32)
+        with pytest.warns(DeprecatedDeviceArrayApiWarning):
+            ary = cuda.mapped_array(N, dtype=np.float32)
 
         with override_config("CUDA_WARN_ON_IMPLICIT_COPY", 1):
             with warnings.catch_warnings(record=True) as w:
@@ -120,7 +123,8 @@ kernel[1,1]()
             r[0] = x + 1
 
         N = 10
-        ary = cuda.managed_array(N, dtype=np.float32)
+        with pytest.warns(DeprecatedDeviceArrayApiWarning):
+            ary = cuda.managed_array(N, dtype=np.float32)
 
         with override_config("CUDA_WARN_ON_IMPLICIT_COPY", 1):
             with warnings.catch_warnings(record=True) as w:
@@ -134,7 +138,9 @@ kernel[1,1]()
             r[0] = x + 1
 
         N = 10
-        ary = cuda.device_array(N, dtype=np.float32)
+
+        with pytest.warns(DeprecatedDeviceArrayApiWarning):
+            ary = cuda.device_array(N, dtype=np.float32)
 
         with override_config("CUDA_WARN_ON_IMPLICIT_COPY", 1):
             with warnings.catch_warnings(record=True) as w:
