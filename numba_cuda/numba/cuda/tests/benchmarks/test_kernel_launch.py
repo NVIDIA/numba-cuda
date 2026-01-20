@@ -7,6 +7,7 @@ from numba.cuda.core import config
 import numpy as np
 import pytest
 from pytest import param
+from numba.cuda.testing import DeprecatedDeviceArrayApiWarning
 
 
 pytestmark = pytest.mark.skipif(
@@ -14,12 +15,15 @@ pytestmark = pytest.mark.skipif(
     reason="no reason to run benchmarks in the simulator",
 )
 
+with pytest.warns(DeprecatedDeviceArrayApiWarning):
+    devary_arg = cuda.device_array(128, dtype=np.float32)
+
 
 @pytest.mark.parametrize(
     "array_func",
     [
         param(
-            lambda: cuda.device_array(128, dtype=np.float32),
+            devary_arg,
             id="device_array",
         ),
         param(
@@ -57,10 +61,7 @@ def test_one_arg(benchmark, array_func, jit):
     "array_func",
     [
         param(
-            lambda: [
-                cuda.device_array(128, dtype=np.float32)
-                for _ in range(len(string.ascii_lowercase))
-            ],
+            lambda: [devary_arg for _ in range(len(string.ascii_lowercase))],
             id="device_array",
         ),
         param(
