@@ -196,7 +196,7 @@ def _fake_non_conda_env():
     sys.prefix = ""
 
 
-class LibraryLookupBase(unittest.TestCase):
+class TestCudaHomeDetection(unittest.TestCase):
     def test_find_cuda_home(self):
         """Test the directory walking logic."""
         import tempfile

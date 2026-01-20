@@ -586,7 +586,6 @@ def _get_nvvm():
         library = pathfinder.load_nvidia_dynamic_lib("nvvm")
         library.found_via = "system-search"
         return library
-    raise pathfinder.DynamicLibNotFoundError
 
 
 def _get_nvrtc():
