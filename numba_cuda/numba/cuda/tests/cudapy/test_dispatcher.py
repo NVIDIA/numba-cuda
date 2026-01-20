@@ -157,6 +157,24 @@ class TestDispatcher(CUDATestCase):
         with self.assertRaises(RuntimeError):
             launchconfig.ensure_current_launch_config()
 
+    @skip_on_cudasim("Dispatcher C-extension not used in the simulator")
+    def test_capture_compile_config(self):
+        @cuda.jit
+        def f(x):
+            x[0] = 1
+
+        arr = np.zeros(1, dtype=np.int32)
+        original = f._compile_for_args
+        with launchconfig.capture_compile_config(f) as capture:
+            f[1, 1](arr)
+
+        cfg = capture["config"]
+        self.assertIsNotNone(cfg)
+        self.assertIs(cfg.dispatcher, f)
+        self.assertEqual(cfg.griddim, (1, 1, 1))
+        self.assertEqual(cfg.blockdim, (1, 1, 1))
+        self.assertIs(f._compile_for_args, original)
+
     def test_coerce_input_types(self):
         # Do not allow unsafe conversions if we can still compile other
         # specializations.

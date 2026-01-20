@@ -57,6 +57,45 @@ This is similar to launch configuration in CUDA C/C++:
 .. note:: The order of ``stream`` and ``sharedmem`` are reversed in Numba
    compared to in CUDA C/C++.
 
+Launch configuration introspection (advanced)
+---------------------------------------------
+
+The current launch configuration is available during compilation triggered by
+kernel launches. This can be useful for debugging or for extensions that need
+to observe how kernels are configured.
+
+.. note:: The capture is compile-time only. If the kernel is already compiled
+   for the given argument types, the captured config may remain ``None``.
+
+.. code-block:: python
+
+   from numba import cuda
+   from numba.cuda import launchconfig
+
+   @cuda.jit
+   def f(x):
+       x[0] = 1
+
+   arr = cuda.device_array(1, dtype="i4")
+   with launchconfig.capture_compile_config(f) as capture:
+       f[1, 1](arr)  # first launch triggers compilation
+
+   cfg = capture["config"]
+   print(cfg.griddim, cfg.blockdim, cfg.sharedmem)
+
+Configured kernels also expose pre-launch callbacks for lightweight
+instrumentation:
+
+.. code-block:: python
+
+   cfg = f[1, 1]
+
+   def log_launch(kernel, cfg):
+       print(cfg.griddim, cfg.blockdim)
+
+   cfg.pre_launch_callbacks.append(log_launch)
+   cfg(arr)
+
 Dispatcher objects also provide several utility methods for inspection and
 creating a specialized instance:
 
