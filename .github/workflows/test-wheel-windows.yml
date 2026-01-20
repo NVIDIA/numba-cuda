@@ -1,6 +1,6 @@
 # SPDX-FileCopyrightText: Copyright (c) 2024-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 #
-# SPDX-License-Identifier: Apache-2.0
+# SPDX-License-Identifier: BSD-2-Clause
 
 name: "CI: Test wheels"
 
@@ -30,7 +30,7 @@ jobs:
       MATRIX: ${{ steps.compute-matrix.outputs.MATRIX }}
     steps:
       - name: Checkout ${{ github.event.repository.name }}
-        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8  # v5.0.0
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8  # v6.0.1
 
       - name: Validate Test Type
         run: |
@@ -47,15 +47,11 @@ jobs:
             MATRIX_TYPE="nightly"
           fi
 
-          # Read base matrix from JSON file for the specific architecture
-          TEST_MATRIX=$(jq --arg arch "$ARCH" --arg matrix_type "$MATRIX_TYPE" '
-            .windows[$matrix_type] |
-            map(select(.ARCH == $arch))
-          ' ci/test-matrix.json)
+          # Read base matrix from YAML file for the specific architecture
+          TEST_MATRIX=$(yq -o json ".windows[\"${MATRIX_TYPE}\"] | map(select(.ARCH == \"${ARCH}\"))" ci/test-matrix.yml)
 
-          MATRIX="$(
-            jq -c '${{ inputs.matrix_filter }} | if (. | length) > 0 then {include: .} else "Error: Empty matrix\n" | halt_error(1) end' <<< "$TEST_MATRIX"
-          )"
+          # Apply matrix filter and wrap in include structure
+          MATRIX=$(echo "$TEST_MATRIX" | jq -c '${{ inputs.matrix_filter }} | if (. | length) > 0 then {include: .} else "Error: Empty matrix\n" | halt_error(1) end')
 
           echo "MATRIX=${MATRIX}" | tee --append "${GITHUB_OUTPUT}"
 
@@ -70,7 +66,7 @@ jobs:
     runs-on: "windows-${{ matrix.ARCH }}-gpu-${{ matrix.GPU }}-${{ matrix.DRIVER }}-1"
     steps:
       - name: Checkout ${{ github.event.repository.name }}
-        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8  # v5.0.0
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8  # v6.0.1
 
       - name: Setup proxy cache
         uses: nv-gha-runners/setup-proxy-cache@main
@@ -107,7 +103,7 @@ jobs:
 
       - name: Download numba-cuda build artifacts
         if: ${{ env.SKIP_NUMBA_CUDA_TEST == '0'}}
-        uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0  # v5.0.0
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131  # v7.0.0
         with:
           name: ${{ env.NUMBA_CUDA_ARTIFACT_NAME }}
           path: ${{ env.NUMBA_CUDA_ARTIFACTS_DIR }}
@@ -118,7 +114,7 @@ jobs:
           Get-ChildItem -Recurse -Force $env:NUMBA_CUDA_ARTIFACTS_DIR | Select-Object Mode, LastWriteTime, Length, FullName
 
       - name: Download numba-cuda test artifacts
-        uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0  # v5.0.0
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131  # v7.0.0
         with:
           name: ${{ env.NUMBA_CUDA_TEST_ARTIFACT_NAME }}-cu${{ env.TEST_CUDA_MAJOR }}
           path: testing/
@@ -129,7 +125,7 @@ jobs:
           Get-ChildItem -Recurse -Force testing/ | Select-Object Mode, LastWriteTime, Length, FullName
 
       - name: Set up Python ${{ matrix.PY_VER }}
-        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065  # v5.6.0
+        uses: actions/setup-python@83679a892e2d95755f2dac6acb0bfd1e9ac5d548  # v6.1.0
         with:
           python-version: ${{ matrix.PY_VER }}
 

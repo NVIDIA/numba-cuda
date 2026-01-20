@@ -344,10 +344,10 @@ class InlineWorker(object):
         # Always copy the callee IR, it gets mutated
         def copy_ir(the_ir):
             kernel_copy = the_ir.copy()
-            kernel_copy.blocks = {}
-            for block_label, block in the_ir.blocks.items():
-                new_block = copy.deepcopy(the_ir.blocks[block_label])
-                kernel_copy.blocks[block_label] = new_block
+            kernel_copy.blocks = {
+                block_label: copy.deepcopy(block)
+                for block_label, block in the_ir.blocks.items()
+            }
             return kernel_copy
 
         callee_ir = copy_ir(callee_ir)
@@ -834,7 +834,7 @@ def _debug_dump(func_ir):
 def _get_all_scopes(blocks):
     """Get all block-local scopes from an IR."""
     all_scopes = []
-    for label, block in blocks.items():
+    for block in blocks.values():
         if block.scope not in all_scopes:
             all_scopes.append(block.scope)
     return all_scopes
@@ -844,7 +844,7 @@ def _replace_args_with(blocks, args):
     """
     Replace ir.Arg(...) with real arguments from call site
     """
-    for label, block in blocks.items():
+    for block in blocks.values():
         assigns = block.find_insts(ir.assign_types)
         for stmt in assigns:
             if isinstance(stmt.value, ir.arg_types):
@@ -857,7 +857,7 @@ def _replace_freevars(blocks, args):
     """
     Replace ir.FreeVar(...) with real variables from parent function
     """
-    for label, block in blocks.items():
+    for block in blocks.values():
         assigns = block.find_insts(ir.assign_types)
         for stmt in assigns:
             if isinstance(stmt.value, ir.freevar_types):
@@ -873,7 +873,7 @@ def _replace_returns(blocks, target, return_label):
     """
     Return return statement by assigning directly to target, and a jump.
     """
-    for label, block in blocks.items():
+    for block in blocks.values():
         casts = []
         for i in range(len(block.body)):
             stmt = block.body[i]
@@ -1316,8 +1316,9 @@ def _inline_arraycall(
     )
 
     # Add back removed just in case they are used by something else
-    for var in removed:
-        stmts.append(_new_definition(func_ir, var, array_var, loc))
+    stmts.extend(
+        _new_definition(func_ir, var, array_var, loc) for var in removed
+    )
 
     # Add back terminator
     stmts.append(terminator)

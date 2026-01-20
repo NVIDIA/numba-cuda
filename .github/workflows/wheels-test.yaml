@@ -110,16 +110,25 @@ jobs:
     - name: Run nvidia-smi to make sure GPU is working
       run: nvidia-smi
     - name: checkout code repo
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
       with:
         repository: ${{ inputs.repo }}
         ref: ${{ inputs.sha }}
         fetch-depth: 0 # unshallow fetch for setuptools-scm
         persist-credentials: false
-    - uses: actions/download-artifact@v4
+
+    - name: Set environment variables
+      env:
+        CUDA_VER: ${{ matrix.CUDA_VER }}
+        HOST_PLATFORM: linux-64
+        PY_VER: ${{ matrix.PY_VER }}
+        SHA: ${{ github.sha }}
+      run: ./ci/tools/env-vars test
+
+    - uses: actions/download-artifact@v7
       with:
-        name: wheel-py${{ matrix.PY_VER }}-${{ matrix.ARCH }}-linux
-        path: wheel
+        name: ${{ env.NUMBA_CUDA_ARTIFACT_NAME }}
+        path: ${{ env.NUMBA_CUDA_ARTIFACTS_DIR }}
     - name: Display structure of downloaded files
       run: ls -R
     - name: Standardize repository information
@@ -136,7 +145,7 @@ jobs:
         GH_TOKEN: ${{ github.token }}
         RAPIDS_AUX_SECRET_1: ${{ secrets.RAPIDS_AUX_SECRET_1 }}
     - name: Generate test report
-      uses: test-summary/action@v2.3
+      uses: test-summary/action@v2.4
       with:
         paths: "${{ env.RAPIDS_TESTS_DIR }}/*.xml"
         show: ${{ inputs.test_summary_show }}

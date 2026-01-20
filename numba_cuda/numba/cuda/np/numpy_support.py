@@ -4,6 +4,7 @@
 import collections
 import ctypes
 import itertools
+import functools
 import operator
 import re
 
@@ -21,11 +22,12 @@ from numba.cuda.cgutils import is_nonelike  # noqa: F401
 numpy_version = tuple(map(int, np.__version__.split(".")[:2]))
 
 
+@functools.lru_cache
 def strides_from_shape(
     shape: tuple[int, ...], itemsize: int, *, order: str
 ) -> tuple[int, ...]:
     """Compute strides for a contiguous array with given shape and order."""
-    if len(shape) == 0:
+    if not shape:
         # 0-D arrays have empty strides
         return ()
     limits = slice(1, None) if order == "C" else slice(None, -1)
@@ -118,16 +120,11 @@ def from_dtype(dtype):
     elif getattr(dtype, "fields", None) is not None:
         return from_struct_dtype(dtype)
 
-    try:
-        return FROM_DTYPE[dtype]
-    except KeyError:
-        pass
+    result = FROM_DTYPE.get(dtype)
+    if result is not None:
+        return result
 
-    try:
-        char = dtype.char
-    except AttributeError:
-        pass
-    else:
+    if (char := getattr(dtype, "char", None)) is not None:
         if char in "SU":
             return _from_str_dtype(dtype)
         if char in "mM":
