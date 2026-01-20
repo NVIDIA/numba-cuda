@@ -1218,9 +1218,9 @@ class TraceRunner(object):
             bc = state._bytecode
             ehhead = bc.find_exception_entry(inst.next)
             ehrelated = [ehhead]
-            for eh in bc.exception_entries:
-                if eh.target == ehhead.target:
-                    ehrelated.append(eh)
+            ehrelated.extend(
+                eh for eh in bc.exception_entries if eh.target == ehhead.target
+            )
             end = max(eh.end for eh in ehrelated)
             state.append(inst, contextmanager=cm, exitfn=exitfn, end=end)
 
@@ -2069,9 +2069,9 @@ class TraceRunner(object):
             bc = state._bytecode
             ehhead = bc.find_exception_entry(inst.offset)
             ehrelated = [ehhead]
-            for eh in bc.exception_entries:
-                if eh.target == ehhead.target:
-                    ehrelated.append(eh)
+            ehrelated.extend(
+                eh for eh in bc.exception_entries if eh.target == ehhead.target
+            )
             end = max(eh.end for eh in ehrelated)
 
             # Push the `__exit__` method (or null) to the stack,

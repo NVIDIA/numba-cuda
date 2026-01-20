@@ -809,15 +809,15 @@ def kernel_fixup(kernel, debug):
     return_value = kernel.args[0]
 
     for block in kernel.blocks:
-        remove_list = []
-
         # Find all stores first
-        for inst in block.instructions:
+        remove_list = [
+            inst
+            for inst in block.instructions
             if (
                 isinstance(inst, ir.StoreInstr)
                 and inst.operands[1] == return_value
-            ):
-                remove_list.append(inst)
+            )
+        ]
 
         # Remove all stores
         for to_remove in remove_list:

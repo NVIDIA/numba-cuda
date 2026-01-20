@@ -125,9 +125,7 @@ def _gettyperecord_impl(typingctx, codepoint):
 
         byref = [upper, lower, title, decimal, digit, flags]
         builder.call(fn, [args[0]] + byref)
-        buf = []
-        for x in byref:
-            buf.append(builder.load(x))
+        buf = list(map(builder.load, byref))
 
         res = context.make_tuple(builder, signature.return_type, tuple(buf))
         return impl_ret_untracked(context, builder, signature.return_type, res)

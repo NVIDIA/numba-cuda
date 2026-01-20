@@ -5,6 +5,7 @@ from collections import namedtuple
 from functools import singledispatch
 import ctypes
 import enum
+import operator
 
 import numpy as np
 from numpy.random.bit_generator import BitGenerator
@@ -47,10 +48,6 @@ def typeof_impl(val, c):
     """
     Generic typeof() implementation.
     """
-    tp = _typeof_buffer(val, c)
-    if tp is not None:
-        return tp
-
     tp = getattr(val, "_numba_type_", None)
     if tp is not None:
         return tp
@@ -63,6 +60,10 @@ def typeof_impl(val, c):
         tp = _typeof_cuda_array_interface(cai, c)
         if tp is not None:
             return tp
+
+    tp = _typeof_buffer(val, c)
+    if tp is not None:
+        return tp
 
     # cffi is handled here as it does not expose a public base class
     # for exported functions or CompiledFFI instances.
@@ -318,17 +319,13 @@ def _typeof_cuda_array_interface(val, c):
     Array Interface. These are typed as regular Array types, with lowering
     handled in numba.cuda.np.arrayobj.
     """
-    # Only handle constants, not arguments (arguments use regular array typing)
-    if c.purpose == Purpose.argument:
-        return None
-
     dtype = numpy_support.from_dtype(np.dtype(val["typestr"]))
     shape = val["shape"]
     ndim = len(shape)
     strides = val.get("strides")
 
     # Determine layout
-    if ndim == 0:
+    if not ndim:
         layout = "C"
     elif strides is None:
         layout = "C"
@@ -340,18 +337,14 @@ def _typeof_cuda_array_interface(val, c):
             c_strides = numpy_support.strides_from_shape(
                 shape, itemsize, order="C"
             )
-            layout = (
-                "C" if all(x == y for x, y in zip(strides, c_strides)) else "A"
-            )
+            layout = "C" if all(map(operator.eq, strides, c_strides)) else "A"
         elif strides[0] == itemsize:
             f_strides = numpy_support.strides_from_shape(
                 shape, itemsize, order="F"
             )
-            layout = (
-                "F" if all(x == y for x, y in zip(strides, f_strides)) else "A"
-            )
+            layout = "F" if all(map(operator.eq, strides, f_strides)) else "A"
         else:
             layout = "A"
 
-    readonly = val["data"][1]
+    _, readonly = val["data"]
     return types.Array(dtype, ndim, layout, readonly=readonly)
