@@ -19,7 +19,7 @@ jobs:
     outputs:
       BUILD_MATRIX: ${{ steps.compute-matrix.outputs.BUILD_MATRIX }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Compute Build Matrix
         id: compute-matrix
         run: |
@@ -29,15 +29,6 @@ jobs:
             echo "${BUILD_MATRIX}"
             echo 'EOF'
           } >> "${GITHUB_OUTPUT}"
-  build-conda:
-    needs: compute-matrix
-    uses: ./.github/workflows/conda-python-build.yaml
-    secrets: inherit
-    with:
-      build_type: release
-      script: "ci/build_conda.sh"
-      matrix: ${{ needs.compute-matrix.outputs.BUILD_MATRIX }}
-      upload_to_anaconda: true
   build-wheels:
     needs: compute-matrix
     uses: ./.github/workflows/wheels-build.yaml
@@ -58,13 +49,13 @@ jobs:
     timeout-minutes: 10
     steps:
       - name: Download wheels
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v7
         with:
           pattern: wheel-py*
           path: dist/
           merge-multiple: true
       - name: Download sdist
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v7
         with:
           name: sdist-py3.13-amd64
           path: sdist/

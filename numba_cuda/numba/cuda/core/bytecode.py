@@ -452,12 +452,13 @@ class ByteCodePy311(_ByteCode):
         """
         Returns the exception entry for the given instruction offset
         """
-        candidates = []
-        for ent in self.exception_entries:
-            if ent.start <= offset < ent.end:
-                candidates.append((ent.depth, ent))
+        candidates = [
+            (ent.depth, ent)
+            for ent in self.exception_entries
+            if ent.start <= offset < ent.end
+        ]
         if candidates:
-            ent = max(candidates)[1]
+            _, ent = max(candidates)
             return ent
 
 

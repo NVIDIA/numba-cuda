@@ -273,7 +273,7 @@ class Annotate:
         ann = function.get_annotation_info(signature=signature)
         self.ann = ann
 
-        for k, v in ann.items():
+        for v in ann.values():
             res = hllines(reform_code(v), style)
             rest = htlines(reform_code(v), style)
             v["pygments_lines"] = [

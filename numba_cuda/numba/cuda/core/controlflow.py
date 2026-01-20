@@ -407,8 +407,7 @@ class CFGraph(object):
             if node not in seen:
                 yield node
                 seen.add(node)
-                for succ in self._succs[node]:
-                    stack.append(succ)
+                stack.extend(self._succs[node])
 
     def _eliminate_dead_blocks(self):
         """
@@ -447,9 +446,11 @@ class CFGraph(object):
             if node not in seen:
                 seen.add(node)
                 stack.append((post_order.append, node))
-                for dest in succs[node]:
-                    if (node, dest) not in back_edges:
-                        stack.append((dfs_rec, dest))
+                stack.extend(
+                    (dfs_rec, dest)
+                    for dest in succs[node]
+                    if (node, dest) not in back_edges
+                )
 
         stack = [(dfs_rec, self._entry_point)]
         while stack:
