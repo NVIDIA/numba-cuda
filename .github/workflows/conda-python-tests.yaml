@@ -80,17 +80,6 @@ jobs:
       fail-fast: false
       matrix: ${{ fromJSON(needs.compute-matrix.outputs.MATRIX) }}
     runs-on: "linux-${{ matrix.ARCH }}-gpu-${{ matrix.GPU }}-${{ matrix.DRIVER }}-1"
-    env:
-      RAPIDS_ARTIFACTS_DIR: ${{ github.workspace }}/artifacts
-      RAPIDS_COVERAGE_DIR: ${{ github.workspace }}/coverage-results
-      NUMBA_VERSION: ${{ matrix.NUMBA_VERSION }}
-      RAPIDS_TESTS_DIR: ${{ github.workspace }}/test-results
-    container:
-      image: rapidsai/ci-conda:cuda${{ matrix.CUDA_VER }}-${{ matrix.LINUX_VER }}-py${{ matrix.PY_VER }}
-      options: ${{ inputs.container-options }}
-      env:
-        RAPIDS_BUILD_TYPE: ${{ inputs.build_type }}
-        NVIDIA_VISIBLE_DEVICES: ${{ env.NVIDIA_VISIBLE_DEVICES }}
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@v6
@@ -98,12 +87,6 @@ jobs:
           repository: ${{ inputs.repo }}
           ref: ${{ inputs.sha }}
           fetch-depth: 0
-      - name: Standardize repository information
-        run: |
-          echo "RAPIDS_REPOSITORY=${{ inputs.repo || github.repository }}" >> "${GITHUB_ENV}"
-          echo "RAPIDS_SHA=$(git rev-parse HEAD)" >> "${GITHUB_ENV}"
-          echo "RAPIDS_REF_NAME=${{ inputs.branch || github.ref_name }}" >> "${GITHUB_ENV}"
-          echo "RAPIDS_NIGHTLY_DATE=${{ inputs.date }}" >> "${GITHUB_ENV}"
       - name: Setup proxy cache
         uses: nv-gha-runners/setup-proxy-cache@main
         continue-on-error: true
@@ -117,6 +100,13 @@ jobs:
             echo "PY_VER_PART=${PY_VER_PART}"
             echo "PIXI_ENV=${PIXI_ENV}"
           } >> "${GITHUB_ENV}"
+      - name: Set up mini CTK
+        uses: ./.github/actions/fetch_ctk
+        continue-on-error: false
+        with:
+          host-platform: ${{ inputs.host-platform }}
+          cuda-version: ${{ matrix.CUDA_VER }}
+          cuda-components: "cuda_nvcc,cuda_cudart,cuda_crt,libnvvm,cuda_nvrtc,cuda_cccl,libnvjitlink,cuda_cuobjdump"
       - name: Setup pixi
         uses: prefix-dev/setup-pixi@fef5c9568ca6c4ff7707bf840ab0692ba3f08293  # v0.9.0
         with:
@@ -129,11 +119,6 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           CUDA_VER: ${{ matrix.CUDA_VER }}
-      - name: Generate test report
-        uses: test-summary/action@v2.4
-        with:
-          paths: "${{ env.RAPIDS_TESTS_DIR }}/*.xml"
-        if: always()
       - name: Run codecov
         if: inputs.run_codecov
         env:
@@ -143,8 +128,4 @@ jobs:
             -v \
             upload-process \
             -C ${{ github.sha }} \
-            -s "${RAPIDS_COVERAGE_DIR}" \
             --handle-no-reports-found
-      - name: Upload additional artifacts
-        if: "!cancelled()"
-        run: rapids-upload-artifacts-dir cuda${RAPIDS_CUDA_VERSION%%.*}_$(arch)_py${RAPIDS_PY_VERSION//.}
