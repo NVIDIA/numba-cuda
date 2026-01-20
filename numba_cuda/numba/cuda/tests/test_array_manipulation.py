@@ -1,11 +1,14 @@
-import numpy as np
 
+# Array manipulation tests for CUDA device arrays.
+# Covers: indexing, slicing, reshape for multiple dtypes and edge cases.
+import numpy as np
 from numba import cuda
 from numba.cuda.testing import CUDATestCase, skip_on_cudasim
 
 
 @cuda.jit
 def index_kernel(inp, out):
+    # Copies each element from inp to out using grid-stride loop
     i = cuda.grid(1)
     if i < inp.size:
         out[i] = inp[i]
@@ -13,6 +16,7 @@ def index_kernel(inp, out):
 
 @cuda.jit
 def slice_kernel(inp, out, start):
+    # Copies a slice from inp[start:start+len(out)] to out
     i = cuda.grid(1)
     if i < out.size:
         out[i] = inp[start + i]
@@ -20,6 +24,7 @@ def slice_kernel(inp, out, start):
 
 @cuda.jit
 def reshape_kernel(inp, out, width):
+    # Reshapes 1D inp to 2D out (row-major)
     i = cuda.grid(1)
     if i < out.size:
         row = i // width
@@ -38,55 +43,59 @@ class TestCudaArrayManipulation(CUDATestCase):
 
 
     def test_basic_indexing(self):
-        src = np.arange(10, dtype=np.int32)
-        dst = np.zeros_like(src)
+        # Test for multiple dtypes and larger arrays
+        for dtype in (np.int32, np.float32, np.complex64, np.uint8):
+            src = np.arange(100, dtype=dtype)
+            dst = np.zeros_like(src)
 
-        d_src = cuda.to_device(src)
-        d_dst = cuda.to_device(dst)
+            d_src = cuda.to_device(src)
+            d_dst = cuda.to_device(dst)
 
-        self._launch_1d(index_kernel, (d_src, d_dst), src.size)
+            self._launch_1d(index_kernel, (d_src, d_dst), src.size)
 
-        np.testing.assert_array_equal(
-            d_dst.copy_to_host(),
-            src
-        )
+            np.testing.assert_array_equal(
+                d_dst.copy_to_host(),
+                src
+            )
 
 
     def test_basic_slicing(self):
-        src = np.arange(20, dtype=np.int32)
-        start = 5
-        length = 10
+        # Test for multiple dtypes, larger arrays, and edge cases
+        for dtype in (np.int32, np.float32, np.complex64, np.uint8):
+            src = np.arange(50, dtype=dtype)
+            # Normal slice
+            start, length = 5, 20
+            expected = src[start:start + length]
+            out = np.zeros(length, dtype=dtype)
+            d_src = cuda.to_device(src)
+            d_out = cuda.to_device(out)
+            self._launch_1d(slice_kernel, (d_src, d_out, start), length)
+            np.testing.assert_array_equal(d_out.copy_to_host(), expected)
 
-        expected = src[start:start + length]
-        out = np.zeros(length, dtype=np.int32)
-
-        d_src = cuda.to_device(src)
-        d_out = cuda.to_device(out)
-
-        self._launch_1d(slice_kernel, (d_src, d_out, start), length)
-
-        np.testing.assert_array_equal(
-            d_out.copy_to_host(),
-            expected
-        )
+            # Zero-length slice
+            start, length = 10, 0
+            expected = src[start:start + length]
+            out = np.zeros(length, dtype=dtype)
+            d_src = cuda.to_device(src)
+            d_out = cuda.to_device(out)
+            self._launch_1d(slice_kernel, (d_src, d_out, start), length)
+            np.testing.assert_array_equal(d_out.copy_to_host(), expected)
 
 
     def test_simple_reshape(self):
-        src = np.arange(12, dtype=np.int32)
-        reshaped = src.reshape(3, 4)
-
-        out = np.zeros_like(reshaped)
-
-        d_src = cuda.to_device(src)
-        d_out = cuda.to_device(out)
-
-        self._launch_1d(
-            reshape_kernel,
-            (d_src, d_out, reshaped.shape[1]),
-            src.size,
-        )
-
-        np.testing.assert_array_equal(
-            d_out.copy_to_host(),
-            reshaped
-        )
+        # Test for multiple dtypes and larger shapes
+        for dtype in (np.int32, np.float32, np.complex64, np.uint8):
+            src = np.arange(60, dtype=dtype)
+            reshaped = src.reshape(10, 6)
+            out = np.zeros_like(reshaped)
+            d_src = cuda.to_device(src)
+            d_out = cuda.to_device(out)
+            self._launch_1d(
+                reshape_kernel,
+                (d_src, d_out, reshaped.shape[1]),
+                src.size,
+            )
+            np.testing.assert_array_equal(
+                d_out.copy_to_host(),
+                reshaped
+            )
