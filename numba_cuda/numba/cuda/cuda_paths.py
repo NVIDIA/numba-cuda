@@ -405,6 +405,8 @@ def get_cuda_paths():
     of (source_variable, info).
 
     The returned dictionary will have the following keys and infos:
+    - "nvrtc": file_path
+    - "nvvm": file_path
     - "libdevice": file_path
     - "cudalib_dir": directory_path
     - "static_cudalib_dir": directory_path
