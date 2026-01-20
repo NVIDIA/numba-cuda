@@ -11,6 +11,7 @@ from numba.cuda.misc.findlib import find_lib
 from numba.cuda import config
 from cuda import pathfinder
 import pathlib
+from contextlib import contextmanager
 
 _env_path_tuple = namedtuple("_env_path_tuple", ["by", "info"])
 
@@ -20,6 +21,20 @@ SEARCH_PRIORITY = [
     "CUDA_HOME",
     "System",
 ]
+
+
+@contextmanager
+def temporary_env_var(key, value):
+    """Context manager to temporarily set an environment variable."""
+    old_value = os.environ.get(key)
+    os.environ[key] = value
+    try:
+        yield
+    finally:
+        if old_value is None:
+            del os.environ[key]
+        else:
+            os.environ[key] = old_value
 
 
 def _get_distribution(distribution_name):
@@ -516,23 +531,66 @@ def _get_include_dir():
     return _env_path_tuple(by, include_dir)
 
 
+def _find_cuda_home_from_lib_path(lib_path):
+    """
+    Walk up from a library path to find a directory containing 'nvvm' subdirectory.
+
+    For example, given /usr/local/cuda/lib64/libnvrtc.so.12,
+    this would find /usr/local/cuda (which contains nvvm/).
+
+    Returns the path if found, None otherwise.
+    """
+    current = pathlib.Path(lib_path).resolve()
+
+    # Walk up the directory tree
+    for parent in current.parents:
+        nvvm_subdir = parent / "nvvm"
+        if nvvm_subdir.is_dir():
+            return str(parent)
+
+    return None
+
+
 def _get_nvvm():
+    # Strategy:
+    # 1. Try pathfinder directly
+    # 2. If CUDA_HOME/CUDA_PATH are set, pathfinder would have found it - give up
+    # 3. Use nvrtc's location to infer CUDA installation root
+    # 4. Temporarily set CUDA_HOME and retry pathfinder
+
+    # First, try pathfinder directly
     try:
-        nvvm = pathfinder.load_nvidia_dynamic_lib("nvvm")
-        return nvvm
-    except pathfinder.DynamicLibNotFoundError as e:
-        # Try system search
-        # TODO: remove after cuda-python/1157 is resolved
-        path_or_none = _get_nvvm_system_path()
-        if path_or_none is not None:
-            nvvm = pathlib.Path(path_or_none)
-            if nvvm.exists():
-                # TODO: Expose private cuda-python APIs
-                dl = pathfinder._dynamic_libs.load_nvidia_dynamic_lib.load_with_abs_path(
-                    "nvvm", nvvm, "system-search"
-                )
-                return dl
-        raise pathfinder.DynamicLibNotFoundError("nvvm not found") from e
+        return pathfinder.load_nvidia_dynamic_lib("nvvm")
+    except pathfinder.DynamicLibNotFoundError:
+        pass
+
+    # If CUDA_HOME or CUDA_PATH is set, pathfinder would have found libnvvm
+    # based on the environment variable(s) - nothing more we can do
+    if os.environ.get("CUDA_HOME") or os.environ.get("CUDA_PATH"):
+        return None
+
+    # Try to locate nvrtc - this library is almost certainly needed if nvvm is needed (in the context of numba-cuda)
+    try:
+        loaded_nvrtc = _get_nvrtc()
+    except pathfinder.DynamicLibNotFoundError:
+        return None
+
+    # If nvrtc was not found via system-search, we can't reliably determine
+    # the CUDA installation structure
+    if loaded_nvrtc.found_via != "system-search":
+        return None
+
+    # Search backward from nvrtc's location to find a directory with "nvvm" subdirectory
+    cuda_home = _find_cuda_home_from_lib_path(loaded_nvrtc.abs_path)
+    if cuda_home is None:
+        return None
+
+    # Temporarily set CUDA_HOME and retry pathfinder
+    with temporary_env_var("CUDA_HOME", cuda_home):
+        try:
+            return pathfinder.load_nvidia_dynamic_lib("nvvm")
+        except pathfinder.DynamicLibNotFoundError:
+            return None
 
 
 def _get_nvrtc():

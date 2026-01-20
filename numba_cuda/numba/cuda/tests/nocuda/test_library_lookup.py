@@ -5,7 +5,7 @@ import sys
 import os
 import multiprocessing as mp
 import warnings
-
+import pathlib
 
 from numba.cuda.core.config import IS_WIN32
 from numba.cuda.core.errors import NumbaWarning
@@ -20,6 +20,7 @@ from numba.cuda.cuda_paths import (
     _get_cudalib_dir_path_decision,
     get_system_ctk,
     get_system_ctk_libdir,
+    _find_cuda_home_from_lib_path,
 )
 
 
@@ -193,6 +194,41 @@ def _fake_non_conda_env():
     Monkeypatch sys.prefix to hide the fact we are in a conda-env
     """
     sys.prefix = ""
+
+
+class LibraryLookupBase(unittest.TestCase):
+    def test_find_cuda_home(self):
+        """Test the directory walking logic."""
+        import tempfile
+
+        # Create a mock CUDA installation structure
+        with tempfile.TemporaryDirectory() as tmpdir:
+            cuda_root = pathlib.Path(tmpdir) / "cuda"
+            lib64 = cuda_root / "lib64"
+            nvvm = cuda_root / "nvvm"
+            nvvm_lib64 = nvvm / "lib64"
+
+            lib64.mkdir(parents=True)
+            nvvm_lib64.mkdir(parents=True)
+
+            # Create mock library files
+            nvrtc_path = lib64 / "libnvrtc.so.12"
+            nvrtc_path.touch()
+
+            nvvm_lib = nvvm_lib64 / "libnvvm.so.4"
+            nvvm_lib.touch()
+
+            # Test finding CUDA_HOME from nvrtc path
+            found_cuda_home = _find_cuda_home_from_lib_path(str(nvrtc_path))
+
+            # Compare resolved paths to handle Windows short path names (e.g., RGROSS~1)
+            expected = str(cuda_root.resolve())
+            assert found_cuda_home == expected, (
+                f"Expected {expected}, got {found_cuda_home}"
+            )
+
+            # Test that the nvvm directory exists at the found location
+            assert (pathlib.Path(found_cuda_home) / "nvvm").is_dir()
 
 
 if __name__ == "__main__":
