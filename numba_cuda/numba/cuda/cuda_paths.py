@@ -593,24 +593,12 @@ def _get_nvrtc():
 
 
 def _get_nvrtc_path():
+    # the pathfinder API will either find the library or raise
     nvrtc = _get_nvrtc()
     return _env_path_tuple(nvrtc.found_via, nvrtc.abs_path)
 
 
 def _get_nvvm_path():
+    # the pathfinder API will either find the library or raise
     nvvm = _get_nvvm()
     return _env_path_tuple(nvvm.found_via, nvvm.abs_path)
-
-
-def _get_nvvm_system_path():
-    nvvm_lib_dir = get_system_ctk("nvvm")
-    if nvvm_lib_dir is None:
-        return None
-    nvvm_lib_dir = os.path.join(nvvm_lib_dir, "bin" if IS_WIN32 else "lib64")
-    if IS_WIN32 and os.path.isdir(os.path.join(nvvm_lib_dir, "x64")):
-        nvvm_lib_dir = os.path.join(nvvm_lib_dir, "x64")
-
-    nvvm_path = os.path.join(
-        nvvm_lib_dir, "nvvm64_40_0.dll" if IS_WIN32 else "libnvvm.so.4"
-    )
-    return nvvm_path

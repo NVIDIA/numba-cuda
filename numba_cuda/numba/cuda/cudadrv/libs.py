@@ -53,6 +53,8 @@ def get_cudalib(lib, static=False):
     loader's search mechanism.
     """
     if lib in {"nvrtc", "nvvm"}:
+        # System search either invoked inside cuda-pathfinder
+        # or, for nvvm, using custom logic inside cuda-paths
         return get_cuda_paths()[lib].info
 
     dir_type = "static_cudalib_dir" if static else "cudalib_dir"
