@@ -979,6 +979,76 @@ class TestCudaDebugInfo(CUDATestCase):
 
         self.assertFileCheckMatches(llvm_ir, self.address_class_filechecks)
 
+    def test_DISubprogram_def_line_number(self):
+        """Tests that DISubprogram line number correctly points to the 'def'
+        line, even when there are comments between def and first statement,
+        and with both single-line and multi-line decorators.
+        """
+        sig = (types.int32[:],)
+
+        # Single line decorator without comment between def and first statement
+        @cuda.jit("void(int32[:])", debug=True, opt=False)
+        def kernel_single_line_decorator_without_comment(x):
+            x[0] = 1
+
+        # Single line decorator with multi-line comment between def and first statement
+        @cuda.jit("void(int32[:])", debug=True, opt=False)
+        def kernel_single_line_decorator_with_multiline_comment(x):
+            # This comment is between def and first statement
+            # and spans multiple lines
+            # on purpose
+            x[0] = 1
+
+        # fmt: off
+        # Multi-line decorator without comment between def and first statement
+        @cuda.jit(
+            "void(int32[:])",
+            debug=True,
+            opt=False
+        )
+        def kernel_multiline_decorator_without_comment(x):
+            x[0] = 1
+
+        # Multi-line decorator with multi-line comment between def and first statement
+        @cuda.jit(
+            "void(int32[:])",
+            debug=True,
+            opt=False
+        )
+        def kernel_multiline_decorator_with_multiline_comment(x):
+            # This comment is between def and first statement
+            # and spans multiple lines
+            # on purpose
+            x[0] = 1
+        # fmt: on
+
+        kernels = [
+            kernel_single_line_decorator_without_comment,
+            kernel_single_line_decorator_with_multiline_comment,
+            kernel_multiline_decorator_without_comment,
+            kernel_multiline_decorator_with_multiline_comment,
+        ]
+        for kernel in kernels:
+            with self.subTest(kernel=kernel.py_func.__name__):
+                source_lines, start_lineno = inspect.getsourcelines(
+                    kernel.py_func
+                )
+
+                # Find the actual 'def' line offset within the source
+                for def_offset, line in enumerate(source_lines):
+                    if line.strip().startswith("def "):
+                        break
+                actual_def_lineno = start_lineno + def_offset
+
+                llvm_ir = kernel.inspect_llvm(sig)
+
+                check_pattern = f"""
+                    CHECK: !DISubprogram(
+                    CHECK-SAME: line: {actual_def_lineno}
+                    CHECK-SAME: {kernel.py_func.__name__}
+                """
+                self.assertFileCheckMatches(llvm_ir, check_pattern)
+
 
 if __name__ == "__main__":
     unittest.main()

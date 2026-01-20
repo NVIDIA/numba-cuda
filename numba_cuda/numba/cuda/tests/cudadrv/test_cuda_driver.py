@@ -2,6 +2,8 @@
 # SPDX-License-Identifier: BSD-2-Clause
 
 from ctypes import c_int, sizeof
+import cffi
+import numpy as np
 
 from numba.cuda.cudadrv.driver import host_to_device, device_to_host, driver
 from numba.cuda._compat import (
@@ -18,8 +20,13 @@ from numba.cuda.testing import (
     CUDATestCase,
     DeprecatedDeviceArrayApiTest,
 )
+from numba.cuda.cudadrv import nvrtc
+from numba.cuda.testing import skip_unless_cc_90
 from numba.cuda.testing import skip_on_cudasim
+from numba.cuda.tests.support import override_config
+from numba.core import types
 import contextlib
+
 
 ptx1 = """
     .version 1.4
@@ -392,6 +399,64 @@ class TestDevice(CUDATestCase):
 
         dev = devices.get_context().device
         self.assertRegex(dev.uuid, uuid_format)
+
+
+@skip_on_cudasim("CUDA asm unsupported in the simulator")
+class TestAcceleratedArchitecture(CUDATestCase):
+    @skip_unless_cc_90
+    def test_device_arch_specific(self):
+        set_desc = cuda.CUSource("""
+        #include <cuda_fp16.h>
+
+        extern "C" __device__
+        int set_descriptor(int *out, int* smem) {
+            unsigned usmem = __cvta_generic_to_shared(smem);
+            asm volatile("tensormap.replace.tile.rank.shared::cta.b1024.b32 [%0], 2;" :: "r"(usmem));
+            return 0;
+        }
+        """)
+
+        set_descriptor = cuda.declare_device(
+            "set_descriptor",
+            types.int32(types.CPointer(types.int32)),
+            link=[set_desc],
+        )
+
+        ffi = cffi.FFI()
+
+        @cuda.jit
+        def kernel(a):
+            sm = cuda.shared.array(1, dtype=np.int32)
+            data_ptr = ffi.from_buffer(sm)
+            set_descriptor(data_ptr)
+
+            # just to prevent optimization:
+            sm[0] = 2
+            cuda.syncthreads()
+            a[0] = sm[0]
+
+        a = np.ones(1, dtype=np.int32)
+
+        kernel[1, 1](a)
+
+        assert a[0] == 2
+
+    def test_get_arch_option_force_cc(self):
+        with override_config("FORCE_CUDA_CC", (8, 0)):
+            arch = nvrtc.get_arch_option(9, 0, "a")
+            self.assertEqual("compute_80", arch)
+
+    def test_get_arch_option_force_cc_arch_specific(self):
+        with override_config("FORCE_CUDA_CC", (9, 0, "a")):
+            arch = nvrtc.get_arch_option(9, 0)
+            self.assertEqual("compute_90a", arch)
+
+    def test_get_arch_option_illegal_arch_specific(self):
+        # Using a fictitious very high compute capability (major 99) for this
+        # test to ensure future toolkits are unlikely to provide an exact match
+        msg = "Can't use arch-specific compute_990a with"
+        with self.assertRaisesRegex(ValueError, msg):
+            nvrtc.get_arch_option(99, 0, "a")
 
 
 if __name__ == "__main__":

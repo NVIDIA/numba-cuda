@@ -106,7 +106,7 @@ jobs:
     timeout-minutes: 60
     steps:
       - name: checkout code repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           repository: ${{ inputs.repo }}
           ref: ${{ inputs.sha }}
@@ -129,7 +129,7 @@ jobs:
           echo "EXTRA_REPO_PATH=${EXTRA_REPO_PATH}" >> $GITHUB_OUTPUT
 
       - name: checkout extra repos
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         if: ${{ inputs.extra-repo != '' }}
         with:
           repository: ${{ inputs.extra-repo }}
@@ -151,7 +151,7 @@ jobs:
         shell: bash -leo pipefail {0}
       - name: Upload sdist
         if: "!cancelled()"
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6.0.0
         with:
           name: sdist-py${{ matrix.PY_VER }}-${{ matrix.ARCH }}
           path: ${{ env.sdist_path }}
@@ -160,7 +160,7 @@ jobs:
         if: ${{ !(matrix.ARCH == 'amd64' && matrix.PY_VER == '3.10' && matrix.CUDA_VER == '12.8.0') }}
       - name: Upload wheel
         if: "!cancelled()"
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6.0.0
         with:
           name: wheel-py${{ matrix.PY_VER }}-${{ matrix.ARCH }}-linux
           path: ${{ env.wheel_path }}
