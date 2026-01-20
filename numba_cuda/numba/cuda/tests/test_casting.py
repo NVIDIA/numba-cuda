@@ -12,6 +12,7 @@ def cast_kernel(inp, out):
         out[i] = inp[i]
 
 
+@skip_on_cudasim("Casting semantics differ under cudasim")
 class TestCudaCasting(CUDATestCase):
 
     def _run_cast_test(self, src_dtype, dst_dtype, values):
@@ -24,7 +25,9 @@ class TestCudaCasting(CUDATestCase):
         threadsperblock = 128
         blockspergrid = (src.size + threadsperblock - 1) // threadsperblock
 
+
         cast_kernel[blockspergrid, threadsperblock](d_src, d_dst)
+        cuda.synchronize()
 
         result = d_dst.copy_to_host()
         expected = src.astype(dst_dtype)
@@ -44,7 +47,8 @@ class TestCudaCasting(CUDATestCase):
         self._run_cast_test(np.int32, np.float32, [1, -2, 3, 4])
 
 
-    def test_float_to_int(self):
+    # CUDA follows C-style truncation toward zero
+    def test_float_to_int_truncation(self):
         self._run_cast_test(np.float32, np.int32, [1.7, -2.2, 3.9])
 
 
