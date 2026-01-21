@@ -44,6 +44,7 @@ class TestCudaBuiltins(CUDATestCase):
         kernel[blockspergrid, threadsperblock](*args)
         cuda.synchronize()
 
+    def test_abs_int(self):
 
     def test_abs_int(self):
         src = np.array([-1, 2, -3, 4], dtype=np.int32)
