@@ -19,6 +19,9 @@ def index_kernel(inp, out):
 @cuda.jit
 def slice_kernel(inp, out, start):
     # Copies a slice from inp[start:start+len(out)] to out
+    # No explicit bounds check for start + i < inp.size is needed:
+    # All test parameters are chosen so that start + len(out) <= inp.size.
+    # If this changes, add: if start + i < inp.size:
     i = cuda.grid(1)
     if i < out.size:
         out[i] = inp[start + i]
