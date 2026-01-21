@@ -2296,7 +2296,7 @@ def get_d_impl(x, dx):
     return impl
 
 
-def np_trapz(y, x=None, dx=1.0):
+def np_trapezoid(y, x=None, dx=1.0):
     if isinstance(y, (types.Number, types.Boolean)):
         raise TypingError("y cannot be a scalar")
     elif isinstance(y, types.Array) and y.ndim == 0:
