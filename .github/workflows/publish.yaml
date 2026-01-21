@@ -19,7 +19,7 @@ jobs:
     outputs:
       BUILD_MATRIX: ${{ steps.compute-matrix.outputs.BUILD_MATRIX }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Compute Build Matrix
         id: compute-matrix
         run: |
@@ -49,13 +49,13 @@ jobs:
     timeout-minutes: 10
     steps:
       - name: Download wheels
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v7
         with:
           pattern: wheel-py*
           path: dist/
           merge-multiple: true
       - name: Download sdist
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v7
         with:
           name: sdist-py3.13-amd64
           path: sdist/
