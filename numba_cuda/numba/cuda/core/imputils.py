@@ -213,7 +213,7 @@ def user_function(fndesc, libs):
     """
 
     def imp(context, builder, sig, args):
-        func = context.declare_function(builder.module, fndesc)
+        func = fndesc.declare_function(builder.module)
         # env=None assumes this is a nopython function
         status, retval = fndesc.call_conv.call_function(
             builder, func, fndesc.restype, fndesc.argtypes, args
@@ -246,7 +246,7 @@ def user_generator(gendesc, libs):
     """
 
     def imp(context, builder, sig, args):
-        func = context.declare_function(builder.module, gendesc)
+        func = gendesc.declare_function(builder.module)
         # env=None assumes this is a nopython function
         status, retval = context.call_conv.call_function(
             builder, func, gendesc.restype, gendesc.argtypes, args

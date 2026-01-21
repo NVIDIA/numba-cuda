@@ -344,7 +344,7 @@ class BaseLower(object):
 
     def setup_function(self, fndesc):
         # Setup function
-        self.function = self.context.declare_function(self.module, fndesc)
+        self.function = fndesc.declare_function(self.module)
         if self.flags.dbg_optnone:
             attrset = self.function.attributes
             if "alwaysinline" not in attrset:

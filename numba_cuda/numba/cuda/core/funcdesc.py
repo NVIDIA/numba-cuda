@@ -8,7 +8,7 @@ Function descriptors.
 from collections import defaultdict
 import importlib
 
-from numba.cuda import types
+from numba.cuda import types, cgutils
 from numba.cuda import itanium_mangler
 from numba.cuda.utils import _dynamic_modname, _dynamic_module
 
@@ -264,6 +264,19 @@ class FunctionDescriptor(object):
             abi_info=abi_info,
         )
         return self
+
+    def declare_function(self, module):
+        fnty = self.call_conv.get_function_type(self.restype, self.argtypes)
+        fn = cgutils.get_or_insert_function(module, fnty, self.mangled_name)
+        self.call_conv.decorate_function(
+            fn, self.args, self.argtypes, noalias=self.noalias
+        )
+        if self.inline:
+            fn.attributes.add("alwaysinline")
+            # alwaysinline overrides optnone
+            fn.attributes.discard("noinline")
+            fn.attributes.discard("optnone")
+        return fn
 
 
 class PythonFunctionDescriptor(FunctionDescriptor):
