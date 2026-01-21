@@ -17,6 +17,7 @@ from numba.cuda import utils
 from numba.cuda.np import numpy_support
 
 from cuda.core import Buffer
+from cuda.core.utils import StridedMemoryView
 
 
 # terminal color markup
@@ -382,4 +383,22 @@ def typeof_buffer(val, c):
         ndim=1,
         layout="C",
         readonly=False,
+    )
+
+
+@typeof_impl.register(StridedMemoryView)
+def typeof_strided_memory_view(val, c):
+    raw_layout = val._layout
+    if raw_layout.is_contiguous_c:
+        layout = "C"
+    elif raw_layout.is_contiguous_f:
+        layout = "F"
+    else:
+        assert raw_layout.is_contiguous_any
+        layout = "A"
+    return types.Array(
+        dtype=numpy_support.from_dtype(val.dtype),
+        ndim=len(val.shape),
+        layout=layout,
+        readonly=val.readonly,
     )

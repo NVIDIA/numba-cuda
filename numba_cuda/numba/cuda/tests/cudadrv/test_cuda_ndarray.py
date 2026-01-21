@@ -635,6 +635,25 @@ class TestCoreContiguous(CUDATestCase):
         func(buf, out)
         assert out[0] == n
 
+    def test_kernel_with_strided_memory_view(self):
+        from cuda.core.utils import StridedMemoryView
+
+        cp = pytest.importorskip("cupy")
+
+        @cuda.jit
+        def kernel(buf, n):
+            n[0] = len(buf)
+
+        n = 10
+        view = cp.ones(n, dtype="int64")
+        out = cp.zeros(1, dtype="uint64")
+        smv = StridedMemoryView.from_cuda_array_interface(
+            view, stream_ptr=view.__cuda_array_interface__["stream"]
+        )
+        func = kernel[1, 1]
+        func(smv, out)
+        assert out[0] == n
+
 
 if __name__ == "__main__":
     unittest.main()
