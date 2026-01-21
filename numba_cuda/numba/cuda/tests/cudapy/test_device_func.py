@@ -530,6 +530,14 @@ void consume(int a)
 }
 """)
 
+consume_cabi_pointer_cu = cuda.CUSource("""
+extern "C" __device__
+void consume(int *a)
+{
+  *a = 42;
+}
+""")
+
 
 @skip_on_cudasim("External functions unsupported in the simulator")
 class TestDeclareDeviceCABI(CUDATestCase):
@@ -599,6 +607,27 @@ class TestDeclareDeviceCABI(CUDATestCase):
         r = np.empty_like(x)
         kernel[1, 32](r, x)
         np.testing.assert_equal(r, x * 2)
+
+    def test_declare_device_cabi_pointer_return(self):
+        ffi = cffi.FFI()
+        consume = cuda.declare_device(
+            "consume",
+            types.void(types.CPointer(types.int32)),
+            link=consume_cabi_pointer_cu,
+            abi="c",
+        )
+
+        @cuda.jit
+        def kernel(x):
+            i = cuda.grid(1)
+            if i < len(x):
+                ptr = ffi.from_buffer(x[i:])
+                consume(ptr)
+
+        x = np.zeros(10, dtype=np.int32)
+
+        kernel[1, 32](x)
+        np.testing.assert_equal(x, 42)
 
 
 if __name__ == "__main__":
