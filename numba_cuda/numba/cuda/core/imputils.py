@@ -226,7 +226,6 @@ def user_function(fndesc, libs):
         assert sig.return_type == fndesc.restype
 
         # Reconstruct optional return type
-        # XXX: What do we do now when we use CABI?
         retval = fix_returning_optional(context, builder, sig, status, retval)
         # If the data representations don't match up
         if retval.type != context.get_value_type(sig.return_type):
