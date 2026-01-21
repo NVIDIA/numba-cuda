@@ -536,12 +536,29 @@ class _Kernel(serialize.ReduceMixin):
         """
 
         # map the arguments using any extension you've registered
+        handler = _arg_handlers.get(type(val))
+        mutated = False
+
         if self.extensions:
             for extension in reversed(self.extensions):
+                if not mutated:
+                    _ty, _val = ty, val
+
                 ty, val = extension.prepare_args(
                     ty, val, stream=stream, retr=retr
                 )
-        elif handler := _arg_handlers.get(type(val)):
+
+                if not mutated and not (_ty is ty and _val is val):
+                    mutated = True
+                    if handler is not None:
+                        raise RuntimeError(
+                            "Argument type %s and value %s were mutated by "
+                            "extension; cannot also be handled by registered "
+                            "argument handler" % (ty, val)
+                        )
+
+        # only run global handler if untouched by extensions
+        if not mutated and handler is not None:
             ty, val = handler(ty, val, stream=stream, retr=retr)
 
         if isinstance(ty, types.Array):
@@ -2122,6 +2139,8 @@ def register_arg_handler(handler, handled_types):
             raise ValueError(
                 f"A handler for args of type {ty} is already registered."
             )
+
+    for ty in handled_types:
         _arg_handlers[ty] = handler
 
 

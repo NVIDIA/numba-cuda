@@ -496,6 +496,8 @@ class TestArgHandlerRegistration(CUDATestCase):
 
         class PassedArgHandler_float32:
             def prepare_args(self, ty, val, **kwargs):
+                if val.arr.dtype != np.float32:
+                    return ty, val
                 return types.float32[::1], val.arr
 
         @cuda.jit(
