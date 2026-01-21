@@ -1081,10 +1081,8 @@ def _compile_pyfunc_with_fixup(
     if resty and not device and resty != types.void:
         raise TypeError("CUDA kernel must have void return type.")
 
-    if device:
-        lib = cres.library
-    else:
-        lib = cres.library
+    lib = cres.library
+    if not device:
         kernel = lib.get_function(cres.fndesc.llvm_func_name)
         lib._entry_name = cres.fndesc.llvm_func_name
         kernel_fixup(kernel, debug)
