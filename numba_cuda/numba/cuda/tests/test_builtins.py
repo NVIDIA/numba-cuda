@@ -31,7 +31,7 @@ def max_kernel(a, b, out):
 @cuda.jit
 def bool_kernel(inp, out):
     i = cuda.grid(1)
-    if i < inp.size:
+    if i < out.size:
         out[i] = bool(inp[i])
 
 
