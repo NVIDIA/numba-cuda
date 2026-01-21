@@ -17,14 +17,14 @@ def abs_kernel(inp, out):
 @cuda.jit
 def min_kernel(a, b, out):
     i = cuda.grid(1)
-    if i < min(a.size, b.size, out.size):
+    if i < out.size:
         out[i] = min(a[i], b[i])
 
 
 @cuda.jit
 def max_kernel(a, b, out):
     i = cuda.grid(1)
-    if i < min(a.size, b.size, out.size):
+    if i < out.size:
         out[i] = max(a[i], b[i])
 
 
@@ -46,8 +46,6 @@ class TestCudaBuiltins(CUDATestCase):
         threadsperblock = 128
         blockspergrid = (size + threadsperblock - 1) // threadsperblock
         kernel[blockspergrid, threadsperblock](*args)
-
-    def test_abs_int(self):
 
     def test_abs_int(self):
         src = np.array([-1, 2, -3, 4], dtype=np.int32)
