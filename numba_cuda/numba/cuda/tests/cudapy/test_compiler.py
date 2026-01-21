@@ -13,6 +13,7 @@ from numba.cuda import (
     compile_all,
     LinkableCode,
 )
+from numba.cuda.cudadrv import nvrtc
 from numba.cuda.testing import skip_on_cudasim, unittest, CUDATestCase
 
 TEST_BIN_DIR = os.getenv("NUMBA_CUDA_TEST_BIN_DIR")
@@ -169,6 +170,16 @@ class TestCompile(unittest.TestCase):
         # ending in the filename of this module.
         self.assertRegex(ptx, '\\.file.*test_compiler.py"')
 
+    # We did test for the presence of debuginfo here, but in practice it made
+    # no sense - the C ABI wrapper generates a call instruction that has
+    # nothing to correlate with the DWARF, so it would confuse the debugger
+    # immediately anyway. With the resolution of Issue #588 (using separate
+    # translation of each IR module when debuginfo is enabled) the debuginfo
+    # isn't even produced for the ABI wrapper, because there was none present
+    # in that module anyway. So this test can only be expected to fail until we
+    # have a proper way of generating device functions with the C ABI without
+    # requiring the hack of generating a wrapper.
+    @unittest.expectedFailure
     def test_device_function_with_debug(self):
         # See Issue #6719 - this ensures that compilation with debug succeeds
         # with CUDA 11.2 / NVVM 7.0 onwards. Previously it failed because NVVM
@@ -547,7 +558,7 @@ class TestCompile(unittest.TestCase):
                 link_obj = LinkableCode.from_path(link)
                 if link_obj.kind == "cu":
                     # if link is a cu file, result contains a compiled object code
-                    from cuda.core.experimental import ObjectCode
+                    from numba.cuda._compat import ObjectCode
 
                     assert isinstance(code_list[1], ObjectCode)
                 else:
@@ -650,6 +661,16 @@ class TestCompileOnlyTests(unittest.TestCase):
                 f"expected {expected}"
             ),
         )
+
+    def test_compile_ptx_arch_specific(self):
+        ptx, resty = cuda.compile_ptx(lambda: None, tuple(), cc=(9, 0, "a"))
+        self.assertIn(".target sm_90a", ptx)
+
+        if nvrtc._get_nvrtc_version() >= (12, 9):
+            ptx, resty = cuda.compile_ptx(
+                lambda: None, tuple(), cc=(10, 0, "f")
+            )
+            self.assertIn(".target sm_100f", ptx)
 
 
 @skip_on_cudasim("Compilation unsupported in the simulator")

@@ -55,8 +55,8 @@ def _extract_loop_lifting_candidates(cfg, blocks):
         insiders = set(loop.body) | set(loop.entries) | set(loop.exits)
         for blk in map(blocks.__getitem__, insiders):
             for inst in blk.body:
-                if isinstance(inst, ir.Assign):
-                    if isinstance(inst.value, ir.Yield):
+                if isinstance(inst, ir.assign_types):
+                    if isinstance(inst.value, ir.yield_types):
                         _logger.debug("has yield")
                         return False
         _logger.debug("no yield")
@@ -347,14 +347,14 @@ def canonicalize_cfg_single_backedge(blocks):
         def replace(target):
             return dst if target == src else target
 
-        if isinstance(term, ir.Branch):
+        if isinstance(term, ir.branch_types):
             return ir.Branch(
                 cond=term.cond,
                 truebr=replace(term.truebr),
                 falsebr=replace(term.falsebr),
                 loc=term.loc,
             )
-        elif isinstance(term, ir.Jump):
+        elif isinstance(term, ir.jump_types):
             return ir.Jump(target=replace(term.target), loc=term.loc)
         else:
             assert not term.get_targets()
@@ -436,9 +436,7 @@ def with_lifting(func_ir, typingctx, targetctx, flags, locals):
     # the kind of contextmanager
     sub_irs = []
     for blk_start, blk_end in withs:
-        body_blocks = []
-        for node in _cfg_nodes_in_region(cfg, blk_start, blk_end):
-            body_blocks.append(node)
+        body_blocks = _cfg_nodes_in_region(cfg, blk_start, blk_end).copy()
         _legalize_with_head(blocks[blk_start])
         # Find the contextmanager
         cmkind, extra = _get_with_contextmanager(func_ir, blocks, blk_start)
@@ -477,7 +475,7 @@ def _get_with_contextmanager(func_ir, blocks, blk_start):
         """
         # If the contextmanager used as a Call
         dfn = func_ir.get_definition(var_ref)
-        if isinstance(dfn, ir.Expr) and dfn.op == "call":
+        if isinstance(dfn, ir.expr_types) and dfn.op == "call":
             args = [get_var_dfn(x) for x in dfn.args]
             kws = {k: get_var_dfn(v) for k, v in dfn.kws}
             extra = {"args": args, "kwargs": kws}
@@ -501,7 +499,7 @@ def _get_with_contextmanager(func_ir, blocks, blk_start):
 
     # Scan the start of the with-region for the contextmanager
     for stmt in blocks[blk_start].body:
-        if isinstance(stmt, ir.EnterWith):
+        if isinstance(stmt, ir.enterwith_types):
             var_ref = stmt.contextmanager
             ctxobj, extra = get_ctxmgr_obj(var_ref)
             if not hasattr(ctxobj, "mutate_with_body"):
@@ -523,7 +521,22 @@ def _legalize_with_head(blk):
     """
     counters = defaultdict(int)
     for stmt in blk.body:
-        counters[type(stmt)] += 1
+        # The counters dict is keyed on the IR node type. As the rest of the
+        # function pops out specific node types, we normalize these node types
+        # to be the Numba-CUDA versions of them so that we don't have to have
+        # more complicated logic looking for both Numba and Numba-CUDA IR nodes
+        # of the same kind.
+        if isinstance(stmt, ir.enterwith_types):
+            stmt_type = ir.EnterWith
+        elif isinstance(stmt, ir.jump_types):
+            stmt_type = ir.Jump
+        elif isinstance(stmt, ir.del_types):
+            stmt_type = ir.Del
+        else:
+            stmt_type = type(stmt)
+
+        counters[stmt_type] += 1
+
     if counters.pop(ir.EnterWith) != 1:
         raise errors.CompilerError(
             "with's head-block must have exactly 1 ENTER_WITH",
@@ -616,9 +629,9 @@ def find_setupwiths(func_ir):
                     # add all its targets to the to_visit stack, unless we
                     # have seen them already
                     if ir_utils.is_terminator(stmt):
-                        for t in stmt.get_targets():
-                            if t not in seen:
-                                to_visit.append(t)
+                        to_visit.extend(
+                            t for t in stmt.get_targets() if t not in seen
+                        )
 
         return setup_with_to_pop_blocks_map
 
@@ -744,10 +757,10 @@ def _rewrite_return(func_ir, target_block_label):
     # JUMP
     # -----------------
     top_body, bottom_body = [], []
-    pop_blocks = [*target_block.find_insts(ir.PopBlock)]
+    pop_blocks = [*target_block.find_insts(ir.popblock_types)]
     assert len(pop_blocks) == 1
-    assert len([*target_block.find_insts(ir.Jump)]) == 1
-    assert isinstance(target_block.body[-1], ir.Jump)
+    assert len([*target_block.find_insts(ir.jump_types)]) == 1
+    assert isinstance(target_block.body[-1], ir.jump_types)
     pb_marker = pop_blocks[0]
     pb_is = target_block.body.index(pb_marker)
     top_body.extend(target_block.body[:pb_is])

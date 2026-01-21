@@ -28,6 +28,7 @@ class FindDefFirstLine(ast.NodeVisitor):
         self._co_name = code.co_name
         self._co_firstlineno = code.co_firstlineno
         self.first_stmt_line = None
+        self.def_lineno = None
 
     def _visit_children(self, node):
         for child in ast.iter_child_nodes(node):
@@ -47,6 +48,7 @@ class FindDefFirstLine(ast.NodeVisitor):
             # Does the first lineno match?
             if self._co_firstlineno in possible_start_lines:
                 # Yes, we found the function.
+                self.def_lineno = node.lineno
                 # So, use the first statement line as the first line.
                 if node.body:
                     first_stmt = node.body[0]
@@ -94,3 +96,27 @@ def get_func_body_first_lineno(pyfunc):
         finder = FindDefFirstLine(co)
         finder.visit(tree)
         return finder.first_stmt_line
+
+
+def get_func_def_lineno(pyfunc):
+    """
+    Look up the line number of the function definition ('def' line) using
+    the file in ``pyfunc.__code__.co_filename``.
+
+    Returns
+    -------
+    lineno : int; or None
+        The line number of the function definition (the 'def' line); or
+        ``None`` if it cannot be determined.
+    """
+    co = pyfunc.__code__
+    try:
+        with open(co.co_filename) as fin:
+            file_content = fin.read()
+    except (FileNotFoundError, OSError):
+        return
+    else:
+        tree = ast.parse(file_content)
+        finder = FindDefFirstLine(co)
+        finder.visit(tree)
+        return finder.def_lineno

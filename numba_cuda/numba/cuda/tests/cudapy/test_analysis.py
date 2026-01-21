@@ -854,13 +854,25 @@ class TestBranchPrunePredicates(TestBranchPruneBase):
                 _CONST2 = "PLACEHOLDER2"
             return _CONST2 + 4
 
-        new = self._literal_const_sample_generator(impl, {1: 0, 3: 20})
+        if PYVERSION in ((3, 14),):
+            # The order of the __code__.co_consts changes with 3.14
+            new = self._literal_const_sample_generator(impl, {0: 0, 2: 20})
+        elif PYVERSION in ((3, 10), (3, 11), (3, 12), (3, 13)):
+            new = self._literal_const_sample_generator(impl, {1: 0, 3: 20})
+        else:
+            raise NotImplementedError(PYVERSION)
         iconst = impl.__code__.co_consts
         nconst = new.__code__.co_consts
-        self.assertEqual(
-            iconst, (None, "PLACEHOLDER1", 3.14159, "PLACEHOLDER2", 4)
-        )
-        self.assertEqual(nconst, (None, 0, 3.14159, 20, 4))
+        if PYVERSION in ((3, 14),):
+            self.assertEqual(iconst, ("PLACEHOLDER1", 3.14159, "PLACEHOLDER2"))
+            self.assertEqual(nconst, (0, 3.14159, 20))
+        elif PYVERSION in ((3, 10), (3, 11), (3, 12), (3, 13)):
+            self.assertEqual(
+                iconst, (None, "PLACEHOLDER1", 3.14159, "PLACEHOLDER2", 4)
+            )
+            self.assertEqual(nconst, (None, 0, 3.14159, 20, 4))
+        else:
+            raise NotImplementedError(PYVERSION)
         self.assertEqual(impl(None), 3.14159)
         self.assertEqual(new(None), 24)
 
@@ -872,7 +884,17 @@ class TestBranchPrunePredicates(TestBranchPruneBase):
 
         for c_inp, prune in (self._TRUTHY, False), (self._FALSEY, True):
             for const in c_inp:
-                func = self._literal_const_sample_generator(impl, {1: const})
+                if PYVERSION in ((3, 14),):
+                    # The order of the __code__.co_consts changes with 3.14
+                    func = self._literal_const_sample_generator(
+                        impl, {0: const}
+                    )
+                elif PYVERSION in ((3, 10), (3, 11), (3, 12), (3, 13)):
+                    func = self._literal_const_sample_generator(
+                        impl, {1: const}
+                    )
+                else:
+                    raise NotImplementedError(PYVERSION)
                 self.assert_prune(
                     func, (types.NoneType("none"),), [prune], None
                 )
@@ -885,7 +907,17 @@ class TestBranchPrunePredicates(TestBranchPruneBase):
 
         for c_inp, prune in (self._TRUTHY, False), (self._FALSEY, True):
             for const in c_inp:
-                func = self._literal_const_sample_generator(impl, {1: const})
+                if PYVERSION in ((3, 14),):
+                    # The order of the __code__.co_consts changes with 3.14
+                    func = self._literal_const_sample_generator(
+                        impl, {0: const}
+                    )
+                elif PYVERSION in ((3, 10), (3, 11), (3, 12), (3, 13)):
+                    func = self._literal_const_sample_generator(
+                        impl, {1: const}
+                    )
+                else:
+                    raise NotImplementedError(PYVERSION)
                 self.assert_prune(
                     func, (types.NoneType("none"),), [prune], None
                 )
@@ -900,7 +932,17 @@ class TestBranchPrunePredicates(TestBranchPruneBase):
 
         for c_inp, prune in (self._TRUTHY, False), (self._FALSEY, True):
             for const in c_inp:
-                func = self._literal_const_sample_generator(impl, {1: const})
+                if PYVERSION in ((3, 14),):
+                    # The order of the __code__.co_consts changes with 3.14
+                    func = self._literal_const_sample_generator(
+                        impl, {0: const}
+                    )
+                elif PYVERSION in ((3, 10), (3, 11), (3, 12), (3, 13)):
+                    func = self._literal_const_sample_generator(
+                        impl, {1: const}
+                    )
+                else:
+                    raise NotImplementedError(PYVERSION)
                 self.assert_prune(
                     func, (types.NoneType("none"),), [prune], None
                 )
@@ -915,7 +957,17 @@ class TestBranchPrunePredicates(TestBranchPruneBase):
 
         for c_inp, prune in (self._TRUTHY, False), (self._FALSEY, True):
             for const in c_inp:
-                func = self._literal_const_sample_generator(impl, {1: const})
+                if PYVERSION in ((3, 14),):
+                    # The order of the __code__.co_consts changes with 3.14
+                    func = self._literal_const_sample_generator(
+                        impl, {0: const}
+                    )
+                elif PYVERSION in ((3, 10), (3, 11), (3, 12), (3, 13)):
+                    func = self._literal_const_sample_generator(
+                        impl, {1: const}
+                    )
+                else:
+                    raise NotImplementedError(PYVERSION)
                 self.assert_prune(
                     func, (types.NoneType("none"),), [prune], None
                 )

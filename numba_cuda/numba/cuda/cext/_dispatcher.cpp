@@ -12,7 +12,6 @@
 #include "frameobject.h"
 #include "traceback.h"
 #include "typeconv.hpp"
-#include "_devicearray.h"
 
 /*
  * Notes on the C_TRACE macro:
@@ -30,7 +29,7 @@
  *
  */
 
-#if (PY_MAJOR_VERSION >= 3) && ((PY_MINOR_VERSION == 12) || (PY_MINOR_VERSION == 13))
+#if (PY_MAJOR_VERSION >= 3) && ((PY_MINOR_VERSION == 12) || (PY_MINOR_VERSION == 13) || (PY_MINOR_VERSION == 14))
 
 #ifndef Py_BUILD_CORE
     #define Py_BUILD_CORE 1
@@ -940,37 +939,6 @@ CLEANUP:
     return retval;
 }
 
-static int
-import_devicearray(void)
-{
-    PyObject *devicearray = PyImport_ImportModule(NUMBA_DEVICEARRAY_IMPORT_NAME);
-    if (devicearray == NULL) {
-        return -1;
-    }
-
-    PyObject *d = PyModule_GetDict(devicearray);
-    if (d == NULL) {
-      Py_DECREF(devicearray);
-      return -1;
-    }
-
-    PyObject *key = PyUnicode_FromString("_DEVICEARRAY_API");
-    PyObject *c_api = PyDict_GetItemWithError(d, key);
-    int retcode = 0;
-    if (PyCapsule_IsValid(c_api, NUMBA_DEVICEARRAY_IMPORT_NAME "._DEVICEARRAY_API")) {
-      DeviceArray_API = (void**)PyCapsule_GetPointer(c_api, NUMBA_DEVICEARRAY_IMPORT_NAME "._DEVICEARRAY_API");
-      if (DeviceArray_API == NULL) {
-        retcode = -1;
-      }
-    } else {
-      retcode = -1;
-    }
-
-    Py_DECREF(key);
-    Py_DECREF(devicearray);
-    return retcode;
-}
-
 static PyMethodDef Dispatcher_methods[] = {
     { "_clear", (PyCFunction)Dispatcher_clear, METH_NOARGS, NULL },
     { "_insert", (PyCFunction)Dispatcher_Insert, METH_VARARGS | METH_KEYWORDS,
@@ -1036,11 +1004,17 @@ static PyTypeObject DispatcherType = {
     0,                                           /* tp_version_tag */
     0,                                           /* tp_finalize */
     0,                                           /* tp_vectorcall */
-#if (PY_MAJOR_VERSION == 3) && (PY_MINOR_VERSION == 12)
+#if (PY_MAJOR_VERSION == 3) && (PY_MINOR_VERSION >= 12)
 /* This was introduced first in 3.12
  * https://github.com/python/cpython/issues/91051
  */
     0,                                           /* tp_watched */
+#endif
+#if (PY_MAJOR_VERSION == 3) && (PY_MINOR_VERSION >= 13)
+/* This was introduced in 3.13
+ * https://github.com/python/cpython/pull/114900
+ */
+    0,                                           /* tp_versions_used */
 #endif
 
 /* WARNING: Do not remove this, only modify it! It is a version guard to
@@ -1076,12 +1050,6 @@ static PyMethodDef ext_methods[] = {
 
 
 MOD_INIT(_dispatcher) {
-    if (import_devicearray() < 0) {
-      PyErr_Print();
-      PyErr_SetString(PyExc_ImportError, NUMBA_DEVICEARRAY_IMPORT_NAME " failed to import");
-      return MOD_ERROR_VAL;
-    }
-
     PyObject *m;
     MOD_DEF(m, "_dispatcher", "No docs", ext_methods)
     if (m == NULL)

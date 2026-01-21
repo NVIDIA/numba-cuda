@@ -27,7 +27,7 @@ from numba.cuda.core.unsafe import eh
 from numba.cuda.cpython.unsafe.tuple import unpack_single_tuple
 
 
-if PYVERSION in ((3, 12), (3, 13)):
+if PYVERSION in ((3, 12), (3, 13), (3, 14)):
     # Operands for CALL_INTRINSIC_1
     from numba.cuda.core.byteflow import CALL_INTRINSIC_1_Operand as ci1op
 elif PYVERSION in ((3, 9), (3, 10), (3, 11)):
@@ -217,8 +217,8 @@ def _call_function_ex_replace_kws_large(
         # The first value must be a constant.
         const_stmt = old_body[search_start]
         if not (
-            isinstance(const_stmt, ir.Assign)
-            and isinstance(const_stmt.value, ir.Const)
+            isinstance(const_stmt, ir.assign_types)
+            and isinstance(const_stmt.value, ir.const_types)
         ):
             # We cannot handle this format so raise the
             # original error message.
@@ -231,8 +231,8 @@ def _call_function_ex_replace_kws_large(
         while search_start <= search_end and not found_getattr:
             getattr_stmt = old_body[search_start]
             if (
-                isinstance(getattr_stmt, ir.Assign)
-                and isinstance(getattr_stmt.value, ir.Expr)
+                isinstance(getattr_stmt, ir.assign_types)
+                and isinstance(getattr_stmt.value, ir.expr_types)
                 and getattr_stmt.value.op == "getattr"
                 and (getattr_stmt.value.value.name == buildmap_name)
                 and getattr_stmt.value.attr == "__setitem__"
@@ -262,8 +262,8 @@ def _call_function_ex_replace_kws_large(
             raise UnsupportedBytecodeError(errmsg)
         setitem_stmt = old_body[search_start + 1]
         if not (
-            isinstance(setitem_stmt, ir.Assign)
-            and isinstance(setitem_stmt.value, ir.Expr)
+            isinstance(setitem_stmt, ir.assign_types)
+            and isinstance(setitem_stmt.value, ir.expr_types)
             and setitem_stmt.value.op == "call"
             and (setitem_stmt.value.func.name == getattr_stmt.target.name)
             and len(setitem_stmt.value.args) == 2
@@ -366,8 +366,8 @@ def _call_function_ex_replace_args_large(
     # tuple.
     search_start = 0
     total_args = []
-    if isinstance(vararg_stmt, ir.Assign) and isinstance(
-        vararg_stmt.value, ir.Var
+    if isinstance(vararg_stmt, ir.assign_types) and isinstance(
+        vararg_stmt.value, ir.var_types
     ):
         target_name = vararg_stmt.value.name
         # If there is an initial assignment, delete it
@@ -387,9 +387,9 @@ def _call_function_ex_replace_args_large(
     while search_end >= search_start:
         concat_stmt = old_body[search_end]
         if (
-            isinstance(concat_stmt, ir.Assign)
+            isinstance(concat_stmt, ir.assign_types)
             and concat_stmt.target.name == target_name
-            and isinstance(concat_stmt.value, ir.Expr)
+            and isinstance(concat_stmt.value, ir.expr_types)
             and concat_stmt.value.op == "build_tuple"
             and not concat_stmt.value.items
         ):
@@ -404,9 +404,9 @@ def _call_function_ex_replace_args_large(
             # We expect to find another arg to append.
             # The first stmt must be a binop "add"
             if (search_end == search_start) or not (
-                isinstance(concat_stmt, ir.Assign)
+                isinstance(concat_stmt, ir.assign_types)
                 and (concat_stmt.target.name == target_name)
-                and isinstance(concat_stmt.value, ir.Expr)
+                and isinstance(concat_stmt.value, ir.expr_types)
                 and concat_stmt.value.op == "binop"
                 and concat_stmt.value.fn == operator.add
             ):
@@ -418,8 +418,8 @@ def _call_function_ex_replace_args_large(
             # build_tuple containing the arg.
             arg_tuple_stmt = old_body[search_end - 1]
             if not (
-                isinstance(arg_tuple_stmt, ir.Assign)
-                and isinstance(arg_tuple_stmt.value, ir.Expr)
+                isinstance(arg_tuple_stmt, ir.assign_types)
+                and isinstance(arg_tuple_stmt.value, ir.expr_types)
                 and (arg_tuple_stmt.value.op == "build_tuple")
                 and len(arg_tuple_stmt.value.items) == 1
             ):
@@ -448,7 +448,7 @@ def _call_function_ex_replace_args_large(
             keep_looking = True
             while search_end >= search_start and keep_looking:
                 next_stmt = old_body[search_end]
-                if isinstance(next_stmt, ir.Assign) and (
+                if isinstance(next_stmt, ir.assign_types) and (
                     next_stmt.target.name == target_name
                 ):
                     keep_looking = False
@@ -522,8 +522,8 @@ def peep_hole_call_function_ex_to_call_function_kw(func_ir):
         new_body = []
         for i, stmt in enumerate(blk.body):
             if (
-                isinstance(stmt, ir.Assign)
-                and isinstance(stmt.value, ir.Expr)
+                isinstance(stmt, ir.assign_types)
+                and isinstance(stmt.value, ir.expr_types)
                 and stmt.value.op == "call"
                 and stmt.value.varkwarg is not None
             ):
@@ -548,7 +548,7 @@ def peep_hole_call_function_ex_to_call_function_kw(func_ir):
                 while varkwarg_loc >= 0 and not found:
                     keyword_def = blk.body[varkwarg_loc]
                     if (
-                        isinstance(keyword_def, ir.Assign)
+                        isinstance(keyword_def, ir.assign_types)
                         and keyword_def.target.name == varkwarg.name
                     ):
                         found = True
@@ -558,7 +558,7 @@ def peep_hole_call_function_ex_to_call_function_kw(func_ir):
                     kws
                     or not found
                     or not (
-                        isinstance(keyword_def.value, ir.Expr)
+                        isinstance(keyword_def.value, ir.expr_types)
                         and keyword_def.value.op == "build_map"
                     )
                 ):
@@ -624,7 +624,7 @@ def peep_hole_call_function_ex_to_call_function_kw(func_ir):
                     while vararg_loc >= 0 and not found:
                         args_def = blk.body[vararg_loc]
                         if (
-                            isinstance(args_def, ir.Assign)
+                            isinstance(args_def, ir.assign_types)
                             and args_def.target.name == vararg.name
                         ):
                             found = True
@@ -635,7 +635,7 @@ def peep_hole_call_function_ex_to_call_function_kw(func_ir):
                         # then we can't handle this format.
                         raise UnsupportedBytecodeError(errmsg)
                     if (
-                        isinstance(args_def.value, ir.Expr)
+                        isinstance(args_def.value, ir.expr_types)
                         and args_def.value.op == "build_tuple"
                     ):
                         # n_args <= 30 case.
@@ -656,7 +656,7 @@ def peep_hole_call_function_ex_to_call_function_kw(func_ir):
                             already_deleted_defs,
                         )
                     elif (
-                        isinstance(args_def.value, ir.Expr)
+                        isinstance(args_def.value, ir.expr_types)
                         and args_def.value.op == "list_to_tuple"
                     ):
                         # If there is a call with vararg we need to check
@@ -708,8 +708,8 @@ def peep_hole_call_function_ex_to_call_function_kw(func_ir):
                 # Update the definition
                 func_ir._definitions[stmt.target.name].append(new_call)
             elif (
-                isinstance(stmt, ir.Assign)
-                and isinstance(stmt.value, ir.Expr)
+                isinstance(stmt, ir.assign_types)
+                and isinstance(stmt.value, ir.expr_types)
                 and stmt.value.op == "call"
                 and stmt.value.vararg is not None
             ):
@@ -725,7 +725,10 @@ def peep_hole_call_function_ex_to_call_function_kw(func_ir):
                     # If this value is still a list to tuple raise the
                     # exception.
                     expr = func_ir._definitions[vararg_name][0]
-                    if isinstance(expr, ir.Expr) and expr.op == "list_to_tuple":
+                    if (
+                        isinstance(expr, ir.expr_types)
+                        and expr.op == "list_to_tuple"
+                    ):
                         raise UnsupportedBytecodeError(errmsg)
 
             new_body.append(stmt)
@@ -771,7 +774,7 @@ def peep_hole_list_to_tuple(func_ir):
     _DEBUG = False
 
     # For all blocks
-    for offset, blk in func_ir.blocks.items():
+    for blk in func_ir.blocks.values():
         # keep doing the peephole rewrite until nothing is left that matches
         while True:
             # first try and find a matching region
@@ -780,17 +783,17 @@ def peep_hole_list_to_tuple(func_ir):
                 found = False
                 for idx in reversed(range(len(blk.body))):
                     stmt = blk.body[idx]
-                    if isinstance(stmt, ir.Assign):
+                    if isinstance(stmt, ir.assign_types):
                         value = stmt.value
                         if (
-                            isinstance(value, ir.Expr)
+                            isinstance(value, ir.expr_types)
                             and value.op == "list_to_tuple"
                         ):
                             target_list = value.info[0]
                             found = True
                             bt = (idx, stmt)
                     if found:
-                        if isinstance(stmt, ir.Assign):
+                        if isinstance(stmt, ir.assign_types):
                             if stmt.target.name == target_list:
                                 region = (bt, (idx, stmt))
                                 return region
@@ -812,8 +815,8 @@ def peep_hole_list_to_tuple(func_ir):
                 # Walk through the peep_hole and find things that are being
                 # "extend"ed and "append"ed to the BUILD_LIST
                 for x in peep_hole:
-                    if isinstance(x, ir.Assign):
-                        if isinstance(x.value, ir.Expr):
+                    if isinstance(x, ir.assign_types):
+                        if isinstance(x.value, ir.expr_types):
                             expr = x.value
                             if (
                                 expr.op == "getattr"
@@ -857,8 +860,8 @@ def peep_hole_list_to_tuple(func_ir):
                 t2l_agn = region[0][1]
                 acc = the_build_list
                 for x in peep_hole:
-                    if isinstance(x, ir.Assign):
-                        if isinstance(x.value, ir.Expr):
+                    if isinstance(x, ir.assign_types):
+                        if isinstance(x.value, ir.expr_types):
                             expr = x.value
                             if expr.op == "getattr":
                                 if (
@@ -877,7 +880,7 @@ def peep_hole_list_to_tuple(func_ir):
                                 fname = expr.func.name
                                 if fname in extends or fname in appends:
                                     arg = expr.args[0]
-                                    if isinstance(arg, ir.Var):
+                                    if isinstance(arg, ir.var_types):
                                         tmp_name = "%s_var_%s" % (
                                             fname,
                                             arg.name,
@@ -997,14 +1000,15 @@ def peep_hole_delete_with_exit(func_ir):
             # Any assignment that uses any of the dead variable is considered
             # dead.
             if used & dead_vars:
-                if isinstance(stmt, ir.Assign):
+                if isinstance(stmt, ir.assign_types):
                     dead_vars.add(stmt.target)
 
-        new_body = []
-        for stmt in blk.body:
+        new_body = [
+            stmt
+            for stmt in blk.body
             # Skip any statements that uses anyone of the dead variable.
-            if not (set(stmt.list_vars()) & dead_vars):
-                new_body.append(stmt)
+            if not (set(stmt.list_vars()) & dead_vars)
+        ]
         blk.body.clear()
         blk.body.extend(new_body)
 
@@ -1112,7 +1116,9 @@ def peep_hole_fuse_dict_add_updates(func_ir):
             # vars in statement. This is always the lhs with
             # a build_map.
             stmt_build_map_out = None
-            if isinstance(stmt, ir.Assign) and isinstance(stmt.value, ir.Expr):
+            if isinstance(stmt, ir.assign_types) and isinstance(
+                stmt.value, ir.expr_types
+            ):
                 if stmt.value.op == "build_map":
                     # Skip the output build_map when looking for used vars.
                     stmt_build_map_out = stmt.target.name
@@ -1130,9 +1136,9 @@ def peep_hole_fuse_dict_add_updates(func_ir):
                     getattr_stmt = blk.body[i - 1]
                     args = stmt.value.args
                     if (
-                        isinstance(getattr_stmt, ir.Assign)
+                        isinstance(getattr_stmt, ir.assign_types)
                         and getattr_stmt.target.name == func_name
-                        and isinstance(getattr_stmt.value, ir.Expr)
+                        and isinstance(getattr_stmt.value, ir.expr_types)
                         and getattr_stmt.value.op == "getattr"
                         and getattr_stmt.value.attr
                         in ("__setitem__", "_update_from_bytecode")
@@ -1207,8 +1213,8 @@ def peep_hole_fuse_dict_add_updates(func_ir):
             # will be removed when handling their call in the next
             # iteration.
             if not (
-                isinstance(stmt, ir.Assign)
-                and isinstance(stmt.value, ir.Expr)
+                isinstance(stmt, ir.assign_types)
+                and isinstance(stmt.value, ir.expr_types)
                 and stmt.value.op == "getattr"
                 and stmt.value.value.name in lit_map_use_idx
                 and stmt.value.attr in ("__setitem__", "_update_from_bytecode")
@@ -1249,7 +1255,7 @@ def peep_hole_split_at_pop_block(func_ir):
         # Gather locations of PopBlock
         pop_block_locs = []
         for i, inst in enumerate(blk.body):
-            if isinstance(inst, ir.PopBlock):
+            if isinstance(inst, ir.popblock_types):
                 pop_block_locs.append(i)
         # Rewrite block with PopBlock
         if pop_block_locs:
@@ -1301,10 +1307,14 @@ def _build_new_build_map(func_ir, name, old_body, old_lineno, new_items):
     for pair in new_items:
         k, v = pair
         key_def = ir_utils.guard(ir_utils.get_definition, func_ir, k)
-        if isinstance(key_def, (ir.Const, ir.Global, ir.FreeVar)):
+        if isinstance(
+            key_def, ir.const_types + ir.global_types + ir.freevar_types
+        ):
             literal_keys.append(key_def.value)
         value_def = ir_utils.guard(ir_utils.get_definition, func_ir, v)
-        if isinstance(value_def, (ir.Const, ir.Global, ir.FreeVar)):
+        if isinstance(
+            value_def, ir.const_types + ir.global_types + ir.freevar_types
+        ):
             values.append(value_def.value)
         else:
             # Append unknown value if not a literal.
@@ -1314,8 +1324,7 @@ def _build_new_build_map(func_ir, name, old_body, old_lineno, new_items):
     if len(literal_keys) == len(new_items):
         # All keys must be literals to have any literal values.
         literal_value = {x: y for x, y in zip(literal_keys, values)}
-        for i, k in enumerate(literal_keys):
-            value_indexes[k] = i
+        value_indexes.update((k, i) for i, k in enumerate(literal_keys))
     else:
         literal_value = None
 
@@ -1381,14 +1390,14 @@ class Interpreter(object):
         self.current_block = None
         self.current_block_offset = None
         last_active_offset = 0
-        for _, inst_blocks in self.cfa.blocks.items():
+        for inst_blocks in self.cfa.blocks.values():
             if inst_blocks.body:
                 last_active_offset = max(
                     last_active_offset, max(inst_blocks.body)
                 )
         self.last_active_offset = last_active_offset
 
-        if PYVERSION in ((3, 12), (3, 13)):
+        if PYVERSION in ((3, 12), (3, 13), (3, 14)):
             self.active_exception_entries = tuple(
                 [
                     entry
@@ -1408,7 +1417,7 @@ class Interpreter(object):
         # Interpret loop
         for inst, kws in self._iter_inst():
             self._dispatch(inst, kws)
-        if PYVERSION in ((3, 11), (3, 12), (3, 13)):
+        if PYVERSION in ((3, 11), (3, 12), (3, 13), (3, 14)):
             # Insert end of try markers
             self._end_try_blocks()
         elif PYVERSION in (
@@ -1436,12 +1445,12 @@ class Interpreter(object):
         # post process the IR to rewrite opcodes/byte sequences that are too
         # involved to risk handling as part of direct interpretation
         peepholes = []
-        if PYVERSION in ((3, 11), (3, 12), (3, 13)):
+        if PYVERSION in ((3, 11), (3, 12), (3, 13), (3, 14)):
             peepholes.append(peep_hole_split_at_pop_block)
-        if PYVERSION in ((3, 9), (3, 10), (3, 11), (3, 12), (3, 13)):
+        if PYVERSION in ((3, 9), (3, 10), (3, 11), (3, 12), (3, 13), (3, 14)):
             peepholes.append(peep_hole_list_to_tuple)
         peepholes.append(peep_hole_delete_with_exit)
-        if PYVERSION in ((3, 10), (3, 11), (3, 12), (3, 13)):
+        if PYVERSION in ((3, 10), (3, 11), (3, 12), (3, 13), (3, 14)):
             # peep_hole_call_function_ex_to_call_function_kw
             # depends on peep_hole_list_to_tuple converting
             # any large number of arguments from a list to a
@@ -1474,7 +1483,7 @@ class Interpreter(object):
 
         See also: _insert_try_block_end
         """
-        assert PYVERSION in ((3, 11), (3, 12), (3, 13))
+        assert PYVERSION in ((3, 11), (3, 12), (3, 13), (3, 14))
         graph = self.cfa.graph
         for offset, block in self.blocks.items():
             # Get current blockstack
@@ -1514,7 +1523,7 @@ class Interpreter(object):
         # Propagate the exception variables to LHS of assignment
         for varname, defnvars in self.definitions.items():
             for v in defnvars:
-                if isinstance(v, ir.Var):
+                if isinstance(v, ir.var_types):
                     k = v.name
                     if k in excvars:
                         excvars.add(varname)
@@ -1582,12 +1591,12 @@ class Interpreter(object):
         self.dfainfo = self.dfa.infos[self.current_block_offset]
         self.assigner = Assigner()
         # Check out-of-scope syntactic-block
-        if PYVERSION in ((3, 11), (3, 12), (3, 13)):
+        if PYVERSION in ((3, 11), (3, 12), (3, 13), (3, 14)):
             # This is recreating pre-3.11 code structure
             while self.syntax_blocks:
                 if offset >= self.syntax_blocks[-1].exit:
                     synblk = self.syntax_blocks.pop()
-                    if isinstance(synblk, ir.With):
+                    if isinstance(synblk, ir.with_types):
                         self.current_block.append(ir.PopBlock(self.loc))
                 else:
                     break
@@ -1684,11 +1693,11 @@ class Interpreter(object):
             # like a = b[i] = 1, so need to handle replaced temporaries in
             # later setitem/setattr nodes
             if (
-                isinstance(inst, (ir.SetItem, ir.SetAttr))
+                isinstance(inst, ir.setitem_types + ir.setattr_types)
                 and inst.value.name in replaced_var
             ):
                 inst.value = replaced_var[inst.value.name]
-            elif isinstance(inst, ir.Assign):
+            elif isinstance(inst, ir.assign_types):
                 if (
                     inst.target.is_temp
                     and inst.target.name in self.assigner.unused_dests
@@ -1698,7 +1707,7 @@ class Interpreter(object):
                 # like a = b = 1, so need to handle replaced temporaries in
                 # later assignments
                 if (
-                    isinstance(inst.value, ir.Var)
+                    isinstance(inst.value, ir.var_types)
                     and inst.value.name in replaced_var
                 ):
                     inst.value = replaced_var[inst.value.name]
@@ -1707,7 +1716,7 @@ class Interpreter(object):
                 # chained unpack cases may reuse temporary
                 # e.g. a = (b, c) = (x, y)
                 if (
-                    isinstance(inst.value, ir.Expr)
+                    isinstance(inst.value, ir.expr_types)
                     and inst.value.op == "exhaust_iter"
                     and inst.value.value.name in replaced_var
                 ):
@@ -1720,10 +1729,10 @@ class Interpreter(object):
                 # the temporary variable is not reused elsewhere since CPython
                 # bytecode is stack-based and this pattern corresponds to a pop
                 if (
-                    isinstance(inst.value, ir.Var)
+                    isinstance(inst.value, ir.var_types)
                     and inst.value.is_temp
                     and new_body
-                    and isinstance(new_body[-1], ir.Assign)
+                    and isinstance(new_body[-1], ir.assign_types)
                 ):
                     prev_assign = new_body[-1]
                     # _var_used_in_binop check makes sure we don't create a new
@@ -1753,7 +1762,7 @@ class Interpreter(object):
         in it as an argument
         """
         return (
-            isinstance(expr, ir.Expr)
+            isinstance(expr, ir.expr_types)
             and expr.op in ("binop", "inplace_binop")
             and (varname == expr.lhs.name or varname == expr.rhs.name)
         )
@@ -1769,7 +1778,7 @@ class Interpreter(object):
                 val = self.get(varname)
             except ir.NotDefinedError:
                 # Hack to make sure exception variables are defined
-                assert PYVERSION in ((3, 11), (3, 12), (3, 13)), (
+                assert PYVERSION in ((3, 11), (3, 12), (3, 13), (3, 14)), (
                     "unexpected missing definition"
                 )
                 val = ir.Const(value=None, loc=self.loc)
@@ -1829,10 +1838,10 @@ class Interpreter(object):
         if self._DEBUG_PRINT:
             print(inst)
         assert self.current_block is not None
-        if PYVERSION in ((3, 11), (3, 12), (3, 13)):
+        if PYVERSION in ((3, 11), (3, 12), (3, 13), (3, 14)):
             if self.syntax_blocks:
                 top = self.syntax_blocks[-1]
-                if isinstance(top, ir.With):
+                if isinstance(top, ir.with_types):
                     if inst.offset >= top.exit:
                         self.current_block.append(ir.PopBlock(loc=self.loc))
                         self.syntax_blocks.pop()
@@ -1881,7 +1890,7 @@ class Interpreter(object):
             )
         else:
             target = self.current_scope.get_or_define(name, loc=self.loc)
-        if isinstance(value, ir.Var):
+        if isinstance(value, ir.var_types):
             value = self.assigner.assign(value, target)
         stmt = ir.Assign(value=value, target=target, loc=self.loc)
         self.current_block.append(stmt)
@@ -1919,6 +1928,14 @@ class Interpreter(object):
 
     def op_NOP(self, inst):
         pass
+
+    if PYVERSION in ((3, 14),):
+        # New in 3.14
+        op_NOT_TAKEN = op_NOP
+    elif PYVERSION in ((3, 10), (3, 11), (3, 12), (3, 13)):
+        pass
+    else:
+        raise NotImplementedError(PYVERSION)
 
     def op_RESUME(self, inst):
         pass
@@ -2019,7 +2036,7 @@ class Interpreter(object):
             )
         self.store(value=sliceinst, name=res)
 
-    if PYVERSION in ((3, 12), (3, 13)):
+    if PYVERSION in ((3, 12), (3, 13), (3, 14)):
 
         def op_BINARY_SLICE(
             self, inst, start, end, container, res, slicevar, temp_res
@@ -2041,7 +2058,7 @@ class Interpreter(object):
     else:
         raise NotImplementedError(PYVERSION)
 
-    if PYVERSION in ((3, 12), (3, 13)):
+    if PYVERSION in ((3, 12), (3, 13), (3, 14)):
 
         def op_STORE_SLICE(
             self, inst, start, end, container, value, res, slicevar
@@ -2311,7 +2328,7 @@ class Interpreter(object):
         srcname = self.code_locals[inst.arg]
         self.store(value=self.get(srcname), name=res)
 
-    if PYVERSION in ((3, 13),):
+    if PYVERSION in ((3, 13), (3, 14)):
 
         def op_LOAD_FAST(self, inst, res, as_load_deref=False):
             if as_load_deref:
@@ -2322,7 +2339,7 @@ class Interpreter(object):
     else:
         op_LOAD_FAST = _op_LOAD_FAST
 
-    if PYVERSION in ((3, 13),):
+    if PYVERSION in ((3, 13), (3, 14)):
 
         def op_LOAD_FAST_LOAD_FAST(self, inst, res1, res2):
             oparg = inst.arg
@@ -2360,7 +2377,7 @@ class Interpreter(object):
     else:
         raise NotImplementedError(PYVERSION)
 
-    if PYVERSION in ((3, 12), (3, 13)):
+    if PYVERSION in ((3, 12), (3, 13), (3, 14)):
         op_LOAD_FAST_CHECK = op_LOAD_FAST
 
         def op_LOAD_FAST_AND_CLEAR(self, inst, res):
@@ -2374,6 +2391,16 @@ class Interpreter(object):
                 self.store(undef, name=res)
 
     elif PYVERSION in ((3, 9), (3, 10), (3, 11)):
+        pass
+    else:
+        raise NotImplementedError(PYVERSION)
+
+    if PYVERSION in ((3, 14),):
+        # New in 3.14.
+        op_LOAD_FAST_BORROW = op_LOAD_FAST
+        op_LOAD_FAST_BORROW_LOAD_FAST_BORROW = op_LOAD_FAST_LOAD_FAST
+
+    elif PYVERSION in ((3, 10), (3, 11), (3, 12), (3, 13)):
         pass
     else:
         raise NotImplementedError(PYVERSION)
@@ -2411,7 +2438,7 @@ class Interpreter(object):
 
     def op_LOAD_ATTR(self, inst, item, res):
         item = self.get(item)
-        if PYVERSION in ((3, 12), (3, 13)):
+        if PYVERSION in ((3, 12), (3, 13), (3, 14)):
             attr = self.code_names[inst.arg >> 1]
         elif PYVERSION in ((3, 9), (3, 10), (3, 11)):
             attr = self.code_names[inst.arg]
@@ -2421,28 +2448,85 @@ class Interpreter(object):
         self.store(getattr, res)
 
     def op_LOAD_CONST(self, inst, res):
+        # New in 3.14: slice is loaded via LOAD_CONST. The value is the
+        # slice object itself, so we get the start, stop and step from it
+        # directly and then proceed with the code in `BUILD_SLICE`. It may also
+        # be a tuple containing a slice, so we need to account for that too.
+        def process_slice(value):
+            start = self.store(
+                ir.Const(value.start, loc=self.loc),
+                name=f"$const_{value.start}",
+                redefine=True,
+            )
+            stop = self.store(
+                ir.Const(value.stop, loc=self.loc),
+                name=f"$const_{value.stop}",
+                redefine=True,
+            )
+
+            slicevar = self.store(
+                value=ir.Global("slice", slice, loc=self.loc),
+                name="$const_slice",
+                redefine=True,
+            )
+
+            if value.step is None:
+                params = (start, stop)
+            else:
+                step = self.store(
+                    ir.Const(value.step, loc=self.loc),
+                    name=f"$const_{value.step}",
+                    redefine=True,
+                )
+                params = (start, stop, step)
+
+            return ir.Expr.call(slicevar, params, (), loc=self.loc)
+
+        def process_args(value):
+            st = []
+            for x in value:
+                if isinstance(x, slice):
+                    st.append(
+                        self.store(
+                            process_slice(x),
+                            name="$const_my_slice",
+                            redefine=True,
+                        )
+                    )
+                else:
+                    st.append(
+                        self.store(
+                            ir.Const(x, loc=self.loc),
+                            name=f"$const_{x}",
+                            redefine=True,
+                        )
+                    )
+            return st
+
         value = self.code_consts[inst.arg]
+
         if isinstance(value, tuple):
-            st = []
-            for x in value:
-                nm = "$const_%s" % str(x)
-                val_const = ir.Const(x, loc=self.loc)
-                target = self.store(val_const, name=nm, redefine=True)
-                st.append(target)
-            const = ir.Expr.build_tuple(st, loc=self.loc)
+            const = ir.Expr.build_tuple(process_args(value), loc=self.loc)
         elif isinstance(value, frozenset):
-            st = []
-            for x in value:
-                nm = "$const_%s" % str(x)
-                val_const = ir.Const(x, loc=self.loc)
-                target = self.store(val_const, name=nm, redefine=True)
-                st.append(target)
-            const = ir.Expr.build_set(st, loc=self.loc)
+            const = ir.Expr.build_set(process_args(value), loc=self.loc)
+        elif isinstance(value, slice):
+            const = process_slice(value)
         else:
             const = ir.Const(value, loc=self.loc)
         self.store(const, res)
 
-    if PYVERSION in ((3, 11), (3, 12), (3, 13)):
+    if PYVERSION in ((3, 14),):
+        # New in 3.14
+        def op_LOAD_SMALL_INT(self, inst, res):
+            value = inst.arg
+            const = ir.Const(value, loc=self.loc)
+            self.store(const, res)
+    elif PYVERSION in ((3, 10), (3, 11), (3, 12), (3, 13)):
+        pass
+    else:
+        raise NotImplementedError(PYVERSION)
+
+    if PYVERSION in ((3, 11), (3, 12), (3, 13), (3, 14)):
 
         def op_LOAD_GLOBAL(self, inst, idx, res):
             name = self.code_names[idx]
@@ -2465,7 +2549,7 @@ class Interpreter(object):
     def op_COPY_FREE_VARS(self, inst):
         pass
 
-    if PYVERSION in ((3, 11), (3, 12), (3, 13)):
+    if PYVERSION in ((3, 11), (3, 12), (3, 13), (3, 14)):
 
         def op_LOAD_DEREF(self, inst, res):
             name = self.func_id.func.__code__._varname_from_oparg(inst.arg)
@@ -2499,12 +2583,12 @@ class Interpreter(object):
     else:
         raise NotImplementedError(PYVERSION)
 
-    if PYVERSION in ((3, 11), (3, 12), (3, 13)):
+    if PYVERSION in ((3, 11), (3, 12), (3, 13), (3, 14)):
 
         def op_MAKE_CELL(self, inst):
             pass  # ignored bytecode
 
-    if PYVERSION in ((3, 11), (3, 12), (3, 13)):
+    if PYVERSION in ((3, 11), (3, 12), (3, 13), (3, 14)):
 
         def op_STORE_DEREF(self, inst, value):
             name = self.func_id.func.__code__._varname_from_oparg(inst.arg)
@@ -2552,39 +2636,46 @@ class Interpreter(object):
         exit_fn_obj = ir.Const(None, loc=self.loc)
         self.store(value=exit_fn_obj, name=exitfn)
 
-    def op_BEFORE_WITH(self, inst, contextmanager, exitfn, end):
-        assert self.blocks[inst.offset] is self.current_block
-        if PYVERSION in ((3, 12), (3, 13)):
-            # Python 3.12 hack for handling nested with blocks
-            if end > self.last_active_offset:
-                # Use exception entries to figure out end of syntax block
-                end = max(
-                    [
-                        ex.end
-                        for ex in self.active_exception_entries
-                        if ex.target == end
-                    ]
-                )
-        elif PYVERSION in ((3, 9), (3, 10), (3, 11)):
-            pass
-        else:
-            raise NotImplementedError(PYVERSION)
-        # Handle with
-        wth = ir.With(inst.offset, exit=end)
-        self.syntax_blocks.append(wth)
-        ctxmgr = self.get(contextmanager)
-        self.current_block.append(
-            ir.EnterWith(
-                contextmanager=ctxmgr,
-                begin=inst.offset,
-                end=end,
-                loc=self.loc,
-            )
-        )
+    if PYVERSION in ((3, 14),):
+        # Replaced by LOAD_SPECIAL in 3.14.
+        pass
+    elif PYVERSION in ((3, 10), (3, 11), (3, 12), (3, 13)):
 
-        # Store exit function
-        exit_fn_obj = ir.Const(None, loc=self.loc)
-        self.store(value=exit_fn_obj, name=exitfn)
+        def op_BEFORE_WITH(self, inst, contextmanager, exitfn, end):
+            assert self.blocks[inst.offset] is self.current_block
+            if PYVERSION in ((3, 12), (3, 13)):
+                # Python 3.12 hack for handling nested with blocks
+                if end > self.last_active_offset:
+                    # Use exception entries to figure out end of syntax block
+                    end = max(
+                        [
+                            ex.end
+                            for ex in self.active_exception_entries
+                            if ex.target == end
+                        ]
+                    )
+            elif PYVERSION in ((3, 10), (3, 11)):
+                pass
+            else:
+                raise NotImplementedError(PYVERSION)
+            # Handle with
+            wth = ir.With(inst.offset, exit=end)
+            self.syntax_blocks.append(wth)
+            ctxmgr = self.get(contextmanager)
+            self.current_block.append(
+                ir.EnterWith(
+                    contextmanager=ctxmgr,
+                    begin=inst.offset,
+                    end=end,
+                    loc=self.loc,
+                )
+            )
+
+            # Store exit function
+            exit_fn_obj = ir.Const(None, loc=self.loc)
+            self.store(value=exit_fn_obj, name=exitfn)
+    else:
+        raise NotImplementedError(PYVERSION)
 
     def op_SETUP_FINALLY(self, inst):
         # Removed since python3.11
@@ -2623,7 +2714,7 @@ class Interpreter(object):
         expr = ir.Expr.call(func, args, kwargs, loc=self.loc)
         self.store(expr, res)
 
-    if PYVERSION in ((3, 13),):
+    if PYVERSION in ((3, 13), (3, 14)):
 
         def op_CALL_KW(self, inst, func, args, kw_names, res):
             func = self.get(func)
@@ -2649,7 +2740,7 @@ class Interpreter(object):
         # Find names const
         names = self.get(names)
         for inst in self.current_block.body:
-            if isinstance(inst, ir.Assign) and inst.target is names:
+            if isinstance(inst, ir.assign_types) and inst.target is names:
                 self.current_block.remove(inst)
                 # scan up the block looking for the values, remove them
                 # and find their name strings
@@ -2750,7 +2841,7 @@ class Interpreter(object):
         keyvar = self.get(keys)
         # TODO: refactor this pattern. occurred several times.
         for inst in self.current_block.body:
-            if isinstance(inst, ir.Assign) and inst.target is keyvar:
+            if isinstance(inst, ir.assign_types) and inst.target is keyvar:
                 self.current_block.remove(inst)
                 # scan up the block looking for the values, remove them
                 # and find their name strings
@@ -2776,7 +2867,7 @@ class Interpreter(object):
             if len(defns) != 1:
                 break
             defn = defns[0]
-            if not isinstance(defn, ir.Const):
+            if not isinstance(defn, ir.const_types):
                 break
             literal_items.append(defn.value)
 
@@ -2785,7 +2876,7 @@ class Interpreter(object):
             if len(defns) != 1:
                 return _UNKNOWN_VALUE(self.get(v).name)
             defn = defns[0]
-            if not isinstance(defn, ir.Const):
+            if not isinstance(defn, ir.const_types):
                 return _UNKNOWN_VALUE(self.get(v).name)
             return defn.value
 
@@ -2798,9 +2889,7 @@ class Interpreter(object):
         # store the index of the actual used value for a given key, this is
         # used when lowering to pull the right value out into the tuple repr
         # of a mixed value type dictionary.
-        value_indexes = {}
-        for i, k in enumerate(keytup):
-            value_indexes[k] = i
+        value_indexes = {k: i for i, k in enumerate(keytup)}
 
         expr = ir.Expr.build_map(
             items=items,
@@ -2843,11 +2932,18 @@ class Interpreter(object):
         )
         self.current_block.append(br)
 
-    def op_BINARY_SUBSCR(self, inst, target, index, res):
-        index = self.get(index)
-        target = self.get(target)
-        expr = ir.Expr.getitem(target, index=index, loc=self.loc)
-        self.store(expr, res)
+    if PYVERSION in ((3, 14),):
+        # Removed in 3.14 -- replaced with BINARY_OP and []
+        pass
+    elif PYVERSION in ((3, 10), (3, 11), (3, 12), (3, 13)):
+
+        def op_BINARY_SUBSCR(self, inst, target, index, res):
+            index = self.get(index)
+            target = self.get(target)
+            expr = ir.Expr.getitem(target, index=index, loc=self.loc)
+            self.store(expr, res)
+    else:
+        raise NotImplementedError(PYVERSION)
 
     def op_STORE_SUBSCR(self, inst, target, index, value):
         index = self.get(index)
@@ -2879,6 +2975,14 @@ class Interpreter(object):
             items=[self.get(x) for x in items], loc=self.loc
         )
         self.store(expr, res)
+
+    def op_SET_ADD(self, inst, value, target, addvar, res):
+        value = self.get(value)
+        target = self.get(target)
+        addattr = ir.Expr.getattr(target, "add", loc=self.loc)
+        self.store(value=addattr, name=addvar)
+        addinst = ir.Expr.call(self.get(addvar), (value,), (), loc=self.loc)
+        self.store(value=addinst, name=res)
 
     def op_SET_UPDATE(self, inst, target, value, updatevar, res):
         target = self.get(target)
@@ -2921,7 +3025,7 @@ class Interpreter(object):
                 if len(defns) != 1:
                     break
                 defn = defns[0]
-                if not isinstance(defn, ir.Const):
+                if not isinstance(defn, ir.const_types):
                     break
                 literal_items.append(defn.value)
             return literal_items
@@ -2939,12 +3043,10 @@ class Interpreter(object):
             literal_dict = {
                 x: _UNKNOWN_VALUE(y[1]) for x, y in zip(literal_keys, got_items)
             }
-            for i, k in enumerate(literal_keys):
-                value_indexes[k] = i
+            value_indexes.update((k, i) for i, k in enumerate(literal_keys))
         else:
             literal_dict = {x: y for x, y in zip(literal_keys, literal_values)}
-            for i, k in enumerate(literal_keys):
-                value_indexes[k] = i
+            value_indexes.update((k, i) for i, k in enumerate(literal_keys))
 
         expr = ir.Expr.build_map(
             items=got_items,
@@ -3000,7 +3102,13 @@ class Interpreter(object):
         self.store(expr, res)
 
     def op_BINARY_OP(self, inst, op, lhs, rhs, res):
-        if "=" in op:
+        if op == "[]":
+            # Special case 3.14 -- body of BINARY_SUBSCR now here
+            lhs = self.get(lhs)
+            rhs = self.get(rhs)
+            expr = ir.Expr.getitem(lhs, index=rhs, loc=self.loc)
+            self.store(expr, res)
+        elif "=" in op:
             self._inplace_binop(op[:-1], lhs, rhs, res)
         else:
             self._binop(op, lhs, rhs, res)
@@ -3117,7 +3225,7 @@ class Interpreter(object):
         ret = ir.Return(self.get(castval), loc=self.loc)
         self.current_block.append(ret)
 
-    if PYVERSION in ((3, 12), (3, 13)):
+    if PYVERSION in ((3, 12), (3, 13), (3, 14)):
 
         def op_RETURN_CONST(self, inst, retval, castval):
             value = self.code_consts[inst.arg]
@@ -3131,7 +3239,7 @@ class Interpreter(object):
     else:
         raise NotImplementedError(PYVERSION)
 
-    if PYVERSION in ((3, 13),):
+    if PYVERSION in ((3, 13), (3, 14)):
 
         def op_TO_BOOL(self, inst, val, res):
             self.store(self.get(val), res)  # TODO: just a lazy hack
@@ -3142,7 +3250,7 @@ class Interpreter(object):
         raise NotImplementedError(PYVERSION)
 
     def op_COMPARE_OP(self, inst, lhs, rhs, res):
-        if PYVERSION in ((3, 13),):
+        if PYVERSION in ((3, 13), (3, 14)):
             op = dis.cmp_op[inst.arg >> 5]
             # TODO: fifth lowest bit now indicates a forced version to bool.
         elif PYVERSION in ((3, 12),):
@@ -3196,7 +3304,7 @@ class Interpreter(object):
     def op_BREAK_LOOP(self, inst, end=None):
         if end is None:
             loop = self.syntax_blocks[-1]
-            assert isinstance(loop, ir.Loop)
+            assert isinstance(loop, ir.loop_types)
             end = loop.exit
         jmp = ir.Jump(target=end, loc=self.loc)
         self.current_block.append(jmp)
@@ -3271,7 +3379,7 @@ class Interpreter(object):
     def op_POP_JUMP_FORWARD_IF_NOT_NONE(self, inst, pred):
         self._jump_if_none(inst, pred, False)
 
-    if PYVERSION in ((3, 12), (3, 13)):
+    if PYVERSION in ((3, 12), (3, 13), (3, 14)):
 
         def op_POP_JUMP_IF_NONE(self, inst, pred):
             self._jump_if_none(inst, pred, True)
@@ -3408,7 +3516,7 @@ class Interpreter(object):
                 defaults = self.get(defaults)
 
         assume_code_const = self.definitions[code][0]
-        if not isinstance(assume_code_const, ir.Const):
+        if not isinstance(assume_code_const, ir.const_types):
             msg = (
                 "Unsupported use of closure. "
                 "Probably caused by complex control-flow constructs; "
@@ -3430,7 +3538,7 @@ class Interpreter(object):
             inst, name, code, closure, annotations, kwdefaults, defaults, res
         )
 
-    if PYVERSION in ((3, 11), (3, 12), (3, 13)):
+    if PYVERSION in ((3, 11), (3, 12), (3, 13), (3, 14)):
 
         def op_LOAD_CLOSURE(self, inst, res):
             name = self.func_id.func.__code__._varname_from_oparg(inst.arg)
@@ -3504,23 +3612,29 @@ class Interpreter(object):
 
         # is last emitted statement a build_tuple?
         stmt = self.current_block.body[-1]
-        ok = isinstance(stmt.value, ir.Expr) and stmt.value.op == "build_tuple"
+        ok = (
+            isinstance(stmt.value, ir.expr_types)
+            and stmt.value.op == "build_tuple"
+        )
         # check statements from self.current_block.body[-1] through to target,
         # make sure they are consts
         build_empty_list = None
         if ok:
             for stmt in reversed(self.current_block.body[:-1]):
-                if not isinstance(stmt, ir.Assign):
+                if not isinstance(stmt, ir.assign_types):
                     ok = False
                     break
                 # if its not a const, it needs to be the `build_list` for the
                 # target, else it's something else we don't know about so just
                 # bail
-                if isinstance(stmt.value, ir.Const):
+                if isinstance(stmt.value, ir.const_types):
                     continue
 
                 # it's not a const, check for target
-                elif isinstance(stmt.value, ir.Expr) and stmt.target == target:
+                elif (
+                    isinstance(stmt.value, ir.expr_types)
+                    and stmt.target == target
+                ):
                     build_empty_list = stmt
                     # it's only ok to do this if the target has no initializer
                     # already
@@ -3566,9 +3680,16 @@ class Interpreter(object):
         )
         self.store(value=appendinst, name=res)
 
-    def op_LOAD_ASSERTION_ERROR(self, inst, res):
-        gv_fn = ir.Global("AssertionError", AssertionError, loc=self.loc)
-        self.store(value=gv_fn, name=res)
+    if PYVERSION in ((3, 14),):
+        # Removed in 3.14
+        pass
+    elif PYVERSION in ((3, 10), (3, 11), (3, 12), (3, 13)):
+
+        def op_LOAD_ASSERTION_ERROR(self, inst, res):
+            gv_fn = ir.Global("AssertionError", AssertionError, loc=self.loc)
+            self.store(value=gv_fn, name=res)
+    else:
+        raise NotImplementedError(PYVERSION)
 
     # NOTE: The LOAD_METHOD opcode is implemented as a LOAD_ATTR for ease,
     # however this means a new object (the bound-method instance) could be
@@ -3584,7 +3705,7 @@ class Interpreter(object):
     def op_CALL_METHOD(self, *args, **kws):
         self.op_CALL_FUNCTION(*args, **kws)
 
-    if PYVERSION in ((3, 12), (3, 13)):
+    if PYVERSION in ((3, 12), (3, 13), (3, 14)):
 
         def op_CALL_INTRINSIC_1(self, inst, operand, **kwargs):
             if operand == ci1op.INTRINSIC_STOPITERATION_ERROR:
@@ -3606,8 +3727,61 @@ class Interpreter(object):
     else:
         raise NotImplementedError(PYVERSION)
 
+    if PYVERSION in ((3, 14),):
+        # New in 3.14, replaces BEFORE_WITH.
+        def op_LOAD_SPECIAL(self, inst, contextmanager, exit_method, block_end):
+            assert self.blocks[inst.offset] is self.current_block
 
-if PYVERSION in ((3, 12), (3, 13)):
+            # Python 3.12 hack for handling nested with blocks
+            if block_end > self.last_active_offset:
+                # Use exception entries to figure out end of syntax block
+                block_end = max(
+                    [
+                        ex.end
+                        for ex in self.active_exception_entries
+                        if ex.target == block_end
+                    ]
+                )
+
+            # Handle with
+            wth = ir.With(inst.offset, exit=block_end)
+            self.syntax_blocks.append(wth)
+            ctxmgr = self.get(contextmanager)
+            self.current_block.append(
+                ir.EnterWith(
+                    contextmanager=ctxmgr,
+                    begin=inst.offset,
+                    end=block_end,
+                    loc=self.loc,
+                )
+            )
+
+            # Store exit function
+            exit_fn_obj = ir.Const(None, loc=self.loc)
+            self.store(value=exit_fn_obj, name=exit_method)
+
+    elif PYVERSION in ((3, 10), (3, 11), (3, 12), (3, 13)):
+        pass
+    else:
+        raise NotImplementedError(PYVERSION)
+
+    if PYVERSION in ((3, 14),):
+
+        def op_LOAD_COMMON_CONSTANT(self, inst, res, idx):
+            if isinstance(dis._common_constants[idx], AssertionError):
+                gv_fn = ir.Global(
+                    "AssertionError", AssertionError, loc=self.loc
+                )
+                self.store(value=gv_fn, name=res)
+            else:
+                raise NotImplementedError
+    elif PYVERSION in ((3, 10), (3, 11), (3, 12), (3, 13)):
+        pass
+    else:
+        raise NotImplementedError(PYVERSION)
+
+
+if PYVERSION in ((3, 12), (3, 13), (3, 14)):
 
     class INTRINSIC_STOPITERATION_ERROR(AssertionError):
         pass

@@ -18,7 +18,7 @@ rapids-logger "Remove Extraneous numba-cuda"
 pip uninstall -y numba-cuda
 
 rapids-logger "Install wheel with test dependencies"
-package=$(realpath wheel/numba_cuda*.whl)
+package=$(realpath "${NUMBA_CUDA_ARTIFACTS_DIR}"/*.whl)
 echo "Package path: ${package}"
 python -m pip install \
     "${package}" \
@@ -49,7 +49,7 @@ pushd tests
 # Required for nvmath-python to locate pip-install MathDx
 export SYS_PREFIX=`python -c "import sys; print(sys.prefix)"`
 export MATHDX_HOME=${SYS_PREFIX}/lib/python3.13/site-packages/nvidia/mathdx
-python -m pytest nvmath_tests/device --tb=native -x
+python -m pytest -n auto -k "not (perf or benchmark)" nvmath_tests/device --tb=native -x
 
 popd
 popd

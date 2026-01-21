@@ -1,0 +1,29 @@
+#!/usr/bin/env bash
+
+# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+#
+# SPDX-License-Identifier: BSD-2-Clause
+
+# A utility script to install the correct packages and run the tests.
+
+set -euo pipefail
+
+echo "Installing numba-cuda wheel with test dependencies"
+if [[ "${LOCAL_CTK}" == 1 ]]; then
+  pip install "${NUMBA_CUDA_ARTIFACTS_DIR}"/*.whl "cuda-bindings==${TEST_CUDA_MAJOR}.*" --group test
+else
+  pip install $(ls "${NUMBA_CUDA_ARTIFACTS_DIR}"/*.whl)["cu${TEST_CUDA_MAJOR}"] "cuda-toolkit==${TEST_CUDA_MAJOR}.${TEST_CUDA_MINOR}.*" --group "test-cu${TEST_CUDA_MAJOR}"
+fi
+
+export NUMBA_CUDA_TEST_BIN_DIR=`pwd`/testing
+pushd $NUMBA_CUDA_TEST_BIN_DIR
+
+echo "Show Numba system info"
+python -m numba --sysinfo
+
+echo "Running numba-cuda tests"
+GPU_CC=$(nvidia-smi --query-gpu=compute_cap --format=csv | grep -v compute_cap | head -n 1 | sed 's/\.//')
+mv cu${TEST_CUDA_MAJOR}_cc${GPU_CC}/* .
+${SANITIZER_CMD} pytest -v
+
+popd

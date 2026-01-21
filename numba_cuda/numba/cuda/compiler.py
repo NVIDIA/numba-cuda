@@ -852,15 +852,15 @@ def kernel_fixup(kernel, debug):
     return_value = kernel.args[0]
 
     for block in kernel.blocks:
-        remove_list = []
-
         # Find all stores first
-        for inst in block.instructions:
+        remove_list = [
+            inst
+            for inst in block.instructions
             if (
                 isinstance(inst, ir.StoreInstr)
                 and inst.operands[1] == return_value
-            ):
-                remove_list.append(inst)
+            )
+        ]
 
         # Remove all stores
         for to_remove in remove_list:
@@ -1023,10 +1023,9 @@ def compile_all(
     )
 
     if lto:
-        code = lib.get_ltoir(cc=cc)
+        codes = [lib.get_ltoir(cc=cc)]
     else:
-        code = lib.get_asm_str(cc=cc)
-    codes = [code]
+        codes = lib.get_asm_strs(cc=cc)
 
     # linking_files
     is_ltoir = output == "ltoir"
@@ -1241,7 +1240,14 @@ def compile(
     if lto:
         code = lib.get_ltoir(cc=cc)
     else:
-        code = lib.get_asm_str(cc=cc)
+        codes = lib.get_asm_strs(cc=cc)
+        if len(codes) == 1:
+            code = codes[0]
+        else:
+            raise RuntimeError(
+                "Compiling this function results in multiple "
+                "PTX files. Use compile_all() instead"
+            )
     return code, resty
 
 

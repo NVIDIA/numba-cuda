@@ -15,6 +15,8 @@ import uuid
 import re
 from warnings import warn
 
+from numba.cuda._compat import launch, LaunchConfig
+
 from numba.cuda.core import errors
 from numba.cuda import serialize, utils
 from numba import cuda
@@ -40,6 +42,7 @@ from numba.cuda.extending import typeof_impl
 from numba.cuda.core import sigutils, config, entrypoints
 from numba.cuda.flags import Flags
 from numba.cuda.cudadrv import driver, nvvm
+
 from numba.cuda.locks import module_init_lock
 from numba.cuda.core.caching import Cache, CacheImpl, NullCache
 from numba.cuda.descriptor import cuda_target
@@ -477,18 +480,15 @@ class _Kernel(serialize.ReduceMixin):
         for t, v in zip(self.argument_types, args):
             self._prepare_args(t, v, stream, retr, kernelargs)
 
-        stream_handle = driver._stream_handle(stream)
-
         # Invoke kernel
-        driver.launch_kernel(
-            cufunc.handle,
-            *griddim,
-            *blockdim,
-            sharedmem,
-            stream_handle,
-            kernelargs,
-            cooperative=self.cooperative,
+        config = LaunchConfig(
+            grid=griddim,
+            block=blockdim,
+            shmem_size=sharedmem,
+            cooperative_launch=self.cooperative,
         )
+        kernel = cufunc.kernel
+        launch(stream, config, kernel, *kernelargs)
 
         if self.debug:
             driver.device_to_host(ctypes.addressof(excval), excmem, excsz)
@@ -547,30 +547,26 @@ class _Kernel(serialize.ReduceMixin):
 
         if isinstance(ty, types.Array):
             devary = wrap_arg(val).to_device(retr, stream)
-            c_intp = ctypes.c_ssize_t
 
-            meminfo = ctypes.c_void_p(0)
-            parent = ctypes.c_void_p(0)
-            nitems = c_intp(devary.size)
-            itemsize = c_intp(devary.dtype.itemsize)
-
-            ptr = driver.device_pointer(devary)
-
-            ptr = int(ptr)
-
-            data = ctypes.c_void_p(ptr)
+            meminfo = 0
+            parent = 0
 
             kernelargs.append(meminfo)
             kernelargs.append(parent)
-            kernelargs.append(nitems)
-            kernelargs.append(itemsize)
-            kernelargs.append(data)
-            kernelargs.extend(map(c_intp, devary.shape))
-            kernelargs.extend(map(c_intp, devary.strides))
+
+            # non-pointer-arguments-without-ctypes might be dicey, since we're
+            # assuming shape, strides, size, and itemsize fit into intptr_t
+            # however, this saves a noticeable amount of overhead in kernel
+            # invocation
+            kernelargs.append(devary.size)
+            kernelargs.append(devary.dtype.itemsize)
+            kernelargs.append(devary.device_ctypes_pointer.value)
+            kernelargs.extend(devary.shape)
+            kernelargs.extend(devary.strides)
 
         elif isinstance(ty, types.CPointer):
             # Pointer arguments should be a pointer-sized integer
-            kernelargs.append(ctypes.c_uint64(val))
+            kernelargs.append(val)
 
         elif isinstance(ty, types.Integer):
             cval = getattr(ctypes, "c_%s" % ty)(val)
@@ -589,8 +585,7 @@ class _Kernel(serialize.ReduceMixin):
             kernelargs.append(cval)
 
         elif ty == types.boolean:
-            cval = ctypes.c_uint8(int(val))
-            kernelargs.append(cval)
+            kernelargs.append(val)
 
         elif ty == types.complex64:
             kernelargs.append(ctypes.c_float(val.real))
@@ -605,8 +600,7 @@ class _Kernel(serialize.ReduceMixin):
 
         elif isinstance(ty, types.Record):
             devrec = wrap_arg(val).to_device(retr, stream)
-            ptr = devrec.device_ctypes_pointer
-            kernelargs.append(ptr)
+            kernelargs.append(devrec.device_ctypes_pointer.value)
 
         elif isinstance(ty, types.BaseTuple):
             assert len(ty) == len(val)
@@ -677,7 +671,7 @@ class _LaunchConfiguration:
         self.dispatcher = dispatcher
         self.griddim = griddim
         self.blockdim = blockdim
-        self.stream = stream
+        self.stream = driver._to_core_stream(stream)
         self.sharedmem = sharedmem
 
         if (
@@ -705,6 +699,16 @@ class _LaunchConfiguration:
         return self.dispatcher.call(
             args, self.griddim, self.blockdim, self.stream, self.sharedmem
         )
+
+    def __getstate__(self):
+        state = self.__dict__.copy()
+        state["stream"] = int(state["stream"].handle)
+        return state
+
+    def __setstate__(self, state):
+        handle = state.pop("stream")
+        self.__dict__.update(state)
+        self.stream = driver._to_core_stream(handle)
 
 
 class CUDACacheImpl(CacheImpl):
@@ -860,7 +864,7 @@ class _DispatcherBase(_dispatcher.Dispatcher):
             for cres in overloads.values():
                 try:
                     targetctx.remove_user_function(cres.entry_point)
-                except KeyError:
+                except KeyError:  # noqa: PERF203
                     pass
 
         return finalizer
@@ -1628,21 +1632,7 @@ class CUDADispatcher(serialize.ReduceMixin, _MemoMixin, _DispatcherBase):
     def typeof_pyval(self, val):
         # Based on _DispatcherBase.typeof_pyval, but differs from it to support
         # the CUDA Array Interface.
-        try:
-            return typeof(val, Purpose.argument)
-        except ValueError:
-            if (
-                interface := getattr(val, "__cuda_array_interface__")
-            ) is not None:
-                # When typing, we don't need to synchronize on the array's
-                # stream - this is done when the kernel is launched.
-
-                return typeof(
-                    cuda.from_cuda_array_interface(interface, sync=False),
-                    Purpose.argument,
-                )
-            else:
-                raise
+        return typeof(val, Purpose.argument)
 
     def specialize(self, *args):
         """
@@ -2106,7 +2096,7 @@ class CUDADispatcher(serialize.ReduceMixin, _MemoMixin, _DispatcherBase):
         if file is None:
             file = sys.stdout
 
-        for _, defn in self.overloads.items():
+        for defn in self.overloads.values():
             defn.inspect_types(file=file)
 
     @classmethod

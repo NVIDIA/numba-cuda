@@ -63,11 +63,11 @@ class OverloadSelector(object):
         """
         Select all compatible signatures and their implementation.
         """
-        out = {}
-        for ver_sig, impl in self.versions:
-            if self._match_arglist(ver_sig, sig):
-                out[ver_sig] = impl
-        return out
+        return {
+            ver_sig: impl
+            for ver_sig, impl in self.versions
+            if self._match_arglist(ver_sig, sig)
+        }
 
     def _best_signature(self, candidates):
         """
@@ -933,7 +933,12 @@ class BaseContext(object):
         If *caching* evaluates True, the function keeps the compiled function
         for reuse in *.cached_internal_func*.
         """
-        cache_key = (impl.__code__, sig, type(self.error_model))
+        cache_key = (
+            impl.__code__,
+            sig,
+            type(self.error_model),
+            self.enable_nrt,
+        )
         if not caching:
             cached = None
         else:
@@ -1317,11 +1322,7 @@ class _wrap_missing_loc(object):
             # ignore attributes if not available (i.e fix py2.7)
             attrs = "__name__", "libs"
             for attr in attrs:
-                try:
-                    val = getattr(fn, attr)
-                except AttributeError:
-                    pass
-                else:
+                if (val := getattr(fn, attr, None)) is not None:
                     setattr(wrapper, attr, val)
 
             return wrapper
