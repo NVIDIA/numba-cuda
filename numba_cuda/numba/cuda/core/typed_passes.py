@@ -335,8 +335,6 @@ class BaseNativeLowering(abc.ABC, LoweringPass):
         else:
             mangler = targetctx.mangler
 
-        # mangler = targetctx.mangler
-
         msg = "Function %s failed at nopython mode lowering" % (
             state.func_id.func_name,
         )
