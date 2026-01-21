@@ -496,8 +496,6 @@ class TestDeclareDevice(CUDATestCase):
         np.testing.assert_equal(r, x * 5)
 
 
-# XXX: Range from 0 - 2 input arguments
-# XXX: void return type?
 times2_cabi_cu = cuda.CUSource("""
 extern "C" __device__
 int times2(int a)
