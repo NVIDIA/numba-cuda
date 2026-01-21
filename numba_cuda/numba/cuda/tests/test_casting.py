@@ -28,11 +28,6 @@ class TestCudaCasting(CUDATestCase):
         cast_kernel[blockspergrid, threadsperblock](d_src, d_dst)
         cuda.synchronize()
 
-        cast_kernel[blockspergrid, threadsperblock](d_src, d_dst)
-
-        cast_kernel[blockspergrid, threadsperblock](d_src, d_dst)
-        cuda.synchronize()
-
         result = d_dst.copy_to_host()
         expected = src.astype(dst_dtype)
 
