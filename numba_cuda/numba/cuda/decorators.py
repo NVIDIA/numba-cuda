@@ -275,6 +275,7 @@ def declare_device(name, sig, link=None, use_cooperative=False, abi="numba"):
     :param sig: The Numba signature of the function.
     :param link: External code to link when calling the function.
     :param use_cooperative: External code requires cooperative launch.
+    :param abi: The ABI to use for the function. "numba" for Numba ABI, "c" for C ABI.
     """
     if abi not in ("numba", "c"):
         raise NotImplementedError(f"Unsupported ABI: {abi}")
