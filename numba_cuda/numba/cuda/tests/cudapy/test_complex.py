@@ -2,6 +2,49 @@
 # --- Basic CUDA complex number operation tests (from test_complex.py) ---
 
 @cuda.jit
+import math
+import itertools
+import sys
+
+import numpy as np
+import pytest
+
+from numba.cuda.testing import unittest, CUDATestCase, skip_on_cudasim
+from numba.cuda import types
+from numba import cuda
+from numba.cuda import config
+from numba.cuda.tests.cudapy.complex_usecases import (
+    real_usecase,
+    imag_usecase,
+    conjugate_usecase,
+    phase_usecase,
+    polar_as_complex_usecase,
+    rect_usecase,
+    isnan_usecase,
+    isinf_usecase,
+    isfinite_usecase,
+    exp_usecase,
+    log_usecase,
+    log_base_usecase,
+    log10_usecase,
+    sqrt_usecase,
+    asin_usecase,
+    acos_usecase,
+    atan_usecase,
+    cos_usecase,
+    sin_usecase,
+    tan_usecase,
+    acosh_usecase,
+    asinh_usecase,
+    atanh_usecase,
+    cosh_usecase,
+    sinh_usecase,
+    tanh_usecase,
+)
+from numba.cuda.np import numpy_support
+
+
+@cuda.jit
 def complex_add_kernel(a, b, out):
     i = cuda.grid(1)
     if i < out.size:
