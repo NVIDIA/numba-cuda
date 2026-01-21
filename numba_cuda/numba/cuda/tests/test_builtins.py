@@ -24,7 +24,7 @@ def min_kernel(a, b, out):
 @cuda.jit
 def max_kernel(a, b, out):
     i = cuda.grid(1)
-    if i < out.size:
+    if i < min(a.size, b.size, out.size):
         out[i] = max(a[i], b[i])
 
 
