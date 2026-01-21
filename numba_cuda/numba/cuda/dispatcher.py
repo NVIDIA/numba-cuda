@@ -38,7 +38,6 @@ from numba.cuda.compiler import (
     compile_extra,
     compile_ir,
 )
-from numba.cuda.extending import typeof_impl
 from numba.cuda.core import sigutils, config, entrypoints
 from numba.cuda.flags import Flags
 from numba.cuda.cudadrv import driver, nvvm
@@ -2115,7 +2114,7 @@ class CUDADispatcher(serialize.ReduceMixin, _MemoMixin, _DispatcherBase):
         return dict(py_func=self.py_func, targetoptions=self.targetoptions)
 
 
-def register_arg_handler(handler, handled_types, impl):
+def register_arg_handler(handler, handled_types):
     global _arg_handlers
 
     for ty in handled_types:
@@ -2123,7 +2122,6 @@ def register_arg_handler(handler, handled_types, impl):
             raise ValueError(
                 f"A handler for args of type {ty} is already registered."
             )
-        typeof_impl.register(ty)(impl)
         _arg_handlers[ty] = handler
 
 

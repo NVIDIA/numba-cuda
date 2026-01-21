@@ -30,7 +30,6 @@ from numba.cuda.tests.support import TestCase, override_config
 from numba.cuda.typing.templates import AttributeTemplate
 from numba.cuda.cudadecl import registry as cuda_registry
 from numba.cuda.cudaimpl import lower_attr as cuda_lower_attr
-from numba.cuda.typing.typeof import typeof
 
 from numba.core import errors
 from numba.cuda.errors import LoweringError
@@ -413,30 +412,20 @@ class TestArgHandlerRegistration(CUDATestCase):
         return types.int32[::1], val.arr
 
     @staticmethod
-    def numpy_array_wrapper_int32_typeof_impl(val, c):
-        return typeof(val.arr)
-
-    @staticmethod
     def numpy_array_wrapper_float32_arg_handler(ty, val, **kwargs):
         return types.float32[::1], val.arr
-
-    @staticmethod
-    def numpy_array_wrapper_float32_typeof_impl(val, c):
-        return typeof(val.arr)
 
     @staticmethod
     def numpy_array_wrapper_int32_arg_handler_v2(ty, val, **kwargs):
         return types.float64[::1], val.arr
 
-    @staticmethod
-    def numpy_array_wrapper_int32_typeof_impl_v2(val, c):
-        return typeof(val.arr)
-
     def test_register_arg_handler_basic(self):
+        """
+        test registration of a single arg handler
+        """
         register_arg_handler(
             self.numpy_array_wrapper_int32_arg_handler,
             (self.NumpyArrayWrapper_int32,),
-            self.numpy_array_wrapper_int32_typeof_impl,
         )
 
         @cuda.jit("void(int32[::1])")
@@ -450,29 +439,18 @@ class TestArgHandlerRegistration(CUDATestCase):
         kernel.forall(len(arr))(wrapped_arr)
         np.testing.assert_equal(arr, np.ones(10, dtype=np.int32))
 
-        # No signature case
-        @cuda.jit
-        def kernel(arr):
-            i = cuda.grid(1)
-            if i < arr.size:
-                arr[i] += 1
-
-        arr = np.zeros(10, dtype=np.int32)
-        wrapped_arr = self.NumpyArrayWrapper_int32(arr)
-        kernel.forall(len(arr))(wrapped_arr)
-        np.testing.assert_equal(arr, np.ones(10, dtype=np.int32))
-
     def test_register_arg_multiple(self):
+        """
+        test that two arg handlers can process two types
+        """
         register_arg_handler(
             self.numpy_array_wrapper_int32_arg_handler,
             (self.NumpyArrayWrapper_int32,),
-            self.numpy_array_wrapper_int32_typeof_impl,
         )
 
         register_arg_handler(
             self.numpy_array_wrapper_float32_arg_handler,
             (self.NumpyArrayWrapper_float32,),
-            self.numpy_array_wrapper_float32_typeof_impl,
         )
 
         @cuda.jit("void(float32[::1], int32[::1])")
@@ -491,10 +469,12 @@ class TestArgHandlerRegistration(CUDATestCase):
         np.testing.assert_equal(arr_i, np.ones(10, dtype=np.int32) * 2)
 
     def test_register_arg_handler_collision(self):
+        """
+        test that registering multiple handlers for the same type raises
+        """
         register_arg_handler(
             self.numpy_array_wrapper_int32_arg_handler,
             (self.NumpyArrayWrapper_int32,),
-            self.numpy_array_wrapper_int32_typeof_impl,
         )
 
         # multiple handlers for the same type - error
@@ -502,14 +482,16 @@ class TestArgHandlerRegistration(CUDATestCase):
             register_arg_handler(
                 self.numpy_array_wrapper_int32_arg_handler_v2,
                 (self.NumpyArrayWrapper_int32,),
-                self.numpy_array_wrapper_int32_typeof_impl_v2,
             )
 
     def test_register_arg_handler_and_pass(self):
+        """
+        test that registering and passing an arg handler at the same
+        time produces the expected behavior
+        """
         register_arg_handler(
             self.numpy_array_wrapper_int32_arg_handler,
             (self.NumpyArrayWrapper_int32,),
-            self.numpy_array_wrapper_int32_typeof_impl,
         )
 
         class PassedArgHandler_float32:
