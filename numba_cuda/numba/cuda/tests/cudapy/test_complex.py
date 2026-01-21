@@ -2,9 +2,6 @@
 # SPDX-License-Identifier: BSD-2-Clause
 
 ## --- Basic CUDA complex number operation tests (from test_complex.py) ---
-import numpy as np
-from numba import cuda
-from numba.cuda.testing import CUDATestCase, skip_on_cudasim
 
 @cuda.jit
 def complex_add_kernel(a, b, out):
