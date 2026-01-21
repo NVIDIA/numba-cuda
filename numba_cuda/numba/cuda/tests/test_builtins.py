@@ -62,7 +62,6 @@ class TestCudaBuiltins(CUDATestCase):
         self._launch_1d(abs_kernel, (d_src, d_dst), src.size)
         np.testing.assert_array_equal(d_dst.copy_to_host(), np.abs(src))
 
-
     def test_min(self):
         a = np.array([1, 5, 3, 7], dtype=np.int32)
         b = np.array([2, 4, 6, 0], dtype=np.int32)
@@ -82,7 +81,6 @@ class TestCudaBuiltins(CUDATestCase):
         self._launch_1d(min_kernel, (da, db, dout), a.size)
         np.testing.assert_array_equal(dout.copy_to_host(), np.minimum(a, b))
 
-
     def test_max(self):
         a = np.array([1, 5, 3, 7], dtype=np.int32)
         b = np.array([2, 4, 6, 0], dtype=np.int32)
@@ -91,7 +89,6 @@ class TestCudaBuiltins(CUDATestCase):
         dout = cuda.device_array_like(a)
         self._launch_1d(max_kernel, (da, db, dout), a.size)
         np.testing.assert_array_equal(dout.copy_to_host(), np.maximum(a, b))
-
 
     def test_bool(self):
         src = np.array([0, 1, -1, 3], dtype=np.int32)
