@@ -31,7 +31,7 @@ from numba.cuda.core.ir_utils import (
     compute_cfg_from_blocks,
     is_operator_or_getitem,
 )
-from numba.cuda.core.callconv import CUDACABICallConv, CUDACallConv
+from numba.cuda.core.callconv import CUDACallConv
 
 from numba.cuda.core import postproc, rewrites, funcdesc, config
 
@@ -330,10 +330,7 @@ class BaseNativeLowering(abc.ABC, LoweringPass):
         if call_conv is None:
             call_conv = CUDACallConv(state.targetctx)
 
-        if isinstance(call_conv, CUDACABICallConv):
-            mangler = targetctx.c_abi_mangler
-        else:
-            mangler = targetctx.mangler
+        mangler = call_conv.mangler
 
         msg = "Function %s failed at nopython mode lowering" % (
             state.func_id.func_name,

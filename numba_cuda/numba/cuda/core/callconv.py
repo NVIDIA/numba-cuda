@@ -3,6 +3,7 @@
 
 from numba.cuda import types
 from numba.cuda import cgutils
+from numba.cuda import itanium_mangler
 from collections import namedtuple
 
 from llvmlite import ir
@@ -160,6 +161,11 @@ class BaseCallConv(object):
         Get an argument packer for the given argument types.
         """
         return self.context.get_arg_packer(argtypes)
+
+    def mangler(self, name, argtypes, *, abi_tags=(), uid=None):
+        return itanium_mangler.mangle(
+            name, argtypes, abi_tags=abi_tags, uid=uid
+        )
 
 
 class MinimalCallConv(BaseCallConv):
@@ -420,6 +426,13 @@ class CUDACABICallConv(BaseCallConv):
 
     def get_return_type(self, ty):
         return self.context.data_model_manager[ty].get_return_type()
+
+    def mangler(self, name, argtypes, *, abi_tags=None, uid=None):
+        if name.startswith(".NumbaEnv."):
+            # return itanium_mangler.mangle(name, argtypes, abi_tags=abi_tags, uid=uid)
+            func_name = name.split(".")[-1]
+            return f"_ZN08NumbaEnv{func_name}"
+        return name.split(".")[-1]
 
 
 class ErrorModel(object):

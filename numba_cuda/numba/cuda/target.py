@@ -269,17 +269,9 @@ class CUDATargetContext(BaseContext):
     def call_conv(self):
         return self.fndesc.call_conv
 
-    def mangler(self, name, argtypes, *, abi_tags=(), uid=None):
-        return itanium_mangler.mangle(
-            name, argtypes, abi_tags=abi_tags, uid=uid
-        )
-
-    def c_abi_mangler(self, name, argtypes, *, abi_tags=None, uid=None):
-        if name.startswith(".NumbaEnv."):
-            # return itanium_mangler.mangle(name, argtypes, abi_tags=abi_tags, uid=uid)
-            func_name = name.split(".")[-1]
-            return f"_ZN08NumbaEnv{func_name}"
-        return name.split(".")[-1]
+    @property
+    def mangler(self):
+        return self.fndesc.call_conv.mangler
 
     def make_constant_array(self, builder, aryty, arr):
         """
