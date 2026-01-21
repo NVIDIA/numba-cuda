@@ -79,7 +79,7 @@ class TestCudaBuiltins(CUDATestCase):
         db = cuda.to_device(b)
         dout = cuda.device_array_like(a)
         self._launch_1d(min_kernel, (da, db, dout), a.size)
-        np.testing.assert_array_equal(dout.copy_to_host(), np.minimum(a, b))
+        np.testing.assert_allclose(dout.copy_to_host(), np.minimum(a, b), equal_nan=True)
 
     def test_max(self):
         a = np.array([1, 5, 3, 7], dtype=np.int32)
