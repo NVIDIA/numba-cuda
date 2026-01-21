@@ -1,3 +1,5 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: BSD-2-Clause
 
 # Array manipulation tests for CUDA device arrays.
 # Covers: indexing, slicing, reshape for multiple dtypes and edge cases.
