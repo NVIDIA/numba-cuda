@@ -885,29 +885,34 @@ class TestCudaDebugInfo(CUDATestCase):
         """,
         )
 
-    # shared_arr -> composite -> elements[4] (data field at index 4) -> pointer with dwarfAddressSpace: 8
-    # local_arr -> composite -> elements[4] (data field at index 4) -> pointer without dwarfAddressSpace: 8
+    # shared_arr -> composite -> elements[4] (data field at index 4) -> pointer without dwarfAddressSpace
+    # local_arr -> composite -> elements[4] (data field at index 4) -> pointer without dwarfAddressSpace
+    # Note: Shared memory pointers don't have dwarfAddressSpace because they are
+    # cast to generic address space via addrspacecast in cudaimpl.py
     address_class_filechecks = r"""
         CHECK-DAG: [[SHARED_VAR:![0-9]+]] = !DILocalVariable({{.*}}name: "shared_arr"{{.*}}type: [[SHARED_COMPOSITE:![0-9]+]]
         CHECK-DAG: [[SHARED_COMPOSITE]] = {{.*}}!DICompositeType(elements: [[SHARED_ELEMENTS:![0-9]+]]
         CHECK-DAG: [[SHARED_ELEMENTS]] = !{{{.*}}, {{.*}}, {{.*}}, {{.*}}, [[SHARED_DATA:![0-9]+]], {{.*}}, {{.*}}}
         CHECK-DAG: [[SHARED_DATA]] = !DIDerivedType(baseType: [[SHARED_PTR:![0-9]+]], name: "data"
-        CHECK-DAG: [[SHARED_PTR]] = !DIDerivedType({{.*}}dwarfAddressSpace: 8{{.*}}tag: DW_TAG_pointer_type
+        CHECK-DAG: [[SHARED_PTR]] = !DIDerivedType({{.*}}tag: DW_TAG_pointer_type
+        CHECK-NOT: [[SHARED_PTR]]{{.*}}dwarfAddressSpace
 
         CHECK-DAG: [[LOCAL_VAR:![0-9]+]] = !DILocalVariable({{.*}}name: "local_arr"{{.*}}type: [[LOCAL_COMPOSITE:![0-9]+]]
         CHECK-DAG: [[LOCAL_COMPOSITE]] = {{.*}}!DICompositeType(elements: [[LOCAL_ELEMENTS:![0-9]+]]
         CHECK-DAG: [[LOCAL_ELEMENTS]] = !{{{.*}}, {{.*}}, {{.*}}, {{.*}}, [[LOCAL_DATA:![0-9]+]], {{.*}}, {{.*}}}
         CHECK-DAG: [[LOCAL_DATA]] = !DIDerivedType(baseType: [[LOCAL_PTR:![0-9]+]], name: "data"
         CHECK-DAG: [[LOCAL_PTR]] = !DIDerivedType(baseType: {{.*}}tag: DW_TAG_pointer_type
-        CHECK-NOT: [[LOCAL_PTR]]{{.*}}dwarfAddressSpace: 8
+        CHECK-NOT: [[LOCAL_PTR]]{{.*}}dwarfAddressSpace
     """
 
     def _test_shared_memory_address_class(self, dtype):
         """Test that shared memory arrays have correct DWARF address class.
 
-        Shared memory pointers should have addressClass: 8 (DW_AT_address_class
-        for CUDA shared memory) in their debug metadata, while regular local
-        arrays should not have this annotation.
+        Shared memory pointers should NOT have dwarfAddressSpace attribute
+        because they are cast to generic address space via addrspacecast.
+        The runtime pointer type is generic, not shared, so cuda-gdb can
+        correctly dereference them. Local arrays also should not have this
+        attribute.
         """
         sig = (numpy_support.from_dtype(dtype),)
 
@@ -972,6 +977,76 @@ class TestCudaDebugInfo(CUDATestCase):
         llvm_ir = kernel_with_shared.inspect_llvm(sig)
 
         self.assertFileCheckMatches(llvm_ir, self.address_class_filechecks)
+
+    def test_DISubprogram_def_line_number(self):
+        """Tests that DISubprogram line number correctly points to the 'def'
+        line, even when there are comments between def and first statement,
+        and with both single-line and multi-line decorators.
+        """
+        sig = (types.int32[:],)
+
+        # Single line decorator without comment between def and first statement
+        @cuda.jit("void(int32[:])", debug=True, opt=False)
+        def kernel_single_line_decorator_without_comment(x):
+            x[0] = 1
+
+        # Single line decorator with multi-line comment between def and first statement
+        @cuda.jit("void(int32[:])", debug=True, opt=False)
+        def kernel_single_line_decorator_with_multiline_comment(x):
+            # This comment is between def and first statement
+            # and spans multiple lines
+            # on purpose
+            x[0] = 1
+
+        # fmt: off
+        # Multi-line decorator without comment between def and first statement
+        @cuda.jit(
+            "void(int32[:])",
+            debug=True,
+            opt=False
+        )
+        def kernel_multiline_decorator_without_comment(x):
+            x[0] = 1
+
+        # Multi-line decorator with multi-line comment between def and first statement
+        @cuda.jit(
+            "void(int32[:])",
+            debug=True,
+            opt=False
+        )
+        def kernel_multiline_decorator_with_multiline_comment(x):
+            # This comment is between def and first statement
+            # and spans multiple lines
+            # on purpose
+            x[0] = 1
+        # fmt: on
+
+        kernels = [
+            kernel_single_line_decorator_without_comment,
+            kernel_single_line_decorator_with_multiline_comment,
+            kernel_multiline_decorator_without_comment,
+            kernel_multiline_decorator_with_multiline_comment,
+        ]
+        for kernel in kernels:
+            with self.subTest(kernel=kernel.py_func.__name__):
+                source_lines, start_lineno = inspect.getsourcelines(
+                    kernel.py_func
+                )
+
+                # Find the actual 'def' line offset within the source
+                for def_offset, line in enumerate(source_lines):
+                    if line.strip().startswith("def "):
+                        break
+                actual_def_lineno = start_lineno + def_offset
+
+                llvm_ir = kernel.inspect_llvm(sig)
+
+                check_pattern = f"""
+                    CHECK: !DISubprogram(
+                    CHECK-SAME: line: {actual_def_lineno}
+                    CHECK-SAME: {kernel.py_func.__name__}
+                """
+                self.assertFileCheckMatches(llvm_ir, check_pattern)
 
 
 if __name__ == "__main__":

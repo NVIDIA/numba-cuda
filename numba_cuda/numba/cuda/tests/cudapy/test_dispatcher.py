@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-2-Clause
 
-from cuda.core.experimental._utils.cuda_utils import CUDAError
+from numba.cuda._compat import CUDAError
 import numpy as np
 import threading
 

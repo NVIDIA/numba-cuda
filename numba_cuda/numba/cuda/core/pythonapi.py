@@ -875,6 +875,9 @@ class PythonAPI(object):
                 self.py_hash_t.as_pointer(),
             ],
         )
+        # `_PySet_NextEntry` returns a borrowed reference to the key, which is
+        # generally not expected for iterators--which is the place where this
+        # is used internally. Perhaps we should revisit this at some point
         fn = self._get_function(fnty, name="_PySet_NextEntry")
         return self.builder.call(fn, (set, posptr, keyptr, hashptr))
 

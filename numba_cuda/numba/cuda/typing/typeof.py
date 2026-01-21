@@ -5,6 +5,7 @@ from collections import namedtuple
 from functools import singledispatch
 import ctypes
 import enum
+import operator
 
 import numpy as np
 from numpy.random.bit_generator import BitGenerator
@@ -47,11 +48,20 @@ def typeof_impl(val, c):
     """
     Generic typeof() implementation.
     """
-    tp = _typeof_buffer(val, c)
+    tp = getattr(val, "_numba_type_", None)
     if tp is not None:
         return tp
 
-    tp = getattr(val, "_numba_type_", None)
+    # Check for __cuda_array_interface__ objects (third-party device arrays)
+
+    # Numba's own DeviceNDArray is handled above via _numba_type_.
+    cai = getattr(val, "__cuda_array_interface__", None)
+    if cai is not None:
+        tp = _typeof_cuda_array_interface(cai, c)
+        if tp is not None:
+            return tp
+
+    tp = _typeof_buffer(val, c)
     if tp is not None:
         return tp
 
@@ -299,3 +309,42 @@ def typeof_numpy_polynomial(val, c):
     domain = typeof(val.domain)
     window = typeof(val.window)
     return types.PolynomialType(coef, domain, window)
+
+
+def _typeof_cuda_array_interface(val, c):
+    """
+    Determine the type of a __cuda_array_interface__ object.
+
+    This handles third-party device arrays that implement the CUDA
+    Array Interface. These are typed as regular Array types, with lowering
+    handled in numba.cuda.np.arrayobj.
+    """
+    dtype = numpy_support.from_dtype(np.dtype(val["typestr"]))
+    shape = val["shape"]
+    ndim = len(shape)
+    strides = val.get("strides")
+
+    # Determine layout
+    if not ndim:
+        layout = "C"
+    elif strides is None:
+        layout = "C"
+    else:
+        itemsize = np.dtype(val["typestr"]).itemsize
+        # Quick rejection: C-contiguous has strides[-1] == itemsize,
+        # F-contiguous has strides[0] == itemsize. If neither, it's "A".
+        if strides[-1] == itemsize:
+            c_strides = numpy_support.strides_from_shape(
+                shape, itemsize, order="C"
+            )
+            layout = "C" if all(map(operator.eq, strides, c_strides)) else "A"
+        elif strides[0] == itemsize:
+            f_strides = numpy_support.strides_from_shape(
+                shape, itemsize, order="F"
+            )
+            layout = "F" if all(map(operator.eq, strides, f_strides)) else "A"
+        else:
+            layout = "A"
+
+    _, readonly = val["data"]
+    return types.Array(dtype, ndim, layout, readonly=readonly)

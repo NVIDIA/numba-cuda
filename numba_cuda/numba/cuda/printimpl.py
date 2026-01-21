@@ -32,6 +32,26 @@ def print_item(ty, context, builder, val):
     )
 
 
+@print_item.register(types.Tuple)
+@print_item.register(types.UniTuple)
+def tuple_print_impl(ty, context, builder, val):
+    formats = []
+    values = []
+
+    for i, argtyp in enumerate(ty.types):
+        argval = builder.extract_value(val, i)
+        argfmt, argvals = print_item(argtyp, context, builder, argval)
+        formats.append(argfmt)
+        values.extend(argvals)
+
+    if len(formats) == 1:
+        base = "({},)"
+    else:
+        base = "({})"
+    rawfmt = base.format(", ".join(formats))
+    return rawfmt, values
+
+
 @print_item.register(types.Integer)
 @print_item.register(types.IntegerLiteral)
 def int_print_impl(ty, context, builder, val):

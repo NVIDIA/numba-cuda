@@ -54,17 +54,15 @@ from numba.cuda.utils import cached_file_read
 from numba.cuda.cudadrv import enums, drvapi, nvrtc
 
 from cuda.bindings import driver as binding
-from cuda.core.experimental import (
+from numba.cuda._compat import (
     Linker,
     LinkerOptions,
     ObjectCode,
-)
-
-from cuda.bindings.utils import get_cuda_native_handle
-from cuda.core.experimental import (
     Stream as ExperimentalStream,
     Device as ExperimentalDevice,
 )
+
+from cuda.bindings.utils import get_cuda_native_handle
 
 
 # There is no definition of the default stream in the Nvidia bindings (nor
@@ -184,7 +182,7 @@ def load_driver(dlloader, candidates):
     for path in candidates:
         try:
             dll = dlloader(path)
-        except OSError as e:
+        except OSError as e:  # noqa: PERF203
             # Problem opening the DLL
             path_not_exist.append(not os.path.isfile(path))
             driver_load_error.append(e)
@@ -375,10 +373,10 @@ class Driver(object):
             return getattr(self.lib, fname)
 
         for variant in variants:
-            try:
-                return getattr(self.lib, f"{fname}{variant}")
-            except AttributeError:
-                pass
+            if (
+                value := getattr(self.lib, f"{fname}{variant}", None)
+            ) is not None:
+                return value
 
         # Not found.
         # Delay missing function error to use
@@ -2305,7 +2303,11 @@ class _Linker:
         lto=None,
         additional_flags=None,
     ):
-        arch = f"sm_{cc[0]}{cc[1]}"
+        if len(cc) == 3:
+            arch = f"sm_{cc[0]}{cc[1]}{cc[2]}"
+        else:
+            arch = f"sm_{cc[0]}{cc[1]}"
+
         self.max_registers = max_registers if max_registers else None
         self.lineinfo = lineinfo
         self.cc = cc

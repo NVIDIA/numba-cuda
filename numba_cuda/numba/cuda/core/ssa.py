@@ -113,8 +113,8 @@ def _iterated_domfronts(cfg):
     keep_going = True
     while keep_going:
         keep_going = False
-        for k, vs in domfronts.items():
-            inner = reduce(operator.or_, [domfronts[v] for v in vs], set())
+        for vs in domfronts.values():
+            inner = reduce(operator.or_, map(domfronts.__getitem__, vs), set())
             if inner.difference(vs):
                 vs |= inner
                 keep_going = True
@@ -211,7 +211,7 @@ def _run_ssa_block_pass(states, blk, handler):
     _logger.debug("Running %s", handler)
     for stmt in blk.body:
         _logger.debug("on stmt: %s", stmt)
-        if isinstance(stmt, ir.Assign):
+        if isinstance(stmt, ir.assign_types):
             ret = handler.on_assign(states, stmt)
         else:
             ret = handler.on_other(states, stmt)
@@ -335,7 +335,7 @@ class _FixSSAVars(_BaseHandler):
 
     def on_assign(self, states, assign):
         rhs = assign.value
-        if isinstance(rhs, ir.Inst):
+        if isinstance(rhs, ir.inst_types):
             newdef = self._fix_var(
                 states,
                 assign,
@@ -353,7 +353,7 @@ class _FixSSAVars(_BaseHandler):
                         value=rhs,
                         loc=assign.loc,
                     )
-        elif isinstance(rhs, ir.Var):
+        elif isinstance(rhs, ir.var_types):
             newdef = self._fix_var(states, assign, [rhs])
             # Has a replacement that is not the current variable
             if newdef is not None and newdef.target is not ir.UNDEFINED:

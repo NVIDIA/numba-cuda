@@ -394,7 +394,7 @@ def _set_code_point(a, i, ch):
         )
 
 
-if PYVERSION in ((3, 12), (3, 13)):
+if PYVERSION in ((3, 12), (3, 13), (3, 14)):
 
     @register_jitable
     def _pick_kind(kind1, kind2):
@@ -442,7 +442,7 @@ def _pick_ascii(is_ascii1, is_ascii2):
     return types.uint32(0)
 
 
-if PYVERSION in ((3, 12), (3, 13)):
+if PYVERSION in ((3, 12), (3, 13), (3, 14)):
 
     @register_jitable
     def _kind_to_byte_width(kind):
