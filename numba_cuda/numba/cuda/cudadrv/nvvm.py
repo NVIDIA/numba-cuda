@@ -312,7 +312,7 @@ class CompilationUnit(object):
 
             return f"-{k}={v}".encode("utf-8")
 
-        debug_build = 'g' in options
+        debug_build = "g" in options
         options = [stringify_option(k, v) for k, v in options.items()]
 
         # If the -numba-debug option is supported by libnvvm, pass it to the
