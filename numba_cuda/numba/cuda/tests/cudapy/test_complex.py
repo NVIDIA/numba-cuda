@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: BSD-2-Clause
+
 ## --- Basic CUDA complex number operation tests (from test_complex.py) ---
 import numpy as np
 from numba import cuda
