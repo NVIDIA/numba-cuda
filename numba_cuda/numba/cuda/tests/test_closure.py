@@ -93,7 +93,8 @@ class TestCudaClosure(CUDATestCase):
     def test_bool_closure_false(self):
         out = np.ones(6, dtype=np.int32)
         d_out = cuda.to_device(out)
-        self._launch_1d(kernel, (d_out,), out.size)
+        kernel = make_bool_closure_kernel(False)
+        d_out = cuda.to_device(out)
         np.testing.assert_array_equal(
             d_out.copy_to_host(),
             np.zeros_like(out),
