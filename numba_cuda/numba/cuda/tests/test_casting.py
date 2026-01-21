@@ -1,7 +1,4 @@
 import numpy as np
-import numpy as np
-
-from numba import cuda
 
 from numba import cuda
 from numba.cuda.testing import CUDATestCase, skip_on_cudasim
