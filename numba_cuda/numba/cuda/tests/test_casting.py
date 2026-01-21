@@ -16,17 +16,14 @@ class TestCudaCasting(CUDATestCase):
 
     def _run_cast_test(self, src_dtype, dst_dtype, values):
         src = np.array(values, dtype=src_dtype)
-        dst = np.zeros_like(src, dtype=dst_dtype)
 
         d_src = cuda.to_device(src)
-        d_dst = cuda.to_device(dst)
+        d_dst = cuda.device_array(src.shape, dtype=dst_dtype)
 
         threadsperblock = 128
         blockspergrid = (src.size + threadsperblock - 1) // threadsperblock
 
         cast_kernel[blockspergrid, threadsperblock](d_src, d_dst)
-        cast_kernel[blockspergrid, threadsperblock](d_src, d_dst)
-        cuda.synchronize()
 
         result = d_dst.copy_to_host()
         expected = src.astype(dst_dtype)
