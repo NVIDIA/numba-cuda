@@ -59,8 +59,6 @@ class TestCudaComplexBasicOps(CUDATestCase):
         dout = cuda.to_device(out)
         self._launch_1d(complex_abs_kernel, (dinp, dout), inp.size)
         np.testing.assert_allclose(dout.copy_to_host(), np.abs(inp), rtol=1e-6)
-# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-# SPDX-License-Identifier: BSD-2-Clause
 
 import math
 import itertools
