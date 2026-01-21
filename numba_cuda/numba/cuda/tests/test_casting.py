@@ -28,6 +28,7 @@ class TestCudaCasting(CUDATestCase):
         blockspergrid = (src.size + threadsperblock - 1) // threadsperblock
 
         cast_kernel[blockspergrid, threadsperblock](d_src, d_dst)
+        cast_kernel[blockspergrid, threadsperblock](d_src, d_dst)
         cuda.synchronize()
 
         cast_kernel[blockspergrid, threadsperblock](d_src, d_dst)
