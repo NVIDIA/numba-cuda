@@ -17,7 +17,7 @@ def abs_kernel(inp, out):
 @cuda.jit
 def min_kernel(a, b, out):
     i = cuda.grid(1)
-    if i < out.size:
+    if i < min(a.size, b.size, out.size):
         out[i] = min(a[i], b[i])
 
 
