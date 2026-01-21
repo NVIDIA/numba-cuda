@@ -2296,7 +2296,6 @@ def get_d_impl(x, dx):
     return impl
 
 
-@overload(np.trapz)
 def np_trapz(y, x=None, dx=1.0):
     if isinstance(y, (types.Number, types.Boolean)):
         raise TypingError("y cannot be a scalar")
@@ -2317,9 +2316,11 @@ def np_trapz(y, x=None, dx=1.0):
     return impl
 
 
-# numpy 2.0 rename np.trapz to np.trapezoid
+# numpy 2.0 renamed np.trapz to np.trapezoid; np.trapz removed in numpy 2.4
 if numpy_version >= (2, 0):
     overload(np.trapezoid)(np_trapz)
+if numpy_version < (2, 4):
+    overload(np.trapz)(np_trapz)
 
 
 @register_jitable
@@ -5089,6 +5090,86 @@ def jit_np_setxor1d(ar1, ar2, assume_unique=False):
     return np_setxor1d_impl
 
 
+# Internal helper for in1d functionality, used by isin and setdiff1d
+# This is needed because np.in1d was removed in NumPy 2.4
+@register_jitable
+def _in1d_impl(ar1, ar2, assume_unique=False, invert=False):
+    # https://github.com/numpy/numpy/blob/03b62604eead0f7d279a5a4c094743eb29647368/numpy/lib/arraysetops.py#L525 # noqa: E501
+
+    # Ravel both arrays, behavior for the first array could be different
+    ar1 = np.asarray(ar1).ravel()
+    ar2 = np.asarray(ar2).ravel()
+
+    # This code is run when it would make the code significantly faster
+    # Sorting is also not guaranteed to work on objects but numba does
+    # not support object arrays.
+    if len(ar2) < 10 * len(ar1) ** 0.145:
+        if invert:
+            mask = np.ones(len(ar1), dtype=np.bool_)
+            for a in ar2:
+                mask &= ar1 != a
+        else:
+            mask = np.zeros(len(ar1), dtype=np.bool_)
+            for a in ar2:
+                mask |= ar1 == a
+        return mask
+
+    # Otherwise use sorting
+    if not assume_unique:
+        # Equivalent to ar1, inv_idx = np.unique(ar1, return_inverse=True)
+        # https://github.com/numpy/numpy/blob/03b62604eead0f7d279a5a4c094743eb29647368/numpy/lib/arraysetops.py#L358C8-L358C8 # noqa: E501
+        order1 = np.argsort(ar1)
+        aux = ar1[order1]
+        mask = np.empty(aux.shape, dtype=np.bool_)
+        mask[:1] = True
+        mask[1:] = aux[1:] != aux[:-1]
+        ar1 = aux[mask]
+        imask = np.cumsum(mask) - 1
+        inv_idx = np.empty(mask.shape, dtype=np.intp)
+        inv_idx[order1] = imask
+        ar2 = np.unique(ar2)
+
+    ar = np.concatenate((ar1, ar2))
+    # We need this to be a stable sort, so always use 'mergesort'
+    # here. The values from the first array should always come before
+    # the values from the second array.
+    order = ar.argsort(kind="mergesort")
+    sar = ar[order]
+    flag = np.empty(sar.size, np.bool_)
+    if invert:
+        flag[:-1] = sar[1:] != sar[:-1]
+    else:
+        flag[:-1] = sar[1:] == sar[:-1]
+    flag[-1:] = invert
+    ret = np.empty(ar.shape, dtype=np.bool_)
+    ret[order] = flag
+
+    # return ret[:len(ar1)]
+    if assume_unique:
+        return ret[: len(ar1)]
+    else:
+        return ret[inv_idx]
+
+
+def jit_np_in1d(ar1, ar2, assume_unique=False, invert=False):
+    if not (type_can_asarray(ar1) or type_can_asarray(ar2)):
+        raise TypingError("in1d: first two args must be array-like")
+    if not (isinstance(assume_unique, (types.Boolean, bool))):
+        raise TypingError('in1d: Argument "assume_unique" must be boolean')
+    if not (isinstance(invert, (types.Boolean, bool))):
+        raise TypingError('in1d: Argument "invert" must be boolean')
+
+    def np_in1d_impl(ar1, ar2, assume_unique=False, invert=False):
+        return _in1d_impl(ar1, ar2, assume_unique, invert)
+
+    return np_in1d_impl
+
+
+# np.in1d was removed in NumPy 2.4
+if numpy_version < (2, 4):
+    overload(np.in1d)(jit_np_in1d)
+
+
 @overload(np.setdiff1d)
 def jit_np_setdiff1d(ar1, ar2, assume_unique=False):
     if not (type_can_asarray(ar1) or type_can_asarray(ar2)):
@@ -5106,7 +5187,7 @@ def jit_np_setdiff1d(ar1, ar2, assume_unique=False):
         else:
             ar1 = np.unique(ar1)
             ar2 = np.unique(ar2)
-        return ar1[np.in1d(ar1, ar2, assume_unique=True, invert=True)]
+        return ar1[_in1d_impl(ar1, ar2, assume_unique=True, invert=True)]
 
     return np_setdiff1d_impl
 
@@ -5123,7 +5204,7 @@ def jit_np_isin(element, test_elements, assume_unique=False, invert=False):
     # https://github.com/numpy/numpy/blob/03b62604eead0f7d279a5a4c094743eb29647368/numpy/lib/arraysetops.py#L889 # noqa: E501
     def np_isin_impl(element, test_elements, assume_unique=False, invert=False):
         element = np.asarray(element)
-        return np.in1d(
+        return _in1d_impl(
             element, test_elements, assume_unique=assume_unique, invert=invert
         ).reshape(element.shape)
 
