@@ -10,7 +10,7 @@ from numba.cuda.testing import CUDATestCase, skip_on_cudasim
 @cuda.jit
 def abs_kernel(inp, out):
     i = cuda.grid(1)
-    if i < inp.size:
+    if i < out.size:
         out[i] = abs(inp[i])
 
 
