@@ -1798,10 +1798,10 @@ def numpy_broadcast_arrays(*args):
             tup = tuple_setitem(tup, i, shape[i])
 
         # numpy checks if the input arrays have the same shape as `shape`
-        outs = []
-        for array in literal_unroll(args):
-            outs.append(np.broadcast_to(np.asarray(array), tup))
-        return outs
+        return [
+            np.broadcast_to(np.asarray(array), tup)
+            for array in literal_unroll(args)
+        ]
 
     return impl
 
@@ -4822,13 +4822,11 @@ def _parse_shape(context, builder, ty, val):
         ndim = ty.count
         passed_shapes = cgutils.unpack_tuple(builder, val, count=ndim)
 
-    shapes = []
-    for s in passed_shapes:
-        shapes.append(safecast_intp(context, builder, s.type, s))
+    shapes = [safecast_intp(context, builder, s.type, s) for s in passed_shapes]
 
     zero = context.get_constant_generic(builder, types.intp, 0)
-    for dim in range(ndim):
-        is_neg = builder.icmp_signed("<", shapes[dim], zero)
+    for shape in shapes:
+        is_neg = builder.icmp_signed("<", shape, zero)
         with cgutils.if_unlikely(builder, is_neg):
             context.call_conv.return_user_exc(
                 builder, ValueError, ("negative dimensions not allowed",)

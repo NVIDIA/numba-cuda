@@ -5,6 +5,7 @@
 set -euo pipefail
 
 CUDA_VER_MAJOR_MINOR=${CUDA_VER%.*}
+CUDA_VER_MAJOR=${CUDA_VER%.*.*}
 AWKWARD_VERSION="2.8.10"
 
 rapids-logger "Install awkward and related libraries"
@@ -12,13 +13,10 @@ rapids-logger "Install awkward and related libraries"
 pip install awkward==${AWKWARD_VERSION} cupy-cuda12x pyarrow pandas nox
 
 rapids-logger "Install wheel with test dependencies"
-package=$(realpath wheel/numba_cuda*.whl)
+package=$(realpath "${NUMBA_CUDA_ARTIFACTS_DIR}"/*.whl)
 echo "Package path: ${package}"
 python -m pip install \
-    "${package}" \
-    "cuda-python==${CUDA_VER_MAJOR_MINOR%.*}.*" \
-    "cuda-core" \
-    "nvidia-nvjitlink-cu12" \
+    "${package}[cu${CUDA_VER_MAJOR}]" \
     --group test
 
 

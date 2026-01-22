@@ -17,11 +17,24 @@
     #include <numpy/npy_2_compat.h>
 #endif
 
-#if (PY_MAJOR_VERSION >= 3) && ((PY_MINOR_VERSION == 13) || (PY_MINOR_VERSION == 14))
-    #ifndef Py_BUILD_CORE
-        #define Py_BUILD_CORE 1
-    #endif
-    #include "internal/pycore_setobject.h"  // _PySet_NextEntry()
+#ifndef Py_BUILD_CORE
+#define Py_BUILD_CORE 1
+#endif
+
+#if (PY_MAJOR_VERSION >= 3) && (PY_MINOR_VERSION >= 13)
+// required include from Python 3.13+
+#include "internal/pycore_setobject.h"
+#ifndef PySet_NextEntry
+#define PySet_NextEntry _PySet_NextEntryRef
+#endif
+#else
+#ifndef PySet_NextEntry
+#define PySet_NextEntry _PySet_NextEntry
+#endif
+#endif
+
+#ifdef Py_BUILD_CORE
+#undef Py_BUILD_CORE
 #endif
 
 
@@ -410,17 +423,52 @@ compute_fingerprint(string_writer_t *w, PyObject *val)
         Py_hash_t h;
         PyObject *item;
         Py_ssize_t pos = 0;
+        int rc;
+
+#if PY_MAJOR_VERSION >= 3 && PY_MINOR_VERSION >= 13
+        // needed when using _PySet_NextEntryRef
+        Py_BEGIN_CRITICAL_SECTION(val);
+#endif
         /* Only one item is considered, as in typeof.py */
-        if (!_PySet_NextEntry(val, &pos, &item, &h)) {
+        rc = PySet_NextEntry(val, &pos, &item, &h);
+
+#if PY_MAJOR_VERSION >= 3 && PY_MINOR_VERSION >= 13
+        // needed when using _PySet_NextEntryRef
+        Py_END_CRITICAL_SECTION();
+#endif
+
+        if (!rc) {
             /* Empty set */
             PyErr_SetString(PyExc_ValueError,
                             "cannot compute fingerprint of empty set");
             return -1;
         }
-        TRY(string_writer_put_char, w, OP_SET);
-        TRY(compute_fingerprint, w, item);
+
+        if (string_writer_put_char(w, OP_SET)) {
+            goto fingerprint_error;
+        }
+
+        if (compute_fingerprint(w, item)) {
+            goto fingerprint_error;
+        }
+
+        goto fingerprint_success;
+
+fingerprint_error:
+#if PY_MAJOR_VERSION >= 3 && PY_MINOR_VERSION >= 13
+        // extra ref if using python >= 3.13
+        Py_XDECREF(item);
+#endif
+        return -1;
+
+fingerprint_success:
+#if PY_MAJOR_VERSION >= 3 && PY_MINOR_VERSION >= 13
+        // extra ref if using python >= 3.13
+        Py_XDECREF(item);
+#endif
         return 0;
     }
+
     if (PyObject_CheckBuffer(val)) {
         Py_buffer buf;
         int flags = PyBUF_ND | PyBUF_STRIDES | PyBUF_FORMAT;
