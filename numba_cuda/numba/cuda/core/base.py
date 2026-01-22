@@ -880,7 +880,7 @@ class BaseContext(object):
         return GENERIC_POINTER
 
     def _compile_subroutine_no_cache(
-        self, builder, impl, sig, locals={}, flags=None
+        self, builder, impl, sig, locals=None, flags=None
     ):
         """
         Invoke the compiler to compile a function to be used inside a
@@ -916,7 +916,7 @@ class BaseContext(object):
                 sig.args,
                 sig.return_type,
                 flags,
-                locals=locals,
+                locals=locals or {},
             )
 
             # Allow inlining the function inside callers.
@@ -924,7 +924,7 @@ class BaseContext(object):
             return cres
 
     def compile_subroutine(
-        self, builder, impl, sig, locals={}, flags=None, caching=True
+        self, builder, impl, sig, locals=None, flags=None, caching=True
     ):
         """
         Compile the function *impl* for the given *sig* (in nopython mode).
@@ -949,7 +949,7 @@ class BaseContext(object):
             cached = self.cached_internal_func.get(cache_key)
         if cached is None:
             cres = self._compile_subroutine_no_cache(
-                builder, impl, sig, locals=locals, flags=flags
+                builder, impl, sig, locals=locals or {}, flags=flags
             )
             self.cached_internal_func[cache_key] = cres
 
@@ -958,12 +958,12 @@ class BaseContext(object):
         self.active_code_library.add_linking_library(cres.library)
         return cres
 
-    def compile_internal(self, builder, impl, sig, args, locals={}):
+    def compile_internal(self, builder, impl, sig, args, locals=None):
         """
         Like compile_subroutine(), but also call the function with the given
         *args*.
         """
-        cres = self.compile_subroutine(builder, impl, sig, locals)
+        cres = self.compile_subroutine(builder, impl, sig, locals or {})
         return self.call_internal(builder, cres.fndesc, sig, args)
 
     def call_internal(self, builder, fndesc, sig, args):

@@ -588,7 +588,7 @@ class DIBuilder(AbstractDIBuilder):
         llfunc = function
         md = []
 
-        for idx, llarg in enumerate(llfunc.args):
+        for llarg in llfunc.args:
             if not llarg.name.startswith("arg."):
                 name = llarg.name.replace(".", "$")  # for gdb to work correctly
                 lltype = llarg.type
@@ -596,7 +596,7 @@ class DIBuilder(AbstractDIBuilder):
                 mdtype = self._var_type(lltype, size, datamodel=None)
                 md.append(mdtype)
 
-        for idx, (name, nbtype) in enumerate(argmap.items()):
+        for name, nbtype in argmap.items():
             name = name.replace(".", "$")  # for gdb to work correctly
             datamodel = self.cgctx.data_model_manager[nbtype]
             lltype = self.cgctx.get_value_type(nbtype)
@@ -837,7 +837,7 @@ class CUDADIBuilder(DIBuilder):
             md.append(mdtype)
 
         # Create metadata type for arguments
-        for idx, (name, nbtype) in enumerate(argmap.items()):
+        for nbtype in argmap.values():
             datamodel = self.cgctx.data_model_manager[nbtype]
             lltype = self.cgctx.get_value_type(nbtype)
             size = self.cgctx.get_abi_sizeof(lltype)

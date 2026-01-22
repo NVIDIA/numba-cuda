@@ -274,8 +274,8 @@ class TestCUDAVectorize(CUDATestCase):
             old_HtoD = getattr(driver, "cuMemcpyHtoD", None)
             old_DtoH = getattr(driver, "cuMemcpyDtoH", None)
 
-            setattr(driver, "cuMemcpyHtoD", raising_transfer)
-            setattr(driver, "cuMemcpyDtoH", raising_transfer)
+            driver.cuMemcpyHtoD = raising_transfer
+            driver.cuMemcpyDtoH = raising_transfer
 
             # Ensure that the mock functions are working as expected
 
@@ -299,11 +299,11 @@ class TestCUDAVectorize(CUDATestCase):
                 # no original implementation, simply remove ours.
 
                 if old_HtoD is not None:
-                    setattr(driver, "cuMemcpyHtoD", old_HtoD)
+                    driver.cuMemcpyHtoD = old_HtoD
                 else:
                     del driver.cuMemcpyHtoD
                 if old_DtoH is not None:
-                    setattr(driver, "cuMemcpyDtoH", old_DtoH)
+                    driver.cuMemcpyDtoH = old_DtoH
                 else:
                     del driver.cuMemcpyDtoH
 
