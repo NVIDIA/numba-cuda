@@ -5,6 +5,7 @@
 Implements the cuda module as called from within an executing kernel
 (@cuda.jit-decorated function).
 """
+
 from collections import defaultdict
 from contextlib import contextmanager
 import sys
@@ -490,14 +491,17 @@ class FakeCUDAModule(object):
 
         raise RuntimeError("Global grid has 1-3 dimensions. %d requested" % n)
 
+
 _locks_register_lock = threading.Lock()
 _globals_locks = defaultdict(threading.Lock)
 _swap_refcount = defaultdict(int)
 _swap_orig = {}
 
+
 @contextmanager
 def swapped_cuda_module(fn, fake_cuda_module):
     from numba import cuda
+
     fn_globs = fn.__globals__
     gid = id(fn_globs)
 
