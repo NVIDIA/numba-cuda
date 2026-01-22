@@ -265,10 +265,6 @@ class CUDATargetContext(BaseContext):
         )
         return nonconsts_with_mod
 
-    @property
-    def mangler(self):
-        return self.fndesc.call_conv.mangler
-
     def make_constant_array(self, builder, aryty, arr):
         """
         Unlike the parent version.  This returns a a pointer in the constant

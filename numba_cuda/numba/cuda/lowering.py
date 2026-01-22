@@ -1197,7 +1197,7 @@ class Lower(BaseLower):
             expr.kws,
         )
         rec_ov = fnty.get_overloads(signature.args)
-        mangler = self.context.mangler or default_mangler
+        mangler = self.call_conv.mangler or default_mangler
         abi_tags = self.fndesc.abi_tags
         mangled_name = mangler(
             rec_ov.qualname, signature.args, abi_tags=abi_tags, uid=rec_ov.uid
