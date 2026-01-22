@@ -962,7 +962,7 @@ class BaseContext(object):
             builder, fndesc, sig, args
         )
         with cgutils.if_unlikely(builder, status.is_error):
-            self.call_conv.return_status_propagate(builder, status)
+            fndesc.call_conv.return_status_propagate(builder, status)
 
         res = imputils.fix_returning_optional(self, builder, sig, status, res)
         return res
@@ -974,7 +974,7 @@ class BaseContext(object):
         # Add call to the generated function
         llvm_mod = builder.module
         fn = fndesc.declare_function(llvm_mod)
-        status, res = self.call_conv.call_function(
+        status, res = fndesc.call_conv.call_function(
             builder, fn, sig.return_type, sig.args, args
         )
         return status, res

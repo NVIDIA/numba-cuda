@@ -212,7 +212,7 @@ def user_function(fndesc, libs):
     A wrapper inserting code calling Numba-compiled *fndesc*.
     """
 
-    def imp(context, builder, sig, args):
+    def imp(context, builder, sig, args, fndesc=fndesc):
         func = fndesc.declare_function(builder.module)
         # env=None assumes this is a nopython function
         status, retval = fndesc.call_conv.call_function(
@@ -221,7 +221,7 @@ def user_function(fndesc, libs):
 
         if status is not None:
             with cgutils.if_unlikely(builder, status.is_error):
-                context.call_conv.return_status_propagate(builder, status)
+                fndesc.call_conv.return_status_propagate(builder, status)
 
         assert sig.return_type == fndesc.restype
 
@@ -244,10 +244,10 @@ def user_generator(gendesc, libs):
     A wrapper inserting code calling Numba-compiled *gendesc*.
     """
 
-    def imp(context, builder, sig, args):
+    def imp(context, builder, sig, args, gendesc=gendesc):
         func = gendesc.declare_function(builder.module)
         # env=None assumes this is a nopython function
-        status, retval = context.call_conv.call_function(
+        status, retval = gendesc.call_conv.call_function(
             builder, func, gendesc.restype, gendesc.argtypes, args
         )
         # Return raw status for caller to process StopIteration

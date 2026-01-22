@@ -266,10 +266,6 @@ class CUDATargetContext(BaseContext):
         return nonconsts_with_mod
 
     @property
-    def call_conv(self):
-        return self.fndesc.call_conv
-
-    @property
     def mangler(self):
         return self.fndesc.call_conv.mangler
 

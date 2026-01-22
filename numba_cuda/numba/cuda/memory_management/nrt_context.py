@@ -415,7 +415,7 @@ class NRTContext(object):
     def eh_check(self, builder):
         """Check if an exception is raised"""
         ctx = self._context
-        cc = ctx.call_conv
+        cc = ctx.fndesc.call_conv
         # Inspect the excinfo argument on the function
         trystatus = cc.check_try_status(builder)
         excinfo = trystatus.excinfo
@@ -428,11 +428,11 @@ class NRTContext(object):
     def eh_try(self, builder):
         """Begin a try-block."""
         ctx = self._context
-        cc = ctx.call_conv
+        cc = ctx.fndesc.call_conv
         cc.set_try_status(builder)
 
     def eh_end_try(self, builder):
         """End a try-block"""
         ctx = self._context
-        cc = ctx.call_conv
+        cc = ctx.fndesc.call_conv
         cc.unset_try_status(builder)

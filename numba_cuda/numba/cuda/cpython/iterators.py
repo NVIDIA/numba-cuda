@@ -164,4 +164,4 @@ def iternext_zip(context, builder, sig, args, result):  # noqa: F811
         builder,
         builder.and_(status.is_error, builder.not_(status.is_stop_iteration)),
     ):
-        context.call_conv.return_status_propagate(builder, status)
+        context.fndesc.call_conv.return_status_propagate(builder, status)
