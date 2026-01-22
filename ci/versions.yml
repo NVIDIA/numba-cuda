@@ -3,6 +3,11 @@
 
 cuda:
   build:
+    # Note: This is intentionally kept at 13.0.2 (the lowest 13.0 version) to generate
+    # test artifacts. We need to link with nvjitlink 13.0.2, and using a higher version
+    # like 13.1.0 to generate code while linking with nvjitlink 13.0.2 is not a supported
+    # use case (must use matching versions or always use the latest nvjitlink within a
+    # CUDA major version).
     version: "13.0.2"
   prev_build:
     version: "12.9.1"
