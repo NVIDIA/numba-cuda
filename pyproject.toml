@@ -17,7 +17,7 @@ requires-python = ">=3.9"
 dependencies = [
     "numba>=0.60.0",
     "cuda-bindings>=12.9.1,<14.0.0",
-    "cuda-core>=0.3.2,<1.0.0",
+    "cuda-core>=0.5.1,<1.0.0",
     "packaging",
 ]
 
