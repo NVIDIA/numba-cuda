@@ -131,7 +131,7 @@ def _multi_broadcast(*shapelist):
         for i, each in enumerate(others, start=1):  # noqa: B007
             result = _pairwise_broadcast(result, each)
     except ValueError:
-        raise ValueError("failed to broadcast argument #{i:d}")
+        raise ValueError(f"failed to broadcast argument #{i:d}")
     else:
         return result
 
