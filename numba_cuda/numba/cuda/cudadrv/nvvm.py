@@ -195,6 +195,75 @@ class NVVM(object):
         self.check_error(err, "Failed to get IR version.")
         return majorIR.value, minorIR.value, majorDbg.value, minorDbg.value
 
+    def check_options(self, options):
+        """
+        Check if the specified options are supported by the current libNVVM version.
+
+        The options are a list of bytes, each representing a compiler option.
+
+        If the test program fails to compile, the options are not supported and False
+        is returned.
+
+        If the test program compiles successfully, True is returned.
+        """
+
+        precheck_nvvm_ir = """target triple = "nvptx64-unknown-cuda"
+        target datalayout = "e-p:64:64:64-i1:8:8-i8:8:8-i16:16:16-i32:32:32-i64:64:64-i128:128:128-f32:32:32-f64:64:64-v16:16:16-v32:32:32-v64:64:64-v128:128:128-n16:32:64"
+
+        define void @dummy_kernel() {{
+        entry:
+        ret void
+        }}
+
+        !nvvm.annotations = !{{!0}}
+        !0 = !{{void ()* @dummy_kernel, !"kernel", i32 1}}
+
+        !nvvmir.version = !{{!1}}
+        !1 = !{{i32 {major}, i32 {minor}, i32 {debug_major}, i32 {debug_minor}}}
+        """
+
+        # Use a test program to compile in order to determine
+        # if the provided options are supported by libnvvm.
+        program = c_void_p()
+        try:
+            # Create the NVVM program
+            err = self.nvvmCreateProgram(byref(program))
+            self.check_error(err, "Failed to create test program.")
+
+            # Add the test program to the compilation unit
+            precheck_nvvm_ir = precheck_nvvm_ir.format(
+                major=self._majorIR,
+                minor=self._minorIR,
+                debug_major=self._majorDbg,
+                debug_minor=self._minorDbg,
+            )
+            precheck_ir_bytes = precheck_nvvm_ir.encode("utf-8")
+            err = self.nvvmAddModuleToProgram(
+                program,
+                precheck_ir_bytes,
+                len(precheck_ir_bytes),
+                "precheck.ll".encode("utf-8"),
+            )
+            self.check_error(err, "Failed to add test module.")
+
+            # Compile the test program
+            option_ptrs = (c_char_p * len(options))(
+                *[c_char_p(x) for x in options]
+            )
+            err = self.nvvmVerifyProgram(program, len(options), option_ptrs)
+            if err != 0:
+                return False
+            err = self.nvvmCompileProgram(program, len(options), option_ptrs)
+            if err != 0:
+                return False
+        except Exception:
+            return False
+        finally:
+            if program.value:
+                # Destroy the NVVM program, not fatal if it fails
+                self.nvvmDestroyProgram(byref(program))
+        return True
+
     def check_error(self, error, msg, exit=False):
         if error:
             exc = NvvmError(msg, RESULT_CODE_NAMES[error])
@@ -243,7 +312,16 @@ class CompilationUnit(object):
 
             return f"-{k}={v}".encode("utf-8")
 
+        debug_build = "g" in options
         options = [stringify_option(k, v) for k, v in options.items()]
+
+        # If the -numba-debug option is supported by libnvvm, pass it to the
+        # compiler for debug builds.
+        if debug_build:
+            numba_debug_option = stringify_option("numba-debug", None)
+            if self.driver.check_options(options + [numba_debug_option]):
+                options.append(numba_debug_option)
+
         option_ptrs = (c_char_p * len(options))(*[c_char_p(x) for x in options])
 
         # We keep both the options and the pointers to them so that options are
