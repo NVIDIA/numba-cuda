@@ -2318,9 +2318,9 @@ def np_trapezoid(y, x=None, dx=1.0):
 
 # numpy 2.0 renamed np.trapz to np.trapezoid; np.trapz removed in numpy 2.4
 if numpy_version >= (2, 0):
-    overload(np.trapezoid)(np_trapz)
+    overload(np.trapezoid)(np_trapezoid)
 if numpy_version < (2, 4):
-    overload(np.trapz)(np_trapz)
+    overload(np.trapz)(np_trapezoid)
 
 
 @register_jitable
