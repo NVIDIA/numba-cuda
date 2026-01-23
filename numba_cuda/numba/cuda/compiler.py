@@ -891,8 +891,8 @@ def kernel_fixup(kernel, debug):
                     for tm_name, tm_value in type_metadata.operands:
                         if tm_name == "types":
                             types = tm_value
-                            null_metadata = ir.Constant(ir.MetaDataType(), None)
-                            types.operands = (null_metadata,) + types.operands[1:]
+                            ret_type = ir.Constant(ir.MetaDataType(), None)
+                            types.operands = (ret_type,) + types.operands[1:]
                             if config.DUMP_LLVM:
                                 types._clear_string_cache()
 
