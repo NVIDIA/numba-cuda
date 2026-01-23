@@ -1,14 +1,16 @@
-#!/usr/bin/env python3
+# SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: BSD-2-Clause
 
 import numpy as np
 from numba import cuda
 
 num_entries = 8
 
+
 #
 # In the following code, we use explicit breakpoint function calls to insert
 # breakpoints.
-# 
+#
 # Breakpoints can also be set by clicking to the left of the source line numbers in the
 # Editor window, and are shown as red dots next to the line numbers. The can also be set
 # from the CUDA GDB command line using the filename:line-number syntax, or by kernel or function name.
@@ -24,7 +26,7 @@ def hello(input, output):
     # Output will likely not happen until the kernel is finished executing
     # because host synchronization is needed to print the output.
     # Output is not guaranteed to be printed in thread order.
-    print('input[', gid, '] =', input[gid])
+    print("input[", gid, "] =", input[gid])
 
     # Reverse the input array
     output[gid] = input[size - gid - 1]
@@ -35,10 +37,10 @@ def hello(input, output):
     # Have the first thread print a message to indicate that all threads
     # have synchronized
     if gid == 0:
-        print('All threads have synchronized (local memory array)')
+        print("All threads have synchronized (local memory array)")
 
     # Print the value of the output array at the current thread's index
-    print('output[', gid, '] =', output[gid])
+    print("output[", gid, "] =", output[gid])
 
     # Allocate a new array in shared memory
     shared_array = cuda.shared.array(num_entries, dtype=np.int64)
@@ -47,7 +49,7 @@ def hello(input, output):
     breakpoint()
 
     # Fill the shared array with the input array with negative values in reverse order
-    shared_array[gid] = - input[size - gid - 1]
+    shared_array[gid] = -input[size - gid - 1]
 
     # Synchronize all threads in the block
     cuda.syncthreads()
@@ -55,10 +57,10 @@ def hello(input, output):
     # Have the first thread print a message to indicate that all threads
     # have synchronized
     if gid == 0:
-        print('All threads have synchronized (shared memory array)')
+        print("All threads have synchronized (shared memory array)")
 
     # Print the value of the shared array at the current thread's index
-    print('shared_array[', gid, '] =', shared_array[gid])
+    print("shared_array[", gid, "] =", shared_array[gid])
 
     # Demonstrate polymorphic variables by setting the value of a variable to a different type.
     # The print() calls are used to ensure that the variable is not optimized out.
@@ -70,21 +72,22 @@ def hello(input, output):
 
         # Set the variable to different values and types.
         variable = True
-        print('variable =', variable)
+        print("variable =", variable)
         variable = 0x80000000
-        print('variable =', variable)
+        print("variable =", variable)
         variable = 0x8000000000000000
-        print('variable =', variable)
+        print("variable =", variable)
         variable = 3.141592653589793
-        print('variable =', variable)
+        print("variable =", variable)
         variable = 2.718281828459045
-        print('variable =', variable)
+        print("variable =", variable)
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     # Generate data
     input = cuda.to_device(np.array(range(num_entries), dtype=np.int64))
-    print(f'input: {input.copy_to_host()}')
- 
+    print(f"input: {input.copy_to_host()}")
+
     # Create a vector to hold the results (same size as the input)
     output = cuda.to_device(np.zeros(len(input), dtype=np.int64))
 
@@ -92,5 +95,5 @@ if __name__ == '__main__':
     hello[1, len(input)](input, output)
 
     # Print the results
-    print(f'output: {output.copy_to_host()}')
-    print('All Done!')
+    print(f"output: {output.copy_to_host()}")
+    print("All Done!")
