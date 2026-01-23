@@ -32,7 +32,6 @@ from abc import ABCMeta, abstractmethod
 from ctypes import (
     c_int,
     byref,
-    c_size_t,
     c_void_p,
     c_uint8,
 )
@@ -47,7 +46,7 @@ from numba.cuda.core import config
 from numba.cuda import utils, serialize
 from .error import CudaSupportError, CudaDriverError
 from .drvapi import API_PROTOTYPES
-from .drvapi import cu_occupancy_b2d_size, cu_stream_callback_pyobj
+from .drvapi import cu_stream_callback_pyobj
 from .mappings import FILE_EXTENSION_MAP
 from .linkable_code import LinkableCode, LTOIR, Fatbin, Object
 from numba.cuda.utils import cached_file_read
@@ -1165,59 +1164,6 @@ class Context(object):
             driver.cuOccupancyMaxActiveBlocksPerMultiprocessorWithFlags(*args)
 
         return retval.value
-
-    def get_max_potential_block_size(
-        self, func, b2d_func, memsize, blocksizelimit, flags=None
-    ):
-        """Suggest a launch configuration with reasonable occupancy.
-        :param func: kernel for which occupancy is calculated
-        :param b2d_func: function that calculates how much per-block dynamic
-                         shared memory 'func' uses based on the block size.
-                         Can also be the address of a C function.
-                         Use `0` to pass `NULL` to the underlying CUDA API.
-        :param memsize: per-block dynamic shared memory usage intended, in bytes
-        :param blocksizelimit: maximum block size the kernel is designed to
-                               handle
-        """
-        args = (func, b2d_func, memsize, blocksizelimit, flags)
-        return self._cuda_python_max_potential_block_size(*args)
-
-    def _ctypes_max_potential_block_size(
-        self, func, b2d_func, memsize, blocksizelimit, flags
-    ):
-        gridsize = c_int()
-        blocksize = c_int()
-        b2d_cb = cu_occupancy_b2d_size(b2d_func)
-        args = [
-            byref(gridsize),
-            byref(blocksize),
-            func.handle,
-            b2d_cb,
-            memsize,
-            blocksizelimit,
-        ]
-
-        if not flags:
-            driver.cuOccupancyMaxPotentialBlockSize(*args)
-        else:
-            args.append(flags)
-            driver.cuOccupancyMaxPotentialBlockSizeWithFlags(*args)
-
-        return (gridsize.value, blocksize.value)
-
-    def _cuda_python_max_potential_block_size(
-        self, func, b2d_func, memsize, blocksizelimit, flags
-    ):
-        b2d_cb = ctypes.CFUNCTYPE(c_size_t, c_int)(b2d_func)
-        ptr = int.from_bytes(b2d_cb, byteorder="little")
-        driver_b2d_cb = binding.CUoccupancyB2DSize(ptr)
-        args = [func.handle, driver_b2d_cb, memsize, blocksizelimit]
-
-        if not flags:
-            return driver.cuOccupancyMaxPotentialBlockSize(*args)
-        else:
-            args.append(flags)
-            return driver.cuOccupancyMaxPotentialBlockSizeWithFlags(*args)
 
     def prepare_for_use(self):
         """Initialize the context for use.
