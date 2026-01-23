@@ -291,7 +291,8 @@ class TestCudaDebugInfo(CUDATestCase):
         mdnode_id = match.group(1)
 
         # extract the metadata node ids from the flexible node of types
-        pat = rf"!{mdnode_id}\s+=\s+!{{\s+!(\d+),\s+!(\d+)\s+}}"
+        # The first element is null (void return type), followed by param types
+        pat = rf"!{mdnode_id}\s+=\s+!{{\s+null,\s+!(\d+),\s+!(\d+)\s+}}"
         match = re.compile(pat).search(llvm_ir)
         self.assertIsNotNone(match, msg=llvm_ir)
         mdnode_id1 = match.group(1)
