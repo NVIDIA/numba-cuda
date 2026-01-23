@@ -626,6 +626,65 @@ class TestCudaDebugInfo(CUDATestCase):
         # and refers to the offending function
         self.assertIn(str(foo.py_func), msg)
 
+    def test_linecache_source(self):
+        """Test that source from linecache (like Jupyter notebooks) works.
+
+        This simulates how Jupyter/IPython registers cell source in linecache,
+        allowing inspect.getsourcelines() to find it even though the file
+        doesn't exist on disk. Fixes issue #721.
+        """
+        import linecache
+
+        # Source with a multi-line decorator
+        strsrc = dedent("""
+        @cuda.jit(
+            "void(int32[:])",
+            debug=True,
+            opt=False
+        )
+        def foo(x):
+            x[0] = 1
+        """).strip()
+
+        # Simulate Jupyter by registering source in linecache
+        fake_filename = "<ipython-input-test-linecache>"
+        lines = [line + "\n" for line in strsrc.splitlines()]
+        linecache.cache[fake_filename] = (
+            len(strsrc),
+            None,  # mtime=None means never expire
+            lines,
+            fake_filename,
+        )
+
+        try:
+            # Compile and execute using the fake filename
+            code = compile(strsrc, fake_filename, "exec")
+            exec_globals = {"cuda": cuda}
+            exec(code, exec_globals)
+            foo = exec_globals["foo"]
+
+            # Should NOT produce a warning since source is in linecache
+            with warnings.catch_warnings(record=True) as w:
+                warnings.simplefilter("always", NumbaDebugInfoWarning)
+                ignore_internal_warnings()
+                foo[1, 1](cuda.to_device(np.zeros(1, dtype=np.int32)))
+
+            # Filter for NumbaDebugInfoWarning specifically
+            debug_warnings = [
+                x for x in w if x.category == NumbaDebugInfoWarning
+            ]
+            self.assertEqual(
+                len(debug_warnings),
+                0,
+                msg=f"Unexpected warning: {debug_warnings}",
+            )
+
+            # Verify debug info is present in the PTX
+            self._check(foo, sig=(types.int32[:],), expect=True)
+        finally:
+            # Clean up linecache
+            linecache.cache.pop(fake_filename, None)
+
     def test_no_if_op_bools_declared(self):
         @cuda.jit(
             "int64(boolean, boolean)",
