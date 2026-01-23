@@ -1009,9 +1009,16 @@ def _to_strided_memory_view(
 ) -> tuple[StridedMemoryView, bool]:
     if _driver.is_device_memory(obj):
         return obj._strided_memory_view_shim, False
-    elif not isinstance(
-        obj, (np.ndarray, _UNSUPPORTED_DLPACK_TYPES)
-    ) and hasattr(obj, "__dlpack__"):
+    elif (
+        not isinstance(obj, (np.ndarray, _UNSUPPORTED_DLPACK_TYPES))
+        and hasattr(obj, "__dlpack__")
+        and (
+            (dtype := getattr(obj, "dtype", None)) is None
+            or not issubclass(
+                getattr(dtype, "type", None), _UNSUPPORTED_DLPACK_TYPES
+            )
+        )
+    ):
         # numpy arrays need to be copied to the device
         # so we can't view them as SMVs until then
         #
