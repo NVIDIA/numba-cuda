@@ -381,7 +381,7 @@ class AbstractTemplate(FunctionTemplate):
     """
 
     def apply(self, args, kws):
-        generic = getattr(self, "generic")
+        generic = self.generic
         sig = generic(args, kws)
         # Enforce that *generic()* must return None or Signature
         if sig is not None:
@@ -410,7 +410,7 @@ class AbstractTemplate(FunctionTemplate):
         return sig
 
     def get_template_info(self):
-        impl = getattr(self, "generic")
+        impl = self.generic
         basepath = os.path.dirname(
             os.path.dirname(os.path.dirname(numba.cuda.__file__))
         )
@@ -441,7 +441,7 @@ class CallableTemplate(FunctionTemplate):
     recvr = None
 
     def apply(self, args, kws):
-        generic = getattr(self, "generic")
+        generic = self.generic
         typer = generic()
         match_sig = inspect.signature(typer)
         try:
@@ -499,7 +499,7 @@ class CallableTemplate(FunctionTemplate):
         return self._select(cases, bound.args, bound.kwargs)
 
     def get_template_info(self):
-        impl = getattr(self, "generic")
+        impl = self.generic
         basepath = os.path.dirname(
             os.path.dirname(os.path.dirname(numba.cuda.__file__))
         )
@@ -527,7 +527,7 @@ class ConcreteTemplate(FunctionTemplate):
     """
 
     def apply(self, args, kws):
-        cases = getattr(self, "cases")
+        cases = self.cases
         return self._select(cases, args, kws)
 
     def get_template_info(self):

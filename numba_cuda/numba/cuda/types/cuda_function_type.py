@@ -212,7 +212,7 @@ class CompileResultWAP(WrapperAddressProtocol):
           attribute)
         """
         self.cres = cres
-        name = getattr(cres.fndesc, "llvm_cfunc_wrapper_name")
+        name = cres.fndesc.llvm_cfunc_wrapper_name
         self.address = cres.library.get_pointer_to_function(name)
 
     def dump(self, tab=""):

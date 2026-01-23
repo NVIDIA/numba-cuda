@@ -159,10 +159,9 @@ class Loc(object):
         if lines and use_line > 0:
 
             def count_spaces(string):
-                spaces = 0
-                for x in itertools.takewhile(str.isspace, str(string)):
-                    spaces += 1
-                return spaces
+                return sum(
+                    1 for _ in itertools.takewhile(str.isspace, str(string))
+                )
 
             # A few places in the code still use no `loc` or default to line 1
             # this is often in places where exceptions are used for the purposes
@@ -1547,15 +1546,15 @@ class FunctionIR(object):
                         msg.append("Other block contains more statements")
 
                     # find the indexes where they don't match
-                    tmp = []
+                    tmp = set()
                     for idx, stmts in enumerate(
                         zip(block.body, other_blk.body)
                     ):
                         b_s, o_s = stmts
                         if b_s != o_s:
-                            tmp.append(idx)
+                            tmp.add(idx)
 
-                    def get_pad(ablock, l):
+                    def get_pad(ablock, l, tmp=tmp):
                         pointer = "-> "
                         sp = len(pointer) * " "
                         pad = []

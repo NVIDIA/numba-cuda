@@ -151,7 +151,7 @@ class InlineOptions(AbstractOptionValue):
             if value in ("always", "never"):
                 ok = True
         else:
-            ok = hasattr(value, "__call__")
+            ok = callable(value)
 
         if ok:
             self._inline = value
