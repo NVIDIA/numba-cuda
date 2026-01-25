@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: BSD-2-Clause
 
 import numpy as np
-from numba import cuda
+from numba import cuda, int32
 from numba.cuda.testing import unittest, CUDATestCase
 from numba.cuda._compat import Device
 from numba.cuda.testing import skip_on_cudasim
@@ -47,6 +47,40 @@ class TestCudaEvent(CUDATestCase):
         evtend.synchronize()
         # Exercise the code path
         evtstart.elapsed_time(evtend)
+
+    def test_event_query(self):
+        from time import perf_counter
+
+        @cuda.jit
+        def spin(ms):
+            # Sleep for ms
+            for i in range(ms):
+                cuda.nanosleep(int32(1_000_000))  # 1 ms
+
+        stream = cuda.stream()
+        evt = cuda.event()
+
+        # Run once to compile
+        spin[1, 1, stream](1)
+
+        t0 = perf_counter()
+        spin_ms = 250
+        spin[1, 1, stream](250)
+        evt.record(stream)
+
+        # Query immediately.
+        while not evt.query():
+            event_time = perf_counter() - t0
+
+        # Syncronize and capture stream-finished time.
+        evt.synchronize()
+        sync_time = perf_counter() - t0
+
+        assert event_time * 1000 > spin_ms * 0.9  # nanosleep isnt reliable
+        assert sync_time * 1000 > spin_ms * 0.9  # nanosleep isnt reliable
+
+        # Give a few ms overhead for the synchronize call to complete
+        assert sync_time - event_time < 2e-3
 
 
 if __name__ == "__main__":
