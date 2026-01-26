@@ -166,6 +166,10 @@ class _Kernel(serialize.ReduceMixin):
             max_registers=max_registers,
             lto=lto,
         )
+        self.launch_config_sensitive = bool(
+            getattr(cres, "metadata", None)
+            and cres.metadata.get("launch_config_sensitive", False)
+        )
         tgt_ctx = cres.target_context
         lib = cres.library
         kernel = lib.get_function(cres.fndesc.llvm_func_name)
@@ -1548,6 +1552,14 @@ class CUDADispatcher(serialize.ReduceMixin, _MemoMixin, _DispatcherBase):
         self._cache_hits = collections.Counter()
         self._cache_misses = collections.Counter()
 
+        # Whether the compiled kernels are launch-config sensitive (e.g., IR
+        # rewrites depend on launch configuration).
+        self._launch_config_sensitive = False
+        self._launch_config_default_key = None
+        self._launch_config_is_specialized = False
+        self._launch_config_specialization_key = None
+        self._launch_config_specializations = {}
+
         # The following properties are for specialization of CUDADispatchers. A
         # specialized CUDADispatcher is one that is compiled for exactly one
         # set of argument types, and bypasses some argument type checking for
@@ -1592,6 +1604,52 @@ class CUDADispatcher(serialize.ReduceMixin, _MemoMixin, _DispatcherBase):
         if len(args) not in [2, 3, 4]:
             raise ValueError("must specify at least the griddim and blockdim")
         return self.configure(*args)
+
+    @staticmethod
+    def _launch_config_key(launch_config):
+        return (
+            launch_config.griddim,
+            launch_config.blockdim,
+            launch_config.sharedmem,
+        )
+
+    def _get_launch_config_specialization(self, key):
+        dispatcher = self._launch_config_specializations.get(key)
+        if dispatcher is None:
+            dispatcher = CUDADispatcher(
+                self.py_func,
+                targetoptions=self.targetoptions,
+                pipeline_class=self._compiler.pipeline_class,
+            )
+            dispatcher._launch_config_sensitive = True
+            dispatcher._launch_config_is_specialized = True
+            dispatcher._launch_config_specialization_key = key
+            dispatcher._launch_config_default_key = key
+            self._launch_config_specializations[key] = dispatcher
+        return dispatcher
+
+    def _select_launch_config_dispatcher(self, launch_config):
+        if not self._launch_config_sensitive:
+            return self
+        if self._launch_config_is_specialized:
+            return self
+        key = self._launch_config_key(launch_config)
+        if self._launch_config_default_key is None:
+            self._launch_config_default_key = key
+            return self
+        if key == self._launch_config_default_key:
+            return self
+        return self._get_launch_config_specialization(key)
+
+    def _update_launch_config_sensitivity(self, kernel, launch_config):
+        if not getattr(kernel, "launch_config_sensitive", False):
+            return
+        if not self._launch_config_sensitive:
+            self._launch_config_sensitive = True
+        if self._launch_config_default_key is None:
+            self._launch_config_default_key = self._launch_config_key(
+                launch_config
+            )
 
     def forall(self, ntasks, tpb=0, stream=0, sharedmem=0):
         """Returns a 1D-configured dispatcher for a given number of tasks.
@@ -1651,12 +1709,18 @@ class CUDADispatcher(serialize.ReduceMixin, _MemoMixin, _DispatcherBase):
 
         launch_config.args = args
         try:
+            dispatcher = self._select_launch_config_dispatcher(launch_config)
+            if dispatcher is not self:
+                return dispatcher.call(args, launch_config)
+
             if self.specialized:
                 kernel = next(iter(self.overloads.values()))
             else:
                 kernel = _dispatcher.Dispatcher._cuda_call(
                     self, *args, **{_LAUNCH_CONFIG_KW: launch_config}
                 )
+
+            self._update_launch_config_sensitivity(kernel, launch_config)
 
             for callback in launch_config.pre_launch_callbacks:
                 callback(kernel, launch_config)
