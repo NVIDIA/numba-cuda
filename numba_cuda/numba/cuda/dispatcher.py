@@ -656,7 +656,8 @@ class ForAll(object):
                 memsize=self.sharedmem,
                 blocksizelimit=1024,
             )
-            return ctx.get_max_potential_block_size(**kwargs)
+            _, tpb = ctx.get_max_potential_block_size(**kwargs)
+            return tpb
 
 
 class _LaunchConfiguration:

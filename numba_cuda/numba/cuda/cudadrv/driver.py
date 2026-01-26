@@ -1173,7 +1173,10 @@ class Context(object):
         :param blocksizelimit: maximum block size the kernel is designed to
                                handle
         """
-        return func.kernel.attributes.max_threads_per_block()
+        return (
+            binding.CUresult.CUDA_SUCCESS,
+            func.kernel.attributes.max_threads_per_block(),
+        )
 
     def prepare_for_use(self):
         """Initialize the context for use.
