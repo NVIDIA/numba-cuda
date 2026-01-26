@@ -69,6 +69,8 @@ def _make_subtarget(targetctx, flags):
     if flags.fastmath:
         subtargetoptions["fastmath"] = flags.fastmath
 
+    # Only the CUDA Calling convention can raise exceptions, so we assume here
+    # that it is suitable for creating the error model.
     call_conv = CUDACallConv(targetctx)
     error_model = callconv.create_error_model(flags.error_model, call_conv)
     subtargetoptions["error_model"] = error_model

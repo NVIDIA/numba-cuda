@@ -265,6 +265,15 @@ class CUDATargetContext(BaseContext):
         )
         return nonconsts_with_mod
 
+    @property
+    def call_conv(self):
+        warnings.warn(
+            "Context.call_conv is deprecated. "
+            "Use FunctionDescriptor.call_conv instead.",
+            DeprecationWarning,
+        )
+        return self.fndesc.call_conv
+
     def make_constant_array(self, builder, aryty, arr):
         """
         Unlike the parent version.  This returns a a pointer in the constant
