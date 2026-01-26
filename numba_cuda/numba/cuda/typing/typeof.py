@@ -323,7 +323,7 @@ def _typeof_cuda_array_interface_cached(
     elif strides is None:
         layout = "C"
     else:
-        itemsize = dtype.itemsize
+        itemsize = dtype.bitwidth
         # Quick rejection: C-contiguous has strides[-1] == itemsize,
         # F-contiguous has strides[0] == itemsize. If neither, it's "A".
         if strides[-1] == itemsize:
