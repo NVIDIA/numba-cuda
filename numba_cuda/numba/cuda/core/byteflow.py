@@ -293,7 +293,7 @@ class Flow(object):
 
         def apply_changes(used_phis, phismap):
             keep = {}
-            for state, used_set in used_phis.items():
+            for used_set in used_phis.values():
                 for phi in used_set:
                     keep[phi] = phismap[phi]
             _logger.debug("keep phismap: %s", _lazy_pformat(keep))
@@ -1139,7 +1139,7 @@ class TraceRunner(object):
 
     def op_BEGIN_FINALLY(self, state, inst):
         temps = []
-        for i in range(_EXCEPT_STACK_OFFSET):
+        for _ in range(_EXCEPT_STACK_OFFSET):
             tmp = state.make_temp()
             temps.append(tmp)
             state.push(tmp)
@@ -1656,7 +1656,7 @@ class TraceRunner(object):
         count = inst.arg
         items = []
         # In 3.5+, BUILD_MAP takes <count> pairs from the stack
-        for i in range(count):
+        for _ in range(count):
             v, k = state.pop(), state.pop()
             items.append((k, v))
         state.append(inst, items=items[::-1], size=count, res=dct)
@@ -2360,8 +2360,7 @@ class _State(object):
             stack = stack[:nstack]
         if npush:
             assert 0 <= npush
-            for i in range(npush):
-                stack.append(self.make_temp())
+            stack.extend(self.make_temp() for _ in range(npush))
         # Handle changes on the blockstack
         blockstack = list(self._blockstack)
         if PYVERSION in ((3, 11), (3, 12), (3, 13), (3, 14)):

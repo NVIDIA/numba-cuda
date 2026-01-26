@@ -892,7 +892,7 @@ def _fix_multi_exit_blocks(func_ir, exit_nodes, *, split_condition=None):
 
         # split the block if needed
         if split_condition is not None:
-            for pt, stmt in enumerate(blk.body):
+            for stmt in blk.body:
                 if split_condition(stmt):
                     break
         else:
@@ -925,10 +925,7 @@ def _fix_multi_exit_blocks(func_ir, exit_nodes, *, split_condition=None):
     common_block.body.append(ir.Jump(post_label, loc=loc))
 
     # Make if-else tree to jump to target
-    remain_blocks = []
-    for remain in remainings:
-        remain_blocks.append(max_label)
-        max_label += 1
+    remain_blocks = range(max_label, max_label + len(remainings))
 
     switch_block = post_block
     loc = ir.unknown_loc

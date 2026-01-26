@@ -9,6 +9,9 @@ import importlib.metadata
 from numba.cuda.core.config import IS_WIN32
 from numba.cuda.misc.findlib import find_lib
 from numba.cuda import config
+from cuda import pathfinder
+import pathlib
+from contextlib import contextmanager
 
 _env_path_tuple = namedtuple("_env_path_tuple", ["by", "info"])
 
@@ -18,6 +21,20 @@ SEARCH_PRIORITY = [
     "CUDA_HOME",
     "System",
 ]
+
+
+@contextmanager
+def temporary_env_var(key, value):
+    """Context manager to temporarily set an environment variable."""
+    old_value = os.environ.get(key)
+    os.environ[key] = value
+    try:
+        yield
+    finally:
+        if old_value is None:
+            os.environ.pop(key, None)
+        else:
+            os.environ[key] = old_value
 
 
 def _get_distribution(distribution_name):
@@ -81,112 +98,6 @@ def _get_libdevice_path_decision():
         ]
     )
     return _find_first_valid_lazy(options)
-
-
-def _get_nvvm_path_decision():
-    options = _build_options(
-        [
-            ("Conda environment", _get_nvvm_conda_path),
-            ("NVIDIA NVCC Wheel", _get_nvvm_wheel_path),
-            ("CUDA_HOME", _get_nvvm_cuda_home_path),
-            ("System", _get_nvvm_system_path),
-        ]
-    )
-    return _find_first_valid_lazy(options)
-
-
-def _get_nvrtc_path_decision():
-    options = _build_options(
-        [
-            ("Conda environment", get_conda_ctk_libdir),
-            ("NVIDIA NVCC Wheel", _get_nvrtc_wheel_libdir),
-            ("CUDA_HOME", get_cuda_home_libdir),
-            ("System", get_system_ctk_libdir),
-        ]
-    )
-    return _find_first_valid_lazy(options)
-
-
-def _get_nvvm_wheel_path():
-    dso_path = None
-    # CUDA 12
-    nvcc_distribution = _get_distribution("nvidia-cuda-nvcc-cu12")
-    if nvcc_distribution is not None:
-        site_packages_path = nvcc_distribution.locate_file("")
-        nvvm_lib_dir = os.path.join(
-            site_packages_path,
-            "nvidia",
-            "cuda_nvcc",
-            "nvvm",
-            "bin" if IS_WIN32 else "lib64",
-        )
-        dso_path = os.path.join(
-            nvvm_lib_dir, "nvvm64_40_0.dll" if IS_WIN32 else "libnvvm.so"
-        )
-
-    # CUDA 13
-    if dso_path is None:
-        nvcc_distribution = _get_distribution("nvidia-nvvm")
-        if (
-            nvcc_distribution is not None
-            and nvcc_distribution.version.startswith("13.")
-        ):
-            site_packages_path = nvcc_distribution.locate_file("")
-            nvvm_lib_dir = os.path.join(
-                site_packages_path,
-                "nvidia",
-                "cu13",
-                "bin" if IS_WIN32 else "lib",
-                "x86_64" if IS_WIN32 else "",
-            )
-            dso_path = os.path.join(
-                nvvm_lib_dir, "nvvm64_40_0.dll" if IS_WIN32 else "libnvvm.so.4"
-            )
-
-    if dso_path and os.path.isfile(dso_path):
-        return dso_path
-    return None
-
-
-def _get_nvrtc_wheel_libdir():
-    dso_path = None
-    # CUDA 12
-    nvrtc_distribution = _get_distribution("nvidia-cuda-nvrtc-cu12")
-    if nvrtc_distribution is not None:
-        site_packages_path = nvrtc_distribution.locate_file("")
-        nvrtc_lib_dir = os.path.join(
-            site_packages_path,
-            "nvidia",
-            "cuda_nvrtc",
-            "bin" if IS_WIN32 else "lib",
-        )
-        dso_path = os.path.join(
-            nvrtc_lib_dir, "nvrtc64_120_0.dll" if IS_WIN32 else "libnvrtc.so.12"
-        )
-
-    # CUDA 13
-    if dso_path is None:
-        nvrtc_distribution = _get_distribution("nvidia-cuda-nvrtc")
-        if (
-            nvrtc_distribution is not None
-            and nvrtc_distribution.version.startswith("13.")
-        ):
-            site_packages_path = nvrtc_distribution.locate_file("")
-            nvrtc_lib_dir = os.path.join(
-                site_packages_path,
-                "nvidia",
-                "cu13",
-                "bin" if IS_WIN32 else "lib",
-                "x86_64" if IS_WIN32 else "",
-            )
-            dso_path = os.path.join(
-                nvrtc_lib_dir,
-                "nvrtc64_130_0.dll" if IS_WIN32 else "libnvrtc.so.13",
-            )
-
-    if dso_path and os.path.isfile(dso_path):
-        return os.path.dirname(dso_path)
-    return None
 
 
 def _get_libdevice_path():
@@ -321,22 +232,6 @@ def get_system_ctk_include():
     return None
 
 
-def _get_nvvm_system_path():
-    nvvm_lib_dir = get_system_ctk("nvvm")
-    if nvvm_lib_dir is None:
-        return None
-    nvvm_lib_dir = os.path.join(nvvm_lib_dir, "bin" if IS_WIN32 else "lib64")
-    if IS_WIN32 and os.path.isdir(os.path.join(nvvm_lib_dir, "x64")):
-        nvvm_lib_dir = os.path.join(nvvm_lib_dir, "x64")
-
-    nvvm_path = os.path.join(
-        nvvm_lib_dir, "nvvm64_40_0.dll" if IS_WIN32 else "libnvvm.so.4"
-    )
-    # if os.path.isfile(nvvm_path):
-    #     return nvvm_path
-    return nvvm_path
-
-
 def get_conda_ctk_libdir():
     """Return path to directory containing the shared libraries of cudatoolkit."""
     is_conda_env = os.path.isdir(os.path.join(sys.prefix, "conda-meta"))
@@ -375,29 +270,6 @@ def get_libdevice_conda_path():
     )
     if os.path.isfile(libdevice_path):
         return libdevice_path
-    return None
-
-
-def _get_nvvm_conda_path():
-    """Return path to directory containing the nvvm library."""
-    is_conda_env = os.path.isdir(os.path.join(sys.prefix, "conda-meta"))
-    if not is_conda_env:
-        return None
-    nvvm_dir = os.path.join(
-        sys.prefix,
-        "Library" if IS_WIN32 else "",
-        "nvvm",
-        "bin" if IS_WIN32 else "lib64",
-    )
-    # Windows CUDA 13.0.0 puts in "bin\x64" directory but 13.0.1+ just uses "bin" directory
-    if IS_WIN32 and os.path.isdir(os.path.join(nvvm_dir, "x64")):
-        nvvm_dir = os.path.join(nvvm_dir, "x64")
-
-    nvvm_path = os.path.join(
-        nvvm_dir, "nvvm64_40_0.dll" if IS_WIN32 else "libnvvm.so.4"
-    )
-    if os.path.isfile(nvvm_path):
-        return nvvm_path
     return None
 
 
@@ -528,43 +400,13 @@ def get_cuda_home_include():
     return None
 
 
-def _get_nvvm_cuda_home_path():
-    nvvm_lib_dir = get_cuda_home("nvvm")
-    if nvvm_lib_dir is None:
-        return
-    nvvm_lib_dir = os.path.join(nvvm_lib_dir, "bin" if IS_WIN32 else "lib64")
-    if IS_WIN32 and os.path.isdir(os.path.join(nvvm_lib_dir, "x64")):
-        nvvm_lib_dir = os.path.join(nvvm_lib_dir, "x64")
-
-    nvvm_path = os.path.join(
-        nvvm_lib_dir, "nvvm64_40_0.dll" if IS_WIN32 else "libnvvm.so.4"
-    )
-    # if os.path.isfile(nvvm_path):
-    #     return nvvm_path
-    return nvvm_path
-
-
-def _get_nvvm_path():
-    by, out = _get_nvvm_path_decision()
-    if not out:
-        return _env_path_tuple(by, None)
-    return _env_path_tuple(by, out)
-
-
-def _get_nvrtc_path():
-    by, path = _get_nvrtc_path_decision()
-    candidates = find_lib("nvrtc", libdir=path)
-    path = max(candidates) if candidates else None
-    return _env_path_tuple(by, path)
-
-
 def get_cuda_paths():
     """Returns a dictionary mapping component names to a 2-tuple
     of (source_variable, info).
 
     The returned dictionary will have the following keys and infos:
-    - "nvvm": file_path
     - "nvrtc": file_path
+    - "nvvm": file_path
     - "libdevice": file_path
     - "cudalib_dir": directory_path
     - "static_cudalib_dir": directory_path
@@ -578,8 +420,8 @@ def get_cuda_paths():
     else:
         # Not in cache
         d = {
-            "nvvm": _get_nvvm_path(),
             "nvrtc": _get_nvrtc_path(),
+            "nvvm": _get_nvvm_path(),
             "libdevice": _get_libdevice_path(),
             "cudalib_dir": _get_cudalib_dir(),
             "static_cudalib_dir": _get_static_cudalib_dir(),
@@ -689,3 +531,92 @@ def _get_include_dir():
     ]
     by, include_dir = _find_valid_path(options)
     return _env_path_tuple(by, include_dir)
+
+
+def _find_cuda_home_from_lib_path(lib_path):
+    """
+    Walk up from a library path to find a directory containing 'nvvm' subdirectory.
+
+    For example, given /usr/local/cuda/lib64/libnvrtc.so.12,
+    this would find /usr/local/cuda (which contains nvvm/).
+
+    Returns the path if found, None otherwise.
+    """
+    current = pathlib.Path(lib_path).resolve()
+
+    # Walk up the directory tree
+    for parent in current.parents:
+        nvvm_subdir = parent / "nvvm"
+        if nvvm_subdir.is_dir():
+            return str(parent)
+
+    return None
+
+
+def _get_nvvm():
+    # Strategy:
+    # 1. Try pathfinder directly
+    # 2. If CUDA_HOME/CUDA_PATH are set, pathfinder would have found it - give up
+    # 3. Use nvrtc's location to infer CUDA installation root
+    # 4. Temporarily set CUDA_HOME and retry pathfinder
+    # First, try pathfinder directly
+    try:
+        return pathfinder.load_nvidia_dynamic_lib("nvvm")
+    except pathfinder.DynamicLibNotFoundError as e:
+        nvvm_exc = e
+
+    def _raise_original(reason: str) -> None:
+        raise pathfinder.DynamicLibNotFoundError(
+            f"{reason}; original nvvm error: {nvvm_exc}"
+        ) from nvvm_exc
+
+    # If CUDA_HOME or CUDA_PATH is set, pathfinder would have found libnvvm
+    # based on the environment variable(s) - nothing more we can do
+    if os.environ.get("CUDA_HOME") or os.environ.get("CUDA_PATH"):
+        _raise_original("nvvm not found and CUDA_HOME/CUDA_PATH is set")
+    # Try to locate nvrtc - this library is almost certainly needed if nvvm is needed (in the context of numba-cuda)
+    try:
+        loaded_nvrtc = _get_nvrtc()
+    except Exception as nvrtc_exc:
+        raise pathfinder.DynamicLibNotFoundError(
+            f"nvrtc load failed while inferring CUDA_HOME; original nvvm error: {nvvm_exc}"
+        ) from nvrtc_exc
+    # If nvrtc was not found via system-search, we can't reliably determine
+    # the CUDA installation structure
+    if loaded_nvrtc.found_via != "system-search":
+        _raise_original(
+            f"nvrtc found via {loaded_nvrtc.found_via}, cannot infer CUDA_HOME"
+        )
+    # Search backward from nvrtc's location to find a directory with "nvvm" subdirectory
+    cuda_home = _find_cuda_home_from_lib_path(loaded_nvrtc.abs_path)
+    if cuda_home is None:
+        _raise_original(
+            f"nvrtc path did not map to CUDA_HOME ({loaded_nvrtc.abs_path})"
+        )
+    # Temporarily set CUDA_HOME and retry pathfinder
+    with temporary_env_var("CUDA_HOME", cuda_home):
+        try:
+            library = pathfinder.load_nvidia_dynamic_lib("nvvm")
+        except pathfinder.DynamicLibNotFoundError as exc:
+            raise pathfinder.DynamicLibNotFoundError(
+                f"nvvm not found after inferring CUDA_HOME={cuda_home}; "
+                f"original nvvm error: {nvvm_exc}"
+            ) from exc
+        library.found_via = "system-search"
+        return library
+
+
+def _get_nvrtc():
+    return pathfinder.load_nvidia_dynamic_lib("nvrtc")
+
+
+def _get_nvrtc_path():
+    # the pathfinder API will either find the library or raise
+    nvrtc = _get_nvrtc()
+    return _env_path_tuple(nvrtc.found_via, nvrtc.abs_path)
+
+
+def _get_nvvm_path():
+    # the pathfinder API will either find the library or raise
+    nvvm = _get_nvvm()
+    return _env_path_tuple(nvvm.found_via, nvvm.abs_path)

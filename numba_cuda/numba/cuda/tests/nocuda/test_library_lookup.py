@@ -5,7 +5,7 @@ import sys
 import os
 import multiprocessing as mp
 import warnings
-
+import pathlib
 
 from numba.cuda.core.config import IS_WIN32
 from numba.cuda.core.errors import NumbaWarning
@@ -17,10 +17,10 @@ from numba.cuda.testing import (
 )
 from numba.cuda.cuda_paths import (
     _get_libdevice_path_decision,
-    _get_nvvm_path_decision,
     _get_cudalib_dir_path_decision,
     get_system_ctk,
     get_system_ctk_libdir,
+    _find_cuda_home_from_lib_path,
 )
 
 
@@ -137,58 +137,6 @@ class TestLibDeviceLookUp(LibraryLookupBase):
 @skip_on_cudasim("Library detection unsupported in the simulator")
 @unittest.skipUnless(has_mp_get_context, "mp.get_context not available")
 @skip_unless_conda_cudatoolkit("test assumes conda installed cudatoolkit")
-class TestNvvmLookUp(LibraryLookupBase):
-    def test_nvvm_path_decision(self):
-        # Check that the default is using conda environment
-        by, info, warns = self.remote_do(self.do_clear_envs)
-        if has_cuda:
-            self.assertEqual(by, "Conda environment")
-        else:
-            self.assertEqual(by, "<unknown>")
-            self.assertIsNone(info)
-        self.assertFalse(warns)
-        # Check that CUDA_HOME works by removing conda-env
-        by, info, warns = self.remote_do(self.do_set_cuda_home)
-        self.assertEqual(by, "CUDA_HOME")
-        self.assertFalse(warns)
-        if IS_WIN32:
-            self.assertEqual(
-                os.path.dirname(info), os.path.join("mycudahome", "nvvm", "bin")
-            )
-        else:
-            self.assertEqual(
-                os.path.dirname(info),
-                os.path.join("mycudahome", "nvvm", "lib64"),
-            )
-
-        if get_system_ctk("nvvm") is None:
-            # Fake remove conda environment so no cudatoolkit is available
-            by, info, warns = self.remote_do(self.do_clear_envs)
-            self.assertEqual(by, "<unknown>")
-            self.assertIsNone(info)
-            self.assertFalse(warns)
-        else:
-            # Use system available cudatoolkit
-            by, info, warns = self.remote_do(self.do_clear_envs)
-            self.assertEqual(by, "System")
-            self.assertFalse(warns)
-
-    @staticmethod
-    def do_clear_envs():
-        remove_env("CUDA_HOME")
-        remove_env("CUDA_PATH")
-        return True, _get_nvvm_path_decision()
-
-    @staticmethod
-    def do_set_cuda_home():
-        os.environ["CUDA_HOME"] = os.path.join("mycudahome")
-        _fake_non_conda_env()
-        return True, _get_nvvm_path_decision()
-
-
-@skip_on_cudasim("Library detection unsupported in the simulator")
-@unittest.skipUnless(has_mp_get_context, "mp.get_context not available")
-@skip_unless_conda_cudatoolkit("test assumes conda installed cudatoolkit")
 class TestCudaLibLookUp(LibraryLookupBase):
     def test_cudalib_path_decision(self):
         # Check that the default is using conda environment
@@ -246,6 +194,41 @@ def _fake_non_conda_env():
     Monkeypatch sys.prefix to hide the fact we are in a conda-env
     """
     sys.prefix = ""
+
+
+class TestCudaHomeDetection(unittest.TestCase):
+    def test_find_cuda_home(self):
+        """Test the directory walking logic."""
+        import tempfile
+
+        # Create a mock CUDA installation structure
+        with tempfile.TemporaryDirectory() as tmpdir:
+            cuda_root = pathlib.Path(tmpdir) / "cuda"
+            lib64 = cuda_root / "lib64"
+            nvvm = cuda_root / "nvvm"
+            nvvm_lib64 = nvvm / "lib64"
+
+            lib64.mkdir(parents=True)
+            nvvm_lib64.mkdir(parents=True)
+
+            # Create mock library files
+            nvrtc_path = lib64 / "libnvrtc.so.12"
+            nvrtc_path.touch()
+
+            nvvm_lib = nvvm_lib64 / "libnvvm.so.4"
+            nvvm_lib.touch()
+
+            # Test finding CUDA_HOME from nvrtc path
+            found_cuda_home = _find_cuda_home_from_lib_path(str(nvrtc_path))
+
+            # Compare resolved paths to handle Windows short path names (e.g., RGROSS~1)
+            expected = str(cuda_root.resolve())
+            assert found_cuda_home == expected, (
+                f"Expected {expected}, got {found_cuda_home}"
+            )
+
+            # Test that the nvvm directory exists at the found location
+            assert (pathlib.Path(found_cuda_home) / "nvvm").is_dir()
 
 
 if __name__ == "__main__":
