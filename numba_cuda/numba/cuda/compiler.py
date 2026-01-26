@@ -408,6 +408,9 @@ class CUDABackend(LoweringPass):
             call_helper=lowered.call_helper,
             signature=signature,
             fndesc=lowered.fndesc,
+            # Preserve metadata populated by rewrite passes (e.g. launch-config
+            # sensitivity) so downstream consumers can act on it.
+            metadata=state.metadata,
         )
         return True
 
