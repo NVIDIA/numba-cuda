@@ -1015,7 +1015,7 @@ def _to_strided_memory_view(
         and (
             (dtype := getattr(obj, "dtype", None)) is None
             or not issubclass(
-                getattr(dtype, "type", None), _UNSUPPORTED_DLPACK_TYPES
+                getattr(dtype, "type", type(None)), _UNSUPPORTED_DLPACK_TYPES
             )
         )
     ):
