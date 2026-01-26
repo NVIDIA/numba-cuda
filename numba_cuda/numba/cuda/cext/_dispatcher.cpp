@@ -13,6 +13,81 @@
 #include "traceback.h"
 #include "typeconv.hpp"
 
+static Py_tss_t launch_config_tss_key = Py_tss_NEEDS_INIT;
+static const char *launch_config_kw = "__numba_cuda_launch_config__";
+
+static int
+launch_config_tss_init(void)
+{
+    if (PyThread_tss_create(&launch_config_tss_key) != 0) {
+        PyErr_SetString(PyExc_RuntimeError,
+                        "Failed to initialize launch config TLS");
+        return -1;
+    }
+    return 0;
+}
+
+static PyObject *
+launch_config_get_borrowed(void)
+{
+    return (PyObject *) PyThread_tss_get(&launch_config_tss_key);
+}
+
+static int
+launch_config_set(PyObject *obj)
+{
+    PyObject *old = (PyObject *) PyThread_tss_get(&launch_config_tss_key);
+    if (obj != NULL) {
+        Py_INCREF(obj);
+    }
+    if (PyThread_tss_set(&launch_config_tss_key, (void *) obj) != 0) {
+        Py_XDECREF(obj);
+        PyErr_SetString(PyExc_RuntimeError,
+                        "Failed to set launch config TLS");
+        return -1;
+    }
+    Py_XDECREF(old);
+    return 0;
+}
+
+class LaunchConfigGuard {
+public:
+    explicit LaunchConfigGuard(PyObject *value)
+        : prev(NULL), active(false), requested(value != NULL)
+    {
+        if (!requested) {
+            return;
+        }
+        prev = launch_config_get_borrowed();
+        Py_XINCREF(prev);
+        if (launch_config_set(value) != 0) {
+            Py_XDECREF(prev);
+            prev = NULL;
+            return;
+        }
+        active = true;
+    }
+
+    bool failed(void) const
+    {
+        return requested && !active;
+    }
+
+    ~LaunchConfigGuard(void)
+    {
+        if (!active) {
+            return;
+        }
+        launch_config_set(prev);
+        Py_XDECREF(prev);
+    }
+
+private:
+    PyObject *prev;
+    bool active;
+    bool requested;
+};
+
 /*
  * Notes on the C_TRACE macro:
  *
@@ -840,6 +915,7 @@ Dispatcher_cuda_call(Dispatcher *self, PyObject *args, PyObject *kws)
     PyObject *cfunc;
     PyThreadState *ts = PyThreadState_Get();
     PyObject *locals = NULL;
+    PyObject *launch_config = NULL;
 
     /* If compilation is enabled, ensure that an exact match is found and if
      * not compile one */
@@ -855,9 +931,26 @@ Dispatcher_cuda_call(Dispatcher *self, PyObject *args, PyObject *kws)
             goto CLEANUP;
         }
     }
+    if (kws != NULL) {
+        launch_config = PyDict_GetItemString(kws, launch_config_kw);
+        if (launch_config != NULL) {
+            Py_INCREF(launch_config);
+            if (PyDict_DelItemString(kws, launch_config_kw) < 0) {
+                Py_DECREF(launch_config);
+                launch_config = NULL;
+                goto CLEANUP;
+            }
+            if (launch_config == Py_None) {
+                Py_DECREF(launch_config);
+                launch_config = NULL;
+            }
+        }
+    }
     if (self->fold_args) {
-        if (find_named_args(self, &args, &kws))
+        if (find_named_args(self, &args, &kws)) {
+            Py_XDECREF(launch_config);
             return NULL;
+        }
     }
     else
         Py_INCREF(args);
@@ -913,6 +1006,11 @@ Dispatcher_cuda_call(Dispatcher *self, PyObject *args, PyObject *kws)
     } else if (matches == 0) {
         /* No matching definition */
         if (self->can_compile) {
+            LaunchConfigGuard guard(launch_config);
+            if (guard.failed()) {
+                retval = NULL;
+                goto CLEANUP;
+            }
             retval = cuda_compile_only(self, args, kws, locals);
         } else if (self->fallbackdef) {
             /* Have object fallback */
@@ -924,6 +1022,11 @@ Dispatcher_cuda_call(Dispatcher *self, PyObject *args, PyObject *kws)
         }
     } else if (self->can_compile) {
         /* Ambiguous, but are allowed to compile */
+        LaunchConfigGuard guard(launch_config);
+        if (guard.failed()) {
+            retval = NULL;
+            goto CLEANUP;
+        }
         retval = cuda_compile_only(self, args, kws, locals);
     } else {
         /* Ambiguous */
@@ -935,6 +1038,7 @@ CLEANUP:
     if (tys != prealloc)
         delete[] tys;
     Py_DECREF(args);
+    Py_XDECREF(launch_config);
 
     return retval;
 }
@@ -1040,10 +1144,23 @@ static PyObject *compute_fingerprint(PyObject *self, PyObject *args)
     return typeof_compute_fingerprint(val);
 }
 
+static PyObject *
+get_current_launch_config(PyObject *self, PyObject *args)
+{
+    PyObject *config = launch_config_get_borrowed();
+    if (config == NULL) {
+        Py_RETURN_NONE;
+    }
+    Py_INCREF(config);
+    return config;
+}
+
 static PyMethodDef ext_methods[] = {
 #define declmethod(func) { #func , ( PyCFunction )func , METH_VARARGS , NULL }
     declmethod(typeof_init),
     declmethod(compute_fingerprint),
+    { "get_current_launch_config", (PyCFunction)get_current_launch_config,
+      METH_NOARGS, NULL },
     { NULL },
 #undef declmethod
 };
@@ -1054,6 +1171,10 @@ MOD_INIT(_dispatcher) {
     MOD_DEF(m, "_dispatcher", "No docs", ext_methods)
     if (m == NULL)
         return MOD_ERROR_VAL;
+
+    if (launch_config_tss_init() != 0) {
+        return MOD_ERROR_VAL;
+    }
 
     DispatcherType.tp_new = PyType_GenericNew;
     if (PyType_Ready(&DispatcherType) < 0) {
