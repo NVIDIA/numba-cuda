@@ -20,6 +20,7 @@ from numba.cuda._compat import launch, LaunchConfig
 from numba.cuda.core import errors
 from numba.cuda import serialize, utils
 from numba import cuda
+from numba.cuda import launchconfig
 
 from numba.cuda.np import numpy_support
 from numba.cuda.core.compiler_lock import global_compiler_lock
@@ -302,6 +303,7 @@ class _Kernel(serialize.ReduceMixin):
         call_helper,
         extensions,
         shared_memory_carveout=None,
+        launch_config_sensitive=False,
     ):
         """
         Rebuild an instance.
@@ -321,6 +323,7 @@ class _Kernel(serialize.ReduceMixin):
         instance.call_helper = call_helper
         instance.extensions = extensions
         instance.shared_memory_carveout = shared_memory_carveout
+        instance.launch_config_sensitive = launch_config_sensitive
         return instance
 
     def _reduce_states(self):
@@ -341,6 +344,7 @@ class _Kernel(serialize.ReduceMixin):
             call_helper=self.call_helper,
             extensions=self.extensions,
             shared_memory_carveout=self.shared_memory_carveout,
+            launch_config_sensitive=self.launch_config_sensitive,
         )
 
     def _parse_carveout(self, carveout):
@@ -767,6 +771,50 @@ class CUDACache(Cache):
     """
 
     _impl_class = CUDACacheImpl
+
+    def __init__(self, py_func):
+        self._launch_config_key = None
+        self._launch_config_sensitive_flag = None
+        super().__init__(py_func)
+        marker_name = f"{self._impl.filename_base}.lcs"
+        self._launch_config_marker_path = os.path.join(
+            self._cache_path, marker_name
+        )
+
+    def _index_key(self, sig, codegen):
+        key = super()._index_key(sig, codegen)
+        if self._launch_config_key is None:
+            return key
+        return key + (("launch_config", self._launch_config_key),)
+
+    def set_launch_config_key(self, key):
+        self._launch_config_key = key
+
+    def is_launch_config_sensitive(self):
+        if self._launch_config_sensitive_flag is None:
+            self._launch_config_sensitive_flag = os.path.exists(
+                self._launch_config_marker_path
+            )
+        return self._launch_config_sensitive_flag
+
+    def mark_launch_config_sensitive(self):
+        if self._launch_config_sensitive_flag is True:
+            return
+        try:
+            self._impl.locator.ensure_cache_path()
+            with open(self._launch_config_marker_path, "a"):
+                pass
+        except OSError:
+            return
+        self._launch_config_sensitive_flag = True
+
+    def flush(self):
+        super().flush()
+        try:
+            os.unlink(self._launch_config_marker_path)
+        except FileNotFoundError:
+            pass
+        self._launch_config_sensitive_flag = None
 
     def load_overload(self, sig, target_context):
         # Loading an overload refreshes the context to ensure it is initialized.
@@ -1613,6 +1661,31 @@ class CUDADispatcher(serialize.ReduceMixin, _MemoMixin, _DispatcherBase):
             launch_config.sharedmem,
         )
 
+    def _cache_launch_config_key(self, launch_config):
+        if self._launch_config_is_specialized:
+            return self._launch_config_specialization_key
+        if self._launch_config_default_key is not None:
+            return self._launch_config_default_key
+        if launch_config is None:
+            return None
+        return self._launch_config_key(launch_config)
+
+    def _configure_cache_for_launch_config(self, launch_config):
+        if not isinstance(self._cache, CUDACache):
+            return
+        if self._launch_config_sensitive or self._launch_config_is_specialized:
+            key = self._cache_launch_config_key(launch_config)
+            self._cache.set_launch_config_key(key)
+            return
+        if self._cache.is_launch_config_sensitive():
+            if launch_config is None:
+                key = None
+            else:
+                key = self._launch_config_key(launch_config)
+            self._cache.set_launch_config_key(key)
+            return
+        self._cache.set_launch_config_key(None)
+
     def _get_launch_config_specialization(self, key):
         dispatcher = self._launch_config_specializations.get(key)
         if dispatcher is None:
@@ -1625,6 +1698,9 @@ class CUDADispatcher(serialize.ReduceMixin, _MemoMixin, _DispatcherBase):
             dispatcher._launch_config_is_specialized = True
             dispatcher._launch_config_specialization_key = key
             dispatcher._launch_config_default_key = key
+            if isinstance(self._cache, CUDACache):
+                dispatcher.enable_caching()
+                dispatcher._configure_cache_for_launch_config(None)
             self._launch_config_specializations[key] = dispatcher
         return dispatcher
 
@@ -1978,11 +2054,22 @@ class CUDADispatcher(serialize.ReduceMixin, _MemoMixin, _DispatcherBase):
             if kernel is not None:
                 return kernel
 
+        launch_config = launchconfig.current_launch_config()
+        self._configure_cache_for_launch_config(launch_config)
+
         # Can we load from the disk cache?
         kernel = self._cache.load_overload(sig, self.targetctx)
 
         if kernel is not None:
             self._cache_hits[sig] += 1
+            if isinstance(self._cache, CUDACache) and getattr(
+                kernel, "launch_config_sensitive", False
+            ):
+                self._cache.mark_launch_config_sensitive()
+                if launch_config is not None:
+                    self._cache.set_launch_config_key(
+                        self._launch_config_key(launch_config)
+                    )
         else:
             # We need to compile a new kernel
             self._cache_misses[sig] += 1
@@ -1992,6 +2079,14 @@ class CUDADispatcher(serialize.ReduceMixin, _MemoMixin, _DispatcherBase):
             kernel = _Kernel(self.py_func, argtypes, **self.targetoptions)
             # We call bind to force codegen, so that there is a cubin to cache
             kernel.bind()
+            if isinstance(self._cache, CUDACache) and getattr(
+                kernel, "launch_config_sensitive", False
+            ):
+                self._cache.mark_launch_config_sensitive()
+                if launch_config is not None:
+                    self._cache.set_launch_config_key(
+                        self._launch_config_key(launch_config)
+                    )
             self._cache.save_overload(sig, kernel)
 
         self.add_overload(kernel, argtypes)
