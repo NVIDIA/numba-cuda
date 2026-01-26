@@ -29,12 +29,7 @@ import tempfile
 import re
 from itertools import product
 from abc import ABCMeta, abstractmethod
-from ctypes import (
-    c_int,
-    byref,
-    c_void_p,
-    c_uint8,
-)
+from ctypes import c_int, byref, c_void_p, c_uint8
 import contextlib
 import importlib
 import numpy as np
@@ -1164,6 +1159,21 @@ class Context(object):
             driver.cuOccupancyMaxActiveBlocksPerMultiprocessorWithFlags(*args)
 
         return retval.value
+
+    def get_max_potential_block_size(
+        self, func, b2d_func, memsize, blocksizelimit, flags=None
+    ):
+        """Suggest a launch configuration with reasonable occupancy.
+        :param func: kernel for which occupancy is calculated
+        :param b2d_func: function that calculates how much per-block dynamic
+                         shared memory 'func' uses based on the block size.
+                         Can also be the address of a C function.
+                         Use `0` to pass `NULL` to the underlying CUDA API.
+        :param memsize: per-block dynamic shared memory usage intended, in bytes
+        :param blocksizelimit: maximum block size the kernel is designed to
+                               handle
+        """
+        return func.kernel.attributes.max_threads_per_block()
 
     def prepare_for_use(self):
         """Initialize the context for use.

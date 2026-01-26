@@ -646,11 +646,17 @@ class ForAll(object):
             return tpb
         # Else, ask the driver to give a good config
         else:
+            ctx = get_context()
             # Dispatcher is specialized, so there's only one definition - get
             # it so we can get the cufunc from the code library
             kernel = next(iter(dispatcher.overloads.values()))
-            function = kernel._codelibrary.get_cufunc()
-            return function.kernel.attributes.max_threads_per_block()
+            kwargs = dict(
+                func=kernel._codelibrary.get_cufunc(),
+                b2d_func=0,  # dynamic-shared memory is constant to blksz
+                memsize=self.sharedmem,
+                blocksizelimit=1024,
+            )
+            return ctx.get_max_potential_block_size(**kwargs)
 
 
 class _LaunchConfiguration:
