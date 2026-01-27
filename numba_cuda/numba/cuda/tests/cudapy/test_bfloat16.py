@@ -414,12 +414,12 @@ class TestBfloat16HighLevelBindings(CUDATestCase):
         self.assertEqual(i1[0], 1)
         self.assertEqual(u1[0], 1)
 
-        np.testing.assert_equal(i2, np.array([2, 1, 1, 2], "int16"))
-        np.testing.assert_equal(i3, np.array([2, 1, 1, 2], "int32"))
-        np.testing.assert_equal(i4, np.array([2, 1, 1, 2], "int64"))
-        np.testing.assert_equal(u2, np.array([2, 1, 1, 2], "uint16"))
-        np.testing.assert_equal(u3, np.array([2, 1, 1, 2], "uint32"))
-        np.testing.assert_equal(u4, np.array([2, 1, 1, 2], "uint64"))
+        np.testing.assert_equal(i2.get(), np.array([2, 1, 1, 2], "int16"))
+        np.testing.assert_equal(i3.get(), np.array([2, 1, 1, 2], "int32"))
+        np.testing.assert_equal(i4.get(), np.array([2, 1, 1, 2], "int64"))
+        np.testing.assert_equal(u2.get(), np.array([2, 1, 1, 2], "uint16"))
+        np.testing.assert_equal(u3.get(), np.array([2, 1, 1, 2], "uint32"))
+        np.testing.assert_equal(u4.get(), np.array([2, 1, 1, 2], "uint64"))
 
     def test_from_integer_conversions(self):
         self.skip_unsupported()
@@ -492,7 +492,7 @@ class TestBfloat16HighLevelBindings(CUDATestCase):
 
         out = cp.zeros((24,), dtype="int16")
         kernel[1, 1](out)
-        res = out.copy_to_host()
+        res = out.get()
 
         i2 = np.int16(789).astype(mldtypes_bf16).view("int16")
         i3 = np.int32(789).astype(mldtypes_bf16).view("int16")
@@ -556,7 +556,7 @@ class TestBfloat16HighLevelBindings(CUDATestCase):
 
         out = cp.zeros((6,), dtype="int16")
         kernel[1, 1](out)
-        raw = out.copy_to_host()
+        raw = out.get()
 
         f4_expected = (
             np.array([test_val] * 4, "float32")

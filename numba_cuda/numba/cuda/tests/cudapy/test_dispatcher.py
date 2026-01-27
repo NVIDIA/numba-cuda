@@ -863,9 +863,9 @@ class TestSharedMemoryCarveout(CUDATestCase):
                     if i < x.size:
                         x[i] = i + 1
 
-                d_x = cuda.to_device(x)
+                d_x = cp.asarray(x)
                 add_one[1, 10](d_x)
-                np.testing.assert_array_equal(d_x.copy_to_host(), expected)
+                np.testing.assert_array_equal(d_x.get(), expected)
 
                 # with signature
                 @cuda.jit("void(int32[:])", shared_memory_carveout=carveout)
@@ -874,9 +874,9 @@ class TestSharedMemoryCarveout(CUDATestCase):
                     if i < x.size:
                         x[i] = i + 1
 
-                d_x = cuda.to_device(x)
+                d_x = cp.asarray(x)
                 add_one_sig[1, 10](d_x)
-                np.testing.assert_array_equal(d_x.copy_to_host(), expected)
+                np.testing.assert_array_equal(d_x.get(), expected)
 
 
 if __name__ == "__main__":
