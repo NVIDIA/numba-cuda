@@ -133,7 +133,7 @@ class EnvironmentManager(object):
         # All constants are frozen inside the environment
         if isinstance(const, str):
             const = sys.intern(const)
-        for index, val in enumerate(self.env.consts):
+        for val in self.env.consts:
             if val is const:
                 break
         else:
@@ -189,9 +189,7 @@ class PythonAPI(object):
 
         self.module = builder.basic_block.function.module
         # A unique mapping of serialized objects in this module
-        try:
-            self.module.__serialized
-        except AttributeError:
+        if not hasattr(self.module, "__serialized"):
             self.module.__serialized = {}
 
         # Initialize types

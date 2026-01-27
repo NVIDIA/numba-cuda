@@ -29,13 +29,7 @@ import tempfile
 import re
 from itertools import product
 from abc import ABCMeta, abstractmethod
-from ctypes import (
-    c_int,
-    byref,
-    c_size_t,
-    c_void_p,
-    c_uint8,
-)
+from ctypes import c_int, byref, c_void_p, c_uint8
 import contextlib
 import importlib
 import numpy as np
@@ -47,7 +41,7 @@ from numba.cuda.core import config
 from numba.cuda import utils, serialize
 from .error import CudaSupportError, CudaDriverError
 from .drvapi import API_PROTOTYPES
-from .drvapi import cu_occupancy_b2d_size, cu_stream_callback_pyobj
+from .drvapi import cu_stream_callback_pyobj
 from .mappings import FILE_EXTENSION_MAP
 from .linkable_code import LinkableCode, LTOIR, Fatbin, Object
 from numba.cuda.utils import cached_file_read
@@ -1179,45 +1173,10 @@ class Context(object):
         :param blocksizelimit: maximum block size the kernel is designed to
                                handle
         """
-        args = (func, b2d_func, memsize, blocksizelimit, flags)
-        return self._cuda_python_max_potential_block_size(*args)
-
-    def _ctypes_max_potential_block_size(
-        self, func, b2d_func, memsize, blocksizelimit, flags
-    ):
-        gridsize = c_int()
-        blocksize = c_int()
-        b2d_cb = cu_occupancy_b2d_size(b2d_func)
-        args = [
-            byref(gridsize),
-            byref(blocksize),
-            func.handle,
-            b2d_cb,
-            memsize,
-            blocksizelimit,
-        ]
-
-        if not flags:
-            driver.cuOccupancyMaxPotentialBlockSize(*args)
-        else:
-            args.append(flags)
-            driver.cuOccupancyMaxPotentialBlockSizeWithFlags(*args)
-
-        return (gridsize.value, blocksize.value)
-
-    def _cuda_python_max_potential_block_size(
-        self, func, b2d_func, memsize, blocksizelimit, flags
-    ):
-        b2d_cb = ctypes.CFUNCTYPE(c_size_t, c_int)(b2d_func)
-        ptr = int.from_bytes(b2d_cb, byteorder="little")
-        driver_b2d_cb = binding.CUoccupancyB2DSize(ptr)
-        args = [func.handle, driver_b2d_cb, memsize, blocksizelimit]
-
-        if not flags:
-            return driver.cuOccupancyMaxPotentialBlockSize(*args)
-        else:
-            args.append(flags)
-            return driver.cuOccupancyMaxPotentialBlockSizeWithFlags(*args)
+        return (
+            binding.CUresult.CUDA_SUCCESS,
+            func.kernel.attributes.max_threads_per_block(),
+        )
 
     def prepare_for_use(self):
         """Initialize the context for use.
@@ -2312,18 +2271,9 @@ class _Linker:
         self.lineinfo = lineinfo
         self.cc = cc
         self.arch = arch
-        if lto is False:
-            # WAR for apparent nvjitlink issue
-            lto = None
         self.lto = lto
         self.additional_flags = additional_flags
-
-        self.options = LinkerOptions(
-            max_register_count=self.max_registers,
-            lineinfo=lineinfo,
-            arch=arch,
-            link_time_optimization=lto,
-        )
+        self._has_ltoir = False
         self._complete = False
         self._object_codes = []
         self.linker = None  # need at least one program
@@ -2446,6 +2396,8 @@ class _Linker:
             print(obj.code)
 
         self._object_codes.append(obj)
+        if self.lto:
+            self._has_ltoir = True
 
     def add_cubin(self, cubin, name="<cudapy-cubin>"):
         obj = ObjectCode.from_cubin(cubin, name=name)
@@ -2454,6 +2406,7 @@ class _Linker:
     def add_ltoir(self, ltoir, name="<cudapy-ltoir>"):
         obj = ObjectCode.from_ltoir(ltoir, name=name)
         self._object_codes.append(obj)
+        self._has_ltoir = True
 
     def add_fatbin(self, fatbin, name="<cudapy-fatbin>"):
         obj = ObjectCode.from_fatbin(fatbin, name=name)
@@ -2499,15 +2452,23 @@ class _Linker:
 
         fn(data, name)
 
-    def get_linked_ptx(self):
+    def _get_linker_options(self, ptx):
+        # Some linker flags are only valid/required if LTOIR object code is present.
+        # WAR for cuda-core < 0.4.0 where passing False incorrectly appends flags
+        # (fixed in cuda-python PR #989, released in cuda-core v0.4.0)
+        lto_flag = True if self._has_ltoir else None
+        ptx_flag = True if (self._has_ltoir and ptx) else None
         options = LinkerOptions(
             max_register_count=self.max_registers,
             lineinfo=self.lineinfo,
             arch=self.arch,
-            link_time_optimization=True,
-            ptx=True,
+            link_time_optimization=lto_flag,
+            ptx=ptx_flag,
         )
+        return options
 
+    def get_linked_ptx(self):
+        options = self._get_linker_options(ptx=True)
         self.linker = Linker(*self._object_codes, options=options)
 
         result = self.linker.link("ptx")
@@ -2526,7 +2487,8 @@ class _Linker:
         cubin is a pointer to a internal buffer of cubin owned by the linker;
         thus, it should be loaded before the linker is destroyed.
         """
-        self.linker = Linker(*self._object_codes, options=self.options)
+        options = self._get_linker_options(ptx=False)
+        self.linker = Linker(*self._object_codes, options=options)
         result = self.linker.link("cubin")
         self.close()
         self._complete = True
