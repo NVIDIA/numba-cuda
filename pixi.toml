@@ -77,6 +77,7 @@ cffi = ">=1"
 pytest = ">=8,<9"
 pytest-xdist = ">=3.8"
 pytest-benchmark = ">=5.1"
+cupy = "*"
 
 [feature.test.pypi-dependencies]
 ml_dtypes = "*"
