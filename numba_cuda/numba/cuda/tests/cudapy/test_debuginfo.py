@@ -1144,6 +1144,43 @@ class TestCudaDebugInfo(CUDATestCase):
         """
         self.assertFileCheckMatches(llvm_ir, check_pattern)
 
+    def test_terminator_line_number(self):
+        """Test that continue statement has correct location info.
+
+        When PHI node exporters are created for the continue block,
+        respect the continue statement's line number.
+
+        See nvbug5811432.
+        """
+        sig = (types.int64[:],)
+
+        @cuda.jit(debug=True, opt=False)
+        def foo(output):
+            x = 0
+            for i in range(5):
+                if i == 3:
+                    continue
+                x = x + i
+            output[0] = x
+
+        source_lines, start_lineno = inspect.getsourcelines(foo.py_func)
+
+        for idx, line in enumerate(source_lines):
+            if "continue" in line:
+                continue_line = start_lineno + idx
+            if "x = x + i" in line:
+                compute_line = start_lineno + idx
+
+        foo.compile(sig)
+        llvm_ir = foo.inspect_llvm(sig)
+
+        # Verify both the continue and compute line have DILocation entries
+        check_pattern = f"""
+            CHECK: !DILocation({{{{.*}}}}line: {continue_line}
+            CHECK: !DILocation({{{{.*}}}}line: {compute_line}
+        """
+        self.assertFileCheckMatches(llvm_ir, check_pattern)
+
 
 if __name__ == "__main__":
     unittest.main()
