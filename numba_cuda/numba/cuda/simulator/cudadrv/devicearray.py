@@ -112,8 +112,27 @@ class FakeCUDAArray(object):
         self.stream = stream
 
     @classmethod
-    def _create_nowarn(ary, stream):
-        return FakeCUDAArray(ary, stream)
+    def _create_nowarn(cls, shape, strides, dtype, stream=0, gpu_data=None):
+        """Create a FakeCUDAArray without the deprecation warning.
+
+        This matches the signature of DeviceNDArrayBase.__init__() but
+        creates a numpy array from the parameters since FakeCUDAArray
+        wraps numpy arrays.
+        """
+        if isinstance(shape, int):
+            shape = (shape,)
+        else:
+            shape = tuple(shape)
+
+        # Create dtype
+        dtype = np.dtype(dtype)
+
+        # For the simulator, we create a simple numpy array with the given shape
+        # and dtype. The strides parameter is typically standard C-order strides,
+        # so numpy's default behavior should work fine for most cases.
+        ary = np.empty(shape, dtype=dtype)
+
+        return FakeCUDAArray(ary, stream=stream)
 
     @property
     def _numba_type_(self):
