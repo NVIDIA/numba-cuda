@@ -3,6 +3,7 @@
 
 import sys
 
+from . import args
 from .api import *
 from .vector_types import vector_types
 from .reduction import Reduce
@@ -39,6 +40,7 @@ if config.ENABLE_CUDASIM:
     from numba.cuda.simulator import cudadrv
     from . import dispatcher
 
+    sys.modules["numba.cuda.args"] = args
     sys.modules["numba.cuda.cudadrv"] = cudadrv
     sys.modules["numba.cuda.cudadrv.devicearray"] = cudadrv.devicearray
     sys.modules["numba.cuda.cudadrv.devices"] = cudadrv.devices
