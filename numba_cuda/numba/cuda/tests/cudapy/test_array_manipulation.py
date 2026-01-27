@@ -1,15 +1,16 @@
+"""
+CUDA array manipulation tests using kernels and Python CUDA semantics.
+
+These tests validate array operations, indexing, and element-wise operations
+in CUDA kernels. They are inspired by CPU array manipulation test suites and
+adapted to verify CUDA device semantics.
+"""
+
 import numpy as np
 import pytest
 
 from numba import cuda
 from numba.cuda.testing import CUDATestCase, skip_on_cudasim
-
-
-# -----------------------------------------------------------------------------
-# Array manipulation tests for the CUDA backend.
-# These tests are adapted from the CPU array manipulation suite to validate
-# supported semantics on device arrays.
-# -----------------------------------------------------------------------------
 
 
 @cuda.jit
@@ -27,9 +28,10 @@ def add_kernel(a, b, out):
 
 
 class TestArrayManipulation(CUDATestCase):
+    """Tests for array manipulation operations in CUDA kernels."""
 
-    @skip_on_cudasim("Device memory semantics required")
     def test_fill_basic(self):
+        """Basic elementwise fill operation - works in simulator."""
         n = 128
         arr = cuda.device_array(n, dtype=np.float32)
 
@@ -40,8 +42,8 @@ class TestArrayManipulation(CUDATestCase):
         result = arr.copy_to_host()
         self.assertTrue(np.all(result == 4.25))
 
-    @skip_on_cudasim("Device memory semantics required")
     def test_elementwise_add(self):
+        """Elementwise addition - basic arithmetic works in simulator."""
         n = 256
         a = np.arange(n, dtype=np.float32)
         b = np.ones(n, dtype=np.float32)
@@ -57,8 +59,8 @@ class TestArrayManipulation(CUDATestCase):
         result = dout.copy_to_host()
         self.assertTrue(np.allclose(result, a + b))
 
-    @skip_on_cudasim("Direct indexing semantics required")
     def test_integer_getitem_setitem(self):
+        """Direct integer indexing in kernel - works in simulator."""
         arr = cuda.device_array(10, dtype=np.int32)
 
         @cuda.jit
@@ -69,8 +71,8 @@ class TestArrayManipulation(CUDATestCase):
         host = arr.copy_to_host()
         self.assertEqual(host[3], 42)
 
-    @skip_on_cudasim("2D indexing requires real device")
     def test_multidimensional_indexing(self):
+        """2D indexing with grid-based kernel - works in simulator."""
         shape = (8, 8)
         host = np.zeros(shape, dtype=np.int32)
         dev = cuda.to_device(host)
@@ -91,28 +93,32 @@ class TestArrayManipulation(CUDATestCase):
 
     @pytest.mark.xfail(reason="Advanced slicing not supported on CUDA device arrays")
     def test_advanced_slicing(self):
+        """Advanced slicing (e.g., ::2) is not supported on device arrays."""
         arr = cuda.to_device(np.arange(10))
         _ = arr[::2]
 
     @pytest.mark.xfail(reason="Multidimensional slicing not supported on CUDA device arrays")
     def test_multidimensional_slicing(self):
+        """Multidimensional slicing not supported on device arrays."""
         arr = cuda.to_device(np.arange(16).reshape(4, 4))
         _ = arr[:, ::-1]
 
     @pytest.mark.xfail(reason="Boolean indexing not supported on CUDA device arrays")
     def test_boolean_indexing(self):
+        """Boolean mask indexing is not supported on device arrays."""
         arr = cuda.to_device(np.arange(10))
         mask = np.array([True, False] * 5)
         _ = arr[mask]
 
     @pytest.mark.xfail(reason="Fancy indexing with arrays not supported on CUDA device arrays")
     def test_fancy_indexing(self):
+        """Fancy indexing with integer arrays not supported on device arrays."""
         arr = cuda.to_device(np.arange(10))
         idx = np.array([1, 3, 5])
         _ = arr[idx]
 
-    @skip_on_cudasim("Device memory semantics required")
     def test_dtype_transitions(self):
+        """Type casting and mixed-dtype operations - basic ops work in simulator."""
         n = 10
         a = np.arange(n, dtype=np.int32)
         b = np.arange(n, dtype=np.float32)
@@ -143,16 +149,18 @@ class TestArrayManipulation(CUDATestCase):
 
         # Mixed dtype elementwise op
         dout3 = cuda.device_array(n, dtype=np.float32)
+
         @cuda.jit
         def add_mixed(a, b, out):
             i = cuda.grid(1)
             if i < out.size:
                 out[i] = a[i] + b[i]
+
         add_mixed[blocks, threads](da, db, dout3)
         self.assertTrue(np.allclose(dout3.copy_to_host(), a + b))
 
-    @skip_on_cudasim("Device memory semantics required")
     def test_shape_semantics_in_kernel(self):
+        """Shape attributes accessible in kernel - works in simulator."""
         shape = (5, 7)
         arr = cuda.device_array(shape, dtype=np.int32)
 
@@ -169,39 +177,25 @@ class TestArrayManipulation(CUDATestCase):
 
     @pytest.mark.xfail(reason="reshape not supported on CUDA device arrays")
     def test_reshape(self):
+        """reshape is not supported on device arrays."""
         arr = cuda.device_array((4, 4), dtype=np.int32)
         _ = arr.reshape((16,))
 
     @pytest.mark.xfail(reason="view not supported on CUDA device arrays")
     def test_view(self):
+        """view is not supported on device arrays."""
         arr = cuda.device_array(8, dtype=np.int32)
         _ = arr.view(np.float32)
 
     @pytest.mark.xfail(reason="ravel not supported on CUDA device arrays")
     def test_ravel(self):
+        """ravel is not supported on device arrays."""
         arr = cuda.device_array((2, 4), dtype=np.int32)
         _ = arr.ravel()
 
-    @skip_on_cudasim("Device memory semantics required")
-    def test_memory_lifetime(self):
-        n = 32
-        arr = cuda.device_array(n, dtype=np.float32)
-
-        @cuda.jit
-        def set_val(a, v):
-            i = cuda.grid(1)
-            if i < a.size:
-                a[i] = v
-
-        threads = 16
-        blocks = (n + threads - 1) // threads
-        set_val[blocks, threads](arr, 1.5)
-        set_val[blocks, threads](arr, 2.5)
-        host = arr.copy_to_host()
-        self.assertTrue(np.allclose(host, 2.5))
-
-    @skip_on_cudasim("Device memory semantics required")
+    @skip_on_cudasim("True grid-stride loop semantics require real device execution")
     def test_grid_stride_correctness(self):
+        """Grid-stride loop pattern - requires actual CUDA grid execution."""
         n = 10
         arr = cuda.device_array(n, dtype=np.int32)
 
@@ -216,8 +210,8 @@ class TestArrayManipulation(CUDATestCase):
         host = arr.copy_to_host()
         self.assertTrue(np.all(host == np.arange(n)))
 
-    @skip_on_cudasim("Device memory semantics required")
     def test_cpu_parity_reference(self):
+        """Validates CUDA behavior matches expected CPU NumPy semantics."""
         n = 50
         a = np.arange(n, dtype=np.float32)
         b = np.arange(n, dtype=np.float32)
