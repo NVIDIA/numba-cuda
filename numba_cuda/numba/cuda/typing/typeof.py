@@ -393,9 +393,12 @@ def typeof_strided_memory_view(val, c):
         layout = "C"
     elif raw_layout.is_contiguous_f:
         layout = "F"
-    else:
-        assert raw_layout.is_contiguous_any
+    elif raw_layout.is_contiguous_any:
         layout = "A"
+    else:
+        raise ValueError(
+            "Unsupported StridedMemoryView layout; must be C contiguous or F contiguous"
+        )
     return types.Array(
         dtype=numpy_support.from_dtype(val.dtype),
         ndim=len(val.shape),
