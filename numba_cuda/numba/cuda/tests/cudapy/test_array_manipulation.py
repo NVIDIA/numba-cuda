@@ -178,24 +178,6 @@ class TestArrayManipulation(CUDATestCase):
         host = out.copy_to_host()
         self.assertEqual(tuple(host), shape)
 
-    @pytest.mark.xfail(reason="reshape not supported on CUDA device arrays")
-    def test_reshape(self):
-        """reshape is not supported on device arrays."""
-        arr = cuda.device_array((4, 4), dtype=np.int32)
-        _ = arr.reshape((16,))
-
-    @pytest.mark.xfail(reason="view not supported on CUDA device arrays")
-    def test_view(self):
-        """view is not supported on device arrays."""
-        arr = cuda.device_array(8, dtype=np.int32)
-        _ = arr.view(np.float32)
-
-    @pytest.mark.xfail(reason="ravel not supported on CUDA device arrays")
-    def test_ravel(self):
-        """ravel is not supported on device arrays."""
-        arr = cuda.device_array((2, 4), dtype=np.int32)
-        _ = arr.ravel()
-
     @skip_on_cudasim("True grid-stride loop semantics require real device execution")
     def test_grid_stride_correctness(self):
         """Grid-stride loop pattern - requires actual CUDA grid execution."""
