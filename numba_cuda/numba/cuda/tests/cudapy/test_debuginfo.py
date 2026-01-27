@@ -669,7 +669,7 @@ class TestCudaDebugInfo(CUDATestCase):
             with warnings.catch_warnings(record=True) as w:
                 warnings.simplefilter("always", NumbaDebugInfoWarning)
                 ignore_internal_warnings()
-                foo[1, 1](cuda.to_device(np.zeros(1, dtype=np.int32)))
+                foo[1, 1](cp.asarray(np.zeros(1, dtype=np.int32)))
 
             # Filter for NumbaDebugInfoWarning specifically
             debug_warnings = [
