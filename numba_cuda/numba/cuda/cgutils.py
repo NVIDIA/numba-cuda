@@ -76,11 +76,12 @@ def create_struct_proxy(fe_type, kind="value"):
     return res
 
 
-def copy_struct(dst, src, repl={}):
+def copy_struct(dst, src, repl=None):
     """
     Copy structure from *src* to *dst* with replacement from *repl*.
     """
-    repl = repl.copy()
+
+    repl = (repl or {}).copy()
     # copy data from src or use those in repl
     for k in src._datamodel._fields:
         v = repl.pop(k, getattr(src, k))

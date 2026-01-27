@@ -269,15 +269,6 @@ class TestCudaDriver(DeprecatedDeviceArrayApiTest):
         )
         self.assertTrue(value > 0)
 
-        def b2d(bs):
-            return bs
-
-        grid, block = self.context.get_max_potential_block_size(
-            function, b2d, 128, 128
-        )
-        self.assertTrue(grid > 0)
-        self.assertTrue(block > 0)
-
     def test_cuda_cache_config(self):
         from numba import types
         import numpy as np

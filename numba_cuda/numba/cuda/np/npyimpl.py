@@ -156,7 +156,7 @@ class _ArrayHelper(
         ZERO = ir.Constant(ir.IntType(intpty.width), 0)
 
         indices = []
-        for i in range(self.ndim):
+        for _ in range(self.ndim):
             x = cgutils.alloca_once(self.builder, ir.IntType(intpty.width))
             self.builder.store(ZERO, x)
             indices.append(x)
@@ -215,7 +215,7 @@ class _ArrayGUHelper(
         ZERO = ir.Constant(ir.IntType(intpty.width), 0)
 
         indices = []
-        for i in range(self.ndim - self.inner_arr_ty.ndim):
+        for _ in range(self.ndim - self.inner_arr_ty.ndim):
             x = cgutils.alloca_once(self.builder, ir.IntType(intpty.width))
             self.builder.store(ZERO, x)
             indices.append(x)

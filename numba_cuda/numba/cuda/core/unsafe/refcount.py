@@ -82,16 +82,14 @@ def get_refcount(typingctx, obj):
         # A sequence of (type, meminfo)
         meminfos = []
         if context.enable_nrt:
-            tmp_mis = context.nrt.get_meminfos(builder, ty, obj)
-            meminfos.extend(tmp_mis)
+            meminfos.extend(context.nrt.get_meminfos(builder, ty, obj))
         refcounts = []
-        if meminfos:
-            for ty, mi in meminfos:
-                miptr = builder.bitcast(mi, _meminfo_struct_type.as_pointer())
-                refctptr = cgutils.gep_inbounds(builder, miptr, 0, 0)
-                refct = builder.load(refctptr)
-                refct_32bit = builder.trunc(refct, ir.IntType(32))
-                refcounts.append(refct_32bit)
+        for _, mi in meminfos:
+            miptr = builder.bitcast(mi, _meminfo_struct_type.as_pointer())
+            refctptr = cgutils.gep_inbounds(builder, miptr, 0, 0)
+            refct = builder.load(refctptr)
+            refct_32bit = builder.trunc(refct, ir.IntType(32))
+            refcounts.append(refct_32bit)
         return refcounts[0]
 
     sig = types.int32(obj)

@@ -6,6 +6,9 @@ Hints to wrap Kernel arguments to indicate how to manage host-device
 memory transfers before & after the kernel call.
 """
 
+import functools
+
+
 from numba.cuda.typing.typeof import typeof, Purpose
 
 
@@ -23,16 +26,16 @@ class ArgHint:
             the kernel
         """
 
-    @property
+    @functools.cached_property
     def _numba_type_(self):
         return typeof(self.value, Purpose.argument)
 
 
 class In(ArgHint):
     def to_device(self, retr, stream=0):
-        from .cudadrv.devicearray import auto_device
+        from .cudadrv.devicearray import _to_strided_memory_view
 
-        devary, _ = auto_device(self.value, stream=stream)
+        devary, _ = _to_strided_memory_view(self.value, stream=stream)
         # A dummy writeback functor to keep devary alive until the kernel
         # is called.
         retr.append(lambda: devary)
@@ -40,23 +43,44 @@ class In(ArgHint):
 
 
 class Out(ArgHint):
-    def to_device(self, retr, stream=0):
-        from .cudadrv.devicearray import auto_device
+    copy_input = False
 
-        devary, conv = auto_device(self.value, copy=False, stream=stream)
+    def to_device(self, retr, stream=0):
+        from .cudadrv.devicearray import _to_strided_memory_view
+        from .cudadrv.devicearray import _make_strided_memory_view
+        from .cudadrv.driver import driver
+        from .cudadrv import devices
+
+        devary, conv = _to_strided_memory_view(
+            value := self.value, copy=self.__class__.copy_input, stream=stream
+        )
         if conv:
-            retr.append(lambda: devary.copy_to_host(self.value, stream=stream))
+            stream_ptr = getattr(stream, "handle", stream)
+
+            def copy_to_host(devary=devary, value=value, stream_ptr=stream_ptr):
+                hostary = _make_strided_memory_view(
+                    value, stream_ptr=stream_ptr
+                )
+                nbytes = devary.size * devary.dtype.itemsize
+                hostptr = hostary.ptr
+                devptr = devary.ptr
+                if int(stream_ptr):
+                    driver.cuMemcpyDtoHAsync(
+                        hostptr, devptr, nbytes, stream_ptr
+                    )
+                else:
+                    driver.cuMemcpyDtoH(hostptr, devptr, nbytes)
+                    ctx = devices.get_context()
+                    stream = ctx.get_default_stream()
+                    stream.synchronize()
+                return hostary
+
+            retr.append(copy_to_host)
         return devary
 
 
-class InOut(ArgHint):
-    def to_device(self, retr, stream=0):
-        from .cudadrv.devicearray import auto_device
-
-        devary, conv = auto_device(self.value, stream=stream)
-        if conv:
-            retr.append(lambda: devary.copy_to_host(self.value, stream=stream))
-        return devary
+class InOut(Out):
+    copy_input = True
 
 
 def wrap_arg(value, default=InOut):

@@ -101,9 +101,8 @@ class CompilerPass(metaclass=ABCMeta):
         """
         return False
 
-    def get_analysis_usage(self, AU):
+    def get_analysis_usage(self, AU):  # noqa: B027
         """Override to set analysis usage"""
-        pass
 
     def get_analysis(self, pass_name):
         """
@@ -230,7 +229,7 @@ class PassManager(object):
         assert self.passes
         self._validate_pass(pass_cls)
         self._validate_pass(location)
-        for idx, (x, _) in enumerate(self.passes):
+        for idx, (x, _) in enumerate(self.passes):  # noqa: B007
             if x == location:
                 break
         else:

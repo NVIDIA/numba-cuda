@@ -22,7 +22,7 @@ from .cudadrv.linkable_code import (
 from .kernel import FakeCUDAKernel
 from numba.cuda.core import config
 from numba.cuda.core.sigutils import is_signature
-from ..args import In, Out, InOut  # noqa: F401
+from .args import In, Out, InOut  # noqa: F401
 
 
 def select_device(dev=0):
@@ -129,6 +129,7 @@ def jit(
     boundscheck=None,
     opt=None,
     cache=None,
+    shared_memory_carveout=None,
 ):
     # Here for API compatibility
     if boundscheck:
