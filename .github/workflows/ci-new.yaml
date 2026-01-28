@@ -209,6 +209,8 @@ jobs:
   test-conda:
     needs:
       - compute-matrix
+      - should-skip
+    if: ${{ github.repository_owner == 'nvidia' && !fromJSON(needs.should-skip.outputs.skip) }}
     uses: ./.github/workflows/conda-python-tests.yaml
     with:
       build_type: pull-request
@@ -219,6 +221,8 @@ jobs:
   test-simulator:
     needs:
       - compute-matrix
+      - should-skip
+    if: ${{ github.repository_owner == 'nvidia' && !fromJSON(needs.should-skip.outputs.skip) }}
     uses: ./.github/workflows/simulator-test.yaml
     with:
       build_type: pull-request
@@ -274,6 +278,9 @@ jobs:
       matrix_filter: map(select(.ARCH == "amd64" and (.CUDA_VER | split(".") | .[0] | tonumber == 12))) | group_by(.CUDA_VER|split(".")|map(tonumber)|.[0]) | map(max_by([(.PY_VER|split(".")|map(tonumber)), (.CUDA_VER|split(".")|map(tonumber))]))
 
   build-docs:
+    needs:
+      - should-skip
+    if: ${{ github.repository_owner == 'nvidia' && !fromJSON(needs.should-skip.outputs.skip) }}
     uses: ./.github/workflows/docs-build.yaml
 
   coverage-report:
