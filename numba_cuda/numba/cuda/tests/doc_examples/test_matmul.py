@@ -130,7 +130,9 @@ def test_matmul():
         # magictoken.ex_run_fast_matmul.end
 
         # fast_matmul test(s)
-        assert np.all(z_h == x_h @ y_h), "fast_matmul incorrect for shared memory, square case."
+        assert np.all(z_h == x_h @ y_h), (
+            "fast_matmul incorrect for shared memory, square case."
+        )
 
         # magictoken.ex_run_nonsquare.begin
         x_h = np.arange(115).reshape([5, 23])
@@ -155,4 +157,6 @@ def test_matmul():
         # magictoken.ex_run_nonsquare.end
 
         # nonsquare fast_matmul test(s)
-        assert np.all(z_h == x_h @ y_h), "fast_matmul incorrect for shared memory, non-square case."
+        assert np.all(z_h == x_h @ y_h), (
+            "fast_matmul incorrect for shared memory, non-square case."
+        )
