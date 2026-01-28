@@ -3,10 +3,15 @@
 
 import numpy as np
 from numba import cuda
-from numba.cuda.core.config import ENABLE_CUDASIM
+from numba.cuda import config
 from numba.cuda.testing import CUDATestCase
 import unittest
-import cupy as cp
+from numba.cuda import config
+
+if config.ENABLE_CUDASIM:
+    import numpy as cp
+else:
+    import cupy as cp
 
 # Avoid recompilation of the sum_reduce function by keeping it at global scope
 sum_reduce = cuda.Reduce(lambda a, b: a + b)
@@ -20,7 +25,7 @@ class TestReduction(CUDATestCase):
         self.assertEqual(expect, got)
 
     def test_sum_reduce(self):
-        if ENABLE_CUDASIM:
+        if config.ENABLE_CUDASIM:
             # Minimal test set for the simulator (which only wraps
             # functools.reduce)
             test_sizes = [1, 16]

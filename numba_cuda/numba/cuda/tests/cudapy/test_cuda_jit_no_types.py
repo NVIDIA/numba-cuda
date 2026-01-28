@@ -2,11 +2,16 @@
 # SPDX-License-Identifier: BSD-2-Clause
 
 from numba import cuda
+from numba.cuda import config
 import numpy as np
 from numba.cuda.testing import CUDATestCase
 from numba.cuda.tests.support import override_config
 import unittest
-import cupy as cp
+
+if config.ENABLE_CUDASIM:
+    import numpy as cp
+else:
+    import cupy as cp
 
 
 class TestCudaJitNoTypes(CUDATestCase):

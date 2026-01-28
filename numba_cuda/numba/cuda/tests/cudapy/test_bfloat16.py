@@ -16,7 +16,11 @@ from numba.cuda import (
     uint64,
 )
 from numba.cuda import config
-import cupy as cp
+
+if config.ENABLE_CUDASIM:
+    import numpy as cp
+else:
+    import cupy as cp
 
 if not config.ENABLE_CUDASIM:
     from numba.cuda.bf16 import (

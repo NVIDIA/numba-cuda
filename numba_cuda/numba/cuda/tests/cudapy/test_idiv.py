@@ -3,9 +3,13 @@
 
 import numpy as np
 from numba import cuda
-from numba.cuda import float32, float64, int32, void
+from numba.cuda import config, float32, float64, int32, void
 from numba.cuda.testing import unittest, CUDATestCase
-import cupy as cp
+
+if config.ENABLE_CUDASIM:
+    import numpy as cp
+else:
+    import cupy as cp
 
 
 class TestCudaIDiv(CUDATestCase):

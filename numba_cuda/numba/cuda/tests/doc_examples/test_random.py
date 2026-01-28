@@ -5,6 +5,7 @@
 # "magictoken" is used for markers as beginning and ending of example text.
 
 import unittest
+
 from numba.cuda.testing import CUDATestCase, skip_on_cudasim
 import cupy as cp
 

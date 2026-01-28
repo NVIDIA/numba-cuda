@@ -23,7 +23,11 @@ from numba.cuda.cudadrv.linkable_code import (
     Archive,
     Object,
 )
-import cupy as cp
+
+if config.ENABLE_CUDASIM:
+    import numpy as cp
+else:
+    import cupy as cp
 
 TEST_BIN_DIR = os.getenv("NUMBA_CUDA_TEST_BIN_DIR")
 

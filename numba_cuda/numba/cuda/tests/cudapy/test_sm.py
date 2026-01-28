@@ -17,8 +17,13 @@ from numba.cuda.testing import (
 )
 
 import numpy as np
+from numba.cuda import config
 from numba.cuda.np import numpy_support as nps
-import cupy as cp
+
+if config.ENABLE_CUDASIM:
+    import numpy as cp
+else:
+    import cupy as cp
 from .extensions_usecases import struct_model_type, MyStruct
 import pytest
 

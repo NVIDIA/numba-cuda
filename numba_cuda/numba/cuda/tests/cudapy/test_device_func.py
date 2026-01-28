@@ -19,11 +19,15 @@ from numba.cuda.core.errors import TypingError
 from numba.cuda.tests.support import skip_unless_cffi
 from numba.cuda.testing import skip_on_standalone_numba_cuda
 from types import ModuleType
-from numba.cuda import HAS_NUMBA
+from numba.cuda import HAS_NUMBA, config
 
 if HAS_NUMBA:
     from numba import jit
-import cupy as cp
+
+if config.ENABLE_CUDASIM:
+    import numpy as cp
+else:
+    import cupy as cp
 
 
 class TestDeviceFunc(CUDATestCase):

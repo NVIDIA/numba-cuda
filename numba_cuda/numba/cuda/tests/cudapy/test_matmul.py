@@ -7,7 +7,11 @@ from numba import cuda
 from numba.cuda import float32, void
 from numba.cuda.testing import unittest, CUDATestCase
 from numba.cuda.core import config
-import cupy as cp
+
+if config.ENABLE_CUDASIM:
+    import numpy as cp
+else:
+    import cupy as cp
 
 # Ensure the test takes a reasonable amount of time in the simulator
 if config.ENABLE_CUDASIM:

@@ -4,9 +4,13 @@
 import numpy as np
 import math
 from numba import cuda
-from numba.cuda import double, void
+from numba.cuda import config, double, void
 from numba.cuda.testing import unittest, CUDATestCase
-import cupy as cp
+
+if config.ENABLE_CUDASIM:
+    import numpy as cp
+else:
+    import cupy as cp
 
 RISKFREE = 0.02
 VOLATILITY = 0.30

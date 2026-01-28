@@ -5,9 +5,14 @@ import numpy as np
 import math
 
 from numba.cuda import vectorize, int32, uint32, float32, float64
+from numba.cuda import config
 from numba.cuda.testing import skip_on_cudasim, CUDATestCase
 from numba.cuda.tests.support import CheckWarningsMixin
-import cupy as cp
+
+if config.ENABLE_CUDASIM:
+    import numpy as cp
+else:
+    import cupy as cp
 import unittest
 
 

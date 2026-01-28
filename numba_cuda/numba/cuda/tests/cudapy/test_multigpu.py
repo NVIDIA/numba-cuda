@@ -2,11 +2,16 @@
 # SPDX-License-Identifier: BSD-2-Clause
 
 from numba import cuda
+from numba.cuda import config
 import numpy as np
 from numba.cuda.testing import skip_on_cudasim, CUDATestCase
 import threading
 import unittest
-import cupy as cp
+
+if config.ENABLE_CUDASIM:
+    import numpy as cp
+else:
+    import cupy as cp
 
 
 class TestMultiGPUContext(CUDATestCase):

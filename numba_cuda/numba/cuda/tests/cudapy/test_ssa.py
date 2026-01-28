@@ -12,13 +12,17 @@ import numpy as np
 
 from numba.cuda import types
 from numba import cuda
-from numba.cuda import jit
+from numba.cuda import config, jit
 from numba.cuda.core import errors
 
 from numba.cuda.extending import overload
 from numba.cuda.tests.support import override_config
 from numba.cuda.testing import CUDATestCase, skip_on_cudasim
-import cupy as cp
+
+if config.ENABLE_CUDASIM:
+    import numpy as cp
+else:
+    import cupy as cp
 
 _DEBUG = False
 

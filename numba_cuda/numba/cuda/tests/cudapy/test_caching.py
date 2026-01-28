@@ -9,6 +9,7 @@ import warnings
 import sys
 import stat
 import subprocess
+from numba.cuda import config
 
 from numba import cuda
 from numba.cuda.core.errors import NumbaWarning
@@ -26,7 +27,11 @@ from numba.cuda.tests.support import (
     import_dynamic,
 )
 import numpy as np
-import cupy as cp
+
+if config.ENABLE_CUDASIM:
+    import numpy as cp
+else:
+    import cupy as cp
 from pickle import PicklingError
 
 # Module-level global for testing that caching rejects global device arrays

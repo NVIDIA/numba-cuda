@@ -6,7 +6,11 @@ from numba import cuda
 from numba.cuda.testing import CUDATestCase
 import unittest
 from numba.cuda import config
-import cupy as cp
+
+if config.ENABLE_CUDASIM:
+    import numpy as cp
+else:
+    import cupy as cp
 
 
 def reinterpret_array_type(byte_arr, start, stop, output):

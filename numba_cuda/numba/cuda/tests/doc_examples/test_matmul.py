@@ -11,6 +11,7 @@ Contents in this file are referenced from the sphinx-generated docs.
 """
 
 import unittest
+
 from numba.cuda.testing import CUDATestCase, skip_on_cudasim
 from numba.cuda.tests.support import captured_stdout
 import cupy as cp

@@ -4,9 +4,14 @@
 import numbers
 
 from numba import cuda
+from numba.cuda import config
 from numba.cuda.testing import unittest, CUDATestCase, skip_on_cudasim
 from numba.cuda.cudadrv import driver
-import cupy as cp
+
+if config.ENABLE_CUDASIM:
+    import numpy as cp
+else:
+    import cupy as cp
 
 
 class TestContextStack(CUDATestCase):

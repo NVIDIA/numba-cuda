@@ -24,7 +24,11 @@ from numba.cuda.testing import (
     CUDATestCase,
 )
 import math
-import cupy as cp
+
+if config.ENABLE_CUDASIM:
+    import numpy as cp
+else:
+    import cupy as cp
 
 
 def add(x, y):
