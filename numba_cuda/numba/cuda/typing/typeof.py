@@ -5,6 +5,7 @@ from collections import namedtuple
 from functools import singledispatch
 import ctypes
 import enum
+import functools
 import operator
 
 import numpy as np
@@ -311,6 +312,47 @@ def typeof_numpy_polynomial(val, c):
     return types.PolynomialType(coef, domain, window)
 
 
+@functools.lru_cache
+def _typeof_cuda_array_interface_cached(
+    *, dtype, shape, strides, readonly: bool
+):
+    # Determine layout
+    ndim = len(shape)
+    if not ndim:
+        layout = "C"
+    elif strides is None:
+        layout = "C"
+    else:
+        itemsize = dtype.bitwidth
+        # Quick rejection: C-contiguous has strides[-1] == itemsize,
+        # F-contiguous has strides[0] == itemsize. If neither, it's "A".
+        if strides[-1] == itemsize:
+            c_strides = numpy_support.strides_from_shape(
+                shape=shape,
+                itemsize=itemsize,
+                c_contiguous=True,
+                f_contiguous=False,
+            )
+            layout = "C" if all(map(operator.eq, strides, c_strides)) else "A"
+        elif strides[0] == itemsize:
+            f_strides = numpy_support.strides_from_shape(
+                shape=shape,
+                itemsize=itemsize,
+                c_contiguous=False,
+                f_contiguous=True,
+            )
+            layout = "F" if all(map(operator.eq, strides, f_strides)) else "A"
+        else:
+            layout = "A"
+
+    return types.Array(dtype, ndim, layout, readonly=readonly)
+
+
+@functools.lru_cache
+def _numba_dtype_from_str(typestr):
+    return numpy_support.from_dtype(np.dtype(typestr))
+
+
 def _typeof_cuda_array_interface(val, c):
     """
     Determine the type of a __cuda_array_interface__ object.
@@ -319,32 +361,13 @@ def _typeof_cuda_array_interface(val, c):
     Array Interface. These are typed as regular Array types, with lowering
     handled in numba.cuda.np.arrayobj.
     """
-    dtype = numpy_support.from_dtype(np.dtype(val["typestr"]))
+    dtype = _numba_dtype_from_str(val["typestr"])
     shape = val["shape"]
-    ndim = len(shape)
     strides = val.get("strides")
-
-    # Determine layout
-    if not ndim:
-        layout = "C"
-    elif strides is None:
-        layout = "C"
-    else:
-        itemsize = np.dtype(val["typestr"]).itemsize
-        # Quick rejection: C-contiguous has strides[-1] == itemsize,
-        # F-contiguous has strides[0] == itemsize. If neither, it's "A".
-        if strides[-1] == itemsize:
-            c_strides = numpy_support.strides_from_shape(
-                shape, itemsize, order="C"
-            )
-            layout = "C" if all(map(operator.eq, strides, c_strides)) else "A"
-        elif strides[0] == itemsize:
-            f_strides = numpy_support.strides_from_shape(
-                shape, itemsize, order="F"
-            )
-            layout = "F" if all(map(operator.eq, strides, f_strides)) else "A"
-        else:
-            layout = "A"
-
     _, readonly = val["data"]
-    return types.Array(dtype, ndim, layout, readonly=readonly)
+    return _typeof_cuda_array_interface_cached(
+        dtype=dtype,
+        shape=shape,
+        strides=strides,
+        readonly=readonly,
+    )

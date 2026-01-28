@@ -4037,18 +4037,18 @@ def np_digitize(x, bins, right=False):
 
         if last_value < next_value:
             # Possibly monotonic increasing
-            for i in range(i + 1, len(bins)):
+            for j in range(i + 1, len(bins)):
                 last_value = next_value
-                next_value = bins[i]
+                next_value = bins[j]
                 if last_value > next_value:
                     return 0
             return 1
 
         else:
             # last > next, possibly monotonic decreasing
-            for i in range(i + 1, len(bins)):
+            for j in range(i + 1, len(bins)):
                 last_value = next_value
-                next_value = bins[i]
+                next_value = bins[j]
                 if last_value < next_value:
                     return 0
             return -1

@@ -24,14 +24,25 @@ numpy_version = tuple(map(int, np.__version__.split(".")[:2]))
 
 @functools.lru_cache
 def strides_from_shape(
-    shape: tuple[int, ...], itemsize: int, *, order: str
+    *,
+    shape: tuple[int, ...],
+    itemsize: int,
+    c_contiguous: bool,
+    f_contiguous: bool,
 ) -> tuple[int, ...]:
     """Compute strides for a contiguous array with given shape and order."""
     if not shape:
         # 0-D arrays have empty strides
         return ()
-    limits = slice(1, None) if order == "C" else slice(None, -1)
-    transform = reversed if order == "C" else lambda x: x
+
+    # assert that c_contiguous and f_contiguous are not both False
+    assert c_contiguous or f_contiguous, (
+        "either c_contiguous or f_contiguous or both must be True"
+    )
+    limits = (
+        slice(1, None) if c_contiguous and not f_contiguous else slice(None, -1)
+    )
+    transform = reversed if c_contiguous else lambda x: x
     strides = tuple(
         map(
             itemsize.__mul__,
@@ -40,7 +51,7 @@ def strides_from_shape(
             ),
         )
     )
-    if order == "F":
+    if f_contiguous:
         return strides
     return strides[::-1]
 
@@ -110,6 +121,7 @@ def _from_datetime_dtype(dtype):
         raise errors.NumbaNotImplementedError(dtype)
 
 
+@functools.lru_cache
 def from_dtype(dtype):
     """
     Return a Numba Type instance corresponding to the given Numpy *dtype*.

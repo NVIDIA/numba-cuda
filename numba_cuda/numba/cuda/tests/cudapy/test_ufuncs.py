@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: BSD-2-Clause
 
 import functools
+import itertools
 import warnings
 import numpy as np
 import unittest
@@ -111,8 +112,8 @@ class BasicUFuncTest(BaseUFuncTest):
     def basic_ufunc_test(
         self,
         ufunc,
-        skip_inputs=[],
-        additional_inputs=[],
+        skip_inputs=(),
+        additional_inputs=(),
         int_output_type=None,
         float_output_type=None,
         kinds="ifc",
@@ -124,12 +125,9 @@ class BasicUFuncTest(BaseUFuncTest):
 
         pyfunc = self._make_ufunc_usecase(ufunc)
 
-        inputs = list(self.inputs) + additional_inputs
-
-        for input_tuple in inputs:
-            input_operand = input_tuple[0]
-            input_type = input_tuple[1]
-
+        for input_operand, input_type in itertools.chain(
+            self.inputs, additional_inputs
+        ):
             is_tuple = isinstance(input_operand, tuple)
             if is_tuple:
                 args = input_operand

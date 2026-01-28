@@ -452,7 +452,7 @@ def basic_indexing(
         if idxty is types.ellipsis:
             # Fill up missing dimensions at the middle
             n_missing = aryty.ndim - len(indices) + 1 + num_newaxes
-            for i in range(n_missing):
+            for _ in range(n_missing):
                 output_indices.append(zero)
                 output_shapes.append(shapes[ax])
                 output_strides.append(strides[ax])
@@ -1084,7 +1084,7 @@ class FancyIndexer(object):
             if idxty is types.ellipsis:
                 # Fill up missing dimensions at the middle
                 n_missing = aryty.ndim - len(indices) + 1 + num_newaxes
-                for i in range(n_missing):
+                for _ in range(n_missing):
                     indexer = EntireIndexer(context, builder, aryty, ary, ax)
                     indexers.append(indexer)
                     ax += 1
@@ -1564,12 +1564,8 @@ def _numpy_broadcast_to(typingctx, array, shape):
         )
 
         # Hack to get np.broadcast_to to return a read-only array
-        setattr(
-            dest,
-            "parent",
-            Constant(
-                context.get_value_type(dest._datamodel.get_type("parent")), None
-            ),
+        dest.parent = Constant(
+            context.get_value_type(dest._datamodel.get_type("parent")), None
         )
 
         res = dest._getvalue()
@@ -1773,7 +1769,7 @@ def numpy_broadcast_arrays(*args):
 
     # number of dimensions
     m = 0
-    for idx, arg in enumerate(args):
+    for arg in args:
         if isinstance(arg, types.ArrayCompatible):
             m = max(m, arg.ndim)
         elif isinstance(arg, (types.Number, types.Boolean, types.BaseTuple)):
@@ -2506,7 +2502,7 @@ def numpy_resize(a, new_shape):
 
         repeats = -(-new_size // a.size)  # ceil division
         res = a
-        for i in range(repeats - 1):
+        for _ in range(repeats - 1):
             res = np.concatenate((res, a))
         res = res[:new_size]
 
@@ -3676,7 +3672,12 @@ def _lower_constant_device_array(context, builder, ty, pyval):
 
     # Calculate strides if not provided (C-contiguous)
     if strides is None:
-        strides = strides_from_shape(shape, itemsize, order="C")
+        strides = strides_from_shape(
+            shape=shape,
+            itemsize=itemsize,
+            c_contiguous=True,
+            f_contiguous=False,
+        )
 
     # Embed device pointer as constant
     llvoidptr = context.get_value_type(types.voidptr)
