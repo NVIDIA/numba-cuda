@@ -7,6 +7,9 @@ on:
   push:
     tags:
       - 'v*'
+    # TODO: Remove pull-request branch trigger before merging
+    branches:
+      - "pull-request/[0-9]+"
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}-release
@@ -68,7 +71,8 @@ jobs:
     uses: ./.github/workflows/build-sdist.yml
 
   publish-wheels:
-    name: Publish wheels to PyPi
+    # TODO: Change to 'PyPI' before merging
+    name: Publish wheels to TestPyPI
     needs: [build-wheels-linux-64, build-wheels-linux-aarch64, build-wheels-windows, build-sdist]
     permissions:
       id-token: write
@@ -87,17 +91,25 @@ jobs:
           name: sdist
           path: dist/
       - name: Display structure of downloaded files
-        run: ls -R
-      - name: Publish to PyPI
+        run: ls -R dist/
+      # TODO: Remove TestPyPI step and enable PyPI step before merging
+      - name: Publish to TestPyPI
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
+          repository-url: https://test.pypi.org/legacy/
           verbose: true
+      # - name: Publish to PyPI
+      #   uses: pypa/gh-action-pypi-publish@release/v1
+      #   with:
+      #     verbose: true
 
   build-docs:
     uses: ./.github/workflows/docs-build.yaml
 
   deploy-docs:
     needs: build-docs
+    # TODO: Remove 'if' condition when removing pull-request branch trigger
+    if: ${{ startsWith(github.ref, 'refs/tags/') }}
     permissions:
       pages: write
       id-token: write
