@@ -215,7 +215,7 @@ Example command line debugging session
     CUDA thread hit application kernel entry function breakpoint, hello<<<(1,1,1),(8,1,1)>>> (input=..., output=...) at hello.py:18
     18     gid = cuda.grid(1)
     (cuda-gdb) list
-    13 # Editor window, and are shown as red dots next to the line numbers. The can also be set
+    13 # Editor window, and are shown as red dots next to the line numbers. They can also be set
     14 # from the CUDA GDB command line using the filename:line-number syntax, or by kernel or function name.
     15 #
     16 @cuda.jit(debug=True, opt=False)

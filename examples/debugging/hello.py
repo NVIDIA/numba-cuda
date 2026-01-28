@@ -12,7 +12,7 @@ num_entries = 8
 # breakpoints.
 #
 # Breakpoints can also be set by clicking to the left of the source line numbers in the
-# Editor window, and are shown as red dots next to the line numbers. The can also be set
+# Editor window, and are shown as red dots next to the line numbers. They can also be set
 # from the CUDA GDB command line using the filename:line-number syntax, or by kernel or function name.
 #
 @cuda.jit(debug=True, opt=False)
