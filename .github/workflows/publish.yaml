@@ -108,8 +108,8 @@ jobs:
 
   deploy-docs:
     needs: build-docs
-    # TODO: Remove 'if' condition when removing pull-request branch trigger
-    if: ${{ startsWith(github.ref, 'refs/tags/') }}
+    # TODO: Remove 'if: false' when removing pull-request branch trigger
+    if: false
     permissions:
       pages: write
       id-token: write
