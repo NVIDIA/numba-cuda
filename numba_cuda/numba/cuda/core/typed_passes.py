@@ -842,6 +842,11 @@ class PreLowerStripPhis(FunctionPass):
             newblk.body = [stmt for stmt in block.body if stmt not in phis]
 
             # insert exporters
+            # Get the block's terminator location for use when the variable
+            # was not assigned in this block (e.g., in continue/break paths).
+            term_loc = (
+                block.terminator.loc if block.is_terminated else block.loc
+            )
             for target, rhs in exporters[label]:
                 # If RHS is undefined
                 if rhs is ir.UNDEFINED:
@@ -849,7 +854,6 @@ class PreLowerStripPhis(FunctionPass):
                     # will eventually materialize as the prologue.
                     rhs = ir.Expr.null(loc=func_ir.loc)
 
-                assign = ir.Assign(target=target, value=rhs, loc=rhs.loc)
                 # Insert at the earliest possible location; i.e. after the
                 # last assignment to rhs
                 assignments = [
@@ -858,9 +862,16 @@ class PreLowerStripPhis(FunctionPass):
                     if stmt.target == rhs
                 ]
                 if assignments:
+                    # Variable was assigned in this block; use RHS location
+                    # to keep the location info at the assignment site.
+                    assign = ir.Assign(target=target, value=rhs, loc=rhs.loc)
                     last_assignment = assignments[-1]
                     newblk.insert_after(assign, last_assignment)
                 else:
+                    # Variable was NOT assigned in this block (just passed
+                    # through, e.g., in continue/break blocks). Use the
+                    # terminator location to preserve location info.
+                    assign = ir.Assign(target=target, value=rhs, loc=term_loc)
                     newblk.prepend(assign)
 
         func_ir.blocks = newblocks

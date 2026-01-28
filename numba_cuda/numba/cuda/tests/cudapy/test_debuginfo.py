@@ -1167,6 +1167,51 @@ class TestCudaDebugInfo(CUDATestCase):
             CHECK-COUNT-1: !DILocalVariable(arg: 2{{.*}}name: "flag2"""
         self.assertFileCheckMatches(llvm_ir, check_pattern)
 
+    def test_terminator_line_number(self):
+        """Test line number info on the continue statement.
+
+        When PHI node exporters are created for the continue block, they
+        should use the continue statement's line number, not the line where
+        the variable was last assigned elsewhere in the loop.
+
+        See nvbug5811432.
+        """
+        sig = (types.int64[:],)
+
+        @cuda.jit(debug=True, opt=False)
+        def foo(output):
+            bar = 0
+            for i in range(10):
+                if i == 5:
+                    continue
+                bar = bar + i
+            output[0] = bar
+
+        source_lines, start_lineno = inspect.getsourcelines(foo.py_func)
+
+        continue_line = None
+        for idx, line in enumerate(source_lines):
+            if "continue" in line:
+                continue_line = start_lineno + idx
+
+        foo.compile(sig)
+        llvm_ir = foo.inspect_llvm(sig)
+
+        # Find the dbg ID for the continue line
+        pattern = rf"!(\d+) = !DILocation\(.*line: {continue_line},"
+        match = re.search(pattern, llvm_ir)
+        self.assertIsNotNone(match, f"No DILocation for line {continue_line}")
+        continue_dbg_id = match.group(1)
+
+        # Find non-zero store to bar.N with this dbg ID
+        pattern = (
+            rf'store i64 %[^,]+, i64\* %"bar\.\d+".*!dbg !{continue_dbg_id}'
+        )
+        match = re.search(pattern, llvm_ir)
+        self.assertIsNotNone(
+            match, f"No non-zero store to 'bar.N' with !dbg !{continue_dbg_id}"
+        )
+
 
 if __name__ == "__main__":
     unittest.main()
