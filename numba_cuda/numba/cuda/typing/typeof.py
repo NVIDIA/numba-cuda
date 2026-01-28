@@ -16,6 +16,9 @@ from numba.cuda.core import errors
 from numba.cuda import utils
 from numba.cuda.np import numpy_support
 
+from cuda.core import Buffer
+from cuda.core.utils import StridedMemoryView
+
 
 # terminal color markup
 _termcolor = errors.termcolor()
@@ -370,4 +373,35 @@ def _typeof_cuda_array_interface(val, c):
         shape=shape,
         strides=strides,
         readonly=readonly,
+    )
+
+
+@typeof_impl.register(Buffer)
+def typeof_buffer(val, c):
+    return types.Array(
+        dtype=_numba_dtype_from_str("uint8"),
+        ndim=1,
+        layout="C",
+        readonly=False,
+    )
+
+
+@typeof_impl.register(StridedMemoryView)
+def typeof_strided_memory_view(val, c):
+    raw_layout = val._layout
+    if raw_layout.is_contiguous_c:
+        layout = "C"
+    elif raw_layout.is_contiguous_f:
+        layout = "F"
+    elif raw_layout.is_contiguous_any:
+        layout = "A"
+    else:
+        raise ValueError(
+            "Unsupported StridedMemoryView layout; must be contiguous"
+        )
+    return types.Array(
+        dtype=numpy_support.from_dtype(val.dtype),
+        ndim=len(val.shape),
+        layout=layout,
+        readonly=val.readonly,
     )
