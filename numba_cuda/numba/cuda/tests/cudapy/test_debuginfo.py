@@ -1145,10 +1145,11 @@ class TestCudaDebugInfo(CUDATestCase):
         self.assertFileCheckMatches(llvm_ir, check_pattern)
 
     def test_terminator_line_number(self):
-        """Test that continue statement has correct location info.
+        """Test line number info on the continue statement.
 
-        When PHI node exporters are created for the continue block,
-        respect the continue statement's line number.
+        When PHI node exporters are created for the continue block, they
+        should use the continue statement's line number, not the line where
+        the variable was last assigned elsewhere in the loop.
 
         See nvbug5811432.
         """
@@ -1156,30 +1157,37 @@ class TestCudaDebugInfo(CUDATestCase):
 
         @cuda.jit(debug=True, opt=False)
         def foo(output):
-            x = 0
-            for i in range(5):
-                if i == 3:
+            bar = 0
+            for i in range(10):
+                if i == 5:
                     continue
-                x = x + i
-            output[0] = x
+                bar = bar + i
+            output[0] = bar
 
         source_lines, start_lineno = inspect.getsourcelines(foo.py_func)
 
+        continue_line = None
         for idx, line in enumerate(source_lines):
             if "continue" in line:
                 continue_line = start_lineno + idx
-            if "x = x + i" in line:
-                compute_line = start_lineno + idx
 
         foo.compile(sig)
         llvm_ir = foo.inspect_llvm(sig)
 
-        # Verify both the continue and compute line have DILocation entries
-        check_pattern = f"""
-            CHECK: !DILocation({{{{.*}}}}line: {continue_line}
-            CHECK: !DILocation({{{{.*}}}}line: {compute_line}
-        """
-        self.assertFileCheckMatches(llvm_ir, check_pattern)
+        # Find the dbg ID for the continue line
+        pattern = rf"!(\d+) = !DILocation\(.*line: {continue_line},"
+        match = re.search(pattern, llvm_ir)
+        self.assertIsNotNone(match, f"No DILocation for line {continue_line}")
+        continue_dbg_id = match.group(1)
+
+        # Find non-zero store to bar.N with this dbg ID
+        pattern = (
+            rf'store i64 %[^,]+, i64\* %"bar\.\d+".*!dbg !{continue_dbg_id}'
+        )
+        match = re.search(pattern, llvm_ir)
+        self.assertIsNotNone(
+            match, f"No non-zero store to 'bar.N' with !dbg !{continue_dbg_id}"
+        )
 
 
 if __name__ == "__main__":
