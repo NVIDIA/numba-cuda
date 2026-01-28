@@ -17,7 +17,7 @@ def newthread(exception_queue):
         cuda.select_device(0)
         stream = cuda.stream()
         A = np.arange(100)
-        dA = cuda.to_device(A, stream=stream)
+        dA = cuda._api._to_device(A, stream=stream)
         stream.synchronize()
         del dA
         del stream

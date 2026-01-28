@@ -24,6 +24,7 @@ from numba.cuda.testing import (
     CUDATestCase,
 )
 import math
+import cupy as cp
 
 
 def add(x, y):
@@ -500,9 +501,9 @@ class TestDispatcher(CUDATestCase):
         a = 5
         hx = np.arange(10, dtype=np.int32)
         hy = np.arange(10, dtype=np.int32) * 2
-        dx = cuda.to_device(hx)
-        dy = cuda.to_device(hy)
-        dr = cuda.device_array_like(dx)
+        dx = cp.array(hx)
+        dy = cp.array(hy)
+        dr = cp.asarray(dx)
 
         r_ptr = dr.__cuda_array_interface__["data"][0]
         x_ptr = dx.__cuda_array_interface__["data"][0]
@@ -511,7 +512,7 @@ class TestDispatcher(CUDATestCase):
         axpy[1, 32](r_ptr, a, x_ptr, y_ptr, N)
 
         expected = a * hx + hy
-        actual = dr.copy_to_host()
+        actual = dr.get()
         np.testing.assert_equal(expected, actual)
 
 
@@ -862,9 +863,9 @@ class TestSharedMemoryCarveout(CUDATestCase):
                     if i < x.size:
                         x[i] = i + 1
 
-                d_x = cuda.to_device(x)
+                d_x = cp.asarray(x)
                 add_one[1, 10](d_x)
-                np.testing.assert_array_equal(d_x.copy_to_host(), expected)
+                np.testing.assert_array_equal(d_x.get(), expected)
 
                 # with signature
                 @cuda.jit("void(int32[:])", shared_memory_carveout=carveout)
@@ -873,9 +874,9 @@ class TestSharedMemoryCarveout(CUDATestCase):
                     if i < x.size:
                         x[i] = i + 1
 
-                d_x = cuda.to_device(x)
+                d_x = cp.asarray(x)
                 add_one_sig[1, 10](d_x)
-                np.testing.assert_array_equal(d_x.copy_to_host(), expected)
+                np.testing.assert_array_equal(d_x.get(), expected)
 
 
 if __name__ == "__main__":

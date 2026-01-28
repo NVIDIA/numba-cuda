@@ -10,6 +10,7 @@ from numba.cuda.cudadrv.driver import _Linker, _have_nvjitlink
 
 from numba import cuda
 from numba.cuda import config
+import cupy as cp
 
 import os
 import io
@@ -101,7 +102,7 @@ class TestLinker(CUDATestCase):
                     def kernel(result):
                         result[0] = add_from_numba(1, 2)
 
-                    result = cuda.device_array(1)
+                    result = cp.zeros(1)
                     kernel[1, 1](result)
                     assert result[0] == 3
 
@@ -158,7 +159,7 @@ class TestLinkerDumpAssembly(CUDATestCase):
                     def kernel(result):
                         result[0] = add_from_numba(1, 2)
 
-                    result = cuda.device_array(1)
+                    result = cp.zeros(1)
                     kernel[1, 1](result)
                     assert result[0] == 3
 
@@ -190,7 +191,7 @@ class TestLinkerDumpAssembly(CUDATestCase):
                 def kernel(result):
                     result[0] = add_from_numba(1, 2)
 
-                result = cuda.device_array(1)
+                result = cp.zeros(1)
                 func = kernel[1, 1]
                 with pytest.warns(
                     UserWarning,

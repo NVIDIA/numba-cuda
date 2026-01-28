@@ -3,10 +3,10 @@
 
 import numpy as np
 from numba import cuda
-from numba.cuda.testing import unittest, CUDATestCase
+from numba.cuda.testing import unittest, DeprecatedDeviceArrayApiTest
 
 
-class TestCudaAutoContext(CUDATestCase):
+class TestCudaAutoContext(DeprecatedDeviceArrayApiTest):
     def test_auto_context(self):
         """A problem was revealed by a customer that the use cuda.to_device
         does not create a CUDA context.

@@ -23,6 +23,7 @@ from numba.cuda.cudadrv.linkable_code import (
     Archive,
     Object,
 )
+import cupy as cp
 
 TEST_BIN_DIR = os.getenv("NUMBA_CUDA_TEST_BIN_DIR")
 
@@ -398,7 +399,7 @@ class TestNrtStatistics(CUDATestCase):
                 out = out.reshape(out.shape)
                 out[0] = 1
 
-            out = cuda.to_device(np.zeros(1, dtype=np.float64))
+            out = cp.zeros(1, dtype=np.float64)
             kernel[1, 1](out)
 
         with override_config("CUDA_ENABLE_NRT", False):

@@ -5,7 +5,7 @@ import unittest
 import itertools
 import numpy as np
 from numba.cuda.cudadrv.dummyarray import Array
-from numba.cuda.testing import skip_on_cudasim
+from numba.cuda.testing import skip_on_cudasim, DeprecatedDeviceArrayApiTest
 
 
 @skip_on_cudasim("Tests internals of the CUDA driver device array")
@@ -421,8 +421,9 @@ class TestEmptyArrays(unittest.TestCase):
                 self.assertTrue(arr.flags["F_CONTIGUOUS"])
 
 
+# Typing of DeviceNDarray is deprecated
 @skip_on_cudasim("Tests CUDA device array type inference")
-class TestEmptyArrayTypeInference(unittest.TestCase):
+class TestEmptyArrayTypeInference(DeprecatedDeviceArrayApiTest):
     def test_empty_array_typeof(self):
         from numba import cuda, typeof
 

@@ -18,6 +18,10 @@ Sharing between processes is implemented using the Legacy CUDA IPC API
 Export device array to another process
 --------------------------------------
 
+.. note::
+  DeviceNDArray is deprecated. Prefer CuPy for array operations including
+  inter-process communication.
+
 A device array can be shared with another process in the same machine using
 the CUDA IPC API.  To do so, use the ``.get_ipc_handle()`` method on the device
 array to get a ``IpcArrayHandle`` object, which can be transferred to another
@@ -33,6 +37,10 @@ process.
 
 Import IPC memory from another process
 --------------------------------------
+
+.. note::
+  DeviceNDArray is deprecated. Prefer CuPy for array operations including
+  inter-process communication.
 
 The following function is used to open IPC handle from another process
 as a device array.

@@ -4,11 +4,10 @@
 import numpy as np
 import math
 
-from numba import cuda
 from numba.cuda import vectorize, int32, uint32, float32, float64
 from numba.cuda.testing import skip_on_cudasim, CUDATestCase
 from numba.cuda.tests.support import CheckWarningsMixin
-
+import cupy as cp
 import unittest
 
 
@@ -162,7 +161,7 @@ class TestGPUVectorizeBroadcast(CUDATestCase):
             return a - b
 
         expect = fn(a, b)
-        got = fngpu(cuda.to_device(a), cuda.to_device(b))
+        got = fngpu(cp.asarray(a), cp.asarray(b))
         np.testing.assert_almost_equal(expect, got.copy_to_host())
 
 

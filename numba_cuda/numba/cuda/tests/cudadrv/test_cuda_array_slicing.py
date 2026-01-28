@@ -6,11 +6,15 @@ from itertools import product
 import numpy as np
 
 from numba import cuda
-from numba.cuda.testing import unittest, CUDATestCase, skip_on_cudasim
+from numba.cuda.testing import (
+    unittest,
+    DeprecatedDeviceArrayApiTest,
+    skip_on_cudasim,
+)
 from unittest.mock import patch
 
 
-class CudaArrayIndexing(CUDATestCase):
+class CudaArrayIndexing(DeprecatedDeviceArrayApiTest):
     def test_index_1d(self):
         arr = np.arange(10)
         darr = cuda.to_device(arr)
@@ -60,7 +64,7 @@ class CudaArrayIndexing(CUDATestCase):
             darr[0, 0, z]
 
 
-class CudaArrayStridedSlice(CUDATestCase):
+class CudaArrayStridedSlice(DeprecatedDeviceArrayApiTest):
     def test_strided_index_1d(self):
         arr = np.arange(10)
         darr = cuda.to_device(arr)
@@ -90,7 +94,7 @@ class CudaArrayStridedSlice(CUDATestCase):
                     )
 
 
-class CudaArraySlicing(CUDATestCase):
+class CudaArraySlicing(DeprecatedDeviceArrayApiTest):
     def test_prefix_1d(self):
         arr = np.arange(5)
         darr = cuda.to_device(arr)
@@ -217,7 +221,7 @@ class CudaArraySlicing(CUDATestCase):
         )
 
 
-class CudaArraySetting(CUDATestCase):
+class CudaArraySetting(DeprecatedDeviceArrayApiTest):
     """
     Most of the slicing logic is tested in the cases above, so these
     tests focus on the setting logic.
