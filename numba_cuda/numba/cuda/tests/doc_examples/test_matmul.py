@@ -15,7 +15,7 @@ from numba.cuda.tests.support import captured_stdout
 
 
 @skip_on_cudasim("cudasim doesn't support cuda import at non-top-level")
-def test_ex_matmul():
+def test_matmul():
     """Test of matrix multiplication on various cases."""
     # Prevent output from this test showing up when running the test suite
     with captured_stdout():

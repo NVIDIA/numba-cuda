@@ -17,7 +17,7 @@ n = bpg * tpb
 SM_SIZE = (tpb, tpb)
 
 
-def test_func():
+def test_cuda_matmul():
     @cuda.jit(void(float32[:, ::1], float32[:, ::1], float32[:, ::1]))
     def cu_square_matrix_mul(A, B, C):
         sA = cuda.shared.array(shape=SM_SIZE, dtype=float32)
