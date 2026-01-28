@@ -105,6 +105,19 @@ def is_bfloat16_supported():
     return current_context().device.supports_bfloat16
 
 
+def is_fp8_accelerated():
+    """Whether FP8 types have hardware acceleration.
+
+    Returns True if the current device has native hardware support for FP8
+    operations (compute capability >= 8.9, Ada Lovelace, Hopper and later).
+
+    When False, FP8 types will still work but will use software emulation,
+    which may be significantly slower. See cuda_fp8.hpp for performance
+    implications of different architecture levels.
+    """
+    return current_context().device.accelerates_fp8
+
+
 @require_context
 def to_device(obj, stream=0, copy=True, to=None):
     """to_device(obj, stream=0, copy=True, to=None)
@@ -538,6 +551,12 @@ def detect():
         if os.name == "nt":
             attrs += [("Compute Mode", "TCC" if tcc else "WDDM")]
         attrs += [("FP32/FP64 Performance Ratio", fp32_to_fp64_ratio)]
+        attrs += [
+            (
+                "FP8 Hardware Acceleration",
+                "Yes" if dev.accelerates_fp8 else "No",
+            )
+        ]
         if cc < (3, 5):
             support = "[NOT SUPPORTED: CC < 3.5]"
         elif cc < (5, 0):
