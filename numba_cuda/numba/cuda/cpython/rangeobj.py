@@ -158,7 +158,7 @@ def make_range_impl(int_type, range_state_type, range_iter_type):
 
             with cgutils.if_unlikely(builder, zero_step):
                 # step shouldn't be zero
-                context.call_conv.return_user_exc(
+                context.fndesc.call_conv.return_user_exc(
                     builder, ValueError, ("range() arg 3 must not be zero",)
                 )
 

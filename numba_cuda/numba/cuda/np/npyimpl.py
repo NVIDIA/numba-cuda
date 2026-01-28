@@ -507,7 +507,9 @@ def _build_array(context, builder, array_ty, input_types, inputs):
             if loc is not None:
                 msg += '\nFile "%s", line %d, ' % (loc.filename, loc.line)
 
-            context.call_conv.return_user_exc(builder, ValueError, (msg,))
+            context.fndesc.call_conv.return_user_exc(
+                builder, ValueError, (msg,)
+            )
 
     real_array_ty = array_ty.as_array
 
@@ -799,11 +801,11 @@ class _Kernel(object):
             for val, inty, outty in zip(args, osig.args, isig.args)
         ]
         if self.cres.objectmode:
-            func_type = self.context.call_conv.get_function_type(
+            func_type = self.context.fndesc.call_conv.get_function_type(
                 types.pyobject, [types.pyobject] * len(isig.args)
             )
         else:
-            func_type = self.context.call_conv.get_function_type(
+            func_type = self.context.fndesc.call_conv.get_function_type(
                 isig.return_type, isig.args
             )
         module = self.builder.block.function.module
@@ -812,7 +814,7 @@ class _Kernel(object):
         )
         entry_point.attributes.add("alwaysinline")
 
-        _, res = self.context.call_conv.call_function(
+        _, res = self.context.fndesc.call_conv.call_function(
             self.builder, entry_point, isig.return_type, isig.args, cast_args
         )
         return self.cast(res, isig.return_type, osig.return_type)
