@@ -8,6 +8,8 @@ from numba.cuda.np.numpy_support import from_dtype
 from numba.cuda.testing import CUDATestCase, skip_on_cudasim
 import unittest
 
+import pytest
+
 
 class TestCudaDateTime(CUDATestCase):
     def test_basic_datetime_kernel(self):
@@ -57,6 +59,26 @@ class TestCudaDateTime(CUDATestCase):
         delta = timediff(arr1, arr2)
 
         self.assertPreciseEqual(delta, arr2 - arr1)
+
+    @skip_on_cudasim("API unsupported in the simulator")
+    def test_datetime_cupy_inputs(self):
+        cp = pytest.importorskip("cupy")
+        datetime_t = from_dtype(cp.dtype("datetime64[D]"))
+
+        @cuda.jit
+        def assign(out, arr):
+            for i in range(arr.shape[0]):
+                out[i] = arr[i]
+
+        # TODO: cupy doesn't allow passing the datetime64[D] array directly
+        arr = cp.array(
+            np.arange("2005-02", "2006-02", dtype="datetime64[D]").view("int64")
+        ).view("datetime64[D]")
+
+        out = cp.empty_like(arr)
+        assign[1, 1](out, arr)
+
+        self.assertPreciseEqual(arr.get(), out.get())
 
     @skip_on_cudasim("ufunc API unsupported in the simulator")
     def test_gufunc(self):
