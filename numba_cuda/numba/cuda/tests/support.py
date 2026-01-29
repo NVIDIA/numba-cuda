@@ -200,20 +200,21 @@ def run_in_subprocess(code, flags=(), env=None, timeout=30):
 
     Returns the stdout and stderr of the subprocess after its termination.
     """
-    proc = subprocess.run(
-        [sys.executable, *flags, "-c", code],
-        env=env,
-        check=True,
-        capture_output=True,
-        text=True,
-        timeout=timeout,
-    )
-    out, err = proc.stdout, proc.stderr
-    if proc.returncode:
-        raise AssertionError(
-            f"process failed with code {proc.returncode:d}: stderr:\n{err}\n"
+    try:
+        proc = subprocess.run(
+            [sys.executable, *flags, "-c", code],
+            env=env,
+            check=True,
+            capture_output=True,
+            text=True,
+            timeout=timeout,
         )
-    return out, err
+    except subprocess.CalledProcessError as e:
+        raise AssertionError(
+            f"process failed with code {proc.returncode:d}: stderr:\n{e.stderr}\n"
+        ) from e
+    else:
+        return proc.stdout, proc.stderr
 
 
 def captured_stdout():
