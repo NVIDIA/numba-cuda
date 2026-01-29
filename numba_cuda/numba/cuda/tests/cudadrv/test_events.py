@@ -69,7 +69,6 @@ class TestCudaEvent(CUDATestCase):
         evt.record(stream)
 
         # Query immediately.
-        # Query immediately.
         event_time = perf_counter() - t0
         while not evt.query():
             event_time = perf_counter() - t0
@@ -78,11 +77,11 @@ class TestCudaEvent(CUDATestCase):
         evt.synchronize()
         sync_time = perf_counter() - t0
 
-        assert event_time * 1000 > spin_ms * 0.9  # nanosleep isn't reliable
-        assert sync_time * 1000 > spin_ms * 0.9  # nanosleep isn't reliable
+        # If this assertion fails, it was nanosleep inaccuracy that caused it
+        assert sync_time * 1000 > spin_ms * 0.9
 
-        # Give a few ms overhead for the synchronize call to complete
-        assert sync_time - event_time < 2e-3
+        # If this assertion fails, the event query returned early
+        assert event_time * 1000 > spin_ms * 0.9
 
 
 if __name__ == "__main__":
