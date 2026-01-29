@@ -15,7 +15,7 @@ else:
 
 
 # Lock for the preventing multiple compiler execution
-class _CompilerLock(object):
+class _CompilerLock:
     def __init__(self):
         self._lock = threading.RLock()
 
@@ -46,7 +46,7 @@ _numba_cuda_compiler_lock = _CompilerLock()
 
 
 # Wrapper that coordinates both numba and numba-cuda compiler locks
-class _DualCompilerLock(object):
+class _DualCompilerLock:
     """Wrapper that coordinates both the numba-cuda and upstream numba compiler locks."""
 
     def __init__(self, cuda_lock, numba_lock):

@@ -38,7 +38,7 @@ from numba.cuda.misc.coverage_support import get_registered_loc_notify
 _VarArgItem = namedtuple("_VarArgItem", ("vararg", "index"))
 
 
-class BaseLower(object):
+class BaseLower:
     """
     Lower IR to LLVM
     """

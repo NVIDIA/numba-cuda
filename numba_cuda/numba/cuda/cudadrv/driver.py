@@ -233,7 +233,7 @@ def _getpid():
 ERROR_MAP = _build_reverse_error_map()
 
 
-class Driver(object):
+class Driver:
     """
     Driver API functions are lazily bound.
     """
@@ -453,7 +453,7 @@ class Driver(object):
         return (major, minor)
 
 
-class _ActiveContext(object):
+class _ActiveContext:
     """An contextmanager object to cache active context to reduce dependency
     on querying the CUDA driver API.
 
@@ -1006,7 +1006,7 @@ class _SizeNotSet(int):
 _SizeNotSet = _SizeNotSet()
 
 
-class _PendingDeallocs(object):
+class _PendingDeallocs:
     """
     Pending deallocations of a context (or device since we are using the primary
     context). The capacity defaults to being unset (_SizeNotSet) but can be
@@ -1092,7 +1092,7 @@ MemoryInfo = namedtuple("MemoryInfo", "free,total")
 """
 
 
-class Context(object):
+class Context:
     """
     This object wraps a CUDA Context resource.
 
@@ -1435,7 +1435,7 @@ def _module_finalizer(context, object_code):
     return core
 
 
-class _CudaIpcImpl(object):
+class _CudaIpcImpl:
     """Implementation of GPU IPC using CUDA driver API.
     This requires the devices to be peer accessible.
     """
@@ -1472,7 +1472,7 @@ class _CudaIpcImpl(object):
         self._opened_mem = None
 
 
-class _StagedIpcImpl(object):
+class _StagedIpcImpl:
     """Implementation of GPU IPC using custom staging logic to workaround
     CUDA IPC limitation on peer accessibility between devices.
     """
@@ -1512,7 +1512,7 @@ class _StagedIpcImpl(object):
         pass
 
 
-class IpcHandle(object):
+class IpcHandle:
     """
     CUDA IPC handle. Serialization of the CUDA IPC handle object is implemented
     here.
@@ -1633,7 +1633,7 @@ class IpcHandle(object):
         )
 
 
-class MemoryPointer(object):
+class MemoryPointer:
     """A memory pointer that owns a buffer, with an optional finalizer. Memory
     pointers provide reference counting, and instances are initialized with a
     reference count of 1.
@@ -1875,7 +1875,7 @@ class ManagedMemory(AutoFreePointer):
         return ManagedOwnedPointer(weakref.proxy(self))
 
 
-class OwnedPointer(object):
+class OwnedPointer:
     def __init__(self, memptr, view=None):
         self._mem = memptr
 

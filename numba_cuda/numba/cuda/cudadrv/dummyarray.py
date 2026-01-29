@@ -120,7 +120,7 @@ def attempt_nocopy_reshape(
     return 1
 
 
-class Dim(object):
+class Dim:
     """A single dimension of the array
 
     Attributes
@@ -208,7 +208,7 @@ def compute_index(indices, dims):
     return sum(d.get_offset(i) for i, d in zip(indices, dims))
 
 
-class Element(object):
+class Element:
     is_array = False
 
     def __init__(self, extent):
@@ -218,7 +218,7 @@ class Element(object):
         yield self.extent
 
 
-class Array(object):
+class Array:
     """A dummy numpy array-like object.  Consider it an array without the
     actual data, but offset from the base data pointer.
 

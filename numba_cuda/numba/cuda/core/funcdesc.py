@@ -25,7 +25,7 @@ def qualifying_prefix(modname, qualname):
     return "{}.{}".format(modname, qualname) if modname else qualname
 
 
-class FunctionDescriptor(object):
+class FunctionDescriptor:
     """
     Base class for function descriptors: an object used to carry
     useful metadata about a natively callable function.

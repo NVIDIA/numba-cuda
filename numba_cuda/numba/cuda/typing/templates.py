@@ -34,7 +34,7 @@ if HAS_NUMBA:
 _inline_info = namedtuple("inline_info", "func_ir typemap calltypes signature")
 
 
-class Signature(object):
+class Signature:
     """
     The signature of a function call or operation, i.e. its argument types
     and return type.
@@ -956,7 +956,7 @@ def make_overload_template(
     return type(base)(name, (base,), dct)
 
 
-class _TemplateTargetHelperMixin(object):
+class _TemplateTargetHelperMixin:
     """Mixin for helper methods that assist with target/registry resolution"""
 
     def _get_target_registry(self, reason):
@@ -1105,7 +1105,7 @@ def make_intrinsic_template(
     return type(base)(name, (base,), dct)
 
 
-class AttributeTemplate(object):
+class AttributeTemplate:
     def __init__(self, context):
         self.context = context
 
@@ -1339,7 +1339,7 @@ def bound_function(template_key):
 # -----------------------------
 
 
-class Registry(object):
+class Registry:
     """
     A registry of typing declarations.  The registry stores such declarations
     for functions, attributes and globals.
@@ -1406,7 +1406,7 @@ class Registry(object):
             return decorator
 
 
-class BaseRegistryLoader(object):
+class BaseRegistryLoader:
     """
     An incremental loader for a registry.  Each new call to
     new_registrations() will iterate over the not yet seen registrations.

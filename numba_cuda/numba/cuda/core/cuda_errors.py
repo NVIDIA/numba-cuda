@@ -247,7 +247,7 @@ except ImportError:
 else:
     from colorama import init, reinit, deinit, Fore, Style
 
-    class ColorShell(object):
+    class ColorShell:
         _has_initialized = False
 
         def __init__(self):
@@ -262,7 +262,7 @@ else:
             Style.RESET_ALL  # noqa: B018
             deinit()
 
-    class reset_terminal(object):
+    class reset_terminal:
         def __init__(self):
             self._buf = bytearray(b"")
 
@@ -497,7 +497,7 @@ def deprecated(arg):
         return decorator
 
 
-class WarningsFixer(object):
+class WarningsFixer:
     """
     An object "fixing" warnings of a given category caught during
     certain phases.  The warnings can have their filename and lineno fixed,

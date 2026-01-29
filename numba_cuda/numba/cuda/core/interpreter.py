@@ -36,7 +36,7 @@ else:
     raise NotImplementedError(PYVERSION)
 
 
-class _UNKNOWN_VALUE(object):
+class _UNKNOWN_VALUE:
     """Represents an unknown value, this is for ease of debugging purposes only."""
 
     def __init__(self, varname):
@@ -49,7 +49,7 @@ class _UNKNOWN_VALUE(object):
 _logger = logging.getLogger(__name__)
 
 
-class Assigner(object):
+class Assigner:
     """
     This object keeps track of potential assignment simplifications
     inside a code block.
@@ -1347,7 +1347,7 @@ def _build_new_build_map(func_ir, name, old_body, old_lineno, new_items):
     )
 
 
-class Interpreter(object):
+class Interpreter:
     """A bytecode interpreter that builds up the IR."""
 
     _DEBUG_PRINT = False

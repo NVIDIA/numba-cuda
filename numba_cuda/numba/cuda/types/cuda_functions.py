@@ -69,7 +69,7 @@ def argsnkwargs_to_str(args, kwargs):
     return ", ".join(buf)
 
 
-class _ResolutionFailures(object):
+class _ResolutionFailures:
     """Collect and format function resolution failures."""
 
     def __init__(self, context, function_type, args, kwargs, depth=0):

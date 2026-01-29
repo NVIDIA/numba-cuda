@@ -782,7 +782,7 @@ class DeviceNDArray(DeviceNDArrayBase):
             stream.synchronize()
 
 
-class IpcArrayHandle(object):
+class IpcArrayHandle:
     """
     An IPC array handle that can be serialized and transfer to another process
     in the same machine for share a GPU allocation.

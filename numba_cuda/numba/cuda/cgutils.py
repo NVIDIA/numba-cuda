@@ -92,7 +92,7 @@ def copy_struct(dst, src, repl=None):
     return dst
 
 
-class _StructProxy(object):
+class _StructProxy:
     """
     Creates a `Structure` like interface that is constructed with information
     from DataModel instance.  FE type must have a data model that is a
@@ -269,7 +269,7 @@ class DataStructProxy(_StructProxy):
         return model.as_data(self._builder, val)
 
 
-class Structure(object):
+class Structure:
     """
     A high-level object wrapping a alloca'ed LLVM structure, including
     named fields and attribute access.

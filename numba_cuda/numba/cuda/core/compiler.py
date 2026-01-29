@@ -11,7 +11,7 @@ from numba.cuda.core.untyped_passes import ExtractByteCode, FixupArgs
 from numba.cuda.core.targetconfig import ConfigStack
 
 
-class _CompileStatus(object):
+class _CompileStatus:
     """
     Describes the state of compilation. Used like a C record.
     """
@@ -72,7 +72,7 @@ def _make_subtarget(targetctx, flags):
     return targetctx.subtarget(**subtargetoptions)
 
 
-class CompilerBase(object):
+class CompilerBase:
     """
     Stores and manages states for the compiler
     """

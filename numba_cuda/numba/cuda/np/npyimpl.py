@@ -52,7 +52,7 @@ registry = Registry("npyimpl")
 # generated and reading performs the appropriate indirection.
 
 
-class _ScalarIndexingHelper(object):
+class _ScalarIndexingHelper:
     def update_indices(self, loop_indices, name):
         pass
 
@@ -60,7 +60,7 @@ class _ScalarIndexingHelper(object):
         pass
 
 
-class _ScalarHelper(object):
+class _ScalarHelper:
     """Helper class to handle scalar arguments (and result).
     Note that store_data is only used when generating code for
     a scalar ufunc and to write the output value.
@@ -764,7 +764,7 @@ def numpy_gufunc_kernel(context, builder, sig, args, ufunc, kernel_class):
 
 
 # Kernels are the code to be executed inside the multidimensional loop.
-class _Kernel(object):
+class _Kernel:
     def __init__(self, context, builder, outer_sig):
         self.context = context
         self.builder = builder

@@ -33,7 +33,7 @@ from numba.cuda.core import consts
 _termcolor = errors.termcolor()
 
 
-class Loc(object):
+class Loc:
     """Source location"""
 
     _defmatcher = re.compile(r"def\s+(\w+)")
@@ -226,7 +226,7 @@ unknown_loc = Loc("unknown location", 0, 0)
 
 
 @total_ordering
-class SlotEqualityCheckMixin(object):
+class SlotEqualityCheckMixin:
     # some ir nodes are __dict__ free using __slots__ instead, this mixin
     # should not trigger the unintended creation of __dict__.
     __slots__ = tuple()
@@ -248,7 +248,7 @@ class SlotEqualityCheckMixin(object):
 
 
 @total_ordering
-class EqualityCheckMixin(object):
+class EqualityCheckMixin:
     """Mixin for basic equality checking"""
 
     def __eq__(self, other):
@@ -274,7 +274,7 @@ class EqualityCheckMixin(object):
         return id(self)
 
 
-class VarMap(object):
+class VarMap:
     def __init__(self):
         self._con = {}
 
@@ -315,7 +315,7 @@ class VarMap(object):
         return not self.__eq__(other)
 
 
-class AbstractRHS(object):
+class AbstractRHS:
     """Abstract base class for anything that can be the RHS of an assignment.
     This class **does not** define any methods.
     """
@@ -1475,7 +1475,7 @@ class With(SlotEqualityCheckMixin):
         return "With(entry=%s, exit=%s)" % args
 
 
-class FunctionIR(object):
+class FunctionIR:
     def __init__(
         self,
         blocks,

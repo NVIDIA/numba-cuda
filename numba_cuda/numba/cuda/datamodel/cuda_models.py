@@ -12,7 +12,7 @@ from numba.cuda import cgutils
 from numba.cuda.np import numpy_support
 
 
-class DataModel(object):
+class DataModel:
     """
     DataModel describe how a FE type is represented in the LLVM IR at
     different contexts.

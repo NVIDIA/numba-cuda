@@ -37,7 +37,7 @@ def is_bfloat16_supported():
     return False
 
 
-class stream(object):
+class stream:
     """
     The stream API is supported in the simulator - however, all execution
     occurs synchronously, so synchronization requires no operation.
@@ -94,7 +94,7 @@ def get_current_device():
 # Events
 
 
-class Event(object):
+class Event:
     """
     The simulator supports the event API, but they do not record timing info,
     and all simulation is synchronous. Execution time is not recorded.

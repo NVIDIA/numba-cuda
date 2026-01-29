@@ -310,7 +310,7 @@ class TestCloudPickleIssues(TestCase):
         self.assertEqual(cfunc(), (100, 100))
 
 
-class DynClass(object):
+class DynClass:
     # For testing issue #7356
     a = None
 

@@ -39,7 +39,7 @@ class CapturedTrace:
         return log
 
 
-class Class(object):
+class Class:
     @tracing.trace
     @classmethod
     def class_method(cls):
@@ -69,7 +69,7 @@ class Class(object):
         return "<Class instance>"
 
 
-class Class2(object):
+class Class2:
     @classmethod
     def class_method(cls):
         pass

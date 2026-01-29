@@ -261,7 +261,7 @@ class ThreadLocalStack:
             self.pop()
 
 
-class ConfigOptions(object):
+class ConfigOptions:
     OPTIONS = {}
 
     def __init__(self):
@@ -406,7 +406,7 @@ def stream_list(lst):
         start = stop
 
 
-class BenchmarkResult(object):
+class BenchmarkResult:
     def __init__(self, func, records, loop):
         self.func = func
         self.loop = loop
@@ -672,7 +672,7 @@ def dump_llvm(fndesc, module):
     print("=" * 80)
 
 
-class _lazy_pformat(object):
+class _lazy_pformat:
     def __init__(self, *args, **kwargs):
         self.args = args
         self.kwargs = kwargs

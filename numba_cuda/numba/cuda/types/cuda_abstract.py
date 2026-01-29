@@ -500,7 +500,7 @@ class TypeRef(Dummy):
         return self.instance_type
 
 
-class InitialValue(object):
+class InitialValue:
     """
     Used as a mixin for a type will potentially have an initial value that will
     be carried in the .initial_value attribute.

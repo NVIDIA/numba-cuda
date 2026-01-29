@@ -32,7 +32,7 @@ incref_decref_ty = ir.FunctionType(ir.VoidType(), [_pointer_type])
 meminfo_data_ty = ir.FunctionType(_pointer_type, [_pointer_type])
 
 
-class NRTContext(object):
+class NRTContext:
     """
     An object providing access to NRT APIs in the lowering pass.
     """

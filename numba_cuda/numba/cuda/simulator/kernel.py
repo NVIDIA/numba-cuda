@@ -61,7 +61,7 @@ class FakeOverloadDict(dict):
         return FakeOverload()
 
 
-class FakeCUDAKernel(object):
+class FakeCUDAKernel:
     """
     Wraps a @cuda.jit-ed function.
     """
@@ -250,7 +250,7 @@ class BlockThread(threading.Thread):
         return "Thread <<<%s, %s>>>" % (self.blockIdx, self.threadIdx)
 
 
-class BlockManager(object):
+class BlockManager:
     """
     Manages the execution of a thread block.
 
