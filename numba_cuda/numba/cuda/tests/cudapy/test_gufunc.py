@@ -8,10 +8,15 @@ from collections import namedtuple
 from numba.cuda import void, int32, float32, float64
 from numba.cuda import guvectorize
 from numba import cuda
-from numba.cuda.testing import skip_on_cudasim, CUDATestCase
+from numba.cuda.testing import (
+    skip_on_cudasim,
+    CUDATestCase,
+    DeprecatedDeviceArrayApiWarning,
+)
 import unittest
 from numba.cuda.core.errors import NumbaPerformanceWarning, TypingError
 from numba.cuda.tests.support import override_config
+import cupy as cp
 
 
 def _get_matmulcore_gufunc(dtype=float32):
@@ -60,7 +65,7 @@ class TestCUDAGufunc(CUDATestCase):
             matrix_ct, 4, 5
         )
 
-        dB = cuda.to_device(B)
+        dB = cp.asarray(B)
 
         C = gufunc(A, dB).copy_to_host()
         Gold = np.matmul(A, B)
@@ -119,12 +124,16 @@ class TestCUDAGufunc(CUDATestCase):
         )
 
         stream = cuda.stream()
-        dA = cuda.to_device(A, stream)
-        dB = cuda.to_device(B, stream)
+        with pytest.warns(DeprecatedDeviceArrayApiWarning):
+            dA = cuda.to_device(A, stream)
+        with pytest.warns(DeprecatedDeviceArrayApiWarning):
+            dB = cuda.to_device(B, stream)
 
-        dC = cuda.device_array(shape=(1001, 2, 5), dtype=A.dtype, stream=stream)
-        dC = gufunc(dA, dB, out=dC, stream=stream)
-        C = dC.copy_to_host(stream=stream)
+            dC = cuda.device_array(
+                shape=(1001, 2, 5), dtype=A.dtype, stream=stream
+            )
+            dC = gufunc(dA, dB, out=dC, stream=stream)
+            C = dC.copy_to_host(stream=stream)
         stream.synchronize()
 
         Gold = np.matmul(A, B)

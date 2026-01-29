@@ -8,7 +8,7 @@ from numba.cuda.cudadrv.devicearray import (
     from_record_like,
     auto_device,
 )
-from numba.cuda.testing import unittest, CUDATestCase
+from numba.cuda.testing import unittest, DeprecatedDeviceArrayApiTest
 from numba.cuda.testing import skip_on_cudasim
 from numba.cuda.np import numpy_support
 from numba import cuda
@@ -33,7 +33,7 @@ recwithrecwithmat = np.dtype([("x", np.int32), ("y", recwithmat)])
 
 
 @skip_on_cudasim("Device Record API unsupported in the simulator")
-class TestCudaDeviceRecord(CUDATestCase):
+class TestCudaDeviceRecord(DeprecatedDeviceArrayApiTest):
     """
     Tests the DeviceRecord class with np.void host types.
     """
@@ -113,12 +113,12 @@ class TestCudaDeviceRecordWithRecord(TestCudaDeviceRecord):
     """
 
     def setUp(self):
-        CUDATestCase.setUp(self)
+        DeprecatedDeviceArrayApiTest.setUp(self)
         self._create_data(np.recarray)
 
 
 @skip_on_cudasim("Structured array attr access not supported in simulator")
-class TestRecordDtypeWithStructArrays(CUDATestCase):
+class TestRecordDtypeWithStructArrays(DeprecatedDeviceArrayApiTest):
     """
     Test operation of device arrays on structured arrays.
     """

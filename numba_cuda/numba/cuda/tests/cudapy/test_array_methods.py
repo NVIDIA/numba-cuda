@@ -6,6 +6,7 @@ from numba import cuda
 from numba.cuda.testing import CUDATestCase
 import unittest
 from numba.cuda import config
+import cupy as cp
 
 
 def reinterpret_array_type(byte_arr, start, stop, output):
@@ -52,10 +53,10 @@ class TestCudaArrayMethods(CUDATestCase):
             for i in range(len(out)):
                 out[i] = q[i]
 
-        out = cuda.to_device(np.zeros(len(val), dtype="float64"))
+        out = cp.asarray(np.zeros(len(val), dtype="float64"))
 
         kernel[1, 1](out)
-        for i, j in zip(out.copy_to_host(), val):
+        for i, j in zip(out.get(), val):
             self.assertEqual(i, j)
 
 
