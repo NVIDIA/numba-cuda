@@ -81,6 +81,49 @@ jobs:
         with:
           verbose: true
 
+  upload-release:
+    name: Upload wheels to GitHub Release
+    needs: [build-wheels-linux-64, build-wheels-linux-aarch64, build-wheels-windows]
+    if: ${{ !github.event.repository.fork }}
+    permissions:
+      contents: write
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download wheels
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131  # v7.0.0
+        with:
+          pattern: numba-cuda-python*
+          path: wheels/
+          merge-multiple: true
+
+      - name: Create GitHub Release if not exists
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # Check if release already exists, create if not
+          if ! gh release view "${{ github.ref_name }}" --repo "${{ github.repository }}" > /dev/null 2>&1; then
+            echo "Creating release ${{ github.ref_name }}"
+            gh release create "${{ github.ref_name }}" \
+              --repo "${{ github.repository }}" \
+              --title "${{ github.ref_name }}" \
+              --generate-notes \
+              --verify-tag
+          else
+            echo "Release ${{ github.ref_name }} already exists"
+          fi
+
+      - name: Upload wheels to GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if [[ -d "wheels" && $(ls -A wheels 2>/dev/null | wc -l) -gt 0 ]]; then
+            echo "Uploading wheels to release ${{ github.ref_name }}"
+            gh release upload --clobber "${{ github.ref_name }}" --repo "${{ github.repository }}" wheels/*
+          else
+            echo "No wheels found to upload"
+            exit 1
+          fi
+
   build-docs:
     uses: ./.github/workflows/docs-build.yaml
 
