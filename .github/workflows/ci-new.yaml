@@ -68,7 +68,6 @@ jobs:
           - linux-64
     name: Build ${{ matrix.host-platform }}
     if: ${{ github.repository_owner == 'nvidia' && !fromJSON(needs.should-skip.outputs.skip) }}
-    secrets: inherit
     uses: ./.github/workflows/build-wheel.yml
     with:
       host-platform: ${{ matrix.host-platform }}
@@ -87,7 +86,6 @@ jobs:
           - linux-aarch64
     name: Build ${{ matrix.host-platform }}
     if: ${{ github.repository_owner == 'nvidia' && !fromJSON(needs.should-skip.outputs.skip) }}
-    secrets: inherit
     uses: ./.github/workflows/build-wheel.yml
     with:
       host-platform: ${{ matrix.host-platform }}
@@ -106,7 +104,6 @@ jobs:
           - win-64
     name: Build ${{ matrix.host-platform }}
     if: ${{ github.repository_owner == 'nvidia' && !fromJSON(needs.should-skip.outputs.skip) }}
-    secrets: inherit
     uses: ./.github/workflows/build-wheel.yml
     with:
       host-platform: ${{ matrix.host-platform }}
@@ -126,7 +123,6 @@ jobs:
       contents: read  # This is required for actions/checkout
     needs:
       - build-linux-64
-    secrets: inherit
     uses: ./.github/workflows/test-wheel-linux.yml
     with:
       build-type: pull-request
@@ -145,7 +141,6 @@ jobs:
       contents: read  # This is required for actions/checkout
     needs:
       - build-linux-aarch64
-    secrets: inherit
     uses: ./.github/workflows/test-wheel-linux.yml
     with:
       build-type: pull-request
@@ -163,7 +158,6 @@ jobs:
       contents: read  # This is required for actions/checkout
     needs:
       - build-windows
-    secrets: inherit
     uses: ./.github/workflows/test-wheel-windows.yml
     with:
       build-type: pull-request
@@ -342,7 +336,6 @@ jobs:
                  needs.test-thirdparty-awkward.result == 'cancelled' ||
                  needs.build-docs.result == 'cancelled' ||
                  needs.coverage-report.result == 'cancelled' }}; then
-                 # needs.doc.result == 'cancelled' }}; then
             exit 1
           else
             exit 0

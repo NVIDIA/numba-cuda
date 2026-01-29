@@ -102,7 +102,6 @@ jobs:
         run: ./ci/tools/env-vars test
 
       - name: Download numba-cuda build artifacts
-        if: ${{ env.SKIP_NUMBA_CUDA_TEST == '0'}}
         uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131  # v7.0.0
         with:
           name: ${{ env.NUMBA_CUDA_ARTIFACT_NAME }}
@@ -139,7 +138,6 @@ jobs:
           cuda-components: "cuda_nvcc,cuda_cudart,cuda_crt,libnvvm,cuda_nvrtc,cuda_cccl,libnvjitlink,cuda_cuobjdump"
 
       - name: Run numba-cuda tests
-        if: ${{ env.SKIP_NUMBA_CUDA_TEST == '0' }}
         env:
           CUDA_VER: ${{ matrix.CUDA_VER }}
           LOCAL_CTK: ${{ matrix.LOCAL_CTK }}
