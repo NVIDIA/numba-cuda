@@ -137,7 +137,7 @@ class CudaAPIError(CudaDriverError):
     def __init__(self, code, msg):
         self.code = code
         self.msg = msg
-        super(CudaAPIError, self).__init__(code, msg)
+        super().__init__(code, msg)
 
     def __str__(self):
         return "[%s] %s" % (self.code, self.msg)
@@ -1756,7 +1756,7 @@ class AutoFreePointer(MemoryPointer):
     """
 
     def __init__(self, *args, **kwargs):
-        super(AutoFreePointer, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         # Releease the self reference to the buffer, so that the finalizer
         # is invoked if all the derived pointers are gone.
         self.refct -= 1
@@ -1792,9 +1792,7 @@ class MappedMemory(AutoFreePointer):
         self._bufptr_ = self.host_pointer
 
         self.device_pointer = devptr
-        super(MappedMemory, self).__init__(
-            context, devptr, size, finalizer=finalizer
-        )
+        super().__init__(context, devptr, size, finalizer=finalizer)
         self.handle = self.host_pointer
 
         # For buffer interface

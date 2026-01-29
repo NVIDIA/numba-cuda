@@ -285,7 +285,7 @@ class ConfigOptions(object):
 
     def __setattr__(self, name, value):
         if name.startswith("_"):
-            super(ConfigOptions, self).__setattr__(name, value)
+            super().__setattr__(name, value)
         else:
             self._check_attr(name)
             self._values[name] = value
@@ -359,7 +359,7 @@ class UniqueDict(dict):
     def __setitem__(self, key, value):
         if key in self:
             raise AssertionError("key already in dictionary: %r" % (key,))
-        super(UniqueDict, self).__setitem__(key, value)
+        super().__setitem__(key, value)
 
 
 def runonce(fn):

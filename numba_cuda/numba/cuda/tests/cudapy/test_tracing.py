@@ -118,7 +118,7 @@ def test_traced_function():
 
 class TestTracing(unittest.TestCase):
     def __init__(self, *args):
-        super(TestTracing, self).__init__(*args)
+        super().__init__(*args)
 
     def setUp(self):
         self.capture = CapturedTrace()

@@ -467,7 +467,7 @@ class Lower(BaseLower):
     def pre_block(self, block):
         from numba.cuda.core.unsafe import eh
 
-        super(Lower, self).pre_block(block)
+        super().pre_block(block)
         self._cur_ir_block = block
 
         if block == self.firstblk:

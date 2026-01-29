@@ -982,14 +982,14 @@ class TypeVarMap(dict):
     def __getitem__(self, name):
         if name not in self:
             self[name] = TypeVar(self.context, name)
-        return super(TypeVarMap, self).__getitem__(name)
+        return super().__getitem__(name)
 
     def __setitem__(self, name, value):
         assert isinstance(name, str)
         if name in self:
             raise KeyError("Cannot redefine typevar %s" % name)
         else:
-            super(TypeVarMap, self).__setitem__(name, value)
+            super().__setitem__(name, value)
 
 
 # A temporary mapping of {function name: dispatcher object}

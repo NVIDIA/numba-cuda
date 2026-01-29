@@ -2414,7 +2414,7 @@ class LiftedWith(LiftedCode):
 class ObjModeLiftedWith(LiftedWith):
     def __init__(self, *args, **kwargs):
         self.output_types = kwargs.pop("output_types", None)
-        super(LiftedWith, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         if not self.flags.force_pyobject:
             raise ValueError("expecting `flags.force_pyobject`")
         if self.output_types is None:

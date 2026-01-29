@@ -232,7 +232,7 @@ class PrimitiveModel(DataModel):
     """
 
     def __init__(self, dmm, fe_type, be_type):
-        super(PrimitiveModel, self).__init__(dmm, fe_type)
+        super().__init__(dmm, fe_type)
         self.be_type = be_type
 
     def get_value_type(self):
@@ -301,7 +301,7 @@ class EnumModel(ProxyModel):
     """
 
     def __init__(self, dmm, fe_type):
-        super(EnumModel, self).__init__(dmm, fe_type)
+        super().__init__(dmm, fe_type)
         self._proxied_model = dmm.lookup(fe_type.dtype)
 
 
@@ -342,7 +342,7 @@ class OpaqueModel(PrimitiveModel):
 
     def __init__(self, dmm, fe_type):
         be_type = self._ptr_type
-        super(OpaqueModel, self).__init__(dmm, fe_type, be_type)
+        super().__init__(dmm, fe_type, be_type)
 
 
 @register_default(types.MemInfoPointer)
@@ -362,7 +362,7 @@ class MemInfoModel(OpaqueModel):
 class IntegerModel(PrimitiveModel):
     def __init__(self, dmm, fe_type):
         be_type = ir.IntType(fe_type.bitwidth)
-        super(IntegerModel, self).__init__(dmm, fe_type, be_type)
+        super().__init__(dmm, fe_type, be_type)
 
 
 @register_default(types.Float)
@@ -374,7 +374,7 @@ class FloatModel(PrimitiveModel):
             be_type = ir.DoubleType()
         else:
             raise NotImplementedError(fe_type)
-        super(FloatModel, self).__init__(dmm, fe_type, be_type)
+        super().__init__(dmm, fe_type, be_type)
 
 
 @register_default(types.CPointer)
@@ -383,7 +383,7 @@ class PointerModel(PrimitiveModel):
         self._pointee_model = dmm.lookup(fe_type.dtype)
         self._pointee_be_type = self._pointee_model.get_data_type()
         be_type = self._pointee_be_type.as_pointer()
-        super(PointerModel, self).__init__(dmm, fe_type, be_type)
+        super().__init__(dmm, fe_type, be_type)
 
 
 @register_default(types.EphemeralPointer)
@@ -405,7 +405,7 @@ class EphemeralPointerModel(PointerModel):
 @register_default(types.EphemeralArray)
 class EphemeralArrayModel(PointerModel):
     def __init__(self, dmm, fe_type):
-        super(EphemeralArrayModel, self).__init__(dmm, fe_type)
+        super().__init__(dmm, fe_type)
         self._data_type = ir.ArrayType(
             self._pointee_be_type, self._fe_type.count
         )
@@ -436,7 +436,7 @@ class ExternalFuncPointerModel(PrimitiveModel):
         retty = dmm.lookup(sig.return_type).get_value_type()
         args = [dmm.lookup(t).get_value_type() for t in sig.args]
         be_type = ir.PointerType(ir.FunctionType(retty, args))
-        super(ExternalFuncPointerModel, self).__init__(dmm, fe_type, be_type)
+        super().__init__(dmm, fe_type, be_type)
 
 
 @register_default(types.UniTuple)
@@ -444,7 +444,7 @@ class ExternalFuncPointerModel(PrimitiveModel):
 @register_default(types.StarArgUniTuple)
 class UniTupleModel(DataModel):
     def __init__(self, dmm, fe_type):
-        super(UniTupleModel, self).__init__(dmm, fe_type)
+        super().__init__(dmm, fe_type)
         self._elem_model = dmm.lookup(fe_type.dtype)
         self._count = len(fe_type)
         self._value_type = ir.ArrayType(
@@ -529,7 +529,7 @@ class StructModel(CompositeModel):
     _data_type = None
 
     def __init__(self, dmm, fe_type, members):
-        super(StructModel, self).__init__(dmm, fe_type)
+        super().__init__(dmm, fe_type)
         if members:
             self._fields, self._members = zip(*members)
         else:
@@ -750,7 +750,7 @@ class ComplexModel(StructModel):
             ("real", fe_type.underlying_float),
             ("imag", fe_type.underlying_float),
         ]
-        super(ComplexModel, self).__init__(dmm, fe_type, members)
+        super().__init__(dmm, fe_type, members)
 
 
 @register_default(types.LiteralList)
@@ -761,7 +761,7 @@ class ComplexModel(StructModel):
 class TupleModel(StructModel):
     def __init__(self, dmm, fe_type):
         members = [("f" + str(i), t) for i, t in enumerate(fe_type)]
-        super(TupleModel, self).__init__(dmm, fe_type, members)
+        super().__init__(dmm, fe_type, members)
 
 
 @register_default(types.UnionType)
@@ -772,7 +772,7 @@ class UnionModel(StructModel):
             # XXX: it should really be a MemInfoPointer(types.voidptr)
             ("payload", types.Tuple.from_types(fe_type.types)),
         ]
-        super(UnionModel, self).__init__(dmm, fe_type, members)
+        super().__init__(dmm, fe_type, members)
 
 
 @register_default(types.Pair)
@@ -782,7 +782,7 @@ class PairModel(StructModel):
             ("first", fe_type.first_type),
             ("second", fe_type.second_type),
         ]
-        super(PairModel, self).__init__(dmm, fe_type, members)
+        super().__init__(dmm, fe_type, members)
 
 
 @register_default(types.ListPayload)
@@ -799,7 +799,7 @@ class ListPayloadModel(StructModel):
             # Actually an inlined var-sized array
             ("data", fe_type.container.dtype),
         ]
-        super(ListPayloadModel, self).__init__(dmm, fe_type, members)
+        super().__init__(dmm, fe_type, members)
 
 
 @register_default(types.List)
@@ -812,7 +812,7 @@ class ListModel(StructModel):
             # This member is only used only for reflected lists
             ("parent", types.pyobject),
         ]
-        super(ListModel, self).__init__(dmm, fe_type, members)
+        super().__init__(dmm, fe_type, members)
 
 
 @register_default(types.ListIter)
@@ -825,7 +825,7 @@ class ListIterModel(StructModel):
             ("meminfo", types.MemInfoPointer(payload_type)),
             ("index", types.EphemeralPointer(types.intp)),
         ]
-        super(ListIterModel, self).__init__(dmm, fe_type, members)
+        super().__init__(dmm, fe_type, members)
 
 
 @register_default(types.SetEntry)
@@ -837,7 +837,7 @@ class SetEntryModel(StructModel):
             ("hash", types.intp),
             ("key", dtype),
         ]
-        super(SetEntryModel, self).__init__(dmm, fe_type, members)
+        super().__init__(dmm, fe_type, members)
 
 
 @register_default(types.SetPayload)
@@ -858,7 +858,7 @@ class SetPayloadModel(StructModel):
             # Actually an inlined var-sized array
             ("entries", entry_type),
         ]
-        super(SetPayloadModel, self).__init__(dmm, fe_type, members)
+        super().__init__(dmm, fe_type, members)
 
 
 @register_default(types.Set)
@@ -871,7 +871,7 @@ class SetModel(StructModel):
             # This member is only used only for reflected sets
             ("parent", types.pyobject),
         ]
-        super(SetModel, self).__init__(dmm, fe_type, members)
+        super().__init__(dmm, fe_type, members)
 
 
 @register_default(types.SetIter)
@@ -885,7 +885,7 @@ class SetIterModel(StructModel):
             # The index into the entries table
             ("index", types.EphemeralPointer(types.intp)),
         ]
-        super(SetIterModel, self).__init__(dmm, fe_type, members)
+        super().__init__(dmm, fe_type, members)
 
 
 @register_default(types.Array)
@@ -906,7 +906,7 @@ class ArrayModel(StructModel):
             ("shape", types.UniTuple(types.intp, ndim)),
             ("strides", types.UniTuple(types.intp, ndim)),
         ]
-        super(ArrayModel, self).__init__(dmm, fe_type, members)
+        super().__init__(dmm, fe_type, members)
 
 
 @register_default(types.ArrayFlags)
@@ -915,14 +915,14 @@ class ArrayFlagsModel(StructModel):
         members = [
             ("parent", fe_type.array_type),
         ]
-        super(ArrayFlagsModel, self).__init__(dmm, fe_type, members)
+        super().__init__(dmm, fe_type, members)
 
 
 @register_default(types.NestedArray)
 class NestedArrayModel(ArrayModel):
     def __init__(self, dmm, fe_type):
         self._be_type = dmm.lookup(fe_type.dtype).get_data_type()
-        super(NestedArrayModel, self).__init__(dmm, fe_type)
+        super().__init__(dmm, fe_type)
 
     def as_storage_type(self):
         """Return the LLVM type representation for the storage of
@@ -940,7 +940,7 @@ class OptionalModel(StructModel):
             ("valid", types.boolean),
         ]
         self._value_model = dmm.lookup(fe_type.type)
-        super(OptionalModel, self).__init__(dmm, fe_type, members)
+        super().__init__(dmm, fe_type, members)
 
     def get_return_type(self):
         return self._value_model.get_return_type()
@@ -969,7 +969,7 @@ class OptionalModel(StructModel):
 @register_default(types.Record)
 class RecordModel(CompositeModel):
     def __init__(self, dmm, fe_type):
-        super(RecordModel, self).__init__(dmm, fe_type)
+        super().__init__(dmm, fe_type)
         self._models = [self._dmm.lookup(t) for _, t in fe_type.members]
         self._be_type = ir.ArrayType(ir.IntType(8), fe_type.size)
         self._be_ptr_type = self._be_type.as_pointer()
@@ -1012,7 +1012,7 @@ class RecordModel(CompositeModel):
 @register_default(types.UnicodeCharSeq)
 class UnicodeCharSeq(DataModel):
     def __init__(self, dmm, fe_type):
-        super(UnicodeCharSeq, self).__init__(dmm, fe_type)
+        super().__init__(dmm, fe_type)
         charty = ir.IntType(numpy_support.sizeof_unicode_char * 8)
         self._be_type = ir.ArrayType(charty, fe_type.count)
 
@@ -1044,7 +1044,7 @@ class UnicodeCharSeq(DataModel):
 @register_default(types.CharSeq)
 class CharSeq(DataModel):
     def __init__(self, dmm, fe_type):
-        super(CharSeq, self).__init__(dmm, fe_type)
+        super().__init__(dmm, fe_type)
         charty = ir.IntType(8)
         self._be_type = ir.ArrayType(charty, fe_type.count)
 
@@ -1086,7 +1086,7 @@ class CContiguousFlatIter(StructModel):
         if need_indices:
             # For ndenumerate()
             members.append(("indices", types.EphemeralArray(types.intp, ndim)))
-        super(CContiguousFlatIter, self).__init__(dmm, fe_type, members)
+        super().__init__(dmm, fe_type, members)
 
 
 class FlatIter(StructModel):
@@ -1100,7 +1100,7 @@ class FlatIter(StructModel):
             ("indices", types.EphemeralArray(types.intp, ndim)),
             ("exhausted", types.EphemeralPointer(types.boolean)),
         ]
-        super(FlatIter, self).__init__(dmm, fe_type, members)
+        super().__init__(dmm, fe_type, members)
 
 
 @register_default(types.UniTupleIter)
@@ -1113,7 +1113,7 @@ class UniTupleIter(StructModel):
                 fe_type.container,
             ),
         ]
-        super(UniTupleIter, self).__init__(dmm, fe_type, members)
+        super().__init__(dmm, fe_type, members)
 
 
 @register_default(types.misc.SliceLiteral)
@@ -1125,7 +1125,7 @@ class SliceModel(StructModel):
             ("stop", types.intp),
             ("step", types.intp),
         ]
-        super(SliceModel, self).__init__(dmm, fe_type, members)
+        super().__init__(dmm, fe_type, members)
 
 
 @register_default(types.NPDatetime)
@@ -1133,7 +1133,7 @@ class SliceModel(StructModel):
 class NPDatetimeModel(PrimitiveModel):
     def __init__(self, dmm, fe_type):
         be_type = ir.IntType(64)
-        super(NPDatetimeModel, self).__init__(dmm, fe_type, be_type)
+        super().__init__(dmm, fe_type, be_type)
 
 
 @register_default(types.ArrayIterator)
@@ -1144,7 +1144,7 @@ class ArrayIterator(StructModel):
             ("index", types.EphemeralPointer(types.uintp)),
             ("array", fe_type.array_type),
         ]
-        super(ArrayIterator, self).__init__(dmm, fe_type, members)
+        super().__init__(dmm, fe_type, members)
 
 
 @register_default(types.EnumerateType)
@@ -1155,7 +1155,7 @@ class EnumerateType(StructModel):
             ("iter", fe_type.source_type),
         ]
 
-        super(EnumerateType, self).__init__(dmm, fe_type, members)
+        super().__init__(dmm, fe_type, members)
 
 
 @register_default(types.ZipType)
@@ -1165,7 +1165,7 @@ class ZipType(StructModel):
             ("iter%d" % i, source_type.iterator_type)
             for i, source_type in enumerate(fe_type.source_types)
         ]
-        super(ZipType, self).__init__(dmm, fe_type, members)
+        super().__init__(dmm, fe_type, members)
 
 
 @register_default(types.RangeIteratorType)
@@ -1178,13 +1178,13 @@ class RangeIteratorType(StructModel):
             ("step", int_type),
             ("count", types.EphemeralPointer(int_type)),
         ]
-        super(RangeIteratorType, self).__init__(dmm, fe_type, members)
+        super().__init__(dmm, fe_type, members)
 
 
 @register_default(types.Generator)
 class GeneratorModel(CompositeModel):
     def __init__(self, dmm, fe_type):
-        super(GeneratorModel, self).__init__(dmm, fe_type)
+        super().__init__(dmm, fe_type)
         # XXX Fold this in DataPacker?
         self._arg_models = [
             self._dmm.lookup(t)
@@ -1253,7 +1253,7 @@ class ArrayCTypesModel(StructModel):
             ("data", types.CPointer(fe_type.dtype)),
             ("meminfo", types.MemInfoPointer(fe_type.dtype)),
         ]
-        super(ArrayCTypesModel, self).__init__(dmm, fe_type, members)
+        super().__init__(dmm, fe_type, members)
 
 
 @register_default(types.RangeType)
@@ -1261,7 +1261,7 @@ class RangeModel(StructModel):
     def __init__(self, dmm, fe_type):
         int_type = fe_type.iterator_type.yield_type
         members = [("start", int_type), ("stop", int_type), ("step", int_type)]
-        super(RangeModel, self).__init__(dmm, fe_type, members)
+        super().__init__(dmm, fe_type, members)
 
 
 # =============================================================================
@@ -1276,7 +1276,7 @@ class NdIndexModel(StructModel):
             ("indices", types.EphemeralArray(types.intp, ndim)),
             ("exhausted", types.EphemeralPointer(types.boolean)),
         ]
-        super(NdIndexModel, self).__init__(dmm, fe_type, members)
+        super().__init__(dmm, fe_type, members)
 
 
 @register_default(types.NumpyFlatType)
@@ -1336,13 +1336,13 @@ class NdIter(StructModel):
                 member_name = "scalar%d" % i
                 members.append((member_name, types.EphemeralPointer(ty)))
 
-        super(NdIter, self).__init__(dmm, fe_type, members)
+        super().__init__(dmm, fe_type, members)
 
 
 @register_default(types.DeferredType)
 class DeferredStructModel(CompositeModel):
     def __init__(self, dmm, fe_type):
-        super(DeferredStructModel, self).__init__(dmm, fe_type)
+        super().__init__(dmm, fe_type)
         self.typename = "deferred.{0}".format(id(fe_type))
         self.actual_fe_type = fe_type.get()
 

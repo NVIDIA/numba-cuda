@@ -1555,7 +1555,7 @@ class RewriteArrayOfConsts(rewrites.Rewrite):
 
     def __init__(self, state, *args, **kws):
         self.typingctx = state.typingctx
-        super(RewriteArrayOfConsts, self).__init__(*args, **kws)
+        super().__init__(*args, **kws)
 
     def match(self, func_ir, block, typemap, calltypes):
         if len(calltypes) == 0:

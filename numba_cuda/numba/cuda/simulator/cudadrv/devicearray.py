@@ -36,7 +36,7 @@ class FakeShape(tuple):
     def __getitem__(self, k):
         if isinstance(k, int) and k < 0:
             raise IndexError("tuple index out of range")
-        return super(FakeShape, self).__getitem__(k)
+        return super().__getitem__(k)
 
 
 class FakeWithinKernelCUDAArray(object):

@@ -553,7 +553,7 @@ class ConcreteTemplate(FunctionTemplate):
 
 class _EmptyImplementationEntry(InternalError):
     def __init__(self, reason):
-        super(_EmptyImplementationEntry, self).__init__(
+        super().__init__(
             "_EmptyImplementationEntry({!r})".format(reason),
         )
 
@@ -1137,7 +1137,7 @@ class _OverloadAttributeTemplate(_TemplateTargetHelperMixin, AttributeTemplate):
     is_method = False
 
     def __init__(self, context):
-        super(_OverloadAttributeTemplate, self).__init__(context)
+        super().__init__(context)
         self.context = context
         self._init_once()
 

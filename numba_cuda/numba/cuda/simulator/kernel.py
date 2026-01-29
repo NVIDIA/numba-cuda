@@ -181,7 +181,7 @@ class BlockThread(threading.Thread):
         else:
             target = f
 
-        super(BlockThread, self).__init__(target=target)
+        super().__init__(target=target)
         self.syncthreads_event = threading.Event()
         self.syncthreads_blocked = False
         self._manager = manager
@@ -198,7 +198,7 @@ class BlockThread(threading.Thread):
 
     def run(self):
         try:
-            super(BlockThread, self).run()
+            super().run()
         except Exception as e:
             tid = "tid=%s" % list(self.threadIdx)
             ctaid = "ctaid=%s" % list(self.blockIdx)

@@ -171,7 +171,7 @@ class _StructProxy(object):
         Store the LLVM *value* into the named *field*.
         """
         if field.startswith("_"):
-            return super(_StructProxy, self).__setattr__(field, value)
+            return super().__setattr__(field, value)
         self[self._datamodel.get_field_position(field)] = value
 
     def __getitem__(self, index):
@@ -329,7 +329,7 @@ class Structure(object):
         Store the LLVM *value* into the named *field*.
         """
         if field.startswith("_"):
-            return super(Structure, self).__setattr__(field, value)
+            return super().__setattr__(field, value)
         self[self._namemap[field]] = value
 
     def __getitem__(self, index):

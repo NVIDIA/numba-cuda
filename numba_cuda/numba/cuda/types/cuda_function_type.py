@@ -121,7 +121,7 @@ class UndefinedFunctionType(FunctionType):
             types.undefined, (types.undefined,) * nargs, recvr=None
         )
 
-        super(UndefinedFunctionType, self).__init__(signature)
+        super().__init__(signature)
 
         self.dispatchers = dispatchers
 
@@ -159,7 +159,7 @@ class FunctionPrototype(Type):
             lst.append(atype.name)
         name = "%s(%s)" % (rtype, ", ".join(lst))
 
-        super(FunctionPrototype, self).__init__(name)
+        super().__init__(name)
 
     @property
     def key(self):

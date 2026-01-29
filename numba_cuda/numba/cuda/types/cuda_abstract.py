@@ -134,7 +134,7 @@ class Type(metaclass=_TypeMetaclass):
         return not (self == other)
 
     def __reduce__(self):
-        reconstructor, args, state = super(Type, self).__reduce__()
+        reconstructor, args, state = super().__reduce__()
         return (_type_reconstructor, (reconstructor, args, state))
 
     def unify(self, typingctx, other):
@@ -353,7 +353,7 @@ class IteratorType(IterableType):
     """
 
     def __init__(self, name, **kwargs):
-        super(IteratorType, self).__init__(name, **kwargs)
+        super().__init__(name, **kwargs)
 
     @abstractproperty
     def yield_type(self):
@@ -448,7 +448,7 @@ class Literal(Type):
             )
         self._literal_init(value)
         fmt = "Literal[{}]({})"
-        super(Literal, self).__init__(fmt.format(type(value).__name__, value))
+        super().__init__(fmt.format(type(value).__name__, value))
 
     def _literal_init(self, value):
         self._literal_value = value
@@ -493,7 +493,7 @@ class TypeRef(Dummy):
 
     def __init__(self, instance_type):
         self.instance_type = instance_type
-        super(TypeRef, self).__init__("typeref[{}]".format(self.instance_type))
+        super().__init__("typeref[{}]".format(self.instance_type))
 
     @property
     def key(self):
@@ -524,7 +524,7 @@ class Poison(Type):
 
     def __init__(self, ty):
         self.ty = ty
-        super(Poison, self).__init__(name="Poison<%s>" % ty)
+        super().__init__(name="Poison<%s>" % ty)
 
     def __unliteral__(self):
         return Poison(self)

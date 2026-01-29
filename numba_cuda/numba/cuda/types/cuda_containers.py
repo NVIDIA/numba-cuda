@@ -38,7 +38,7 @@ class Pair(Type):
         self.first_type = first_type
         self.second_type = second_type
         name = "pair<%s, %s>" % (first_type, second_type)
-        super(Pair, self).__init__(name=name)
+        super().__init__(name=name)
 
     @property
     def key(self):
@@ -64,7 +64,7 @@ class BaseContainerIterator(SimpleIteratorType):
         self.container = container
         yield_type = container.dtype
         name = "iter(%s)" % container
-        super(BaseContainerIterator, self).__init__(name, yield_type)
+        super().__init__(name, yield_type)
 
     def unify(self, typingctx, other):
         cls = type(self)
@@ -89,7 +89,7 @@ class BaseContainerPayload(Type):
         assert isinstance(container, self.container_class)
         self.container = container
         name = "payload(%s)" % container
-        super(BaseContainerPayload, self).__init__(name)
+        super().__init__(name)
 
     @property
     def key(self):
@@ -240,7 +240,7 @@ class UniTuple(BaseAnonymousTuple, _HomogeneousTuple, Sequence):
             dtype,
             count,
         )
-        super(UniTuple, self).__init__(name)
+        super().__init__(name)
 
     @property
     def mangling_args(self):
@@ -299,7 +299,7 @@ class UnionType(Type):
     def __init__(self, types):
         self.types = tuple(sorted(set(types), key=lambda x: x.name))
         name = "Union[{}]".format(",".join(map(str, self.types)))
-        super(UnionType, self).__init__(name=name)
+        super().__init__(name=name)
 
     def get_type_tag(self, typ):
         return self.types.index(typ)
@@ -326,7 +326,7 @@ class Tuple(BaseAnonymousTuple, _HeterogeneousTuple):
             self.__class__.__name__,
             ", ".join(str(i) for i in self.types),
         )
-        super(Tuple, self).__init__(name)
+        super().__init__(name)
 
     @property
     def mangling_args(self):
@@ -390,7 +390,7 @@ class NamedUniTuple(_HomogeneousTuple, BaseNamedTuple):
         self.fields = tuple(cls._fields)
         self.instance_class = cls
         name = "%s(%s x %d)" % (cls.__name__, dtype, count)
-        super(NamedUniTuple, self).__init__(name)
+        super().__init__(name)
 
     @property
     def iterator_type(self):
@@ -410,7 +410,7 @@ class NamedTuple(_HeterogeneousTuple, BaseNamedTuple):
         self.fields = tuple(cls._fields)
         self.instance_class = cls
         name = "%s(%s)" % (cls.__name__, ", ".join(str(i) for i in self.types))
-        super(NamedTuple, self).__init__(name)
+        super().__init__(name)
 
     @property
     def key(self):
@@ -428,7 +428,7 @@ class List(MutableSequence, InitialValue):
         self.reflected = reflected
         cls_name = "reflected list" if reflected else "list"
         name = "%s(%s)<iv=%s>" % (cls_name, self.dtype, initial_value)
-        super(List, self).__init__(name=name)
+        super().__init__(name=name)
         InitialValue.__init__(self, initial_value)
 
     def copy(self, dtype=None, reflected=None):
@@ -558,7 +558,7 @@ class Set(Container):
         self.reflected = reflected
         cls_name = "reflected set" if reflected else "set"
         name = "%s(%s)" % (cls_name, self.dtype)
-        super(Set, self).__init__(name=name)
+        super().__init__(name=name)
 
     @property
     def key(self):
@@ -613,7 +613,7 @@ class SetEntry(Type):
     def __init__(self, set_type):
         self.set_type = set_type
         name = "entry(%s)" % set_type
-        super(SetEntry, self).__init__(name)
+        super().__init__(name)
 
     @property
     def key(self):
@@ -638,7 +638,7 @@ class ListType(IterableType):
             self.__class__.__name__,
             itemty,
         )
-        super(ListType, self).__init__(name)
+        super().__init__(name)
 
     @property
     def key(self):
@@ -680,7 +680,7 @@ class ListTypeIterableType(SimpleIterableType):
         self.yield_type = self.parent.item_type
         name = "list[{}]".format(self.parent.name)
         iterator_type = ListTypeIteratorType(self)
-        super(ListTypeIterableType, self).__init__(name, iterator_type)
+        super().__init__(name, iterator_type)
 
 
 class ListTypeIteratorType(SimpleIteratorType):
@@ -689,7 +689,7 @@ class ListTypeIteratorType(SimpleIteratorType):
         self.iterable = iterable
         yield_type = iterable.yield_type
         name = "iter[{}->{}]".format(iterable.parent, yield_type)
-        super(ListTypeIteratorType, self).__init__(name, yield_type)
+        super().__init__(name, yield_type)
 
 
 def _sentry_forbidden_types(key, value):
@@ -721,7 +721,7 @@ class DictType(IterableType, InitialValue):
         name = "{}[{},{}]<iv={}>".format(
             self.__class__.__name__, keyty, valty, initial_value
         )
-        super(DictType, self).__init__(name)
+        super().__init__(name)
         InitialValue.__init__(self, initial_value)
 
     def is_precise(self):
@@ -790,7 +790,7 @@ class LiteralStrKeyDict(Literal, ConstSized, Hashable):
         def __init__(self, name, keys):
             self.__name__ = name
             self._fields = tuple(keys)
-            super(LiteralStrKeyDict.FakeNamedTuple, self).__init__()
+            super().__init__()
 
         def __len__(self):
             return len(self._fields)
@@ -855,7 +855,7 @@ class DictItemsIterableType(SimpleIterableType):
         name = "items[{}]".format(self.parent.name)
         self.name = name
         iterator_type = DictIteratorType(self)
-        super(DictItemsIterableType, self).__init__(name, iterator_type)
+        super().__init__(name, iterator_type)
 
 
 class DictKeysIterableType(SimpleIterableType):
@@ -868,7 +868,7 @@ class DictKeysIterableType(SimpleIterableType):
         name = "keys[{}]".format(self.parent.name)
         self.name = name
         iterator_type = DictIteratorType(self)
-        super(DictKeysIterableType, self).__init__(name, iterator_type)
+        super().__init__(name, iterator_type)
 
 
 class DictValuesIterableType(SimpleIterableType):
@@ -881,7 +881,7 @@ class DictValuesIterableType(SimpleIterableType):
         name = "values[{}]".format(self.parent.name)
         self.name = name
         iterator_type = DictIteratorType(self)
-        super(DictValuesIterableType, self).__init__(name, iterator_type)
+        super().__init__(name, iterator_type)
 
 
 class DictIteratorType(SimpleIteratorType):
@@ -892,7 +892,7 @@ class DictIteratorType(SimpleIteratorType):
         name = "iter[{}->{}],{}".format(
             iterable.parent, yield_type, iterable.name
         )
-        super(DictIteratorType, self).__init__(name, yield_type)
+        super().__init__(name, yield_type)
 
 
 class StructRef(Type):

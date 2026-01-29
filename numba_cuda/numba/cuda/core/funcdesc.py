@@ -314,7 +314,7 @@ class ExternalFunctionDescriptor(FunctionDescriptor):
         def mangler(a, x, abi_tags, uid=None):
             return a
 
-        super(ExternalFunctionDescriptor, self).__init__(
+        super().__init__(
             native=True,
             modname=None,
             qualname=name,

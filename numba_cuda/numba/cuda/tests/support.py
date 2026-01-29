@@ -816,13 +816,13 @@ class MemoryLeak(object):
 
 class MemoryLeakMixin(EnableNRTStatsMixin, MemoryLeak):
     def setUp(self):
-        super(MemoryLeakMixin, self).setUp()
+        super().setUp()
         self.memory_leak_setup()
 
     def tearDown(self):
         gc.collect()
         self.memory_leak_teardown()
-        super(MemoryLeakMixin, self).tearDown()
+        super().tearDown()
 
 
 class CheckWarningsMixin(object):

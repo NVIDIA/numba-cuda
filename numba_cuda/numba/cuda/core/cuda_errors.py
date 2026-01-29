@@ -57,11 +57,9 @@ class NumbaWarning(Warning):
                 return x
 
         if loc:
-            super(NumbaWarning, self).__init__(
-                highlight("%s\n%s\n" % (msg, loc.strformat()))
-            )
+            super().__init__(highlight("%s\n%s\n" % (msg, loc.strformat())))
         else:
-            super(NumbaWarning, self).__init__(highlight("%s" % (msg,)))
+            super().__init__(highlight("%s" % (msg,)))
 
 
 class NumbaPerformanceWarning(NumbaWarning):
@@ -575,7 +573,7 @@ class NumbaError(Exception):
             new_msg = "%s\n%s\n" % (msg, loc.strformat())
         else:
             new_msg = "%s" % (msg,)
-        super(NumbaError, self).__init__(highlight(new_msg))
+        super().__init__(highlight(new_msg))
 
     @property
     def contexts(self):
@@ -649,7 +647,7 @@ class NotDefinedError(IRError):
             "The compiler failed to analyze the bytecode. "
             "Variable '%s' is not defined." % name
         )
-        super(NotDefinedError, self).__init__(msg, loc=loc)
+        super().__init__(msg, loc=loc)
 
 
 class VerificationError(IRError):
@@ -678,7 +676,7 @@ class LoweringError(NumbaError):
     """
 
     def __init__(self, msg, loc=None):
-        super(LoweringError, self).__init__(msg, loc=loc)
+        super().__init__(msg, loc=loc)
 
 
 class UnsupportedParforsError(NumbaError):
@@ -717,7 +715,7 @@ class UntypedAttributeError(TypingError):
         else:
             msg = "Unknown attribute '{attr}' of type {type}"
             msg = msg.format(type=value, attr=attr)
-        super(UntypedAttributeError, self).__init__(msg, loc=loc)
+        super().__init__(msg, loc=loc)
 
 
 class ByteCodeSupportError(NumbaError):
@@ -726,7 +724,7 @@ class ByteCodeSupportError(NumbaError):
     """
 
     def __init__(self, msg, loc=None):
-        super(ByteCodeSupportError, self).__init__(msg, loc=loc)
+        super().__init__(msg, loc=loc)
 
 
 class CompilerError(NumbaError):
@@ -743,7 +741,7 @@ class ConstantInferenceError(NumbaError):
     """
 
     def __init__(self, value, loc=None):
-        super(ConstantInferenceError, self).__init__(value, loc=loc)
+        super().__init__(value, loc=loc)
 
 
 class InternalError(NumbaError):
@@ -752,7 +750,7 @@ class InternalError(NumbaError):
     """
 
     def __init__(self, exception):
-        super(InternalError, self).__init__(str(exception))
+        super().__init__(str(exception))
         self.old_exception = exception
 
 
@@ -805,7 +803,7 @@ class ForceLiteralArg(NumbaError):
             the ``args`` and ``kwargs``.
         loc : numba.ir.Loc or None
         """
-        super(ForceLiteralArg, self).__init__(
+        super().__init__(
             "Pseudo-exception to force literal arguments in the dispatcher",
             loc=loc,
         )

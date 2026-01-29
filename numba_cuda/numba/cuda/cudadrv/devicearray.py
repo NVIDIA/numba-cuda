@@ -429,9 +429,7 @@ class DeviceRecord(DeviceNDArrayBase):
     def __init__(self, dtype, stream=0, gpu_data=None):
         shape = ()
         strides = ()
-        super(DeviceRecord, self).__init__(
-            shape, strides, dtype, stream, gpu_data
-        )
+        super().__init__(shape, strides, dtype, stream, gpu_data)
 
     @property
     def flags(self):

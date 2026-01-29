@@ -118,7 +118,7 @@ def make_array(array_type):
             try:
                 array_impl = self._context.get_function("__array__", sig)
             except NotImplementedError:
-                return super(ArrayStruct, self)._make_refs(ref)
+                return super()._make_refs(ref)
 
             # Return a wrapped structure and its unwrapped reference
             datamodel = self._context.data_model_manager[array_type]

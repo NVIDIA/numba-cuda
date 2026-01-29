@@ -842,7 +842,7 @@ def _ufunc_db_function(ufunc):
 
     class _KernelImpl(_Kernel):
         def __init__(self, context, builder, outer_sig):
-            super(_KernelImpl, self).__init__(context, builder, outer_sig)
+            super().__init__(context, builder, outer_sig)
             loop = ufunc_find_matching_loop(
                 ufunc,
                 outer_sig.args + tuple(_unpack_output_types(ufunc, outer_sig)),
