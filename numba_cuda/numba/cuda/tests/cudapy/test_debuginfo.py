@@ -1108,6 +1108,65 @@ class TestCudaDebugInfo(CUDATestCase):
                 """
                 self.assertFileCheckMatches(llvm_ir, check_pattern)
 
+    def test_prologue_line_number(self):
+        """Test prologue code uses the 'def' line, not the decorator line.
+
+        When a function has decorators, Python's co_firstlineno points to the
+        first decorator line. Prologue code (argument setup, etc.) should use
+        the 'def' line for debug info, not the decorator line.
+        """
+        sig = (types.int32[:],)
+
+        @cuda.jit("void(int32[:])", debug=True, opt=False)
+        def foo(x):
+            x[0] = 1
+
+        # Get line numbers from source inspection
+        _, start_lineno = inspect.getsourcelines(foo.py_func)
+        decorator_line = start_lineno  # co_firstlineno points to decorator
+        def_line = start_lineno + 1  # def is on next line
+        first_stmt_line = start_lineno + 2  # first statement
+
+        llvm_ir = foo.inspect_llvm(sig)
+
+        # Verify DISubprogram uses def line
+        # Verify DILocation uses def line or first_stmt_line, NOT decorator
+        check_pattern = f"""
+            CHECK: !DISubprogram(
+            CHECK-SAME: line: {def_line}
+
+            CHECK: !DILocation(
+            CHECK-SAME: line: {def_line}
+            CHECK: !DILocation(
+            CHECK-SAME: line: {first_stmt_line}
+
+            CHECK-NOT: line: {decorator_line}
+        """
+        self.assertFileCheckMatches(llvm_ir, check_pattern)
+
+    def test_bool_param_ref_only(self):
+        """Test that boolean parameters (ref-only) have single DILocalVariable.
+
+        When a boolean parameter is only referenced (not reassigned), it should
+        have exactly one DILocalVariable entry as a formal parameter (arg: N).
+
+        See nvbug5805171.
+        """
+        sig = (types.boolean, types.boolean)
+
+        @cuda.jit(sig, debug=True, opt=False)
+        def foo(flag1, flag2):
+            result = flag1 and flag2  # noqa: F841
+
+        llvm_ir = foo.inspect_llvm(sig)
+
+        # Each ref-only boolean parameter should have exactly one entry of
+        # DILocalVariable as a formal parameter
+        check_pattern = r"""
+            CHECK-COUNT-1: !DILocalVariable(arg: 1{{.*}}name: "flag1"
+            CHECK-COUNT-1: !DILocalVariable(arg: 2{{.*}}name: "flag2"""
+        self.assertFileCheckMatches(llvm_ir, check_pattern)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -21,6 +21,7 @@ from numba.cuda.core import errors
 from numba.cuda import serialize, utils
 from numba import cuda
 
+from numba.cuda.np import numpy_support
 from numba.cuda.core.compiler_lock import global_compiler_lock
 from numba.cuda.typeconv.rules import default_type_manager
 from numba.cuda.typing.templates import fold_arguments
@@ -41,7 +42,6 @@ from numba.cuda.compiler import (
 from numba.cuda.core import sigutils, config, entrypoints
 from numba.cuda.flags import Flags
 from numba.cuda.cudadrv import driver, nvvm
-
 from numba.cuda.locks import module_init_lock
 from numba.cuda.core.caching import Cache, CacheImpl, NullCache
 from numba.cuda.descriptor import cuda_target
@@ -560,8 +560,7 @@ class _Kernel(serialize.ReduceMixin):
         if isinstance(ty, types.Array):
             devary = wrap_arg(val).to_device(retr, stream)
 
-            meminfo = 0
-            parent = 0
+            meminfo = parent = 0
 
             kernelargs.append(meminfo)
             kernelargs.append(parent)
@@ -571,10 +570,18 @@ class _Kernel(serialize.ReduceMixin):
             # however, this saves a noticeable amount of overhead in kernel
             # invocation
             kernelargs.append(devary.size)
-            kernelargs.append(devary.dtype.itemsize)
-            kernelargs.append(devary.device_ctypes_pointer.value)
-            kernelargs.extend(devary.shape)
-            kernelargs.extend(devary.strides)
+            kernelargs.append(itemsize := devary.dtype.itemsize)
+            kernelargs.append(devary.ptr)
+            kernelargs.extend(shape := devary.shape)
+            kernelargs.extend(
+                (layout := devary._layout).strides_in_bytes
+                or numpy_support.strides_from_shape(
+                    shape=shape,
+                    itemsize=itemsize,
+                    c_contiguous=layout.is_contiguous_c,
+                    f_contiguous=layout.is_contiguous_f,
+                )
+            )
 
         elif isinstance(ty, types.CPointer):
             # Pointer arguments should be a pointer-sized integer
@@ -612,7 +619,7 @@ class _Kernel(serialize.ReduceMixin):
 
         elif isinstance(ty, types.Record):
             devrec = wrap_arg(val).to_device(retr, stream)
-            kernelargs.append(devrec.device_ctypes_pointer.value)
+            kernelargs.append(devrec.ptr)
 
         elif isinstance(ty, types.BaseTuple):
             assert len(ty) == len(val)

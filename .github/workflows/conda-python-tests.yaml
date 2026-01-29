@@ -27,10 +27,6 @@ on:
       matrix_filter:
         type: string
         default: "."
-      container-options:
-        required: false
-        type: string
-        default: "-e _NOOP"
 
 defaults:
   run:
