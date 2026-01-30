@@ -193,30 +193,28 @@ def override_config(name, value):
         setattr(config, name, old_value)
 
 
-def run_in_subprocess(code, flags=None, env=None, timeout=30):
+def run_in_subprocess(code, flags=(), env=None, timeout=30):
     """Run a snippet of Python code in a subprocess with flags, if any are
     given. 'env' is passed to subprocess.Popen(). 'timeout' is passed to
     popen.communicate().
 
     Returns the stdout and stderr of the subprocess after its termination.
     """
-    if flags is None:
-        flags = []
-    cmd = (
-        [
-            sys.executable,
-        ]
-        + flags
-        + ["-c", code]
-    )
-    popen = subprocess.Popen(
-        cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=env
-    )
-    out, err = popen.communicate(timeout=timeout)
-    if popen.returncode != 0:
-        msg = "process failed with code %s: stderr follows\n%s\n"
-        raise AssertionError(msg % (popen.returncode, err.decode()))
-    return out, err
+    try:
+        proc = subprocess.run(
+            [sys.executable, *flags, "-c", code],
+            env=env,
+            check=True,
+            capture_output=True,
+            text=True,
+            timeout=timeout,
+        )
+    except subprocess.CalledProcessError as e:
+        raise AssertionError(
+            f"process failed with code {e.returncode:d}: stderr:\n{e.stderr}\n"
+        ) from e
+    else:
+        return proc.stdout, proc.stderr
 
 
 def captured_stdout():
