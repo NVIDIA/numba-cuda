@@ -743,4 +743,49 @@ def ufunc_db():
         "DD->D": npyfuncs.np_complex_div_impl,
     }
 
+    db[np.isfinite] = {
+        "f->?": npyfuncs.np_real_isfinite_impl,
+        "d->?": npyfuncs.np_real_isfinite_impl,
+        "F->?": npyfuncs.np_complex_isfinite_impl,
+        "D->?": npyfuncs.np_complex_isfinite_impl,
+        # int8
+        "b->?": npyfuncs.np_int_isfinite_impl,
+        "B->?": npyfuncs.np_int_isfinite_impl,
+        # int16
+        "h->?": npyfuncs.np_int_isfinite_impl,
+        "H->?": npyfuncs.np_int_isfinite_impl,
+        # int32
+        "i->?": npyfuncs.np_int_isfinite_impl,
+        "I->?": npyfuncs.np_int_isfinite_impl,
+        # int64
+        "l->?": npyfuncs.np_int_isfinite_impl,
+        "L->?": npyfuncs.np_int_isfinite_impl,
+        # intp
+        "q->?": npyfuncs.np_int_isfinite_impl,
+        "Q->?": npyfuncs.np_int_isfinite_impl,
+        # boolean
+        "?->?": npyfuncs.np_int_isfinite_impl,
+        # datetime & timedelta
+        "M->?": npyfuncs.np_datetime_isfinite_impl,
+        "m->?": npyfuncs.np_datetime_isfinite_impl,
+    }
+
+    db[np.multiply] = {
+        "??->?": numbers.int_and_impl,
+        "bb->b": numbers.int_mul_impl,
+        "BB->B": numbers.int_mul_impl,
+        "hh->h": numbers.int_mul_impl,
+        "HH->H": numbers.int_mul_impl,
+        "ii->i": numbers.int_mul_impl,
+        "II->I": numbers.int_mul_impl,
+        "ll->l": numbers.int_mul_impl,
+        "LL->L": numbers.int_mul_impl,
+        "qq->q": numbers.int_mul_impl,
+        "QQ->Q": numbers.int_mul_impl,
+        "ff->f": numbers.real_mul_impl,
+        "dd->d": numbers.real_mul_impl,
+        "FF->F": numbers.complex_mul_impl,
+        "DD->D": numbers.complex_mul_impl,
+    }
+
     return db
