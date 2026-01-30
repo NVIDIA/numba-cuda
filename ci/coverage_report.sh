@@ -28,7 +28,7 @@ rapids-logger "Show Numba system info"
 python -m numba --sysinfo
 
 rapids-logger "Run Tests with Coverage"
-python -m pytest -v --cov --pyargs numba.cuda.tests
+python -m pytest -v --cov --pyargs numba.cuda.tests --ignore=.
 
 rapids-logger "Generate Markdown Coverage Report"
 python -m coverage report --format markdown >> $GITHUB_STEP_SUMMARY

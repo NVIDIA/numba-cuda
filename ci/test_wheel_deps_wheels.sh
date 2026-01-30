@@ -42,4 +42,4 @@ apt remove --purge -y $nvvm_pkgs
 apt remove --purge -y $nvrtc_pkgs
 
 rapids-logger "Run Tests"
-NUMBA_CUDA_TEST_BIN_DIR=$NUMBA_CUDA_TEST_BIN_DIR python -m pytest -v --pyargs numba.cuda.tests
+NUMBA_CUDA_TEST_BIN_DIR=$NUMBA_CUDA_TEST_BIN_DIR python -m pytest -v --pyargs numba.cuda.tests --ignore=.
