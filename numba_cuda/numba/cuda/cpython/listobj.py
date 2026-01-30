@@ -47,7 +47,7 @@ def get_itemsize(context, list_type):
     return context.get_abi_sizeof(llty)
 
 
-class _ListPayloadMixin(object):
+class _ListPayloadMixin:
     @property
     def size(self):
         return self._payload.size

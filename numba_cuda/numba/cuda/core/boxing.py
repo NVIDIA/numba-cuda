@@ -673,7 +673,7 @@ def box_list(typ, val, c):
     return c.builder.load(res)
 
 
-class _NumbaTypeHelper(object):
+class _NumbaTypeHelper:
     """A helper for acquiring `numba.typeof` for type checking.
 
     Usage

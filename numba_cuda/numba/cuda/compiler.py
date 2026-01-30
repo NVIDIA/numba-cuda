@@ -117,7 +117,7 @@ def run_frontend(func, inline_closures=False, emit_dels=False):
     return func_ir
 
 
-class DefaultPassBuilder(object):
+class DefaultPassBuilder:
     """
     This is the default pass builder, it contains the "classic" default
     pipelines as pre-canned PassManager instances:

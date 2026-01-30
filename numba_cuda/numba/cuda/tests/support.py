@@ -47,7 +47,7 @@ if HAS_NUMBA:
     from numba.core import types as upstream_types
 
 
-class EnableNRTStatsMixin(object):
+class EnableNRTStatsMixin:
     """Mixin to enable the NRT statistics counters."""
 
     def setUp(self):
@@ -762,7 +762,7 @@ class TestCase(unittest.TestCase):
         dummy_type = DummyType("my_dummy")
         register_model(DummyType)(OpaqueModel)
 
-        class Dummy(object):
+        class Dummy:
             pass
 
         @typeof_impl.register(Dummy)
@@ -787,7 +787,7 @@ class TestCase(unittest.TestCase):
         return Dummy, DummyType
 
 
-class MemoryLeak(object):
+class MemoryLeak:
     __enable_leak_check = True
 
     def memory_leak_setup(self):
@@ -816,16 +816,16 @@ class MemoryLeak(object):
 
 class MemoryLeakMixin(EnableNRTStatsMixin, MemoryLeak):
     def setUp(self):
-        super(MemoryLeakMixin, self).setUp()
+        super().setUp()
         self.memory_leak_setup()
 
     def tearDown(self):
         gc.collect()
         self.memory_leak_teardown()
-        super(MemoryLeakMixin, self).tearDown()
+        super().tearDown()
 
 
-class CheckWarningsMixin(object):
+class CheckWarningsMixin:
     @contextlib.contextmanager
     def check_warnings(self, messages, category=RuntimeWarning):
         with warnings.catch_warnings(record=True) as catch:

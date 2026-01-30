@@ -638,7 +638,7 @@ class _Kernel(serialize.ReduceMixin):
             raise NotImplementedError(ty, val)
 
 
-class ForAll(object):
+class ForAll:
     def __init__(self, dispatcher, ntasks, tpb, stream, sharedmem):
         if ntasks < 0:
             raise ValueError(
@@ -762,7 +762,7 @@ class CUDACache(Cache):
             return super().load_overload(sig, target_context)
 
 
-class OmittedArg(object):
+class OmittedArg:
     """
     A placeholder for omitted arguments with a default value.
     """
@@ -778,7 +778,7 @@ class OmittedArg(object):
         return types.Omitted(self.value)
 
 
-class CompilingCounter(object):
+class CompilingCounter:
     """
     A simple counter that increment in __enter__ and decrement in __exit__.
     """
@@ -1391,7 +1391,7 @@ _CompileStats = collections.namedtuple(
 )
 
 
-class _FunctionCompiler(object):
+class _FunctionCompiler:
     def __init__(self, py_func, targetdescr, targetoptions, pipeline_class):
         self.py_func = py_func
         self.targetdescr = targetdescr
@@ -2414,7 +2414,7 @@ class LiftedWith(LiftedCode):
 class ObjModeLiftedWith(LiftedWith):
     def __init__(self, *args, **kwargs):
         self.output_types = kwargs.pop("output_types", None)
-        super(LiftedWith, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         if not self.flags.force_pyobject:
             raise ValueError("expecting `flags.force_pyobject`")
         if self.output_types is None:

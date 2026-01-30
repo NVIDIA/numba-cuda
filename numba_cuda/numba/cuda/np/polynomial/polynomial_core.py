@@ -37,7 +37,7 @@ class PolynomialModel(core_models.StructModel):
             # Introduced in NumPy 1.24, maybe leave it out for now
             # ('symbol', types.string)
         ]
-        super(PolynomialModel, self).__init__(dmm, fe_type, members)
+        super().__init__(dmm, fe_type, members)
 
 
 @type_callable(Polynomial)

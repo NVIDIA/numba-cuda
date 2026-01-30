@@ -38,7 +38,7 @@ from numba.cuda.misc.coverage_support import get_registered_loc_notify
 _VarArgItem = namedtuple("_VarArgItem", ("vararg", "index"))
 
 
-class BaseLower(object):
+class BaseLower:
     """
     Lower IR to LLVM
     """
@@ -467,7 +467,7 @@ class Lower(BaseLower):
     def pre_block(self, block):
         from numba.cuda.core.unsafe import eh
 
-        super(Lower, self).pre_block(block)
+        super().pre_block(block)
         self._cur_ir_block = block
 
         if block == self.firstblk:

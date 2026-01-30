@@ -7,7 +7,7 @@ from collections import ChainMap
 from numba.cuda import types
 
 
-class DataModelManager(object):
+class DataModelManager:
     """Manages mapping of FE types to their corresponding data model"""
 
     def __init__(self, handlers=None):

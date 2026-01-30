@@ -19,7 +19,7 @@ from numba.cuda.np import numpy_support
 from .vector_types import vector_types
 
 
-class Dim3(object):
+class Dim3:
     """
     Used to implement thread/block indices/dimensions
     """
@@ -62,7 +62,7 @@ class FakeCUDACg:
         return GridGroup()
 
 
-class FakeCUDALocal(object):
+class FakeCUDALocal:
     """
     CUDA Local arrays
     """
@@ -76,7 +76,7 @@ class FakeCUDALocal(object):
         return np.empty(shape, dtype)
 
 
-class FakeCUDAConst(object):
+class FakeCUDAConst:
     """
     CUDA Const arrays
     """
@@ -85,7 +85,7 @@ class FakeCUDAConst(object):
         return ary
 
 
-class FakeCUDAShared(object):
+class FakeCUDAShared:
     """
     CUDA Shared arrays.
 
@@ -150,7 +150,7 @@ declock = threading.Lock()
 exchlock = threading.Lock()
 
 
-class FakeCUDAAtomic(object):
+class FakeCUDAAtomic:
     def add(self, array, index, val):
         with addlock:
             old = array[index]
@@ -245,7 +245,7 @@ class FakeCUDAAtomic(object):
             return loaded
 
 
-class FakeCUDAFp16(object):
+class FakeCUDAFp16:
     def hadd(self, a, b):
         return a + b
 
@@ -337,7 +337,7 @@ class FakeCUDAFp16(object):
         return min(a, b)
 
 
-class FakeCUDAModule(object):
+class FakeCUDAModule:
     """
     An instance of this class will be injected into the __globals__ for an
     executing function in order to implement calls to cuda.*. This will fail to
