@@ -28,7 +28,7 @@ def check_concurrent_compiling():
         foo[1, 1](x)
         return x
 
-    arrays = [cp.arange(10) for i in range(10)]
+    arrays = [cp.asarray(np.arange(10)) for i in range(10)]
     expected = np.arange(10)
     expected[0] += 1
     with ThreadPoolExecutor(max_workers=4) as e:

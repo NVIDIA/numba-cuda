@@ -96,7 +96,7 @@ class TestCudaArrayInterface(DeprecatedDeviceArrayApiTest):
                 for j in range(arr.shape[1]):
                     out[i, j] = arr[i, j]
 
-        arr = cp.asfortranarray(cp.random.random((10, 10)))
+        arr = cp.asarray(np.asfortranarray(np.random.random((10, 10))))
         out = cp.empty_like(arr)
         copy[1, 1](arr, out)
 
