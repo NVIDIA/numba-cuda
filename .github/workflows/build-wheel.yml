@@ -68,6 +68,8 @@ jobs:
         continue-on-error: true
         # Skip the cache on Windows nodes outside of our org.
         if: ${{ inputs.host-platform != 'win-64' }}
+        with:
+          enable-apt: true
 
       - name: Set up Python
         id: setup-python1

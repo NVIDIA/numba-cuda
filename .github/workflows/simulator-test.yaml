@@ -95,6 +95,8 @@ jobs:
           echo "RAPIDS_NIGHTLY_DATE=${{ inputs.date }}" >> "${GITHUB_ENV}"
       - name: Setup proxy cache
         uses: nv-gha-runners/setup-proxy-cache@main
+        with:
+          enable-apt: true
       - name: Compute pixi environment name
         run: |
           set -euo pipefail
