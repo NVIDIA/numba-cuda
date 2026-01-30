@@ -211,7 +211,7 @@ def run_in_subprocess(code, flags=(), env=None, timeout=30):
         )
     except subprocess.CalledProcessError as e:
         raise AssertionError(
-            f"process failed with code {proc.returncode:d}: stderr:\n{e.stderr}\n"
+            f"process failed with code {e.returncode:d}: stderr:\n{e.stderr}\n"
         ) from e
     else:
         return proc.stdout, proc.stderr
