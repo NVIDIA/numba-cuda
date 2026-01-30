@@ -609,6 +609,21 @@ class TestCompile(unittest.TestCase):
             str(code_list[1].code.decode()), r"\.section\s+\.debug_info"
         )
 
+    def test_compile_tuple_args(self):
+        def op(x, y):
+            pass
+
+        ptx, resty = compile(
+            op, (types.UniTuple(int32, 2), types.UniTuple(int32, 3))
+        )
+        self.assertRegex(
+            ptx,
+            r"\.visible\s+\.func\s+\(\.param\s+\.b64\s+"
+            r"func_retval0\)\s+op\(\s*"
+            r"\.param\s+\.align\s+4\s+\.b8\s+op_param_0\[\d+\],\s*"
+            r"\.param\s+\.align\s+4\s+\.b8\s+op_param_1\[\d+\]\s*\)",
+        )
+
 
 @skip_on_cudasim("Compilation unsupported in the simulator")
 class TestCompileForCurrentDevice(CUDATestCase):
