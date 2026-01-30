@@ -16,8 +16,7 @@ python -m pip install "${package}[cu${CUDA_VER_MAJOR}]" --group "test-cu${CUDA_V
 rapids-logger "Build test binaries"
 
 export NUMBA_CUDA_TEST_BIN_DIR=`pwd`/testing
-pushd $NUMBA_CUDA_TEST_BIN_DIR
-make -j $(nproc)
+make -j $(nproc) -C "$NUMBA_CUDA_TEST_BIN_DIR"
 
 rapids-logger "Check GPU usage"
 nvidia-smi
@@ -44,5 +43,3 @@ apt remove --purge -y $nvrtc_pkgs
 
 rapids-logger "Run Tests"
 NUMBA_CUDA_TEST_BIN_DIR=$NUMBA_CUDA_TEST_BIN_DIR python -m pytest -v
-
-popd

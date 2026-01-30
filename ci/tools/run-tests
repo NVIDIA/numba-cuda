@@ -16,14 +16,12 @@ else
 fi
 
 export NUMBA_CUDA_TEST_BIN_DIR=`pwd`/testing
-pushd $NUMBA_CUDA_TEST_BIN_DIR
+mkdir -p "$NUMBA_CUDA_TEST_BIN_DIR"
 
 echo "Show Numba system info"
 python -m numba --sysinfo
 
 echo "Running numba-cuda tests"
 GPU_CC=$(nvidia-smi --query-gpu=compute_cap --format=csv | grep -v compute_cap | head -n 1 | sed 's/\.//')
-mv cu${TEST_CUDA_MAJOR}_cc${GPU_CC}/* .
+mv cu${TEST_CUDA_MAJOR}_cc${GPU_CC}/* "$NUMBA_CUDA_TEST_BIN_DIR"/
 ${SANITIZER_CMD} pytest -v -n auto --dist loadscope --loadscope-reorder
-
-popd
