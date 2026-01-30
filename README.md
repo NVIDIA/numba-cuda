@@ -29,19 +29,18 @@ If you want to manage all run-time dependencies yourself, also pass the `--no-de
 
 ## Running tests
 
-Tests must be run from the `testing` folder, which contains the pytest
-configuration and code to generate binaries used during the tests. The test
-binaries need to be built on the system on which the tests are run, so that
-they are compiled for the appropriate compute capability.
+Run tests from the repo root like a standard pytest project. The `testing`
+folder only contains the code to generate binaries needed by the test suite.
+The test binaries need to be built on the system on which the tests are run,
+so that they are compiled for the appropriate compute capability.
 
 ```
-cd testing
-# Optionally, build test binaries and point to their location for the test suite
-make -j $(nproc)
-export NUMBA_CUDA_TEST_BIN_DIR=`pwd`
-# Execute tests
+# Build test binaries in ./testing
+make -C testing -j $(nproc)
+# Execute tests (defaults NUMBA_CUDA_TEST_BIN_DIR to ./testing)
 pytest -n auto -v --dist loadscope
 ```
+Set `NUMBA_CUDA_TEST_BIN_DIR` if you build the binaries in a different location.
 
 Alternatively, you can use [pixi](https://pixi.sh/latest/installation/) to wrap all of that up for you:
 
