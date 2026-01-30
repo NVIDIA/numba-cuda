@@ -86,6 +86,8 @@ jobs:
       - name: Setup proxy cache
         uses: nv-gha-runners/setup-proxy-cache@main
         continue-on-error: true
+        with:
+          enable-apt: true
       - name: Compute pixi environment name
         run: |
           set -euo pipefail
