@@ -22,7 +22,7 @@ class TestCudaIDiv(CUDATestCase):
 
         grid = cp.ones((2, 2), dtype=np.float32)
         div[1, 1](grid, 2, 2)
-        y = grid.get()
+        y = grid.get() if not config.ENABLE_CUDASIM else grid
         self.assertTrue(np.all(y == 0.5))
 
     def test_inplace_div_double(self):
@@ -34,7 +34,7 @@ class TestCudaIDiv(CUDATestCase):
 
         grid = cp.ones((2, 2), dtype=np.float64)
         div_double[1, 1](grid, 2, 2)
-        y = grid.get()
+        y = grid.get() if not config.ENABLE_CUDASIM else grid
         self.assertTrue(np.all(y == 0.5))
 
 

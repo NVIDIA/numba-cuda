@@ -46,8 +46,13 @@ class TestCudaNonDet(CUDATestCase):
 
         diagproduct[griddim, blockdim](dF, dA, dB)
 
-        E = np.dot(dA.get(), np.diag(dB.get()))
-        np.testing.assert_array_almost_equal(dF.get(), E)
+        E = np.dot(
+            dA.get() if not config.ENABLE_CUDASIM else dA,
+            np.diag(dB.get() if not config.ENABLE_CUDASIM else dB),
+        )
+        np.testing.assert_array_almost_equal(
+            dF.get() if not config.ENABLE_CUDASIM else dF, E
+        )
 
 
 if __name__ == "__main__":

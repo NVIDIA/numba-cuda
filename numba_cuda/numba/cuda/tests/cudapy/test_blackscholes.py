@@ -153,8 +153,14 @@ class TestBlackScholes(CUDATestCase):
             )
 
         with stream:
-            callResultNumba = d_callResult.get()
-            putResultNumba = d_putResult.get()
+            callResultNumba = (
+                d_callResult.get()
+                if not config.ENABLE_CUDASIM
+                else d_callResult
+            )
+            putResultNumba = (
+                d_putResult.get() if not config.ENABLE_CUDASIM else d_putResult
+            )
 
         stream.synchronize()
 

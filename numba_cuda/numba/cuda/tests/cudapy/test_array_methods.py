@@ -60,7 +60,7 @@ class TestCudaArrayMethods(CUDATestCase):
         out = cp.asarray(np.zeros(len(val), dtype="float64"))
 
         kernel[1, 1](out)
-        for i, j in zip(out.get(), val):
+        for i, j in zip(out.get() if not config.ENABLE_CUDASIM else out, val):
             self.assertEqual(i, j)
 
 

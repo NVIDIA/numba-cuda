@@ -46,7 +46,11 @@ class SSABaseTest(CUDATestCase):
 
         # Call the CUDA kernel
         func[1, 1](gpu_result_array, *copy.deepcopy(args))
-        gpu_result = gpu_result_array.get()
+        gpu_result = (
+            gpu_result_array.get()
+            if not config.ENABLE_CUDASIM
+            else gpu_result_array
+        )
 
         # Call the original Python function for expected result
         cpu_result = np.zeros_like(result_array)

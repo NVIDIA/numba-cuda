@@ -6,6 +6,7 @@ from numba import cuda
 from numba.cuda import float64, void
 from numba.cuda.testing import unittest, CUDATestCase
 from numba.cuda.core import config
+from contextlib import nullcontext
 
 if config.ENABLE_CUDASIM:
     import numpy as cp
@@ -98,8 +99,14 @@ class TestCudaLaplace(CUDATestCase):
 
         error_grid = np.zeros(griddim)
 
-        cp_stream = cp.cuda.Stream()
-        stream = cuda.api.external_stream(cp_stream.ptr)
+        cp_stream = (
+            cp.cuda.Stream() if not config.ENABLE_CUDASIM else nullcontext()
+        )
+        stream = (
+            cuda.api.external_stream(cp_stream.ptr)
+            if not config.ENABLE_CUDASIM
+            else cuda.stream()
+        )
 
         with cp_stream:
             dA = cp.asarray(A)  # to device and don't come back
@@ -112,7 +119,11 @@ class TestCudaLaplace(CUDATestCase):
             jocabi_relax_core[griddim, blockdim, stream](dA, dAnew, derror_grid)
 
             with cp_stream:
-                error_grid = derror_grid.get()
+                error_grid = (
+                    derror_grid.get()
+                    if not config.ENABLE_CUDASIM
+                    else derror_grid
+                )
 
             error = np.abs(error_grid).max()
 

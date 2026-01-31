@@ -63,10 +63,13 @@ class TestCudaMatMul(CUDATestCase):
         dC = cp.empty_like(dA)
 
         cu_square_matrix_mul[(bpg, bpg), (tpb, tpb)](dA, dB, dC)
-        C = dC.get()
+        C = dC.get() if not config.ENABLE_CUDASIM else dC
 
         # Host compute
-        Cans = np.dot(dA.get(), dB.get())
+        Cans = np.dot(
+            dA.get() if not config.ENABLE_CUDASIM else dA,
+            dB.get() if not config.ENABLE_CUDASIM else dB,
+        )
 
         # Check result
         np.testing.assert_allclose(C, Cans, rtol=1e-5)

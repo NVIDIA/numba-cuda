@@ -409,7 +409,7 @@ class TestSharedMemory(CUDATestCase):
 
         d_result = cp.asarray(arr)
         sm_slice_copy[nblocks, nthreads, 0, nshared](arr, d_result, chunksize)
-        host_result = d_result.get()
+        host_result = d_result.get() if not config.ENABLE_CUDASIM else d_result
         np.testing.assert_array_equal(arr, host_result)
 
     @skip_on_cudasim("Can't check typing in simulator")

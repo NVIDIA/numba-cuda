@@ -33,7 +33,7 @@ class TestCudaJitNoTypes(CUDATestCase):
 
         foo[10, 1](dx, dy)
 
-        y = dy.get()
+        y = dy.get() if not config.ENABLE_CUDASIM else dy
 
         self.assertTrue(np.all(x == y))
 
@@ -84,7 +84,7 @@ class TestCudaJitNoTypes(CUDATestCase):
 
             outer[1, 1, nb_stream](d_a, d_b)
 
-            b = d_b.get()
+            b = d_b.get() if not config.ENABLE_CUDASIM else d_b
 
         self.assertEqual(b[0], (a[0] + 1) + (2 + 1))
 
