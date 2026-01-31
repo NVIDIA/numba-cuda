@@ -9,8 +9,20 @@
 set -euo pipefail
 
 echo "Installing numba-cuda wheel with test dependencies"
+
+# Check Python version to determine if we should install cupy
+PYTHON_VERSION=$(python -c "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')")
+INSTALL_CUPY=true
+if [[ "${PYTHON_VERSION}" == "3.14" ]]; then
+  echo "Python 3.14 detected - skipping cupy installation (not yet available)"
+  INSTALL_CUPY=false
+fi
+
 if [[ "${LOCAL_CTK}" == 1 ]]; then
-  pip install "${NUMBA_CUDA_ARTIFACTS_DIR}"/*.whl "cuda-bindings==${TEST_CUDA_MAJOR}.*" "cupy-cuda${TEST_CUDA_MAJOR}x" --group test
+  pip install "${NUMBA_CUDA_ARTIFACTS_DIR}"/*.whl "cuda-bindings==${TEST_CUDA_MAJOR}.*" --group test
+  if [[ "${INSTALL_CUPY}" == "true" ]]; then
+    pip install "cupy-cuda${TEST_CUDA_MAJOR}x"
+  fi
 else
   pip install $(ls "${NUMBA_CUDA_ARTIFACTS_DIR}"/*.whl)["cu${TEST_CUDA_MAJOR}"] "cuda-toolkit==${TEST_CUDA_MAJOR}.${TEST_CUDA_MINOR}.*" --group "test-cu${TEST_CUDA_MAJOR}"
 fi

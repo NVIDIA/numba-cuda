@@ -48,12 +48,12 @@ test = [
 ]
 test-cu12 = [
     "cuda-toolkit[curand]==12.*",
-    "cupy-cuda12x",
+    "cupy-cuda12x; python_version<'3.14'",
     { include-group = "test" }
 ]
 test-cu13 = [
     "cuda-toolkit[curand]==13.*",
-    "cupy-cuda13x",
+    "cupy-cuda13x; python_version<'3.14'",
     { include-group = "test" }
 ]
 
