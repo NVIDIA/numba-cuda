@@ -141,8 +141,11 @@ class TestSharedMemory(CUDATestCase):
                 for j in range(nthreads):
                     y[bd * bx + j] = sm[j]
 
-        with pytest.warns(DeprecatedDeviceArrayApiWarning):
-            # waiting on cupy support for record dtypes
+        if not config.ENABLE_CUDASIM:
+            with pytest.warns(DeprecatedDeviceArrayApiWarning):
+                # waiting on cupy support for record dtypes
+                d_result = cuda.to_device(arr)
+        else:
             d_result = cuda.to_device(arr)
 
         use_sm_chunk_copy[nblocks, nthreads](arr, d_result)
