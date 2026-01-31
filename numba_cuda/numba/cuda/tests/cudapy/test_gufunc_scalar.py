@@ -13,6 +13,7 @@ from numba.cuda.testing import (
     skip_on_cudasim,
     CUDATestCase,
     DeprecatedDeviceArrayApiWarning,
+    skip_if_cupy_unavailable,
 )
 import unittest
 import cupy as cp
@@ -21,6 +22,7 @@ import pytest
 
 @skip_on_cudasim("ufunc API unsupported in the simulator")
 class TestGUFuncScalar(CUDATestCase):
+    @skip_if_cupy_unavailable
     def test_gufunc_scalar_output(self):
         #    function type:
         #        - has no void return type

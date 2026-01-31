@@ -6,6 +6,7 @@ import unittest
 from numba.cuda.testing import (
     CUDATestCase,
     skip_if_cudadevrt_missing,
+    skip_if_cupy_unavailable,
     skip_on_cudasim,
     skip_unless_cc_60,
 )
@@ -32,6 +33,7 @@ class TestSessionization(CUDATestCase):
         self._captured_stdout.__exit__(None, None, None)
         super().tearDown()
 
+    @skip_if_cupy_unavailable
     def test_ex_sessionize(self):
         # ex_sessionize.import.begin
         import numpy as np

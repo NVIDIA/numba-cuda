@@ -117,7 +117,7 @@ if not config.ENABLE_CUDASIM:
         float32_to_bfloat16_ru,
     )
 
-from numba.cuda.testing import CUDATestCase
+from numba.cuda.testing import CUDATestCase, skip_if_cupy_unavailable
 
 import math
 
@@ -136,6 +136,7 @@ class TestBfloat16HighLevelBindings(CUDATestCase):
 
         kernel[1, 1]()
 
+    @skip_if_cupy_unavailable
     def test_math_bindings(self):
         self.skip_unsupported()
 
@@ -172,6 +173,7 @@ class TestBfloat16HighLevelBindings(CUDATestCase):
                 else:
                     self.assertAlmostEqual(arr[0], f(3.14), delta=1e-2)
 
+    @skip_if_cupy_unavailable
     def test_arithmetic_intrinsics_basic(self):
         self.skip_unsupported()
 
@@ -212,6 +214,7 @@ class TestBfloat16HighLevelBindings(CUDATestCase):
         for i, exp in enumerate(expected):
             self.assertAlmostEqual(out[i], exp, delta=1e-2)
 
+    @skip_if_cupy_unavailable
     def test_arithmetic_intrinsics_saturating(self):
         self.skip_unsupported()
 
@@ -238,6 +241,7 @@ class TestBfloat16HighLevelBindings(CUDATestCase):
             self.assertGreaterEqual(out[i], 0.0)
             self.assertLessEqual(out[i], 1.0)
 
+    @skip_if_cupy_unavailable
     def test_fma_relu_intrinsic(self):
         self.skip_unsupported()
 
@@ -254,6 +258,7 @@ class TestBfloat16HighLevelBindings(CUDATestCase):
 
         self.assertAlmostEqual(out[0], 0.0, delta=1e-3)
 
+    @skip_if_cupy_unavailable
     def test_comparison_intrinsics(self):
         self.skip_unsupported()
 
@@ -296,6 +301,7 @@ class TestBfloat16HighLevelBindings(CUDATestCase):
                 kernel[1, 1](out, a, b)
                 self.assertEqual(bool(out[0]), op(4.0, 3.0))
 
+    @skip_if_cupy_unavailable
     def test_hmax_hmin_intrinsics(self):
         self.skip_unsupported()
 
@@ -311,6 +317,7 @@ class TestBfloat16HighLevelBindings(CUDATestCase):
         self.assertAlmostEqual(out[0], 4.0, delta=1e-3)
         self.assertAlmostEqual(out[1], 3.0, delta=1e-3)
 
+    @skip_if_cupy_unavailable
     def test_nan_and_inf_intrinsics(self):
         self.skip_unsupported()
 
@@ -327,6 +334,7 @@ class TestBfloat16HighLevelBindings(CUDATestCase):
         self.assertTrue(bool(out_bool[0]))
         self.assertNotEqual(int(out_int[0]), 0)
 
+    @skip_if_cupy_unavailable
     def test_hmax_nan_hmin_nan_intrinsics(self):
         self.skip_unsupported()
 
@@ -348,6 +356,7 @@ class TestBfloat16HighLevelBindings(CUDATestCase):
         self.assertAlmostEqual(out[2], 2.0, delta=1e-3)
         self.assertAlmostEqual(out[3], 2.0, delta=1e-3)
 
+    @skip_if_cupy_unavailable
     def test_bfloat16_as_bitcast(self):
         self.skip_unsupported()
 
@@ -364,6 +373,7 @@ class TestBfloat16HighLevelBindings(CUDATestCase):
         self.assertEqual(i2[0], test_val)
         self.assertEqual(u2[0], test_val)
 
+    @skip_if_cupy_unavailable
     def test_to_integer_conversions(self):
         self.skip_unsupported()
 
@@ -425,6 +435,7 @@ class TestBfloat16HighLevelBindings(CUDATestCase):
         np.testing.assert_equal(u3.get(), np.array([2, 1, 1, 2], "uint32"))
         np.testing.assert_equal(u4.get(), np.array([2, 1, 1, 2], "uint64"))
 
+    @skip_if_cupy_unavailable
     def test_from_integer_conversions(self):
         self.skip_unsupported()
 
@@ -520,6 +531,7 @@ class TestBfloat16HighLevelBindings(CUDATestCase):
         np.testing.assert_array_less(_bf16_ulp_distance(res[16:20], u3arr), two)
         np.testing.assert_array_less(_bf16_ulp_distance(res[20:24], u4arr), two)
 
+    @skip_if_cupy_unavailable
     def test_to_float_conversions(self):
         self.skip_unsupported()
 
@@ -533,6 +545,7 @@ class TestBfloat16HighLevelBindings(CUDATestCase):
 
         self.assertAlmostEqual(out[0], 1.5, delta=1e-7)  # conversion is exact
 
+    @skip_if_cupy_unavailable
     def test_from_float_conversions(self):
         self.skip_unsupported()
 

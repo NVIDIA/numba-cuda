@@ -12,6 +12,7 @@ from numba.cuda.types import int32, float32, float64
 from numba.cuda.cudadrv.driver import CudaAPIError, driver
 from numba.cuda.testing import skip_on_cudasim
 from numba.cuda.testing import CUDATestCase
+from numba.cuda.testing import skip_if_cupy_unavailable
 import unittest
 import cupy as cp
 import pytest
@@ -81,6 +82,7 @@ class TestCUDAVectorize(CUDATestCase):
                 np.testing.assert_allclose(expected, actual)
                 self.assertEqual(actual.dtype, ty)
 
+    @skip_if_cupy_unavailable
     def test_1d_async(self):
         for vectorize in vectorize_funcs:
 
@@ -158,6 +160,7 @@ class TestCUDAVectorize(CUDATestCase):
                 # to be using addition). Instead, compare against the input dtype.
                 self.assertEqual(dtype, actual.dtype)
 
+    @skip_if_cupy_unavailable
     def test_reduce_async(self):
         for vectorize in vectorize_funcs:
 
@@ -179,6 +182,7 @@ class TestCUDAVectorize(CUDATestCase):
                 # Compare against the input dtype as in test_reduce().
                 self.assertEqual(dtype, actual.dtype)
 
+    @skip_if_cupy_unavailable
     def test_manual_transfer(self):
         for vectorize in vectorize_funcs:
 
@@ -194,6 +198,7 @@ class TestCUDAVectorize(CUDATestCase):
             np.testing.assert_equal(expected, actual)
             self.assertEqual(expected.dtype, actual.dtype)
 
+    @skip_if_cupy_unavailable
     def test_ufunc_output_2d(self):
         for vectorize in vectorize_funcs:
 

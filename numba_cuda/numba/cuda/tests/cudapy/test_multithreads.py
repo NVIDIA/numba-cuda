@@ -8,6 +8,7 @@ from numba import cuda
 from numba.cuda.testing import (
     skip_on_cudasim,
     skip_under_cuda_memcheck,
+    skip_if_cupy_unavailable,
     DeprecatedDeviceArrayApiTest,
 )
 import unittest
@@ -19,6 +20,7 @@ from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor
 has_mp_get_context = hasattr(multiprocessing, "get_context")
 
 
+@skip_if_cupy_unavailable
 def check_concurrent_compiling():
     @cuda.jit
     def foo(x):

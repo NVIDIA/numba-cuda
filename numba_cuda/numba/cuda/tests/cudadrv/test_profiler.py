@@ -5,11 +5,13 @@ import unittest
 from numba.cuda.testing import CUDATestCase
 from numba import cuda
 from numba.cuda.testing import skip_on_cudasim
+from numba.cuda.testing import skip_if_cupy_unavailable
 import cupy as cp
 
 
 @skip_on_cudasim("CUDA Profiler unsupported in the simulator")
 class TestProfiler(CUDATestCase):
+    @skip_if_cupy_unavailable
     def test_profiling(self):
         with cuda.profiling():
             a = cp.zeros(10)

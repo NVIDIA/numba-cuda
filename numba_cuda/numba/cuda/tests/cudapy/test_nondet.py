@@ -4,7 +4,7 @@
 import numpy as np
 from numba import cuda
 from numba.cuda import config, float32, void
-from numba.cuda.testing import unittest, CUDATestCase
+from numba.cuda.testing import unittest, CUDATestCase, skip_if_cupy_unavailable
 
 if config.ENABLE_CUDASIM:
     import numpy as cp
@@ -19,6 +19,7 @@ def generate_input(n):
 
 
 class TestCudaNonDet(CUDATestCase):
+    @skip_if_cupy_unavailable
     def test_for_pre(self):
         """Test issue with loop not running due to bad sign-extension at the for
         loop precondition.

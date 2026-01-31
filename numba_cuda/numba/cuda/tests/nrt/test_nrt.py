@@ -6,7 +6,11 @@ import os
 
 import numpy as np
 import unittest
-from numba.cuda.testing import CUDATestCase, skip_on_cudasim
+from numba.cuda.testing import (
+    CUDATestCase,
+    skip_on_cudasim,
+    skip_if_cupy_unavailable,
+)
 from numba.cuda.tests.support import run_in_subprocess, override_config
 from numba.cuda import get_current_device
 from numba.cuda.cudadrv.nvrtc import compile
@@ -387,6 +391,7 @@ class TestNrtStatistics(CUDATestCase):
             self.assertEqual(stats.free, stats_free)
             self.assertEqual(stats.mi_free, stats_mi_free)
 
+    @skip_if_cupy_unavailable
     def test_nrt_toggle_enabled(self):
         def array_reshape1d(arr, newshape, got):
             y = arr.reshape(newshape)

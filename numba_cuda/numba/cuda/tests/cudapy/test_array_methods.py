@@ -48,6 +48,7 @@ class TestCudaArrayMethods(CUDATestCase):
             got = output[0]
             self.assertEqual(expect, got)
 
+    @skip_if_cupy_unavailable
     def test_array_copy(self):
         val = np.array([1, 2, 3])[::-1]
 

@@ -15,6 +15,7 @@ import numpy as np
 from numba import cuda
 from numba.cuda.testing import unittest, CUDATestCase, ForeignArray
 from numba.cuda.testing import skip_on_cudasim
+from numba.cuda.testing import skip_if_cupy_unavailable
 import cupy as cp
 
 
@@ -46,6 +47,7 @@ ARRAY_FACTORIES = [
 class TestDeviceArrayCapture(CUDATestCase):
     """Test capturing device arrays from global scope."""
 
+    @skip_if_cupy_unavailable
     def test_basic_capture(self):
         """Test basic global capture with different array types."""
         for name, make_array in ARRAY_FACTORIES:
@@ -72,6 +74,7 @@ class TestDeviceArrayCapture(CUDATestCase):
                 result = output.get()
                 np.testing.assert_array_equal(result, host_data)
 
+    @skip_if_cupy_unavailable
     def test_computation(self):
         """Test captured global arrays used in computations."""
         for name, make_array in ARRAY_FACTORIES:
@@ -99,6 +102,7 @@ class TestDeviceArrayCapture(CUDATestCase):
                 expected = host_data * 2.0
                 np.testing.assert_array_equal(result, expected)
 
+    @skip_if_cupy_unavailable
     def test_mutability(self):
         """Test that captured arrays can be written to (mutability)."""
         for name, make_array in ARRAY_FACTORIES:
@@ -118,6 +122,7 @@ class TestDeviceArrayCapture(CUDATestCase):
                 expected = np.array([1.0, 2.0, 3.0, 4.0, 5.0], dtype=np.float32)
                 np.testing.assert_array_equal(result, expected)
 
+    @skip_if_cupy_unavailable
     def test_multiple_arrays(self):
         """Test capturing multiple arrays from globals."""
         for name, make_array in ARRAY_FACTORIES:
@@ -144,6 +149,7 @@ class TestDeviceArrayCapture(CUDATestCase):
                 expected = np.array([11.0, 22.0, 33.0], dtype=np.float32)
                 np.testing.assert_array_equal(result, expected)
 
+    @skip_if_cupy_unavailable
     def test_multidimensional(self):
         """Test capturing multidimensional arrays."""
         for name, make_array in ARRAY_FACTORIES:
@@ -172,6 +178,7 @@ class TestDeviceArrayCapture(CUDATestCase):
                 expected = host_2d.flatten()
                 np.testing.assert_array_equal(result, expected)
 
+    @skip_if_cupy_unavailable
     def test_dtypes(self):
         """Test capturing arrays with different dtypes."""
         dtypes = [
@@ -199,6 +206,7 @@ class TestDeviceArrayCapture(CUDATestCase):
                     kernel[1, len(host_data)](output)
                     np.testing.assert_array_equal(output.get(), host_data)
 
+    @skip_if_cupy_unavailable
     def test_direct_kernel_access(self):
         """Test direct kernel access (not via device function)."""
         for name, make_array in ARRAY_FACTORIES:
@@ -219,6 +227,7 @@ class TestDeviceArrayCapture(CUDATestCase):
                 expected = np.array([8.0, 9.0, 10.0], dtype=np.float32)
                 np.testing.assert_array_equal(result, expected)
 
+    @skip_if_cupy_unavailable
     def test_zero_dimensional(self):
         """Test capturing 0-D (scalar) device arrays."""
         for name, make_array in ARRAY_FACTORIES:

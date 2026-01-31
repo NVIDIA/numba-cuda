@@ -20,6 +20,7 @@ from numba.cuda.testing import (
     skip_if_cudadevrt_missing,
     test_data_dir,
     skip_on_standalone_numba_cuda,
+    skip_if_cupy_unavailable,
 )
 from numba.cuda.tests.support import (
     TestCase,
@@ -378,6 +379,7 @@ class CUDACachingTest(DispatcherCacheUsecasesTest):
             def f():
                 pass
 
+    @skip_if_cupy_unavailable
     def test_cannot_cache_captured_device_array(self):
         # Test that kernels capturing device arrays from closures cannot
         # be cached. The error can come from either NumbaPickler (for closure
@@ -397,6 +399,7 @@ class CUDACachingTest(DispatcherCacheUsecasesTest):
             output = cp.zeros(3, dtype=np.float32)
             cached_kernel[1, 3](output)
 
+    @skip_if_cupy_unavailable
     def test_cannot_cache_global_device_array(self):
         # Test that kernels referencing module-level global device arrays
         # cannot be cached.

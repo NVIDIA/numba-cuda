@@ -4,7 +4,7 @@
 import numpy as np
 from numba import cuda
 from numba.cuda import float64, void
-from numba.cuda.testing import unittest, CUDATestCase
+from numba.cuda.testing import unittest, CUDATestCase, skip_if_cupy_unavailable
 from numba.cuda.core import config
 from contextlib import nullcontext
 
@@ -23,6 +23,7 @@ SM_SIZE = tpb, tpb
 
 
 class TestCudaLaplace(CUDATestCase):
+    @skip_if_cupy_unavailable
     def test_laplace_small(self):
         @cuda.jit(float64(float64, float64), device=True, inline="always")
         def get_max(a, b):

@@ -10,6 +10,7 @@ from numba.cuda import guvectorize
 from numba import cuda
 from numba.cuda.testing import (
     skip_on_cudasim,
+    skip_if_cupy_unavailable,
     CUDATestCase,
     DeprecatedDeviceArrayApiWarning,
 )
@@ -54,6 +55,7 @@ class TestCUDAGufunc(CUDATestCase):
         Gold = np.matmul(A, B)
         self.assertTrue(np.allclose(C, Gold))
 
+    @skip_if_cupy_unavailable
     def test_gufunc_auto_transfer(self):
         gufunc = _get_matmulcore_gufunc()
 

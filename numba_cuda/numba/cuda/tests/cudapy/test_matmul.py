@@ -24,6 +24,7 @@ SM_SIZE = (tpb, tpb)
 
 
 class TestCudaMatMul(CUDATestCase):
+    @skip_if_cupy_unavailable
     def test_func(self):
         @cuda.jit(void(float32[:, ::1], float32[:, ::1], float32[:, ::1]))
         def cu_square_matrix_mul(A, B, C):

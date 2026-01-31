@@ -22,6 +22,7 @@ from numba.cuda.testing import (
     skip_on_cudasim,
     unittest,
     CUDATestCase,
+    skip_if_cupy_unavailable,
 )
 import math
 
@@ -491,6 +492,7 @@ class TestDispatcher(CUDATestCase):
         self.assertEqual("Add two integers, device version", add_device.__doc__)
 
     @skip_on_cudasim("Cudasim does not have device pointers")
+    @skip_if_cupy_unavailable
     def test_dispatcher_cpointer_arguments(self):
         ptr = types.CPointer(types.int32)
         sig = void(ptr, int32, ptr, ptr, uint32)
@@ -852,6 +854,7 @@ class TestSharedMemoryCarveout(CUDATestCase):
                         if i < len(x):
                             x[i] = i + 1
 
+    @skip_if_cupy_unavailable
     def test_shared_memory_carveout_valid_values(self):
         carveout_values = ["MaxL1", "MaxShared", "default", 0, 50, 100, -1]
 

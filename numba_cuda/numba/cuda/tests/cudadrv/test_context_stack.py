@@ -6,6 +6,7 @@ import numbers
 from numba import cuda
 from numba.cuda import config
 from numba.cuda.testing import unittest, CUDATestCase, skip_on_cudasim
+from numba.cuda.testing import skip_if_cupy_unavailable
 from numba.cuda.cudadrv import driver
 
 if config.ENABLE_CUDASIM:
@@ -146,6 +147,7 @@ class Test3rdPartyContext(CUDATestCase):
         finally:
             the_driver.cuCtxDestroy(hctx)
 
+    @skip_if_cupy_unavailable
     def test_cudajit_in_attached_primary_context(self):
         def do():
             from numba import cuda

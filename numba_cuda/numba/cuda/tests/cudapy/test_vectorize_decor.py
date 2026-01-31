@@ -6,7 +6,11 @@ import math
 
 from numba.cuda import vectorize, int32, uint32, float32, float64
 from numba.cuda import config
-from numba.cuda.testing import skip_on_cudasim, CUDATestCase
+from numba.cuda.testing import (
+    skip_on_cudasim,
+    CUDATestCase,
+    skip_if_cupy_unavailable,
+)
 from numba.cuda.tests.support import CheckWarningsMixin
 
 if config.ENABLE_CUDASIM:
@@ -150,6 +154,7 @@ class TestGPUVectorizeBroadcast(CUDATestCase):
         got = fngpu(a, b)
         np.testing.assert_almost_equal(expect, got)
 
+    @skip_if_cupy_unavailable
     def test_device_broadcast(self):
         """
         Same test as .test_broadcast() but with device array as inputs

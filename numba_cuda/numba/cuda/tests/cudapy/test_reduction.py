@@ -4,7 +4,7 @@
 import numpy as np
 from numba import cuda
 from numba.cuda import config
-from numba.cuda.testing import CUDATestCase
+from numba.cuda.testing import CUDATestCase, skip_if_cupy_unavailable
 import unittest
 from numba.cuda import config
 
@@ -59,6 +59,7 @@ class TestReduction(CUDATestCase):
         got = sum_reduce(A)
         self.assertEqual(expect, got)
 
+    @skip_if_cupy_unavailable
     def test_empty_array_device(self):
         A = np.arange(0, dtype=np.float64) + 1
         dA = cp.asarray(A)
@@ -87,6 +88,7 @@ class TestReduction(CUDATestCase):
         got = sum_reduce(A, init=init)
         self.assertEqual(expect, got)
 
+    @skip_if_cupy_unavailable
     def test_result_on_device(self):
         A = np.arange(10, dtype=np.float64) + 1
         got = cp.zeros(1, dtype=np.float64)

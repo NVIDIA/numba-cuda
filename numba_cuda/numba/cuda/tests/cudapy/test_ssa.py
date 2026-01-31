@@ -17,7 +17,11 @@ from numba.cuda.core import errors
 
 from numba.cuda.extending import overload
 from numba.cuda.tests.support import override_config
-from numba.cuda.testing import CUDATestCase, skip_on_cudasim
+from numba.cuda.testing import (
+    CUDATestCase,
+    skip_on_cudasim,
+    skip_if_cupy_unavailable,
+)
 
 if config.ENABLE_CUDASIM:
     import numpy as cp
@@ -65,6 +69,7 @@ class TestSSA(SSABaseTest):
     Contains tests to help isolate problems in SSA
     """
 
+    @skip_if_cupy_unavailable
     def test_argument_name_reused(self):
         @jit
         def foo(result, x):
@@ -73,6 +78,7 @@ class TestSSA(SSABaseTest):
 
         self.check_func(foo, np.array([124.0]), 123)
 
+    @skip_if_cupy_unavailable
     def test_if_else_redefine(self):
         @jit
         def foo(result, x, y):
@@ -86,6 +92,7 @@ class TestSSA(SSABaseTest):
         self.check_func(foo, np.array([2.0]), 3, 2)
         self.check_func(foo, np.array([2.0]), 2, 3)
 
+    @skip_if_cupy_unavailable
     def test_sum_loop(self):
         @jit
         def foo(result, n):
@@ -97,6 +104,7 @@ class TestSSA(SSABaseTest):
         self.check_func(foo, np.array([0.0]), 0)
         self.check_func(foo, np.array([45.0]), 10)
 
+    @skip_if_cupy_unavailable
     def test_sum_loop_2vars(self):
         @jit
         def foo(result, n):
@@ -111,6 +119,7 @@ class TestSSA(SSABaseTest):
         self.check_func(foo, np.array([0.0, 0.0]), 0)
         self.check_func(foo, np.array([45.0, 110.0]), 10)
 
+    @skip_if_cupy_unavailable
     def test_sum_2d_loop(self):
         @jit
         def foo(result, n):
@@ -153,12 +162,14 @@ class TestSSA(SSABaseTest):
     @skip_on_cudasim(
         "Numba variable warnings are not supported in the simulator"
     )
+    @skip_if_cupy_unavailable
     def test_undefined_var(self):
         with override_config("ALWAYS_WARN_UNINIT_VAR", 0):
             self.check_undefined_var(should_warn=False)
         with override_config("ALWAYS_WARN_UNINIT_VAR", 1):
             self.check_undefined_var(should_warn=True)
 
+    @skip_if_cupy_unavailable
     def test_phi_propagation(self):
         @jit
         def foo(result, actions):
@@ -258,6 +269,7 @@ class TestReportedSSAIssues(SSABaseTest):
     # Tests from issues
     # https://github.com/numba/numba/issues?q=is%3Aopen+is%3Aissue+label%3ASSA
 
+    @skip_if_cupy_unavailable
     def test_issue2194(self):
         @jit
         def foo(result, V):
@@ -272,6 +284,7 @@ class TestReportedSSAIssues(SSABaseTest):
         V = np.empty(1)
         self.check_func(foo, np.array([1.0]), V)
 
+    @skip_if_cupy_unavailable
     def test_issue3094(self):
         @jit
         def foo(result, pred):
@@ -283,6 +296,7 @@ class TestReportedSSAIssues(SSABaseTest):
 
         self.check_func(foo, np.array([0]), False)
 
+    @skip_if_cupy_unavailable
     def test_issue3931(self):
         @jit
         def foo(result, arr):
@@ -297,6 +311,7 @@ class TestReportedSSAIssues(SSABaseTest):
         result_gpu = np.zeros((3, 2))
         self.check_func(foo, result_gpu, np.zeros((3, 2)))
 
+    @skip_if_cupy_unavailable
     def test_issue3976(self):
         def overload_this(a):
             return 42
@@ -317,6 +332,7 @@ class TestReportedSSAIssues(SSABaseTest):
 
         self.check_func(foo, np.array([42]), True)
 
+    @skip_if_cupy_unavailable
     def test_issue3979(self):
         @jit
         def foo(result, A, B):
@@ -333,6 +349,7 @@ class TestReportedSSAIssues(SSABaseTest):
             foo, np.array([2, 4]), np.array([1, 2]), np.array([3, 4])
         )
 
+    @skip_if_cupy_unavailable
     def test_issue5219(self):
         def overload_this(a, b=None):
             if isinstance(b, tuple):
@@ -356,6 +373,7 @@ class TestReportedSSAIssues(SSABaseTest):
 
         self.check_func(test_tuple, np.array([2]), 1, (2,))
 
+    @skip_if_cupy_unavailable
     def test_issue5223(self):
         @jit
         def bar(result, x):
@@ -372,6 +390,7 @@ class TestReportedSSAIssues(SSABaseTest):
         expected = np.ones(5)  # Since len(a) == 5, it should return unchanged
         self.check_func(bar, expected, a)
 
+    @skip_if_cupy_unavailable
     def test_issue5243(self):
         @jit
         def foo(result, q, lin):
@@ -382,6 +401,7 @@ class TestReportedSSAIssues(SSABaseTest):
         lin = np.array([0.1, 0.6, 0.3])
         self.check_func(foo, np.array([0.1]), np.zeros((2, 2)), lin)
 
+    @skip_if_cupy_unavailable
     def test_issue5482_missing_variable_init(self):
         # Test error that lowering fails because variable is missing
         # a definition before use.
@@ -402,6 +422,7 @@ class TestReportedSSAIssues(SSABaseTest):
 
         self.check_func(foo, np.array([10]), 1, 5, 3)
 
+    @skip_if_cupy_unavailable
     def test_issue5493_unneeded_phi(self):
         # Test error that unneeded phi is inserted because variable does not
         # have a dominance definition.

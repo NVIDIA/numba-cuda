@@ -3,7 +3,11 @@
 
 import unittest
 
-from numba.cuda.testing import CUDATestCase, skip_on_cudasim
+from numba.cuda.testing import (
+    CUDATestCase,
+    skip_if_cupy_unavailable,
+    skip_on_cudasim,
+)
 from numba.cuda.tests.support import captured_stdout
 import cupy as cp
 
@@ -26,6 +30,7 @@ class TestGlobals(CUDATestCase):
         self._captured_stdout.__exit__(None, None, None)
         super().tearDown()
 
+    @skip_if_cupy_unavailable
     def test_ex_globals_constant_capture(self):
         """
         Test demonstrating how global variables are captured as constants.
@@ -63,6 +68,7 @@ class TestGlobals(CUDATestCase):
         expected = np.array([10.8, 54.0, 16.2, 64.8, 162.0])
         np.testing.assert_allclose(d_totals.get(), expected)
 
+    @skip_if_cupy_unavailable
     def test_ex_globals_device_array_capture(self):
         """
         Test demonstrating how global device arrays are captured by pointer.

@@ -4,7 +4,11 @@
 import numpy as np
 from numba.cuda import vectorize
 from numba.cuda import float64
-from numba.cuda.testing import skip_on_cudasim, CUDATestCase
+from numba.cuda.testing import (
+    skip_on_cudasim,
+    skip_if_cupy_unavailable,
+    CUDATestCase,
+)
 import unittest
 import cupy as cp
 
@@ -13,6 +17,7 @@ sig = [float64(float64, float64)]
 
 @skip_on_cudasim("ufunc API unsupported in the simulator")
 class TestCUDAVectorizeScalarArg(CUDATestCase):
+    @skip_if_cupy_unavailable
     def test_vectorize_scalar_arg(self):
         @vectorize(sig, target="cuda")
         def vector_add(a, b):

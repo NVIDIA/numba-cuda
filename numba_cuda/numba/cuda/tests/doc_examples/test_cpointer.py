@@ -3,7 +3,11 @@
 
 import unittest
 
-from numba.cuda.testing import CUDATestCase, skip_on_cudasim
+from numba.cuda.testing import (
+    CUDATestCase,
+    skip_if_cupy_unavailable,
+    skip_on_cudasim,
+)
 from numba.cuda.tests.support import captured_stdout
 import cupy as cp
 
@@ -26,6 +30,7 @@ class TestCPointer(CUDATestCase):
         self._captured_stdout.__exit__(None, None, None)
         super().tearDown()
 
+    @skip_if_cupy_unavailable
     def test_ex_cpointer(self):
         # ex_cpointer.sig.begin
         import numpy as np

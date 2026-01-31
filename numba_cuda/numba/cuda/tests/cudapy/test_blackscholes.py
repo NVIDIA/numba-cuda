@@ -5,7 +5,7 @@ import numpy as np
 import math
 from numba import cuda
 from numba.cuda import config, double, void
-from numba.cuda.testing import unittest, CUDATestCase
+from numba.cuda.testing import unittest, CUDATestCase, skip_if_cupy_unavailable
 
 if config.ENABLE_CUDASIM:
     import numpy as cp
@@ -63,6 +63,7 @@ def randfloat(rand_var, low, high):
 
 
 class TestBlackScholes(CUDATestCase):
+    @skip_if_cupy_unavailable
     def test_blackscholes(self):
         OPT_N = 400
         iterations = 2

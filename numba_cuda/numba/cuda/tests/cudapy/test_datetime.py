@@ -5,7 +5,11 @@ import numpy as np
 
 from numba import cuda, vectorize, guvectorize
 from numba.cuda.np.numpy_support import from_dtype
-from numba.cuda.testing import skip_on_cudasim, DeprecatedDeviceArrayApiTest
+from numba.cuda.testing import (
+    skip_on_cudasim,
+    skip_if_cupy_unavailable,
+    DeprecatedDeviceArrayApiTest,
+)
 import unittest
 
 import pytest
@@ -61,6 +65,7 @@ class TestCudaDateTime(DeprecatedDeviceArrayApiTest):
         self.assertPreciseEqual(delta, arr2 - arr1)
 
     @skip_on_cudasim("API unsupported in the simulator")
+    @skip_if_cupy_unavailable
     def test_datetime_cupy_inputs(self):
         cp = pytest.importorskip("cupy")
         datetime_t = from_dtype(cp.dtype("datetime64[D]"))

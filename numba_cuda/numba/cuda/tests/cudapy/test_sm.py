@@ -13,6 +13,7 @@ from numba.cuda.testing import (
     unittest,
     CUDATestCase,
     skip_on_cudasim,
+    skip_if_cupy_unavailable,
     DeprecatedDeviceArrayApiWarning,
 )
 
@@ -76,6 +77,7 @@ class TestSharedMemoryIssue(CUDATestCase):
         self._check_shared_array_size_fp16(2, 2, types.float16)
         self._check_shared_array_size_fp16(2, 2, np.float16)
 
+    @skip_if_cupy_unavailable
     def test_issue_2393(self):
         """
         Test issue of warp misalign address due to nvvm not knowing the
@@ -369,6 +371,7 @@ class TestSharedMemory(CUDATestCase):
         expected = np.array([99, 3, 99, 2, 99, 1], dtype=np.int32)
         self._test_dynshared_slice(slice_nonunit_reverse_stride, arr, expected)
 
+    @skip_if_cupy_unavailable
     def test_issue_5073(self):
         # An example with which Bug #5073 (slices of dynamic shared memory all
         # alias) was discovered. The kernel uses all threads in the block to

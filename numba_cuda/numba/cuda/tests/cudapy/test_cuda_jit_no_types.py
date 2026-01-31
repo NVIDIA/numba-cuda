@@ -4,7 +4,7 @@
 from numba import cuda
 from numba.cuda import config
 import numpy as np
-from numba.cuda.testing import CUDATestCase
+from numba.cuda.testing import CUDATestCase, skip_if_cupy_unavailable
 from numba.cuda.tests.support import override_config
 import unittest
 
@@ -19,6 +19,7 @@ class TestCudaJitNoTypes(CUDATestCase):
     Tests the jit decorator with no types provided.
     """
 
+    @skip_if_cupy_unavailable
     def test_device_array(self):
         @cuda.jit
         def foo(x, y):
@@ -64,6 +65,7 @@ class TestCudaJitNoTypes(CUDATestCase):
 
         np.testing.assert_allclose(Acopy + Acopy + Bcopy + Bcopy + 1, B)
 
+    @skip_if_cupy_unavailable
     def test_device_jit_2(self):
         @cuda.jit(device=True)
         def inner(arg):

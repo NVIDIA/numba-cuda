@@ -4,7 +4,11 @@
 from numba import cuda
 from numba.cuda import config
 import numpy as np
-from numba.cuda.testing import skip_on_cudasim, CUDATestCase
+from numba.cuda.testing import (
+    skip_on_cudasim,
+    CUDATestCase,
+    skip_if_cupy_unavailable,
+)
 import threading
 import unittest
 
@@ -57,6 +61,7 @@ class TestMultiGPUContext(CUDATestCase):
         check(A, B)
 
     @skip_on_cudasim("Simulator does not support multiple threads")
+    @skip_if_cupy_unavailable
     def test_multithreaded(self):
         def work(gpu, dA, results, ridx):
             try:

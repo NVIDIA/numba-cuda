@@ -190,6 +190,7 @@ class TestDeviceFunc(CUDATestCase):
         )
 
     @skip_on_cudasim("cudasim ignores casting by jit decorator signature")
+    @skip_if_cupy_unavailable
     def test_device_casting(self):
         # Ensure that casts to the correct type are forced when calling a
         # device function with a signature. This test ensures that:

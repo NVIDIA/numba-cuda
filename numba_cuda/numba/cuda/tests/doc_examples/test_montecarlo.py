@@ -5,6 +5,7 @@ import unittest
 
 from numba.cuda.testing import (
     CUDATestCase,
+    skip_if_cupy_unavailable,
     skip_on_cudasim,
     skip_on_standalone_numba_cuda,
 )
@@ -30,6 +31,7 @@ class TestMonteCarlo(CUDATestCase):
         super().tearDown()
 
     @skip_on_standalone_numba_cuda
+    @skip_if_cupy_unavailable
     def test_ex_montecarlo(self):
         # ex_montecarlo.import.begin
         import numba

@@ -4,7 +4,7 @@
 import numpy as np
 from numba import cuda
 from numba.cuda import config, float32, float64, int32, void
-from numba.cuda.testing import unittest, CUDATestCase
+from numba.cuda.testing import unittest, CUDATestCase, skip_if_cupy_unavailable
 
 if config.ENABLE_CUDASIM:
     import numpy as cp
@@ -25,6 +25,7 @@ class TestCudaIDiv(CUDATestCase):
         y = grid.get() if not config.ENABLE_CUDASIM else grid
         self.assertTrue(np.all(y == 0.5))
 
+    @skip_if_cupy_unavailable
     def test_inplace_div_double(self):
         @cuda.jit(void(float64[:, :], int32, int32))
         def div_double(grid, l_x, l_y):

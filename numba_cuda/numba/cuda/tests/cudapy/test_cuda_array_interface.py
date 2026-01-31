@@ -10,7 +10,11 @@ from numba.cuda.testing import (
     ForeignArray,
     DeprecatedDeviceArrayApiTest,
 )
-from numba.cuda.testing import skip_on_cudasim, skip_if_external_memmgr
+from numba.cuda.testing import (
+    skip_on_cudasim,
+    skip_if_external_memmgr,
+    skip_if_cupy_unavailable,
+)
 from numba.cuda.tests.support import linux_only, override_config
 from unittest.mock import call, patch
 import cupy as cp
@@ -87,6 +91,7 @@ class TestCudaArrayInterface(DeprecatedDeviceArrayApiTest):
         np.testing.assert_array_equal(wrapped.copy_to_host(), h_arr + val)
         np.testing.assert_array_equal(d_arr.copy_to_host(), h_arr + val)
 
+    @skip_if_cupy_unavailable
     def test_fortran_contiguous(self):
         cp = pytest.importorskip("cupy")
 
@@ -102,6 +107,7 @@ class TestCudaArrayInterface(DeprecatedDeviceArrayApiTest):
 
         np.testing.assert_array_equal(arr.get(), out.get())
 
+    @skip_if_cupy_unavailable
     def test_ufunc_arg(self):
         @vectorize(["f8(f8, f8)"], target="cuda")
         def vadd(a, b):

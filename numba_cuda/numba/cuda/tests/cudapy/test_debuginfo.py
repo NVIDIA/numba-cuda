@@ -3,11 +3,14 @@
 
 from collections import namedtuple
 from numba.cuda.tests.support import override_config, captured_stdout
-from numba.cuda.testing import skip_on_cudasim
+from numba.cuda.testing import (
+    skip_on_cudasim,
+    skip_if_cupy_unavailable,
+    CUDATestCase,
+)
 from numba import cuda
 from numba.cuda import types
 from numba.cuda.np import numpy_support
-from numba.cuda.testing import CUDATestCase
 from numba.cuda.core import config
 from textwrap import dedent
 import math
@@ -449,6 +452,7 @@ class TestCudaDebugInfo(CUDATestCase):
         match = re.compile(pat6).search(llvm_ir)
         self.assertIsNotNone(match, msg=llvm_ir)
 
+    @skip_if_cupy_unavailable
     def test_union_debug(self):
         @cuda.jit("void(u8, int64[::1])", debug=True, opt=False)
         def a_union_use_case(arg, results):
@@ -628,6 +632,7 @@ class TestCudaDebugInfo(CUDATestCase):
         # and refers to the offending function
         self.assertIn(str(foo.py_func), msg)
 
+    @skip_if_cupy_unavailable
     def test_linecache_source(self):
         """Test that source from linecache (like Jupyter notebooks) works.
 
@@ -712,6 +717,7 @@ class TestCudaDebugInfo(CUDATestCase):
             if "llvm.dbg.declare" in line:
                 self.assertNotIn("bool", line)
 
+    @skip_if_cupy_unavailable
     def test_llvm_inliner_flag_conflict(self):
         # bar will be marked as 'alwaysinline', but when DEBUGINFO_DEFAULT is
         # set functions are not marked as 'alwaysinline' and this results in a
@@ -788,6 +794,7 @@ class TestCudaDebugInfo(CUDATestCase):
         """,
         )
 
+    @skip_if_cupy_unavailable
     def test_DILocation_versioned_variables(self):
         """Tests that DILocation information for versions of variables matches
         up to their definition site."""

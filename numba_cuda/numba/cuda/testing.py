@@ -217,6 +217,31 @@ def skip_unless_cudasim(reason):
     return unittest.skipUnless(config.ENABLE_CUDASIM, reason)
 
 
+def skip_if_cupy_unavailable(fn):
+    """
+    Skip test if CuPy is not available, unless running in simulator mode.
+
+    When running in simulator mode, the test will execute using NumPy arrays
+    (via 'import numpy as cp' pattern). When not in simulator mode, the test
+    is skipped if CuPy cannot be imported.
+
+    This decorator should be used for tests that:
+    1. Use device arrays via cupy (cp.asarray, cp.zeros, etc.)
+    2. Should still run in simulator mode with numpy arrays
+    3. Should be skipped on hardware when cupy is unavailable
+    """
+    if config.ENABLE_CUDASIM:
+        # In simulator mode, tests use numpy as cp, so don't skip
+        return fn
+
+    try:
+        import cupy
+
+        return fn
+    except ImportError:
+        return unittest.skip("CuPy not available")(fn)
+
+
 def skip_unless_conda_cudatoolkit(reason):
     """Skip test if the CUDA toolkit was not installed by Conda"""
     assert isinstance(reason, str)
