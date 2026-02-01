@@ -99,7 +99,7 @@ jobs:
             echo "PIXI_ENV=${PIXI_ENV}"
           } >> "${GITHUB_ENV}"
       - name: Setup pixi
-        uses: prefix-dev/setup-pixi@fef5c9568ca6c4ff7707bf840ab0692ba3f08293  # v0.9.0
+        uses: prefix-dev/setup-pixi@a0af7a228712d6121d37aba47adf55c1332c9c2e  # v0.9.4
         with:
           pixi-version: "v0.63.2"
           environments: ${{ env.PIXI_ENV }}
