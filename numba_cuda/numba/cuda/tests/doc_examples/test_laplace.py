@@ -10,6 +10,7 @@ from numba.cuda.testing import (
     skip_unless_cc_60,
 )
 from numba.cuda.tests.support import captured_stdout
+import pytest
 
 cp = pytest.importorskip("cupy")
 

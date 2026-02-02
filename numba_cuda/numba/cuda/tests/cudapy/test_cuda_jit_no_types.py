@@ -7,6 +7,7 @@ import numpy as np
 from numba.cuda.testing import CUDATestCase, skip_if_cupy_unavailable
 from numba.cuda.tests.support import override_config
 import unittest
+from contextlib import nullcontext
 
 if config.ENABLE_CUDASIM:
     import numpy as cp
@@ -81,7 +82,9 @@ class TestCudaJitNoTypes(CUDATestCase):
         a = np.zeros(1)
         b = np.zeros(1)
 
-        stream = cp.cuda.Stream()
+        stream = (
+            cp.cuda.Stream() if not config.ENABLE_CUDASIM else nullcontext()
+        )
         nb_stream = cuda.api.external_stream(stream.ptr)
         with stream:
             d_a = cp.asarray(a)

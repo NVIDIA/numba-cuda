@@ -6,6 +6,7 @@ import math
 from numba import cuda
 from numba.cuda import config, double, void
 from numba.cuda.testing import unittest, CUDATestCase, skip_if_cupy_unavailable
+from contextlib import nullcontext
 
 if config.ENABLE_CUDASIM:
     import numpy as cp
@@ -135,7 +136,9 @@ class TestBlackScholes(CUDATestCase):
         # numba
         blockdim = 512, 1
         griddim = int(math.ceil(float(OPT_N) / blockdim[0])), 1
-        stream = cp.cuda.Stream()
+        stream = (
+            cp.cuda.Stream() if not config.ENABLE_CUDASIM else nullcontext()
+        )
         nb_stream = cuda.api.external_stream(stream.ptr)
 
         with stream:

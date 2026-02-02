@@ -10,6 +10,7 @@ from numba.cuda.testing import (
 )
 from numba.cuda.tests.support import captured_stdout
 import numpy as np
+import pytest
 
 cp = pytest.importorskip("cupy")
 

@@ -7,6 +7,7 @@ from numba import cuda
 from numba.cuda import float32, void
 from numba.cuda.core import config
 import pytest
+from contextlib import nullcontext
 
 if config.ENABLE_CUDASIM:
     import numpy as cp
@@ -61,7 +62,7 @@ def test_cuda_matmul():
     B = np.array(np.random.random((n, n)), dtype=np.float32)
     C = np.empty_like(A)
 
-    stream = cp.cuda.Stream()
+    stream = cp.cuda.Stream() if not config.ENABLE_CUDASIM else nullcontext()
     nb_stream = cuda.api.external_stream(stream.ptr)
     with stream:
         dA = cp.asarray(A)
