@@ -10,6 +10,7 @@ from contextlib import contextmanager
 from numba.cuda.np.numpy_support import numpy_version
 from numba.cuda.np import numpy_support
 from numba.cuda import types
+import warnings
 
 import numpy as np
 
