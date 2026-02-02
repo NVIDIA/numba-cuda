@@ -69,7 +69,7 @@ def test_cuda_matmul():
 
     cu_square_matrix_mul[(bpg, bpg), (tpb, tpb), nb_stream](dA, dB, dC)
     with stream:
-        c = dC.get() if not config.ENABLE_CUDASIM else dC
+        C = dC.get() if not config.ENABLE_CUDASIM else dC
 
     # Host compute
     Cans = np.dot(A, B)
