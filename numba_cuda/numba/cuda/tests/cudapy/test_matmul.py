@@ -52,15 +52,15 @@ def test_cuda_matmul():
 
             cuda.syncthreads()
 
-        if x < n and y < n:
-            C[y, x] = acc
+            if x < n and y < n:
+                C[y, x] = acc
 
     np.random.seed(42)
     A = np.array(np.random.random((n, n)), dtype=np.float32)
     B = np.array(np.random.random((n, n)), dtype=np.float32)
     C = np.empty_like(A)
 
-    stream = cp.cuda.stream()
+    stream = cp.cuda.Stream()
     nb_stream = cuda.api.external_stream(stream.ptr)
     with stream:
         dA = cp.asarray(A, stream)
