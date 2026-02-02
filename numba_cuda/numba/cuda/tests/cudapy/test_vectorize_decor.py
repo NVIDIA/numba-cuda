@@ -41,7 +41,7 @@ def vector_add(a, b):
     return a + b
 
 
-class BaseVectorizeDecor(object):
+class BaseVectorizeDecor:
     target = None
     wrapper = None
     funcs = {

@@ -432,6 +432,8 @@ class DeviceNDArrayBase:
     @functools.cached_property
     def _strided_memory_view_shim(self):
         flags = self.flags
+        is_contiguous_c = flags["C_CONTIGUOUS"]
+        is_contiguous_f = flags["F_CONTIGUOUS"]
         return _StridedMemoryViewShim(
             ptr=self.device_ctypes_pointer.value,
             shape=self.shape,
@@ -439,8 +441,9 @@ class DeviceNDArrayBase:
             size=self.size,
             _layout=_StridedLayoutShim(
                 strides_in_bytes=self.strides,
-                is_contiguous_c=flags["C_CONTIGUOUS"],
-                is_contiguous_f=flags["F_CONTIGUOUS"],
+                is_contiguous_c=is_contiguous_c,
+                is_contiguous_f=is_contiguous_f,
+                is_contiguous_any=is_contiguous_c or is_contiguous_f,
             ),
         )
 
@@ -453,9 +456,7 @@ class DeviceRecord(DeviceNDArrayBase):
     def __init__(self, dtype, stream=0, gpu_data=None):
         shape = ()
         strides = ()
-        super(DeviceRecord, self).__init__(
-            shape, strides, dtype, stream, gpu_data
-        )
+        super().__init__(shape, strides, dtype, stream, gpu_data)
 
     @property
     def flags(self):
@@ -822,7 +823,7 @@ class DeviceNDArray(DeviceNDArrayBase):
             stream.synchronize()
 
 
-class IpcArrayHandle(object):
+class IpcArrayHandle:
     """
     An IPC array handle that can be serialized and transfer to another process
     in the same machine for share a GPU allocation.
@@ -1022,7 +1023,12 @@ def _make_strided_memory_view(obj, *, stream_ptr) -> StridedMemoryView:
 
 
 class _StridedLayoutShim:
-    __slots__ = ("strides_in_bytes", "is_contiguous_c", "is_contiguous_f")
+    __slots__ = (
+        "strides_in_bytes",
+        "is_contiguous_c",
+        "is_contiguous_f",
+        "is_contiguous_any",
+    )
 
     def __init__(
         self,
@@ -1030,10 +1036,12 @@ class _StridedLayoutShim:
         strides_in_bytes: tuple[int, ...],
         is_contiguous_c: bool,
         is_contiguous_f: bool,
+        is_contiguous_any: bool,
     ) -> None:
         self.strides_in_bytes = strides_in_bytes
         self.is_contiguous_c = is_contiguous_c
         self.is_contiguous_f = is_contiguous_f
+        self.is_contiguous_any = is_contiguous_any
 
 
 class _StridedMemoryViewShim:
@@ -1058,7 +1066,9 @@ class _StridedMemoryViewShim:
 def _to_strided_memory_view(
     obj, stream=0, copy: bool = True, user_explicit: bool = False
 ) -> tuple[StridedMemoryView, bool]:
-    if _driver.is_device_memory(obj):
+    if isinstance(obj, StridedMemoryView):
+        return obj, False
+    elif _driver.is_device_memory(obj):
         return obj._strided_memory_view_shim, False
     elif (
         not isinstance(obj, (np.ndarray, _UNSUPPORTED_DLPACK_TYPES))

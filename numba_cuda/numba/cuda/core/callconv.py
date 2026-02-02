@@ -50,7 +50,7 @@ FIRST_USEREXC = 1
 RETCODE_USEREXC = _const_int(FIRST_USEREXC)
 
 
-class BaseCallConv(object):
+class BaseCallConv:
     def __init__(self, context):
         self.context = context
 
@@ -293,7 +293,7 @@ class MinimalCallConv(BaseCallConv):
         return status, out
 
 
-class _MinimalCallHelper(object):
+class _MinimalCallHelper:
     """
     A call helper object for the "minimal" calling convention.
     User exceptions are represented as integer codes and stored in
@@ -341,7 +341,7 @@ class _MinimalCallHelper(object):
             return exc, exc_args, locinfo
 
 
-class ErrorModel(object):
+class ErrorModel:
     def __init__(self, call_conv):
         self.call_conv = call_conv
 

@@ -21,7 +21,7 @@ class TestArrayReductions(MemoryLeakMixin, TestCase):
     """
 
     def setUp(self):
-        super(TestArrayReductions, self).setUp()
+        super().setUp()
         np.random.seed(42)
         self.old_nrt_setting = config.CUDA_ENABLE_NRT
         self.old_perf_warnings_setting = config.DISABLE_PERFORMANCE_WARNINGS
@@ -31,7 +31,7 @@ class TestArrayReductions(MemoryLeakMixin, TestCase):
     def tearDown(self):
         config.CUDA_ENABLE_NRT = self.old_nrt_setting
         config.DISABLE_PERFORMANCE_WARNINGS = self.old_perf_warnings_setting
-        super(TestArrayReductions, self).tearDown()
+        super().tearDown()
 
     @skip_if_cupy_unavailable
     def test_all_basic(self):

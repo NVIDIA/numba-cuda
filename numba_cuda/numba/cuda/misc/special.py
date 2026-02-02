@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: BSD-2-Clause
 
 
-class prange(object):
+class prange:
     """Provides a 1D parallel iterator that generates a sequence of integers.
     In non-parallel contexts, prange is identical to range.
     """

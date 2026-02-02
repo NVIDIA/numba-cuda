@@ -53,11 +53,7 @@ def test_one_arg(benchmark, array_func, jit):
     def one_arg(arr1):
         return
 
-    def bench(func, arr):
-        for _ in range(100):
-            func(arr)
-
-    benchmark(bench, one_arg[128, 128], array_func())
+    benchmark(one_arg[128, 128], array_func())
 
 
 @pytest.mark.parametrize(
@@ -100,8 +96,6 @@ def test_one_arg(benchmark, array_func, jit):
     ids=["dispatch", "signature"],
 )
 def test_many_args(benchmark, array_func, jit):
-    many_arrs = array_func()
-
     @jit
     def many_args(
         a,
@@ -133,8 +127,4 @@ def test_many_args(benchmark, array_func, jit):
     ):
         return
 
-    def bench(func, *arrs):
-        for _ in range(100):
-            func(*arrs)
-
-    benchmark(bench, many_args[128, 128], *many_arrs)
+    benchmark(many_args[128, 128], *array_func())

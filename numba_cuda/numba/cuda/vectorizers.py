@@ -14,7 +14,7 @@ import warnings
 from numba.cuda.cudadrv.devicearray import DeprecatedDeviceArrayApiWarning
 
 
-class CUDAUFuncDispatcher(object):
+class CUDAUFuncDispatcher:
     """
     Invoke the CUDA ufunc specialization for the given inputs.
     """

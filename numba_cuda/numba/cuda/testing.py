@@ -410,7 +410,7 @@ def skip_on_nvjitlink_13_1_sm_120(reason):
     return unittest.skipIf(_is_nvjitlink_13_1_and_sm_120(), reason)
 
 
-class ForeignArray(object):
+class ForeignArray:
     """
     Class for emulating an array coming from another library through the CUDA
     Array interface. This just hides a DeviceNDArray so that it doesn't look

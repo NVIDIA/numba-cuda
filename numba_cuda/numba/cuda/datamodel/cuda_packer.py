@@ -7,7 +7,7 @@ from numba.cuda import types
 from numba.cuda import cgutils
 
 
-class DataPacker(object):
+class DataPacker:
     """
     A helper to pack a number of typed arguments into a data structure.
     Omitted arguments (i.e. values with the type `Omitted`) are automatically
@@ -64,7 +64,7 @@ class DataPacker(object):
         self._do_load(builder, ptr, formal_list)
 
 
-class ArgPacker(object):
+class ArgPacker:
     """
     Compute the position for each high-level typed argument.
     It flattens every composite argument into primitive types.
@@ -167,7 +167,7 @@ _APPEND_EMPTY_TUPLE = 3
 _POP = 4
 
 
-class _Unflattener(object):
+class _Unflattener:
     """
     An object used to unflatten nested sequences after a given pattern
     (an arbitrarily nested sequence).

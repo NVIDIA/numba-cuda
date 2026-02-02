@@ -38,7 +38,7 @@ from numba.cuda.misc.coverage_support import get_registered_loc_notify
 _VarArgItem = namedtuple("_VarArgItem", ("vararg", "index"))
 
 
-class BaseLower(object):
+class BaseLower:
     """
     Lower IR to LLVM
     """
@@ -467,7 +467,7 @@ class Lower(BaseLower):
     def pre_block(self, block):
         from numba.cuda.core.unsafe import eh
 
-        super(Lower, self).pre_block(block)
+        super().pre_block(block)
         self._cur_ir_block = block
 
         if block == self.firstblk:
@@ -1786,10 +1786,9 @@ class CUDALower(Lower):
                             # Not yet covered by the dbg.value range
                             and src_name not in self.dbg_val_names
                         ):
-                            for index, item in enumerate(self.fnargs):
-                                if item.name == src_name:
-                                    argidx = index + 1
-                                    break
+                            # Use fndesc.args to get correct argidx for func args
+                            if src_name in self.fndesc.args:
+                                argidx = self.fndesc.args.index(src_name) + 1
                             # Insert the llvm.dbg.value intrinsic call
                             self.debuginfo.update_variable(
                                 self.builder,

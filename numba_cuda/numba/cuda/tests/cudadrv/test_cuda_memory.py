@@ -19,7 +19,7 @@ class TestCudaMemory(CUDATestCase):
     def tearDown(self):
         self.context.reset()
         del self.context
-        super(TestCudaMemory, self).tearDown()
+        super().tearDown()
 
     def _template(self, obj):
         self.assertTrue(driver.is_device_memory(obj))
@@ -112,7 +112,7 @@ class TestCudaMemoryFunctions(CUDATestCase):
 
     def tearDown(self):
         del self.context
-        super(TestCudaMemoryFunctions, self).tearDown()
+        super().tearDown()
 
     def test_memcpy(self):
         hstary = np.arange(100, dtype=np.uint32)

@@ -3,7 +3,7 @@
 
 import numpy as np
 from numba import cuda
-from numba.cuda.testing import CUDATestCase
+from numba.cuda.testing import CUDATestCase, skip_if_cupy_unavailable
 import unittest
 from numba.cuda import config
 
@@ -23,11 +23,11 @@ class TestCudaArrayMethods(CUDATestCase):
     def setUp(self):
         self.old_nrt_setting = config.CUDA_ENABLE_NRT
         config.CUDA_ENABLE_NRT = True
-        super(TestCudaArrayMethods, self).setUp()
+        super().setUp()
 
     def tearDown(self):
         config.CUDA_ENABLE_NRT = self.old_nrt_setting
-        super(TestCudaArrayMethods, self).tearDown()
+        super().tearDown()
 
     def test_reinterpret_array_type(self):
         """

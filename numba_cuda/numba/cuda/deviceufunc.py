@@ -136,7 +136,7 @@ def _multi_broadcast(*shapelist):
         return result
 
 
-class UFuncMechanism(object):
+class UFuncMechanism:
     """
     Prepare ufunc arguments for vectorize.
     """
@@ -634,7 +634,7 @@ def _gen_src_index(adims, atype):
         return "__tid__"
 
 
-class GUFuncEngine(object):
+class GUFuncEngine:
     """Determine how to broadcast and execute a gufunc
     base on input shape and signature
     """
@@ -706,7 +706,7 @@ class GUFuncEngine(object):
         return GUFuncSchedule(self, inner_shapes, oshapes, loopdims, pinned)
 
 
-class GUFuncSchedule(object):
+class GUFuncSchedule:
     def __init__(self, parent, ishapes, oshapes, loopdims, pinned):
         self.parent = parent
         # core shapes
@@ -728,7 +728,7 @@ class GUFuncSchedule(object):
         return pprint.pformat(dict(values))
 
 
-class GeneralizedUFunc(object):
+class GeneralizedUFunc:
     def __init__(self, kernelmap, engine):
         self.kernelmap = kernelmap
         self.engine = engine

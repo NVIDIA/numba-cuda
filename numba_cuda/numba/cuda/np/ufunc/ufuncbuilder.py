@@ -24,7 +24,7 @@ def _compile_element_wise_function(nb_func, targetoptions, sig):
 # Class definitions
 
 
-class _BaseUFuncBuilder(object):
+class _BaseUFuncBuilder:
     def add(self, sig=None):
         if hasattr(self, "targetoptions"):
             targetoptions = self.targetoptions

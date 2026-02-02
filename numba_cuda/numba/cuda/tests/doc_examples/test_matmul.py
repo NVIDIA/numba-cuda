@@ -22,26 +22,10 @@ import cupy as cp
 
 
 @skip_on_cudasim("cudasim doesn't support cuda import at non-top-level")
-class TestMatMul(CUDATestCase):
-    """
-    Text matrix multiplication using simple, shared memory/square, and shared
-    memory/nonsquare cases.
-    """
-
-    def setUp(self):
-        # Prevent output from this test showing up when running the test suite
-        self._captured_stdout = captured_stdout()
-        self._captured_stdout.__enter__()
-        super().setUp()
-
-    def tearDown(self):
-        # No exception type, value, or traceback
-        self._captured_stdout.__exit__(None, None, None)
-        super().tearDown()
-
-    @skip_if_cupy_unavailable
-    def test_ex_matmul(self):
-        """Test of matrix multiplication on various cases."""
+def test_matmul():
+    """Test of matrix multiplication on various cases."""
+    # Prevent output from this test showing up when running the test suite
+    with captured_stdout():
         # magictoken.ex_import.begin
         from numba import cuda
         from numba.cuda import float32
@@ -153,8 +137,9 @@ class TestMatMul(CUDATestCase):
         # magictoken.ex_run_fast_matmul.end
 
         # fast_matmul test(s)
-        msg = "fast_matmul incorrect for shared memory, square case."
-        self.assertTrue(np.all(z_h == x_h @ y_h), msg=msg)
+        assert np.all(z_h == x_h @ y_h), (
+            "fast_matmul incorrect for shared memory, square case."
+        )
 
         # magictoken.ex_run_nonsquare.begin
         x_h = np.arange(115).reshape([5, 23])
@@ -179,9 +164,6 @@ class TestMatMul(CUDATestCase):
         # magictoken.ex_run_nonsquare.end
 
         # nonsquare fast_matmul test(s)
-        msg = "fast_matmul incorrect for shared memory, non-square case."
-        self.assertTrue(np.all(z_h == x_h @ y_h), msg=msg)
-
-
-if __name__ == "__main__":
-    unittest.main()
+        assert np.all(z_h == x_h @ y_h), (
+            "fast_matmul incorrect for shared memory, non-square case."
+        )

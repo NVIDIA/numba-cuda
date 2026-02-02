@@ -118,7 +118,7 @@ def make_array(array_type):
             try:
                 array_impl = self._context.get_function("__array__", sig)
             except NotImplementedError:
-                return super(ArrayStruct, self)._make_refs(ref)
+                return super()._make_refs(ref)
 
             # Return a wrapped structure and its unwrapped reference
             datamodel = self._context.data_model_manager[array_type]
@@ -701,7 +701,7 @@ if numpy_version < (2, 0):
 # Advanced / fancy indexing
 
 
-class Indexer(object):
+class Indexer:
     """
     Generic indexer interface, for generating indices over a fancy indexed
     array on a single dimension.
@@ -1061,7 +1061,7 @@ class SliceIndexer(Indexer):
         builder.position_at_end(self.bb_end)
 
 
-class FancyIndexer(object):
+class FancyIndexer:
     """
     Perform fancy indexing on the given array.
     """
@@ -3827,7 +3827,7 @@ def make_nditer_cls(nditerty):
     narrays = len(nditerty.arrays)
     nshapes = ndim if nditerty.need_shaped_indexing else 1
 
-    class BaseSubIter(object):
+    class BaseSubIter:
         """
         Base class for sub-iterators of a nditer() instance.
         """

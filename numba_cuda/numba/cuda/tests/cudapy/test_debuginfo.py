@@ -1152,6 +1152,29 @@ class TestCudaDebugInfo(CUDATestCase):
         """
         self.assertFileCheckMatches(llvm_ir, check_pattern)
 
+    def test_bool_param_ref_only(self):
+        """Test that boolean parameters (ref-only) have single DILocalVariable.
+
+        When a boolean parameter is only referenced (not reassigned), it should
+        have exactly one DILocalVariable entry as a formal parameter (arg: N).
+
+        See nvbug5805171.
+        """
+        sig = (types.boolean, types.boolean)
+
+        @cuda.jit(sig, debug=True, opt=False)
+        def foo(flag1, flag2):
+            result = flag1 and flag2  # noqa: F841
+
+        llvm_ir = foo.inspect_llvm(sig)
+
+        # Each ref-only boolean parameter should have exactly one entry of
+        # DILocalVariable as a formal parameter
+        check_pattern = r"""
+            CHECK-COUNT-1: !DILocalVariable(arg: 1{{.*}}name: "flag1"
+            CHECK-COUNT-1: !DILocalVariable(arg: 2{{.*}}name: "flag2"""
+        self.assertFileCheckMatches(llvm_ir, check_pattern)
+
 
 if __name__ == "__main__":
     unittest.main()

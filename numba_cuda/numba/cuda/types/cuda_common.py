@@ -18,7 +18,7 @@ class Opaque(Dummy):
 class SimpleIterableType(IterableType):
     def __init__(self, name, iterator_type):
         self._iterator_type = iterator_type
-        super(SimpleIterableType, self).__init__(name)
+        super().__init__(name)
 
     @property
     def iterator_type(self):
@@ -28,7 +28,7 @@ class SimpleIterableType(IterableType):
 class SimpleIteratorType(IteratorType):
     def __init__(self, name, yield_type):
         self._yield_type = yield_type
-        super(SimpleIteratorType, self).__init__(name)
+        super().__init__(name)
 
     @property
     def yield_type(self):
@@ -70,7 +70,7 @@ class Buffer(IterableType, ArrayCompatible):
             if readonly:
                 type_name = "readonly %s" % type_name
             name = "%s(%s, %sd, %s)" % (type_name, dtype, ndim, layout)
-        super(Buffer, self).__init__(name)
+        super().__init__(name)
 
     @property
     def iterator_type(self):

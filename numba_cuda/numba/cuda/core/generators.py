@@ -61,7 +61,7 @@ class GeneratorDescriptor(FunctionDescriptor):
         return "finalize_" + self.mangled_name
 
 
-class BaseGeneratorLower(object):
+class BaseGeneratorLower:
     """
     Base support class for lowering generators.
     """
@@ -323,7 +323,7 @@ class PyGeneratorLower(BaseGeneratorLower):
         builder.ret_void()
 
 
-class LowerYield(object):
+class LowerYield:
     """
     Support class for lowering a particular yield point.
     """

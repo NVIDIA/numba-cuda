@@ -27,10 +27,6 @@ on:
       matrix_filter:
         type: string
         default: "."
-      container-options:
-        required: false
-        type: string
-        default: "-e _NOOP"
 
 defaults:
   run:
@@ -90,6 +86,8 @@ jobs:
       - name: Setup proxy cache
         uses: nv-gha-runners/setup-proxy-cache@main
         continue-on-error: true
+        with:
+          enable-apt: true
       - name: Compute pixi environment name
         run: |
           set -euo pipefail
@@ -103,7 +101,7 @@ jobs:
       - name: Setup pixi
         uses: prefix-dev/setup-pixi@fef5c9568ca6c4ff7707bf840ab0692ba3f08293  # v0.9.0
         with:
-          pixi-version: "v0.62.2"
+          pixi-version: "v0.63.2"
           environments: ${{ env.PIXI_ENV }}
           cache: false
           locked: false

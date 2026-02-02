@@ -72,7 +72,7 @@ def is_available():
 _nvvm_lock = threading.Lock()
 
 
-class NVVM(object):
+class NVVM:
     """Process-wide singleton."""
 
     _PROTOTYPES = {
@@ -274,7 +274,7 @@ class NVVM(object):
                 raise exc
 
 
-class CompilationUnit(object):
+class CompilationUnit:
     """
     A CompilationUnit is a set of LLVM modules that are compiled to PTX or
     LTO-IR with NVVM.
@@ -420,7 +420,7 @@ MISSING_LIBDEVICE_FILE_MSG = """Missing libdevice file.
 """
 
 
-class LibDevice(object):
+class LibDevice:
     _cache_ = None
 
     def __init__(self):

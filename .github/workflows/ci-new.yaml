@@ -68,7 +68,6 @@ jobs:
           - linux-64
     name: Build ${{ matrix.host-platform }}
     if: ${{ github.repository_owner == 'nvidia' && !fromJSON(needs.should-skip.outputs.skip) }}
-    secrets: inherit
     uses: ./.github/workflows/build-wheel.yml
     with:
       host-platform: ${{ matrix.host-platform }}
@@ -87,7 +86,6 @@ jobs:
           - linux-aarch64
     name: Build ${{ matrix.host-platform }}
     if: ${{ github.repository_owner == 'nvidia' && !fromJSON(needs.should-skip.outputs.skip) }}
-    secrets: inherit
     uses: ./.github/workflows/build-wheel.yml
     with:
       host-platform: ${{ matrix.host-platform }}
@@ -106,7 +104,6 @@ jobs:
           - win-64
     name: Build ${{ matrix.host-platform }}
     if: ${{ github.repository_owner == 'nvidia' && !fromJSON(needs.should-skip.outputs.skip) }}
-    secrets: inherit
     uses: ./.github/workflows/build-wheel.yml
     with:
       host-platform: ${{ matrix.host-platform }}
@@ -126,7 +123,6 @@ jobs:
       contents: read  # This is required for actions/checkout
     needs:
       - build-linux-64
-    secrets: inherit
     uses: ./.github/workflows/test-wheel-linux.yml
     with:
       build-type: pull-request
@@ -145,7 +141,6 @@ jobs:
       contents: read  # This is required for actions/checkout
     needs:
       - build-linux-aarch64
-    secrets: inherit
     uses: ./.github/workflows/test-wheel-linux.yml
     with:
       build-type: pull-request
@@ -163,7 +158,6 @@ jobs:
       contents: read  # This is required for actions/checkout
     needs:
       - build-windows
-    secrets: inherit
     uses: ./.github/workflows/test-wheel-windows.yml
     with:
       build-type: pull-request
@@ -175,7 +169,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
-      - uses: actions/setup-python@83679a892e2d95755f2dac6acb0bfd1e9ac5d548
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
       - uses: pre-commit/action@2c7b3805fd2a0fd8c1884dcaebf91fc102a13ecd
         with:
           extra_args: --all-files --show-diff-on-failure
@@ -209,6 +203,8 @@ jobs:
   test-conda:
     needs:
       - compute-matrix
+      - should-skip
+    if: ${{ github.repository_owner == 'nvidia' && !fromJSON(needs.should-skip.outputs.skip) }}
     uses: ./.github/workflows/conda-python-tests.yaml
     with:
       build_type: pull-request
@@ -219,6 +215,8 @@ jobs:
   test-simulator:
     needs:
       - compute-matrix
+      - should-skip
+    if: ${{ github.repository_owner == 'nvidia' && !fromJSON(needs.should-skip.outputs.skip) }}
     uses: ./.github/workflows/simulator-test.yaml
     with:
       build_type: pull-request
@@ -274,6 +272,9 @@ jobs:
       matrix_filter: map(select(.ARCH == "amd64" and (.CUDA_VER | split(".") | .[0] | tonumber == 12))) | group_by(.CUDA_VER|split(".")|map(tonumber)|.[0]) | map(max_by([(.PY_VER|split(".")|map(tonumber)), (.CUDA_VER|split(".")|map(tonumber))]))
 
   build-docs:
+    needs:
+      - should-skip
+    if: ${{ github.repository_owner == 'nvidia' && !fromJSON(needs.should-skip.outputs.skip) }}
     uses: ./.github/workflows/docs-build.yaml
 
   coverage-report:
@@ -335,7 +336,6 @@ jobs:
                  needs.test-thirdparty-awkward.result == 'cancelled' ||
                  needs.build-docs.result == 'cancelled' ||
                  needs.coverage-report.result == 'cancelled' }}; then
-                 # needs.doc.result == 'cancelled' }}; then
             exit 1
           else
             exit 0

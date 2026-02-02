@@ -12,6 +12,7 @@ from numba.cuda.testing import (
     test_data_dir,
     unittest,
     CUDATestCase,
+    skip_if_cupy_unavailable,
 )
 from numba import cuda
 from numba.cuda import float32, int32, types
