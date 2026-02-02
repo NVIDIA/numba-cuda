@@ -6,7 +6,7 @@ from numba import cuda
 from numba.cuda import config
 from numba.cuda.testing import unittest, CUDATestCase
 from numba.cuda._compat import Device
-from numba.cuda.testing import skip_on_cudasim
+from numba.cuda.testing import skip_on_cudasim, skip_if_cupy_unavailable
 
 if config.ENABLE_CUDASIM:
     import numpy as cp
@@ -18,6 +18,7 @@ else:
 
 
 class TestCudaEvent(CUDATestCase):
+    @skip_if_cupy_unavailable
     def test_event_elapsed(self):
         N = 32
         evtstart = cuda.event()

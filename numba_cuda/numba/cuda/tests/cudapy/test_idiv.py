@@ -16,6 +16,7 @@ else:
 
 
 class TestCudaIDiv(CUDATestCase):
+    @skip_if_cupy_unavailable
     def test_inplace_div(self):
         @cuda.jit(void(float32[:, :], int32, int32))
         def div(grid, l_x, l_y):
