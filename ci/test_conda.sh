@@ -11,7 +11,6 @@ if [ "${NUMBA_VERSION:-*}" != "*" ]; then
 fi
 
 if [ "${CUDA_CORE_VERSION:-*}" != "*" ]; then
-    # add to the default environment's dependencies
     pixi add --feature "${PY_VER_PART}" "cuda-core=${CUDA_CORE_VERSION}"
 fi
 
