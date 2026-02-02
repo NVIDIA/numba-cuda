@@ -63,7 +63,11 @@ def test_cuda_matmul():
     C = np.empty_like(A)
 
     stream = cp.cuda.Stream() if not config.ENABLE_CUDASIM else nullcontext()
-    nb_stream = cuda.api.external_stream(stream.ptr)
+    nb_stream = (
+        cuda.api.external_stream(stream.ptr)
+        if not config.ENABLE_CUDASIM
+        else cuda.stream()
+    )
     with stream:
         dA = cp.asarray(A)
         dB = cp.asarray(B)

@@ -139,7 +139,11 @@ class TestBlackScholes(CUDATestCase):
         stream = (
             cp.cuda.Stream() if not config.ENABLE_CUDASIM else nullcontext()
         )
-        nb_stream = cuda.api.external_stream(stream.ptr)
+        nb_stream = (
+            cuda.api.external_stream(stream.ptr)
+            if not config.ENABLE_CUDASIM
+            else cuda.stream()
+        )
 
         with stream:
             d_callResult = cp.asarray(callResultNumba)
@@ -169,7 +173,8 @@ class TestBlackScholes(CUDATestCase):
                 d_putResult.get() if not config.ENABLE_CUDASIM else d_putResult
             )
 
-        stream.synchronize()
+        if not config.ENABLE_CUDASIM:
+            stream.synchronize()
 
         delta = np.abs(callResultNumpy - callResultNumba)
         L1norm = delta.sum() / np.abs(callResultNumpy).sum()
