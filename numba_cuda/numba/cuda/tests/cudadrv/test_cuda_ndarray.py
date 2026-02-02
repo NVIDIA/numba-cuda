@@ -6,10 +6,18 @@ import numpy as np
 from numba.cuda.cudadrv import devicearray
 from numba import cuda
 from numba.cuda.testing import unittest, DeprecatedDeviceArrayApiTest
-from numba.cuda.testing import skip_on_cudasim
+from numba.cuda.testing import skip_on_cudasim, skip_if_cupy_unavailable
 from numba.cuda.tests.support import IS_NUMPY_2
 
 import pytest
+
+if config.ENABLE_CUDASIM:
+    import numpy as cp
+else:
+    try:
+        import cupy as cp
+    except ImportError:
+        cp = None
 
 
 class TestCudaNDArray(DeprecatedDeviceArrayApiTest):
@@ -618,10 +626,9 @@ class TestCoreContiguous(DeprecatedDeviceArrayApiTest):
         view = np.zeros(shape, order="F")[::2, ::2]
         self._test_against_array_core(view)
 
+    @skip_if_cupy_unavailable
     def test_kernel_with_buffer(self):
         from cuda.core import Buffer
-
-        cp = pytest.importorskip("cupy")
 
         @cuda.jit
         def kernel(buf, n):
@@ -635,6 +642,7 @@ class TestCoreContiguous(DeprecatedDeviceArrayApiTest):
         func(buf, out)
         assert out[0] == n
 
+    @skip_if_cupy_unavailable
     def test_kernel_with_strided_memory_view(self):
         from cuda.core.utils import StridedMemoryView
 

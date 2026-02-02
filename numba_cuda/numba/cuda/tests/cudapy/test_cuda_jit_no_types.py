@@ -85,7 +85,11 @@ class TestCudaJitNoTypes(CUDATestCase):
         stream = (
             cp.cuda.Stream() if not config.ENABLE_CUDASIM else nullcontext()
         )
-        nb_stream = cuda.api.external_stream(stream.ptr)
+        nb_stream = (
+            cuda.api.external_stream(stream.ptr)
+            if not config.ENABLE_CUDASIM
+            else cuda.stream()
+        )
         with stream:
             d_a = cp.asarray(a)
             d_b = cp.asarray(b)
