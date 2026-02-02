@@ -14,8 +14,12 @@ from numba.cuda.testing import skip_on_cudasim
 from numba.cuda.testing import CUDATestCase
 from numba.cuda.testing import skip_if_cupy_unavailable
 import unittest
-import cupy as cp
 import pytest
+
+try:
+    import cupy as cp
+except ImportError:
+    cp = None
 from numba.cuda.testing import DeprecatedDeviceArrayApiWarning
 
 

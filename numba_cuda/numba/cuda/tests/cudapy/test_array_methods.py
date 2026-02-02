@@ -10,7 +10,10 @@ from numba.cuda import config
 if config.ENABLE_CUDASIM:
     import numpy as cp
 else:
-    import cupy as cp
+    try:
+        import cupy as cp
+    except ImportError:
+        cp = None
 
 
 def reinterpret_array_type(byte_arr, start, stop, output):

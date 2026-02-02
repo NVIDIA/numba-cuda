@@ -32,7 +32,10 @@ import numpy as np
 if config.ENABLE_CUDASIM:
     import numpy as cp
 else:
-    import cupy as cp
+    try:
+        import cupy as cp
+    except ImportError:
+        cp = None
 from pickle import PicklingError
 
 # Module-level global for testing that caching rejects global device arrays

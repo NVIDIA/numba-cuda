@@ -11,7 +11,11 @@ from numba.cuda.cudadrv.driver import _Linker, _have_nvjitlink
 
 from numba import cuda
 from numba.cuda import config
-import cupy as cp
+
+try:
+    import cupy as cp
+except ImportError:
+    cp = None
 
 import os
 import io

@@ -22,7 +22,11 @@ from numba.cuda.core.errors import NumbaDebugInfoWarning
 from numba.cuda.tests.support import ignore_internal_warnings
 import numpy as np
 import inspect
-import cupy as cp
+
+try:
+    import cupy as cp
+except ImportError:
+    cp = None
 
 
 @skip_on_cudasim("Simulator does not produce debug dumps")

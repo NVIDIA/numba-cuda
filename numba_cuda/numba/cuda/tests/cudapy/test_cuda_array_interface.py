@@ -17,7 +17,11 @@ from numba.cuda.testing import (
 )
 from numba.cuda.tests.support import linux_only, override_config
 from unittest.mock import call, patch
-import cupy as cp
+
+try:
+    import cupy as cp
+except ImportError:
+    cp = None
 
 import pytest
 

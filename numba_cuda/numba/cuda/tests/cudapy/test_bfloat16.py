@@ -20,7 +20,10 @@ from numba.cuda import config
 if config.ENABLE_CUDASIM:
     import numpy as cp
 else:
-    import cupy as cp
+    try:
+        import cupy as cp
+    except ImportError:
+        cp = None
 
 if not config.ENABLE_CUDASIM:
     from numba.cuda.bf16 import (

@@ -10,7 +10,10 @@ from numba.cuda.testing import unittest, CUDATestCase, skip_if_cupy_unavailable
 if config.ENABLE_CUDASIM:
     import numpy as cp
 else:
-    import cupy as cp
+    try:
+        import cupy as cp
+    except ImportError:
+        cp = None
 
 RISKFREE = 0.02
 VOLATILITY = 0.30

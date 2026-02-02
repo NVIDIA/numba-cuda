@@ -11,7 +11,10 @@ from contextlib import nullcontext
 if config.ENABLE_CUDASIM:
     import numpy as cp
 else:
-    import cupy as cp
+    try:
+        import cupy as cp
+    except ImportError:
+        cp = None
 
 # NOTE: CUDA kernel does not return any value
 

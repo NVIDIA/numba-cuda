@@ -10,7 +10,11 @@ from numba.cuda.testing import (
     skip_unless_cc_60,
 )
 from numba.cuda.tests.support import captured_stdout
-import cupy as cp
+
+try:
+    import cupy as cp
+except ImportError:
+    cp = None
 
 
 @skip_if_cudadevrt_missing

@@ -28,7 +28,10 @@ if HAS_NUMBA:
 if config.ENABLE_CUDASIM:
     import numpy as cp
 else:
-    import cupy as cp
+    try:
+        import cupy as cp
+    except ImportError:
+        cp = None
 
 
 class TestDeviceFunc(CUDATestCase):

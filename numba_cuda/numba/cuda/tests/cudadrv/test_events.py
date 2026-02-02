@@ -11,7 +11,10 @@ from numba.cuda.testing import skip_on_cudasim
 if config.ENABLE_CUDASIM:
     import numpy as cp
 else:
-    import cupy as cp
+    try:
+        import cupy as cp
+    except ImportError:
+        cp = None
 
 
 class TestCudaEvent(CUDATestCase):

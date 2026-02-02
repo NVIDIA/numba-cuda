@@ -10,7 +10,11 @@ from numba.cuda.testing import (
     CUDATestCase,
 )
 import unittest
-import cupy as cp
+
+try:
+    import cupy as cp
+except ImportError:
+    cp = None
 
 sig = [float64(float64, float64)]
 

@@ -12,7 +12,11 @@ from numba.cuda.testing import (
     DeprecatedDeviceArrayApiTest,
 )
 import unittest
-import cupy as cp
+
+try:
+    import cupy as cp
+except ImportError:
+    cp = None
 
 from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor
 

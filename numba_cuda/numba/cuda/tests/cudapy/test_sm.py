@@ -24,7 +24,10 @@ from numba.cuda.np import numpy_support as nps
 if config.ENABLE_CUDASIM:
     import numpy as cp
 else:
-    import cupy as cp
+    try:
+        import cupy as cp
+    except ImportError:
+        cp = None
 from .extensions_usecases import struct_model_type, MyStruct
 import pytest
 

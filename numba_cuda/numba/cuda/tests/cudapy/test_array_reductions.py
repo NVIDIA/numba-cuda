@@ -11,7 +11,11 @@ from numba.cuda.testing import (
 )
 from numba.cuda.misc.special import literal_unroll
 from numba.cuda import config
-import cupy as cp
+
+try:
+    import cupy as cp
+except ImportError:
+    cp = None
 
 
 @skip_on_cudasim("doesn't work in the simulator")

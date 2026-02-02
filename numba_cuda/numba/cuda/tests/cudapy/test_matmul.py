@@ -10,7 +10,10 @@ from numba.cuda.core import config
 if config.ENABLE_CUDASIM:
     import numpy as cp
 else:
-    import cupy as cp
+    try:
+        import cupy as cp
+    except ImportError:
+        cp = None
 
 # Ensure the test takes a reasonable amount of time in the simulator
 if config.ENABLE_CUDASIM:

@@ -7,7 +7,11 @@
 import unittest
 
 from numba.cuda.testing import CUDATestCase, skip_on_cudasim
-import cupy as cp
+
+try:
+    import cupy as cp
+except ImportError:
+    cp = None
 
 
 @skip_on_cudasim("cudasim doesn't support cuda import at non-top-level")

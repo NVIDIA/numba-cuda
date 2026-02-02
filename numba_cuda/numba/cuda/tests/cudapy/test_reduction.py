@@ -11,7 +11,10 @@ from numba.cuda import config
 if config.ENABLE_CUDASIM:
     import numpy as cp
 else:
-    import cupy as cp
+    try:
+        import cupy as cp
+    except ImportError:
+        cp = None
 
 # Avoid recompilation of the sum_reduce function by keeping it at global scope
 sum_reduce = cuda.Reduce(lambda a, b: a + b)

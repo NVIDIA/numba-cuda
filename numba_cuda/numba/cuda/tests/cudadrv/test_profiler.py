@@ -6,7 +6,11 @@ from numba.cuda.testing import CUDATestCase
 from numba import cuda
 from numba.cuda.testing import skip_on_cudasim
 from numba.cuda.testing import skip_if_cupy_unavailable
-import cupy as cp
+
+try:
+    import cupy as cp
+except ImportError:
+    cp = None
 
 
 @skip_on_cudasim("CUDA Profiler unsupported in the simulator")

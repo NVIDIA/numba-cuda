@@ -17,7 +17,11 @@ from numba.cuda.testing import (
 import unittest
 from numba.cuda.core.errors import NumbaPerformanceWarning, TypingError
 from numba.cuda.tests.support import override_config
-import cupy as cp
+
+try:
+    import cupy as cp
+except ImportError:
+    cp = None
 
 
 def _get_matmulcore_gufunc(dtype=float32):
