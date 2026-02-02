@@ -15,10 +15,7 @@ pytestmark = pytest.mark.skipif(
     reason="no reason to run benchmarks in the simulator",
 )
 
-if not config.ENABLE_CUDASIM:
-    with pytest.warns(DeprecatedDeviceArrayApiWarning):
-        devary_arg = cuda.device_array(128, dtype=np.float32)
-else:
+with pytest.warns(DeprecatedDeviceArrayApiWarning):
     devary_arg = cuda.device_array(128, dtype=np.float32)
 
 

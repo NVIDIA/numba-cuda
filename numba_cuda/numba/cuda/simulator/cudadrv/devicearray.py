@@ -360,10 +360,6 @@ def check_array_compatibility(ary1, ary2):
 
 
 def to_device(ary, stream=0, copy=True, to=None):
-    warnings.warn(
-        "to_device is deprecated. Please prefer cupy for array functions",
-        DeprecatedDeviceArrayApiWarning,
-    )
     ary = np.array(
         ary, copy=False if numpy_version < (2, 0) else None, subok=True
     )
