@@ -63,9 +63,9 @@ def test_cuda_matmul():
     stream = cp.cuda.Stream()
     nb_stream = cuda.api.external_stream(stream.ptr)
     with stream:
-        dA = cp.asarray(A, stream)
-        dB = cp.asarray(B, stream)
-        dC = cp.asarray(C, stream)
+        dA = cp.asarray(A)
+        dB = cp.asarray(B)
+        dC = cp.asarray(C)
 
     cu_square_matrix_mul[(bpg, bpg), (tpb, tpb), nb_stream](dA, dB, dC)
     with stream:
