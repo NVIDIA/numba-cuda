@@ -70,7 +70,7 @@ jobs:
 
           echo "MATRIX=${MATRIX}" | tee --append "${GITHUB_OUTPUT}"
   tests:
-    name: ${{ matrix.CUDA_VER }}, ${{ matrix.PY_VER }}, ${{ matrix.ARCH }}, ${{ matrix.LINUX_VER }}, ${{ matrix.GPU }}, ${{ matrix.DRIVER }}-driver, numba@${{ matrix.NUMBA_VERSION }}
+    name: ${{ matrix.CUDA_VER }}, ${{ matrix.PY_VER }}, ${{ matrix.ARCH }}, ${{ matrix.LINUX_VER }}, ${{ matrix.GPU }}, ${{ matrix.DRIVER }}-driver, numba@${{ matrix.NUMBA_VERSION }}, cuda-core@${{ matrix.CUDA_CORE_VERSION }}
     needs: compute-matrix
     strategy:
       fail-fast: false
@@ -108,6 +108,8 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           CUDA_VER: ${{ matrix.CUDA_VER }}
+          NUMBA_VERSION: ${{ matrix.NUMBA_VERSION }}
+          CUDA_CORE_VERSION: ${{ matrix.CUDA_CORE_VERSION }}
       - name: Run codecov
         if: inputs.run_codecov
         env:
