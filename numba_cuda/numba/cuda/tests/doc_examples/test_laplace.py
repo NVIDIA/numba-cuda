@@ -11,10 +11,7 @@ from numba.cuda.testing import (
 )
 from numba.cuda.tests.support import captured_stdout
 
-try:
-    import cupy as cp
-except ImportError:
-    cp = None
+cp = pytest.importorskip("cupy")
 
 
 @skip_if_cudadevrt_missing

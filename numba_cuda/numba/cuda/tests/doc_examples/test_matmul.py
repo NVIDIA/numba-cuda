@@ -18,11 +18,10 @@ from numba.cuda.testing import (
     skip_on_cudasim,
 )
 from numba.cuda.tests.support import captured_stdout
+import pytest
 
-try:
-    import cupy as cp
-except ImportError:
-    cp = None
+
+cupy = pytest.importorskip("cupy")
 
 
 @skip_on_cudasim("cudasim doesn't support cuda import at non-top-level")
