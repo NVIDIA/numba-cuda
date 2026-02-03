@@ -8,6 +8,7 @@ from numba import cuda
 from numba.cuda.testing import unittest, DeprecatedDeviceArrayApiTest
 from numba.cuda.testing import skip_on_cudasim, skip_if_cupy_unavailable
 from numba.cuda.tests.support import IS_NUMPY_2
+from numba.cuda import config
 
 import pytest
 
