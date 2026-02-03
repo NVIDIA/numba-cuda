@@ -76,7 +76,10 @@ class BaseGeneratorLower:
         self.geninfo = lower.generator_info
         self.gentype = self.get_generator_type()
         self.gendesc = GeneratorDescriptor.from_generator_fndesc(
-            lower.func_ir, self.fndesc, self.gentype, self.context.mangler
+            lower.func_ir,
+            self.fndesc,
+            self.gentype,
+            self.fndesc.call_conv.mangler,
         )
         # Helps packing non-omitted arguments into a structure
         self.arg_packer = self.context.get_data_packer(self.fndesc.argtypes)

@@ -8,7 +8,7 @@ Function descriptors.
 from collections import defaultdict
 import importlib
 
-from numba.cuda import types
+from numba.cuda import types, cgutils
 from numba.cuda import itanium_mangler
 from numba.cuda.utils import _dynamic_modname, _dynamic_module
 
@@ -54,6 +54,8 @@ class FunctionDescriptor:
         "noalias",
         "abi_tags",
         "uid",
+        "call_conv",
+        "abi_info",
     )
 
     def __init__(
@@ -76,6 +78,8 @@ class FunctionDescriptor:
         global_dict=None,
         abi_tags=(),
         uid=None,
+        call_conv=None,
+        abi_info=None,
     ):
         self.native = native
         self.modname = modname
@@ -103,12 +107,17 @@ class FunctionDescriptor:
         # be chosen at link time.
         qualprefix = qualifying_prefix(self.modname, self.qualname)
         self.uid = uid
-        self.mangled_name = mangler(
-            qualprefix,
-            self.argtypes,
-            abi_tags=abi_tags,
-            uid=uid,
-        )
+
+        if abi_info is not None and "abi_name" in abi_info:
+            self.mangled_name = abi_info["abi_name"]
+        else:
+            self.mangled_name = mangler(
+                qualprefix,
+                self.argtypes,
+                abi_tags=abi_tags,
+                uid=uid,
+            )
+
         if env_name is None:
             env_name = mangler(
                 ".NumbaEnv.{}".format(qualprefix),
@@ -120,6 +129,8 @@ class FunctionDescriptor:
         self.inline = inline
         self.noalias = noalias
         self.abi_tags = abi_tags
+        self.call_conv = call_conv
+        self.abi_info = abi_info
 
     def lookup_globals(self):
         """
@@ -219,6 +230,8 @@ class FunctionDescriptor:
         inline=False,
         noalias=False,
         abi_tags=(),
+        call_conv=None,
+        abi_info=None,
     ):
         (
             qualname,
@@ -247,8 +260,23 @@ class FunctionDescriptor:
             global_dict=global_dict,
             abi_tags=abi_tags,
             uid=func_ir.func_id.unique_id,
+            call_conv=call_conv,
+            abi_info=abi_info,
         )
         return self
+
+    def declare_function(self, module):
+        fnty = self.call_conv.get_function_type(self.restype, self.argtypes)
+        fn = cgutils.get_or_insert_function(module, fnty, self.mangled_name)
+        self.call_conv.decorate_function(
+            fn, self.args, self.argtypes, noalias=self.noalias
+        )
+        if self.inline:
+            fn.attributes.add("alwaysinline")
+            # alwaysinline overrides optnone
+            fn.attributes.discard("noinline")
+            fn.attributes.discard("optnone")
+        return fn
 
 
 class PythonFunctionDescriptor(FunctionDescriptor):
@@ -269,6 +297,8 @@ class PythonFunctionDescriptor(FunctionDescriptor):
         inline,
         noalias,
         abi_tags,
+        call_conv,
+        abi_info,
     ):
         """
         Build a FunctionDescriptor for a given specialization of a Python
@@ -284,6 +314,8 @@ class PythonFunctionDescriptor(FunctionDescriptor):
             inline=inline,
             noalias=noalias,
             abi_tags=abi_tags,
+            call_conv=call_conv,
+            abi_info=abi_info,
         )
 
     @classmethod
@@ -308,7 +340,7 @@ class ExternalFunctionDescriptor(FunctionDescriptor):
 
     __slots__ = ()
 
-    def __init__(self, name, restype, argtypes):
+    def __init__(self, name, restype, argtypes, call_conv):
         args = ["arg%d" % i for i in range(len(argtypes))]
 
         def mangler(a, x, abi_tags, uid=None):
@@ -327,4 +359,5 @@ class ExternalFunctionDescriptor(FunctionDescriptor):
             kws=None,
             mangler=mangler,
             argtypes=argtypes,
+            call_conv=call_conv,
         )

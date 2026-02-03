@@ -3,6 +3,7 @@
 
 from numba.cuda import types
 from numba.cuda import cgutils
+from numba.cuda import itanium_mangler
 from collections import namedtuple
 
 from llvmlite import ir
@@ -160,6 +161,11 @@ class BaseCallConv:
         Get an argument packer for the given argument types.
         """
         return self.context.get_arg_packer(argtypes)
+
+    def mangler(self, name, argtypes, *, abi_tags=(), uid=None):
+        return itanium_mangler.mangle(
+            name, argtypes, abi_tags=abi_tags, uid=uid
+        )
 
 
 class MinimalCallConv(BaseCallConv):
@@ -341,6 +347,93 @@ class _MinimalCallHelper:
             return exc, exc_args, locinfo
 
 
+class CUDACallConv(MinimalCallConv):
+    def decorate_function(self, fn, args, fe_argtypes, noalias=False):
+        """
+        Set names and attributes of function arguments.
+        """
+        assert not noalias
+        arginfo = self._get_arg_packer(fe_argtypes)
+        # Do not prefix "arg." on argument name, so that nvvm compiler
+        # can track debug info of argument more accurately
+        arginfo.assign_names(self.get_arguments(fn), args)
+        fn.args[0].name = ".ret"
+
+
+class CUDACABICallConv(BaseCallConv):
+    """
+    Calling convention aimed at matching the CUDA C/C++ ABI. The implemented
+    function signature is:
+
+        <Python return type> (<Python arguments>)
+
+    Exceptions are unsupported in this convention.
+    """
+
+    def _make_call_helper(self, builder):
+        # Call helpers are used to help report exceptions back to Python, so
+        # none is required here.
+        return None
+
+    def return_value(self, builder, retval):
+        return builder.ret(retval)
+
+    def return_user_exc(
+        self, builder, exc, exc_args=None, loc=None, func_name=None
+    ):
+        msg = "Python exceptions are unsupported in the CUDA C/C++ ABI"
+        raise NotImplementedError(msg)
+
+    def return_status_propagate(self, builder, status):
+        msg = "Return status is unsupported in the CUDA C/C++ ABI"
+        raise NotImplementedError(msg)
+
+    def get_function_type(self, restype, argtypes):
+        """
+        Get the LLVM IR Function type for *restype* and *argtypes*.
+        """
+        arginfo = self._get_arg_packer(argtypes)
+        argtypes = list(arginfo.argument_types)
+        fnty = ir.FunctionType(self.get_return_type(restype), argtypes)
+        return fnty
+
+    def decorate_function(self, fn, args, fe_argtypes, noalias=False):
+        """
+        Set names and attributes of function arguments.
+        """
+        assert not noalias
+        arginfo = self._get_arg_packer(fe_argtypes)
+        arginfo.assign_names(self.get_arguments(fn), ["arg." + a for a in args])
+
+    def get_arguments(self, func):
+        """
+        Get the Python-level arguments of LLVM *func*.
+        """
+        return func.args
+
+    def call_function(self, builder, callee, resty, argtys, args):
+        """
+        Call the Numba-compiled *callee*.
+        """
+        arginfo = self._get_arg_packer(argtys)
+        realargs = arginfo.as_arguments(builder, args)
+        code = builder.call(callee, realargs)
+        # No status required as we don't support exceptions or a distinct None
+        # value in a C ABI.
+        status = None
+        out = self.context.get_returned_value(builder, resty, code)
+        return status, out
+
+    def get_return_type(self, ty):
+        return self.context.data_model_manager[ty].get_return_type()
+
+    def mangler(self, name, argtypes, *, abi_tags=None, uid=None):
+        if name.startswith(".NumbaEnv."):
+            func_name = name.split(".")[-1]
+            return f"_ZN08NumbaEnv{func_name}"
+        return name.split(".")[-1]
+
+
 class ErrorModel:
     def __init__(self, call_conv):
         self.call_conv = call_conv
@@ -385,8 +478,8 @@ error_models = {
 }
 
 
-def create_error_model(model_name, context):
+def create_error_model(model_name, call_conv):
     """
     Create an error model instance for the given target context.
     """
-    return error_models[model_name](context.call_conv)
+    return error_models[model_name](call_conv)
