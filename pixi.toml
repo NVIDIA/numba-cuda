@@ -111,6 +111,20 @@ nvidia-sphinx-theme = "*"
 [feature.test-cupy.dependencies]
 cupy = "*"
 
+[feature.test-sim.dependencies]
+# Simulator testing - same as test feature but without cupy
+make = "*"
+pre-commit = ">=4.3"
+psutil = ">=6"
+cffi = ">=1"
+pytest = ">=8,<9"
+pytest-xdist = ">=3.8"
+pytest-benchmark = ">=5.1"
+
+[feature.test-sim.pypi-dependencies]
+ml_dtypes = "*"
+filecheck = "*"
+
 [environments]
 default = { features = ["cu-13-1", "test", "cu", "cu-13", "cu-rt", "nvvm", "py314"], solve-group = "default" }
 dev = { features = ["ruff"], no-default-feature = true }
@@ -231,6 +245,16 @@ cu-13-1-py314 = { features = [
     "nvvm",
     "py314",
 ], solve-group = "cu-13-1-py314" }
+# Simulator (no CUDA required, no CuPy)
+sim-cu-12-8-py312 = { features = [
+    "cu-12-8",
+    "test-sim",
+    "cu",
+    "cu-12",
+    "cu-rt",
+    "nvvm",
+    "py312",
+], solve-group = "sim-cu-12-8-py312" }
 
 docs = { features = ["docs"], solve-group = "docs" }
 
