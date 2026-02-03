@@ -12,7 +12,6 @@ from numba.cuda import config
 from cuda import pathfinder
 import pathlib
 from contextlib import contextmanager
-from cuda import pathfinder
 
 _env_path_tuple = namedtuple("_env_path_tuple", ["by", "info"])
 
@@ -441,12 +440,20 @@ def get_current_cuda_target_name():
 def _get_include_dir():
     """Find the root include directory."""
     located_header_dir = pathfinder.locate_nvidia_header_directory("cudart")
-    assert os.path.exists(
-        located_header_dir.abs_path + "/cuda_device_runtime_api.h"
-    )
-    return _env_path_tuple(
-        located_header_dir.found_via, located_header_dir.abs_path
-    )
+    if located_header_dir:
+        assert os.path.exists(
+            os.path.join(
+                located_header_dir.abs_path, "cuda_device_runtime_api.h"
+            )
+        )
+        return _env_path_tuple(
+            located_header_dir.found_via, located_header_dir.abs_path
+        )
+    else:
+        if config.CUDA_INCLUDE_PATH:
+            return _env_path_tuple(
+                "CUDA_INCLUDE_PATH Config entry", config.CUDA_INCLUDE_PATH
+            )
 
 
 def _find_cuda_home_from_lib_path(lib_path):
