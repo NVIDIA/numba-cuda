@@ -16,6 +16,7 @@ from numba.cuda.core.errors import NumbaWarning
 from numba.cuda.core.base import BaseContext
 from numba.cuda.typing import cmathdecl
 from numba.cuda import datamodel
+from numba.cuda.datamodel.packer import ArgPacker, _Unflattener, _flatten
 
 from .cudadrv import nvvm
 from numba.cuda import (
@@ -122,6 +123,55 @@ class CUDATypingContext(typing.BaseContext):
 
 # -----------------------------------------------------------------------------
 # Implementation
+
+
+class CUDACABIArgPacker(ArgPacker):
+    """
+    Subclass of ArgPacker which packs arguments according to the
+    CUDA C ABI calling convention.
+    """
+
+    def __init__(self, dmm, fe_args):
+        self._dmm = dmm
+        self._fe_args = fe_args
+        self._nargs = len(fe_args)
+
+        self._dm_args = []
+        argtys = []
+        for ty in fe_args:
+            dm = self._dmm.lookup(ty)
+            self._dm_args.append(dm)
+            argtys.append(dm.get_data_type())
+        self._unflattener = _Unflattener(argtys)
+        self._be_args = list(_flatten(argtys))
+
+    def as_arguments(self, builder, values):
+        """Flatten all argument values"""
+        if len(values) != self._nargs:
+            raise TypeError(
+                "invalid number of args: expected %d, got %d"
+                % (self._nargs, len(values))
+            )
+
+        if not values:
+            return ()
+
+        args = [
+            dm.as_data(builder, val) for dm, val in zip(self._dm_args, values)
+        ]
+
+        args = tuple(_flatten(args))
+        return args
+
+    def from_arguments(self, builder, args):
+        """Unflatten all argument values"""
+        valtree = self._unflattener.unflatten(args)
+        values = [
+            dm.from_data(builder, val)
+            for dm, val in zip(self._dm_args, valtree)
+        ]
+
+        return values
 
 
 VALID_CHARS = re.compile(r"[^a-z0-9]", re.I)
@@ -503,3 +553,6 @@ class CUDACABICallConv(BaseCallConv):
 
     def get_return_type(self, ty):
         return self.context.data_model_manager[ty].get_return_type()
+
+    def _get_arg_packer(self, fe_args):
+        return CUDACABIArgPacker(self.context.data_model_manager, fe_args)
