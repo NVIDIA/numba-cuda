@@ -74,6 +74,21 @@ index 39080a34..0eb3940f 100644
      array = rng.integers(50, size=1000)
 EOF
 
+patch -p1 <<'EOF'
+diff --git a/pyproject.toml b/pyproject.toml
+index 78ecfba9..80a25474 100644
+--- a/pyproject.toml
++++ b/pyproject.toml
+@@ -136,6 +136,7 @@ filterwarnings = [
+     "ignore:.*np\\.MachAr.*:DeprecationWarning",
+     "ignore:module 'sre_.*' is deprecated:DeprecationWarning",
+     "ignore:Jitify is performing a one-time only warm-up",
++    "ignore:Context.call_conv is deprecated.",
+ ]
+ log_cli_level = "INFO"
+ testpaths = ["tests", "tests-cuda", "tests-cuda-kernels", "tests-cuda-kernels-explicit"]
+EOF
+
 rapids-logger "Generate awkward tests"
 nox -s prepare -- --tests
 
