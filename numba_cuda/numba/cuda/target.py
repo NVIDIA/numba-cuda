@@ -453,6 +453,21 @@ class CUDACABICallConv(BaseCallConv):
         return None
 
     def return_value(self, builder, retval):
+        expected_type = builder.function.ftype.return_type
+        actual_type = retval.type
+
+        # If types don't match, we need to cast
+        if actual_type != expected_type:
+            if isinstance(actual_type, ir.IntType) and isinstance(
+                expected_type, ir.IntType
+            ):
+                if actual_type.width < expected_type.width:
+                    # Zero-extend smaller integers to larger ones
+                    retval = builder.zext(retval, expected_type)
+                elif actual_type.width > expected_type.width:
+                    # Truncate larger integers to smaller ones
+                    retval = builder.trunc(retval, expected_type)
+
         return builder.ret(retval)
 
     def return_user_exc(

@@ -800,7 +800,7 @@ def cabi_wrap_function(
     _, return_value = context.call_conv.call_function(
         builder, func, restype, argtypes, callargs
     )
-    builder.ret(return_value)
+    c_call_conv.return_value(builder, return_value)
 
     if config.DUMP_LLVM:
         utils.dump_llvm(fndesc, wrapper_module)
