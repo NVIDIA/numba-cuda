@@ -627,9 +627,10 @@ class TestCoreContiguous(DeprecatedDeviceArrayApiTest):
         view = np.zeros(shape, order="F")[::2, ::2]
         self._test_against_array_core(view)
 
-    @skip_if_cupy_unavailable
     def test_kernel_with_buffer(self):
         from cuda.core import Buffer
+
+        cp = pytest.importorskip("cupy")
 
         @cuda.jit
         def kernel(buf, n):
@@ -643,7 +644,6 @@ class TestCoreContiguous(DeprecatedDeviceArrayApiTest):
         func(buf, out)
         assert out[0] == n
 
-    @skip_if_cupy_unavailable
     def test_kernel_with_strided_memory_view(self):
         from cuda.core.utils import StridedMemoryView
 
