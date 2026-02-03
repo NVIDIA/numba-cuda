@@ -22,13 +22,13 @@ class DelayedRegistry(utils.UniqueDict):
         self.key_type = kws.pop("key_type", None)
         self.value_type = kws.pop("value_type", None)
         self._type_check = self.key_type or self.value_type
-        super(DelayedRegistry, self).__init__(*args, **kws)
+        super().__init__(*args, **kws)
 
     def __getitem__(self, item):
         if item in self.ondemand:
             self[item] = self.ondemand[item]()
             del self.ondemand[item]
-        return super(DelayedRegistry, self).__getitem__(item)
+        return super().__getitem__(item)
 
     def __setitem__(self, key, value):
         if self._type_check:
@@ -43,4 +43,4 @@ class DelayedRegistry(utils.UniqueDict):
                 check(key, self.key_type)
             if self.value_type is not None:
                 check(value, self.value_type)
-        return super(DelayedRegistry, self).__setitem__(key, value)
+        return super().__setitem__(key, value)

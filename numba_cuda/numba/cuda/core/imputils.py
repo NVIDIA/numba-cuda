@@ -14,7 +14,7 @@ from numba.cuda import types
 from numba.cuda.typing.templates import BaseRegistryLoader
 
 
-class Registry(object):
+class Registry:
     """
     A registry of function and attribute implementations.
     """
@@ -279,7 +279,7 @@ def iterator_impl(iterable_type, iterator_type):
     return wrapper
 
 
-class _IternextResult(object):
+class _IternextResult:
     """
     A result wrapper for iteration, passed by iternext_impl() into the
     wrapped function.

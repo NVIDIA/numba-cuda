@@ -88,7 +88,7 @@ class CUDATypingContext(typing.BaseContext):
                     val = disp
 
         # continue with parent logic
-        return super(CUDATypingContext, self).resolve_value_type(val)
+        return super().resolve_value_type(val)
 
     def can_convert(self, fromty, toty):
         """

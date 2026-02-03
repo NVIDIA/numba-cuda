@@ -76,11 +76,12 @@ def create_struct_proxy(fe_type, kind="value"):
     return res
 
 
-def copy_struct(dst, src, repl={}):
+def copy_struct(dst, src, repl=None):
     """
     Copy structure from *src* to *dst* with replacement from *repl*.
     """
-    repl = repl.copy()
+
+    repl = (repl or {}).copy()
     # copy data from src or use those in repl
     for k in src._datamodel._fields:
         v = repl.pop(k, getattr(src, k))
@@ -91,7 +92,7 @@ def copy_struct(dst, src, repl={}):
     return dst
 
 
-class _StructProxy(object):
+class _StructProxy:
     """
     Creates a `Structure` like interface that is constructed with information
     from DataModel instance.  FE type must have a data model that is a
@@ -170,7 +171,7 @@ class _StructProxy(object):
         Store the LLVM *value* into the named *field*.
         """
         if field.startswith("_"):
-            return super(_StructProxy, self).__setattr__(field, value)
+            return super().__setattr__(field, value)
         self[self._datamodel.get_field_position(field)] = value
 
     def __getitem__(self, index):
@@ -268,7 +269,7 @@ class DataStructProxy(_StructProxy):
         return model.as_data(self._builder, val)
 
 
-class Structure(object):
+class Structure:
     """
     A high-level object wrapping a alloca'ed LLVM structure, including
     named fields and attribute access.
@@ -328,7 +329,7 @@ class Structure(object):
         Store the LLVM *value* into the named *field*.
         """
         if field.startswith("_"):
-            return super(Structure, self).__setattr__(field, value)
+            return super().__setattr__(field, value)
         self[self._namemap[field]] = value
 
     def __getitem__(self, index):

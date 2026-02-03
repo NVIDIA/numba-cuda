@@ -38,7 +38,7 @@ from numba.cuda.misc.coverage_support import get_registered_loc_notify
 _VarArgItem = namedtuple("_VarArgItem", ("vararg", "index"))
 
 
-class BaseLower(object):
+class BaseLower:
     """
     Lower IR to LLVM
     """
@@ -137,6 +137,16 @@ class BaseLower(object):
                 )
                 warnings.warn(NumbaDebugInfoWarning(msg))
         return defn_loc
+
+    def _adjust_line_if_prologue(self, line):
+        """Adjust prologue line numbers to use the 'def' line.
+
+        The function prologue doesn't have corresponding source lines. These
+        instructions inherit line numbers from co_firstlineno, which points to
+        the decorator line when decorators are present. This method redirects
+        such lines to the 'def' line.
+        """
+        return self.defn_loc.line if line < self.defn_loc.line else line
 
     def pre_lower(self):
         """
@@ -457,7 +467,7 @@ class Lower(BaseLower):
     def pre_block(self, block):
         from numba.cuda.core.unsafe import eh
 
-        super(Lower, self).pre_block(block)
+        super().pre_block(block)
         self._cur_ir_block = block
 
         if block == self.firstblk:
@@ -503,7 +513,9 @@ class Lower(BaseLower):
 
     def lower_inst(self, inst):
         # Set debug location for all subsequent LL instructions
-        self.debuginfo.mark_location(self.builder, self.loc.line)
+        self.debuginfo.mark_location(
+            self.builder, self._adjust_line_if_prologue(self.loc.line)
+        )
         self.notify_loc(self.loc)
         self.debug_print(str(inst))
         if isinstance(inst, ir.assign_types):
@@ -1659,7 +1671,7 @@ class Lower(BaseLower):
                     name=name,
                     lltype=lltype,
                     size=sizeof,
-                    line=self.loc.line,
+                    line=self._adjust_line_if_prologue(self.loc.line),
                     datamodel=datamodel,
                 )
         return aptr
@@ -1747,7 +1759,7 @@ class CUDALower(Lower):
             if isinstance(lltype, int_type + real_type):
                 sizeof = self.context.get_abi_sizeof(lltype)
                 datamodel = self.context.data_model_manager[fetype]
-                line = self.loc.line if argidx is None else self.defn_loc.line
+                line = self._adjust_line_if_prologue(self.loc.line)
                 if not name.startswith("$"):
                     # Emit debug value for user variable
                     src_name = name.split(".")[0]
@@ -1774,10 +1786,9 @@ class CUDALower(Lower):
                             # Not yet covered by the dbg.value range
                             and src_name not in self.dbg_val_names
                         ):
-                            for index, item in enumerate(self.fnargs):
-                                if item.name == src_name:
-                                    argidx = index + 1
-                                    break
+                            # Use fndesc.args to get correct argidx for func args
+                            if src_name in self.fndesc.args:
+                                argidx = self.fndesc.args.index(src_name) + 1
                             # Insert the llvm.dbg.value intrinsic call
                             self.debuginfo.update_variable(
                                 self.builder,

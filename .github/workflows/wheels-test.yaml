@@ -35,11 +35,6 @@ on:
         required: false
         type: string
         default: "fail"
-    # the use of secrets in shared-workflows is discouraged, especially for public repositories.
-    # these values were added for situations where the use of secrets is unavoidable.
-    secrets:
-      RAPIDS_AUX_SECRET_1:
-        required: false
 
 defaults:
   run:
@@ -89,11 +84,12 @@ jobs:
 
           echo "MATRIX=${MATRIX}" | tee --append "${GITHUB_OUTPUT}"
   test:
-    name: ${{ matrix.CUDA_VER }}, ${{ matrix.PY_VER }}, ${{ matrix.ARCH }}, ${{ matrix.LINUX_VER }}, ${{ matrix.GPU }}, ${{ matrix.DRIVER }}-driver, numba@${{ matrix.NUMBA_VERSION }}
+    name: ${{ matrix.CUDA_VER }}, ${{ matrix.PY_VER }}, ${{ matrix.ARCH }}, ${{ matrix.LINUX_VER }}, ${{ matrix.GPU }}, ${{ matrix.DRIVER }}-driver, numba@${{ matrix.NUMBA_VERSION }}, cuda-core@${{ matrix.CUDA_CORE_VERSION }}
     needs: compute-matrix
     env:
       RAPIDS_ARTIFACTS_DIR: ${{ github.workspace }}/artifacts
       NUMBA_VERSION: ${{ matrix.NUMBA_VERSION }}
+      CUDA_CORE_VERSION: ${{ matrix.CUDA_CORE_VERSION }}
       RAPIDS_TESTS_DIR: ${{ github.workspace }}/test-results
     strategy:
       fail-fast: false
@@ -142,8 +138,9 @@ jobs:
       run: ${{ inputs.script }}
       env:
         CUDA_VER: ${{ matrix.CUDA_VER }}
+        NUMBA_VERSION: ${{ matrix.NUMBA_VERSION }}
+        CUDA_CORE_VERSION: ${{ matrix.CUDA_CORE_VERSION }}
         GH_TOKEN: ${{ github.token }}
-        RAPIDS_AUX_SECRET_1: ${{ secrets.RAPIDS_AUX_SECRET_1 }}
     - name: Generate test report
       uses: test-summary/action@v2.4
       with:

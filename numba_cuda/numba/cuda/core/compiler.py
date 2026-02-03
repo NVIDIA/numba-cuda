@@ -13,7 +13,7 @@ from numba.cuda.core.targetconfig import ConfigStack
 from numba.cuda.core.callconv import CUDACallConv
 
 
-class _CompileStatus(object):
+class _CompileStatus:
     """
     Describes the state of compilation. Used like a C record.
     """
@@ -78,7 +78,7 @@ def _make_subtarget(targetctx, flags):
     return targetctx.subtarget(**subtargetoptions)
 
 
-class CompilerBase(object):
+class CompilerBase:
     """
     Stores and manages states for the compiler
     """

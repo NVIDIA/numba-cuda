@@ -995,7 +995,7 @@ class TestNumbaInternalOverloads(TestCase):
             def create_message(func, overload_func, func_sig, ol_sig):
                 msg = []
                 s = (
-                    f"{func} from module '{getattr(func, '__module__')}' "
+                    f"{func} from module '{func.__module__}' "
                     "has mismatched sig."
                 )
                 msg.append(s)

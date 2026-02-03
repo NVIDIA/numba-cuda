@@ -11,7 +11,7 @@ import numpy as np
 from .cudadrv.devicearray import FakeCUDAArray, FakeWithinKernelCUDAArray
 from .kernelapi import Dim3, FakeCUDAModule, swapped_cuda_module
 from ..errors import normalize_kernel_dimensions
-from ..args import ArgHint, InOut
+from .args import ArgHint, InOut
 
 
 """
@@ -61,12 +61,12 @@ class FakeOverloadDict(dict):
         return FakeOverload()
 
 
-class FakeCUDAKernel(object):
+class FakeCUDAKernel:
     """
     Wraps a @cuda.jit-ed function.
     """
 
-    def __init__(self, fn, device, fastmath=False, extensions=[], debug=False):
+    def __init__(self, fn, device, fastmath=False, extensions=(), debug=False):
         self.fn = fn
         self._device = device
         self._fastmath = fastmath
@@ -181,7 +181,7 @@ class BlockThread(threading.Thread):
         else:
             target = f
 
-        super(BlockThread, self).__init__(target=target)
+        super().__init__(target=target)
         self.syncthreads_event = threading.Event()
         self.syncthreads_blocked = False
         self._manager = manager
@@ -198,7 +198,7 @@ class BlockThread(threading.Thread):
 
     def run(self):
         try:
-            super(BlockThread, self).run()
+            super().run()
         except Exception as e:
             tid = "tid=%s" % list(self.threadIdx)
             ctaid = "ctaid=%s" % list(self.blockIdx)
@@ -250,7 +250,7 @@ class BlockThread(threading.Thread):
         return "Thread <<<%s, %s>>>" % (self.blockIdx, self.threadIdx)
 
 
-class BlockManager(object):
+class BlockManager:
     """
     Manages the execution of a thread block.
 

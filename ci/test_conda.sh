@@ -10,24 +10,18 @@ if [ "${NUMBA_VERSION:-*}" != "*" ]; then
     pixi add --feature "${PY_VER_PART}" "numba=${NUMBA_VERSION}"
 fi
 
-rapids-logger "Check GPU usage"
+if [ "${CUDA_CORE_VERSION:-*}" != "*" ]; then
+    pixi add --feature "${PY_VER_PART}" "cuda-core=${CUDA_CORE_VERSION}"
+fi
+
 nvidia-smi
 
 EXITCODE=0
 trap "EXITCODE=1" ERR
 set +e
 
-rapids-logger "Show Numba system info"
 pixi run -e "${PIXI_ENV}" python -m numba --sysinfo
-
-rapids-logger "Test importing numba.cuda"
 pixi run -e "${PIXI_ENV}" python -c "from numba import cuda"
+pixi run -e "${PIXI_ENV}" test -n auto --dist loadscope --loadscope-reorder -v
 
-rapids-logger "Run Tests"
-pixi run -e "${PIXI_ENV}" test -n auto \
-  --dist loadscope \
-  --loadscope-reorder \
-  -v
-
-rapids-logger "Test script exiting with value: $EXITCODE"
-exit ${EXITCODE}
+exit "${EXITCODE}"

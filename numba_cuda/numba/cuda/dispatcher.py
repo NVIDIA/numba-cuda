@@ -21,6 +21,7 @@ from numba.cuda.core import errors
 from numba.cuda import serialize, utils
 from numba import cuda
 
+from numba.cuda.np import numpy_support
 from numba.cuda.core.compiler_lock import global_compiler_lock
 from numba.cuda.typeconv.rules import default_type_manager
 from numba.cuda.typing.templates import fold_arguments
@@ -41,7 +42,6 @@ from numba.cuda.compiler import (
 from numba.cuda.core import sigutils, config, entrypoints
 from numba.cuda.flags import Flags
 from numba.cuda.cudadrv import driver, nvvm
-
 from numba.cuda.locks import module_init_lock
 from numba.cuda.core.caching import Cache, CacheImpl, NullCache
 from numba.cuda.descriptor import cuda_target
@@ -116,6 +116,7 @@ class _Kernel(serialize.ReduceMixin):
         opt=True,
         device=False,
         launch_bounds=None,
+        shared_memory_carveout=None,
     ):
         if device:
             raise RuntimeError("Cannot compile a device function as a kernel")
@@ -170,6 +171,12 @@ class _Kernel(serialize.ReduceMixin):
         lib._entry_name = cres.fndesc.llvm_func_name
         kernel_fixup(kernel, self.debug)
         nvvm.set_launch_bounds(kernel, launch_bounds)
+        if shared_memory_carveout is not None:
+            self.shared_memory_carveout = self._parse_carveout(
+                shared_memory_carveout
+            )
+        else:
+            self.shared_memory_carveout = None
 
         if not link:
             link = []
@@ -289,6 +296,7 @@ class _Kernel(serialize.ReduceMixin):
         lineinfo,
         call_helper,
         extensions,
+        shared_memory_carveout=None,
     ):
         """
         Rebuild an instance.
@@ -307,6 +315,7 @@ class _Kernel(serialize.ReduceMixin):
         instance.lineinfo = lineinfo
         instance.call_helper = call_helper
         instance.extensions = extensions
+        instance.shared_memory_carveout = shared_memory_carveout
         return instance
 
     def _reduce_states(self):
@@ -326,7 +335,14 @@ class _Kernel(serialize.ReduceMixin):
             lineinfo=self.lineinfo,
             call_helper=self.call_helper,
             extensions=self.extensions,
+            shared_memory_carveout=self.shared_memory_carveout,
         )
+
+    def _parse_carveout(self, carveout):
+        if isinstance(carveout, int):
+            return carveout
+        carveout_map = {"default": -1, "maxl1": 0, "maxshared": 100}
+        return carveout_map[str(carveout).lower()]
 
     @module_init_lock
     def initialize_once(self, mod):
@@ -340,6 +356,9 @@ class _Kernel(serialize.ReduceMixin):
         cufunc = self._codelibrary.get_cufunc()
 
         self.initialize_once(cufunc.module)
+
+        if self.shared_memory_carveout is not None:
+            cufunc.set_shared_memory_carveout(self.shared_memory_carveout)
 
         if (
             hasattr(self, "target_context")
@@ -541,8 +560,7 @@ class _Kernel(serialize.ReduceMixin):
         if isinstance(ty, types.Array):
             devary = wrap_arg(val).to_device(retr, stream)
 
-            meminfo = 0
-            parent = 0
+            meminfo = parent = 0
 
             kernelargs.append(meminfo)
             kernelargs.append(parent)
@@ -552,10 +570,18 @@ class _Kernel(serialize.ReduceMixin):
             # however, this saves a noticeable amount of overhead in kernel
             # invocation
             kernelargs.append(devary.size)
-            kernelargs.append(devary.dtype.itemsize)
-            kernelargs.append(devary.device_ctypes_pointer.value)
-            kernelargs.extend(devary.shape)
-            kernelargs.extend(devary.strides)
+            kernelargs.append(itemsize := devary.dtype.itemsize)
+            kernelargs.append(devary.ptr)
+            kernelargs.extend(shape := devary.shape)
+            kernelargs.extend(
+                (layout := devary._layout).strides_in_bytes
+                or numpy_support.strides_from_shape(
+                    shape=shape,
+                    itemsize=itemsize,
+                    c_contiguous=layout.is_contiguous_c,
+                    f_contiguous=layout.is_contiguous_f,
+                )
+            )
 
         elif isinstance(ty, types.CPointer):
             # Pointer arguments should be a pointer-sized integer
@@ -593,7 +619,7 @@ class _Kernel(serialize.ReduceMixin):
 
         elif isinstance(ty, types.Record):
             devrec = wrap_arg(val).to_device(retr, stream)
-            kernelargs.append(devrec.device_ctypes_pointer.value)
+            kernelargs.append(devrec.ptr)
 
         elif isinstance(ty, types.BaseTuple):
             assert len(ty) == len(val)
@@ -612,7 +638,7 @@ class _Kernel(serialize.ReduceMixin):
             raise NotImplementedError(ty, val)
 
 
-class ForAll(object):
+class ForAll:
     def __init__(self, dispatcher, ntasks, tpb, stream, sharedmem):
         if ntasks < 0:
             raise ValueError(
@@ -736,7 +762,7 @@ class CUDACache(Cache):
             return super().load_overload(sig, target_context)
 
 
-class OmittedArg(object):
+class OmittedArg:
     """
     A placeholder for omitted arguments with a default value.
     """
@@ -752,7 +778,7 @@ class OmittedArg(object):
         return types.Omitted(self.value)
 
 
-class CompilingCounter(object):
+class CompilingCounter:
     """
     A simple counter that increment in __enter__ and decrement in __exit__.
     """
@@ -1365,7 +1391,7 @@ _CompileStats = collections.namedtuple(
 )
 
 
-class _FunctionCompiler(object):
+class _FunctionCompiler:
     def __init__(self, py_func, targetdescr, targetoptions, pipeline_class):
         self.py_func = py_func
         self.targetdescr = targetdescr
@@ -2388,7 +2414,7 @@ class LiftedWith(LiftedCode):
 class ObjModeLiftedWith(LiftedWith):
     def __init__(self, *args, **kwargs):
         self.output_types = kwargs.pop("output_types", None)
-        super(LiftedWith, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         if not self.flags.force_pyobject:
             raise ValueError("expecting `flags.force_pyobject`")
         if self.output_types is None:

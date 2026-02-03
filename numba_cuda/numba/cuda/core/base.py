@@ -30,7 +30,7 @@ PYOBJECT = GENERIC_POINTER
 void_ptr = GENERIC_POINTER
 
 
-class OverloadSelector(object):
+class OverloadSelector:
     """
     An object matching an actual signature against a registry of formal
     signatures and choosing the best candidate, if any.
@@ -151,7 +151,7 @@ class OverloadSelector(object):
         self._cache.clear()
 
 
-class BaseContext(object):
+class BaseContext:
     """
 
     Notes on Structure
@@ -867,7 +867,7 @@ class BaseContext(object):
         return GENERIC_POINTER
 
     def _compile_subroutine_no_cache(
-        self, builder, impl, sig, locals={}, flags=None
+        self, builder, impl, sig, locals=None, flags=None
     ):
         """
         Invoke the compiler to compile a function to be used inside a
@@ -903,7 +903,7 @@ class BaseContext(object):
                 sig.args,
                 sig.return_type,
                 flags,
-                locals=locals,
+                locals=locals or {},
             )
 
             # Allow inlining the function inside callers.
@@ -911,7 +911,7 @@ class BaseContext(object):
             return cres
 
     def compile_subroutine(
-        self, builder, impl, sig, locals={}, flags=None, caching=True
+        self, builder, impl, sig, locals=None, flags=None, caching=True
     ):
         """
         Compile the function *impl* for the given *sig* (in nopython mode).
@@ -936,7 +936,7 @@ class BaseContext(object):
             cached = self.cached_internal_func.get(cache_key)
         if cached is None:
             cres = self._compile_subroutine_no_cache(
-                builder, impl, sig, locals=locals, flags=flags
+                builder, impl, sig, locals=locals or {}, flags=flags
             )
             self.cached_internal_func[cache_key] = cres
 
@@ -945,12 +945,12 @@ class BaseContext(object):
         self.active_code_library.add_linking_library(cres.library)
         return cres
 
-    def compile_internal(self, builder, impl, sig, args, locals={}):
+    def compile_internal(self, builder, impl, sig, args, locals=None):
         """
         Like compile_subroutine(), but also call the function with the given
         *args*.
         """
-        cres = self.compile_subroutine(builder, impl, sig, locals)
+        cres = self.compile_subroutine(builder, impl, sig, locals or {})
         return self.call_internal(builder, cres.fndesc, sig, args)
 
     def call_internal(self, builder, fndesc, sig, args):
@@ -1258,7 +1258,7 @@ class BaseContext(object):
         raise NotImplementedError(f"{self} does not support ufunc")
 
 
-class _wrap_impl(object):
+class _wrap_impl:
     """
     A wrapper object to call an implementation function with some predefined
     (context, signature) arguments.
@@ -1289,7 +1289,7 @@ def _has_loc(fn):
     return "loc" in sig.parameters
 
 
-class _wrap_missing_loc(object):
+class _wrap_missing_loc:
     def __init__(self, fn):
         self.func = fn  # store this to help with debug
 

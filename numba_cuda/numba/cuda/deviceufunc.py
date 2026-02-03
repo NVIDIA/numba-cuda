@@ -128,15 +128,15 @@ def _multi_broadcast(*shapelist):
     result = shapelist[0]
     others = shapelist[1:]
     try:
-        for i, each in enumerate(others, start=1):
+        for i, each in enumerate(others, start=1):  # noqa: B007
             result = _pairwise_broadcast(result, each)
     except ValueError:
-        raise ValueError("failed to broadcast argument #{0}".format(i))
+        raise ValueError(f"failed to broadcast argument #{i:d}")
     else:
         return result
 
 
-class UFuncMechanism(object):
+class UFuncMechanism:
     """
     Prepare ufunc arguments for vectorize.
     """
@@ -173,7 +173,7 @@ class UFuncMechanism(object):
         """
         for i, ary in enumerate(self.arrays):
             if ary is not None:
-                dtype = getattr(ary, "dtype")
+                dtype = ary.dtype
                 if dtype is None:
                     dtype = np.asarray(ary).dtype
                 self.argtypes[i] = dtype
@@ -433,19 +433,21 @@ def to_dtype(ty):
 
 
 class DeviceVectorize(_BaseUFuncBuilder):
-    def __init__(self, func, identity=None, cache=False, targetoptions={}):
+    def __init__(self, func, identity=None, cache=False, targetoptions=None):
         if cache:
             raise TypeError("caching is not supported")
-        for opt in targetoptions:
+        for opt in targetoptions or {}:
             if opt == "nopython":
                 warnings.warn(
                     "nopython kwarg for cuda target is redundant",
                     RuntimeWarning,
                 )
             else:
-                fmt = "Unrecognized options. "
-                fmt += "cuda vectorize target does not support option: '%s'"
-                raise KeyError(fmt % opt)
+                msg = (
+                    "Unrecognized options. "
+                    f"cuda vectorize target does not support option: '{opt}'"
+                )
+                raise KeyError(msg)
         self.py_func = func
         self.identity = parse_identity(identity)
         # { arg_dtype: (return_dtype), cudakernel }
@@ -505,7 +507,7 @@ class DeviceGUFuncVectorize(_BaseUFuncBuilder):
         sig,
         identity=None,
         cache=False,
-        targetoptions={},
+        targetoptions=None,
         writable_args=(),
     ):
         if cache:
@@ -514,6 +516,8 @@ class DeviceGUFuncVectorize(_BaseUFuncBuilder):
             raise TypeError("writable_args are not supported")
 
         # Allow nopython flag to be set.
+        if not targetoptions:
+            targetoptions = {}
         if not targetoptions.pop("nopython", True):
             raise TypeError("nopython flag must be True")
         # Are there any more target options?
@@ -631,7 +635,7 @@ def _gen_src_index(adims, atype):
         return "__tid__"
 
 
-class GUFuncEngine(object):
+class GUFuncEngine:
     """Determine how to broadcast and execute a gufunc
     base on input shape and signature
     """
@@ -703,7 +707,7 @@ class GUFuncEngine(object):
         return GUFuncSchedule(self, inner_shapes, oshapes, loopdims, pinned)
 
 
-class GUFuncSchedule(object):
+class GUFuncSchedule:
     def __init__(self, parent, ishapes, oshapes, loopdims, pinned):
         self.parent = parent
         # core shapes
@@ -725,7 +729,7 @@ class GUFuncSchedule(object):
         return pprint.pformat(dict(values))
 
 
-class GeneralizedUFunc(object):
+class GeneralizedUFunc:
     def __init__(self, kernelmap, engine):
         self.kernelmap = kernelmap
         self.engine = engine

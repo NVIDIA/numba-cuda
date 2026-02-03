@@ -969,7 +969,7 @@ def _code_reduce(obj):
 def _cell_reduce(obj):
     """Cell (containing values of a function's free variables) reducer."""
     try:
-        obj.cell_contents
+        obj.cell_contents  # noqa: B018
     except ValueError:  # cell is empty
         return _make_empty_cell, ()
     else:

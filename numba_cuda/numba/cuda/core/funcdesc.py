@@ -25,7 +25,7 @@ def qualifying_prefix(modname, qualname):
     return "{}.{}".format(modname, qualname) if modname else qualname
 
 
-class FunctionDescriptor(object):
+class FunctionDescriptor:
     """
     Base class for function descriptors: an object used to carry
     useful metadata about a natively callable function.
@@ -346,7 +346,7 @@ class ExternalFunctionDescriptor(FunctionDescriptor):
         def mangler(a, x, abi_tags, uid=None):
             return a
 
-        super(ExternalFunctionDescriptor, self).__init__(
+        super().__init__(
             native=True,
             modname=None,
             qualname=name,

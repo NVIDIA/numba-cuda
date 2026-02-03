@@ -14,17 +14,17 @@ from numba import cuda
 @skip_on_cudasim("No refcounting in the simulator")
 class TestNrtRefCt(EnableNRTStatsMixin, CUDATestCase):
     def setUp(self):
-        super(TestNrtRefCt, self).setUp()
+        super().setUp()
 
     def tearDown(self):
-        super(TestNrtRefCt, self).tearDown()
+        super().tearDown()
 
     def run(self, result=None):
         with (
             override_config("CUDA_ENABLE_NRT", True),
             override_config("CUDA_NRT_STATS", True),
         ):
-            super(TestNrtRefCt, self).run(result)
+            super().run(result)
 
     def test_no_return(self):
         """

@@ -291,7 +291,8 @@ class TestCudaDebugInfo(CUDATestCase):
         mdnode_id = match.group(1)
 
         # extract the metadata node ids from the flexible node of types
-        pat = rf"!{mdnode_id}\s+=\s+!{{\s+!(\d+),\s+!(\d+)\s+}}"
+        # The first element is null (void return type), followed by param types
+        pat = rf"!{mdnode_id}\s+=\s+!{{\s+null,\s+!(\d+),\s+!(\d+)\s+}}"
         match = re.compile(pat).search(llvm_ir)
         self.assertIsNotNone(match, msg=llvm_ir)
         mdnode_id1 = match.group(1)
@@ -625,6 +626,65 @@ class TestCudaDebugInfo(CUDATestCase):
         self.assertIn("Could not find source for function", msg)
         # and refers to the offending function
         self.assertIn(str(foo.py_func), msg)
+
+    def test_linecache_source(self):
+        """Test that source from linecache (like Jupyter notebooks) works.
+
+        This simulates how Jupyter/IPython registers cell source in linecache,
+        allowing inspect.getsourcelines() to find it even though the file
+        doesn't exist on disk. Fixes issue #721.
+        """
+        import linecache
+
+        # Source with a multi-line decorator
+        strsrc = dedent("""
+        @cuda.jit(
+            "void(int32[:])",
+            debug=True,
+            opt=False
+        )
+        def foo(x):
+            x[0] = 1
+        """).strip()
+
+        # Simulate Jupyter by registering source in linecache
+        fake_filename = "<ipython-input-test-linecache>"
+        lines = [line + "\n" for line in strsrc.splitlines()]
+        linecache.cache[fake_filename] = (
+            len(strsrc),
+            None,  # mtime=None means never expire
+            lines,
+            fake_filename,
+        )
+
+        try:
+            # Compile and execute using the fake filename
+            code = compile(strsrc, fake_filename, "exec")
+            exec_globals = {"cuda": cuda}
+            exec(code, exec_globals)
+            foo = exec_globals["foo"]
+
+            # Should NOT produce a warning since source is in linecache
+            with warnings.catch_warnings(record=True) as w:
+                warnings.simplefilter("always", NumbaDebugInfoWarning)
+                ignore_internal_warnings()
+                foo[1, 1](cuda.to_device(np.zeros(1, dtype=np.int32)))
+
+            # Filter for NumbaDebugInfoWarning specifically
+            debug_warnings = [
+                x for x in w if x.category == NumbaDebugInfoWarning
+            ]
+            self.assertEqual(
+                len(debug_warnings),
+                0,
+                msg=f"Unexpected warning: {debug_warnings}",
+            )
+
+            # Verify debug info is present in the PTX
+            self._check(foo, sig=(types.int32[:],), expect=True)
+        finally:
+            # Clean up linecache
+            linecache.cache.pop(fake_filename, None)
 
     def test_no_if_op_bools_declared(self):
         @cuda.jit(
@@ -1047,6 +1107,110 @@ class TestCudaDebugInfo(CUDATestCase):
                     CHECK-SAME: {kernel.py_func.__name__}
                 """
                 self.assertFileCheckMatches(llvm_ir, check_pattern)
+
+    def test_prologue_line_number(self):
+        """Test prologue code uses the 'def' line, not the decorator line.
+
+        When a function has decorators, Python's co_firstlineno points to the
+        first decorator line. Prologue code (argument setup, etc.) should use
+        the 'def' line for debug info, not the decorator line.
+        """
+        sig = (types.int32[:],)
+
+        @cuda.jit("void(int32[:])", debug=True, opt=False)
+        def foo(x):
+            x[0] = 1
+
+        # Get line numbers from source inspection
+        _, start_lineno = inspect.getsourcelines(foo.py_func)
+        decorator_line = start_lineno  # co_firstlineno points to decorator
+        def_line = start_lineno + 1  # def is on next line
+        first_stmt_line = start_lineno + 2  # first statement
+
+        llvm_ir = foo.inspect_llvm(sig)
+
+        # Verify DISubprogram uses def line
+        # Verify DILocation uses def line or first_stmt_line, NOT decorator
+        check_pattern = f"""
+            CHECK: !DISubprogram(
+            CHECK-SAME: line: {def_line}
+
+            CHECK: !DILocation(
+            CHECK-SAME: line: {def_line}
+            CHECK: !DILocation(
+            CHECK-SAME: line: {first_stmt_line}
+
+            CHECK-NOT: line: {decorator_line}
+        """
+        self.assertFileCheckMatches(llvm_ir, check_pattern)
+
+    def test_bool_param_ref_only(self):
+        """Test that boolean parameters (ref-only) have single DILocalVariable.
+
+        When a boolean parameter is only referenced (not reassigned), it should
+        have exactly one DILocalVariable entry as a formal parameter (arg: N).
+
+        See nvbug5805171.
+        """
+        sig = (types.boolean, types.boolean)
+
+        @cuda.jit(sig, debug=True, opt=False)
+        def foo(flag1, flag2):
+            result = flag1 and flag2  # noqa: F841
+
+        llvm_ir = foo.inspect_llvm(sig)
+
+        # Each ref-only boolean parameter should have exactly one entry of
+        # DILocalVariable as a formal parameter
+        check_pattern = r"""
+            CHECK-COUNT-1: !DILocalVariable(arg: 1{{.*}}name: "flag1"
+            CHECK-COUNT-1: !DILocalVariable(arg: 2{{.*}}name: "flag2"""
+        self.assertFileCheckMatches(llvm_ir, check_pattern)
+
+    def test_terminator_line_number(self):
+        """Test line number info on the continue statement.
+
+        When PHI node exporters are created for the continue block, they
+        should use the continue statement's line number, not the line where
+        the variable was last assigned elsewhere in the loop.
+
+        See nvbug5811432.
+        """
+        sig = (types.int64[:],)
+
+        @cuda.jit(debug=True, opt=False)
+        def foo(output):
+            bar = 0
+            for i in range(10):
+                if i == 5:
+                    continue
+                bar = bar + i
+            output[0] = bar
+
+        source_lines, start_lineno = inspect.getsourcelines(foo.py_func)
+
+        continue_line = None
+        for idx, line in enumerate(source_lines):
+            if "continue" in line:
+                continue_line = start_lineno + idx
+
+        foo.compile(sig)
+        llvm_ir = foo.inspect_llvm(sig)
+
+        # Find the dbg ID for the continue line
+        pattern = rf"!(\d+) = !DILocation\(.*line: {continue_line},"
+        match = re.search(pattern, llvm_ir)
+        self.assertIsNotNone(match, f"No DILocation for line {continue_line}")
+        continue_dbg_id = match.group(1)
+
+        # Find non-zero store to bar.N with this dbg ID
+        pattern = (
+            rf'store i64 %[^,]+, i64\* %"bar\.\d+".*!dbg !{continue_dbg_id}'
+        )
+        match = re.search(pattern, llvm_ir)
+        self.assertIsNotNone(
+            match, f"No non-zero store to 'bar.N' with !dbg !{continue_dbg_id}"
+        )
 
 
 if __name__ == "__main__":

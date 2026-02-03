@@ -1487,7 +1487,7 @@ def simplify_CFG(blocks):
         inst = blocks[label].body[0]
         predecessors = cfg.predecessors(label)
         delete_block = True
-        for p, q in predecessors:
+        for p, _ in predecessors:
             block = blocks[p]
             if isinstance(block.body[-1], ir.jump_types):
                 block.body[-1] = copy.copy(inst)
@@ -1992,7 +1992,7 @@ def get_ir_of_code(glbls, fcode):
     # we need to run the before inference rewrite pass to normalize the IR
     # XXX: check rewrite pass flag?
     # for example, Raise nodes need to become StaticRaise before type inference
-    class DummyPipeline(object):
+    class DummyPipeline:
         def __init__(self, f_ir):
             self.state = StateDict()
             self.state.typingctx = None
@@ -2617,7 +2617,7 @@ def fixup_var_define_in_scope(blocks):
     # Ensure the scope of each block defines all used variables.
     for blk in blocks.values():
         scope = blk.scope
-        for var, inst in used_var.items():
+        for var in used_var.keys():
             # add this variable if it's not in scope
             if var.name not in scope.localvars:
                 # Note: using a internal method to reuse the same

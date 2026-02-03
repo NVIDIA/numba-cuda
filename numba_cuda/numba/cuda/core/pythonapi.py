@@ -23,7 +23,7 @@ if PYVERSION in ((3, 10), (3, 11)):
     PY_UNICODE_WCHAR_KIND = _helperlib.py_unicode_wchar_kind
 
 
-class _Registry(object):
+class _Registry:
     def __init__(self):
         self.functions = {}
 
@@ -106,7 +106,7 @@ class _ReflectContext(
         return self.pyapi.reflect_native_value(typ, val, self.env_manager)
 
 
-class NativeValue(object):
+class NativeValue:
     """
     Encapsulate the result of converting a Python object to a native value,
     recording whether the conversion was successful and how to cleanup.
@@ -118,7 +118,7 @@ class NativeValue(object):
         self.cleanup = cleanup
 
 
-class EnvironmentManager(object):
+class EnvironmentManager:
     def __init__(self, pyapi, env, env_body, env_ptr):
         assert isinstance(env, lowering.Environment)
         self.pyapi = pyapi
@@ -133,7 +133,7 @@ class EnvironmentManager(object):
         # All constants are frozen inside the environment
         if isinstance(const, str):
             const = sys.intern(const)
-        for index, val in enumerate(self.env.consts):
+        for val in self.env.consts:
             if val is const:
                 break
         else:
@@ -174,7 +174,7 @@ class EnvironmentManager(object):
 _IteratorLoop = namedtuple("_IteratorLoop", ("value", "do_break"))
 
 
-class PythonAPI(object):
+class PythonAPI:
     """
     Code generation facilities to call into the CPython C API (and related
     helpers).
@@ -189,9 +189,7 @@ class PythonAPI(object):
 
         self.module = builder.basic_block.function.module
         # A unique mapping of serialized objects in this module
-        try:
-            self.module.__serialized
-        except AttributeError:
+        if not hasattr(self.module, "__serialized"):
             self.module.__serialized = {}
 
         # Initialize types

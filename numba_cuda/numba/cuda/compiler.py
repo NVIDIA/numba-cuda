@@ -117,7 +117,7 @@ def run_frontend(func, inline_closures=False, emit_dels=False):
     return func_ir
 
 
-class DefaultPassBuilder(object):
+class DefaultPassBuilder:
     """
     This is the default pass builder, it contains the "classic" default
     pipelines as pre-canned PassManager instances:
@@ -781,7 +781,7 @@ def kernel_fixup(kernel, debug):
     #    ret void
 
     for block in kernel.blocks:
-        for i, inst in enumerate(block.instructions):
+        for inst in block.instructions:
             if isinstance(inst, ir.Ret):
                 old_ret = block.instructions.pop()
                 block.terminator = None
@@ -837,7 +837,8 @@ def kernel_fixup(kernel, debug):
     kernel.return_value = ir.ReturnValue(kernel, ir.VoidType())
     kernel.args = kernel.args[1:]
 
-    # If debug metadata is present, remove the return value from it
+    # If debug metadata is present, fix the return type to void by replacing
+    # the first element of the types tuple with null (representing void).
 
     if kernel_metadata := getattr(kernel, "metadata", None):
         if dbg_metadata := kernel_metadata.get("dbg", None):
@@ -847,7 +848,8 @@ def kernel_fixup(kernel, debug):
                     for tm_name, tm_value in type_metadata.operands:
                         if tm_name == "types":
                             types = tm_value
-                            types.operands = types.operands[1:]
+                            ret_type = ir.Constant(ir.MetaDataType(), None)
+                            types.operands = (ret_type,) + types.operands[1:]
                             if config.DUMP_LLVM:
                                 types._clear_string_cache()
 
