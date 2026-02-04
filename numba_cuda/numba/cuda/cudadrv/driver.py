@@ -45,7 +45,7 @@ from .drvapi import cu_stream_callback_pyobj
 from .mappings import FILE_EXTENSION_MAP
 from .linkable_code import LinkableCode, LTOIR, Fatbin, Object
 from numba.cuda.utils import cached_file_read
-from numba.cuda.cudadrv import enums, drvapi, nvrtc
+from numba.cuda.cudadrv import drvapi, nvrtc
 
 from cuda.bindings import driver as binding
 from numba.cuda._compat import (
@@ -217,12 +217,10 @@ def _raise_driver_error(e):
 
 
 def _build_reverse_error_map():
-    prefix = "CUDA_ERROR"
+    """Build error code to name mapping from cuda.bindings.driver.CUresult"""
     map = utils.UniqueDict()
-    for name in dir(enums):
-        if name.startswith(prefix):
-            code = getattr(enums, name)
-            map[code] = name
+    for name, member in binding.CUresult.__members__.items():
+        map[int(member)] = name
     return map
 
 
@@ -387,11 +385,11 @@ class Driver:
             raise CudaDriverError("CUDA initialized before forking")
 
     def _check_ctypes_error(self, fname, retcode):
-        if retcode != enums.CUDA_SUCCESS:
+        if retcode != binding.CUresult.CUDA_SUCCESS:
             errname = ERROR_MAP.get(retcode, "UNKNOWN_CUDA_ERROR")
             msg = "Call to %s results in %s" % (fname, errname)
             _logger.error(msg)
-            if retcode == enums.CUDA_ERROR_NOT_INITIALIZED:
+            if retcode == binding.CUresult.CUDA_ERROR_NOT_INITIALIZED:
                 self._detect_fork()
             raise CudaAPIError(retcode, msg)
 
@@ -786,11 +784,11 @@ class HostOnlyCUDAMemoryManager(BaseCUDAMemoryManager):
         """
         flags = 0
         if mapped:
-            flags |= enums.CU_MEMHOSTALLOC_DEVICEMAP
+            flags |= binding.CU_MEMHOSTALLOC_DEVICEMAP
         if portable:
-            flags |= enums.CU_MEMHOSTALLOC_PORTABLE
+            flags |= binding.CU_MEMHOSTALLOC_PORTABLE
         if wc:
-            flags |= enums.CU_MEMHOSTALLOC_WRITECOMBINED
+            flags |= binding.CU_MEMHOSTALLOC_WRITECOMBINED
 
         def allocator():
             return driver.cuMemHostAlloc(size, flags)
@@ -826,7 +824,7 @@ class HostOnlyCUDAMemoryManager(BaseCUDAMemoryManager):
         flags = 0
 
         if mapped:
-            flags |= enums.CU_MEMHOSTREGISTER_DEVICEMAP
+            flags |= binding.CU_MEMHOSTREGISTER_DEVICEMAP
 
         def allocator():
             driver.cuMemHostRegister(pointer, size, flags)
@@ -1303,7 +1301,7 @@ class Context:
     def create_event(self, timing=True):
         flags = 0
         if not timing:
-            flags |= enums.CU_EVENT_DISABLE_TIMING
+            flags |= int(binding.CUevent_flags.CU_EVENT_DISABLE_TIMING)
         handle = drvapi.cu_event(int(driver.cuEventCreate(flags)))
         return Event(
             handle, finalizer=_event_finalizer(self.deallocations, handle)
@@ -2076,7 +2074,7 @@ class Event:
         try:
             driver.cuEventQuery(self.handle)
         except CudaAPIError as e:
-            if e.code == enums.CUDA_ERROR_NOT_READY:
+            if e.code == binding.CUresult.CUDA_ERROR_NOT_READY:
                 return False
             else:
                 raise
