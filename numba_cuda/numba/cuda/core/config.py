@@ -124,7 +124,7 @@ def _process_opt_level(opt_level):
         return _OptLevel(opt_level)
 
 
-class _EnvReloader(object):
+class _EnvReloader:
     def __init__(self):
         self.reset()
 
@@ -153,9 +153,11 @@ class _EnvReloader(object):
                         new_environ["NUMBA_" + k.upper()] = v
 
         # clobber file based config with any locally defined env vars
-        for name, value in os.environ.items():
-            if name.startswith("NUMBA_"):
-                new_environ[name] = value
+        new_environ.update(
+            (name, value)
+            for name, value in os.environ.items()
+            if name.startswith("NUMBA_")
+        )
         # We update the config variables if at least one NUMBA environment
         # variable was modified.  This lets the user modify values
         # directly in the config module without having them when

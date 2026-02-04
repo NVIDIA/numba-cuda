@@ -422,10 +422,9 @@ HAVE_ARGUMENT = dis.HAVE_ARGUMENT
 EXTENDED_ARG = dis.EXTENDED_ARG
 
 
-_BUILTIN_TYPE_NAMES = {}
-for k, v in types.__dict__.items():
-    if type(v) is type:
-        _BUILTIN_TYPE_NAMES[v] = k
+_BUILTIN_TYPE_NAMES = {
+    v: k for k, v in types.__dict__.items() if type(v) is type
+}
 
 
 def _builtin_type(name):
@@ -463,7 +462,7 @@ def _extract_class_dict(cls):
             base_value = inherited_dict[name]
             if value is base_value:
                 to_remove.append(name)
-        except KeyError:
+        except KeyError:  # noqa: PERF203
             pass
     for name in to_remove:
         clsdict.pop(name)
@@ -970,7 +969,7 @@ def _code_reduce(obj):
 def _cell_reduce(obj):
     """Cell (containing values of a function's free variables) reducer."""
     try:
-        obj.cell_contents
+        obj.cell_contents  # noqa: B018
     except ValueError:  # cell is empty
         return _make_empty_cell, ()
     else:

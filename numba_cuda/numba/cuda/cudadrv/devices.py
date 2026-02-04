@@ -56,7 +56,7 @@ class _DeviceList:
                 return self[devnum]
 
 
-class _DeviceContextManager(object):
+class _DeviceContextManager:
     """
     Provides a context manager for executing in the context of the chosen
     device. The normal use of instances of this type is from
@@ -88,7 +88,7 @@ class _DeviceContextManager(object):
         return f"<Managed Device {self.id}>"
 
 
-class _Runtime(object):
+class _Runtime:
     """Emulate the CUDA runtime context management.
 
     It owns all Devices and Contexts.

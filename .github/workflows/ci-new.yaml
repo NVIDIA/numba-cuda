@@ -1,6 +1,6 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 #
-# SPDX-License-Identifier: Apache-2.0
+# SPDX-License-Identifier: BSD-2-Clause
 
 # Note: This name is referred to in the test job, so make sure any changes are sync'd up!
 # Further this is referencing a run in the backport branch to fetch old bindings.
@@ -24,16 +24,16 @@ jobs:
       CUDA_PREV_BUILD_VER: ${{ steps.get-vars.outputs.cuda_prev_build_ver }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8  # v5.0.0
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8  # v6.0.1
         with:
           fetch-depth: 0
 
       - name: Get CUDA build versions
         id: get-vars
         run: |
-          cuda_build_ver=$(jq -r .cuda.build.version ci/versions.json)
+          cuda_build_ver=$(yq '.cuda.build.version' ci/versions.yml)
           echo "cuda_build_ver=$cuda_build_ver" >> $GITHUB_OUTPUT
-          cuda_prev_build_ver=$(jq -r .cuda.prev_build.version ci/versions.json)
+          cuda_prev_build_ver=$(yq '.cuda.prev_build.version' ci/versions.yml)
           echo "cuda_prev_build_ver=$cuda_prev_build_ver" >> $GITHUB_OUTPUT
 
   should-skip:
@@ -42,7 +42,7 @@ jobs:
       skip: ${{ steps.get-should-skip.outputs.skip }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8  # v5.0.0
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8  # v6.0.1
       - name: Compute whether to skip builds and tests
         id: get-should-skip
         env:
@@ -68,7 +68,6 @@ jobs:
           - linux-64
     name: Build ${{ matrix.host-platform }}
     if: ${{ github.repository_owner == 'nvidia' && !fromJSON(needs.should-skip.outputs.skip) }}
-    secrets: inherit
     uses: ./.github/workflows/build-wheel.yml
     with:
       host-platform: ${{ matrix.host-platform }}
@@ -87,7 +86,6 @@ jobs:
           - linux-aarch64
     name: Build ${{ matrix.host-platform }}
     if: ${{ github.repository_owner == 'nvidia' && !fromJSON(needs.should-skip.outputs.skip) }}
-    secrets: inherit
     uses: ./.github/workflows/build-wheel.yml
     with:
       host-platform: ${{ matrix.host-platform }}
@@ -106,7 +104,6 @@ jobs:
           - win-64
     name: Build ${{ matrix.host-platform }}
     if: ${{ github.repository_owner == 'nvidia' && !fromJSON(needs.should-skip.outputs.skip) }}
-    secrets: inherit
     uses: ./.github/workflows/build-wheel.yml
     with:
       host-platform: ${{ matrix.host-platform }}
@@ -126,7 +123,6 @@ jobs:
       contents: read  # This is required for actions/checkout
     needs:
       - build-linux-64
-    secrets: inherit
     uses: ./.github/workflows/test-wheel-linux.yml
     with:
       build-type: pull-request
@@ -145,7 +141,6 @@ jobs:
       contents: read  # This is required for actions/checkout
     needs:
       - build-linux-aarch64
-    secrets: inherit
     uses: ./.github/workflows/test-wheel-linux.yml
     with:
       build-type: pull-request
@@ -163,11 +158,137 @@ jobs:
       contents: read  # This is required for actions/checkout
     needs:
       - build-windows
-    secrets: inherit
     uses: ./.github/workflows/test-wheel-windows.yml
     with:
       build-type: pull-request
       host-platform: ${{ matrix.host-platform }}
+
+  # ============== old CI jobs (ci.yaml & pr.yaml) ==============
+
+  pre-commit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
+      - uses: pre-commit/action@2c7b3805fd2a0fd8c1884dcaebf91fc102a13ecd
+        with:
+          extra_args: --all-files --show-diff-on-failure
+
+  compute-matrix:
+    runs-on: ubuntu-latest
+    outputs:
+      BUILD_MATRIX: ${{ steps.compute-matrix.outputs.BUILD_MATRIX }}
+      SIMULATOR_MATRIX: ${{ steps.compute-matrix.outputs.SIMULATOR_MATRIX }}
+      TEST_MATRIX: ${{ steps.compute-matrix.outputs.TEST_MATRIX }}
+    steps:
+      - uses: actions/checkout@v6
+      - name: Compute Matrices
+        id: compute-matrix
+        run: |
+          BUILD_MATRIX="$(yq '.build-matrix' ci/matrix.yml)"
+          SIMULATOR_MATRIX="$(yq '.simulator-matrix' ci/matrix.yml)"
+          TEST_MATRIX="$(yq '.test-matrix' ci/matrix.yml)"
+          {
+            echo 'BUILD_MATRIX<<EOF'
+            echo "${BUILD_MATRIX}"
+            echo 'EOF'
+            echo 'SIMULATOR_MATRIX<<EOF'
+            echo "${SIMULATOR_MATRIX}"
+            echo 'EOF'
+            echo 'TEST_MATRIX<<EOF'
+            echo "${TEST_MATRIX}"
+            echo 'EOF'
+          } >> "${GITHUB_OUTPUT}"
+
+  test-conda:
+    needs:
+      - compute-matrix
+      - should-skip
+    if: ${{ github.repository_owner == 'nvidia' && !fromJSON(needs.should-skip.outputs.skip) }}
+    uses: ./.github/workflows/conda-python-tests.yaml
+    with:
+      build_type: pull-request
+      script: "ci/test_conda.sh"
+      run_codecov: false
+      matrix: ${{ needs.compute-matrix.outputs.TEST_MATRIX }}
+
+  test-simulator:
+    needs:
+      - compute-matrix
+      - should-skip
+    if: ${{ github.repository_owner == 'nvidia' && !fromJSON(needs.should-skip.outputs.skip) }}
+    uses: ./.github/workflows/simulator-test.yaml
+    with:
+      build_type: pull-request
+      script: "ci/test_simulator.sh"
+      matrix: ${{ needs.compute-matrix.outputs.SIMULATOR_MATRIX }}
+
+  test-wheels-deps-wheels:
+    needs:
+      - build-linux-64
+      - compute-matrix
+    uses: ./.github/workflows/wheels-test.yaml
+    with:
+      build_type: pull-request
+      script: "ci/test_wheel_deps_wheels.sh"
+      matrix: ${{ needs.compute-matrix.outputs.TEST_MATRIX }}
+      matrix_filter: map(select(.ARCH == "amd64" and (.CUDA_VER | split(".") | .[0] | tonumber >= 12))) | group_by(.CUDA_VER|split(".")|map(tonumber)|.[0]) | map(max_by([(.PY_VER|split(".")|map(tonumber)), (.CUDA_VER|split(".")|map(tonumber))]))
+
+  test-thirdparty-cudf:
+    needs:
+      - build-linux-64
+      - compute-matrix
+    uses: ./.github/workflows/wheels-test.yaml
+    with:
+      build_type: pull-request
+      script: "ci/test_thirdparty_cudf.sh"
+      matrix: ${{ needs.compute-matrix.outputs.TEST_MATRIX }}
+      # TODO: Enable for CUDA 13 when a supporting version of cuDF is available
+      matrix_filter: map(select(.ARCH == "amd64" and (.CUDA_VER | split(".") | .[0] | tonumber == 12))) | group_by(.CUDA_VER|split(".")|map(tonumber)|.[0]) | map(max_by([(.PY_VER|split(".")|map(tonumber)), (.CUDA_VER|split(".")|map(tonumber))]))
+
+  test-thirdparty-nvmath:
+    if: ${{ github.ref_name == 'main' }}
+    needs:
+      - build-linux-64
+      - compute-matrix
+    uses: ./.github/workflows/wheels-test.yaml
+    with:
+      build_type: pull-request
+      script: "ci/test_thirdparty_nvmath.sh"
+      matrix: ${{ needs.compute-matrix.outputs.TEST_MATRIX }}
+      # TODO: Enable for CUDA 13 when a supporting version of nvmath-python is available
+      matrix_filter: map(select(.ARCH == "amd64" and (.CUDA_VER | split(".") | .[0] | tonumber == 12))) | group_by(.CUDA_VER|split(".")|map(tonumber)|.[0]) | map(max_by([(.PY_VER|split(".")|map(tonumber)), (.CUDA_VER|split(".")|map(tonumber))]))
+
+  test-thirdparty-awkward:
+    needs:
+      - build-linux-64
+      - compute-matrix
+    uses: ./.github/workflows/wheels-test.yaml
+    with:
+      build_type: pull-request
+      script: "ci/test_thirdparty_awkward.sh"
+      matrix: ${{ needs.compute-matrix.outputs.TEST_MATRIX }}
+      # TODO: Enable for CUDA 13 in future
+      matrix_filter: map(select(.ARCH == "amd64" and (.CUDA_VER | split(".") | .[0] | tonumber == 12))) | group_by(.CUDA_VER|split(".")|map(tonumber)|.[0]) | map(max_by([(.PY_VER|split(".")|map(tonumber)), (.CUDA_VER|split(".")|map(tonumber))]))
+
+  build-docs:
+    needs:
+      - should-skip
+    if: ${{ github.repository_owner == 'nvidia' && !fromJSON(needs.should-skip.outputs.skip) }}
+    uses: ./.github/workflows/docs-build.yaml
+
+  coverage-report:
+    needs:
+      - build-linux-64
+      - compute-matrix
+    uses: ./.github/workflows/wheels-test.yaml
+    with:
+      build_type: pull-request
+      script: "ci/coverage_report.sh"
+      matrix: ${{ needs.compute-matrix.outputs.TEST_MATRIX }}
+      matrix_filter: 'map(select(.ARCH == "amd64" and .CUDA_VER == "12.9.1" and .PY_VER == "3.12")) | .[0:1]'
+
+  # =============================================================
 
   checks:
     name: Check job status
@@ -177,6 +298,14 @@ jobs:
       - test-linux-64
       - test-linux-aarch64
       - test-windows
+      - pre-commit
+      - test-conda
+      - test-simulator
+      - test-thirdparty-cudf
+      - test-thirdparty-nvmath
+      - test-thirdparty-awkward
+      - build-docs
+      - coverage-report
     steps:
       - name: Exit
         run: |
@@ -199,7 +328,14 @@ jobs:
           if ${{ needs.test-linux-64.result == 'cancelled' ||
                  needs.test-linux-aarch64.result == 'cancelled' ||
                  needs.test-windows.result == 'cancelled' ||
-                 needs.doc.result == 'cancelled' }}; then
+                 needs.pre-commit.result == 'cancelled' ||
+                 needs.test-conda.result == 'cancelled' ||
+                 needs.test-simulator.result == 'cancelled' ||
+                 needs.test-thirdparty-cudf.result == 'cancelled' ||
+                 needs.test-thirdparty-nvmath.result == 'cancelled' ||
+                 needs.test-thirdparty-awkward.result == 'cancelled' ||
+                 needs.build-docs.result == 'cancelled' ||
+                 needs.coverage-report.result == 'cancelled' }}; then
             exit 1
           else
             exit 0

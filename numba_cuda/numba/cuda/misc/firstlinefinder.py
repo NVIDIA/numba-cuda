@@ -7,6 +7,8 @@ body.
 """
 
 import ast
+import inspect
+import textwrap
 
 
 class FindDefFirstLine(ast.NodeVisitor):
@@ -16,18 +18,25 @@ class FindDefFirstLine(ast.NodeVisitor):
     first_stmt_line : int or None
         This stores the first statement line number if the definition is found.
         Or, ``None`` if the definition is not found.
+    def_lineno : int or None
+        This stores the 'def' line number if the definition is found.
+        Or, ``None`` if the definition is not found.
     """
 
-    def __init__(self, code):
+    def __init__(self, name, firstlineno):
         """
         Parameters
         ----------
-        code :
-            The function's code object.
+        name : str
+            The function's name (co_name).
+        firstlineno : int
+            The function's first line number (co_firstlineno), adjusted for
+            any offset if the source is a fragment.
         """
-        self._co_name = code.co_name
-        self._co_firstlineno = code.co_firstlineno
+        self._co_name = name
+        self._co_firstlineno = firstlineno
         self.first_stmt_line = None
+        self.def_lineno = None
 
     def _visit_children(self, node):
         for child in ast.iter_child_nodes(node):
@@ -47,6 +56,7 @@ class FindDefFirstLine(ast.NodeVisitor):
             # Does the first lineno match?
             if self._co_firstlineno in possible_start_lines:
                 # Yes, we found the function.
+                self.def_lineno = node.lineno
                 # So, use the first statement line as the first line.
                 if node.body:
                     first_stmt = node.body[0]
@@ -74,8 +84,11 @@ def _is_docstring(node):
 
 def get_func_body_first_lineno(pyfunc):
     """
-    Look up the first line of function body using the file in
-    ``pyfunc.__code__.co_filename``.
+    Look up the first line of function body.
+
+    Uses inspect.getsourcelines() which works for both regular .py files
+    (via linecache reading from disk) and Jupyter notebook cells (via
+    IPython's linecache registration).
 
     Returns
     -------
@@ -85,12 +98,49 @@ def get_func_body_first_lineno(pyfunc):
     """
     co = pyfunc.__code__
     try:
-        with open(co.co_filename) as fin:
-            file_content = fin.read()
-    except (FileNotFoundError, OSError):
-        return
+        lines, offset = inspect.getsourcelines(pyfunc)
+        source = "".join(lines)
+        offset = offset - 1
+    except (OSError, TypeError):
+        return None
+
+    tree = ast.parse(textwrap.dedent(source))
+    finder = FindDefFirstLine(co.co_name, co.co_firstlineno - offset)
+    finder.visit(tree)
+    if finder.first_stmt_line:
+        return finder.first_stmt_line + offset
     else:
-        tree = ast.parse(file_content)
-        finder = FindDefFirstLine(co)
-        finder.visit(tree)
-        return finder.first_stmt_line
+        # No first line found.
+        return None
+
+
+def get_func_def_lineno(pyfunc):
+    """
+    Look up the line number of the function definition ('def' line).
+
+    Uses inspect.getsourcelines() which works for both regular .py files
+    (via linecache reading from disk) and Jupyter notebook cells (via
+    IPython's linecache registration).
+
+    Returns
+    -------
+    lineno : int; or None
+        The line number of the function definition (the 'def' line); or
+        ``None`` if it cannot be determined.
+    """
+    co = pyfunc.__code__
+    try:
+        lines, offset = inspect.getsourcelines(pyfunc)
+        source = "".join(lines)
+        offset = offset - 1
+    except (OSError, TypeError):
+        return None
+
+    tree = ast.parse(textwrap.dedent(source))
+    finder = FindDefFirstLine(co.co_name, co.co_firstlineno - offset)
+    finder.visit(tree)
+    if finder.def_lineno:
+        return finder.def_lineno + offset
+    else:
+        # No def line found.
+        return None

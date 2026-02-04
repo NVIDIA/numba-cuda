@@ -132,7 +132,7 @@ _overload_default_jit_options = {"no_cpython_wrapper": True, "nopython": True}
 
 def overload(
     func,
-    jit_options={},
+    jit_options=None,
     strict=True,
     inline="never",
     prefer_literal=False,
@@ -201,7 +201,7 @@ def overload(
 
     # set default options
     opts = _overload_default_jit_options.copy()
-    opts.update(jit_options)  # let user options override
+    opts.update(jit_options or {})  # let user options override
 
     # TODO: abort now if the kwarg 'target' relates to an unregistered target,
     # this requires sorting out the circular imports first.

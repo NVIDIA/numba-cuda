@@ -632,7 +632,7 @@ class MakeFunctionToJitFunction(FunctionPass):
     def run_pass(self, state):
         func_ir = state.func_ir
         mutated = False
-        for idx, blk in func_ir.blocks.items():
+        for blk in func_ir.blocks.values():
             for stmt in blk.body:
                 if isinstance(stmt, ir.assign_types):
                     if isinstance(stmt.value, ir.expr_types):
@@ -696,7 +696,7 @@ class TransformLiteralUnrollConstListToTuple(FunctionPass):
     def run_pass(self, state):
         mutated = False
         func_ir = state.func_ir
-        for label, blk in func_ir.blocks.items():
+        for blk in func_ir.blocks.values():
             calls = [_ for _ in blk.find_exprs("call")]
             for call in calls:
                 glbl = guard(get_definition, func_ir, call.func)
@@ -928,7 +928,7 @@ class MixedContainerUnroller(FunctionPass):
         sentinel_exits = set()
         sentinel_blocks = []
         for lbl, blk in switch_ir.blocks.items():
-            for i, stmt in enumerate(blk.body):
+            for stmt in blk.body:
                 if isinstance(stmt, ir.assign_types):
                     if "SENTINEL" in stmt.target.name:
                         sentinel_blocks.append(lbl)
@@ -941,8 +941,8 @@ class MixedContainerUnroller(FunctionPass):
         # find jumps that are non-local, we won't relabel these
         ignore_set = set()
         local_lbl = [x for x in loop_ir.blocks.keys()]
-        for lbl, blk in loop_ir.blocks.items():
-            for i, stmt in enumerate(blk.body):
+        for blk in loop_ir.blocks.values():
+            for stmt in blk.body:
                 if isinstance(stmt, ir.jump_types):
                     if stmt.target not in local_lbl:
                         ignore_set.add(stmt.target)
@@ -1123,16 +1123,17 @@ class MixedContainerUnroller(FunctionPass):
         )
         keys = [k for k in data.keys()]
 
-        elifs = []
-        for i in range(1, len(keys)):
-            elifs.append(elif_tplt % ",".join(map(str, data[keys[i]])))
+        elifs = [
+            elif_tplt % ",".join(map(str, data[keys[i]]))
+            for i in range(1, len(keys))
+        ]
         src = b % (",".join(map(str, data[keys[0]])), "".join(elifs))
         wstr = src
         l = {}
         exec(wstr, {}, l)
         bfunc = l["foo"]
         branches = compile_to_numba_ir(bfunc, {})
-        for lbl, blk in branches.blocks.items():
+        for blk in branches.blocks.values():
             for stmt in blk.body:
                 if isinstance(stmt, ir.assign_types):
                     if isinstance(stmt.value, ir.global_types):
@@ -1173,7 +1174,7 @@ class MixedContainerUnroller(FunctionPass):
             """This finds loops which are compliant with the form:
             for i in range(len(literal_unroll(<something>>)))"""
             unroll_loops = {}
-            for header_lbl, loop in loops.items():
+            for loop in loops.values():
                 # TODO: check the loop head has literal_unroll, if it does but
                 # does not conform to the following then raise
 
@@ -1605,7 +1606,7 @@ class IterLoopCanonicalization(FunctionPass):
         for x in induction_vars:
             try:  # there's not always an alias, e.g. loop from inlined closure
                 tmp.add(func_ir.get_assignee(x, loop.header))
-            except ValueError:
+            except ValueError:  # noqa: PERF203
                 pass
         induction_vars |= tmp
         induction_var_names = set([x.name for x in induction_vars])
@@ -1639,7 +1640,7 @@ class IterLoopCanonicalization(FunctionPass):
         loops = cfg.loops()
 
         mutated = False
-        for header, loop in loops.items():
+        for loop in loops.values():
             stat = self.assess_loop(loop, func_ir, state.typemap)
             if stat:
                 if self._DEBUG:
@@ -1979,7 +1980,7 @@ class RewriteDynamicRaises(FunctionPass):
                     try:
                         const = func_ir.infer_constant(exc_arg)
                         exc_args.append(const)
-                    except consts.ConstantInferenceError:
+                    except consts.ConstantInferenceError:  # noqa: PERF203
                         exc_args.append(exc_arg)
                 loc = raise_.loc
 

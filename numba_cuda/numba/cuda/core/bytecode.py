@@ -70,7 +70,7 @@ EXTENDED_ARG = dis.EXTENDED_ARG
 HAVE_ARGUMENT = dis.HAVE_ARGUMENT
 
 
-class ByteCodeInst(object):
+class ByteCodeInst:
     """
     Attributes
     ----------
@@ -182,9 +182,10 @@ OPCODE_NOP = dis.opname.index("NOP")
 if PYVERSION in ((3, 13), (3, 14)):
 
     def _unpack_opargs(code):
-        buf = []
-        for i, start_offset, op, arg in dis._unpack_opargs(code):
-            buf.append((start_offset, op, arg))
+        buf = [
+            (start_offset, op, arg)
+            for _, start_offset, op, arg in dis._unpack_opargs(code)
+        ]
         for i, (start_offset, op, arg) in enumerate(buf):
             if i + 1 < len(buf):
                 next_offset = buf[i + 1][0]
@@ -270,7 +271,7 @@ def _patched_opargs(bc_stream):
         yield offset + _FIXED_OFFSET, opcode, arg, nextoffset + _FIXED_OFFSET
 
 
-class ByteCodeIter(object):
+class ByteCodeIter:
     def __init__(self, code):
         self.code = code
         self.iter = iter(_patched_opargs(_unpack_opargs(self.code.co_code)))
@@ -297,7 +298,7 @@ class ByteCodeIter(object):
         return buf
 
 
-class _ByteCode(object):
+class _ByteCode:
     """
     The decoded bytecode of a function, and related information.
     """
@@ -452,12 +453,13 @@ class ByteCodePy311(_ByteCode):
         """
         Returns the exception entry for the given instruction offset
         """
-        candidates = []
-        for ent in self.exception_entries:
-            if ent.start <= offset < ent.end:
-                candidates.append((ent.depth, ent))
+        candidates = [
+            (ent.depth, ent)
+            for ent in self.exception_entries
+            if ent.start <= offset < ent.end
+        ]
         if candidates:
-            ent = max(candidates)[1]
+            _, ent = max(candidates)
             return ent
 
 

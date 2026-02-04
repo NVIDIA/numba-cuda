@@ -389,10 +389,7 @@ def get_name_var_table(blocks):
 def replace_var_names(blocks, namedict):
     """replace variables (ir.Var to ir.Var) from dictionary (name -> name)"""
     # remove identity values to avoid infinite loop
-    new_namedict = {}
-    for l, r in namedict.items():
-        if l != r:
-            new_namedict[l] = r
+    new_namedict = {l: r for l, r in namedict.items() if l != r}
 
     def replace_name(var, namedict):
         assert isinstance(var, ir.var_types)
@@ -415,10 +412,7 @@ def replace_var_callback(var, vardict):
 def replace_vars(blocks, vardict):
     """replace variables (ir.Var to ir.Var) from dictionary (name -> ir.Var)"""
     # remove identity values to avoid infinite loop
-    new_vardict = {}
-    for l, r in vardict.items():
-        if l != r.name:
-            new_vardict[l] = r
+    new_vardict = {l: r for l, r in vardict.items() if l != r.name}
     visit_vars(blocks, replace_var_callback, new_vardict)
 
 
@@ -591,11 +585,9 @@ def flatten_labels(blocks):
 def remove_dels(blocks):
     """remove ir.Del nodes"""
     for block in blocks.values():
-        new_body = []
-        for stmt in block.body:
-            if not isinstance(stmt, ir.del_types):
-                new_body.append(stmt)
-        block.body = new_body
+        block.body = [
+            stmt for stmt in block.body if not isinstance(stmt, ir.del_types)
+        ]
     return
 
 
@@ -1076,7 +1068,7 @@ def init_copy_propagate_data(blocks, entry, typemap):
     gen_copies, extra_kill = get_block_copies(blocks, typemap)
     # set of all program copies
     all_copies = set()
-    for l, s in gen_copies.items():
+    for l in gen_copies.keys():
         all_copies |= gen_copies[l]
     kill_copies = {}
     for label, gen_set in gen_copies.items():
@@ -1122,8 +1114,7 @@ def get_block_copies(blocks, typemap):
             for T, f in copy_propagate_extensions.items():
                 if isinstance(stmt, T):
                     gen_set, kill_set = f(stmt, typemap)
-                    for lhs, rhs in gen_set:
-                        assign_dict[lhs] = rhs
+                    assign_dict.update(gen_set)
                     # if a=b is in dict and b is killed, a is also killed
                     new_assign_dict = {}
                     for l, r in assign_dict.items():
@@ -1496,7 +1487,7 @@ def simplify_CFG(blocks):
         inst = blocks[label].body[0]
         predecessors = cfg.predecessors(label)
         delete_block = True
-        for p, q in predecessors:
+        for p, _ in predecessors:
             block = blocks[p]
             if isinstance(block.body[-1], ir.jump_types):
                 block.body[-1] = copy.copy(inst)
@@ -1933,7 +1924,7 @@ def compile_to_numba_ir(
     # rename all variables to avoid conflict
     var_table = get_name_var_table(f_ir.blocks)
     new_var_dict = {}
-    for name, var in var_table.items():
+    for name in var_table.keys():
         new_var_dict[name] = mk_unique_var(name)
     replace_var_names(f_ir.blocks, new_var_dict)
 
@@ -2001,7 +1992,7 @@ def get_ir_of_code(glbls, fcode):
     # we need to run the before inference rewrite pass to normalize the IR
     # XXX: check rewrite pass flag?
     # for example, Raise nodes need to become StaticRaise before type inference
-    class DummyPipeline(object):
+    class DummyPipeline:
         def __init__(self, f_ir):
             self.state = StateDict()
             self.state.typingctx = None
@@ -2626,7 +2617,7 @@ def fixup_var_define_in_scope(blocks):
     # Ensure the scope of each block defines all used variables.
     for blk in blocks.values():
         scope = blk.scope
-        for var, inst in used_var.items():
+        for var in used_var.keys():
             # add this variable if it's not in scope
             if var.name not in scope.localvars:
                 # Note: using a internal method to reuse the same

@@ -74,7 +74,7 @@ def _created_inlined_var_name(function_name, var_name):
     return new_name
 
 
-class InlineClosureCallPass(object):
+class InlineClosureCallPass:
     """InlineClosureCallPass class looks for direct calls to locally defined
     closures, and inlines the body of the closure function to the call site.
     """
@@ -137,7 +137,7 @@ class InlineClosureCallPass(object):
             sized_loops = [(k, len(loops[k].body)) for k in loops.keys()]
             visited = []
             # We go over all loops, bigger loops first (outer first)
-            for k, s in sorted(
+            for k, _ in sorted(
                 sized_loops, key=lambda tup: tup[1], reverse=True
             ):
                 visited.append(k)
@@ -259,7 +259,7 @@ def check_reduce_func(func_ir, func_var):
     return reduce_func
 
 
-class InlineWorker(object):
+class InlineWorker:
     """A worker class for inlining, this is a more advanced version of
     `inline_closure_call` in that it permits inlining from function type, Numba
     IR and code object. It also, runs the entire untyped compiler pipeline on
@@ -344,10 +344,10 @@ class InlineWorker(object):
         # Always copy the callee IR, it gets mutated
         def copy_ir(the_ir):
             kernel_copy = the_ir.copy()
-            kernel_copy.blocks = {}
-            for block_label, block in the_ir.blocks.items():
-                new_block = copy.deepcopy(the_ir.blocks[block_label])
-                kernel_copy.blocks[block_label] = new_block
+            kernel_copy.blocks = {
+                block_label: copy.deepcopy(block)
+                for block_label, block in the_ir.blocks.items()
+            }
             return kernel_copy
 
         callee_ir = copy_ir(callee_ir)
@@ -834,7 +834,7 @@ def _debug_dump(func_ir):
 def _get_all_scopes(blocks):
     """Get all block-local scopes from an IR."""
     all_scopes = []
-    for label, block in blocks.items():
+    for block in blocks.values():
         if block.scope not in all_scopes:
             all_scopes.append(block.scope)
     return all_scopes
@@ -844,7 +844,7 @@ def _replace_args_with(blocks, args):
     """
     Replace ir.Arg(...) with real arguments from call site
     """
-    for label, block in blocks.items():
+    for block in blocks.values():
         assigns = block.find_insts(ir.assign_types)
         for stmt in assigns:
             if isinstance(stmt.value, ir.arg_types):
@@ -857,7 +857,7 @@ def _replace_freevars(blocks, args):
     """
     Replace ir.FreeVar(...) with real variables from parent function
     """
-    for label, block in blocks.items():
+    for block in blocks.values():
         assigns = block.find_insts(ir.assign_types)
         for stmt in assigns:
             if isinstance(stmt.value, ir.freevar_types):
@@ -873,7 +873,7 @@ def _replace_returns(blocks, target, return_label):
     """
     Return return statement by assigning directly to target, and a jump.
     """
-    for label, block in blocks.items():
+    for block in blocks.values():
         casts = []
         for i in range(len(block.body)):
             stmt = block.body[i]
@@ -1316,8 +1316,9 @@ def _inline_arraycall(
     )
 
     # Add back removed just in case they are used by something else
-    for var in removed:
-        stmts.append(_new_definition(func_ir, var, array_var, loc))
+    stmts.extend(
+        _new_definition(func_ir, var, array_var, loc) for var in removed
+    )
 
     # Add back terminator
     stmts.append(terminator)
@@ -1397,7 +1398,7 @@ def _inline_arraycall(
 
 
 def _find_unsafe_empty_inferred(func_ir, expr):
-    unsafe_empty_inferred
+    unsafe_empty_inferred  # noqa: B018
     require(isinstance(expr, ir.expr_types) and expr.op == "call")
     callee = expr.func
     callee_def = get_definition(func_ir, callee)
@@ -1554,7 +1555,7 @@ class RewriteArrayOfConsts(rewrites.Rewrite):
 
     def __init__(self, state, *args, **kws):
         self.typingctx = state.typingctx
-        super(RewriteArrayOfConsts, self).__init__(*args, **kws)
+        super().__init__(*args, **kws)
 
     def match(self, func_ir, block, typemap, calltypes):
         if len(calltypes) == 0:
@@ -1691,7 +1692,7 @@ def _inline_const_arraycall(block, func_ir, context, typemap, calltypes):
         stmts.extend(dels)
         return True
 
-    class State(object):
+    class State:
         """
         This class is used to hold the state in the following loop so as to make
         it easy to reset the state of the variables tracking the various

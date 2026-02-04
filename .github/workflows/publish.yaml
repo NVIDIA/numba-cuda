@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: Copyright (c) 2024 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2024-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-2-Clause
 
 name: Publish packages
@@ -14,70 +14,119 @@ concurrency:
 
 
 jobs:
-  compute-matrix:
+  ci-vars:
     runs-on: ubuntu-latest
     outputs:
-      BUILD_MATRIX: ${{ steps.compute-matrix.outputs.BUILD_MATRIX }}
+      CUDA_BUILD_VER: ${{ steps.get-vars.outputs.cuda_build_ver }}
+      CUDA_PREV_BUILD_VER: ${{ steps.get-vars.outputs.cuda_prev_build_ver }}
     steps:
-      - uses: actions/checkout@v4
-      - name: Compute Build Matrix
-        id: compute-matrix
+      - name: Checkout repository
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8  # v6.0.1
+        with:
+          fetch-depth: 0
+
+      - name: Get CUDA build versions
+        id: get-vars
         run: |
-          BUILD_MATRIX="$(yq '.build-matrix' ci/matrix.yml)"
-          {
-            echo 'BUILD_MATRIX<<EOF'
-            echo "${BUILD_MATRIX}"
-            echo 'EOF'
-          } >> "${GITHUB_OUTPUT}"
-  build-conda:
-    needs: compute-matrix
-    uses: ./.github/workflows/conda-python-build.yaml
-    secrets: inherit
+          cuda_build_ver=$(yq '.cuda.build.version' ci/versions.yml)
+          echo "cuda_build_ver=$cuda_build_ver" >> $GITHUB_OUTPUT
+          cuda_prev_build_ver=$(yq '.cuda.prev_build.version' ci/versions.yml)
+          echo "cuda_prev_build_ver=$cuda_prev_build_ver" >> $GITHUB_OUTPUT
+
+  build-wheels-linux-64:
+    needs: ci-vars
+    name: Build linux-64
+    uses: ./.github/workflows/build-wheel.yml
     with:
-      build_type: release
-      script: "ci/build_conda.sh"
-      matrix: ${{ needs.compute-matrix.outputs.BUILD_MATRIX }}
-      upload_to_anaconda: true
-  build-wheels:
-    needs: compute-matrix
-    uses: ./.github/workflows/wheels-build.yaml
-    secrets: inherit
+      host-platform: linux-64
+      cuda-version: ${{ needs.ci-vars.outputs.CUDA_BUILD_VER }}
+      prev-cuda-version: ${{ needs.ci-vars.outputs.CUDA_PREV_BUILD_VER }}
+
+  build-wheels-linux-aarch64:
+    needs: ci-vars
+    name: Build linux-aarch64
+    uses: ./.github/workflows/build-wheel.yml
     with:
-      build_type: release
-      script: "ci/build_wheel.sh"
-      matrix: ${{ needs.compute-matrix.outputs.BUILD_MATRIX }}
+      host-platform: linux-aarch64
+      cuda-version: ${{ needs.ci-vars.outputs.CUDA_BUILD_VER }}
+      prev-cuda-version: ${{ needs.ci-vars.outputs.CUDA_PREV_BUILD_VER }}
+
   build-wheels-windows:
-    uses: ./.github/workflows/wheel-windows-build.yaml
-    secrets: inherit
+    needs: ci-vars
+    name: Build win-64
+    uses: ./.github/workflows/build-wheel.yml
+    with:
+      host-platform: win-64
+      cuda-version: ${{ needs.ci-vars.outputs.CUDA_BUILD_VER }}
+      prev-cuda-version: ${{ needs.ci-vars.outputs.CUDA_PREV_BUILD_VER }}
+
   publish-wheels:
-    name: Publish wheels to PyPi
-    needs: [build-wheels, build-wheels-windows]
+    name: Publish wheels to PyPI
+    needs: [build-wheels-linux-64, build-wheels-linux-aarch64, build-wheels-windows]
     permissions:
       id-token: write
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
       - name: Download wheels
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131  # v7.0.0
         with:
-          pattern: wheel-py*
+          pattern: numba-cuda-python*
           path: dist/
           merge-multiple: true
-      - name: Download sdist
-        uses: actions/download-artifact@v4
-        with:
-          name: sdist-py3.13-amd64
-          path: sdist/
-      - name: Move sdist to dist
-        run: mv sdist/*.tar.gz dist/
       - name: Display structure of downloaded files
-        run: ls -R
+        run: ls -R dist/
       - name: Publish to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
           verbose: true
+
+  upload-release:
+    name: Upload wheels to GitHub Release
+    needs: [build-wheels-linux-64, build-wheels-linux-aarch64, build-wheels-windows]
+    if: ${{ !github.event.repository.fork }}
+    permissions:
+      contents: write
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download wheels
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131  # v7.0.0
+        with:
+          pattern: numba-cuda-python*
+          path: wheels/
+          merge-multiple: true
+
+      - name: Create GitHub Release if not exists
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # Check if release already exists, create if not
+          if ! gh release view "${{ github.ref_name }}" --repo "${{ github.repository }}" > /dev/null 2>&1; then
+            echo "Creating release ${{ github.ref_name }}"
+            gh release create "${{ github.ref_name }}" \
+              --repo "${{ github.repository }}" \
+              --title "${{ github.ref_name }}" \
+              --generate-notes \
+              --verify-tag
+          else
+            echo "Release ${{ github.ref_name }} already exists"
+          fi
+
+      - name: Upload wheels to GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if [[ -d "wheels" && $(ls -A wheels 2>/dev/null | wc -l) -gt 0 ]]; then
+            echo "Uploading wheels to release ${{ github.ref_name }}"
+            gh release upload --clobber "${{ github.ref_name }}" --repo "${{ github.repository }}" wheels/*
+          else
+            echo "No wheels found to upload"
+            exit 1
+          fi
+
   build-docs:
     uses: ./.github/workflows/docs-build.yaml
+
   deploy-docs:
     needs: build-docs
     permissions:

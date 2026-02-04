@@ -12,6 +12,9 @@ python = ["3.10.*", "3.11.*", "3.12.*", "3.13.*", "3.14.*"]
 # source
 numba-cuda = { path = "." }
 
+[feature.ruff.dependencies]
+ruff = ">=0.14.10"
+
 [feature.cu.dependencies]
 cuda-nvcc = "*"
 cuda-nvcc-impl = "*"
@@ -105,6 +108,8 @@ numpydoc = ">=1.9.0"
 nvidia-sphinx-theme = "*"
 
 [environments]
+default = { features = ["cu-13-1", "test", "cu", "cu-13", "cu-rt", "nvvm", "py314"], solve-group = "default" }
+dev = { features = ["ruff"], no-default-feature = true }
 bench-against = { features = ["test"], no-default-feature = true }
 # CUDA 12
 cu-12-0-py310 = { features = [
@@ -251,15 +256,21 @@ benchcmp = { cmd = [
     "--benchmark-group-by=name",
     "--benchmark-compare",
 ] }
-
-[target.linux.tasks.bench-against]
-cmd = ["python", "$PIXI_PROJECT_ROOT/scripts/bench-against.py"]
+bench-against = { cmd = [
+    "python",
+    "$PIXI_PROJECT_ROOT/scripts/bench-against.py",
+] }
 
 [target.linux.tasks.build-docs]
 cmd = ["make", "-C", "$PIXI_PROJECT_ROOT/docs", "html"]
 
 [target.linux.tasks.test]
 cmd = ["pytest", "$PIXI_PROJECT_ROOT/testing"]
+env = { NUMBA_CUDA_TEST_BIN_DIR = "$PIXI_PROJECT_ROOT/testing" }
+depends-on = [{ task = "build-tests" }]
+
+[target.linux.tasks.test-par]
+cmd = ["pytest", "-n", "auto", "--dist", "loadscope", "$PIXI_PROJECT_ROOT/testing"]
 env = { NUMBA_CUDA_TEST_BIN_DIR = "$PIXI_PROJECT_ROOT/testing" }
 depends-on = [{ task = "build-tests" }]
 
@@ -272,7 +283,7 @@ NUMBA_ENABLE_CUDASIM = "1"
 
 [package]
 name = "numba-cuda"
-version = "0.22.1"
+version = "0.26.0"
 
 [package.build]
 backend = { name = "pixi-build-python", version = "*" }
@@ -293,6 +304,8 @@ numpy = ">=2.1"
 python = "*"
 packaging = "*"
 numba = ">=0.60"
-cuda-core = ">=0.3,<1"
+cuda-core = ">=0.5.1,<1"
 cuda-bindings = ">=12.9,<14"
 cuda-python = ">=12.9,<14"
+cuda-pathfinder = ">=1.3.1,<2"
+cuda-cudart = "*"

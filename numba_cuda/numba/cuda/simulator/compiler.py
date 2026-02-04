@@ -18,7 +18,7 @@ def run_frontend(func):
     pass
 
 
-class DefaultPassBuilder(object):
+class DefaultPassBuilder:
     @staticmethod
     def define_nopython_lowering_pipeline(state, name="nopython_lowering"):
         pass

@@ -29,13 +29,7 @@ import tempfile
 import re
 from itertools import product
 from abc import ABCMeta, abstractmethod
-from ctypes import (
-    c_int,
-    byref,
-    c_size_t,
-    c_void_p,
-    c_uint8,
-)
+from ctypes import c_int, byref, c_void_p, c_uint8
 import contextlib
 import importlib
 import numpy as np
@@ -47,7 +41,7 @@ from numba.cuda.core import config
 from numba.cuda import utils, serialize
 from .error import CudaSupportError, CudaDriverError
 from .drvapi import API_PROTOTYPES
-from .drvapi import cu_occupancy_b2d_size, cu_stream_callback_pyobj
+from .drvapi import cu_stream_callback_pyobj
 from .mappings import FILE_EXTENSION_MAP
 from .linkable_code import LinkableCode, LTOIR, Fatbin, Object
 from numba.cuda.utils import cached_file_read
@@ -143,7 +137,7 @@ class CudaAPIError(CudaDriverError):
     def __init__(self, code, msg):
         self.code = code
         self.msg = msg
-        super(CudaAPIError, self).__init__(code, msg)
+        super().__init__(code, msg)
 
     def __str__(self):
         return "[%s] %s" % (self.code, self.msg)
@@ -182,7 +176,7 @@ def load_driver(dlloader, candidates):
     for path in candidates:
         try:
             dll = dlloader(path)
-        except OSError as e:
+        except OSError as e:  # noqa: PERF203
             # Problem opening the DLL
             path_not_exist.append(not os.path.isfile(path))
             driver_load_error.append(e)
@@ -239,7 +233,7 @@ def _getpid():
 ERROR_MAP = _build_reverse_error_map()
 
 
-class Driver(object):
+class Driver:
     """
     Driver API functions are lazily bound.
     """
@@ -373,10 +367,10 @@ class Driver(object):
             return getattr(self.lib, fname)
 
         for variant in variants:
-            try:
-                return getattr(self.lib, f"{fname}{variant}")
-            except AttributeError:
-                pass
+            if (
+                value := getattr(self.lib, f"{fname}{variant}", None)
+            ) is not None:
+                return value
 
         # Not found.
         # Delay missing function error to use
@@ -459,7 +453,7 @@ class Driver(object):
         return (major, minor)
 
 
-class _ActiveContext(object):
+class _ActiveContext:
     """An contextmanager object to cache active context to reduce dependency
     on querying the CUDA driver API.
 
@@ -1021,7 +1015,7 @@ class _SizeNotSet(int):
 _SizeNotSet = _SizeNotSet()
 
 
-class _PendingDeallocs(object):
+class _PendingDeallocs:
     """
     Pending deallocations of a context (or device since we are using the primary
     context). The capacity defaults to being unset (_SizeNotSet) but can be
@@ -1107,7 +1101,7 @@ MemoryInfo = namedtuple("MemoryInfo", "free,total")
 """
 
 
-class Context(object):
+class Context:
     """
     This object wraps a CUDA Context resource.
 
@@ -1188,45 +1182,10 @@ class Context(object):
         :param blocksizelimit: maximum block size the kernel is designed to
                                handle
         """
-        args = (func, b2d_func, memsize, blocksizelimit, flags)
-        return self._cuda_python_max_potential_block_size(*args)
-
-    def _ctypes_max_potential_block_size(
-        self, func, b2d_func, memsize, blocksizelimit, flags
-    ):
-        gridsize = c_int()
-        blocksize = c_int()
-        b2d_cb = cu_occupancy_b2d_size(b2d_func)
-        args = [
-            byref(gridsize),
-            byref(blocksize),
-            func.handle,
-            b2d_cb,
-            memsize,
-            blocksizelimit,
-        ]
-
-        if not flags:
-            driver.cuOccupancyMaxPotentialBlockSize(*args)
-        else:
-            args.append(flags)
-            driver.cuOccupancyMaxPotentialBlockSizeWithFlags(*args)
-
-        return (gridsize.value, blocksize.value)
-
-    def _cuda_python_max_potential_block_size(
-        self, func, b2d_func, memsize, blocksizelimit, flags
-    ):
-        b2d_cb = ctypes.CFUNCTYPE(c_size_t, c_int)(b2d_func)
-        ptr = int.from_bytes(b2d_cb, byteorder="little")
-        driver_b2d_cb = binding.CUoccupancyB2DSize(ptr)
-        args = [func.handle, driver_b2d_cb, memsize, blocksizelimit]
-
-        if not flags:
-            return driver.cuOccupancyMaxPotentialBlockSize(*args)
-        else:
-            args.append(flags)
-            return driver.cuOccupancyMaxPotentialBlockSizeWithFlags(*args)
+        return (
+            binding.CUresult.CUDA_SUCCESS,
+            func.kernel.attributes.max_threads_per_block(),
+        )
 
     def prepare_for_use(self):
         """Initialize the context for use.
@@ -1485,7 +1444,7 @@ def _module_finalizer(context, object_code):
     return core
 
 
-class _CudaIpcImpl(object):
+class _CudaIpcImpl:
     """Implementation of GPU IPC using CUDA driver API.
     This requires the devices to be peer accessible.
     """
@@ -1522,7 +1481,7 @@ class _CudaIpcImpl(object):
         self._opened_mem = None
 
 
-class _StagedIpcImpl(object):
+class _StagedIpcImpl:
     """Implementation of GPU IPC using custom staging logic to workaround
     CUDA IPC limitation on peer accessibility between devices.
     """
@@ -1562,7 +1521,7 @@ class _StagedIpcImpl(object):
         pass
 
 
-class IpcHandle(object):
+class IpcHandle:
     """
     CUDA IPC handle. Serialization of the CUDA IPC handle object is implemented
     here.
@@ -1683,7 +1642,7 @@ class IpcHandle(object):
         )
 
 
-class MemoryPointer(object):
+class MemoryPointer:
     """A memory pointer that owns a buffer, with an optional finalizer. Memory
     pointers provide reference counting, and instances are initialized with a
     reference count of 1.
@@ -1806,7 +1765,7 @@ class AutoFreePointer(MemoryPointer):
     """
 
     def __init__(self, *args, **kwargs):
-        super(AutoFreePointer, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         # Releease the self reference to the buffer, so that the finalizer
         # is invoked if all the derived pointers are gone.
         self.refct -= 1
@@ -1842,9 +1801,7 @@ class MappedMemory(AutoFreePointer):
         self._bufptr_ = self.host_pointer
 
         self.device_pointer = devptr
-        super(MappedMemory, self).__init__(
-            context, devptr, size, finalizer=finalizer
-        )
+        super().__init__(context, devptr, size, finalizer=finalizer)
         self.handle = self.host_pointer
 
         # For buffer interface
@@ -1927,7 +1884,7 @@ class ManagedMemory(AutoFreePointer):
         return ManagedOwnedPointer(weakref.proxy(self))
 
 
-class OwnedPointer(object):
+class OwnedPointer:
     def __init__(self, memptr, view=None):
         self._mem = memptr
 
@@ -2312,23 +2269,18 @@ class _Linker:
         lto=None,
         additional_flags=None,
     ):
-        arch = f"sm_{cc[0]}{cc[1]}"
+        if len(cc) == 3:
+            arch = f"sm_{cc[0]}{cc[1]}{cc[2]}"
+        else:
+            arch = f"sm_{cc[0]}{cc[1]}"
+
         self.max_registers = max_registers if max_registers else None
         self.lineinfo = lineinfo
         self.cc = cc
         self.arch = arch
-        if lto is False:
-            # WAR for apparent nvjitlink issue
-            lto = None
         self.lto = lto
         self.additional_flags = additional_flags
-
-        self.options = LinkerOptions(
-            max_register_count=self.max_registers,
-            lineinfo=lineinfo,
-            arch=arch,
-            link_time_optimization=lto,
-        )
+        self._has_ltoir = False
         self._complete = False
         self._object_codes = []
         self.linker = None  # need at least one program
@@ -2451,6 +2403,8 @@ class _Linker:
             print(obj.code)
 
         self._object_codes.append(obj)
+        if self.lto:
+            self._has_ltoir = True
 
     def add_cubin(self, cubin, name="<cudapy-cubin>"):
         obj = ObjectCode.from_cubin(cubin, name=name)
@@ -2459,6 +2413,7 @@ class _Linker:
     def add_ltoir(self, ltoir, name="<cudapy-ltoir>"):
         obj = ObjectCode.from_ltoir(ltoir, name=name)
         self._object_codes.append(obj)
+        self._has_ltoir = True
 
     def add_fatbin(self, fatbin, name="<cudapy-fatbin>"):
         obj = ObjectCode.from_fatbin(fatbin, name=name)
@@ -2504,15 +2459,23 @@ class _Linker:
 
         fn(data, name)
 
-    def get_linked_ptx(self):
+    def _get_linker_options(self, ptx):
+        # Some linker flags are only valid/required if LTOIR object code is present.
+        # WAR for cuda-core < 0.4.0 where passing False incorrectly appends flags
+        # (fixed in cuda-python PR #989, released in cuda-core v0.4.0)
+        lto_flag = True if self._has_ltoir else None
+        ptx_flag = True if (self._has_ltoir and ptx) else None
         options = LinkerOptions(
             max_register_count=self.max_registers,
             lineinfo=self.lineinfo,
             arch=self.arch,
-            link_time_optimization=True,
-            ptx=True,
+            link_time_optimization=lto_flag,
+            ptx=ptx_flag,
         )
+        return options
 
+    def get_linked_ptx(self):
+        options = self._get_linker_options(ptx=True)
         self.linker = Linker(*self._object_codes, options=options)
 
         result = self.linker.link("ptx")
@@ -2531,7 +2494,8 @@ class _Linker:
         cubin is a pointer to a internal buffer of cubin owned by the linker;
         thus, it should be loaded before the linker is destroyed.
         """
-        self.linker = Linker(*self._object_codes, options=self.options)
+        options = self._get_linker_options(ptx=False)
+        self.linker = Linker(*self._object_codes, options=options)
         result = self.linker.link("cubin")
         self.close()
         self._complete = True

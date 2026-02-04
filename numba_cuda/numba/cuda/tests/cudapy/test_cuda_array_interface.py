@@ -10,6 +10,8 @@ from numba.cuda.testing import skip_on_cudasim, skip_if_external_memmgr
 from numba.cuda.tests.support import linux_only, override_config
 from unittest.mock import call, patch
 
+import pytest
+
 
 @skip_on_cudasim("CUDA Array Interface is not supported in the simulator")
 class TestCudaArrayInterface(CUDATestCase):
@@ -79,6 +81,21 @@ class TestCudaArrayInterface(CUDATestCase):
 
         np.testing.assert_array_equal(wrapped.copy_to_host(), h_arr + val)
         np.testing.assert_array_equal(d_arr.copy_to_host(), h_arr + val)
+
+    def test_fortran_contiguous(self):
+        cp = pytest.importorskip("cupy")
+
+        @cuda.jit
+        def copy(arr, out):
+            for i in range(arr.shape[0]):
+                for j in range(arr.shape[1]):
+                    out[i, j] = arr[i, j]
+
+        arr = cp.asfortranarray(cp.random.random((10, 10)))
+        out = cp.empty_like(arr)
+        copy[1, 1](arr, out)
+
+        np.testing.assert_array_equal(arr.get(), out.get())
 
     def test_ufunc_arg(self):
         @vectorize(["f8(f8, f8)"], target="cuda")

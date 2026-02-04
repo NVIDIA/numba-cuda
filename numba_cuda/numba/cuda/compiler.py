@@ -29,7 +29,7 @@ from numba.cuda.cudadrv import nvvm, nvrtc
 from numba.cuda.cudadrv.linkable_code import LinkableCode
 from numba.cuda.descriptor import cuda_target
 from numba.cuda.flags import CUDAFlags
-from numba.cuda.target import CUDACABICallConv
+from numba.cuda.core.callconv import CUDACABICallConv, CUDACallConv
 from numba.cuda.core.compiler import CompilerBase
 from numba.cuda.core.compiler_machinery import (
     FunctionPass,
@@ -117,7 +117,7 @@ def run_frontend(func, inline_closures=False, emit_dels=False):
     return func_ir
 
 
-class DefaultPassBuilder(object):
+class DefaultPassBuilder:
     """
     This is the default pass builder, it contains the "classic" default
     pipelines as pre-canned PassManager instances:
@@ -699,6 +699,8 @@ def compile_cuda(
     cc=None,
     max_registers=None,
     lto=False,
+    abi="numba",
+    abi_info=None,
 ):
     if cc is None:
         raise ValueError("Compute Capability must be supplied")
@@ -741,6 +743,12 @@ def compile_cuda(
     flags.max_registers = max_registers
     flags.lto = lto
 
+    if abi == "c":
+        flags.call_conv = CUDACABICallConv(targetctx)
+
+    if abi_info is not None:
+        flags.abi_info = abi_info
+
     with utils.numba_target_override():
         cres = compile_extra(
             typingctx=typingctx,
@@ -759,57 +767,6 @@ def compile_cuda(
     return cres
 
 
-def cabi_wrap_function(
-    context, lib, fndesc, wrapper_function_name, nvvm_options
-):
-    """
-    Wrap a Numba ABI function in a C ABI wrapper at the NVVM IR level.
-
-    The C ABI wrapper will have the same name as the source Python function.
-    """
-    # The wrapper will be contained in a new library that links to the wrapped
-    # function's library
-    library = lib.codegen.create_library(
-        f"{lib.name}_function_",
-        entry_name=wrapper_function_name,
-        nvvm_options=nvvm_options,
-    )
-    library.add_linking_library(lib)
-
-    # Determine the caller (C ABI) and wrapper (Numba ABI) function types
-    argtypes = fndesc.argtypes
-    restype = fndesc.restype
-    c_call_conv = CUDACABICallConv(context)
-    wrapfnty = c_call_conv.get_function_type(restype, argtypes)
-    fnty = context.call_conv.get_function_type(fndesc.restype, argtypes)
-
-    # Create a new module and declare the callee
-    wrapper_module = context.create_module("cuda.cabi.wrapper")
-    func = ir.Function(wrapper_module, fnty, fndesc.llvm_func_name)
-
-    # Define the caller - populate it with a call to the callee and return
-    # its return value
-
-    wrapfn = ir.Function(wrapper_module, wrapfnty, wrapper_function_name)
-    builder = ir.IRBuilder(wrapfn.append_basic_block(""))
-
-    arginfo = context.get_arg_packer(argtypes)
-    callargs = arginfo.from_arguments(builder, wrapfn.args)
-    # We get (status, return_value), but we ignore the status since we
-    # can't propagate it through the C ABI anyway
-    _, return_value = context.call_conv.call_function(
-        builder, func, restype, argtypes, callargs
-    )
-    builder.ret(return_value)
-
-    if config.DUMP_LLVM:
-        utils.dump_llvm(fndesc, wrapper_module)
-
-    library.add_ir_module(wrapper_module)
-    library.finalize()
-    return library
-
-
 def kernel_fixup(kernel, debug):
     if debug:
         exc_helper = add_exception_store_helper(kernel)
@@ -824,7 +781,7 @@ def kernel_fixup(kernel, debug):
     #    ret void
 
     for block in kernel.blocks:
-        for i, inst in enumerate(block.instructions):
+        for inst in block.instructions:
             if isinstance(inst, ir.Ret):
                 old_ret = block.instructions.pop()
                 block.terminator = None
@@ -852,15 +809,15 @@ def kernel_fixup(kernel, debug):
     return_value = kernel.args[0]
 
     for block in kernel.blocks:
-        remove_list = []
-
         # Find all stores first
-        for inst in block.instructions:
+        remove_list = [
+            inst
+            for inst in block.instructions
             if (
                 isinstance(inst, ir.StoreInstr)
                 and inst.operands[1] == return_value
-            ):
-                remove_list.append(inst)
+            )
+        ]
 
         # Remove all stores
         for to_remove in remove_list:
@@ -880,7 +837,8 @@ def kernel_fixup(kernel, debug):
     kernel.return_value = ir.ReturnValue(kernel, ir.VoidType())
     kernel.args = kernel.args[1:]
 
-    # If debug metadata is present, remove the return value from it
+    # If debug metadata is present, fix the return type to void by replacing
+    # the first element of the types tuple with null (representing void).
 
     if kernel_metadata := getattr(kernel, "metadata", None):
         if dbg_metadata := kernel_metadata.get("dbg", None):
@@ -890,7 +848,8 @@ def kernel_fixup(kernel, debug):
                     for tm_name, tm_value in type_metadata.operands:
                         if tm_name == "types":
                             types = tm_value
-                            types.operands = types.operands[1:]
+                            ret_type = ir.Constant(ir.MetaDataType(), None)
+                            types.operands = (ret_type,) + types.operands[1:]
                             if config.DUMP_LLVM:
                                 types._clear_string_cache()
 
@@ -932,7 +891,7 @@ def add_exception_store_helper(kernel):
     # Implement status check / exception store logic
 
     status_code = helper_func.args[0]
-    call_conv = cuda_target.target_context.call_conv
+    call_conv = CUDACallConv(cuda_target.target_context)
     status = call_conv._get_return_status(builder, status_code)
 
     # Check error status
@@ -1116,23 +1075,16 @@ def _compile_pyfunc_with_fixup(
         nvvm_options=nvvm_options,
         cc=cc,
         forceinline=forceinline,
+        abi=abi,
+        abi_info=abi_info,
     )
     resty = cres.signature.return_type
 
     if resty and not device and resty != types.void:
         raise TypeError("CUDA kernel must have void return type.")
 
-    tgt = cres.target_context
-
-    if device:
-        lib = cres.library
-        if abi == "c":
-            wrapper_name = abi_info.get("abi_name", pyfunc.__name__)
-            lib = cabi_wrap_function(
-                tgt, lib, cres.fndesc, wrapper_name, nvvm_options
-            )
-    else:
-        lib = cres.library
+    lib = cres.library
+    if not device:
         kernel = lib.get_function(cres.fndesc.llvm_func_name)
         lib._entry_name = cres.fndesc.llvm_func_name
         kernel_fixup(kernel, debug)
@@ -1353,7 +1305,9 @@ def compile_ptx_for_current_device(
     )
 
 
-def declare_device_function(name, restype, argtypes, link, use_cooperative):
+def declare_device_function(
+    name, restype, argtypes, link, use_cooperative, abi
+):
     from .descriptor import cuda_target
 
     typingctx = cuda_target.typing_context
@@ -1374,9 +1328,18 @@ def declare_device_function(name, restype, argtypes, link, use_cooperative):
         lib.add_linking_file(file)
     lib.use_cooperative = use_cooperative
 
+    if abi == "numba":
+        call_conv = CUDACallConv(targetctx)
+    elif abi == "c":
+        call_conv = CUDACABICallConv(targetctx)
+    else:
+        raise NotImplementedError(f"Unsupported ABI: {abi}")
+
     # ExternalFunctionDescriptor provides a lowering implementation for calling
     # external functions
-    fndesc = funcdesc.ExternalFunctionDescriptor(name, restype, argtypes)
+    fndesc = funcdesc.ExternalFunctionDescriptor(
+        name, restype, argtypes, call_conv
+    )
     targetctx.insert_user_function(extfn, fndesc, libs=(lib,))
 
     return device_function_template

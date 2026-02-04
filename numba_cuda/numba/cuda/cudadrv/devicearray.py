@@ -15,6 +15,9 @@ from ctypes import c_void_p
 
 import numpy as np
 
+from cuda.core.utils import StridedMemoryView
+from cuda.core import Buffer
+
 from numba.cuda.cudadrv import devices, dummyarray
 from numba.cuda.cudadrv import driver as _driver
 from numba.cuda import types
@@ -392,12 +395,30 @@ class DeviceNDArrayBase:
             gpu_data=self.gpu_data,
         )
 
-    @property
+    @functools.cached_property
     def nbytes(self):
         # Note: not using `alloc_size`.  `alloc_size` reports memory
         # consumption of the allocation, not the size of the array
         # https://docs.scipy.org/doc/numpy/reference/generated/numpy.ndarray.nbytes.html
         return self.dtype.itemsize * self.size
+
+    @functools.cached_property
+    def _strided_memory_view_shim(self):
+        flags = self.flags
+        is_contiguous_c = flags["C_CONTIGUOUS"]
+        is_contiguous_f = flags["F_CONTIGUOUS"]
+        return _StridedMemoryViewShim(
+            ptr=self.device_ctypes_pointer.value,
+            shape=self.shape,
+            dtype=self.dtype,
+            size=self.size,
+            _layout=_StridedLayoutShim(
+                strides_in_bytes=self.strides,
+                is_contiguous_c=is_contiguous_c,
+                is_contiguous_f=is_contiguous_f,
+                is_contiguous_any=is_contiguous_c or is_contiguous_f,
+            ),
+        )
 
 
 class DeviceRecord(DeviceNDArrayBase):
@@ -408,9 +429,7 @@ class DeviceRecord(DeviceNDArrayBase):
     def __init__(self, dtype, stream=0, gpu_data=None):
         shape = ()
         strides = ()
-        super(DeviceRecord, self).__init__(
-            shape, strides, dtype, stream, gpu_data
-        )
+        super().__init__(shape, strides, dtype, stream, gpu_data)
 
     @property
     def flags(self):
@@ -763,7 +782,7 @@ class DeviceNDArray(DeviceNDArrayBase):
             stream.synchronize()
 
 
-class IpcArrayHandle(object):
+class IpcArrayHandle:
     """
     An IPC array handle that can be serialized and transfer to another process
     in the same machine for share a GPU allocation.
@@ -852,10 +871,10 @@ def array_core(ary):
     """
     if not ary.strides or not ary.size:
         return ary
-    core_index = []
-    for stride in ary.strides:
-        core_index.append(0 if stride == 0 else slice(None))
-    return ary[tuple(core_index)]
+    core_index = tuple(
+        0 if stride == 0 else slice(None) for stride in ary.strides
+    )
+    return ary[core_index]
 
 
 def is_contiguous(ary):
@@ -931,6 +950,146 @@ def auto_device(obj, stream=0, copy=True, user_explicit=False):
                     )
                     warn(NumbaPerformanceWarning(msg))
             devobj.copy_to_device(obj, stream=stream)
+        return devobj, True
+
+
+_UNSUPPORTED_DLPACK_TYPES = (
+    np.void,
+    np.datetime64,
+    np.timedelta64,
+    np.bytes_,
+    np.str_,
+)
+
+
+def _make_strided_memory_view(obj, *, stream_ptr) -> StridedMemoryView:
+    if isinstance(obj, _UNSUPPORTED_DLPACK_TYPES) or (
+        isinstance(obj, np.ndarray)
+        and issubclass(obj.dtype.type, _UNSUPPORTED_DLPACK_TYPES)
+    ):
+        return StridedMemoryView.from_array_interface(obj)
+    return StridedMemoryView.from_any_interface(obj, stream_ptr=stream_ptr)
+
+
+class _StridedLayoutShim:
+    __slots__ = (
+        "strides_in_bytes",
+        "is_contiguous_c",
+        "is_contiguous_f",
+        "is_contiguous_any",
+    )
+
+    def __init__(
+        self,
+        *,
+        strides_in_bytes: tuple[int, ...],
+        is_contiguous_c: bool,
+        is_contiguous_f: bool,
+        is_contiguous_any: bool,
+    ) -> None:
+        self.strides_in_bytes = strides_in_bytes
+        self.is_contiguous_c = is_contiguous_c
+        self.is_contiguous_f = is_contiguous_f
+        self.is_contiguous_any = is_contiguous_any
+
+
+class _StridedMemoryViewShim:
+    __slots__ = ("ptr", "shape", "dtype", "size", "_layout")
+
+    def __init__(
+        self,
+        *,
+        ptr: int,
+        shape: tuple[int, ...],
+        dtype: np.dtype,
+        size: int,
+        _layout: _StridedLayoutShim,
+    ) -> None:
+        self.ptr = ptr
+        self.shape = shape
+        self.dtype = dtype
+        self.size = size
+        self._layout = _layout
+
+
+def _to_strided_memory_view(
+    obj, stream=0, copy: bool = True, user_explicit: bool = False
+) -> tuple[StridedMemoryView, bool]:
+    if isinstance(obj, StridedMemoryView):
+        return obj, False
+    elif _driver.is_device_memory(obj):
+        return obj._strided_memory_view_shim, False
+    elif (
+        not isinstance(obj, (np.ndarray, _UNSUPPORTED_DLPACK_TYPES))
+        and hasattr(obj, "__dlpack__")
+        and (
+            (dtype := getattr(obj, "dtype", None)) is None
+            or not issubclass(
+                getattr(dtype, "type", type(None)), _UNSUPPORTED_DLPACK_TYPES
+            )
+        )
+    ):
+        # numpy arrays need to be copied to the device
+        # so we can't view them as SMVs until then
+        #
+        # not sure if this is true in general, since what if a numpy array was
+        # constructed using `np.from_dlpack`?
+        return StridedMemoryView.from_dlpack(
+            obj, stream_ptr=getattr(stream, "handle", stream)
+        ), False
+    elif (desc := getattr(obj, "__cuda_array_interface__", None)) is not None:
+        smv = StridedMemoryView.from_cuda_array_interface(
+            obj, stream_ptr=getattr(stream, "handle", stream)
+        )
+
+        if (
+            external_stream_ptr := desc.get("stream")
+        ) is not None and config.CUDA_ARRAY_INTERFACE_SYNC:
+            ctx = devices.get_context()
+            ext_stream = ctx.create_external_stream(external_stream_ptr)
+            ext_stream.synchronize()
+        return smv, False
+    else:
+        array_obj = np.asanyarray(obj)
+        nbytes = array_obj.nbytes
+        stream_ptr = getattr(stream, "handle", stream)
+
+        ctx = devices.get_context()
+        if not nbytes:
+            # TODO: once cuda-core fixes zero-byte allocation, this branch can go away
+            assert not array_obj.size
+            buf = Buffer.from_handle(
+                ptr=0, size=0, mr=ctx.device._dev.memory_resource
+            )
+        else:
+            # TODO: potentially rebuild EMM around these (cuda-core) APIs instead
+            # of numba-cuda APIs in the future
+            buf = ctx.device._dev.allocate(nbytes, stream=stream)
+
+        hostobj = _make_strided_memory_view(array_obj, stream_ptr=stream_ptr)
+        devobj = StridedMemoryView.from_buffer(
+            buf,
+            shape=hostobj.shape,
+            strides=hostobj.strides,
+            dtype=hostobj.dtype,
+        )
+        if copy:
+            if (
+                config.CUDA_WARN_ON_IMPLICIT_COPY
+                and not config.DISABLE_PERFORMANCE_WARNINGS
+            ):
+                if not user_explicit and (
+                    not isinstance(obj, DeviceNDArray)
+                    and isinstance(obj, np.ndarray)
+                ):
+                    msg = (
+                        "Host array used in CUDA kernel will incur "
+                        "copy overhead to/from device."
+                    )
+                    warn(NumbaPerformanceWarning(msg))
+            _driver.driver.cuMemcpyHtoDAsync(
+                devobj.ptr, hostobj.ptr, nbytes, stream_ptr
+            )
         return devobj, True
 
 

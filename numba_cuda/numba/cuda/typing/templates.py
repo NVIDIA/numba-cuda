@@ -34,7 +34,7 @@ if HAS_NUMBA:
 _inline_info = namedtuple("inline_info", "func_ir typemap calltypes signature")
 
 
-class Signature(object):
+class Signature:
     """
     The signature of a function call or operation, i.e. its argument types
     and return type.
@@ -381,7 +381,7 @@ class AbstractTemplate(FunctionTemplate):
     """
 
     def apply(self, args, kws):
-        generic = getattr(self, "generic")
+        generic = self.generic
         sig = generic(args, kws)
         # Enforce that *generic()* must return None or Signature
         if sig is not None:
@@ -410,7 +410,7 @@ class AbstractTemplate(FunctionTemplate):
         return sig
 
     def get_template_info(self):
-        impl = getattr(self, "generic")
+        impl = self.generic
         basepath = os.path.dirname(
             os.path.dirname(os.path.dirname(numba.cuda.__file__))
         )
@@ -441,7 +441,7 @@ class CallableTemplate(FunctionTemplate):
     recvr = None
 
     def apply(self, args, kws):
-        generic = getattr(self, "generic")
+        generic = self.generic
         typer = generic()
         match_sig = inspect.signature(typer)
         try:
@@ -499,7 +499,7 @@ class CallableTemplate(FunctionTemplate):
         return self._select(cases, bound.args, bound.kwargs)
 
     def get_template_info(self):
-        impl = getattr(self, "generic")
+        impl = self.generic
         basepath = os.path.dirname(
             os.path.dirname(os.path.dirname(numba.cuda.__file__))
         )
@@ -527,7 +527,7 @@ class ConcreteTemplate(FunctionTemplate):
     """
 
     def apply(self, args, kws):
-        cases = getattr(self, "cases")
+        cases = self.cases
         return self._select(cases, args, kws)
 
     def get_template_info(self):
@@ -553,7 +553,7 @@ class ConcreteTemplate(FunctionTemplate):
 
 class _EmptyImplementationEntry(InternalError):
     def __init__(self, reason):
-        super(_EmptyImplementationEntry, self).__init__(
+        super().__init__(
             "_EmptyImplementationEntry({!r})".format(reason),
         )
 
@@ -956,7 +956,7 @@ def make_overload_template(
     return type(base)(name, (base,), dct)
 
 
-class _TemplateTargetHelperMixin(object):
+class _TemplateTargetHelperMixin:
     """Mixin for helper methods that assist with target/registry resolution"""
 
     def _get_target_registry(self, reason):
@@ -1105,7 +1105,7 @@ def make_intrinsic_template(
     return type(base)(name, (base,), dct)
 
 
-class AttributeTemplate(object):
+class AttributeTemplate:
     def __init__(self, context):
         self.context = context
 
@@ -1137,7 +1137,7 @@ class _OverloadAttributeTemplate(_TemplateTargetHelperMixin, AttributeTemplate):
     is_method = False
 
     def __init__(self, context):
-        super(_OverloadAttributeTemplate, self).__init__(context)
+        super().__init__(context)
         self.context = context
         self._init_once()
 
@@ -1339,7 +1339,7 @@ def bound_function(template_key):
 # -----------------------------
 
 
-class Registry(object):
+class Registry:
     """
     A registry of typing declarations.  The registry stores such declarations
     for functions, attributes and globals.
@@ -1406,7 +1406,7 @@ class Registry(object):
             return decorator
 
 
-class BaseRegistryLoader(object):
+class BaseRegistryLoader:
     """
     An incremental loader for a registry.  Each new call to
     new_registrations() will iterate over the not yet seen registrations.

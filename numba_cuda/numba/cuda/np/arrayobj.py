@@ -118,7 +118,7 @@ def make_array(array_type):
             try:
                 array_impl = self._context.get_function("__array__", sig)
             except NotImplementedError:
-                return super(ArrayStruct, self)._make_refs(ref)
+                return super()._make_refs(ref)
 
             # Return a wrapped structure and its unwrapped reference
             datamodel = self._context.data_model_manager[array_type]
@@ -452,7 +452,7 @@ def basic_indexing(
         if idxty is types.ellipsis:
             # Fill up missing dimensions at the middle
             n_missing = aryty.ndim - len(indices) + 1 + num_newaxes
-            for i in range(n_missing):
+            for _ in range(n_missing):
                 output_indices.append(zero)
                 output_shapes.append(shapes[ax])
                 output_strides.append(strides[ax])
@@ -672,7 +672,7 @@ def array_item(context, builder, sig, args):
         builder.icmp_signed("!=", nitems, nitems.type(1)), likely=False
     ):
         msg = "item(): can only convert an array of size 1 to a Python scalar"
-        context.call_conv.return_user_exc(builder, ValueError, (msg,))
+        context.fndesc.call_conv.return_user_exc(builder, ValueError, (msg,))
 
     return load_item(context, builder, aryty, ary.data)
 
@@ -691,7 +691,9 @@ if numpy_version < (2, 0):
             builder.icmp_signed("!=", nitems, nitems.type(1)), likely=False
         ):
             msg = "itemset(): can only write to an array of size 1"
-            context.call_conv.return_user_exc(builder, ValueError, (msg,))
+            context.fndesc.call_conv.return_user_exc(
+                builder, ValueError, (msg,)
+            )
 
         store_item(context, builder, aryty, val, ary.data)
         return context.get_dummy_value()
@@ -701,7 +703,7 @@ if numpy_version < (2, 0):
 # Advanced / fancy indexing
 
 
-class Indexer(object):
+class Indexer:
     """
     Generic indexer interface, for generating indices over a fancy indexed
     array on a single dimension.
@@ -1061,7 +1063,7 @@ class SliceIndexer(Indexer):
         builder.position_at_end(self.bb_end)
 
 
-class FancyIndexer(object):
+class FancyIndexer:
     """
     Perform fancy indexing on the given array.
     """
@@ -1084,7 +1086,7 @@ class FancyIndexer(object):
             if idxty is types.ellipsis:
                 # Fill up missing dimensions at the middle
                 n_missing = aryty.ndim - len(indices) + 1 + num_newaxes
-                for i in range(n_missing):
+                for _ in range(n_missing):
                     indexer = EntireIndexer(context, builder, aryty, ary, ax)
                     indexers.append(indexer)
                     ax += 1
@@ -1478,7 +1480,9 @@ def _bc_adjust_dimension(context, builder, shapes, strides, target_shape):
         # Check error
         with builder.if_then(builder.not_(accepted), likely=False):
             msg = "cannot broadcast source array for assignment"
-            context.call_conv.return_user_exc(builder, ValueError, (msg,))
+            context.fndesc.call_conv.return_user_exc(
+                builder, ValueError, (msg,)
+            )
         # Truncate extra shapes, strides
         shapes = shapes[nd_diff:]
         strides = strides[nd_diff:]
@@ -1564,12 +1568,8 @@ def _numpy_broadcast_to(typingctx, array, shape):
         )
 
         # Hack to get np.broadcast_to to return a read-only array
-        setattr(
-            dest,
-            "parent",
-            Constant(
-                context.get_value_type(dest._datamodel.get_type("parent")), None
-            ),
+        dest.parent = Constant(
+            context.get_value_type(dest._datamodel.get_type("parent")), None
         )
 
         res = dest._getvalue()
@@ -1773,7 +1773,7 @@ def numpy_broadcast_arrays(*args):
 
     # number of dimensions
     m = 0
-    for idx, arg in enumerate(args):
+    for arg in args:
         if isinstance(arg, types.ArrayCompatible):
             m = max(m, arg.ndim)
         elif isinstance(arg, (types.Number, types.Boolean, types.BaseTuple)):
@@ -1798,10 +1798,10 @@ def numpy_broadcast_arrays(*args):
             tup = tuple_setitem(tup, i, shape[i])
 
         # numpy checks if the input arrays have the same shape as `shape`
-        outs = []
-        for array in literal_unroll(args):
-            outs.append(np.broadcast_to(np.asarray(array), tup))
-        return outs
+        return [
+            np.broadcast_to(np.asarray(array), tup)
+            for array in literal_unroll(args)
+        ]
 
     return impl
 
@@ -2426,7 +2426,9 @@ def array_reshape(context, builder, sig, args):
 
     with builder.if_then(fail):
         msg = "incompatible shape for array"
-        context.call_conv.return_user_exc(builder, NotImplementedError, (msg,))
+        context.fndesc.call_conv.return_user_exc(
+            builder, NotImplementedError, (msg,)
+        )
 
     ret = make_array(retty)(context, builder)
     populate_array(
@@ -2506,7 +2508,7 @@ def numpy_resize(a, new_shape):
 
         repeats = -(-new_size // a.size)  # ceil division
         res = a
-        for i in range(repeats - 1):
+        for _ in range(repeats - 1):
             res = np.concatenate((res, a))
         res = res[:new_size]
 
@@ -3099,7 +3101,7 @@ def array_view(context, builder, sig, args):
 
     with builder.if_then(fail):
         msg = "new type not compatible with array"
-        context.call_conv.return_user_exc(builder, ValueError, (msg,))
+        context.fndesc.call_conv.return_user_exc(builder, ValueError, (msg,))
 
     res = ret._getvalue()
     return impl_ret_borrowed(context, builder, sig.return_type, res)
@@ -3676,7 +3678,12 @@ def _lower_constant_device_array(context, builder, ty, pyval):
 
     # Calculate strides if not provided (C-contiguous)
     if strides is None:
-        strides = strides_from_shape(shape, itemsize, order="C")
+        strides = strides_from_shape(
+            shape=shape,
+            itemsize=itemsize,
+            c_contiguous=True,
+            f_contiguous=False,
+        )
 
     # Embed device pointer as constant
     llvoidptr = context.get_value_type(types.voidptr)
@@ -3826,7 +3833,7 @@ def make_nditer_cls(nditerty):
     narrays = len(nditerty.arrays)
     nshapes = ndim if nditerty.need_shaped_indexing else 1
 
-    class BaseSubIter(object):
+    class BaseSubIter:
         """
         Base class for sub-iterators of a nditer() instance.
         """
@@ -4719,7 +4726,7 @@ def _empty_nd_impl(context, builder, arrtype, shapes):
     with builder.if_then(overflow, likely=False):
         # Raise same error as numpy, see:
         # https://github.com/numpy/numpy/blob/2a488fe76a0f732dc418d03b452caace161673da/numpy/core/src/multiarray/ctors.c#L1095-L1101    # noqa: E501
-        context.call_conv.return_user_exc(
+        context.fndesc.call_conv.return_user_exc(
             builder,
             ValueError,
             (
@@ -4803,7 +4810,7 @@ def _parse_shape(context, builder, ty, val):
         elif src_t.width >= intp_width:
             is_larger = builder.icmp_signed(">", src, maxval)
             with builder.if_then(is_larger, likely=False):
-                context.call_conv.return_user_exc(
+                context.fndesc.call_conv.return_user_exc(
                     builder,
                     ValueError,
                     ("Cannot safely convert value to intp",),
@@ -4822,15 +4829,13 @@ def _parse_shape(context, builder, ty, val):
         ndim = ty.count
         passed_shapes = cgutils.unpack_tuple(builder, val, count=ndim)
 
-    shapes = []
-    for s in passed_shapes:
-        shapes.append(safecast_intp(context, builder, s.type, s))
+    shapes = [safecast_intp(context, builder, s.type, s) for s in passed_shapes]
 
     zero = context.get_constant_generic(builder, types.intp, 0)
-    for dim in range(ndim):
-        is_neg = builder.icmp_signed("<", shapes[dim], zero)
+    for shape in shapes:
+        is_neg = builder.icmp_signed("<", shape, zero)
         with cgutils.if_unlikely(builder, is_neg):
-            context.call_conv.return_user_exc(
+            context.fndesc.call_conv.return_user_exc(
                 builder, ValueError, ("negative dimensions not allowed",)
             )
 
@@ -5760,7 +5765,9 @@ def np_frombuffer(typingctx, buffer, dtype, retty):
         is_incompatible = cgutils.is_not_null(builder, rem)
         with builder.if_then(is_incompatible, likely=False):
             msg = "buffer size must be a multiple of element size"
-            context.call_conv.return_user_exc(builder, ValueError, (msg,))
+            context.fndesc.call_conv.return_user_exc(
+                builder, ValueError, (msg,)
+            )
 
         shape = cgutils.pack_array(builder, [builder.sdiv(nbytes, ll_itemsize)])
         strides = cgutils.pack_array(builder, [ll_itemsize])
@@ -6015,7 +6022,7 @@ def check_sequence_shape(context, builder, seqty, seq, shapes):
     """
 
     def _fail():
-        context.call_conv.return_user_exc(
+        context.fndesc.call_conv.return_user_exc(
             builder, ValueError, ("incompatible sequence shape",)
         )
 
@@ -6170,7 +6177,7 @@ def _normalize_axis(context, builder, func_name, ndim, axis):
     )
     with builder.if_then(axis_out_of_bounds, likely=False):
         msg = "%s(): axis out of bounds" % func_name
-        context.call_conv.return_user_exc(builder, IndexError, (msg,))
+        context.fndesc.call_conv.return_user_exc(builder, IndexError, (msg,))
 
     return axis
 
@@ -6490,7 +6497,7 @@ def _np_concatenate(context, builder, arrtys, arrs, retty, axis):
                         is_ok, builder.icmp_signed("==", sh, ret_sh)
                     )
                 with builder.if_then(builder.not_(is_ok), likely=False):
-                    context.call_conv.return_user_exc(
+                    context.fndesc.call_conv.return_user_exc(
                         builder,
                         ValueError,
                         (
@@ -6539,7 +6546,7 @@ def _np_stack(context, builder, arrtys, arrs, retty, axis):
         ):
             is_ok = builder.and_(is_ok, builder.icmp_signed("==", sh, orig_sh))
             with builder.if_then(builder.not_(is_ok), likely=False):
-                context.call_conv.return_user_exc(
+                context.fndesc.call_conv.return_user_exc(
                     builder,
                     ValueError,
                     ("np.stack(): all input arrays must have the same shape",),

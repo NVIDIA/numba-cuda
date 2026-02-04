@@ -15,7 +15,7 @@ rapids-logger "Remove Extraneous numba-cuda"
 pip uninstall -y numba-cuda
 
 rapids-logger "Install wheel with test dependencies"
-package=$(realpath wheel/numba_cuda*.whl)
+package=$(realpath "${NUMBA_CUDA_ARTIFACTS_DIR}"/*.whl)
 echo "Package path: ${package}"
 python -m pip install \
     "${package}" \
@@ -28,6 +28,13 @@ python -m pip install \
 
 rapids-logger "Shallow clone cuDF repository"
 git clone --single-branch --branch 'release/25.12' https://github.com/rapidsai/cudf.git
+
+# TODO: remove the patch and its application after 26.02 is released
+patchfile="${PWD}/ci/patches/cudf_numba_cuda_compatibility.patch"
+pushd "$(python -c 'import site; print(site.getsitepackages()[0])')"
+# strip 3 slashes to apply from the root of the install
+patch -p3 < "${patchfile}"
+popd
 
 pushd cudf
 

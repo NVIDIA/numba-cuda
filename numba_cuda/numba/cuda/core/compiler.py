@@ -10,8 +10,10 @@ from numba.cuda.core import callconv, config, bytecode
 from numba.cuda.core.untyped_passes import ExtractByteCode, FixupArgs
 from numba.cuda.core.targetconfig import ConfigStack
 
+from numba.cuda.core.callconv import CUDACallConv
 
-class _CompileStatus(object):
+
+class _CompileStatus:
     """
     Describes the state of compilation. Used like a C record.
     """
@@ -23,10 +25,9 @@ class _CompileStatus(object):
         self.can_fallback = can_fallback
 
     def __repr__(self):
-        vals = []
-        for k in self.__slots__:
-            vals.append("{k}={v}".format(k=k, v=getattr(self, k)))
-        return ", ".join(vals)
+        return ", ".join(
+            "{k}={v}".format(k=k, v=getattr(self, k)) for k in self.__slots__
+        )
 
 
 class StateDict(dict):
@@ -67,13 +68,17 @@ def _make_subtarget(targetctx, flags):
         subtargetoptions["enable_nrt"] = True
     if flags.fastmath:
         subtargetoptions["fastmath"] = flags.fastmath
-    error_model = callconv.create_error_model(flags.error_model, targetctx)
+
+    # Only the CUDA Calling convention can raise exceptions, so we assume here
+    # that it is suitable for creating the error model.
+    call_conv = CUDACallConv(targetctx)
+    error_model = callconv.create_error_model(flags.error_model, call_conv)
     subtargetoptions["error_model"] = error_model
 
     return targetctx.subtarget(**subtargetoptions)
 
 
-class CompilerBase(object):
+class CompilerBase:
     """
     Stores and manages states for the compiler
     """

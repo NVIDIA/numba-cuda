@@ -23,7 +23,7 @@ if PYVERSION in ((3, 10), (3, 11)):
     PY_UNICODE_WCHAR_KIND = _helperlib.py_unicode_wchar_kind
 
 
-class _Registry(object):
+class _Registry:
     def __init__(self):
         self.functions = {}
 
@@ -106,7 +106,7 @@ class _ReflectContext(
         return self.pyapi.reflect_native_value(typ, val, self.env_manager)
 
 
-class NativeValue(object):
+class NativeValue:
     """
     Encapsulate the result of converting a Python object to a native value,
     recording whether the conversion was successful and how to cleanup.
@@ -118,7 +118,7 @@ class NativeValue(object):
         self.cleanup = cleanup
 
 
-class EnvironmentManager(object):
+class EnvironmentManager:
     def __init__(self, pyapi, env, env_body, env_ptr):
         assert isinstance(env, lowering.Environment)
         self.pyapi = pyapi
@@ -133,7 +133,7 @@ class EnvironmentManager(object):
         # All constants are frozen inside the environment
         if isinstance(const, str):
             const = sys.intern(const)
-        for index, val in enumerate(self.env.consts):
+        for val in self.env.consts:
             if val is const:
                 break
         else:
@@ -174,7 +174,7 @@ class EnvironmentManager(object):
 _IteratorLoop = namedtuple("_IteratorLoop", ("value", "do_break"))
 
 
-class PythonAPI(object):
+class PythonAPI:
     """
     Code generation facilities to call into the CPython C API (and related
     helpers).
@@ -189,9 +189,7 @@ class PythonAPI(object):
 
         self.module = builder.basic_block.function.module
         # A unique mapping of serialized objects in this module
-        try:
-            self.module.__serialized
-        except AttributeError:
+        if not hasattr(self.module, "__serialized"):
             self.module.__serialized = {}
 
         # Initialize types
@@ -232,7 +230,7 @@ class PythonAPI(object):
                 )
                 self.builder.ret(self.get_null_object())
             else:
-                self.context.call_conv.return_user_exc(
+                self.context.fndesc.call_conv.return_user_exc(
                     self.builder,
                     RuntimeError,
                     (f"missing Environment: {debug_msg}",),
@@ -875,6 +873,9 @@ class PythonAPI(object):
                 self.py_hash_t.as_pointer(),
             ],
         )
+        # `_PySet_NextEntry` returns a borrowed reference to the key, which is
+        # generally not expected for iterators--which is the place where this
+        # is used internally. Perhaps we should revisit this at some point
         fn = self._get_function(fnty, name="_PySet_NextEntry")
         return self.builder.call(fn, (set, posptr, keyptr, hashptr))
 
@@ -1770,7 +1771,7 @@ class PythonAPI(object):
             with has_err:
                 builder.store(status.is_error, is_error_ptr)
                 # Set error state in the Python interpreter
-                self.context.call_conv.raise_error(builder, self, status)
+                self.context.fndesc.call_conv.raise_error(builder, self, status)
             with no_err:
                 # Handle returned value
                 res = imputils.fix_returning_optional(

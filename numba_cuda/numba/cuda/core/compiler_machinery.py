@@ -23,7 +23,7 @@ import numba.cuda.core.compiler_machinery as nccm
 _termcolor = errors.termcolor()
 
 
-class SimpleTimer(object):
+class SimpleTimer:
     """
     A simple context managed timer
     """
@@ -101,9 +101,8 @@ class CompilerPass(metaclass=ABCMeta):
         """
         return False
 
-    def get_analysis_usage(self, AU):
+    def get_analysis_usage(self, AU):  # noqa: B027
         """Override to set analysis usage"""
-        pass
 
     def get_analysis(self, pass_name):
         """
@@ -112,7 +111,7 @@ class CompilerPass(metaclass=ABCMeta):
         return self._analysis[pass_name]
 
 
-class SSACompliantMixin(object):
+class SSACompliantMixin:
     """Mixin to indicate a pass is SSA form compliant. Nothing is asserted
     about this condition at present.
     """
@@ -138,7 +137,7 @@ class LoweringPass(CompilerPass):
     pass
 
 
-class AnalysisUsage(object):
+class AnalysisUsage:
     """This looks and behaves like LLVM's AnalysisUsage because its like that."""
 
     def __init__(self):
@@ -172,7 +171,7 @@ def debug_print(*args, **kwargs):
 pass_timings = namedtuple("pass_timings", "init run finalize")
 
 
-class PassManager(object):
+class PassManager:
     """
     The PassManager is a named instance of a particular compilation pipeline
     """
@@ -230,7 +229,7 @@ class PassManager(object):
         assert self.passes
         self._validate_pass(pass_cls)
         self._validate_pass(location)
-        for idx, (x, _) in enumerate(self.passes):
+        for idx, (x, _) in enumerate(self.passes):  # noqa: B007
             if x == location:
                 break
         else:
@@ -386,7 +385,7 @@ class PassManager(object):
                     self._runPass(idx, pass_inst, state)
                 else:
                     raise BaseException("Legacy pass in use")
-            except _EarlyPipelineCompletion as e:
+            except _EarlyPipelineCompletion as e:  # noqa: PERF203
                 raise e
             except Exception as e:
                 if not isinstance(e, errors.NumbaError):
@@ -438,7 +437,7 @@ class PassManager(object):
 pass_info = namedtuple("pass_info", "pass_inst mutates_CFG analysis_only")
 
 
-class PassRegistry(object):
+class PassRegistry:
     """
     Pass registry singleton class.
     """
@@ -468,14 +467,14 @@ class PassRegistry(object):
         return self._registry[clazz]
 
     def _does_pass_name_alias(self, check):
-        for k, v in self._registry.items():
+        for v in self._registry.values():
             if v.pass_inst.name == check:
                 return True
         return False
 
     def find_by_name(self, class_name):
         assert isinstance(class_name, str)
-        for k, v in self._registry.items():
+        for v in self._registry.values():
             if v.pass_inst.name == class_name:
                 return v
         else:

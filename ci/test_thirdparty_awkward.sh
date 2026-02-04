@@ -5,6 +5,7 @@
 set -euo pipefail
 
 CUDA_VER_MAJOR_MINOR=${CUDA_VER%.*}
+CUDA_VER_MAJOR=${CUDA_VER%.*.*}
 AWKWARD_VERSION="2.8.10"
 
 rapids-logger "Install awkward and related libraries"
@@ -12,13 +13,10 @@ rapids-logger "Install awkward and related libraries"
 pip install awkward==${AWKWARD_VERSION} cupy-cuda12x pyarrow pandas nox
 
 rapids-logger "Install wheel with test dependencies"
-package=$(realpath wheel/numba_cuda*.whl)
+package=$(realpath "${NUMBA_CUDA_ARTIFACTS_DIR}"/*.whl)
 echo "Package path: ${package}"
 python -m pip install \
-    "${package}" \
-    "cuda-python==${CUDA_VER_MAJOR_MINOR%.*}.*" \
-    "cuda-core" \
-    "nvidia-nvjitlink-cu12" \
+    "${package}[cu${CUDA_VER_MAJOR}]" \
     --group test
 
 
@@ -74,6 +72,21 @@ index 39080a34..0eb3940f 100644
  def test_block_boundary_prod_complex13():
      rng = np.random.default_rng(seed=42)
      array = rng.integers(50, size=1000)
+EOF
+
+patch -p1 <<'EOF'
+diff --git a/pyproject.toml b/pyproject.toml
+index 78ecfba9..80a25474 100644
+--- a/pyproject.toml
++++ b/pyproject.toml
+@@ -136,6 +136,7 @@ filterwarnings = [
+     "ignore:.*np\\.MachAr.*:DeprecationWarning",
+     "ignore:module 'sre_.*' is deprecated:DeprecationWarning",
+     "ignore:Jitify is performing a one-time only warm-up",
++    "ignore:Context.call_conv is deprecated.",
+ ]
+ log_cli_level = "INFO"
+ testpaths = ["tests", "tests-cuda", "tests-cuda-kernels", "tests-cuda-kernels-explicit"]
 EOF
 
 rapids-logger "Generate awkward tests"
