@@ -11,6 +11,7 @@ Tests cover:
 - Conversion intrinsics
 """
 
+import unittest
 from numba import cuda
 from numba.cuda.testing import unittest, CUDATestCase
 import numpy as np
@@ -29,6 +30,7 @@ from numba.cuda import (
 )
 from numba.cuda.types import float16, bfloat16
 from numba.cuda import config
+from numba.cuda.api import is_fp8_supported
 
 if not config.ENABLE_CUDASIM:
     from numba.cuda._internal.cuda_fp8 import (
@@ -50,6 +52,7 @@ if not config.ENABLE_CUDASIM:
 FE8_TYPES = [fp8_e5m2, fp8_e4m3, fp8_e8m0]
 
 
+@unittest.skipUnless(is_fp8_supported(), "FP8 is not supported")
 class FP8ConstructorTests(CUDATestCase):
     """Basic constructor for FP8 types."""
 
@@ -171,6 +174,7 @@ class FP8ConstructorTests(CUDATestCase):
         self.assertTrue(np.isnan(result[2]))
 
 
+@unittest.skipUnless(is_fp8_supported(), "FP8 is not supported")
 class FP8ConversionTests(CUDATestCase):
     """Test FP8 conversion operators to various types."""
 
@@ -368,6 +372,7 @@ class FP8ConversionTests(CUDATestCase):
         np.testing.assert_array_equal(result, np.array([float("nan")] * 9))
 
 
+@unittest.skipUnless(is_fp8_supported(), "FP8 is not supported")
 class FP8Storage_CVT_Intrinsics_Tests(CUDATestCase):
     """Test raw conversion intrinsics operating on storage types."""
 
