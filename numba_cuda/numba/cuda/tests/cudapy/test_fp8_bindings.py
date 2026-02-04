@@ -53,6 +53,9 @@ FE8_TYPES = [fp8_e5m2, fp8_e4m3, fp8_e8m0]
 
 
 @unittest.skipUnless(is_fp8_supported(), "FP8 is not supported")
+@unittest.skipIf(
+    config.ENABLE_CUDASIM, "FP8 is not supported on CUDA simulator"
+)
 class FP8ConstructorTests(CUDATestCase):
     """Basic constructor for FP8 types."""
 
@@ -175,6 +178,9 @@ class FP8ConstructorTests(CUDATestCase):
 
 
 @unittest.skipUnless(is_fp8_supported(), "FP8 is not supported")
+@unittest.skipIf(
+    config.ENABLE_CUDASIM, "FP8 is not supported on CUDA simulator"
+)
 class FP8ConversionTests(CUDATestCase):
     """Test FP8 conversion operators to various types."""
 
@@ -373,6 +379,9 @@ class FP8ConversionTests(CUDATestCase):
 
 
 @unittest.skipUnless(is_fp8_supported(), "FP8 is not supported")
+@unittest.skipIf(
+    config.ENABLE_CUDASIM, "FP8 is not supported on CUDA simulator"
+)
 class FP8Storage_CVT_Intrinsics_Tests(CUDATestCase):
     """Test raw conversion intrinsics operating on storage types."""
 
