@@ -300,41 +300,6 @@ class Driver:
 
         return self._cuda_python_wrap_fn(fname)
 
-    def _ctypes_wrap_fn(self, fname, libfn=None):
-        # Wrap a CUDA driver function by default
-        if libfn is None:
-            try:
-                proto = API_PROTOTYPES[fname]
-            except KeyError:
-                raise AttributeError(fname)
-            restype = proto[0]
-            argtypes = proto[1:]
-
-            # Find function in driver library
-            libfn = self._find_api(fname)
-            libfn.restype = restype
-            libfn.argtypes = argtypes
-
-        def verbose_cuda_api_call(*args):
-            argstr = ", ".join([str(arg) for arg in args])
-            _logger.debug("call driver api: %s(%s)", libfn.__name__, argstr)
-            retcode = libfn(*args)
-            self._check_ctypes_error(fname, retcode)
-
-        def safe_cuda_api_call(*args):
-            _logger.debug("call driver api: %s", libfn.__name__)
-            retcode = libfn(*args)
-            self._check_ctypes_error(fname, retcode)
-
-        if config.CUDA_LOG_API_ARGS:
-            wrapper = verbose_cuda_api_call
-        else:
-            wrapper = safe_cuda_api_call
-
-        safe_call = functools.wraps(libfn)(wrapper)
-        setattr(self, fname, safe_call)
-        return safe_call
-
     def _cuda_python_wrap_fn(self, fname):
         libfn = getattr(binding, fname)
 
@@ -383,15 +348,6 @@ class Driver:
             msg = "pid %s forked from pid %s after CUDA driver init"
             _logger.critical(msg, _getpid(), self.pid)
             raise CudaDriverError("CUDA initialized before forking")
-
-    def _check_ctypes_error(self, fname, retcode):
-        if retcode != binding.CUresult.CUDA_SUCCESS:
-            errname = ERROR_MAP.get(retcode, "UNKNOWN_CUDA_ERROR")
-            msg = "Call to %s results in %s" % (fname, errname)
-            _logger.error(msg)
-            if retcode == binding.CUresult.CUDA_ERROR_NOT_INITIALIZED:
-                self._detect_fork()
-            raise CudaAPIError(retcode, msg)
 
     def _check_cuda_python_error(self, fname, returned):
         retcode = returned[0]
