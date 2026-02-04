@@ -251,7 +251,9 @@ def getitem_typed(context, builder, sig, args):
 
         # Always branch and raise IndexError
         with builder.if_then(cgutils.true_bit):
-            context.call_conv.return_user_exc(builder, IndexError, errmsg_oob)
+            context.fndesc.call_conv.return_user_exc(
+                builder, IndexError, errmsg_oob
+            )
         # This is unreachable in runtime,
         # but it exists to not terminate the current basicblock.
         res = context.get_constant_null(sig.return_type)
@@ -264,7 +266,9 @@ def getitem_typed(context, builder, sig, args):
         switch = builder.switch(idx, bbelse)
 
         with builder.goto_block(bbelse):
-            context.call_conv.return_user_exc(builder, IndexError, errmsg_oob)
+            context.fndesc.call_conv.return_user_exc(
+                builder, IndexError, errmsg_oob
+            )
 
         lrtty = context.get_value_type(sig.return_type)
         voidptrty = context.get_value_type(types.voidptr)
@@ -345,7 +349,9 @@ def getitem_unituple(context, builder, sig, args):
 
         # Always branch and raise IndexError
         with builder.if_then(cgutils.true_bit):
-            context.call_conv.return_user_exc(builder, IndexError, errmsg_oob)
+            context.fndesc.call_conv.return_user_exc(
+                builder, IndexError, errmsg_oob
+            )
         # This is unreachable in runtime,
         # but it exists to not terminate the current basicblock.
         res = context.get_constant_null(sig.return_type)
@@ -357,7 +363,9 @@ def getitem_unituple(context, builder, sig, args):
         switch = builder.switch(idx, bbelse)
 
         with builder.goto_block(bbelse):
-            context.call_conv.return_user_exc(builder, IndexError, errmsg_oob)
+            context.fndesc.call_conv.return_user_exc(
+                builder, IndexError, errmsg_oob
+            )
 
         lrtty = context.get_value_type(tupty.dtype)
         with builder.goto_block(bbend):
