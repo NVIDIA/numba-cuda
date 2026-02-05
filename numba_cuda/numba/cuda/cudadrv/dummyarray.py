@@ -250,7 +250,7 @@ class Array:
     def from_desc(cls, offset, shape, strides, itemsize):
         dims = []
         for ashape, astride in zip(shape, strides):
-            if not isinstance(ashape, (int, np.integer)):
+            if not isinstance(ashape, int):
                 raise TypeError("all elements of shape must be ints")
             dim = Dim(
                 offset, offset + ashape * astride, ashape, astride, single=False
