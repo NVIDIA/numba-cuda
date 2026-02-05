@@ -82,7 +82,7 @@ class DeviceNDArrayBase:
         if isinstance(shape, int):
             shape = (shape,)
         else:
-            shape = tuple(shape)
+            shape = tuple(int(s) for s in shape)
         if isinstance(strides, int):
             strides = (strides,)
         else:

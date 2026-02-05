@@ -249,6 +249,9 @@ class Array:
     @functools.cache
     def from_desc(cls, offset, shape, strides, itemsize):
         dims = []
+        shape = tuple(int(s) for s in shape)
+        strides = tuple(int(s) for s in strides)
+        offset = int(offset)
         for ashape, astride in zip(shape, strides):
             if not isinstance(ashape, int):
                 raise TypeError("all elements of shape must be ints")
