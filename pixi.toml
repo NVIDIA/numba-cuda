@@ -238,7 +238,6 @@ clean-tests = { cmd = [
 ] }
 bench = { cmd = [
     "pytest",
-    "$PIXI_PROJECT_ROOT/testing",
     "--pyargs",
     "numba.cuda.tests.benchmarks",
     "--benchmark-only",
@@ -248,7 +247,6 @@ bench = { cmd = [
 ] }
 benchcmp = { cmd = [
     "pytest",
-    "$PIXI_PROJECT_ROOT/testing",
     "--pyargs",
     "numba.cuda.tests.benchmarks",
     "--benchmark-only",
@@ -265,17 +263,17 @@ bench-against = { cmd = [
 cmd = ["make", "-C", "$PIXI_PROJECT_ROOT/docs", "html"]
 
 [target.linux.tasks.test]
-cmd = ["pytest", "$PIXI_PROJECT_ROOT/testing"]
+cmd = ["pytest"]
 env = { NUMBA_CUDA_TEST_BIN_DIR = "$PIXI_PROJECT_ROOT/testing" }
 depends-on = [{ task = "build-tests" }]
 
 [target.linux.tasks.test-par]
-cmd = ["pytest", "-n", "auto", "--dist", "loadscope", "$PIXI_PROJECT_ROOT/testing"]
+cmd = ["pytest", "-n", "auto", "--dist", "loadscope"]
 env = { NUMBA_CUDA_TEST_BIN_DIR = "$PIXI_PROJECT_ROOT/testing" }
 depends-on = [{ task = "build-tests" }]
 
 [target.linux.tasks.simtest]
-cmd = ["pytest", "$PIXI_PROJECT_ROOT/testing"]
+cmd = ["pytest"]
 
 [target.linux.tasks.simtest.env]
 NUMBA_CUDA_TEST_BIN_DIR = "$PIXI_PROJECT_ROOT/testing"

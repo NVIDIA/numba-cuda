@@ -19,8 +19,7 @@ python -m pip install \
 
 rapids-logger "Build test binaries"
 export NUMBA_CUDA_TEST_BIN_DIR=`pwd`/testing
-pushd $NUMBA_CUDA_TEST_BIN_DIR
-make -j $(nproc)
+make -j $(nproc) -C "$NUMBA_CUDA_TEST_BIN_DIR"
 
 rapids-logger "Check GPU usage"
 nvidia-smi
@@ -29,9 +28,7 @@ rapids-logger "Show Numba system info"
 python -m numba --sysinfo
 
 rapids-logger "Run Tests with Coverage"
-python -m pytest -v --cov
+python -m pytest -v --cov --pyargs numba.cuda.tests --ignore=.
 
 rapids-logger "Generate Markdown Coverage Report"
 python -m coverage report --format markdown >> $GITHUB_STEP_SUMMARY
-
-popd
