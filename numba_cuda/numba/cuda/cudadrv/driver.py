@@ -619,6 +619,10 @@ class Device:
     def supports_bfloat16(self):
         return self.compute_capability >= (8, 0)
 
+    @property
+    def supports_fp8(self):
+        return self.compute_capability >= (8, 9)
+
 
 class BaseCUDAMemoryManager(object, metaclass=ABCMeta):
     """Abstract base class for External Memory Management (EMM) Plugins."""
