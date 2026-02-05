@@ -445,6 +445,99 @@ class TestCompile(unittest.TestCase):
             r"func_retval0\)\s+_Z4funcii\(",
         )
 
+    def test_c_abi_boolean_return(self):
+        """
+        Tests that returning a raw boolean comparison (a == b) compiles correctly
+        without NVVM verification errors.
+
+        See: https://github.com/NVIDIA/numba-cuda/issues/157
+        """
+        with self.subTest("compile_ptx"):
+            self._test_c_abi_boolean_return(
+                compile_ptx, {"device": True, "abi": "c"}
+            )
+
+        with self.subTest("compile_all"):
+            self._test_c_abi_boolean_return(
+                compile_all, {"device": True, "abi": "c", "output": "ptx"}
+            )
+
+    def _test_c_abi_boolean_return(self, compile_function, default_kwargs):
+        # Explicit cast
+        def cmp_explicit(a, b):
+            return types.uint8(a == b)
+
+        ret = compile_function(cmp_explicit, (int32, int32), **default_kwargs)
+        ptx, resty = self._handle_compile_result(ret, compile_function)
+        self.assertEqual(resty, types.uint8)
+        self.assertIn(".visible .func", ptx)
+
+        # Implicit boolean return
+        def cmp_implicit(a, b):
+            return a == b
+
+        ret = compile_function(cmp_implicit, (int32, int32), **default_kwargs)
+        ptx, resty = self._handle_compile_result(ret, compile_function)
+        self.assertEqual(resty, types.boolean)
+        self.assertIn(".visible .func", ptx)
+        self.assertIn("func_retval0", ptx)
+
+        def cmp_less_than(a, b):
+            return a < b
+
+        def cmp_greater_than(a, b):
+            return a > b
+
+        def cmp_less_equal(a, b):
+            return a <= b
+
+        def cmp_greater_equal(a, b):
+            return a >= b
+
+        def cmp_not_equal(a, b):
+            return a != b
+
+        comparison_ops = [
+            (cmp_less_than, "less than"),
+            (cmp_greater_than, "greater than"),
+            (cmp_less_equal, "less equal"),
+            (cmp_greater_equal, "greater equal"),
+            (cmp_not_equal, "not equal"),
+        ]
+
+        for func, op_name in comparison_ops:
+            with self.subTest(operator=op_name):
+                ret = compile_function(func, (int32, int32), **default_kwargs)
+                ptx, resty = self._handle_compile_result(ret, compile_function)
+                self.assertEqual(resty, types.boolean)
+                self.assertIn(".visible .func", ptx)
+
+        # Different integer types
+        def cmp_eq(a, b):
+            return a == b
+
+        integer_types = [
+            (int16, "int16"),
+            (int64, "int64"),
+            (uint32, "uint32"),
+        ]
+
+        for typ, type_name in integer_types:
+            with self.subTest(type=type_name):
+                ret = compile_function(cmp_eq, (typ, typ), **default_kwargs)
+                ptx, resty = self._handle_compile_result(ret, compile_function)
+                self.assertEqual(resty, types.boolean)
+                self.assertIn(".visible .func", ptx)
+
+        # Float comparison
+        def cmp_float(a, b):
+            return a < b
+
+        ret = compile_function(cmp_float, (float32, float32), **default_kwargs)
+        ptx, resty = self._handle_compile_result(ret, compile_function)
+        self.assertEqual(resty, types.boolean)
+        self.assertIn(".visible .func", ptx)
+
     def test_compile_defaults_to_c_abi(self):
         with self.subTest("compile"):
             self._test_compile_defaults_to_c_abi(compile, {"device": True})

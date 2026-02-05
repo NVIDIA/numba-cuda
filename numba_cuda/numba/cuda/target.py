@@ -43,6 +43,7 @@ class CUDATypingContext(typing.BaseContext):
             cudamath,
             fp16,
             bf16,
+            fp8,
             libdevicedecl,
             vector_types,
         )
@@ -58,6 +59,7 @@ class CUDATypingContext(typing.BaseContext):
         self.install_registry(vector_types.typing_registry)
         self.install_registry(fp16.typing_registry)
         self.install_registry(bf16.typing_registry)
+        self.install_registry(fp8.typing_registry)
 
     def resolve_value_type(self, val):
         # treat other dispatcher object as another device function
@@ -186,6 +188,7 @@ class CUDATargetContext(BaseContext):
             mathimpl as cuda_mathimpl,
             vector_types,
             bf16,
+            fp8,
         )
 
         # fix for #8940
@@ -203,6 +206,7 @@ class CUDATargetContext(BaseContext):
         self.install_registry(vector_types.impl_registry)
         self.install_registry(fp16.target_registry)
         self.install_registry(bf16.target_registry)
+        self.install_registry(fp8.target_registry)
         self.install_registry(slicing.registry)
         self.install_registry(iterators.registry)
         self.install_registry(listobj.registry)
