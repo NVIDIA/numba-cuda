@@ -4,9 +4,17 @@
 import numpy as np
 import math
 from numba import cuda
-from numba.cuda import double, void
-from numba.cuda.testing import unittest, CUDATestCase
+from numba.cuda import config, double, void
+from numba.cuda.testing import unittest, CUDATestCase, skip_if_cupy_unavailable
+from contextlib import nullcontext
 
+if config.ENABLE_CUDASIM:
+    import numpy as cp
+else:
+    try:
+        import cupy as cp
+    except ImportError:
+        cp = None
 
 RISKFREE = 0.02
 VOLATILITY = 0.30
@@ -59,6 +67,7 @@ def randfloat(rand_var, low, high):
 
 
 class TestBlackScholes(CUDATestCase):
+    @skip_if_cupy_unavailable
     def test_blackscholes(self):
         OPT_N = 400
         iterations = 2
@@ -127,15 +136,24 @@ class TestBlackScholes(CUDATestCase):
         # numba
         blockdim = 512, 1
         griddim = int(math.ceil(float(OPT_N) / blockdim[0])), 1
-        stream = cuda.stream()
-        d_callResult = cuda.to_device(callResultNumba, stream)
-        d_putResult = cuda.to_device(putResultNumba, stream)
-        d_stockPrice = cuda.to_device(stockPrice, stream)
-        d_optionStrike = cuda.to_device(optionStrike, stream)
-        d_optionYears = cuda.to_device(optionYears, stream)
+        stream = (
+            cp.cuda.Stream() if not config.ENABLE_CUDASIM else nullcontext()
+        )
+        nb_stream = (
+            cuda.api.external_stream(stream.ptr)
+            if not config.ENABLE_CUDASIM
+            else cuda.stream()
+        )
+
+        with stream:
+            d_callResult = cp.asarray(callResultNumba)
+            d_putResult = cp.asarray(putResultNumba)
+            d_stockPrice = cp.asarray(stockPrice)
+            d_optionStrike = cp.asarray(optionStrike)
+            d_optionYears = cp.asarray(optionYears)
 
         for i in range(iterations):
-            black_scholes_cuda[griddim, blockdim, stream](
+            black_scholes_cuda[griddim, blockdim, nb_stream](
                 d_callResult,
                 d_putResult,
                 d_stockPrice,
@@ -144,9 +162,19 @@ class TestBlackScholes(CUDATestCase):
                 RISKFREE,
                 VOLATILITY,
             )
-        d_callResult.copy_to_host(callResultNumba, stream)
-        d_putResult.copy_to_host(putResultNumba, stream)
-        stream.synchronize()
+
+        with stream:
+            callResultNumba = (
+                d_callResult.get()
+                if not config.ENABLE_CUDASIM
+                else d_callResult
+            )
+            putResultNumba = (
+                d_putResult.get() if not config.ENABLE_CUDASIM else d_putResult
+            )
+
+        if not config.ENABLE_CUDASIM:
+            stream.synchronize()
 
         delta = np.abs(callResultNumpy - callResultNumba)
         L1norm = delta.sum() / np.abs(callResultNumpy).sum()

@@ -4,8 +4,17 @@
 import numpy as np
 from numba import cuda
 from numba.cuda import float64, void
-from numba.cuda.testing import unittest, CUDATestCase
+from numba.cuda.testing import unittest, CUDATestCase, skip_if_cupy_unavailable
 from numba.cuda.core import config
+from contextlib import nullcontext
+
+if config.ENABLE_CUDASIM:
+    import numpy as cp
+else:
+    try:
+        import cupy as cp
+    except ImportError:
+        cp = None
 
 # NOTE: CUDA kernel does not return any value
 
@@ -17,6 +26,7 @@ SM_SIZE = tpb, tpb
 
 
 class TestCudaLaplace(CUDATestCase):
+    @skip_if_cupy_unavailable
     def test_laplace_small(self):
         @cuda.jit(float64(float64, float64), device=True, inline="always")
         def get_max(a, b):
@@ -93,21 +103,31 @@ class TestCudaLaplace(CUDATestCase):
 
         error_grid = np.zeros(griddim)
 
-        stream = cuda.stream()
+        cp_stream = (
+            cp.cuda.Stream() if not config.ENABLE_CUDASIM else nullcontext()
+        )
+        stream = (
+            cuda.api.external_stream(cp_stream.ptr)
+            if not config.ENABLE_CUDASIM
+            else cuda.stream()
+        )
 
-        dA = cuda.to_device(A, stream)  # to device and don't come back
-        dAnew = cuda.to_device(Anew, stream)  # to device and don't come back
-        derror_grid = cuda.to_device(error_grid, stream)
+        with cp_stream:
+            dA = cp.asarray(A)  # to device and don't come back
+            dAnew = cp.asarray(Anew)  # to device and don't come back
+            derror_grid = cp.asarray(error_grid)
 
         while error > tol and iter < iter_max:
             self.assertTrue(error_grid.dtype == np.float64)
 
             jocabi_relax_core[griddim, blockdim, stream](dA, dAnew, derror_grid)
 
-            derror_grid.copy_to_host(error_grid, stream=stream)
-
-            # error_grid is available on host
-            stream.synchronize()
+            with cp_stream:
+                error_grid = (
+                    derror_grid.get()
+                    if not config.ENABLE_CUDASIM
+                    else derror_grid
+                )
 
             error = np.abs(error_grid).max()
 

@@ -5,14 +5,14 @@ import numpy as np
 from numba import cuda
 from numba.cuda.kernels.transpose import transpose
 from numba.cuda.testing import unittest
-from numba.cuda.testing import skip_on_cudasim, CUDATestCase
+from numba.cuda.testing import skip_on_cudasim, DeprecatedDeviceArrayApiTest
 
 
 recordwith2darray = np.dtype([("i", np.int32), ("j", np.float32, (3, 2))])
 
 
 @skip_on_cudasim("Device Array API unsupported in the simulator")
-class TestTranspose(CUDATestCase):
+class TestTranspose(DeprecatedDeviceArrayApiTest):
     def test_transpose(self):
         variants = (
             (5, 6, np.float64),

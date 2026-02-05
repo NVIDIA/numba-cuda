@@ -9,6 +9,7 @@ import warnings
 import sys
 import stat
 import subprocess
+from numba.cuda import config
 
 from numba import cuda
 from numba.cuda.core.errors import NumbaWarning
@@ -19,6 +20,7 @@ from numba.cuda.testing import (
     skip_if_cudadevrt_missing,
     test_data_dir,
     skip_on_standalone_numba_cuda,
+    skip_if_cupy_unavailable,
 )
 from numba.cuda.tests.support import (
     TestCase,
@@ -26,6 +28,14 @@ from numba.cuda.tests.support import (
     import_dynamic,
 )
 import numpy as np
+
+if config.ENABLE_CUDASIM:
+    import numpy as cp
+else:
+    try:
+        import cupy as cp
+    except ImportError:
+        cp = None
 from pickle import PicklingError
 
 # Module-level global for testing that caching rejects global device arrays
@@ -372,12 +382,13 @@ class CUDACachingTest(DispatcherCacheUsecasesTest):
             def f():
                 pass
 
+    @skip_if_cupy_unavailable
     def test_cannot_cache_captured_device_array(self):
         # Test that kernels capturing device arrays from closures cannot
         # be cached. The error can come from either NumbaPickler (for closure
         # variables) or CUDACodeLibrary._reduce_states (for referenced objects).
         host_data = np.array([1.0, 2.0, 3.0], dtype=np.float32)
-        captured_arr = cuda.to_device(host_data)
+        captured_arr = cp.asarray(host_data)
 
         msg = "global device arrays"
         with self.assertRaisesRegex(PicklingError, msg):
@@ -388,16 +399,17 @@ class CUDACachingTest(DispatcherCacheUsecasesTest):
                 if i < output.size:
                     output[i] = captured_arr[i] * 2.0
 
-            output = cuda.device_array(3, dtype=np.float32)
+            output = cp.zeros(3, dtype=np.float32)
             cached_kernel[1, 3](output)
 
+    @skip_if_cupy_unavailable
     def test_cannot_cache_global_device_array(self):
         # Test that kernels referencing module-level global device arrays
         # cannot be cached.
         global GLOBAL_DEVICE_ARRAY
 
         host_data = np.array([1.0, 2.0, 3.0], dtype=np.float32)
-        GLOBAL_DEVICE_ARRAY = cuda.to_device(host_data)
+        GLOBAL_DEVICE_ARRAY = cp.asarray(host_data)
 
         try:
             msg = "global device arrays"
@@ -409,7 +421,7 @@ class CUDACachingTest(DispatcherCacheUsecasesTest):
                     if i < output.size:
                         output[i] = GLOBAL_DEVICE_ARRAY[i] * 2.0
 
-                output = cuda.device_array(3, dtype=np.float32)
+                output = cp.zeros(3, dtype=np.float32)
                 cached_kernel_global[1, 3](output)
         finally:
             GLOBAL_DEVICE_ARRAY = None

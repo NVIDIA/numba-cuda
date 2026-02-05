@@ -9,15 +9,26 @@ from queue import Queue
 
 import numpy as np
 from numba import cuda
-from numba.cuda.testing import unittest, CUDATestCase
+from numba.cuda.testing import (
+    unittest,
+    CUDATestCase,
+    DeprecatedDeviceArrayApiWarning,
+)
+import pytest
 
 
 def newthread(exception_queue):
     try:
+        from numba.cuda import config
+
         cuda.select_device(0)
         stream = cuda.stream()
         A = np.arange(100)
-        dA = cuda.to_device(A, stream=stream)
+        if not config.ENABLE_CUDASIM:
+            with pytest.warns(DeprecatedDeviceArrayApiWarning):
+                dA = cuda.to_device(A, stream=stream)
+        else:
+            dA = cuda.to_device(A, stream=stream)
         stream.synchronize()
         del dA
         del stream

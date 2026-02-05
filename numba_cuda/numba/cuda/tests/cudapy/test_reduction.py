@@ -3,9 +3,18 @@
 
 import numpy as np
 from numba import cuda
-from numba.cuda.core.config import ENABLE_CUDASIM
-from numba.cuda.testing import CUDATestCase
+from numba.cuda import config
+from numba.cuda.testing import CUDATestCase, skip_if_cupy_unavailable
 import unittest
+from numba.cuda import config
+
+if config.ENABLE_CUDASIM:
+    import numpy as cp
+else:
+    try:
+        import cupy as cp
+    except ImportError:
+        cp = None
 
 # Avoid recompilation of the sum_reduce function by keeping it at global scope
 sum_reduce = cuda.Reduce(lambda a, b: a + b)
@@ -19,7 +28,7 @@ class TestReduction(CUDATestCase):
         self.assertEqual(expect, got)
 
     def test_sum_reduce(self):
-        if ENABLE_CUDASIM:
+        if config.ENABLE_CUDASIM:
             # Minimal test set for the simulator (which only wraps
             # functools.reduce)
             test_sizes = [1, 16]
@@ -53,9 +62,10 @@ class TestReduction(CUDATestCase):
         got = sum_reduce(A)
         self.assertEqual(expect, got)
 
+    @skip_if_cupy_unavailable
     def test_empty_array_device(self):
         A = np.arange(0, dtype=np.float64) + 1
-        dA = cuda.to_device(A)
+        dA = cp.asarray(A)
         expect = A.sum()
         got = sum_reduce(dA)
         self.assertEqual(expect, got)
@@ -81,9 +91,10 @@ class TestReduction(CUDATestCase):
         got = sum_reduce(A, init=init)
         self.assertEqual(expect, got)
 
+    @skip_if_cupy_unavailable
     def test_result_on_device(self):
         A = np.arange(10, dtype=np.float64) + 1
-        got = cuda.to_device(np.zeros(1, dtype=np.float64))
+        got = cp.zeros(1, dtype=np.float64)
         expect = A.sum()
         res = sum_reduce(A, res=got)
         self.assertIsNone(res)

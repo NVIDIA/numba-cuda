@@ -3,8 +3,17 @@
 
 import unittest
 
-from numba.cuda.testing import CUDATestCase, skip_on_cudasim
+from numba.cuda.testing import (
+    CUDATestCase,
+    skip_if_cupy_unavailable,
+    skip_on_cudasim,
+)
 from numba.cuda.tests.support import captured_stdout
+
+try:
+    import cupy as cp
+except ImportError:
+    cp = None
 
 
 @skip_on_cudasim("cudasim doesn't support cuda import at non-top-level")
@@ -25,6 +34,7 @@ class TestCPointer(CUDATestCase):
         self._captured_stdout.__exit__(None, None, None)
         super().tearDown()
 
+    @skip_if_cupy_unavailable
     def test_ex_cpointer(self):
         # ex_cpointer.sig.begin
         import numpy as np
@@ -47,10 +57,10 @@ class TestCPointer(CUDATestCase):
         # ex_cpointer.kernel.end
 
         # ex_cpointer.launch.begin
-        x = cuda.to_device(np.arange(10, dtype=np.uint8))
+        x = cp.arange(10, dtype=np.uint8)
 
         # Print initial values of x
-        print(x.copy_to_host())  # [0 1 2 3 4 5 6 7 8 9]
+        print(x.get())  # [0 1 2 3 4 5 6 7 8 9]
 
         # Obtain a pointer to the data from from the CUDA Array Interface
         x_ptr = x.__cuda_array_interface__["data"][0]
@@ -60,7 +70,7 @@ class TestCPointer(CUDATestCase):
         add_one[1, 32](x_ptr, x_len)
 
         # Demonstrate that the data was updated by the kernel
-        print(x.copy_to_host())  # [ 1  2  3  4  5  6  7  8  9 10]
+        print(x.get())  # [ 1  2  3  4  5  6  7  8  9 10]
         # ex_cpointer.launch.end
 
 

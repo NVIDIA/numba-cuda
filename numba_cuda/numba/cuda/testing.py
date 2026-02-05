@@ -13,12 +13,13 @@ from numba.cuda.dispatcher import CUDADispatcher
 from numba.cuda import config
 from numba.cuda.tests.support import TestCase
 from pathlib import Path
-
+import warnings
 from typing import Iterable, Union
 from io import StringIO
 import unittest
 import numpy as np
 from numba.cuda import HAS_NUMBA
+from numba.cuda.cudadrv.devicearray import DeprecatedDeviceArrayApiWarning
 
 if PYVERSION >= (3, 10):
     from filecheck.matcher import Matcher
@@ -185,6 +186,20 @@ class CUDATestCase(TestCase):
             )
 
 
+class DeprecatedDeviceArrayApiTest(CUDATestCase):
+    def setUp(self):
+        self._warnings_filters = warnings.filters[:]
+
+        warnings.filterwarnings(
+            "ignore", category=DeprecatedDeviceArrayApiWarning
+        )
+        super().setUp()
+
+    def tearDown(self):
+        warnings.filters = self._warnings_filters
+        super().tearDown()
+
+
 def skip_on_cudasim(reason):
     """Skip this test if running on the CUDA simulator"""
     assert isinstance(reason, str)
@@ -200,6 +215,31 @@ def skip_unless_cudasim(reason):
     """Skip this test if running on CUDA hardware"""
     assert isinstance(reason, str)
     return unittest.skipUnless(config.ENABLE_CUDASIM, reason)
+
+
+def skip_if_cupy_unavailable(fn):
+    """
+    Skip test if CuPy is not available, unless running in simulator mode.
+
+    When running in simulator mode, the test will execute using NumPy arrays
+    (via 'import numpy as cp' pattern). When not in simulator mode, the test
+    is skipped if CuPy cannot be imported.
+
+    This decorator should be used for tests that:
+    1. Use device arrays via cupy (cp.asarray, cp.zeros, etc.)
+    2. Should still run in simulator mode with numpy arrays
+    3. Should be skipped on hardware when cupy is unavailable
+    """
+    if config.ENABLE_CUDASIM:
+        # In simulator mode, tests use numpy as cp, so don't skip
+        return fn
+
+    try:
+        import cupy
+
+        return fn
+    except ImportError:
+        return unittest.skip("CuPy not available")(fn)
 
 
 def skip_unless_conda_cudatoolkit(reason):

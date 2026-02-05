@@ -2,10 +2,23 @@
 # SPDX-License-Identifier: BSD-2-Clause
 
 from numba import cuda
+from numba.cuda import config
 import numpy as np
-from numba.cuda.testing import skip_on_cudasim, CUDATestCase
+from numba.cuda.testing import (
+    skip_on_cudasim,
+    CUDATestCase,
+    skip_if_cupy_unavailable,
+)
 import threading
 import unittest
+
+if config.ENABLE_CUDASIM:
+    import numpy as cp
+else:
+    try:
+        import cupy as cp
+    except ImportError:
+        cp = None
 
 
 class TestMultiGPUContext(CUDATestCase):
@@ -51,11 +64,12 @@ class TestMultiGPUContext(CUDATestCase):
         check(A, B)
 
     @skip_on_cudasim("Simulator does not support multiple threads")
+    @skip_if_cupy_unavailable
     def test_multithreaded(self):
         def work(gpu, dA, results, ridx):
             try:
                 with gpu:
-                    arr = dA.copy_to_host()
+                    arr = dA.get()
 
             except Exception as e:
                 results[ridx] = e
@@ -63,7 +77,7 @@ class TestMultiGPUContext(CUDATestCase):
             else:
                 results[ridx] = np.all(arr == np.arange(10))
 
-        dA = cuda.to_device(np.arange(10))
+        dA = cp.asarray(np.arange(10))
 
         nthreads = 10
         results = [None] * nthreads

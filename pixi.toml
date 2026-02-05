@@ -77,6 +77,7 @@ cffi = ">=1"
 pytest = ">=8,<9"
 pytest-xdist = ">=3.8"
 pytest-benchmark = ">=5.1"
+cupy = "*"
 
 [feature.test.pypi-dependencies]
 ml_dtypes = "*"
@@ -107,6 +108,23 @@ numpydoc = ">=1.9.0"
 [feature.docs.pypi-dependencies]
 nvidia-sphinx-theme = "*"
 
+[feature.test-cupy.dependencies]
+cupy = "*"
+
+[feature.test-sim.dependencies]
+# Simulator testing - same as test feature but without cupy
+make = "*"
+pre-commit = ">=4.3"
+psutil = ">=6"
+cffi = ">=1"
+pytest = ">=8,<9"
+pytest-xdist = ">=3.8"
+pytest-benchmark = ">=5.1"
+
+[feature.test-sim.pypi-dependencies]
+ml_dtypes = "*"
+filecheck = "*"
+
 [environments]
 default = { features = ["cu-13-1", "test", "cu", "cu-13", "cu-rt", "nvvm", "py314"], solve-group = "default" }
 dev = { features = ["ruff"], no-default-feature = true }
@@ -118,6 +136,7 @@ cu-12-0-py310 = { features = [
     "cu",
     "cu-12",
     "py310",
+    "test-cupy",
 ], solve-group = "cu-12-0-py310" }
 cu-12-0-py311 = { features = [
     "cu-12-0",
@@ -125,6 +144,7 @@ cu-12-0-py311 = { features = [
     "cu",
     "cu-12",
     "py311",
+    "test-cupy",
 ], solve-group = "cu-12-0-py311" }
 cu-12-2-py311 = { features = [
     "cu-12-2",
@@ -133,6 +153,7 @@ cu-12-2-py311 = { features = [
     "cu-12",
     "nvvm",
     "py311",
+    "test-cupy",
 ], solve-group = "cu-12-2-py311" }
 cu-12-8-py310 = { features = [
     "cu-12-8",
@@ -142,6 +163,7 @@ cu-12-8-py310 = { features = [
     "cu-rt",
     "nvvm",
     "py310",
+    "test-cupy",
 ], solve-group = "cu-12-8-py310" }
 cu-12-8-py311 = { features = [
     "cu-12-8",
@@ -151,6 +173,7 @@ cu-12-8-py311 = { features = [
     "cu-rt",
     "nvvm",
     "py311",
+    "test-cupy",
 ], solve-group = "cu-12-8-py311" }
 cu-12-8-py312 = { features = [
     "cu-12-8",
@@ -160,6 +183,7 @@ cu-12-8-py312 = { features = [
     "cu-rt",
     "nvvm",
     "py312",
+    "test-cupy",
 ], solve-group = "cu-12-8-py312" }
 cu-12-8-py313 = { features = [
     "cu-12-8",
@@ -169,6 +193,7 @@ cu-12-8-py313 = { features = [
     "cu-rt",
     "nvvm",
     "py313",
+    "test-cupy",
 ], solve-group = "cu-12-8-py313" }
 cu-12-9-py312 = { features = [
     "cu-12-9",
@@ -179,6 +204,7 @@ cu-12-9-py312 = { features = [
     "cu-rt",
     "nvvm",
     "py312",
+    "test-cupy",
 ], solve-group = "cu-12-9-py312" }
 # CUDA 13
 cu-13-0-py312 = { features = [
@@ -189,6 +215,7 @@ cu-13-0-py312 = { features = [
     "cu-rt",
     "nvvm",
     "py312",
+    "test-cupy",
 ], solve-group = "cu-13-0-py312" }
 cu-13-0-py313 = { features = [
     "cu-13-0",
@@ -198,6 +225,7 @@ cu-13-0-py313 = { features = [
     "cu-rt",
     "nvvm",
     "py313",
+    "test-cupy",
 ], solve-group = "cu-13-0-py313" }
 cu-13-0-py314 = { features = [
     "cu-13-0",
@@ -217,6 +245,16 @@ cu-13-1-py314 = { features = [
     "nvvm",
     "py314",
 ], solve-group = "cu-13-1-py314" }
+# Simulator (no CUDA required, no CuPy)
+sim-cu-12-8-py312 = { features = [
+    "cu-12-8",
+    "test-sim",
+    "cu",
+    "cu-12",
+    "cu-rt",
+    "nvvm",
+    "py312",
+], solve-group = "sim-cu-12-8-py312" }
 
 docs = { features = ["docs"], solve-group = "docs" }
 
@@ -283,7 +321,7 @@ NUMBA_ENABLE_CUDASIM = "1"
 
 [package]
 name = "numba-cuda"
-version = "0.26.0"
+version = "0.24.0"
 
 [package.build]
 backend = { name = "pixi-build-python", version = "*" }

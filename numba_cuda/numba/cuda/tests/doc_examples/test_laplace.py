@@ -10,6 +10,9 @@ from numba.cuda.testing import (
     skip_unless_cc_60,
 )
 from numba.cuda.tests.support import captured_stdout
+import pytest
+
+cp = pytest.importorskip("cupy")
 
 
 @skip_if_cudadevrt_missing
@@ -49,10 +52,10 @@ class TestLaplace(CUDATestCase):
 
         # Middle element is made very hot
         data[500] = 10000
-        buf_0 = cuda.to_device(data)
+        buf_0 = cp.asarray(data)
 
         # This extra array is used for synchronization purposes
-        buf_1 = cuda.device_array_like(buf_0)
+        buf_1 = cp.zeros_like(buf_0)
 
         niter = 10000
         # ex_laplace.allocate.end
@@ -63,7 +66,7 @@ class TestLaplace(CUDATestCase):
             fig, ax = plt.subplots(figsize=(16 * 0.66, 9 * 0.66))
             plt.plot(
                 np.arange(len(buf_0)),
-                buf_0.copy_to_host(),
+                buf_0.get(),
                 lw=3,
                 marker="*",
                 color="black",
@@ -128,7 +131,7 @@ class TestLaplace(CUDATestCase):
         solve_heat_equation.forall(len(data))(buf_0, buf_1, niter, 0.25)
         # ex_laplace.launch.end
 
-        results = buf_1.copy_to_host()
+        results = buf_1.get()
         if plot:
             fig, ax = plt.subplots(figsize=(16 * 0.66, 9 * 0.66))
             plt.plot(

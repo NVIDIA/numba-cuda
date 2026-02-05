@@ -5,13 +5,17 @@ import numpy as np
 
 from numba import cuda, vectorize, guvectorize
 from numba.cuda.np.numpy_support import from_dtype
-from numba.cuda.testing import CUDATestCase, skip_on_cudasim
+from numba.cuda.testing import (
+    skip_on_cudasim,
+    skip_if_cupy_unavailable,
+    DeprecatedDeviceArrayApiTest,
+)
 import unittest
 
 import pytest
 
 
-class TestCudaDateTime(CUDATestCase):
+class TestCudaDateTime(DeprecatedDeviceArrayApiTest):
     def test_basic_datetime_kernel(self):
         @cuda.jit
         def foo(start, end, delta):
@@ -61,6 +65,7 @@ class TestCudaDateTime(CUDATestCase):
         self.assertPreciseEqual(delta, arr2 - arr1)
 
     @skip_on_cudasim("API unsupported in the simulator")
+    @skip_if_cupy_unavailable
     def test_datetime_cupy_inputs(self):
         cp = pytest.importorskip("cupy")
         datetime_t = from_dtype(cp.dtype("datetime64[D]"))
@@ -95,7 +100,6 @@ class TestCudaDateTime(CUDATestCase):
 
         arr1 = np.arange("2005-02", "2006-02", dtype="datetime64[D]")
         arr2 = arr1 + np.random.randint(0, 10000, arr1.size)
-
         delta = timediff(arr1, arr2)
 
         self.assertPreciseEqual(delta, arr2 - arr1)

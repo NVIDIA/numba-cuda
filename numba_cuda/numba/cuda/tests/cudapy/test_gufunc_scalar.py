@@ -9,12 +9,24 @@ See Numpy documentation for detail about gufunc:
 
 import numpy as np
 from numba import cuda, guvectorize
-from numba.cuda.testing import skip_on_cudasim, CUDATestCase
+from numba.cuda.testing import (
+    skip_on_cudasim,
+    CUDATestCase,
+    DeprecatedDeviceArrayApiWarning,
+    skip_if_cupy_unavailable,
+)
 import unittest
+import pytest
+
+try:
+    import cupy as cp
+except ImportError:
+    cp = None
 
 
 @skip_on_cudasim("ufunc API unsupported in the simulator")
 class TestGUFuncScalar(CUDATestCase):
+    @skip_if_cupy_unavailable
     def test_gufunc_scalar_output(self):
         #    function type:
         #        - has no void return type
@@ -42,13 +54,13 @@ class TestGUFuncScalar(CUDATestCase):
         out1 = np.empty(100, dtype=inp.dtype)
         out2 = np.empty(100, dtype=inp.dtype)
 
-        dev_inp = cuda.to_device(inp)  # alloc and copy input data
-        dev_out1 = cuda.to_device(out1, copy=False)  # alloc only
+        dev_inp = cp.asarray(inp)  # alloc and copy input data
+        dev_out1 = cp.empty(out1.shape, dtype=out1.dtype)  # alloc only
 
         sum_row(dev_inp, out=dev_out1)  # invoke the gufunc
         dev_out2 = sum_row(dev_inp)  # invoke the gufunc
 
-        dev_out1.copy_to_host(out1)  # retrieve the result
+        out1 = dev_out1.get()  # retrieve the result
         dev_out2.copy_to_host(out2)  # retrieve the result
 
         # verify result
@@ -119,7 +131,11 @@ class TestGUFuncScalar(CUDATestCase):
 
         # test error
         a = np.array(a)
-        da = cuda.to_device(a)
+
+        # As this test specifically tests the behavior of passing a DeviceNDArray,
+        # we'll catch the expected warning explicitly here.
+        with pytest.warns(DeprecatedDeviceArrayApiWarning):
+            da = cuda.to_device(a)
         self.assertEqual(da.dtype, np.int64)
         with self.assertRaises(TypeError) as raises:
             foo(da, b)

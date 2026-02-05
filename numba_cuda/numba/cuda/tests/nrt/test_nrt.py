@@ -6,7 +6,11 @@ import os
 
 import numpy as np
 import unittest
-from numba.cuda.testing import CUDATestCase, skip_on_cudasim
+from numba.cuda.testing import (
+    CUDATestCase,
+    skip_on_cudasim,
+    skip_if_cupy_unavailable,
+)
 from numba.cuda.tests.support import run_in_subprocess, override_config
 from numba.cuda import get_current_device
 from numba.cuda.cudadrv.nvrtc import compile
@@ -23,6 +27,14 @@ from numba.cuda.cudadrv.linkable_code import (
     Archive,
     Object,
 )
+
+if config.ENABLE_CUDASIM:
+    import numpy as cp
+else:
+    try:
+        import cupy as cp
+    except ImportError:
+        cp = None
 
 TEST_BIN_DIR = os.getenv("NUMBA_CUDA_TEST_BIN_DIR")
 
@@ -382,6 +394,7 @@ class TestNrtStatistics(CUDATestCase):
             self.assertEqual(stats.free, stats_free)
             self.assertEqual(stats.mi_free, stats_mi_free)
 
+    @skip_if_cupy_unavailable
     def test_nrt_toggle_enabled(self):
         def array_reshape1d(arr, newshape, got):
             y = arr.reshape(newshape)
@@ -398,7 +411,7 @@ class TestNrtStatistics(CUDATestCase):
                 out = out.reshape(out.shape)
                 out[0] = 1
 
-            out = cuda.to_device(np.zeros(1, dtype=np.float64))
+            out = cp.zeros(1, dtype=np.float64)
             kernel[1, 1](out)
 
         with override_config("CUDA_ENABLE_NRT", False):

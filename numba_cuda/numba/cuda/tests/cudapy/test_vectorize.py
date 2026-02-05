@@ -12,7 +12,15 @@ from numba.cuda.types import int32, float32, float64
 from numba.cuda.cudadrv.driver import CudaAPIError, driver
 from numba.cuda.testing import skip_on_cudasim
 from numba.cuda.testing import CUDATestCase
+from numba.cuda.testing import skip_if_cupy_unavailable
 import unittest
+import pytest
+
+try:
+    import cupy as cp
+except ImportError:
+    cp = None
+from numba.cuda.testing import DeprecatedDeviceArrayApiWarning
 
 
 # Signatures to test with - these are all homogeneous in dtype, so the output
@@ -78,6 +86,7 @@ class TestCUDAVectorize(CUDATestCase):
                 np.testing.assert_allclose(expected, actual)
                 self.assertEqual(actual.dtype, ty)
 
+    @skip_if_cupy_unavailable
     def test_1d_async(self):
         for vectorize in vectorize_funcs:
 
@@ -85,13 +94,15 @@ class TestCUDAVectorize(CUDATestCase):
             def vector_add(a, b):
                 return a + b
 
-            stream = cuda.stream()
+            nb_stream = cuda.stream()
+            stream = cp.cuda.Stream()
 
             for ty in dtypes:
                 data = np.array(np.random.random(self.N), dtype=ty)
-                device_data = cuda.to_device(data, stream)
+                with stream:
+                    device_data = cp.asarray(data)
 
-                dresult = vector_add(device_data, device_data, stream=stream)
+                dresult = vector_add(device_data, device_data, stream=nb_stream)
                 actual = dresult.copy_to_host()
 
                 expected = np.add(data, data)
@@ -153,6 +164,7 @@ class TestCUDAVectorize(CUDATestCase):
                 # to be using addition). Instead, compare against the input dtype.
                 self.assertEqual(dtype, actual.dtype)
 
+    @skip_if_cupy_unavailable
     def test_reduce_async(self):
         for vectorize in vectorize_funcs:
 
@@ -160,18 +172,21 @@ class TestCUDAVectorize(CUDATestCase):
             def vector_add(a, b):
                 return a + b
 
-            stream = cuda.stream()
+            nb_stream = cuda.stream()
+            stream = cp.cuda.Stream()
             dtype = np.int32
 
             for n in input_sizes:
                 x = np.arange(n, dtype=dtype)
                 expected = np.add.reduce(x)
-                dx = cuda.to_device(x, stream)
-                actual = vector_add.reduce(dx, stream=stream)
+                with stream:
+                    dx = cp.asarray(x)
+                actual = vector_add.reduce(dx, stream=nb_stream)
                 np.testing.assert_allclose(expected, actual)
                 # Compare against the input dtype as in test_reduce().
                 self.assertEqual(dtype, actual.dtype)
 
+    @skip_if_cupy_unavailable
     def test_manual_transfer(self):
         for vectorize in vectorize_funcs:
 
@@ -181,12 +196,13 @@ class TestCUDAVectorize(CUDATestCase):
 
             n = 10
             x = np.arange(n, dtype=np.int32)
-            dx = cuda.to_device(x)
+            dx = cp.asarray(x)
             expected = x + x
             actual = vector_add(x, dx).copy_to_host()
             np.testing.assert_equal(expected, actual)
             self.assertEqual(expected.dtype, actual.dtype)
 
+    @skip_if_cupy_unavailable
     def test_ufunc_output_2d(self):
         for vectorize in vectorize_funcs:
 
@@ -196,11 +212,11 @@ class TestCUDAVectorize(CUDATestCase):
 
             n = 10
             x = np.arange(n, dtype=np.int32).reshape(2, 5)
-            dx = cuda.to_device(x)
+            dx = cp.asarray(x)
             vector_add(dx, dx, out=dx)
 
             expected = x + x
-            actual = dx.copy_to_host()
+            actual = dx.get()
             np.testing.assert_equal(expected, actual)
             self.assertEqual(expected.dtype, actual.dtype)
 
@@ -256,56 +272,76 @@ class TestCUDAVectorize(CUDATestCase):
 
             self.assertEqual(bar.__name__, "bar")
 
-    def test_no_transfer_for_device_data(self):
-        for vectorize in vectorize_funcs:
-            # Initialize test data on the device prior to banning host <-> device
-            # transfer
 
-            noise = np.random.randn(1, 3, 64, 64).astype(np.float32)
-            noise = cuda.to_device(noise)
+@skip_on_cudasim("ufunc API unsupported in the simulator")
+class TestCUDAVectorizeNoTransfer(CUDATestCase):
+    """Test that vectorize operations on device data don't induce transfers."""
 
-            # A mock of a CUDA function that always raises a CudaAPIError
+    def setUp(self):
+        """Set up mocks to block host <-> device transfers."""
+        super().setUp()
 
-            def raising_transfer(*args, **kwargs):
-                raise CudaAPIError(999, "Transfer not allowed")
+        # Initialize test data on the device prior to banning host <-> device
+        # transfer
+        self.noise = np.random.randn(1, 3, 64, 64).astype(np.float32)
+        with pytest.warns(DeprecatedDeviceArrayApiWarning):
+            self.device_noise = cuda.to_device(self.noise)
 
-            # Use the mock for transfers between the host and device
+        # A mock of a CUDA function that always raises a CudaAPIError
+        def raising_transfer(*args, **kwargs):
+            raise CudaAPIError(999, "Transfer not allowed")
 
-            old_HtoD = getattr(driver, "cuMemcpyHtoD", None)
-            old_DtoH = getattr(driver, "cuMemcpyDtoH", None)
+        # Save the original implementations
+        self.old_HtoD = getattr(driver, "cuMemcpyHtoD", None)
+        self.old_DtoH = getattr(driver, "cuMemcpyDtoH", None)
 
-            driver.cuMemcpyHtoD = raising_transfer
-            driver.cuMemcpyDtoH = raising_transfer
+        # Replace with mocks that prevent transfers
+        driver.cuMemcpyHtoD = raising_transfer
+        driver.cuMemcpyDtoH = raising_transfer
 
-            # Ensure that the mock functions are working as expected
+    def tearDown(self):
+        """Restore original transfer functions."""
+        # Replace our mocks with the original implementations. If there was
+        # no original implementation, simply remove ours.
+        if self.old_HtoD is not None:
+            driver.cuMemcpyHtoD = self.old_HtoD
+        else:
+            if hasattr(driver, "cuMemcpyHtoD"):
+                del driver.cuMemcpyHtoD
 
-            with self.assertRaisesRegex(CudaAPIError, "Transfer not allowed"):
-                noise.copy_to_host()
+        if self.old_DtoH is not None:
+            driver.cuMemcpyDtoH = self.old_DtoH
+        else:
+            if hasattr(driver, "cuMemcpyDtoH"):
+                del driver.cuMemcpyDtoH
 
-            with self.assertRaisesRegex(CudaAPIError, "Transfer not allowed"):
+        super().tearDown()
+
+    def test_mock_blocks_device_to_host_transfer(self):
+        """Verify that the mock successfully blocks device-to-host transfers."""
+        with self.assertRaisesRegex(CudaAPIError, "Transfer not allowed"):
+            self.device_noise.copy_to_host()
+
+    def test_mock_blocks_host_to_device_transfer(self):
+        """Verify that the mock successfully blocks host-to-device transfers."""
+        with self.assertRaisesRegex(CudaAPIError, "Transfer not allowed"):
+            with pytest.warns(DeprecatedDeviceArrayApiWarning):
                 cuda.to_device([1])
 
-            try:
-                # Check that defining and calling a ufunc with data on the device
-                # induces no transfers
+    def test_vectorize_with_device_data_no_transfer(self):
+        """Test that vectorize operations on device data don't induce transfers."""
+        for vectorize in vectorize_funcs:
+            # Define and call a ufunc with data on the device
+            # This should not induce any transfers (which would raise CudaAPIError)
+            @vectorize(["float32(float32)"])
+            def func(noise):
+                return noise + 1.0
 
-                @vectorize(["float32(float32)"])
-                def func(noise):
-                    return noise + 1.0
+            # This should succeed without raising CudaAPIError
+            result = func(self.device_noise)
 
-                func(noise)
-            finally:
-                # Replace our mocks with the original implementations. If there was
-                # no original implementation, simply remove ours.
-
-                if old_HtoD is not None:
-                    driver.cuMemcpyHtoD = old_HtoD
-                else:
-                    del driver.cuMemcpyHtoD
-                if old_DtoH is not None:
-                    driver.cuMemcpyDtoH = old_DtoH
-                else:
-                    del driver.cuMemcpyDtoH
+            # Verify the result is still on the device and has the right shape
+            self.assertEqual(result.shape, self.device_noise.shape)
 
 
 if __name__ == "__main__":

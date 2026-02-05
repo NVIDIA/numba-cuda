@@ -5,11 +5,17 @@ import pytest
 from numba.cuda.testing import unittest
 from numba.cuda.testing import skip_on_cudasim
 from numba.cuda.testing import CUDATestCase
+from numba.cuda.testing import skip_if_cupy_unavailable
 from numba.cuda import get_current_device
 from numba.cuda.cudadrv.driver import _Linker, _have_nvjitlink
 
 from numba import cuda
 from numba.cuda import config
+
+try:
+    import cupy as cp
+except ImportError:
+    cp = None
 
 import os
 import io
@@ -82,6 +88,7 @@ class TestLinker(CUDATestCase):
             # because there's no way to know what kind of file to treat it as
             linker.add_file_guess_ext(content)
 
+    @skip_if_cupy_unavailable
     def test_nvjitlink_jit_with_linkable_code(self):
         files = (
             test_device_functions_a,
@@ -101,7 +108,7 @@ class TestLinker(CUDATestCase):
                     def kernel(result):
                         result[0] = add_from_numba(1, 2)
 
-                    result = cuda.device_array(1)
+                    result = cp.zeros(1)
                     kernel[1, 1](result)
                     assert result[0] == 3
 
@@ -132,6 +139,7 @@ class TestLinkerDumpAssembly(CUDATestCase):
         config.DUMP_ASSEMBLY = self._prev_dump_assembly
         super().tearDown()
 
+    @skip_if_cupy_unavailable
     def test_nvjitlink_jit_with_linkable_code_lto_dump_assembly(self):
         files = (
             test_device_functions_cu,
@@ -158,12 +166,13 @@ class TestLinkerDumpAssembly(CUDATestCase):
                     def kernel(result):
                         result[0] = add_from_numba(1, 2)
 
-                    result = cuda.device_array(1)
+                    result = cp.zeros(1)
                     kernel[1, 1](result)
                     assert result[0] == 3
 
                 self.assertTrue("ASSEMBLY (AFTER LTO)" in f.getvalue())
 
+    @skip_if_cupy_unavailable
     def test_nvjitlink_jit_with_linkable_code_lto_dump_assembly_warn(self):
         files = (
             test_device_functions_a,
@@ -190,7 +199,7 @@ class TestLinkerDumpAssembly(CUDATestCase):
                 def kernel(result):
                     result[0] = add_from_numba(1, 2)
 
-                result = cuda.device_array(1)
+                result = cp.zeros(1)
                 func = kernel[1, 1]
                 with pytest.warns(
                     UserWarning,

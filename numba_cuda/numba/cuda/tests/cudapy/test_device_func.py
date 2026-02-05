@@ -12,6 +12,7 @@ from numba.cuda.testing import (
     test_data_dir,
     unittest,
     CUDATestCase,
+    skip_if_cupy_unavailable,
 )
 from numba import cuda
 from numba.cuda import float32, int32, types
@@ -19,10 +20,18 @@ from numba.cuda.core.errors import TypingError
 from numba.cuda.tests.support import skip_unless_cffi
 from numba.cuda.testing import skip_on_standalone_numba_cuda
 from types import ModuleType
-from numba.cuda import HAS_NUMBA
+from numba.cuda import HAS_NUMBA, config
 
 if HAS_NUMBA:
     from numba import jit
+
+if config.ENABLE_CUDASIM:
+    import numpy as cp
+else:
+    try:
+        import cupy as cp
+    except ImportError:
+        cp = None
 
 
 class TestDeviceFunc(CUDATestCase):
@@ -185,6 +194,7 @@ class TestDeviceFunc(CUDATestCase):
         )
 
     @skip_on_cudasim("cudasim ignores casting by jit decorator signature")
+    @skip_if_cupy_unavailable
     def test_device_casting(self):
         # Ensure that casts to the correct type are forced when calling a
         # device function with a signature. This test ensures that:
@@ -206,10 +216,8 @@ class TestDeviceFunc(CUDATestCase):
         def rgba_caller(x, channels):
             x[0] = rgba(channels[0], channels[1], channels[2], channels[3])
 
-        x = cuda.device_array(1, dtype=np.int32)
-        channels = cuda.to_device(
-            np.asarray([1.0, 2.0, 3.0, 4.0], dtype=np.float32)
-        )
+        x = cp.asarray([1], dtype=np.int32)
+        channels = cp.array([1.0, 2.0, 3.0, 4.0], dtype=np.float32)
 
         rgba_caller[1, 1](x, channels)
 

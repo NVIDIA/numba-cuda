@@ -2,10 +2,20 @@
 # SPDX-License-Identifier: BSD-2-Clause
 
 from numba import cuda
+from numba.cuda import config
 import numpy as np
-from numba.cuda.testing import CUDATestCase
+from numba.cuda.testing import CUDATestCase, skip_if_cupy_unavailable
 from numba.cuda.tests.support import override_config
 import unittest
+from contextlib import nullcontext
+
+if config.ENABLE_CUDASIM:
+    import numpy as cp
+else:
+    try:
+        import cupy as cp
+    except ImportError:
+        cp = None
 
 
 class TestCudaJitNoTypes(CUDATestCase):
@@ -13,6 +23,7 @@ class TestCudaJitNoTypes(CUDATestCase):
     Tests the jit decorator with no types provided.
     """
 
+    @skip_if_cupy_unavailable
     def test_device_array(self):
         @cuda.jit
         def foo(x, y):
@@ -22,12 +33,12 @@ class TestCudaJitNoTypes(CUDATestCase):
         x = np.arange(10)
         y = np.empty_like(x)
 
-        dx = cuda.to_device(x)
-        dy = cuda.to_device(y)
+        dx = cp.asarray(x)
+        dy = cp.asarray(y)
 
         foo[10, 1](dx, dy)
 
-        dy.copy_to_host(y)
+        y = dy.get() if not config.ENABLE_CUDASIM else dy
 
         self.assertTrue(np.all(x == y))
 
@@ -58,6 +69,7 @@ class TestCudaJitNoTypes(CUDATestCase):
 
         np.testing.assert_allclose(Acopy + Acopy + Bcopy + Bcopy + 1, B)
 
+    @skip_if_cupy_unavailable
     def test_device_jit_2(self):
         @cuda.jit(device=True)
         def inner(arg):
@@ -70,13 +82,21 @@ class TestCudaJitNoTypes(CUDATestCase):
         a = np.zeros(1)
         b = np.zeros(1)
 
-        stream = cuda.stream()
-        d_a = cuda.to_device(a, stream)
-        d_b = cuda.to_device(b, stream)
+        stream = (
+            cp.cuda.Stream() if not config.ENABLE_CUDASIM else nullcontext()
+        )
+        nb_stream = (
+            cuda.api.external_stream(stream.ptr)
+            if not config.ENABLE_CUDASIM
+            else cuda.stream()
+        )
+        with stream:
+            d_a = cp.asarray(a)
+            d_b = cp.asarray(b)
 
-        outer[1, 1, stream](d_a, d_b)
+            outer[1, 1, nb_stream](d_a, d_b)
 
-        d_b.copy_to_host(b, stream)
+            b = d_b.get() if not config.ENABLE_CUDASIM else d_b
 
         self.assertEqual(b[0], (a[0] + 1) + (2 + 1))
 

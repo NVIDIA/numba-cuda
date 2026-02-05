@@ -3,20 +3,29 @@
 
 import numpy as np
 from numba import cuda
+from numba.cuda import config
 from numba.cuda.testing import unittest, CUDATestCase
 from numba.cuda._compat import Device
-from numba.cuda.testing import skip_on_cudasim
+from numba.cuda.testing import skip_on_cudasim, skip_if_cupy_unavailable
+
+if config.ENABLE_CUDASIM:
+    import numpy as cp
+else:
+    try:
+        import cupy as cp
+    except ImportError:
+        cp = None
 
 
 class TestCudaEvent(CUDATestCase):
+    @skip_if_cupy_unavailable
     def test_event_elapsed(self):
         N = 32
-        dary = cuda.device_array(N, dtype=np.double)
         evtstart = cuda.event()
         evtend = cuda.event()
 
         evtstart.record()
-        cuda.to_device(np.arange(N, dtype=np.double), to=dary)
+        dary = cp.array(np.arange(N, dtype=np.double))  # noqa: F841
         evtend.record()
         evtend.wait()
         evtend.synchronize()
@@ -35,13 +44,17 @@ class TestCudaEvent(CUDATestCase):
         self.event_elapsed_inner(stream)
 
     def event_elapsed_inner(self, stream):
-        N = 32
-        dary = cuda.device_array(N, dtype=np.double)
+        @cuda.jit
+        def kernel():
+            pass
+
         evtstart = cuda.event()
         evtend = cuda.event()
 
         evtstart.record(stream=stream)
-        cuda.to_device(np.arange(N, dtype=np.double), to=dary, stream=stream)
+
+        kernel[1, 1, stream]()
+
         evtend.record(stream=stream)
         evtend.wait(stream=stream)
         evtend.synchronize()

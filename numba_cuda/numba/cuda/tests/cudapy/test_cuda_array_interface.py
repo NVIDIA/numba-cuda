@@ -5,16 +5,29 @@ import numpy as np
 
 from numba.cuda import vectorize, guvectorize
 from numba import cuda
-from numba.cuda.testing import unittest, CUDATestCase, ForeignArray
-from numba.cuda.testing import skip_on_cudasim, skip_if_external_memmgr
+from numba.cuda.testing import (
+    unittest,
+    ForeignArray,
+    DeprecatedDeviceArrayApiTest,
+)
+from numba.cuda.testing import (
+    skip_on_cudasim,
+    skip_if_external_memmgr,
+    skip_if_cupy_unavailable,
+)
 from numba.cuda.tests.support import linux_only, override_config
 from unittest.mock import call, patch
+
+try:
+    import cupy as cp
+except ImportError:
+    cp = None
 
 import pytest
 
 
 @skip_on_cudasim("CUDA Array Interface is not supported in the simulator")
-class TestCudaArrayInterface(CUDATestCase):
+class TestCudaArrayInterface(DeprecatedDeviceArrayApiTest):
     def assertPointersEqual(self, a, b):
         self.assertEqual(
             a.device_ctypes_pointer.value, b.device_ctypes_pointer.value
@@ -82,6 +95,7 @@ class TestCudaArrayInterface(CUDATestCase):
         np.testing.assert_array_equal(wrapped.copy_to_host(), h_arr + val)
         np.testing.assert_array_equal(d_arr.copy_to_host(), h_arr + val)
 
+    @skip_if_cupy_unavailable
     def test_fortran_contiguous(self):
         cp = pytest.importorskip("cupy")
 
@@ -91,12 +105,13 @@ class TestCudaArrayInterface(CUDATestCase):
                 for j in range(arr.shape[1]):
                     out[i, j] = arr[i, j]
 
-        arr = cp.asfortranarray(cp.random.random((10, 10)))
+        arr = cp.asarray(np.asfortranarray(np.random.random((10, 10))))
         out = cp.empty_like(arr)
         copy[1, 1](arr, out)
 
         np.testing.assert_array_equal(arr.get(), out.get())
 
+    @skip_if_cupy_unavailable
     def test_ufunc_arg(self):
         @vectorize(["f8(f8, f8)"], target="cuda")
         def vadd(a, b):
@@ -104,7 +119,7 @@ class TestCudaArrayInterface(CUDATestCase):
 
         # Case 1: use custom array as argument
         h_arr = np.random.random(10)
-        arr = ForeignArray(cuda.to_device(h_arr))
+        arr = ForeignArray(cp.asarray(h_arr))
         val = 6
         out = vadd(arr, val)
         np.testing.assert_array_equal(out.copy_to_host(), h_arr + val)

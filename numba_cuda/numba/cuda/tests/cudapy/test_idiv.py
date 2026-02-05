@@ -3,11 +3,20 @@
 
 import numpy as np
 from numba import cuda
-from numba.cuda import float32, float64, int32, void
-from numba.cuda.testing import unittest, CUDATestCase
+from numba.cuda import config, float32, float64, int32, void
+from numba.cuda.testing import unittest, CUDATestCase, skip_if_cupy_unavailable
+
+if config.ENABLE_CUDASIM:
+    import numpy as cp
+else:
+    try:
+        import cupy as cp
+    except ImportError:
+        cp = None
 
 
 class TestCudaIDiv(CUDATestCase):
+    @skip_if_cupy_unavailable
     def test_inplace_div(self):
         @cuda.jit(void(float32[:, :], int32, int32))
         def div(grid, l_x, l_y):
@@ -15,12 +24,12 @@ class TestCudaIDiv(CUDATestCase):
                 for y in range(l_y):
                     grid[x, y] /= 2.0
 
-        x = np.ones((2, 2), dtype=np.float32)
-        grid = cuda.to_device(x)
+        grid = cp.ones((2, 2), dtype=np.float32)
         div[1, 1](grid, 2, 2)
-        y = grid.copy_to_host()
+        y = grid.get() if not config.ENABLE_CUDASIM else grid
         self.assertTrue(np.all(y == 0.5))
 
+    @skip_if_cupy_unavailable
     def test_inplace_div_double(self):
         @cuda.jit(void(float64[:, :], int32, int32))
         def div_double(grid, l_x, l_y):
@@ -28,10 +37,9 @@ class TestCudaIDiv(CUDATestCase):
                 for y in range(l_y):
                     grid[x, y] /= 2.0
 
-        x = np.ones((2, 2), dtype=np.float64)
-        grid = cuda.to_device(x)
+        grid = cp.ones((2, 2), dtype=np.float64)
         div_double[1, 1](grid, 2, 2)
-        y = grid.copy_to_host()
+        y = grid.get() if not config.ENABLE_CUDASIM else grid
         self.assertTrue(np.all(y == 0.5))
 
 

@@ -3,8 +3,15 @@
 
 import unittest
 
-from numba.cuda.testing import CUDATestCase, skip_on_cudasim
+from numba.cuda.testing import (
+    CUDATestCase,
+    skip_if_cupy_unavailable,
+    skip_on_cudasim,
+)
 from numba.cuda.tests.support import captured_stdout
+import pytest
+
+cp = pytest.importorskip("cupy")
 
 
 @skip_on_cudasim("cudasim doesn't support cuda import at non-top-level")
@@ -33,7 +40,7 @@ class TestReduction(CUDATestCase):
 
         # ex_reduction.allocate.begin
         # generate data
-        a = cuda.to_device(np.arange(1024))
+        a = cp.asarray(np.arange(1024))
         nelem = len(a)
         # ex_reduction.allocate.end
 
@@ -69,11 +76,11 @@ class TestReduction(CUDATestCase):
 
         # ex_reduction.launch.begin
         array_sum[1, nelem](a)
-        print(a[0])  # 523776
+        print(a.get()[0])  # 523776
         print(sum(np.arange(1024)))  # 523776
         # ex_reduction.launch.end
 
-        np.testing.assert_equal(a[0], sum(np.arange(1024)))
+        np.testing.assert_equal(a.get()[0], sum(np.arange(1024)))
 
 
 if __name__ == "__main__":

@@ -17,6 +17,14 @@ from numba.cuda import (
 )
 from numba.cuda import config
 
+if config.ENABLE_CUDASIM:
+    import numpy as cp
+else:
+    try:
+        import cupy as cp
+    except ImportError:
+        cp = None
+
 if not config.ENABLE_CUDASIM:
     from numba.cuda.bf16 import (
         bfloat16,
@@ -112,7 +120,7 @@ if not config.ENABLE_CUDASIM:
         float32_to_bfloat16_ru,
     )
 
-from numba.cuda.testing import CUDATestCase
+from numba.cuda.testing import CUDATestCase, skip_if_cupy_unavailable
 
 import math
 
@@ -131,6 +139,7 @@ class TestBfloat16HighLevelBindings(CUDATestCase):
 
         kernel[1, 1]()
 
+    @skip_if_cupy_unavailable
     def test_math_bindings(self):
         self.skip_unsupported()
 
@@ -159,7 +168,7 @@ class TestBfloat16HighLevelBindings(CUDATestCase):
                     y = f(x)
                     arr[0] = float32(y)
 
-                arr = cuda.device_array((1,), dtype="float32")
+                arr = cp.zeros((1,), dtype="float32")
                 kernel[1, 1](arr)
 
                 if f in exp_functions:
@@ -167,6 +176,7 @@ class TestBfloat16HighLevelBindings(CUDATestCase):
                 else:
                     self.assertAlmostEqual(arr[0], f(3.14), delta=1e-2)
 
+    @skip_if_cupy_unavailable
     def test_arithmetic_intrinsics_basic(self):
         self.skip_unsupported()
 
@@ -187,7 +197,7 @@ class TestBfloat16HighLevelBindings(CUDATestCase):
             out[8] = float32(hsub_rn(a, b))
             out[9] = float32(hmul_rn(a, b))
 
-        out = cuda.device_array((10,), dtype="float32")
+        out = cp.zeros((10,), dtype="float32")
         kernel[1, 1](out)
 
         a = 1.25
@@ -207,6 +217,7 @@ class TestBfloat16HighLevelBindings(CUDATestCase):
         for i, exp in enumerate(expected):
             self.assertAlmostEqual(out[i], exp, delta=1e-2)
 
+    @skip_if_cupy_unavailable
     def test_arithmetic_intrinsics_saturating(self):
         self.skip_unsupported()
 
@@ -220,7 +231,7 @@ class TestBfloat16HighLevelBindings(CUDATestCase):
             out[2] = float32(hmul_sat(a, b))  # 1.125 -> 1.0
             out[3] = float32(hfma_sat(a, b, a))  # 1.125 + 1.5 -> 1.0
 
-        out = cuda.device_array((4,), dtype="float32")
+        out = cp.zeros((4,), dtype="float32")
         kernel[1, 1](out)
 
         self.assertAlmostEqual(out[0], 1.0, delta=1e-3)
@@ -233,6 +244,7 @@ class TestBfloat16HighLevelBindings(CUDATestCase):
             self.assertGreaterEqual(out[i], 0.0)
             self.assertLessEqual(out[i], 1.0)
 
+    @skip_if_cupy_unavailable
     def test_fma_relu_intrinsic(self):
         self.skip_unsupported()
 
@@ -244,11 +256,12 @@ class TestBfloat16HighLevelBindings(CUDATestCase):
 
             out[0] = float32(hfma_relu(a, b, c))  # -3.0 -> relu -> 0.0
 
-        out = cuda.device_array((1,), dtype="float32")
+        out = cp.zeros((1,), dtype="float32")
         kernel[1, 1](out)
 
         self.assertAlmostEqual(out[0], 0.0, delta=1e-3)
 
+    @skip_if_cupy_unavailable
     def test_comparison_intrinsics(self):
         self.skip_unsupported()
 
@@ -274,7 +287,7 @@ class TestBfloat16HighLevelBindings(CUDATestCase):
         for cmpfn, op in zip(comparisons, ops):
             with self.subTest(cmpfn=cmpfn):
                 kernel = make_kernel(cmpfn)
-                out = cuda.device_array((1,), dtype="bool")
+                out = cp.zeros((1,), dtype="bool")
 
                 a = 3.0
                 b = 3.0
@@ -291,6 +304,7 @@ class TestBfloat16HighLevelBindings(CUDATestCase):
                 kernel[1, 1](out, a, b)
                 self.assertEqual(bool(out[0]), op(4.0, 3.0))
 
+    @skip_if_cupy_unavailable
     def test_hmax_hmin_intrinsics(self):
         self.skip_unsupported()
 
@@ -301,11 +315,12 @@ class TestBfloat16HighLevelBindings(CUDATestCase):
             out[0] = float32(hmax(a, b))
             out[1] = float32(hmin(a, b))
 
-        out = cuda.device_array((2,), dtype="float32")
+        out = cp.zeros((2,), dtype="float32")
         kernel[1, 1](out)
         self.assertAlmostEqual(out[0], 4.0, delta=1e-3)
         self.assertAlmostEqual(out[1], 3.0, delta=1e-3)
 
+    @skip_if_cupy_unavailable
     def test_nan_and_inf_intrinsics(self):
         self.skip_unsupported()
 
@@ -316,12 +331,13 @@ class TestBfloat16HighLevelBindings(CUDATestCase):
             out_bool[0] = hisnan(nanv)
             out_int[0] = hisinf(infv)
 
-        out_bool = cuda.device_array((1,), dtype="bool")
-        out_int = cuda.device_array((1,), dtype="int32")
+        out_bool = cp.zeros((1,), dtype="bool")
+        out_int = cp.zeros((1,), dtype="int32")
         kernel[1, 1](out_bool, out_int)
         self.assertTrue(bool(out_bool[0]))
         self.assertNotEqual(int(out_int[0]), 0)
 
+    @skip_if_cupy_unavailable
     def test_hmax_nan_hmin_nan_intrinsics(self):
         self.skip_unsupported()
 
@@ -334,7 +350,7 @@ class TestBfloat16HighLevelBindings(CUDATestCase):
             out[2] = float32(hmax(a, b))
             out[3] = float32(hmin(a, b))
 
-        out = cuda.device_array((4,), dtype="float32")
+        out = cp.zeros((4,), dtype="float32")
         kernel[1, 1](out)
         # NaN-propagating variants should produce NaN
         self.assertTrue(math.isnan(out[0]))
@@ -343,6 +359,7 @@ class TestBfloat16HighLevelBindings(CUDATestCase):
         self.assertAlmostEqual(out[2], 2.0, delta=1e-3)
         self.assertAlmostEqual(out[3], 2.0, delta=1e-3)
 
+    @skip_if_cupy_unavailable
     def test_bfloat16_as_bitcast(self):
         self.skip_unsupported()
 
@@ -352,13 +369,14 @@ class TestBfloat16HighLevelBindings(CUDATestCase):
             u2[0] = uint16_as_bfloat16(bfloat16_as_uint16(test_val))
 
         test_val = np.int16(0x3FC0)  # 1.5 in bfloat16
-        i2 = cuda.device_array((1,), dtype="int16")
-        u2 = cuda.device_array((1,), dtype="uint16")
+        i2 = cp.zeros((1,), dtype="int16")
+        u2 = cp.zeros((1,), dtype="uint16")
         roundtrip_kernel[1, 1](test_val, i2, u2)
 
         self.assertEqual(i2[0], test_val)
         self.assertEqual(u2[0], test_val)
 
+    @skip_if_cupy_unavailable
     def test_to_integer_conversions(self):
         self.skip_unsupported()
 
@@ -394,17 +412,17 @@ class TestBfloat16HighLevelBindings(CUDATestCase):
             u4[3] = bfloat16_to_uint64_ru(a)
 
         # rz
-        i1 = cuda.device_array((1,), dtype="int8")
+        i1 = cp.zeros((1,), dtype="int8")
         # rn, rz, rd, ru
-        i2 = cuda.device_array((4,), dtype="int16")
-        i3 = cuda.device_array((4,), dtype="int32")
-        i4 = cuda.device_array((4,), dtype="int64")
+        i2 = cp.zeros((4,), dtype="int16")
+        i3 = cp.zeros((4,), dtype="int32")
+        i4 = cp.zeros((4,), dtype="int64")
         # rz
-        u1 = cuda.device_array((1,), dtype="uint8")
+        u1 = cp.zeros((1,), dtype="uint8")
         # rn, rz, rd, ru
-        u2 = cuda.device_array((4,), dtype="uint16")
-        u3 = cuda.device_array((4,), dtype="uint32")
-        u4 = cuda.device_array((4,), dtype="uint64")
+        u2 = cp.zeros((4,), dtype="uint16")
+        u3 = cp.zeros((4,), dtype="uint32")
+        u4 = cp.zeros((4,), dtype="uint64")
 
         test_val = np.int16(0x3FC0)  # 1.5 in bfloat16
 
@@ -413,13 +431,14 @@ class TestBfloat16HighLevelBindings(CUDATestCase):
         self.assertEqual(i1[0], 1)
         self.assertEqual(u1[0], 1)
 
-        np.testing.assert_equal(i2, np.array([2, 1, 1, 2], "int16"))
-        np.testing.assert_equal(i3, np.array([2, 1, 1, 2], "int32"))
-        np.testing.assert_equal(i4, np.array([2, 1, 1, 2], "int64"))
-        np.testing.assert_equal(u2, np.array([2, 1, 1, 2], "uint16"))
-        np.testing.assert_equal(u3, np.array([2, 1, 1, 2], "uint32"))
-        np.testing.assert_equal(u4, np.array([2, 1, 1, 2], "uint64"))
+        np.testing.assert_equal(i2.get(), np.array([2, 1, 1, 2], "int16"))
+        np.testing.assert_equal(i3.get(), np.array([2, 1, 1, 2], "int32"))
+        np.testing.assert_equal(i4.get(), np.array([2, 1, 1, 2], "int64"))
+        np.testing.assert_equal(u2.get(), np.array([2, 1, 1, 2], "uint16"))
+        np.testing.assert_equal(u3.get(), np.array([2, 1, 1, 2], "uint32"))
+        np.testing.assert_equal(u4.get(), np.array([2, 1, 1, 2], "uint64"))
 
+    @skip_if_cupy_unavailable
     def test_from_integer_conversions(self):
         self.skip_unsupported()
 
@@ -489,9 +508,9 @@ class TestBfloat16HighLevelBindings(CUDATestCase):
             out[22] = bfloat16_as_int16(u4rd)
             out[23] = bfloat16_as_int16(u4ru)
 
-        out = cuda.device_array((24,), dtype="int16")
+        out = cp.zeros((24,), dtype="int16")
         kernel[1, 1](out)
-        res = out.copy_to_host()
+        res = out.get()
 
         i2 = np.int16(789).astype(mldtypes_bf16).view("int16")
         i3 = np.int32(789).astype(mldtypes_bf16).view("int16")
@@ -515,6 +534,7 @@ class TestBfloat16HighLevelBindings(CUDATestCase):
         np.testing.assert_array_less(_bf16_ulp_distance(res[16:20], u3arr), two)
         np.testing.assert_array_less(_bf16_ulp_distance(res[20:24], u4arr), two)
 
+    @skip_if_cupy_unavailable
     def test_to_float_conversions(self):
         self.skip_unsupported()
 
@@ -523,11 +543,12 @@ class TestBfloat16HighLevelBindings(CUDATestCase):
             a = bfloat16(1.5)
             out[0] = bfloat16_to_float32(a)
 
-        out = cuda.device_array((1,), dtype="float32")
+        out = cp.zeros((1,), dtype="float32")
         kernel[1, 1](out)
 
         self.assertAlmostEqual(out[0], 1.5, delta=1e-7)  # conversion is exact
 
+    @skip_if_cupy_unavailable
     def test_from_float_conversions(self):
         self.skip_unsupported()
 
@@ -553,9 +574,9 @@ class TestBfloat16HighLevelBindings(CUDATestCase):
             out[4] = bfloat16_as_int16(f4_default)
             out[5] = bfloat16_as_int16(f8_default)
 
-        out = cuda.device_array((6,), dtype="int16")
+        out = cp.zeros((6,), dtype="int16")
         kernel[1, 1](out)
-        raw = out.copy_to_host()
+        raw = out.get()
 
         f4_expected = (
             np.array([test_val] * 4, "float32")

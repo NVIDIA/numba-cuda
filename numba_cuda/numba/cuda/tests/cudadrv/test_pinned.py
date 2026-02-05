@@ -5,10 +5,11 @@ import numpy as np
 import platform
 
 from numba import cuda
-from numba.cuda.testing import unittest, CUDATestCase
+from numba.cuda.testing import unittest, DeprecatedDeviceArrayApiTest
 
 
-class TestPinned(CUDATestCase):
+# TODO
+class TestPinned(DeprecatedDeviceArrayApiTest):
     def _run_copies(self, A):
         A0 = np.copy(A)
 

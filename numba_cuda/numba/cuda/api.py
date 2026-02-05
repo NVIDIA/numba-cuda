@@ -9,10 +9,11 @@ import contextlib
 import os
 
 import numpy as np
-
+import warnings
 from .cudadrv import devicearray, devices, driver
-from numba.cuda.core import config
 from numba.cuda.api_util import prepare_shape_strides_dtype
+from numba.cuda.cudadrv.devicearray import DeprecatedDeviceArrayApiWarning
+from . import _api
 
 # NDarray device helper
 
@@ -30,38 +31,12 @@ def from_cuda_array_interface(desc, owner=None, sync=True):
     If ``sync`` is ``True``, then the imported stream (if present) will be
     synchronized.
     """
-    version = desc.get("version")
-    # Mask introduced in version 1
-    if 1 <= version:
-        mask = desc.get("mask")
-        # Would ideally be better to detect if the mask is all valid
-        if mask is not None:
-            raise NotImplementedError("Masked arrays are not supported")
-
-    shape = desc["shape"]
-    strides = desc.get("strides")
-
-    shape, strides, dtype = prepare_shape_strides_dtype(
-        shape, strides, desc["typestr"], order="C"
+    warnings.warn(
+        "Constructing DeviceNDArray objects via the __cuda_array_interface__ "
+        "is now deprecated. Please prefer cupy for constructing device arrays.",
+        DeprecatedDeviceArrayApiWarning,
     )
-    size = driver.memory_size_from_info(shape, strides, dtype.itemsize)
-
-    cudevptr_class = driver.binding.CUdeviceptr
-    devptr = cudevptr_class(desc["data"][0])
-    data = driver.MemoryPointer(
-        current_context(), devptr, size=size, owner=owner
-    )
-    stream_ptr = desc.get("stream", None)
-    if stream_ptr is not None:
-        stream = external_stream(stream_ptr)
-        if sync and config.CUDA_ARRAY_INTERFACE_SYNC:
-            stream.synchronize()
-    else:
-        stream = 0  # No "Numba default stream", not the CUDA default stream
-    da = devicearray.DeviceNDArray(
-        shape=shape, strides=strides, dtype=dtype, gpu_data=data, stream=stream
-    )
-    return da
+    return _api._from_cuda_array_interface(desc, owner=owner, sync=sync)
 
 
 def as_cuda_array(obj, sync=True):
@@ -74,11 +49,12 @@ def as_cuda_array(obj, sync=True):
     If ``sync`` is ``True``, then the imported stream (if present) will be
     synchronized.
     """
-    if (
-        interface := getattr(obj, "__cuda_array_interface__", None)
-    ) is not None:
-        return from_cuda_array_interface(interface, owner=obj, sync=sync)
-    raise TypeError("*obj* doesn't implement the cuda array interface.")
+    warnings.warn(
+        "Constructing DeviceNDArray objects via as_cuda_array is now deprecated. "
+        "Please prefer cupy for constructing device arrays.",
+        DeprecatedDeviceArrayApiWarning,
+    )
+    return _api._as_cuda_array(obj, sync=sync)
 
 
 def is_cuda_array(obj):
@@ -86,7 +62,11 @@ def is_cuda_array(obj):
 
     Does not verify the validity of the interface.
     """
-    return hasattr(obj, "__cuda_array_interface__")
+    warnings.warn(
+        "is_cuda_array is deprecated. Please prefer cupy for device array operations.",
+        DeprecatedDeviceArrayApiWarning,
+    )
+    return _api._is_cuda_array(obj)
 
 
 def is_float16_supported():
@@ -144,6 +124,10 @@ def to_device(obj, stream=0, copy=True, to=None):
 
         hary = d_ary.copy_to_host(stream=stream)
     """
+    warnings.warn(
+        "to_device is deprecated. Please prefer cupy for moving numpy arrays to the device.",
+        DeprecatedDeviceArrayApiWarning,
+    )
     if to is None:
         to, new = devicearray.auto_device(
             obj, stream=stream, copy=copy, user_explicit=True
@@ -160,10 +144,20 @@ def device_array(shape, dtype=np.float64, strides=None, order="C", stream=0):
 
     Allocate an empty device ndarray. Similar to :meth:`numpy.empty`.
     """
+    warnings.warn(
+        "device_array is deprecated. Please prefer cupy for moving numpy arrays to the device.",
+        DeprecatedDeviceArrayApiWarning,
+    )
+    return _device_array(
+        shape, dtype=dtype, strides=strides, order=order, stream=stream
+    )
+
+
+def _device_array(shape, dtype=np.float64, strides=None, order="C", stream=0):
     shape, strides, dtype = prepare_shape_strides_dtype(
         shape, strides, dtype, order
     )
-    return devicearray.DeviceNDArray(
+    return devicearray.DeviceNDArray._create_nowarn(
         shape=shape, strides=strides, dtype=dtype, stream=stream
     )
 
@@ -192,6 +186,10 @@ def managed_array(
                           *host*, and memory is only accessible by devices
                           with Compute Capability 6.0 and later.
     """
+    warnings.warn(
+        "managed_array is deprecated. Please prefer cupy for moving numpy arrays to the device.",
+        DeprecatedDeviceArrayApiWarning,
+    )
     shape, strides, dtype = prepare_shape_strides_dtype(
         shape, strides, dtype, order
     )
@@ -214,6 +212,10 @@ def pinned_array(shape, dtype=np.float64, strides=None, order="C"):
     Allocate an :class:`ndarray <numpy.ndarray>` with a buffer that is pinned
     (pagelocked).  Similar to :func:`np.empty() <numpy.empty>`.
     """
+    warnings.warn(
+        "pinned_array is deprecated. Please prefer cupy for moving numpy arrays to the device.",
+        DeprecatedDeviceArrayApiWarning,
+    )
     shape, strides, dtype = prepare_shape_strides_dtype(
         shape, strides, dtype, order
     )
@@ -246,6 +248,10 @@ def mapped_array(
         to write by the host and to read by the device, but slower to
         write by the host and slower to write by the device.
     """
+    warnings.warn(
+        "mapped_array is deprecated. Please prefer cupy for moving numpy arrays to the device.",
+        DeprecatedDeviceArrayApiWarning,
+    )
     shape, strides, dtype = prepare_shape_strides_dtype(
         shape, strides, dtype, order
     )
@@ -418,7 +424,7 @@ def external_stream(ptr):
     :param ptr: Pointer to the external stream to wrap in a Numba Stream
     :type ptr: int
     """
-    return current_context().create_external_stream(ptr)
+    return _api.external_stream(ptr)
 
 
 # Page lock
@@ -454,7 +460,7 @@ def mapped(*arylist, **kws):
             mapped=True,
         )
         pmlist.append(pm)
-        devary = devicearray.from_array_like(ary, gpu_data=pm, stream=stream)
+        devary = devicearray._from_array_like(ary, gpu_data=pm, stream=stream)
         devarylist.append(devary)
     try:
         if len(devarylist) == 1:

@@ -10,6 +10,7 @@ from contextlib import contextmanager
 from numba.cuda.np.numpy_support import numpy_version
 from numba.cuda.np import numpy_support
 from numba.cuda import types
+import warnings
 
 import numpy as np
 
@@ -110,6 +111,29 @@ class FakeCUDAArray:
     def __init__(self, ary, stream=0):
         self._ary = ary
         self.stream = stream
+
+    @classmethod
+    def _create_nowarn(cls, shape, strides, dtype, stream=0, gpu_data=None):
+        """Create a FakeCUDAArray without the deprecation warning.
+
+        This matches the signature of DeviceNDArrayBase.__init__() but
+        creates a numpy array from the parameters since FakeCUDAArray
+        wraps numpy arrays.
+        """
+        if isinstance(shape, int):
+            shape = (shape,)
+        else:
+            shape = tuple(shape)
+
+        # Create dtype
+        dtype = np.dtype(dtype)
+
+        # For the simulator, we create a simple numpy array with the given shape
+        # and dtype. The strides parameter is typically standard C-order strides,
+        # so numpy's default behavior should work fine for most cases.
+        ary = np.empty(shape, dtype=dtype)
+
+        return FakeCUDAArray(ary, stream=stream)
 
     @property
     def _numba_type_(self):
@@ -270,6 +294,13 @@ class FakeCUDAArray:
             FakeCUDAArray(a)
             for a in np.split(self._ary, range(section, len(self), section))
         ]
+
+
+DeviceNDArray = FakeCUDAArray
+
+
+class DeprecatedDeviceArrayApiWarning(Warning):
+    pass
 
 
 def array_core(ary):

@@ -15,23 +15,29 @@ import numpy as np
 from numba import cuda
 from numba.cuda.testing import unittest, CUDATestCase, ForeignArray
 from numba.cuda.testing import skip_on_cudasim
+from numba.cuda.testing import skip_if_cupy_unavailable
+
+try:
+    import cupy as cp
+except ImportError:
+    cp = None
 
 
 def make_numba_array(host_arr):
     """Create a Numba device array from host array."""
-    return cuda.to_device(host_arr)
+    return cp.asarray(host_arr)
 
 
 def make_foreign_array(host_arr):
     """Create a ForeignArray wrapping a Numba device array."""
-    return ForeignArray(cuda.to_device(host_arr))
+    return ForeignArray(cp.asarray(host_arr))
 
 
 def get_host_data(arr):
     """Copy array data back to host."""
     if isinstance(arr, ForeignArray):
-        return arr._arr.copy_to_host()
-    return arr.copy_to_host()
+        return arr._arr.get()
+    return arr.get()
 
 
 # Array factories to test: (name, factory)
@@ -45,6 +51,7 @@ ARRAY_FACTORIES = [
 class TestDeviceArrayCapture(CUDATestCase):
     """Test capturing device arrays from global scope."""
 
+    @skip_if_cupy_unavailable
     def test_basic_capture(self):
         """Test basic global capture with different array types."""
         for name, make_array in ARRAY_FACTORIES:
@@ -65,12 +72,13 @@ class TestDeviceArrayCapture(CUDATestCase):
                         output[i] = read_global(i)
 
                 n = len(host_data)
-                output = cuda.device_array(n, dtype=np.float32)
+                output = cp.zeros(n, dtype=np.float32)
                 kernel[1, n](output)
 
-                result = output.copy_to_host()
+                result = output.get()
                 np.testing.assert_array_equal(result, host_data)
 
+    @skip_if_cupy_unavailable
     def test_computation(self):
         """Test captured global arrays used in computations."""
         for name, make_array in ARRAY_FACTORIES:
@@ -91,13 +99,14 @@ class TestDeviceArrayCapture(CUDATestCase):
                         output[i] = double_global_value(i)
 
                 n = len(host_data)
-                output = cuda.device_array(n, dtype=np.float32)
+                output = cp.zeros(n, dtype=np.float32)
                 kernel[1, n](output)
 
-                result = output.copy_to_host()
+                result = output.get()
                 expected = host_data * 2.0
                 np.testing.assert_array_equal(result, expected)
 
+    @skip_if_cupy_unavailable
     def test_mutability(self):
         """Test that captured arrays can be written to (mutability)."""
         for name, make_array in ARRAY_FACTORIES:
@@ -117,6 +126,7 @@ class TestDeviceArrayCapture(CUDATestCase):
                 expected = np.array([1.0, 2.0, 3.0, 4.0, 5.0], dtype=np.float32)
                 np.testing.assert_array_equal(result, expected)
 
+    @skip_if_cupy_unavailable
     def test_multiple_arrays(self):
         """Test capturing multiple arrays from globals."""
         for name, make_array in ARRAY_FACTORIES:
@@ -136,13 +146,14 @@ class TestDeviceArrayCapture(CUDATestCase):
                     if i < output.size:
                         output[i] = add_globals(i)
 
-                output = cuda.device_array(3, dtype=np.float32)
+                output = cp.zeros(3, dtype=np.float32)
                 kernel[1, 3](output)
 
-                result = output.copy_to_host()
+                result = output.get()
                 expected = np.array([11.0, 22.0, 33.0], dtype=np.float32)
                 np.testing.assert_array_equal(result, expected)
 
+    @skip_if_cupy_unavailable
     def test_multidimensional(self):
         """Test capturing multidimensional arrays."""
         for name, make_array in ARRAY_FACTORIES:
@@ -164,13 +175,14 @@ class TestDeviceArrayCapture(CUDATestCase):
                         col = i % 2
                         output[i] = read_2d(row, col)
 
-                output = cuda.device_array(6, dtype=np.float32)
+                output = cp.zeros(6, dtype=np.float32)
                 kernel[1, 6](output)
 
-                result = output.copy_to_host()
+                result = output.get()
                 expected = host_2d.flatten()
                 np.testing.assert_array_equal(result, expected)
 
+    @skip_if_cupy_unavailable
     def test_dtypes(self):
         """Test capturing arrays with different dtypes."""
         dtypes = [
@@ -194,12 +206,11 @@ class TestDeviceArrayCapture(CUDATestCase):
                         if i < output.size:
                             output[i] = read_arr(i)
 
-                    output = cuda.device_array(len(host_data), dtype=dtype)
+                    output = cp.zeros(len(host_data), dtype=dtype)
                     kernel[1, len(host_data)](output)
-                    np.testing.assert_array_equal(
-                        output.copy_to_host(), host_data
-                    )
+                    np.testing.assert_array_equal(output.get(), host_data)
 
+    @skip_if_cupy_unavailable
     def test_direct_kernel_access(self):
         """Test direct kernel access (not via device function)."""
         for name, make_array in ARRAY_FACTORIES:
@@ -213,13 +224,14 @@ class TestDeviceArrayCapture(CUDATestCase):
                     if i < output.size:
                         output[i] = global_direct[i] + 1.0
 
-                output = cuda.device_array(3, dtype=np.float32)
+                output = cp.zeros(3, dtype=np.float32)
                 direct_access_kernel[1, 3](output)
 
-                result = output.copy_to_host()
+                result = output.get()
                 expected = np.array([8.0, 9.0, 10.0], dtype=np.float32)
                 np.testing.assert_array_equal(result, expected)
 
+    @skip_if_cupy_unavailable
     def test_zero_dimensional(self):
         """Test capturing 0-D (scalar) device arrays."""
         for name, make_array in ARRAY_FACTORIES:
@@ -231,10 +243,10 @@ class TestDeviceArrayCapture(CUDATestCase):
                 def kernel_0d(output):
                     output[()] = global_0d[()] * 2.0
 
-                output = cuda.device_array((), dtype=np.float32)
+                output = cp.zeros((), dtype=np.float32)
                 kernel_0d[1, 1](output)
 
-                result = output.copy_to_host()
+                result = output.get()
                 expected = 84.0
                 self.assertEqual(result, expected)
 

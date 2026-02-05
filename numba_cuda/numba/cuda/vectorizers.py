@@ -9,6 +9,9 @@ from numba.cuda.deviceufunc import (
     GeneralizedUFunc,
     GUFuncCallSteps,
 )
+from numba.cuda import _api
+import warnings
+from numba.cuda.cudadrv.devicearray import DeprecatedDeviceArrayApiWarning
 
 
 class CUDAUFuncDispatcher:
@@ -54,7 +57,7 @@ class CUDAUFuncDispatcher:
             if cuda.cudadrv.devicearray.is_cuda_ndarray(arg):
                 mem = arg
             else:
-                mem = cuda.to_device(arg, stream)
+                mem = cuda._api._to_device(arg, stream)
                 # do reduction
             out = self.__reduce(mem, gpu_mems, stream)
             # use a small buffer to store the result element
@@ -66,7 +69,11 @@ class CUDAUFuncDispatcher:
     def __reduce(self, mem, gpu_mems, stream):
         n = mem.shape[0]
         if n % 2 != 0:  # odd?
-            fatcut, thincut = mem.split(n - 1)
+            with warnings.catch_warnings():
+                warnings.filterwarnings(
+                    "ignore", category=DeprecatedDeviceArrayApiWarning
+                )
+                fatcut, thincut = mem.split(n - 1)
             # prevent freeing during async mode
             gpu_mems.append(fatcut)
             gpu_mems.append(thincut)
@@ -75,7 +82,11 @@ class CUDAUFuncDispatcher:
             gpu_mems.append(out)
             return self(out, thincut, out=out, stream=stream)
         else:  # even?
-            left, right = mem.split(n // 2)
+            with warnings.catch_warnings():
+                warnings.filterwarnings(
+                    "ignore", category=DeprecatedDeviceArrayApiWarning
+                )
+                left, right = mem.split(n // 2)
             # prevent freeing during async mode
             gpu_mems.append(left)
             gpu_mems.append(right)
@@ -97,7 +108,7 @@ class _CUDAGUFuncCallSteps(GUFuncCallSteps):
         self._stream = kwargs.get("stream", 0)
 
     def is_device_array(self, obj):
-        return cuda.is_cuda_array(obj)
+        return _api._is_cuda_array(obj)
 
     def as_device_array(self, obj):
         # We don't want to call as_cuda_array on objects that are already Numba
@@ -107,17 +118,19 @@ class _CUDAGUFuncCallSteps(GUFuncCallSteps):
         # When we have a Numba device array, we can simply return it.
         if cuda.cudadrv.devicearray.is_cuda_ndarray(obj):
             return obj
-        return cuda.as_cuda_array(obj)
+        return cuda._api._as_cuda_array(obj)
 
     def to_device(self, hostary):
-        return cuda.to_device(hostary, stream=self._stream)
+        return _api._to_device(hostary, stream=self._stream)
 
     def to_host(self, devary, hostary):
         out = devary.copy_to_host(hostary, stream=self._stream)
         return out
 
     def allocate_device_array(self, shape, dtype):
-        return cuda.device_array(shape=shape, dtype=dtype, stream=self._stream)
+        return cuda._api._device_array(
+            shape=shape, dtype=dtype, stream=self._stream
+        )
 
     def launch_kernel(self, kernel, nelem, args):
         kernel.forall(nelem, stream=self._stream)(*args)
@@ -133,7 +146,7 @@ class CUDAGeneralizedUFunc(GeneralizedUFunc):
         return _CUDAGUFuncCallSteps
 
     def _broadcast_scalar_input(self, ary, shape):
-        return cuda.cudadrv.devicearray.DeviceNDArray(
+        return cuda.cudadrv.devicearray.DeviceNDArray._create_nowarn(
             shape=shape, strides=(0,), dtype=ary.dtype, gpu_data=ary.gpu_data
         )
 
@@ -141,7 +154,7 @@ class CUDAGeneralizedUFunc(GeneralizedUFunc):
         newax = len(newshape) - len(ary.shape)
         # Add 0 strides for missing dimension
         newstrides = (0,) * newax + ary.strides
-        return cuda.cudadrv.devicearray.DeviceNDArray(
+        return cuda.cudadrv.devicearray.DeviceNDArray._create_nowarn(
             shape=newshape,
             strides=newstrides,
             dtype=ary.dtype,
@@ -160,7 +173,7 @@ class CUDAUFuncMechanism(UFuncMechanism):
         func.forall(count, stream=stream)(*args)
 
     def is_device_array(self, obj):
-        return cuda.is_cuda_array(obj)
+        return cuda._api._is_cuda_array(obj)
 
     def as_device_array(self, obj):
         # We don't want to call as_cuda_array on objects that are already Numba
@@ -170,16 +183,18 @@ class CUDAUFuncMechanism(UFuncMechanism):
         # When we have a Numba device array, we can simply return it.
         if cuda.cudadrv.devicearray.is_cuda_ndarray(obj):
             return obj
-        return cuda.as_cuda_array(obj)
+        return _api._as_cuda_array(obj)
 
     def to_device(self, hostary, stream):
-        return cuda.to_device(hostary, stream=stream)
+        return _api._to_device(hostary, stream=stream)
 
     def to_host(self, devary, stream):
         return devary.copy_to_host(stream=stream)
 
     def allocate_device_array(self, shape, dtype, stream):
-        return cuda.device_array(shape=shape, dtype=dtype, stream=stream)
+        # want to return a deprecated DeviceNDArray without warning
+        #
+        return _api._device_array(shape=shape, dtype=dtype, stream=stream)
 
     def broadcast_device(self, ary, shape):
         ax_differs = [
@@ -194,7 +209,7 @@ class CUDAUFuncMechanism(UFuncMechanism):
         for ax in ax_differs:
             strides[ax] = 0
 
-        return cuda.cudadrv.devicearray.DeviceNDArray(
+        return cuda.cudadrv.devicearray.DeviceNDArray._create_nowarn(
             shape=shape, strides=strides, dtype=ary.dtype, gpu_data=ary.gpu_data
         )
 

@@ -5,6 +5,9 @@ import unittest
 
 from numba.cuda.testing import CUDATestCase, skip_on_cudasim
 from numba.cuda.tests.support import captured_stdout
+import pytest
+
+cp = pytest.importorskip("cupy")
 
 
 @skip_on_cudasim("cudasim doesn't support cuda import at non-top-level")
@@ -48,14 +51,14 @@ class TestVecAdd(CUDATestCase):
 
         # ex_vecadd.allocate.begin
         N = 100000
-        a = cuda.to_device(np.random.random(N))
-        b = cuda.to_device(np.random.random(N))
-        c = cuda.device_array_like(a)
+        a = cp.asarray(np.random.random(N))
+        b = cp.asarray(np.random.random(N))
+        c = cp.empty(a.shape)
         # ex_vecadd.allocate.end
 
         # ex_vecadd.forall.begin
         f.forall(len(a))(a, b, c)
-        print(c.copy_to_host())
+        print(c.get())
         # ex_vecadd.forall.end
 
         # ex_vecadd.launch.begin
@@ -64,12 +67,10 @@ class TestVecAdd(CUDATestCase):
         # Enough blocks to cover the entire vector depending on its length
         nblocks = (len(a) // nthreads) + 1
         f[nblocks, nthreads](a, b, c)
-        print(c.copy_to_host())
+        print(c.get())
         # ex_vecadd.launch.end
 
-        np.testing.assert_equal(
-            c.copy_to_host(), a.copy_to_host() + b.copy_to_host()
-        )
+        np.testing.assert_equal(c.get(), a.get() + b.get())
 
 
 if __name__ == "__main__":

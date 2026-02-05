@@ -152,7 +152,7 @@ class _Runtime:
         """
         Allocate memsys on global memory
         """
-        from numba.cuda import device_array
+        from numba.cuda._api import _device_array
 
         # Check if memsys module is defined
         if self._memsys_module is None:
@@ -167,7 +167,7 @@ class _Runtime:
         driver.cuMemcpyDtoH(
             ctypes.addressof(memsys_size), device_memsys_size, nbytes
         )
-        self._memsys = device_array(
+        self._memsys = _device_array(
             (memsys_size.value,), dtype="i1", stream=stream
         )
         self.set_memsys_to_module(self._memsys_module, stream=stream)
@@ -237,7 +237,7 @@ class _Runtime:
         Return a boolean indicating whether memsys is enabled. Synchronizes
         context
         """
-        enabled_ar = cuda.managed_array(1, np.uint8)
+        enabled_ar = cuda._api._managed_array(1, np.uint8)
         enabled_ptr = enabled_ar.device_ctypes_pointer
 
         self._single_thread_launch(
@@ -264,7 +264,7 @@ class _Runtime:
             ]
         )
 
-        stats_for_read = cuda.managed_array(1, dt)
+        stats_for_read = cuda._api._managed_array(1, dt)
         stats_ptr = stats_for_read.device_ctypes_pointer
 
         self._single_thread_launch(
@@ -295,7 +295,7 @@ class _Runtime:
         """
         Get a single stat from the memsys
         """
-        got = cuda.managed_array(1, np.uint64)
+        got = cuda._api._managed_array(1, np.uint64)
         got_ptr = got.device_ctypes_pointer
 
         self._single_thread_launch(

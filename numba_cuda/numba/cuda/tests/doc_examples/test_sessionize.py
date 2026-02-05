@@ -6,10 +6,16 @@ import unittest
 from numba.cuda.testing import (
     CUDATestCase,
     skip_if_cudadevrt_missing,
+    skip_if_cupy_unavailable,
     skip_on_cudasim,
     skip_unless_cc_60,
 )
 from numba.cuda.tests.support import captured_stdout
+
+try:
+    import cupy as cp
+except ImportError:
+    cp = None
 
 
 @skip_if_cudadevrt_missing
@@ -31,6 +37,7 @@ class TestSessionization(CUDATestCase):
         self._captured_stdout.__exit__(None, None, None)
         super().tearDown()
 
+    @skip_if_cupy_unavailable
     def test_ex_sessionize(self):
         # ex_sessionize.import.begin
         import numpy as np
@@ -42,41 +49,39 @@ class TestSessionization(CUDATestCase):
 
         # ex_sessionize.allocate.begin
         # Generate data
-        ids = cuda.to_device(
-            np.array(
-                [
-                    1,
-                    1,
-                    1,
-                    1,
-                    1,
-                    1,
-                    2,
-                    2,
-                    2,
-                    3,
-                    3,
-                    3,
-                    3,
-                    3,
-                    3,
-                    3,
-                    3,
-                    3,
-                    3,
-                    4,
-                    4,
-                    4,
-                    4,
-                    4,
-                    4,
-                    4,
-                    4,
-                    4,
-                ]
-            )
+        ids = cp.array(
+            [
+                1,
+                1,
+                1,
+                1,
+                1,
+                1,
+                2,
+                2,
+                2,
+                3,
+                3,
+                3,
+                3,
+                3,
+                3,
+                3,
+                3,
+                3,
+                3,
+                4,
+                4,
+                4,
+                4,
+                4,
+                4,
+                4,
+                4,
+                4,
+            ]
         )
-        sec = cuda.to_device(
+        sec = cp.asarray(
             np.array(
                 [
                     1,
@@ -109,10 +114,11 @@ class TestSessionization(CUDATestCase):
                     25003,
                 ],
                 dtype="datetime64[ns]",
-            ).astype("int64")  # Cast to int64 for compatibility
+            ).astype("int64")
         )
+
         # Create a vector to hold the results
-        results = cuda.to_device(np.zeros(len(ids)))
+        results = cp.zeros(len(ids))
         # ex_sessionize.allocate.end
 
         # ex_sessionize.kernel.begin
@@ -161,7 +167,7 @@ class TestSessionization(CUDATestCase):
         # ex_sessionize.launch.begin
         sessionize.forall(len(ids))(ids, sec, results)
 
-        print(results.copy_to_host())
+        print(results.get())
         # array([ 0.,  0.,  0.,  3.,  3.,  3.,
         #         6.,  6.,  6.,  9.,  9., 11.,
         #         11., 13., 13., 13., 13., 17.,
@@ -199,7 +205,7 @@ class TestSessionization(CUDATestCase):
             24,
             24,
         ]
-        np.testing.assert_equal(expect, results.copy_to_host())
+        np.testing.assert_equal(expect, results.get())
 
 
 if __name__ == "__main__":

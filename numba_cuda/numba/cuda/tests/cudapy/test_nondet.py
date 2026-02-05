@@ -3,17 +3,26 @@
 
 import numpy as np
 from numba import cuda
-from numba.cuda import float32, void
-from numba.cuda.testing import unittest, CUDATestCase
+from numba.cuda import config, float32, void
+from numba.cuda.testing import unittest, CUDATestCase, skip_if_cupy_unavailable
+
+if config.ENABLE_CUDASIM:
+    import numpy as cp
+else:
+    try:
+        import cupy as cp
+    except ImportError:
+        cp = None
 
 
 def generate_input(n):
-    A = np.array(np.arange(n * n).reshape(n, n), dtype=np.float32)
-    B = np.array(np.arange(n) + 0, dtype=A.dtype)
+    A = cp.array(np.arange(n * n).reshape(n, n), dtype=np.float32)
+    B = cp.array(np.arange(n) + 0, dtype=A.dtype)
     return A, B
 
 
 class TestCudaNonDet(CUDATestCase):
+    @skip_if_cupy_unavailable
     def test_for_pre(self):
         """Test issue with loop not running due to bad sign-extension at the for
         loop precondition.
@@ -33,20 +42,21 @@ class TestCudaNonDet(CUDATestCase):
 
         N = 8
 
-        A, B = generate_input(N)
-
-        F = np.empty(A.shape, dtype=A.dtype)
+        dA, dB = generate_input(N)
+        dF = cp.empty(dA.shape, dtype=dA.dtype)
 
         blockdim = (32, 8)
         griddim = (1, 1)
 
-        dA = cuda.to_device(A)
-        dB = cuda.to_device(B)
-        dF = cuda.to_device(F, copy=False)
         diagproduct[griddim, blockdim](dF, dA, dB)
 
-        E = np.dot(A, np.diag(B))
-        np.testing.assert_array_almost_equal(dF.copy_to_host(), E)
+        E = np.dot(
+            dA.get() if not config.ENABLE_CUDASIM else dA,
+            np.diag(dB.get() if not config.ENABLE_CUDASIM else dB),
+        )
+        np.testing.assert_array_almost_equal(
+            dF.get() if not config.ENABLE_CUDASIM else dF, E
+        )
 
 
 if __name__ == "__main__":

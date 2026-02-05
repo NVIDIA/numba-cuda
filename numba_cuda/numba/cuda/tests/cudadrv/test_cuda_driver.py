@@ -14,8 +14,14 @@ from numba.cuda._compat import (
 )
 
 from numba import cuda
-from numba.cuda.cudadrv import devices, nvrtc
-from numba.cuda.testing import unittest, CUDATestCase, skip_unless_cc_90
+from numba.cuda.cudadrv import devices
+from numba.cuda.testing import (
+    unittest,
+    CUDATestCase,
+    DeprecatedDeviceArrayApiTest,
+)
+from numba.cuda.cudadrv import nvrtc
+from numba.cuda.testing import skip_unless_cc_90
 from numba.cuda.testing import skip_on_cudasim
 from numba.cuda.tests.support import override_config
 from numba.core import types
@@ -76,7 +82,7 @@ ptx2 = """
 
 
 @skip_on_cudasim("CUDA Driver API unsupported in the simulator")
-class TestCudaDriver(CUDATestCase):
+class TestCudaDriver(DeprecatedDeviceArrayApiTest):
     def setUp(self):
         super().setUp()
         self.assertTrue(len(devices.gpus) > 0)

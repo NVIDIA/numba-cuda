@@ -3,23 +3,32 @@
 
 import numpy as np
 from numba.cuda import vectorize
-from numba import cuda
 from numba.cuda import float64
-from numba.cuda.testing import skip_on_cudasim, CUDATestCase
+from numba.cuda.testing import (
+    skip_on_cudasim,
+    skip_if_cupy_unavailable,
+    CUDATestCase,
+)
 import unittest
+
+try:
+    import cupy as cp
+except ImportError:
+    cp = None
 
 sig = [float64(float64, float64)]
 
 
 @skip_on_cudasim("ufunc API unsupported in the simulator")
 class TestCUDAVectorizeScalarArg(CUDATestCase):
+    @skip_if_cupy_unavailable
     def test_vectorize_scalar_arg(self):
         @vectorize(sig, target="cuda")
         def vector_add(a, b):
             return a + b
 
         A = np.arange(10, dtype=np.float64)
-        dA = cuda.to_device(A)
+        dA = cp.asarray(A)
         v = vector_add(1.0, dA)
 
         np.testing.assert_array_almost_equal(

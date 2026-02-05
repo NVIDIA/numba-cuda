@@ -9,12 +9,27 @@ if HAS_NUMBA:
     from numba.core.errors import TypingError as NumbaTypingError
 from numba.cuda.core.errors import TypingError
 from numba.cuda import types
-from numba.cuda.testing import unittest, CUDATestCase, skip_on_cudasim
+from numba.cuda.testing import (
+    unittest,
+    CUDATestCase,
+    skip_on_cudasim,
+    skip_if_cupy_unavailable,
+    DeprecatedDeviceArrayApiWarning,
+)
 
 import numpy as np
+from numba.cuda import config
 from numba.cuda.np import numpy_support as nps
 
+if config.ENABLE_CUDASIM:
+    import numpy as cp
+else:
+    try:
+        import cupy as cp
+    except ImportError:
+        cp = None
 from .extensions_usecases import struct_model_type, MyStruct
+import pytest
 
 recordwith2darray = np.dtype([("i", np.int32), ("j", np.float32, (3, 2))])
 
@@ -65,6 +80,7 @@ class TestSharedMemoryIssue(CUDATestCase):
         self._check_shared_array_size_fp16(2, 2, types.float16)
         self._check_shared_array_size_fp16(2, 2, np.float16)
 
+    @skip_if_cupy_unavailable
     def test_issue_2393(self):
         """
         Test issue of warp misalign address due to nvvm not knowing the
@@ -91,7 +107,7 @@ class TestSharedMemoryIssue(CUDATestCase):
             d_block_costs[0] = s_initialcost[0] + prediction
 
         block_costs = np.zeros(num_blocks, dtype=np.float64)
-        d_block_costs = cuda.to_device(block_costs)
+        d_block_costs = cp.asarray(block_costs)
 
         costs_func[num_blocks, threads_per_block](d_block_costs)
 
@@ -130,7 +146,13 @@ class TestSharedMemory(CUDATestCase):
                 for j in range(nthreads):
                     y[bd * bx + j] = sm[j]
 
-        d_result = cuda.device_array_like(arr)
+        if not config.ENABLE_CUDASIM:
+            with pytest.warns(DeprecatedDeviceArrayApiWarning):
+                # waiting on cupy support for record dtypes
+                d_result = cuda.to_device(arr)
+        else:
+            d_result = cuda.to_device(arr)
+
         use_sm_chunk_copy[nblocks, nthreads](arr, d_result)
         host_result = d_result.copy_to_host()
         np.testing.assert_array_equal(arr, host_result)
@@ -352,6 +374,7 @@ class TestSharedMemory(CUDATestCase):
         expected = np.array([99, 3, 99, 2, 99, 1], dtype=np.int32)
         self._test_dynshared_slice(slice_nonunit_reverse_stride, arr, expected)
 
+    @skip_if_cupy_unavailable
     def test_issue_5073(self):
         # An example with which Bug #5073 (slices of dynamic shared memory all
         # alias) was discovered. The kernel uses all threads in the block to
@@ -393,9 +416,9 @@ class TestSharedMemory(CUDATestCase):
                     y[bd * bx + j] = sm1[j]
                     y[bd * bx + j + chunksize] = sm2[j]
 
-        d_result = cuda.device_array_like(arr)
+        d_result = cp.asarray(arr)
         sm_slice_copy[nblocks, nthreads, 0, nshared](arr, d_result, chunksize)
-        host_result = d_result.copy_to_host()
+        host_result = d_result.get() if not config.ENABLE_CUDASIM else d_result
         np.testing.assert_array_equal(arr, host_result)
 
     @skip_on_cudasim("Can't check typing in simulator")

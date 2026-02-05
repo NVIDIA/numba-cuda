@@ -6,6 +6,13 @@ import numpy as np
 from numba import cuda
 from numba.cuda import float32, void
 from numba.cuda.core import config
+import pytest
+from contextlib import nullcontext
+
+if config.ENABLE_CUDASIM:
+    import numpy as cp
+else:
+    cp = pytest.importorskip("cupy")
 
 # Ensure the test takes a reasonable amount of time in the simulator
 if config.ENABLE_CUDASIM:
@@ -47,21 +54,28 @@ def test_cuda_matmul():
 
             cuda.syncthreads()
 
-        if x < n and y < n:
-            C[y, x] = acc
+            if x < n and y < n:
+                C[y, x] = acc
 
     np.random.seed(42)
     A = np.array(np.random.random((n, n)), dtype=np.float32)
     B = np.array(np.random.random((n, n)), dtype=np.float32)
     C = np.empty_like(A)
 
-    stream = cuda.stream()
-    with stream.auto_synchronize():
-        dA = cuda.to_device(A, stream)
-        dB = cuda.to_device(B, stream)
-        dC = cuda.to_device(C, stream)
-        cu_square_matrix_mul[(bpg, bpg), (tpb, tpb), stream](dA, dB, dC)
-        dC.copy_to_host(C, stream)
+    stream = cp.cuda.Stream() if not config.ENABLE_CUDASIM else nullcontext()
+    nb_stream = (
+        cuda.api.external_stream(stream.ptr)
+        if not config.ENABLE_CUDASIM
+        else cuda.stream()
+    )
+    with stream:
+        dA = cp.asarray(A)
+        dB = cp.asarray(B)
+        dC = cp.asarray(C)
+
+    cu_square_matrix_mul[(bpg, bpg), (tpb, tpb), nb_stream](dA, dB, dC)
+    with stream:
+        C = dC.get() if not config.ENABLE_CUDASIM else dC
 
     # Host compute
     Cans = np.dot(A, B)

@@ -20,7 +20,6 @@ from numba.cuda.random import (
     xoroshiro128p_normal_float64,
 )
 
-
 # Distributions
 UNIFORM = 1
 NORMAL = 2
