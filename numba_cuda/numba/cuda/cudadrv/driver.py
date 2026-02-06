@@ -458,18 +458,6 @@ class _ActiveContext:
 driver = Driver()
 
 
-def _build_reverse_device_attrs():
-    prefix = "CU_DEVICE_ATTRIBUTE_"
-    map = utils.UniqueDict()
-    for name in dir(enums):
-        if name.startswith(prefix):
-            map[name[len(prefix) :]] = getattr(enums, name)
-    return map
-
-
-DEVICE_ATTRIBUTES = _build_reverse_device_attrs()
-
-
 class Device:
     """
     The device object owns the CUDA contexts.  This is owned by the driver
