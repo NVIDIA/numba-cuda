@@ -219,8 +219,8 @@ def _raise_driver_error(e):
 def _build_reverse_error_map():
     """Build error code to name mapping from cuda.bindings.driver.CUresult"""
     map = utils.UniqueDict()
-    for name, member in binding.CUresult.__members__.items():
-        map[int(member)] = name
+    for enum_val in binding.CUresult:
+        map[int(enum_val)] = enum_val.name
     return map
 
 
