@@ -30,7 +30,7 @@ PYOBJECT = GENERIC_POINTER
 void_ptr = GENERIC_POINTER
 
 
-class OverloadSelector(object):
+class OverloadSelector:
     """
     An object matching an actual signature against a registry of formal
     signatures and choosing the best candidate, if any.
@@ -151,7 +151,7 @@ class OverloadSelector(object):
         self._cache.clear()
 
 
-class BaseContext(object):
+class BaseContext:
     """
 
     Notes on Structure
@@ -467,19 +467,6 @@ class BaseContext(object):
         restype = self.get_argument_type(fndesc.restype)
         fnty = llvmir.FunctionType(restype, argtypes)
         return fnty
-
-    def declare_function(self, module, fndesc):
-        fnty = self.call_conv.get_function_type(fndesc.restype, fndesc.argtypes)
-        fn = cgutils.get_or_insert_function(module, fnty, fndesc.mangled_name)
-        self.call_conv.decorate_function(
-            fn, fndesc.args, fndesc.argtypes, noalias=fndesc.noalias
-        )
-        if fndesc.inline:
-            fn.attributes.add("alwaysinline")
-            # alwaysinline overrides optnone
-            fn.attributes.discard("noinline")
-            fn.attributes.discard("optnone")
-        return fn
 
     def declare_external_function(self, module, fndesc):
         fnty = self.get_external_function_type(fndesc)
@@ -975,7 +962,7 @@ class BaseContext(object):
             builder, fndesc, sig, args
         )
         with cgutils.if_unlikely(builder, status.is_error):
-            self.call_conv.return_status_propagate(builder, status)
+            fndesc.call_conv.return_status_propagate(builder, status)
 
         res = imputils.fix_returning_optional(self, builder, sig, status, res)
         return res
@@ -986,8 +973,8 @@ class BaseContext(object):
         """
         # Add call to the generated function
         llvm_mod = builder.module
-        fn = self.declare_function(llvm_mod, fndesc)
-        status, res = self.call_conv.call_function(
+        fn = fndesc.declare_function(llvm_mod)
+        status, res = fndesc.call_conv.call_function(
             builder, fn, sig.return_type, sig.args, args
         )
         return status, res
@@ -1271,7 +1258,7 @@ class BaseContext(object):
         raise NotImplementedError(f"{self} does not support ufunc")
 
 
-class _wrap_impl(object):
+class _wrap_impl:
     """
     A wrapper object to call an implementation function with some predefined
     (context, signature) arguments.
@@ -1302,7 +1289,7 @@ def _has_loc(fn):
     return "loc" in sig.parameters
 
 
-class _wrap_missing_loc(object):
+class _wrap_missing_loc:
     def __init__(self, fn):
         self.func = fn  # store this to help with debug
 

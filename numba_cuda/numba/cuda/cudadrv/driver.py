@@ -137,7 +137,7 @@ class CudaAPIError(CudaDriverError):
     def __init__(self, code, msg):
         self.code = code
         self.msg = msg
-        super(CudaAPIError, self).__init__(code, msg)
+        super().__init__(code, msg)
 
     def __str__(self):
         return "[%s] %s" % (self.code, self.msg)
@@ -233,7 +233,7 @@ def _getpid():
 ERROR_MAP = _build_reverse_error_map()
 
 
-class Driver(object):
+class Driver:
     """
     Driver API functions are lazily bound.
     """
@@ -453,7 +453,7 @@ class Driver(object):
         return (major, minor)
 
 
-class _ActiveContext(object):
+class _ActiveContext:
     """An contextmanager object to cache active context to reduce dependency
     on querying the CUDA driver API.
 
@@ -618,6 +618,10 @@ class Device:
     @property
     def supports_bfloat16(self):
         return self.compute_capability >= (8, 0)
+
+    @property
+    def supports_fp8(self):
+        return self.compute_capability >= (8, 9)
 
 
 class BaseCUDAMemoryManager(object, metaclass=ABCMeta):
@@ -1006,7 +1010,7 @@ class _SizeNotSet(int):
 _SizeNotSet = _SizeNotSet()
 
 
-class _PendingDeallocs(object):
+class _PendingDeallocs:
     """
     Pending deallocations of a context (or device since we are using the primary
     context). The capacity defaults to being unset (_SizeNotSet) but can be
@@ -1092,7 +1096,7 @@ MemoryInfo = namedtuple("MemoryInfo", "free,total")
 """
 
 
-class Context(object):
+class Context:
     """
     This object wraps a CUDA Context resource.
 
@@ -1435,7 +1439,7 @@ def _module_finalizer(context, object_code):
     return core
 
 
-class _CudaIpcImpl(object):
+class _CudaIpcImpl:
     """Implementation of GPU IPC using CUDA driver API.
     This requires the devices to be peer accessible.
     """
@@ -1472,7 +1476,7 @@ class _CudaIpcImpl(object):
         self._opened_mem = None
 
 
-class _StagedIpcImpl(object):
+class _StagedIpcImpl:
     """Implementation of GPU IPC using custom staging logic to workaround
     CUDA IPC limitation on peer accessibility between devices.
     """
@@ -1512,7 +1516,7 @@ class _StagedIpcImpl(object):
         pass
 
 
-class IpcHandle(object):
+class IpcHandle:
     """
     CUDA IPC handle. Serialization of the CUDA IPC handle object is implemented
     here.
@@ -1633,7 +1637,7 @@ class IpcHandle(object):
         )
 
 
-class MemoryPointer(object):
+class MemoryPointer:
     """A memory pointer that owns a buffer, with an optional finalizer. Memory
     pointers provide reference counting, and instances are initialized with a
     reference count of 1.
@@ -1756,7 +1760,7 @@ class AutoFreePointer(MemoryPointer):
     """
 
     def __init__(self, *args, **kwargs):
-        super(AutoFreePointer, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         # Releease the self reference to the buffer, so that the finalizer
         # is invoked if all the derived pointers are gone.
         self.refct -= 1
@@ -1792,9 +1796,7 @@ class MappedMemory(AutoFreePointer):
         self._bufptr_ = self.host_pointer
 
         self.device_pointer = devptr
-        super(MappedMemory, self).__init__(
-            context, devptr, size, finalizer=finalizer
-        )
+        super().__init__(context, devptr, size, finalizer=finalizer)
         self.handle = self.host_pointer
 
         # For buffer interface
@@ -1877,7 +1879,7 @@ class ManagedMemory(AutoFreePointer):
         return ManagedOwnedPointer(weakref.proxy(self))
 
 
-class OwnedPointer(object):
+class OwnedPointer:
     def __init__(self, memptr, view=None):
         self._mem = memptr
 

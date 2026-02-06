@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 #
 # SPDX-License-Identifier: BSD-2-Clause
 
@@ -169,7 +169,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
-      - uses: actions/setup-python@83679a892e2d95755f2dac6acb0bfd1e9ac5d548
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
       - uses: pre-commit/action@2c7b3805fd2a0fd8c1884dcaebf91fc102a13ecd
         with:
           extra_args: --all-files --show-diff-on-failure
@@ -309,7 +309,7 @@ jobs:
     steps:
       - name: Exit
         run: |
-          # if any dependencies were cancelled, that's a failure
+          # if any dependencies were cancelled or failed, that's a failure
           #
           # see https://docs.github.com/en/actions/reference/workflows-and-actions/expressions#always
           # and https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/collaborating-on-repositories-with-code-quality-features/troubleshooting-required-status-checks#handling-skipped-but-required-checks
@@ -326,16 +326,27 @@ jobs:
           # build to succeed which we don't want (originally this was just
           # 'exit 0')
           if ${{ needs.test-linux-64.result == 'cancelled' ||
+                 needs.test-linux-64.result == 'failure' ||
                  needs.test-linux-aarch64.result == 'cancelled' ||
+                 needs.test-linux-aarch64.result == 'failure' ||
                  needs.test-windows.result == 'cancelled' ||
+                 needs.test-windows.result == 'failure' ||
                  needs.pre-commit.result == 'cancelled' ||
+                 needs.pre-commit.result == 'failure' ||
                  needs.test-conda.result == 'cancelled' ||
+                 needs.test-conda.result == 'failure' ||
                  needs.test-simulator.result == 'cancelled' ||
+                 needs.test-simulator.result == 'failure' ||
                  needs.test-thirdparty-cudf.result == 'cancelled' ||
+                 needs.test-thirdparty-cudf.result == 'failure' ||
                  needs.test-thirdparty-nvmath.result == 'cancelled' ||
+                 needs.test-thirdparty-nvmath.result == 'failure' ||
                  needs.test-thirdparty-awkward.result == 'cancelled' ||
+                 needs.test-thirdparty-awkward.result == 'failure' ||
                  needs.build-docs.result == 'cancelled' ||
-                 needs.coverage-report.result == 'cancelled' }}; then
+                 needs.build-docs.result == 'failure' ||
+                 needs.coverage-report.result == 'cancelled' ||
+                 needs.coverage-report.result == 'failure' }}; then
             exit 1
           else
             exit 0

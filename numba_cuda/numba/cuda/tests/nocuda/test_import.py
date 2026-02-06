@@ -51,12 +51,18 @@ class TestImport(unittest.TestCase):
             "numba.cuda.np.npyimpl",
         )
 
-        code = "import sys; from numba import cuda; print(list(sys.modules))"
+        code = """\
+import sys
+
+from numba import cuda
+
+for mod in sys.modules:
+    print(mod)"""
 
         out, _ = run_in_subprocess(code)
-        modlist = set(eval(out.strip()))
+        modlist = out.splitlines()
         unexpected = set(banlist) & set(modlist)
-        self.assertFalse(unexpected, "some modules unexpectedly imported")
+        assert not unexpected
 
 
 if __name__ == "__main__":

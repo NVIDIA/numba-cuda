@@ -70,7 +70,7 @@ EXTENDED_ARG = dis.EXTENDED_ARG
 HAVE_ARGUMENT = dis.HAVE_ARGUMENT
 
 
-class ByteCodeInst(object):
+class ByteCodeInst:
     """
     Attributes
     ----------
@@ -271,7 +271,7 @@ def _patched_opargs(bc_stream):
         yield offset + _FIXED_OFFSET, opcode, arg, nextoffset + _FIXED_OFFSET
 
 
-class ByteCodeIter(object):
+class ByteCodeIter:
     def __init__(self, code):
         self.code = code
         self.iter = iter(_patched_opargs(_unpack_opargs(self.code.co_code)))
@@ -298,7 +298,7 @@ class ByteCodeIter(object):
         return buf
 
 
-class _ByteCode(object):
+class _ByteCode:
     """
     The decoded bytecode of a function, and related information.
     """

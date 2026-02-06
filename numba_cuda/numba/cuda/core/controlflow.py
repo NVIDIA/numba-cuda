@@ -23,7 +23,7 @@ else:
     raise NotImplementedError(PYVERSION)
 
 
-class CFBlock(object):
+class CFBlock:
     def __init__(self, offset):
         self.offset = offset
         self.body = []
@@ -93,7 +93,7 @@ class _DictOfContainers(collections.defaultdict):
         return [(k, vs) for k, vs in sorted(self.items()) if vs]
 
 
-class CFGraph(object):
+class CFGraph:
     """
     Generic (almost) implementation of a Control Flow Graph.
     """
@@ -749,7 +749,7 @@ class CFGraph(object):
         return not self.__eq__(other)
 
 
-class ControlFlowAnalysis(object):
+class ControlFlowAnalysis:
     """
     Attributes
     ----------

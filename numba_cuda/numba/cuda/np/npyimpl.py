@@ -52,7 +52,7 @@ registry = Registry("npyimpl")
 # generated and reading performs the appropriate indirection.
 
 
-class _ScalarIndexingHelper(object):
+class _ScalarIndexingHelper:
     def update_indices(self, loop_indices, name):
         pass
 
@@ -60,7 +60,7 @@ class _ScalarIndexingHelper(object):
         pass
 
 
-class _ScalarHelper(object):
+class _ScalarHelper:
     """Helper class to handle scalar arguments (and result).
     Note that store_data is only used when generating code for
     a scalar ufunc and to write the output value.
@@ -507,7 +507,9 @@ def _build_array(context, builder, array_ty, input_types, inputs):
             if loc is not None:
                 msg += '\nFile "%s", line %d, ' % (loc.filename, loc.line)
 
-            context.call_conv.return_user_exc(builder, ValueError, (msg,))
+            context.fndesc.call_conv.return_user_exc(
+                builder, ValueError, (msg,)
+            )
 
     real_array_ty = array_ty.as_array
 
@@ -764,7 +766,7 @@ def numpy_gufunc_kernel(context, builder, sig, args, ufunc, kernel_class):
 
 
 # Kernels are the code to be executed inside the multidimensional loop.
-class _Kernel(object):
+class _Kernel:
     def __init__(self, context, builder, outer_sig):
         self.context = context
         self.builder = builder
@@ -799,11 +801,11 @@ class _Kernel(object):
             for val, inty, outty in zip(args, osig.args, isig.args)
         ]
         if self.cres.objectmode:
-            func_type = self.context.call_conv.get_function_type(
+            func_type = self.context.fndesc.call_conv.get_function_type(
                 types.pyobject, [types.pyobject] * len(isig.args)
             )
         else:
-            func_type = self.context.call_conv.get_function_type(
+            func_type = self.context.fndesc.call_conv.get_function_type(
                 isig.return_type, isig.args
             )
         module = self.builder.block.function.module
@@ -812,7 +814,7 @@ class _Kernel(object):
         )
         entry_point.attributes.add("alwaysinline")
 
-        _, res = self.context.call_conv.call_function(
+        _, res = self.context.fndesc.call_conv.call_function(
             self.builder, entry_point, isig.return_type, isig.args, cast_args
         )
         return self.cast(res, isig.return_type, osig.return_type)
@@ -842,7 +844,7 @@ def _ufunc_db_function(ufunc):
 
     class _KernelImpl(_Kernel):
         def __init__(self, context, builder, outer_sig):
-            super(_KernelImpl, self).__init__(context, builder, outer_sig)
+            super().__init__(context, builder, outer_sig)
             loop = ufunc_find_matching_loop(
                 ufunc,
                 outer_sig.args + tuple(_unpack_output_types(ufunc, outer_sig)),

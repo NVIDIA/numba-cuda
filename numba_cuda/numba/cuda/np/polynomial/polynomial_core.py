@@ -37,7 +37,7 @@ class PolynomialModel(core_models.StructModel):
             # Introduced in NumPy 1.24, maybe leave it out for now
             # ('symbol', types.string)
         ]
-        super(PolynomialModel, self).__init__(dmm, fe_type, members)
+        super().__init__(dmm, fe_type, members)
 
 
 @type_callable(Polynomial)
@@ -149,12 +149,12 @@ def impl_polynomial3(context, builder, sig, args):
     pred2 = builder.icmp_signed("!=", s2, two)
 
     with cgutils.if_unlikely(builder, pred1):
-        context.call_conv.return_user_exc(
+        context.fndesc.call_conv.return_user_exc(
             builder, ValueError, ("Domain has wrong number of elements.",)
         )
 
     with cgutils.if_unlikely(builder, pred2):
-        context.call_conv.return_user_exc(
+        context.fndesc.call_conv.return_user_exc(
             builder, ValueError, ("Window has wrong number of elements.",)
         )
 
