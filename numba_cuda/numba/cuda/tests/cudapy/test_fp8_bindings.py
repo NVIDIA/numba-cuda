@@ -49,7 +49,7 @@ if not config.ENABLE_CUDASIM:
     )
     from cuda.bindings.runtime import cudaRoundMode
 
-FE8_TYPES = [fp8_e5m2, fp8_e4m3, fp8_e8m0]
+    FE8_TYPES = [fp8_e5m2, fp8_e4m3, fp8_e8m0]
 
 
 @unittest.skipUnless(is_fp8_supported(), "FP8 is not supported")
