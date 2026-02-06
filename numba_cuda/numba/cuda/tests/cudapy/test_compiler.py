@@ -4,6 +4,8 @@
 import os
 from math import sqrt
 from numba import cuda
+from numba.core.extending import intrinsic
+
 from numba.cuda import float32, int16, int32, int64, types, uint32, void
 from numba.cuda import (
     compile,
@@ -700,6 +702,64 @@ class TestCompile(unittest.TestCase):
         self.assertRegex(
             str(code_list[1].code.decode()), r"\.section\s+\.debug_info"
         )
+
+    def test_compile_jitted_subroutine(self):
+        # Reproducer from gh-781
+        # https://github.com/NVIDIA/numba-cuda/issues/781
+        def foo(x):
+            return 2 * x
+
+        # Create a wrapper that takes void* arguments
+        def create_void_ptr_wrapper():
+            """Create a wrapper that takes void* input and output pointers."""
+
+            # Make foo a device function
+            foo_device = cuda.jit(device=True)(foo)
+
+            # The inner signature: int32 -> int32
+            inner_sig = types.int32(types.int32)
+
+            # The wrapper signature: void(void*, void*) - input ptr, output ptr
+            wrapper_sig = types.void(types.voidptr, types.voidptr)
+
+            @intrinsic
+            def wrapper_impl(typingctx, arg0, arg1):
+                def codegen(context, builder, sig, args):
+                    input_ptr, output_ptr = args
+
+                    # Cast input void* to int32*, load value
+                    int32_llvm_type = context.get_value_type(types.int32)
+                    typed_input_ptr = builder.bitcast(
+                        input_ptr, int32_llvm_type.as_pointer()
+                    )
+                    input_val = builder.load(typed_input_ptr)
+
+                    # Call the inner function
+                    cres = context.compile_subroutine(
+                        builder, foo_device, inner_sig, caching=False
+                    )
+                    result = context.call_internal(
+                        builder, cres.fndesc, inner_sig, [input_val]
+                    )
+
+                    # Cast output void* to int32*, store result
+                    typed_output_ptr = builder.bitcast(
+                        output_ptr, int32_llvm_type.as_pointer()
+                    )
+                    builder.store(result, typed_output_ptr)
+
+                    return context.get_dummy_value()
+
+                return wrapper_sig, codegen
+
+            def wrapper_func(input_ptr, output_ptr):
+                return wrapper_impl(input_ptr, output_ptr)
+
+            return wrapper_func, wrapper_sig
+
+        wrapper, wrapper_sig = create_void_ptr_wrapper()
+
+        cuda.compile(wrapper, wrapper_sig.args, output="ltoir")
 
 
 @skip_on_cudasim("Compilation unsupported in the simulator")
