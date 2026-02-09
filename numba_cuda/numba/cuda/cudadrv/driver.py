@@ -389,7 +389,7 @@ class Driver:
         """
         with self.get_active_context() as ac:
             if ac.devnum is not None:
-                popped = drvapi.cu_context(int(driver.cuCtxPopCurrent()))
+                popped = driver.cuCtxPopCurrent()
                 return popped
 
     def get_active_context(self):
@@ -428,8 +428,6 @@ class _ActiveContext:
             hctx = driver.cuCtxGetCurrent()
             if int(hctx) == 0:
                 hctx = None
-            else:
-                hctx = drvapi.cu_context(int(hctx))
 
             if hctx is None:
                 devnum = None
@@ -532,7 +530,7 @@ class Device:
         self._dev.set_current()
         self.primary_context = ctx = Context(
             weakref.proxy(self),
-            ctypes.c_void_p(int(self._dev.context._handle)),
+            self._dev.context._handle,
         )
         return ctx
 
@@ -1134,7 +1132,7 @@ class Context:
         """
         Pushes this context on the current CPU Thread.
         """
-        driver.cuCtxPushCurrent(self.handle.value)
+        driver.cuCtxPushCurrent(self.handle)
         self.prepare_for_use()
 
     def pop(self):
@@ -1143,7 +1141,7 @@ class Context:
         must be at the top of the context stack, otherwise an error will occur.
         """
         popped = driver.pop_active_context()
-        assert popped.value == self.handle.value
+        assert int(popped) == int(self.handle)
 
     def memalloc(self, bytesize):
         return self.memory_manager.memalloc(bytesize)
@@ -1214,19 +1212,15 @@ class Context:
         del self.modules[key]
 
     def get_default_stream(self):
-        handle = drvapi.cu_stream(int(binding.CUstream(CU_STREAM_DEFAULT)))
+        handle = binding.CUstream(CU_STREAM_DEFAULT)
         return Stream(handle)
 
     def get_legacy_default_stream(self):
-        handle = drvapi.cu_stream(
-            int(binding.CUstream(binding.CU_STREAM_LEGACY))
-        )
+        handle = binding.CUstream(binding.CU_STREAM_LEGACY)
         return Stream(handle)
 
     def get_per_thread_default_stream(self):
-        handle = drvapi.cu_stream(
-            int(binding.CUstream(binding.CU_STREAM_PER_THREAD))
-        )
+        handle = binding.CUstream(binding.CU_STREAM_PER_THREAD)
         return Stream(handle)
 
     def create_stream(self):
@@ -1235,7 +1229,7 @@ class Context:
         # default stream, which we define also as CU_STREAM_DEFAULT when
         # the NV binding is in use).
         flags = binding.CUstream_flags.CU_STREAM_DEFAULT.value
-        handle = drvapi.cu_stream(int(driver.cuStreamCreate(flags)))
+        handle = driver.cuStreamCreate(flags)
         return Stream(
             handle, finalizer=_stream_finalizer(self.deallocations, handle)
         )
@@ -1356,7 +1350,7 @@ def _event_finalizer(deallocs, handle):
 
 def _stream_finalizer(deallocs, handle):
     def core():
-        deallocs.add_item(driver.cuStreamDestroy, handle.value)
+        deallocs.add_item(driver.cuStreamDestroy, handle)
 
     return core
 
@@ -1875,9 +1869,9 @@ class Stream:
         return self.handle.value or drvapi.CU_STREAM_DEFAULT
 
     def __cuda_stream__(self):
-        if not self.handle.value:
+        if not self.handle:
             return (0, drvapi.CU_STREAM_DEFAULT)
-        return (0, self.handle.value)
+        return (0, int(self.handle))
 
     def __repr__(self):
         default_streams = {
@@ -1899,8 +1893,7 @@ class Stream:
         Wait for all commands in this stream to execute. This will commit any
         pending memory transfers.
         """
-        handle = self.handle.value
-        driver.cuStreamSynchronize(handle)
+        driver.cuStreamSynchronize(self.handle)
 
     @contextlib.contextmanager
     def auto_synchronize(self):
@@ -1999,7 +1992,7 @@ def _to_core_stream(stream):
     if not stream:
         return ExperimentalStream.from_handle(0)
     elif isinstance(stream, Stream):
-        return ExperimentalStream.from_handle(stream.handle.value or 0)
+        return ExperimentalStream.from_handle(stream.handle or 0)
     elif isinstance(stream, ExperimentalStream):
         return stream
     else:
