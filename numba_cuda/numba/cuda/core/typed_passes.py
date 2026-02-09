@@ -326,7 +326,7 @@ class BaseNativeLowering(abc.ABC, LoweringPass):
         metadata = state.metadata
         pre_stats = passmanagers.dump_refprune_stats()
 
-        call_conv = flags.call_conv
+        call_conv = state.call_conv
         if call_conv is None:
             call_conv = CUDACallConv(state.targetctx)
 
@@ -348,7 +348,7 @@ class BaseNativeLowering(abc.ABC, LoweringPass):
                     noalias=flags.noalias,
                     abi_tags=[flags.get_mangle_string()],
                     call_conv=call_conv,
-                    abi_info=flags.abi_info,
+                    abi_info=state.abi_info,
                 )
             )
 

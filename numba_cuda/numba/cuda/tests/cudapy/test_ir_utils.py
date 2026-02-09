@@ -57,6 +57,7 @@ class TestIrUtils(CUDATestCase):
                     from numba.cuda.descriptor import cuda_target
 
                     target_context = cuda_target.target_context
+
                 return cls(
                     typing_context,
                     target_context,
@@ -65,6 +66,8 @@ class TestIrUtils(CUDATestCase):
                     return_type,
                     flags,
                     locals,
+                    None,
+                    None,
                 )
 
             def compile_to_ir(self, func, DCE=False):

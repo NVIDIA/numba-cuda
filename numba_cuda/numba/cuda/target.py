@@ -420,6 +420,8 @@ class CUDATargetContext(BaseContext):
                 sig.return_type,
                 flags,
                 locals=locals,
+                call_conv=self.fndesc.call_conv,
+                abi_info=self.fndesc.abi_info,
             )
 
             # Allow inlining the function inside callers
