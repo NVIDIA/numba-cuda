@@ -1866,27 +1866,27 @@ class Stream:
 
     def __int__(self):
         # The default stream's handle.value is 0, which gives `None`
-        return self.handle.value or drvapi.CU_STREAM_DEFAULT
+        return self.handle.value or binding.CUstream_flags.CU_STREAM_DEFAULT
 
     def __cuda_stream__(self):
         if not self.handle:
-            return (0, drvapi.CU_STREAM_DEFAULT)
+            return (0, binding.CUstream_flags.CU_STREAM_DEFAULT)
         return (0, int(self.handle))
 
     def __repr__(self):
         default_streams = {
-            drvapi.CU_STREAM_DEFAULT: "<Default CUDA stream>",
-            drvapi.CU_STREAM_LEGACY: "<Legacy default CUDA stream>",
-            drvapi.CU_STREAM_PER_THREAD: "<Per-thread default CUDA stream>",
+            binding.CUstream_flags.CU_STREAM_DEFAULT: "<Default CUDA stream>",
+            binding.CU_STREAM_LEGACY: "<Legacy default CUDA stream>",
+            binding.CU_STREAM_PER_THREAD: "<Per-thread default CUDA stream>",
         }
-        ptr = self.handle.value or drvapi.CU_STREAM_DEFAULT
+        ptr = self.handle or binding.CUstream_flags.CU_STREAM_DEFAULT
 
         if ptr in default_streams:
             return default_streams[ptr]
         elif self.external:
-            return f"<External CUDA stream {ptr:d}>"
+            return f"<External CUDA stream {int(ptr):d}>"
         else:
-            return f"<CUDA stream {ptr:d}>"
+            return f"<CUDA stream {int(ptr):d}>"
 
     def synchronize(self):
         """

@@ -87,15 +87,14 @@ class Test3rdPartyContext(CUDATestCase):
         # Emulate primary context creation by 3rd party
         the_driver = driver.driver
         dev = driver.binding.CUdevice(0)
-        binding_hctx = the_driver.cuDevicePrimaryCtxRetain(dev)
-        hctx = driver.drvapi.cu_context(int(binding_hctx))
+        hctx = the_driver.cuDevicePrimaryCtxRetain(dev)
         ctx = driver.Context(dev, hctx)
         try:
             ctx.push()
             # Check that the context from numba matches the created primary
             # context.
             my_ctx = cuda.current_context()
-            self.assertEqual(my_ctx.handle.value, ctx.handle.value)
+            self.assertEqual(int(my_ctx.handle), int(ctx.handle))
 
             extra_work()
         finally:
