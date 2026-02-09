@@ -285,7 +285,7 @@ def jit(
                 return disp
 
 
-def declare_device(name, sig, link=None, use_cooperative=False):
+def declare_device(name, sig, link=None, use_cooperative=False, abi="numba"):
     """
     Declare the signature of a foreign function. Returns a descriptor that can
     be used to call the function from a Python kernel.
@@ -295,7 +295,11 @@ def declare_device(name, sig, link=None, use_cooperative=False):
     :param sig: The Numba signature of the function.
     :param link: External code to link when calling the function.
     :param use_cooperative: External code requires cooperative launch.
+    :param abi: The ABI to use for the function. "numba" for Numba ABI, "c" for C ABI.
     """
+    if abi not in ("numba", "c"):
+        raise NotImplementedError(f"Unsupported ABI: {abi}")
+
     if link is None:
         link = tuple()
     else:
@@ -308,7 +312,7 @@ def declare_device(name, sig, link=None, use_cooperative=False):
         raise TypeError(msg)
 
     template = declare_device_function(
-        name, restype, argtypes, link, use_cooperative
+        name, restype, argtypes, link, use_cooperative, abi
     )
 
     return template.key

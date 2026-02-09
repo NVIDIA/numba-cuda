@@ -45,7 +45,7 @@ from .drvapi import cu_stream_callback_pyobj
 from .mappings import FILE_EXTENSION_MAP
 from .linkable_code import LinkableCode, LTOIR, Fatbin, Object
 from numba.cuda.utils import cached_file_read
-from numba.cuda.cudadrv import enums, drvapi, nvrtc
+from numba.cuda.cudadrv import drvapi, nvrtc
 
 from cuda.bindings import driver as binding
 from numba.cuda._compat import (
@@ -137,7 +137,7 @@ class CudaAPIError(CudaDriverError):
     def __init__(self, code, msg):
         self.code = code
         self.msg = msg
-        super(CudaAPIError, self).__init__(code, msg)
+        super().__init__(code, msg)
 
     def __str__(self):
         return "[%s] %s" % (self.code, self.msg)
@@ -217,12 +217,10 @@ def _raise_driver_error(e):
 
 
 def _build_reverse_error_map():
-    prefix = "CUDA_ERROR"
+    """Build error code to name mapping from cuda.bindings.driver.CUresult"""
     map = utils.UniqueDict()
-    for name in dir(enums):
-        if name.startswith(prefix):
-            code = getattr(enums, name)
-            map[code] = name
+    for enum_val in binding.CUresult:
+        map[int(enum_val)] = enum_val.name
     return map
 
 
@@ -233,7 +231,7 @@ def _getpid():
 ERROR_MAP = _build_reverse_error_map()
 
 
-class Driver(object):
+class Driver:
     """
     Driver API functions are lazily bound.
     """
@@ -302,41 +300,6 @@ class Driver(object):
 
         return self._cuda_python_wrap_fn(fname)
 
-    def _ctypes_wrap_fn(self, fname, libfn=None):
-        # Wrap a CUDA driver function by default
-        if libfn is None:
-            try:
-                proto = API_PROTOTYPES[fname]
-            except KeyError:
-                raise AttributeError(fname)
-            restype = proto[0]
-            argtypes = proto[1:]
-
-            # Find function in driver library
-            libfn = self._find_api(fname)
-            libfn.restype = restype
-            libfn.argtypes = argtypes
-
-        def verbose_cuda_api_call(*args):
-            argstr = ", ".join([str(arg) for arg in args])
-            _logger.debug("call driver api: %s(%s)", libfn.__name__, argstr)
-            retcode = libfn(*args)
-            self._check_ctypes_error(fname, retcode)
-
-        def safe_cuda_api_call(*args):
-            _logger.debug("call driver api: %s", libfn.__name__)
-            retcode = libfn(*args)
-            self._check_ctypes_error(fname, retcode)
-
-        if config.CUDA_LOG_API_ARGS:
-            wrapper = verbose_cuda_api_call
-        else:
-            wrapper = safe_cuda_api_call
-
-        safe_call = functools.wraps(libfn)(wrapper)
-        setattr(self, fname, safe_call)
-        return safe_call
-
     def _cuda_python_wrap_fn(self, fname):
         libfn = getattr(binding, fname)
 
@@ -385,15 +348,6 @@ class Driver(object):
             msg = "pid %s forked from pid %s after CUDA driver init"
             _logger.critical(msg, _getpid(), self.pid)
             raise CudaDriverError("CUDA initialized before forking")
-
-    def _check_ctypes_error(self, fname, retcode):
-        if retcode != enums.CUDA_SUCCESS:
-            errname = ERROR_MAP.get(retcode, "UNKNOWN_CUDA_ERROR")
-            msg = "Call to %s results in %s" % (fname, errname)
-            _logger.error(msg)
-            if retcode == enums.CUDA_ERROR_NOT_INITIALIZED:
-                self._detect_fork()
-            raise CudaAPIError(retcode, msg)
 
     def _check_cuda_python_error(self, fname, returned):
         retcode = returned[0]
@@ -453,7 +407,7 @@ class Driver(object):
         return (major, minor)
 
 
-class _ActiveContext(object):
+class _ActiveContext:
     """An contextmanager object to cache active context to reduce dependency
     on querying the CUDA driver API.
 
@@ -502,18 +456,6 @@ class _ActiveContext(object):
 
 
 driver = Driver()
-
-
-def _build_reverse_device_attrs():
-    prefix = "CU_DEVICE_ATTRIBUTE_"
-    map = utils.UniqueDict()
-    for name in dir(enums):
-        if name.startswith(prefix):
-            map[name[len(prefix) :]] = getattr(enums, name)
-    return map
-
-
-DEVICE_ATTRIBUTES = _build_reverse_device_attrs()
 
 
 class Device:
@@ -618,6 +560,10 @@ class Device:
     @property
     def supports_bfloat16(self):
         return self.compute_capability >= (8, 0)
+
+    @property
+    def supports_fp8(self):
+        return self.compute_capability >= (8, 9)
 
 
 class BaseCUDAMemoryManager(object, metaclass=ABCMeta):
@@ -786,11 +732,11 @@ class HostOnlyCUDAMemoryManager(BaseCUDAMemoryManager):
         """
         flags = 0
         if mapped:
-            flags |= enums.CU_MEMHOSTALLOC_DEVICEMAP
+            flags |= binding.CU_MEMHOSTALLOC_DEVICEMAP
         if portable:
-            flags |= enums.CU_MEMHOSTALLOC_PORTABLE
+            flags |= binding.CU_MEMHOSTALLOC_PORTABLE
         if wc:
-            flags |= enums.CU_MEMHOSTALLOC_WRITECOMBINED
+            flags |= binding.CU_MEMHOSTALLOC_WRITECOMBINED
 
         def allocator():
             return driver.cuMemHostAlloc(size, flags)
@@ -826,7 +772,7 @@ class HostOnlyCUDAMemoryManager(BaseCUDAMemoryManager):
         flags = 0
 
         if mapped:
-            flags |= enums.CU_MEMHOSTREGISTER_DEVICEMAP
+            flags |= binding.CU_MEMHOSTREGISTER_DEVICEMAP
 
         def allocator():
             driver.cuMemHostRegister(pointer, size, flags)
@@ -1006,7 +952,7 @@ class _SizeNotSet(int):
 _SizeNotSet = _SizeNotSet()
 
 
-class _PendingDeallocs(object):
+class _PendingDeallocs:
     """
     Pending deallocations of a context (or device since we are using the primary
     context). The capacity defaults to being unset (_SizeNotSet) but can be
@@ -1092,7 +1038,7 @@ MemoryInfo = namedtuple("MemoryInfo", "free,total")
 """
 
 
-class Context(object):
+class Context:
     """
     This object wraps a CUDA Context resource.
 
@@ -1303,7 +1249,7 @@ class Context(object):
     def create_event(self, timing=True):
         flags = 0
         if not timing:
-            flags |= enums.CU_EVENT_DISABLE_TIMING
+            flags |= int(binding.CUevent_flags.CU_EVENT_DISABLE_TIMING)
         handle = drvapi.cu_event(int(driver.cuEventCreate(flags)))
         return Event(
             handle, finalizer=_event_finalizer(self.deallocations, handle)
@@ -1435,7 +1381,7 @@ def _module_finalizer(context, object_code):
     return core
 
 
-class _CudaIpcImpl(object):
+class _CudaIpcImpl:
     """Implementation of GPU IPC using CUDA driver API.
     This requires the devices to be peer accessible.
     """
@@ -1472,7 +1418,7 @@ class _CudaIpcImpl(object):
         self._opened_mem = None
 
 
-class _StagedIpcImpl(object):
+class _StagedIpcImpl:
     """Implementation of GPU IPC using custom staging logic to workaround
     CUDA IPC limitation on peer accessibility between devices.
     """
@@ -1512,7 +1458,7 @@ class _StagedIpcImpl(object):
         pass
 
 
-class IpcHandle(object):
+class IpcHandle:
     """
     CUDA IPC handle. Serialization of the CUDA IPC handle object is implemented
     here.
@@ -1633,7 +1579,7 @@ class IpcHandle(object):
         )
 
 
-class MemoryPointer(object):
+class MemoryPointer:
     """A memory pointer that owns a buffer, with an optional finalizer. Memory
     pointers provide reference counting, and instances are initialized with a
     reference count of 1.
@@ -1756,7 +1702,7 @@ class AutoFreePointer(MemoryPointer):
     """
 
     def __init__(self, *args, **kwargs):
-        super(AutoFreePointer, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         # Releease the self reference to the buffer, so that the finalizer
         # is invoked if all the derived pointers are gone.
         self.refct -= 1
@@ -1792,9 +1738,7 @@ class MappedMemory(AutoFreePointer):
         self._bufptr_ = self.host_pointer
 
         self.device_pointer = devptr
-        super(MappedMemory, self).__init__(
-            context, devptr, size, finalizer=finalizer
-        )
+        super().__init__(context, devptr, size, finalizer=finalizer)
         self.handle = self.host_pointer
 
         # For buffer interface
@@ -1877,7 +1821,7 @@ class ManagedMemory(AutoFreePointer):
         return ManagedOwnedPointer(weakref.proxy(self))
 
 
-class OwnedPointer(object):
+class OwnedPointer:
     def __init__(self, memptr, view=None):
         self._mem = memptr
 
@@ -2080,7 +2024,7 @@ class Event:
             driver.cuEventQuery(handle)
             return True
         except CudaAPIError as e:
-            if e.code == enums.CUDA_ERROR_NOT_READY:
+            if e.code == binding.CUresult.CUDA_ERROR_NOT_READY:
                 return False
             else:
                 raise

@@ -51,7 +51,7 @@ else:
 
 
 @total_ordering
-class BlockKind(object):
+class BlockKind:
     """Kinds of block to make related code safer than just `str`."""
 
     _members = frozenset(
@@ -88,7 +88,7 @@ class BlockKind(object):
         return "BlockKind({})".format(self._value)
 
 
-class Flow(object):
+class Flow:
     """Data+Control Flow analysis.
 
     Simulate execution to recover dataflow and controlflow information.
@@ -353,7 +353,7 @@ def _is_null_temp_reg(reg):
     return reg.startswith("$null$")
 
 
-class TraceRunner(object):
+class TraceRunner:
     """Trace runner contains the states for the trace and the opcode dispatch."""
 
     def __init__(self, debug_filename):
@@ -2118,7 +2118,7 @@ class TraceRunner(object):
 
 
 @total_ordering
-class _State(object):
+class _State:
     """State of the trace"""
 
     def __init__(self, bytecode, pc, nstack, blockstack, nullvals=()):
@@ -2487,7 +2487,7 @@ else:
 Edge = namedtuple("Edge", ["pc", "stack", "blockstack", "npush"])
 
 
-class AdaptDFA(object):
+class AdaptDFA:
     """Adapt Flow to the old DFA class expected by Interpreter"""
 
     def __init__(self, flow):
@@ -2543,7 +2543,7 @@ def _flatten_inst_regs(iterable):
                 yield x
 
 
-class AdaptCFA(object):
+class AdaptCFA:
     """Adapt Flow to the old CFA class expected by Interpreter"""
 
     def __init__(self, flow):
@@ -2585,7 +2585,7 @@ class AdaptCFA(object):
         self._flow.cfgraph.dump()
 
 
-class AdaptCFBlock(object):
+class AdaptCFBlock:
     def __init__(self, blockinfo, offset):
         self.offset = offset
         self.body = tuple(i for i, _ in blockinfo.insts)

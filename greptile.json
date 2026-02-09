@@ -3,5 +3,6 @@
     "included": false,
     "collapsible": false,
     "defaultOpen": false
-  }
+  },
+  "skipReview": "AUTOMATIC"
 }

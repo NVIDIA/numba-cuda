@@ -38,7 +38,7 @@ from numba.cuda.misc.coverage_support import get_registered_loc_notify
 _VarArgItem = namedtuple("_VarArgItem", ("vararg", "index"))
 
 
-class BaseLower(object):
+class BaseLower:
     """
     Lower IR to LLVM
     """
@@ -99,7 +99,7 @@ class BaseLower(object):
 
     @property
     def call_conv(self):
-        return self.context.call_conv
+        return self.fndesc.call_conv
 
     def init(self):
         pass
@@ -354,7 +354,7 @@ class BaseLower(object):
 
     def setup_function(self, fndesc):
         # Setup function
-        self.function = self.context.declare_function(self.module, fndesc)
+        self.function = fndesc.declare_function(self.module)
         if self.flags.dbg_optnone:
             attrset = self.function.attributes
             if "alwaysinline" not in attrset:
@@ -467,7 +467,7 @@ class Lower(BaseLower):
     def pre_block(self, block):
         from numba.cuda.core.unsafe import eh
 
-        super(Lower, self).pre_block(block)
+        super().pre_block(block)
         self._cur_ir_block = block
 
         if block == self.firstblk:
@@ -1209,7 +1209,7 @@ class Lower(BaseLower):
             expr.kws,
         )
         rec_ov = fnty.get_overloads(signature.args)
-        mangler = self.context.mangler or default_mangler
+        mangler = self.call_conv.mangler or default_mangler
         abi_tags = self.fndesc.abi_tags
         mangled_name = mangler(
             rec_ov.qualname, signature.args, abi_tags=abi_tags, uid=rec_ov.uid

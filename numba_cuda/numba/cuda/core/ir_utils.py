@@ -1992,7 +1992,7 @@ def get_ir_of_code(glbls, fcode):
     # we need to run the before inference rewrite pass to normalize the IR
     # XXX: check rewrite pass flag?
     # for example, Raise nodes need to become StaticRaise before type inference
-    class DummyPipeline(object):
+    class DummyPipeline:
         def __init__(self, f_ir):
             self.state = StateDict()
             self.state.typingctx = None

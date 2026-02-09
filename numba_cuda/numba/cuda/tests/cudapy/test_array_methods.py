@@ -18,11 +18,11 @@ class TestCudaArrayMethods(CUDATestCase):
     def setUp(self):
         self.old_nrt_setting = config.CUDA_ENABLE_NRT
         config.CUDA_ENABLE_NRT = True
-        super(TestCudaArrayMethods, self).setUp()
+        super().setUp()
 
     def tearDown(self):
         config.CUDA_ENABLE_NRT = self.old_nrt_setting
-        super(TestCudaArrayMethods, self).tearDown()
+        super().tearDown()
 
     def test_reinterpret_array_type(self):
         """

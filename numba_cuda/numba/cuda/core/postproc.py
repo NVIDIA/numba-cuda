@@ -5,7 +5,7 @@ from numba.cuda.core import analysis, ir
 from numba.cuda.core import ir_utils, transforms
 
 
-class YieldPoint(object):
+class YieldPoint:
     def __init__(self, block, inst):
         assert isinstance(block, ir.block_types)
         assert isinstance(inst, ir.yield_types)
@@ -15,7 +15,7 @@ class YieldPoint(object):
         self.weak_live_vars = None
 
 
-class GeneratorInfo(object):
+class GeneratorInfo:
     def __init__(self):
         # { index: YieldPoint }
         self.yield_points = {}
@@ -29,7 +29,7 @@ class GeneratorInfo(object):
         return self.yield_points.values()
 
 
-class VariableLifetime(object):
+class VariableLifetime:
     """
     For lazily building information of variable lifetime
     """
@@ -63,7 +63,7 @@ class VariableLifetime(object):
 ir_extension_insert_dels = {}
 
 
-class PostProcessor(object):
+class PostProcessor:
     """
     A post-processor for Numba IR.
     """

@@ -92,7 +92,7 @@ def copy_struct(dst, src, repl=None):
     return dst
 
 
-class _StructProxy(object):
+class _StructProxy:
     """
     Creates a `Structure` like interface that is constructed with information
     from DataModel instance.  FE type must have a data model that is a
@@ -171,7 +171,7 @@ class _StructProxy(object):
         Store the LLVM *value* into the named *field*.
         """
         if field.startswith("_"):
-            return super(_StructProxy, self).__setattr__(field, value)
+            return super().__setattr__(field, value)
         self[self._datamodel.get_field_position(field)] = value
 
     def __getitem__(self, index):
@@ -269,7 +269,7 @@ class DataStructProxy(_StructProxy):
         return model.as_data(self._builder, val)
 
 
-class Structure(object):
+class Structure:
     """
     A high-level object wrapping a alloca'ed LLVM structure, including
     named fields and attribute access.
@@ -329,7 +329,7 @@ class Structure(object):
         Store the LLVM *value* into the named *field*.
         """
         if field.startswith("_"):
-            return super(Structure, self).__setattr__(field, value)
+            return super().__setattr__(field, value)
         self[self._namemap[field]] = value
 
     def __getitem__(self, index):
@@ -764,12 +764,12 @@ def do_boundscheck(context, builder, ind, dimlen, axis=None):
     with if_unlikely(builder, out_of_bounds_upper):
         if config.FULL_TRACEBACKS:
             _dbg()
-        context.call_conv.return_user_exc(builder, IndexError, (msg,))
+        context.fndesc.call_conv.return_user_exc(builder, IndexError, (msg,))
     out_of_bounds_lower = builder.icmp_signed("<", ind, ind.type(0))
     with if_unlikely(builder, out_of_bounds_lower):
         if config.FULL_TRACEBACKS:
             _dbg()
-        context.call_conv.return_user_exc(builder, IndexError, (msg,))
+        context.fndesc.call_conv.return_user_exc(builder, IndexError, (msg,))
 
 
 def get_item_pointer2(
@@ -936,7 +936,7 @@ def guard_null(context, builder, value, exc_tuple):
     with builder.if_then(is_scalar_zero(builder, value), likely=False):
         exc = exc_tuple[0]
         exc_args = exc_tuple[1:] or None
-        context.call_conv.return_user_exc(builder, exc, exc_args)
+        context.fndesc.call_conv.return_user_exc(builder, exc, exc_args)
 
 
 def guard_memory_error(context, builder, pointer, msg=None):
@@ -946,7 +946,7 @@ def guard_memory_error(context, builder, pointer, msg=None):
     assert isinstance(pointer.type, ir.PointerType), pointer.type
     exc_args = (msg,) if msg else ()
     with builder.if_then(is_null(builder, pointer), likely=False):
-        context.call_conv.return_user_exc(builder, MemoryError, exc_args)
+        context.fndesc.call_conv.return_user_exc(builder, MemoryError, exc_args)
 
 
 @contextmanager

@@ -69,7 +69,7 @@ def argsnkwargs_to_str(args, kwargs):
     return ", ".join(buf)
 
 
-class _ResolutionFailures(object):
+class _ResolutionFailures:
     """Collect and format function resolution failures."""
 
     def __init__(self, context, function_type, args, kwargs, depth=0):
@@ -286,7 +286,7 @@ class BaseFunction(Callable):
         self._impl_keys = {}
         name = "%s(%s)" % (self.__class__.__name__, self.typing_key)
         self._depth = 0
-        super(BaseFunction, self).__init__(name)
+        super().__init__(name)
 
     @property
     def key(self):
@@ -390,7 +390,7 @@ class BoundFunction(Callable, Opaque):
             self.typing_key,
             self.this,
         )
-        super(BoundFunction, self).__init__(name)
+        super().__init__(name)
 
     def unify(self, typingctx, other):
         if (
@@ -561,7 +561,7 @@ class Dispatcher(WeakType, Callable, Dummy):
 
     def __init__(self, dispatcher):
         self._store_object(dispatcher)
-        super(Dispatcher, self).__init__("type(%s)" % dispatcher)
+        super().__init__("type(%s)" % dispatcher)
 
     def dump(self, tab=""):
         print(
@@ -673,7 +673,7 @@ class ExternalFunctionPointer(BaseFunction):
             template = GilRequiringDefn
         else:
             template = make_concrete_template("CFuncPtr", sig, [sig])
-        super(ExternalFunctionPointer, self).__init__(template)
+        super().__init__(template)
 
     @property
     def key(self):
@@ -692,7 +692,7 @@ class ExternalFunction(Function):
         self.symbol = symbol
         self.sig = sig
         template = typing.make_concrete_template(symbol, symbol, [sig])
-        super(ExternalFunction, self).__init__(template)
+        super().__init__(template)
 
     @property
     def key(self):
@@ -707,7 +707,7 @@ class NamedTupleClass(Callable, Opaque):
     def __init__(self, instance_class):
         self.instance_class = instance_class
         name = "class(%s)" % (instance_class)
-        super(NamedTupleClass, self).__init__(name)
+        super().__init__(name)
 
     def get_call_type(self, context, args, kws):
         # Overridden by the __call__ constructor resolution in
@@ -733,7 +733,7 @@ class NumberClass(Callable, DTypeSpec, Opaque):
     def __init__(self, instance_type):
         self.instance_type = instance_type
         name = "class(%s)" % (instance_type,)
-        super(NumberClass, self).__init__(name)
+        super().__init__(name)
 
     def get_call_type(self, context, args, kws):
         # Overridden by the __call__ constructor resolution in typing.builtins
@@ -768,7 +768,7 @@ class RecursiveCall(Opaque):
         assert isinstance(dispatcher_type, Dispatcher)
         self.dispatcher_type = dispatcher_type
         name = "recursive(%s)" % (dispatcher_type,)
-        super(RecursiveCall, self).__init__(name)
+        super().__init__(name)
         # Initializing for the first time
         if self._overloads is None:
             self._overloads = {}
