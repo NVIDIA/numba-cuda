@@ -48,8 +48,10 @@ class TestCudaEvent(CUDATestCase):
         # Exercise the code path
         evtstart.elapsed_time(evtend)
 
+    @skip_on_cudasim("Testing cuda.core events requires driver")
     def test_event_query(self):
-        from time import perf_counter
+        stream = cuda.stream()
+        evt = cuda.event()
 
         @cuda.jit
         def spin(ms):
@@ -57,32 +59,19 @@ class TestCudaEvent(CUDATestCase):
             for i in range(ms):
                 cuda.nanosleep(int32(1_000_000))  # 1 ms
 
-        stream = cuda.stream()
-        evt = cuda.event()
-
         # Run once to compile
         spin[1, 1, stream](1)
 
-        t0 = perf_counter()
-        spin_ms = 250
-        spin[1, 1, stream](250)
+        spin_ms = 200
+        spin[1, 1, stream](spin_ms)
         evt.record(stream)
 
-        # Query immediately.
-        event_time = perf_counter() - t0
-        while not evt.query():
-            event_time = perf_counter() - t0
-
-        # Synchronize and capture stream-finished time.
+        immediate_query = evt.query()
         evt.synchronize()
-        sync_time = perf_counter() - t0
+        synced_query = evt.query()
 
-        # If this assertion fails, it was nanosleep inaccuracy that caused it
-        assert sync_time * 1000 > spin_ms * 0.9
-
-        # If this assertion fails, the event query returned early
-        assert event_time * 1000 > spin_ms * 0.9
-
+        assert immediate_query is False, "Query returned True prematurely"
+        assert synced_query is True, "Query returned False after sync"
 
 if __name__ == "__main__":
     unittest.main()
