@@ -1342,7 +1342,7 @@ def _pin_finalizer(memory_manager, ptr, alloc_key, mapped):
 
 def _event_finalizer(deallocs, handle):
     def core():
-        deallocs.add_item(driver.cuEventDestroy, handle.value)
+        deallocs.add_item(driver.cuEventDestroy, int(handle))
 
     return core
 
@@ -2058,7 +2058,7 @@ def event_elapsed_time(evtstart, evtend):
     """
     Compute the elapsed time between two events in milliseconds.
     """
-    return driver.cuEventElapsedTime(evtstart.handle.value, evtend.handle.value)
+    return driver.cuEventElapsedTime(int(evtstart.handle), int(evtend.handle))
 
 
 class CudaPythonModule:
