@@ -125,7 +125,6 @@ class CompilerBase:
         # hold this for e.g. with_lifting, null out on exit
         self.state.pipeline = self
 
-        # Default to CUDAFlag's default
         if call_conv is None:
             call_conv = CUDACallConv(self.state.targetctx)
         if abi_info is None:

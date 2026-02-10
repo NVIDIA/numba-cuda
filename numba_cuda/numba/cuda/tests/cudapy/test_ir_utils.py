@@ -66,8 +66,6 @@ class TestIrUtils(CUDATestCase):
                     return_type,
                     flags,
                     locals,
-                    None,
-                    None,
                 )
 
             def compile_to_ir(self, func, DCE=False):

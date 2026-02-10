@@ -690,7 +690,6 @@ class _OverloadFunctionTemplate(AbstractTemplate):
             tyctx = fcomp.targetdescr.typing_context
             tgctx = fcomp.targetdescr.target_context
 
-            # XXX: Should we use None for call_conv and abi_info?
             compiler_inst = fcomp.pipeline_class(
                 tyctx,
                 tgctx,
@@ -698,8 +697,6 @@ class _OverloadFunctionTemplate(AbstractTemplate):
                 None,
                 None,
                 flags,
-                None,
-                None,
                 None,
             )
             inline_worker = InlineWorker(
