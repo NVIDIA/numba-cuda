@@ -29,7 +29,7 @@ import tempfile
 import re
 from itertools import product
 from abc import ABCMeta, abstractmethod
-from ctypes import c_int, byref, c_void_p, c_uint8
+from ctypes import c_int, byref, c_void_p, c_uint8, CFUNCTYPE, py_object
 import contextlib
 import importlib
 import numpy as np
@@ -40,7 +40,6 @@ from numba.cuda.cext import mviewbuf
 from numba.cuda.core import config
 from numba.cuda import utils, serialize
 from .error import CudaSupportError, CudaDriverError
-from .drvapi import cu_stream_callback_pyobj
 from .mappings import FILE_EXTENSION_MAP
 from .linkable_code import LinkableCode, LTOIR, Fatbin, Object
 from numba.cuda.utils import cached_file_read
@@ -66,7 +65,7 @@ CU_STREAM_DEFAULT = 0
 
 MIN_REQUIRED_CC = (3, 5)
 SUPPORTS_IPC = sys.platform.startswith("linux")
-
+cu_stream_callback_pyobj = CFUNCTYPE(None, c_void_p, c_int, py_object)
 
 _py_decref = ctypes.pythonapi.Py_DecRef
 _py_incref = ctypes.pythonapi.Py_IncRef
