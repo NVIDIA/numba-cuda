@@ -1237,14 +1237,14 @@ class Context:
     def create_external_stream(self, ptr):
         if not isinstance(ptr, int):
             raise TypeError("ptr for external stream must be an int")
-        handle = drvapi.cu_stream(int(binding.CUstream(ptr)))
+        handle = binding.CUstream(ptr)
         return Stream(handle, external=True)
 
     def create_event(self, timing=True):
         flags = 0
         if not timing:
             flags |= int(binding.CUevent_flags.CU_EVENT_DISABLE_TIMING)
-        handle = drvapi.cu_event(int(driver.cuEventCreate(flags)))
+        handle = driver.cuEventCreate(flags)
         return Event(
             handle, finalizer=_event_finalizer(self.deallocations, handle)
         )
@@ -1866,7 +1866,7 @@ class Stream:
 
     def __int__(self):
         # The default stream's handle.value is 0, which gives `None`
-        return self.handle.value or binding.CUstream_flags.CU_STREAM_DEFAULT
+        return int(self.handle) or binding.CUstream_flags.CU_STREAM_DEFAULT
 
     def __cuda_stream__(self):
         if not self.handle:
@@ -1893,7 +1893,7 @@ class Stream:
         Wait for all commands in this stream to execute. This will commit any
         pending memory transfers.
         """
-        driver.cuStreamSynchronize(self.handle)
+        driver.cuStreamSynchronize(int(self.handle))
 
     @contextlib.contextmanager
     def auto_synchronize(self):
@@ -2032,14 +2032,14 @@ class Event:
         completed.
         """
         hstream = _stream_handle(stream)
-        handle = self.handle.value
+        handle = int(self.handle)
         driver.cuEventRecord(handle, hstream)
 
     def synchronize(self):
         """
         Synchronize the host thread for the completion of the event.
         """
-        handle = self.handle.value
+        handle = int(self.handle)
         driver.cuEventSynchronize(handle)
 
     def wait(self, stream=0):
@@ -2047,7 +2047,7 @@ class Event:
         All future works submitted to stream will wait util the event completes.
         """
         hstream = _stream_handle(stream)
-        handle = self.handle.value
+        handle = int(self.handle)
         flags = 0
         driver.cuStreamWaitEvent(hstream, handle, flags)
 
