@@ -11,6 +11,7 @@ import numpy as np
 
 from numba.cuda import types
 from numba.cuda import HAS_NUMBA
+from numba.cuda.core.callconv import CUDACallConv
 from numba.cuda.core.compiler_lock import global_compiler_lock
 from numba.cuda.core.errors import NumbaWarning
 from numba.cuda.core.base import BaseContext
@@ -411,6 +412,10 @@ class CUDATargetContext(BaseContext):
             flags.no_cpython_wrapper = True
             flags.no_cfunc_wrapper = True
 
+            # compile_subroutine always uses CUDACallConv
+            call_conv = CUDACallConv(self)
+            abi_info = {}
+
             cres = compiler.compile_internal(
                 self.typing_context,
                 self,
@@ -420,8 +425,8 @@ class CUDATargetContext(BaseContext):
                 sig.return_type,
                 flags,
                 locals=locals,
-                call_conv=self.fndesc.call_conv,
-                abi_info=self.fndesc.abi_info,
+                call_conv=call_conv,
+                abi_info=abi_info,
             )
 
             # Allow inlining the function inside callers

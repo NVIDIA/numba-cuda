@@ -18,6 +18,8 @@ from numba.cuda import (
 from numba.cuda.cudadrv import nvrtc
 from numba.cuda.testing import skip_on_cudasim, unittest, CUDATestCase
 
+from numba.cuda.core.callconv import CUDACallConv
+
 TEST_BIN_DIR = os.getenv("NUMBA_CUDA_TEST_BIN_DIR")
 if TEST_BIN_DIR:
     test_device_functions_a = os.path.join(
@@ -738,7 +740,12 @@ class TestCompile(unittest.TestCase):
                     cres = context.compile_subroutine(
                         builder, foo_device, inner_sig, caching=False
                     )
-                    result = context.call_internal(
+
+                    # Wrapper function is compiled with cabi, but inner function
+                    # is compiled with numba-abi. So cres should have CUDACallConv.
+                    assert isinstance(cres.fndesc.call_conv, CUDACallConv)
+
+                    _, result = context.call_internal_no_propagate(
                         builder, cres.fndesc, inner_sig, [input_val]
                     )
 
