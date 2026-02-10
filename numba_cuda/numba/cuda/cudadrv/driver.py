@@ -40,12 +40,11 @@ from numba.cuda.cext import mviewbuf
 from numba.cuda.core import config
 from numba.cuda import utils, serialize
 from .error import CudaSupportError, CudaDriverError
-from .drvapi import API_PROTOTYPES
 from .drvapi import cu_stream_callback_pyobj
 from .mappings import FILE_EXTENSION_MAP
 from .linkable_code import LinkableCode, LTOIR, Fatbin, Object
 from numba.cuda.utils import cached_file_read
-from numba.cuda.cudadrv import drvapi, nvrtc
+from numba.cuda.cudadrv import nvrtc
 
 from cuda.bindings import driver as binding
 from numba.cuda._compat import (
@@ -1666,7 +1665,7 @@ class MemoryPointer:
             if size < 0:
                 raise RuntimeError("size cannot be negative")
             pointer = binding.CUdeviceptr()
-            ctypes_ptr = drvapi.cu_device_ptr.from_address(pointer.getPtr())
+            ctypes_ptr = c_void_p.from_address(pointer.getPtr())
             ctypes_ptr.value = base
             view = MemoryPointer(self.context, pointer, size, owner=self.owner)
 
@@ -1679,7 +1678,7 @@ class MemoryPointer:
 
     @property
     def device_ctypes_pointer(self):
-        return drvapi.cu_device_ptr(int(self.device_pointer))
+        return c_void_p(int(self.device_pointer))
 
     @property
     def device_pointer_value(self):
@@ -1879,7 +1878,7 @@ class Stream:
             binding.CU_STREAM_LEGACY: "<Legacy default CUDA stream>",
             binding.CU_STREAM_PER_THREAD: "<Per-thread default CUDA stream>",
         }
-        ptr = self.handle or binding.CUstream_flags.CU_STREAM_DEFAULT
+        ptr = int(self.handle) or binding.CUstream_flags.CU_STREAM_DEFAULT
 
         if ptr in default_streams:
             return default_streams[ptr]
