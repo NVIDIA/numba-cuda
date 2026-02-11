@@ -29,7 +29,15 @@ import tempfile
 import re
 from itertools import product
 from abc import ABCMeta, abstractmethod
-from ctypes import c_int, byref, c_void_p, c_uint8, CFUNCTYPE, py_object
+from ctypes import (
+    c_int,
+    byref,
+    c_void_p,
+    c_uint8,
+    CFUNCTYPE,
+    py_object,
+    c_size_t,
+)
 import contextlib
 import importlib
 import numpy as np
@@ -1682,7 +1690,7 @@ class MemoryPointer:
 
     @property
     def device_ctypes_pointer(self):
-        return c_void_p(int(self.device_pointer))
+        return c_size_t(int(self.device_pointer))
 
     @property
     def device_pointer_value(self):
