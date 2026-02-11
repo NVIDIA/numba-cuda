@@ -218,20 +218,6 @@ def get_system_ctk_libdir():
     return None
 
 
-def get_system_ctk_include():
-    system_ctk_dir = get_system_ctk()
-    if system_ctk_dir is None:
-        return None
-    include_dir = os.path.join(system_ctk_dir, "include")
-
-    if include_dir and os.path.isdir(include_dir):
-        if os.path.isfile(
-            os.path.join(include_dir, "cuda_device_runtime_api.h")
-        ):
-            return include_dir
-    return None
-
-
 def get_conda_ctk_libdir():
     """Return path to directory containing the shared libraries of cudatoolkit."""
     is_conda_env = os.path.isdir(os.path.join(sys.prefix, "conda-meta"))

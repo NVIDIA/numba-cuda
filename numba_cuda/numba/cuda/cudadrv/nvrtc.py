@@ -108,9 +108,10 @@ def compile(src, name, cc, ltoir=False, lineinfo=False, debug=False):
     numba_cuda_path = os.path.dirname(cudadrv_path)
 
     nvrtc_ver_major = version[0]
-    cccl_include_dir = pathfinder.locate_nvidia_header_directory(
-        "cccl"
-    ).abs_path
+    cccl_found_header_dir = pathfinder.locate_nvidia_header_directory("cccl")
+    if cccl_found_header_dir is None:
+        raise RuntimeError("Unable to locate CCCL header directory.")
+    cccl_include_dir = cccl_found_header_dir.abs_path
     cuda_includes.append(cccl_include_dir)
 
     if config.CUDA_NVRTC_EXTRA_SEARCH_PATHS:
