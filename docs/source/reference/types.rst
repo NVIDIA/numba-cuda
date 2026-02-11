@@ -558,3 +558,105 @@ These APIs reinterpret bits without numeric conversion:
 .. function:: numba.cuda.bf16.uint16_as_bfloat16(x)
 
     Reinterpret the bits of a ``uint16`` as a ``bfloat16``.
+
+
+FP8
+--------
+
+.. note::
+
+    FP8 is only supported with CUDA version 13.0+, and only supported on
+    devices with compute capability 8.9 or above.
+
+To determine whether FP8 is supported in the current configuration, use:
+
+.. function:: numba.cuda.is_fp8_supported()
+
+    Returns ``True`` if the current device and toolkit support FP8.
+    ``False`` otherwise.
+
+Data Types
+**********
+
+Scalar FP8 types:
+
+.. function:: numba.cuda.fp8.fp8_e5m2(x)
+.. function:: numba.cuda.fp8.fp8_e4m3(x)
+.. function:: numba.cuda.fp8.fp8_e8m0(x)
+
+    Construct an FP8 value from a scalar. Supported scalar inputs include
+    ``float16``, ``bfloat16``, ``float32``, ``float64``, ``int16``, ``int32``,
+    ``int64``, ``uint16``, ``uint32``, and ``uint64``.
+
+Packed FP8 types:
+
+.. function:: numba.cuda.fp8.fp8x2_e5m2(x)
+.. function:: numba.cuda.fp8.fp8x2_e4m3(x)
+.. function:: numba.cuda.fp8.fp8x2_e8m0(x)
+.. function:: numba.cuda.fp8.fp8x4_e5m2(x)
+.. function:: numba.cuda.fp8.fp8x4_e4m3(x)
+.. function:: numba.cuda.fp8.fp8x4_e8m0(x)
+
+    Construct packed FP8 vectors from ``float32x2`` / ``float64x2`` (for ``x2``)
+    and ``float32x4`` / ``float64x4`` (for ``x4``).
+
+FP8 Conversion Enums
+********************
+
+.. class:: numba.cuda.fp8.saturation_t
+
+    Saturation policy for FP8 conversion intrinsics:
+
+    - ``saturation_t.NOSAT``: no finite-value saturation.
+    - ``saturation_t.SATFINITE``: saturate to max finite representable value.
+
+.. class:: numba.cuda.fp8.fp8_interpretation_t
+
+    FP8 interpretation selector for generic FP8 conversions:
+
+    - ``fp8_interpretation_t.E4M3``
+    - ``fp8_interpretation_t.E5M2``
+
+Conversion Intrinsics
+*********************
+
+The ``numba.cuda.fp8`` module exposes both low-level ``cvt_*`` intrinsics and
+high-level aliases with Numba-style names:
+
+Generic FP8 (E4M3 / E5M2 selected by enum)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. function:: numba.cuda.fp8.float32_to_fp8(x, saturate, fp8_kind)
+.. function:: numba.cuda.fp8.float64_to_fp8(x, saturate, fp8_kind)
+
+    Aliases of ``cvt_float_to_fp8`` and ``cvt_double_to_fp8``.
+    ``fp8_kind`` must be one of ``fp8_interpretation_t.E4M3`` or
+    ``fp8_interpretation_t.E5M2``.
+
+.. function:: numba.cuda.fp8.float32x2_to_fp8x2(x, saturate, fp8_kind)
+.. function:: numba.cuda.fp8.float64x2_to_fp8x2(x, saturate, fp8_kind)
+
+    Aliases of ``cvt_float2_to_fp8x2`` and ``cvt_double2_to_fp8x2``.
+    These return packed FP8x2 storage in a ``uint16``.
+
+.. function:: numba.cuda.fp8.bfloat16_raw_to_fp8(x, saturate, fp8_kind)
+
+    Alias of ``cvt_bfloat16raw_to_fp8``.
+
+E8M0 conversions
+^^^^^^^^^^^^^^^^
+
+.. function:: numba.cuda.fp8.float32_to_e8m0(x, saturate, rounding)
+.. function:: numba.cuda.fp8.float64_to_e8m0(x, saturate, rounding)
+.. function:: numba.cuda.fp8.float32x2_to_e8m0x2(x, saturate, rounding)
+.. function:: numba.cuda.fp8.float64x2_to_e8m0x2(x, saturate, rounding)
+.. function:: numba.cuda.fp8.bfloat16_raw_to_e8m0(x, saturate, rounding)
+
+    Aliases of ``cvt_float_to_e8m0``, ``cvt_double_to_e8m0``,
+    ``cvt_float2_to_e8m0x2``, ``cvt_double2_to_e8m0x2``, and
+    ``cvt_bfloat16raw_to_e8m0`` respectively.
+    ``rounding`` uses ``cudaRoundMode`` values from ``cuda.bindings.runtime``.
+
+.. function:: numba.cuda.fp8.e8m0_to_bfloat16_raw(x)
+
+    Alias of ``cvt_e8m0_to_bf16raw``. Returns a bfloat16 raw storage object.
