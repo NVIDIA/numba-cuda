@@ -605,19 +605,25 @@ Packed FP8 types:
 FP8 Conversion Enums
 ********************
 
+.. class:: numba.cuda.fp8.SaturationMode
 .. class:: numba.cuda.fp8.saturation_t
 
     Saturation policy for FP8 conversion intrinsics:
 
-    - ``saturation_t.NOSAT``: no finite-value saturation.
-    - ``saturation_t.SATFINITE``: saturate to max finite representable value.
+    - ``SaturationMode.NOSAT``: no finite-value saturation.
+    - ``SaturationMode.SATFINITE``: saturate to max finite representable value.
 
+    ``saturation_t`` is a backward-compatible alias.
+
+.. class:: numba.cuda.fp8.FP8Format
 .. class:: numba.cuda.fp8.fp8_interpretation_t
 
     FP8 interpretation selector for generic FP8 conversions:
 
-    - ``fp8_interpretation_t.E4M3``
-    - ``fp8_interpretation_t.E5M2``
+    - ``FP8Format.E4M3``
+    - ``FP8Format.E5M2``
+
+    ``fp8_interpretation_t`` is a backward-compatible alias.
 
 Conversion Intrinsics
 *********************
@@ -632,8 +638,8 @@ Generic FP8 (E4M3 / E5M2 selected by enum)
 .. function:: numba.cuda.fp8.float64_to_fp8(x, saturate, fp8_kind)
 
     Aliases of ``cvt_float_to_fp8`` and ``cvt_double_to_fp8``.
-    ``fp8_kind`` must be one of ``fp8_interpretation_t.E4M3`` or
-    ``fp8_interpretation_t.E5M2``.
+    ``fp8_kind`` must be one of ``FP8Format.E4M3`` or
+    ``FP8Format.E5M2``.
 
 .. function:: numba.cuda.fp8.float32x2_to_fp8x2(x, saturate, fp8_kind)
 .. function:: numba.cuda.fp8.float64x2_to_fp8x2(x, saturate, fp8_kind)

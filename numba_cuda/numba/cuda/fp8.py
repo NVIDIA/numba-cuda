@@ -29,6 +29,8 @@ from numba.cuda._internal.cuda_fp8 import (
 
 
 # Public aliases using Numba/Numpy-style conversion names.
+SaturationMode = saturation_t
+FP8Format = fp8_interpretation_t
 float32_to_fp8 = cvt_float_to_fp8
 float64_to_fp8 = cvt_double_to_fp8
 float32x2_to_fp8x2 = cvt_float2_to_fp8x2
@@ -45,6 +47,8 @@ e8m0_to_bfloat16_raw = cvt_e8m0_to_bf16raw
 __all__ = [
     "typing_registry",
     "target_registry",
+    "SaturationMode",
+    "FP8Format",
     "saturation_t",
     "fp8_interpretation_t",
     "fp8_e5m2",

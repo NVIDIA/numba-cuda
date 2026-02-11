@@ -37,6 +37,8 @@ if not config.ENABLE_CUDASIM:
         fp8x4_e4m3,
         fp8x4_e5m2,
         fp8x4_e8m0,
+        FP8Format,
+        SaturationMode,
         fp8_interpretation_t,
         saturation_t,
     )
@@ -53,6 +55,8 @@ if not config.ENABLE_CUDASIM:
 )
 class TestFP8HighLevelBindings(CUDATestCase):
     def test_public_aliases_map_to_intrinsics(self):
+        self.assertIs(SaturationMode, saturation_t)
+        self.assertIs(FP8Format, fp8_interpretation_t)
         self.assertIs(float32_to_fp8, cvt_float_to_fp8)
         self.assertIs(float64_to_fp8, cvt_double_to_fp8)
         self.assertIs(float32x2_to_fp8x2, cvt_float2_to_fp8x2)
@@ -80,28 +84,28 @@ class TestFP8HighLevelBindings(CUDATestCase):
 
             out_u16[0] = _packed_storage_bits(fp8x2_e5m2(f2))
             out_u16[1] = float32x2_to_fp8x2(
-                f2, saturation_t.SATFINITE, fp8_interpretation_t.E5M2
+                f2, SaturationMode.SATFINITE, FP8Format.E5M2
             )
             out_u16[2] = _packed_storage_bits(fp8x2_e4m3(f2))
             out_u16[3] = float32x2_to_fp8x2(
-                f2, saturation_t.SATFINITE, fp8_interpretation_t.E4M3
+                f2, SaturationMode.SATFINITE, FP8Format.E4M3
             )
             out_u16[4] = _packed_storage_bits(fp8x2_e8m0(f2))
             out_u16[5] = float32x2_to_e8m0x2(
-                f2, saturation_t.SATFINITE, cudaRoundMode.cudaRoundPosInf
+                f2, SaturationMode.SATFINITE, cudaRoundMode.cudaRoundPosInf
             )
 
             out_u16[6] = _packed_storage_bits(fp8x2_e5m2(d2))
             out_u16[7] = float64x2_to_fp8x2(
-                d2, saturation_t.SATFINITE, fp8_interpretation_t.E5M2
+                d2, SaturationMode.SATFINITE, FP8Format.E5M2
             )
             out_u16[8] = _packed_storage_bits(fp8x2_e4m3(d2))
             out_u16[9] = float64x2_to_fp8x2(
-                d2, saturation_t.SATFINITE, fp8_interpretation_t.E4M3
+                d2, SaturationMode.SATFINITE, FP8Format.E4M3
             )
             out_u16[10] = _packed_storage_bits(fp8x2_e8m0(d2))
             out_u16[11] = float64x2_to_e8m0x2(
-                d2, saturation_t.SATFINITE, cudaRoundMode.cudaRoundPosInf
+                d2, SaturationMode.SATFINITE, cudaRoundMode.cudaRoundPosInf
             )
 
             f4 = cuda.float32x4(
@@ -117,41 +121,41 @@ class TestFP8HighLevelBindings(CUDATestCase):
             d_hi2 = cuda.float64x2(d4.z, d4.w)
 
             f_e5m2_lo = float32x2_to_fp8x2(
-                f_lo2, saturation_t.SATFINITE, fp8_interpretation_t.E5M2
+                f_lo2, SaturationMode.SATFINITE, FP8Format.E5M2
             )
             f_e5m2_hi = float32x2_to_fp8x2(
-                f_hi2, saturation_t.SATFINITE, fp8_interpretation_t.E5M2
+                f_hi2, SaturationMode.SATFINITE, FP8Format.E5M2
             )
             f_e4m3_lo = float32x2_to_fp8x2(
-                f_lo2, saturation_t.SATFINITE, fp8_interpretation_t.E4M3
+                f_lo2, SaturationMode.SATFINITE, FP8Format.E4M3
             )
             f_e4m3_hi = float32x2_to_fp8x2(
-                f_hi2, saturation_t.SATFINITE, fp8_interpretation_t.E4M3
+                f_hi2, SaturationMode.SATFINITE, FP8Format.E4M3
             )
             f_e8m0_lo = float32x2_to_e8m0x2(
-                f_lo2, saturation_t.SATFINITE, cudaRoundMode.cudaRoundPosInf
+                f_lo2, SaturationMode.SATFINITE, cudaRoundMode.cudaRoundPosInf
             )
             f_e8m0_hi = float32x2_to_e8m0x2(
-                f_hi2, saturation_t.SATFINITE, cudaRoundMode.cudaRoundPosInf
+                f_hi2, SaturationMode.SATFINITE, cudaRoundMode.cudaRoundPosInf
             )
 
             d_e5m2_lo = float64x2_to_fp8x2(
-                d_lo2, saturation_t.SATFINITE, fp8_interpretation_t.E5M2
+                d_lo2, SaturationMode.SATFINITE, FP8Format.E5M2
             )
             d_e5m2_hi = float64x2_to_fp8x2(
-                d_hi2, saturation_t.SATFINITE, fp8_interpretation_t.E5M2
+                d_hi2, SaturationMode.SATFINITE, FP8Format.E5M2
             )
             d_e4m3_lo = float64x2_to_fp8x2(
-                d_lo2, saturation_t.SATFINITE, fp8_interpretation_t.E4M3
+                d_lo2, SaturationMode.SATFINITE, FP8Format.E4M3
             )
             d_e4m3_hi = float64x2_to_fp8x2(
-                d_hi2, saturation_t.SATFINITE, fp8_interpretation_t.E4M3
+                d_hi2, SaturationMode.SATFINITE, FP8Format.E4M3
             )
             d_e8m0_lo = float64x2_to_e8m0x2(
-                d_lo2, saturation_t.SATFINITE, cudaRoundMode.cudaRoundPosInf
+                d_lo2, SaturationMode.SATFINITE, cudaRoundMode.cudaRoundPosInf
             )
             d_e8m0_hi = float64x2_to_e8m0x2(
-                d_hi2, saturation_t.SATFINITE, cudaRoundMode.cudaRoundPosInf
+                d_hi2, SaturationMode.SATFINITE, cudaRoundMode.cudaRoundPosInf
             )
 
             out_u32[0] = _packed_storage_bits(fp8x4_e5m2(f4))
@@ -180,16 +184,16 @@ class TestFP8HighLevelBindings(CUDATestCase):
         @cuda.jit
         def kernel(out_u8, x32, x64):
             out_u8[0] = float32_to_fp8(
-                x32[0], saturation_t.NOSAT, fp8_interpretation_t.E5M2
+                x32[0], SaturationMode.NOSAT, FP8Format.E5M2
             )
             out_u8[1] = float32_to_fp8(
-                x32[0], saturation_t.SATFINITE, fp8_interpretation_t.E5M2
+                x32[0], SaturationMode.SATFINITE, FP8Format.E5M2
             )
             out_u8[2] = float64_to_fp8(
-                x64[0], saturation_t.NOSAT, fp8_interpretation_t.E4M3
+                x64[0], SaturationMode.NOSAT, FP8Format.E4M3
             )
             out_u8[3] = float64_to_fp8(
-                x64[0], saturation_t.SATFINITE, fp8_interpretation_t.E4M3
+                x64[0], SaturationMode.SATFINITE, FP8Format.E4M3
             )
 
         out_u8 = np.zeros(4, dtype=np.uint8)
@@ -210,16 +214,16 @@ class TestFP8HighLevelBindings(CUDATestCase):
         @cuda.jit
         def kernel(out_u8, out_raw_u16, x32, x64):
             out_u8[0] = float32_to_e8m0(
-                x32[0], saturation_t.NOSAT, cudaRoundMode.cudaRoundPosInf
+                x32[0], SaturationMode.NOSAT, cudaRoundMode.cudaRoundPosInf
             )
             out_u8[1] = float32_to_e8m0(
-                x32[0], saturation_t.SATFINITE, cudaRoundMode.cudaRoundPosInf
+                x32[0], SaturationMode.SATFINITE, cudaRoundMode.cudaRoundPosInf
             )
             out_u8[2] = float64_to_e8m0(
-                x64[0], saturation_t.NOSAT, cudaRoundMode.cudaRoundPosInf
+                x64[0], SaturationMode.NOSAT, cudaRoundMode.cudaRoundPosInf
             )
             out_u8[3] = float64_to_e8m0(
-                x64[0], saturation_t.SATFINITE, cudaRoundMode.cudaRoundPosInf
+                x64[0], SaturationMode.SATFINITE, cudaRoundMode.cudaRoundPosInf
             )
 
             raw_one = e8m0_to_bfloat16_raw(uint8(127))
@@ -227,7 +231,7 @@ class TestFP8HighLevelBindings(CUDATestCase):
 
             raw_half = e8m0_to_bfloat16_raw(uint8(126))
             out_u8[4] = bfloat16_raw_to_e8m0(
-                raw_half, saturation_t.NOSAT, cudaRoundMode.cudaRoundZero
+                raw_half, SaturationMode.NOSAT, cudaRoundMode.cudaRoundZero
             )
 
         x32_over = np.nextafter(np.float32(2.0**127), np.float32(np.inf))
@@ -251,10 +255,10 @@ class TestFP8HighLevelBindings(CUDATestCase):
             # Exponent 254 corresponds to 2^127 in E8M0, out-of-range for FP8 E5M2.
             raw = e8m0_to_bfloat16_raw(uint8(254))
             out_u8[0] = bfloat16_raw_to_fp8(
-                raw, saturation_t.NOSAT, fp8_interpretation_t.E5M2
+                raw, SaturationMode.NOSAT, FP8Format.E5M2
             )
             out_u8[1] = bfloat16_raw_to_fp8(
-                raw, saturation_t.SATFINITE, fp8_interpretation_t.E5M2
+                raw, SaturationMode.SATFINITE, FP8Format.E5M2
             )
 
         out_u8 = np.zeros(2, dtype=np.uint8)
