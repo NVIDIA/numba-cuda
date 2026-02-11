@@ -8,7 +8,7 @@ CUDA_VER_MAJOR_MINOR=${CUDA_VER%.*}
 
 rapids-logger "Install cuDF Wheel"
 
-pip install "cudf-cu12==25.12.*"
+pip install "cudf-cu12==26.02.*"
 
 
 rapids-logger "Remove Extraneous numba-cuda"
@@ -27,14 +27,8 @@ python -m pip install \
 
 
 rapids-logger "Shallow clone cuDF repository"
-git clone --single-branch --branch 'release/25.12' https://github.com/rapidsai/cudf.git
+git clone --single-branch --branch 'release/26.02' https://github.com/rapidsai/cudf.git
 
-# TODO: remove the patch and its application after 26.02 is released
-patchfile="${PWD}/ci/patches/cudf_numba_cuda_compatibility.patch"
-pushd "$(python -c 'import site; print(site.getsitepackages()[0])')"
-# strip 3 slashes to apply from the root of the install
-patch -p3 < "${patchfile}"
-popd
 
 pushd cudf
 
