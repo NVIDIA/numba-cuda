@@ -567,6 +567,8 @@ FP8
 
     FP8 is only supported with CUDA version 13.0+, and only supported on
     devices with compute capability 8.9 or above.
+    The three FP8 variants (``E4M3``, ``E5M2``, and ``E8M0``) are available,
+    but support is currently limited to conversion intrinsics.
 
 To determine whether FP8 is supported in the current configuration, use:
 

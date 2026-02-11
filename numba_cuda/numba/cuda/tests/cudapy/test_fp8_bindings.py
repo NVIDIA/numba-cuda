@@ -35,14 +35,24 @@ from numba.cuda.api import is_fp8_supported
 if not config.ENABLE_CUDASIM:
     from numba.cuda._internal.cuda_fp8 import (
         fp8_e5m2,
+        fp8x2_e5m2,
+        fp8x4_e5m2,
         fp8_e4m3,
+        fp8x2_e4m3,
+        fp8x4_e4m3,
         fp8_e8m0,
+        fp8x2_e8m0,
+        fp8x4_e8m0,
         cvt_float_to_fp8,
+        cvt_float2_to_fp8x2,
         cvt_double_to_fp8,
+        cvt_double2_to_fp8x2,
         cvt_bfloat16raw_to_fp8,
         cvt_bfloat16raw_to_e8m0,
         cvt_float_to_e8m0,
+        cvt_float2_to_e8m0x2,
         cvt_double_to_e8m0,
+        cvt_double2_to_e8m0x2,
         cvt_e8m0_to_bf16raw,
         saturation_t,
         fp8_interpretation_t,
@@ -158,6 +168,121 @@ class FP8ConstructorTests(CUDATestCase):
         # Check integer conversions - should be exactly 4.0
         for i in range(4, 12):
             self.assertEqual(result[i], 4.0)
+
+    def test_fp8x2_constructors_match_conversion_intrinsics(self):
+        """Test fp8x2 packed constructors from float2/double2 inputs."""
+
+        @cuda.jit
+        def kernel(result):
+            f2 = cuda.float32x2(float32(1.0), float32(2.0))
+            d2 = cuda.float64x2(float64(4.0), float64(8.0))
+
+            result[0] = fp8x2_e5m2(f2).__x
+            result[1] = cvt_float2_to_fp8x2(
+                f2, saturation_t.SATFINITE, fp8_interpretation_t.E5M2
+            )
+            result[2] = fp8x2_e4m3(f2).__x
+            result[3] = cvt_float2_to_fp8x2(
+                f2, saturation_t.SATFINITE, fp8_interpretation_t.E4M3
+            )
+            result[4] = fp8x2_e8m0(f2).__x
+            result[5] = cvt_float2_to_e8m0x2(
+                f2, saturation_t.SATFINITE, cudaRoundMode.cudaRoundPosInf
+            )
+
+            result[6] = fp8x2_e5m2(d2).__x
+            result[7] = cvt_double2_to_fp8x2(
+                d2, saturation_t.SATFINITE, fp8_interpretation_t.E5M2
+            )
+            result[8] = fp8x2_e4m3(d2).__x
+            result[9] = cvt_double2_to_fp8x2(
+                d2, saturation_t.SATFINITE, fp8_interpretation_t.E4M3
+            )
+            result[10] = fp8x2_e8m0(d2).__x
+            result[11] = cvt_double2_to_e8m0x2(
+                d2, saturation_t.SATFINITE, cudaRoundMode.cudaRoundPosInf
+            )
+
+        result = np.zeros(12, dtype=np.uint16)
+        kernel[1, 1](result)
+
+        for i in range(0, 12, 2):
+            self.assertEqual(result[i], result[i + 1])
+
+    def test_fp8x4_constructors_match_paired_x2_intrinsics(self):
+        """Test fp8x4 packed constructors from float4/double4 inputs."""
+
+        @cuda.jit
+        def kernel(result):
+            f4 = cuda.float32x4(
+                float32(1.0), float32(2.0), float32(4.0), float32(8.0)
+            )
+            d4 = cuda.float64x4(
+                float64(16.0), float64(32.0), float64(64.0), float64(128.0)
+            )
+
+            f_lo2 = cuda.float32x2(f4.x, f4.y)
+            f_hi2 = cuda.float32x2(f4.z, f4.w)
+            d_lo2 = cuda.float64x2(d4.x, d4.y)
+            d_hi2 = cuda.float64x2(d4.z, d4.w)
+
+            e5m2_lo_f = cvt_float2_to_fp8x2(
+                f_lo2, saturation_t.SATFINITE, fp8_interpretation_t.E5M2
+            )
+            e5m2_hi_f = cvt_float2_to_fp8x2(
+                f_hi2, saturation_t.SATFINITE, fp8_interpretation_t.E5M2
+            )
+            e4m3_lo_f = cvt_float2_to_fp8x2(
+                f_lo2, saturation_t.SATFINITE, fp8_interpretation_t.E4M3
+            )
+            e4m3_hi_f = cvt_float2_to_fp8x2(
+                f_hi2, saturation_t.SATFINITE, fp8_interpretation_t.E4M3
+            )
+            e8m0_lo_f = cvt_float2_to_e8m0x2(
+                f_lo2, saturation_t.SATFINITE, cudaRoundMode.cudaRoundPosInf
+            )
+            e8m0_hi_f = cvt_float2_to_e8m0x2(
+                f_hi2, saturation_t.SATFINITE, cudaRoundMode.cudaRoundPosInf
+            )
+
+            e5m2_lo_d = cvt_double2_to_fp8x2(
+                d_lo2, saturation_t.SATFINITE, fp8_interpretation_t.E5M2
+            )
+            e5m2_hi_d = cvt_double2_to_fp8x2(
+                d_hi2, saturation_t.SATFINITE, fp8_interpretation_t.E5M2
+            )
+            e4m3_lo_d = cvt_double2_to_fp8x2(
+                d_lo2, saturation_t.SATFINITE, fp8_interpretation_t.E4M3
+            )
+            e4m3_hi_d = cvt_double2_to_fp8x2(
+                d_hi2, saturation_t.SATFINITE, fp8_interpretation_t.E4M3
+            )
+            e8m0_lo_d = cvt_double2_to_e8m0x2(
+                d_lo2, saturation_t.SATFINITE, cudaRoundMode.cudaRoundPosInf
+            )
+            e8m0_hi_d = cvt_double2_to_e8m0x2(
+                d_hi2, saturation_t.SATFINITE, cudaRoundMode.cudaRoundPosInf
+            )
+
+            result[0] = fp8x4_e5m2(f4).__x
+            result[1] = uint32(e5m2_lo_f) | (uint32(e5m2_hi_f) << 16)
+            result[2] = fp8x4_e4m3(f4).__x
+            result[3] = uint32(e4m3_lo_f) | (uint32(e4m3_hi_f) << 16)
+            result[4] = fp8x4_e8m0(f4).__x
+            result[5] = uint32(e8m0_lo_f) | (uint32(e8m0_hi_f) << 16)
+
+            result[6] = fp8x4_e5m2(d4).__x
+            result[7] = uint32(e5m2_lo_d) | (uint32(e5m2_hi_d) << 16)
+            result[8] = fp8x4_e4m3(d4).__x
+            result[9] = uint32(e4m3_lo_d) | (uint32(e4m3_hi_d) << 16)
+            result[10] = fp8x4_e8m0(d4).__x
+            result[11] = uint32(e8m0_lo_d) | (uint32(e8m0_hi_d) << 16)
+
+        result = np.zeros(12, dtype=np.uint32)
+        kernel[1, 1](result)
+
+        for i in range(0, 12, 2):
+            self.assertEqual(result[i], result[i + 1])
 
     def test_fp8_nan_constructors(self):
         """Test fp8 construction from NaN."""

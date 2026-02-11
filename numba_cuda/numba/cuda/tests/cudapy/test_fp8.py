@@ -3,7 +3,7 @@
 
 import numpy as np
 from numba import cuda
-from numba.cuda import config, float32, float64, uint8
+from numba.cuda import config, float32, float64, uint8, uint32
 from numba.cuda.api import is_fp8_supported
 from numba.cuda.testing import CUDATestCase, unittest
 
@@ -13,16 +13,30 @@ if not config.ENABLE_CUDASIM:
     from numba.cuda.fp8 import (
         bfloat16_raw_to_e8m0,
         bfloat16_raw_to_fp8,
+        cvt_double2_to_e8m0x2,
+        cvt_double2_to_fp8x2,
         cvt_double_to_fp8,
+        cvt_float2_to_e8m0x2,
+        cvt_float2_to_fp8x2,
         cvt_float_to_fp8,
         e8m0_to_bfloat16_raw,
         float32_to_e8m0,
         float32_to_fp8,
+        float32x2_to_e8m0x2,
+        float32x2_to_fp8x2,
         float64_to_e8m0,
         float64_to_fp8,
+        float64x2_to_e8m0x2,
+        float64x2_to_fp8x2,
         fp8_e4m3,
         fp8_e5m2,
         fp8_e8m0,
+        fp8x2_e4m3,
+        fp8x2_e5m2,
+        fp8x2_e8m0,
+        fp8x4_e4m3,
+        fp8x4_e5m2,
+        fp8x4_e8m0,
         fp8_interpretation_t,
         saturation_t,
     )
@@ -36,6 +50,10 @@ class TestFP8HighLevelBindings(CUDATestCase):
     def test_public_aliases_map_to_intrinsics(self):
         self.assertIs(float32_to_fp8, cvt_float_to_fp8)
         self.assertIs(float64_to_fp8, cvt_double_to_fp8)
+        self.assertIs(float32x2_to_fp8x2, cvt_float2_to_fp8x2)
+        self.assertIs(float64x2_to_fp8x2, cvt_double2_to_fp8x2)
+        self.assertIs(float32x2_to_e8m0x2, cvt_float2_to_e8m0x2)
+        self.assertIs(float64x2_to_e8m0x2, cvt_double2_to_e8m0x2)
 
     def test_scalar_fp8_types(self):
         @cuda.jit
@@ -48,6 +66,110 @@ class TestFP8HighLevelBindings(CUDATestCase):
         kernel[1, 1](out)
 
         np.testing.assert_allclose(out, [1.0, 1.0, 2.0], atol=1e-3)
+
+    def test_packed_fp8_types(self):
+        @cuda.jit
+        def kernel(out_u16, out_u32):
+            f2 = cuda.float32x2(float32(1.0), float32(2.0))
+            d2 = cuda.float64x2(float64(4.0), float64(8.0))
+
+            out_u16[0] = fp8x2_e5m2(f2).__x
+            out_u16[1] = float32x2_to_fp8x2(
+                f2, saturation_t.SATFINITE, fp8_interpretation_t.E5M2
+            )
+            out_u16[2] = fp8x2_e4m3(f2).__x
+            out_u16[3] = float32x2_to_fp8x2(
+                f2, saturation_t.SATFINITE, fp8_interpretation_t.E4M3
+            )
+            out_u16[4] = fp8x2_e8m0(f2).__x
+            out_u16[5] = float32x2_to_e8m0x2(
+                f2, saturation_t.SATFINITE, cudaRoundMode.cudaRoundPosInf
+            )
+
+            out_u16[6] = fp8x2_e5m2(d2).__x
+            out_u16[7] = float64x2_to_fp8x2(
+                d2, saturation_t.SATFINITE, fp8_interpretation_t.E5M2
+            )
+            out_u16[8] = fp8x2_e4m3(d2).__x
+            out_u16[9] = float64x2_to_fp8x2(
+                d2, saturation_t.SATFINITE, fp8_interpretation_t.E4M3
+            )
+            out_u16[10] = fp8x2_e8m0(d2).__x
+            out_u16[11] = float64x2_to_e8m0x2(
+                d2, saturation_t.SATFINITE, cudaRoundMode.cudaRoundPosInf
+            )
+
+            f4 = cuda.float32x4(
+                float32(1.0), float32(2.0), float32(4.0), float32(8.0)
+            )
+            d4 = cuda.float64x4(
+                float64(16.0), float64(32.0), float64(64.0), float64(128.0)
+            )
+
+            f_lo2 = cuda.float32x2(f4.x, f4.y)
+            f_hi2 = cuda.float32x2(f4.z, f4.w)
+            d_lo2 = cuda.float64x2(d4.x, d4.y)
+            d_hi2 = cuda.float64x2(d4.z, d4.w)
+
+            f_e5m2_lo = float32x2_to_fp8x2(
+                f_lo2, saturation_t.SATFINITE, fp8_interpretation_t.E5M2
+            )
+            f_e5m2_hi = float32x2_to_fp8x2(
+                f_hi2, saturation_t.SATFINITE, fp8_interpretation_t.E5M2
+            )
+            f_e4m3_lo = float32x2_to_fp8x2(
+                f_lo2, saturation_t.SATFINITE, fp8_interpretation_t.E4M3
+            )
+            f_e4m3_hi = float32x2_to_fp8x2(
+                f_hi2, saturation_t.SATFINITE, fp8_interpretation_t.E4M3
+            )
+            f_e8m0_lo = float32x2_to_e8m0x2(
+                f_lo2, saturation_t.SATFINITE, cudaRoundMode.cudaRoundPosInf
+            )
+            f_e8m0_hi = float32x2_to_e8m0x2(
+                f_hi2, saturation_t.SATFINITE, cudaRoundMode.cudaRoundPosInf
+            )
+
+            d_e5m2_lo = float64x2_to_fp8x2(
+                d_lo2, saturation_t.SATFINITE, fp8_interpretation_t.E5M2
+            )
+            d_e5m2_hi = float64x2_to_fp8x2(
+                d_hi2, saturation_t.SATFINITE, fp8_interpretation_t.E5M2
+            )
+            d_e4m3_lo = float64x2_to_fp8x2(
+                d_lo2, saturation_t.SATFINITE, fp8_interpretation_t.E4M3
+            )
+            d_e4m3_hi = float64x2_to_fp8x2(
+                d_hi2, saturation_t.SATFINITE, fp8_interpretation_t.E4M3
+            )
+            d_e8m0_lo = float64x2_to_e8m0x2(
+                d_lo2, saturation_t.SATFINITE, cudaRoundMode.cudaRoundPosInf
+            )
+            d_e8m0_hi = float64x2_to_e8m0x2(
+                d_hi2, saturation_t.SATFINITE, cudaRoundMode.cudaRoundPosInf
+            )
+
+            out_u32[0] = fp8x4_e5m2(f4).__x
+            out_u32[1] = uint32(f_e5m2_lo) | (uint32(f_e5m2_hi) << 16)
+            out_u32[2] = fp8x4_e4m3(f4).__x
+            out_u32[3] = uint32(f_e4m3_lo) | (uint32(f_e4m3_hi) << 16)
+            out_u32[4] = fp8x4_e8m0(f4).__x
+            out_u32[5] = uint32(f_e8m0_lo) | (uint32(f_e8m0_hi) << 16)
+
+            out_u32[6] = fp8x4_e5m2(d4).__x
+            out_u32[7] = uint32(d_e5m2_lo) | (uint32(d_e5m2_hi) << 16)
+            out_u32[8] = fp8x4_e4m3(d4).__x
+            out_u32[9] = uint32(d_e4m3_lo) | (uint32(d_e4m3_hi) << 16)
+            out_u32[10] = fp8x4_e8m0(d4).__x
+            out_u32[11] = uint32(d_e8m0_lo) | (uint32(d_e8m0_hi) << 16)
+
+        out_u16 = np.zeros(12, dtype=np.uint16)
+        out_u32 = np.zeros(12, dtype=np.uint32)
+        kernel[1, 1](out_u16, out_u32)
+
+        for i in range(0, 12, 2):
+            self.assertEqual(out_u16[i], out_u16[i + 1])
+            self.assertEqual(out_u32[i], out_u32[i + 1])
 
     def test_float_to_fp8_aliases(self):
         @cuda.jit
