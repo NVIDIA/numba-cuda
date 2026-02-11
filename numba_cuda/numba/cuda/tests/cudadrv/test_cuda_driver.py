@@ -206,7 +206,7 @@ class TestCudaDriver(CUDATestCase):
         # Test properties of the default stream
         ds = self.context.get_default_stream()
         self.assertIn("Default CUDA stream", repr(ds))
-        self.assertEqual(0, int(ds))
+        self.assertEqual(0, ds.__cuda_stream__()[1])
         # bool(stream) is the check that is done in memcpy to decide if async
         # version should be used. So the default (0) stream should be true-ish
         # even though 0 is usually false-ish in Python.
