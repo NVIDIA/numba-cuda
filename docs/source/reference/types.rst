@@ -647,9 +647,9 @@ Generic FP8 (E4M3 / E5M2 selected by enum)
     Aliases of ``cvt_float2_to_fp8x2`` and ``cvt_double2_to_fp8x2``.
     These return packed FP8x2 storage in a ``uint16``.
 
-.. function:: numba.cuda.fp8.bfloat16_raw_to_fp8(x, saturate, fp8_kind)
+.. function:: numba.cuda.fp8.bfloat16_to_fp8(x, saturate, fp8_kind)
 
-    Alias of ``cvt_bfloat16raw_to_fp8``.
+    Converts ``bfloat16`` to the requested FP8 format.
 
 E8M0 conversions
 ^^^^^^^^^^^^^^^^
@@ -658,13 +658,13 @@ E8M0 conversions
 .. function:: numba.cuda.fp8.float64_to_e8m0(x, saturate, rounding)
 .. function:: numba.cuda.fp8.float32x2_to_e8m0x2(x, saturate, rounding)
 .. function:: numba.cuda.fp8.float64x2_to_e8m0x2(x, saturate, rounding)
-.. function:: numba.cuda.fp8.bfloat16_raw_to_e8m0(x, saturate, rounding)
+.. function:: numba.cuda.fp8.bfloat16_to_e8m0(x, saturate, rounding)
 
     Aliases of ``cvt_float_to_e8m0``, ``cvt_double_to_e8m0``,
     ``cvt_float2_to_e8m0x2``, ``cvt_double2_to_e8m0x2``, and
     ``cvt_bfloat16raw_to_e8m0`` respectively.
     ``rounding`` uses ``cudaRoundMode`` values from ``cuda.bindings.runtime``.
 
-.. function:: numba.cuda.fp8.e8m0_to_bfloat16_raw(x)
+.. function:: numba.cuda.fp8.e8m0_to_bfloat16(x)
 
-    Alias of ``cvt_e8m0_to_bf16raw``. Returns a bfloat16 raw storage object.
+    Converts E8M0 storage to ``bfloat16``.

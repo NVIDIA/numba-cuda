@@ -11,15 +11,15 @@ if not config.ENABLE_CUDASIM:
     from cuda.bindings.runtime import cudaRoundMode
 
     from numba.cuda.fp8 import (
-        bfloat16_raw_to_e8m0,
-        bfloat16_raw_to_fp8,
+        bfloat16_to_e8m0,
+        bfloat16_to_fp8,
         cvt_double2_to_e8m0x2,
         cvt_double2_to_fp8x2,
         cvt_double_to_fp8,
         cvt_float2_to_e8m0x2,
         cvt_float2_to_fp8x2,
         cvt_float_to_fp8,
-        e8m0_to_bfloat16_raw,
+        e8m0_to_bfloat16,
         float32_to_e8m0,
         float32_to_fp8,
         float32x2_to_e8m0x2,
@@ -210,9 +210,9 @@ class TestFP8HighLevelBindings(CUDATestCase):
             out_u8[3], 0x7E
         )  # E4M3 overflow -> MAXNORM (SATFINITE)
 
-    def test_e8m0_aliases_and_raw_roundtrip(self):
+    def test_e8m0_aliases_and_bfloat16_roundtrip(self):
         @cuda.jit
-        def kernel(out_u8, out_raw_u16, x32, x64):
+        def kernel(out_u8, out_bf16_f32, x32, x64):
             out_u8[0] = float32_to_e8m0(
                 x32[0], SaturationMode.NOSAT, cudaRoundMode.cudaRoundPosInf
             )
@@ -226,12 +226,12 @@ class TestFP8HighLevelBindings(CUDATestCase):
                 x64[0], SaturationMode.SATFINITE, cudaRoundMode.cudaRoundPosInf
             )
 
-            raw_one = e8m0_to_bfloat16_raw(uint8(127))
-            out_raw_u16[0] = raw_one.x
+            bf16_one = e8m0_to_bfloat16(uint8(127))
+            out_bf16_f32[0] = float32(bf16_one)
 
-            raw_half = e8m0_to_bfloat16_raw(uint8(126))
-            out_u8[4] = bfloat16_raw_to_e8m0(
-                raw_half, SaturationMode.NOSAT, cudaRoundMode.cudaRoundZero
+            bf16_half = e8m0_to_bfloat16(uint8(126))
+            out_u8[4] = bfloat16_to_e8m0(
+                bf16_half, SaturationMode.NOSAT, cudaRoundMode.cudaRoundZero
             )
 
         x32_over = np.nextafter(np.float32(2.0**127), np.float32(np.inf))
@@ -239,26 +239,26 @@ class TestFP8HighLevelBindings(CUDATestCase):
         x32 = np.array([x32_over], dtype=np.float32)
         x64 = np.array([x64_over], dtype=np.float64)
         out_u8 = np.zeros(5, dtype=np.uint8)
-        out_raw_u16 = np.zeros(1, dtype=np.uint16)
-        kernel[1, 1](out_u8, out_raw_u16, x32, x64)
+        out_bf16_f32 = np.zeros(1, dtype=np.float32)
+        kernel[1, 1](out_u8, out_bf16_f32, x32, x64)
 
         self.assertEqual(out_u8[0], 0xFF)  # NOSAT overflow -> NaN
         self.assertEqual(out_u8[1], 0xFE)  # SATFINITE overflow -> max finite
         self.assertEqual(out_u8[2], 0xFF)  # NOSAT overflow -> NaN
         self.assertEqual(out_u8[3], 0xFE)  # SATFINITE overflow -> max finite
-        self.assertEqual(out_raw_u16[0], 0x3F80)  # 1.0 in BF16 raw format
-        self.assertEqual(out_u8[4], 126)  # Roundtrip e8m0 -> bf16 raw -> e8m0
+        self.assertEqual(out_bf16_f32[0], 1.0)  # e8m0(127) -> bfloat16(1.0)
+        self.assertEqual(out_u8[4], 126)  # Roundtrip e8m0 -> bfloat16 -> e8m0
 
-    def test_bfloat16_raw_to_fp8_alias(self):
+    def test_bfloat16_to_fp8_alias(self):
         @cuda.jit
         def kernel(out_u8):
             # Exponent 254 corresponds to 2^127 in E8M0, out-of-range for FP8 E5M2.
-            raw = e8m0_to_bfloat16_raw(uint8(254))
-            out_u8[0] = bfloat16_raw_to_fp8(
-                raw, SaturationMode.NOSAT, FP8Format.E5M2
+            bf16 = e8m0_to_bfloat16(uint8(254))
+            out_u8[0] = bfloat16_to_fp8(
+                bf16, SaturationMode.NOSAT, FP8Format.E5M2
             )
-            out_u8[1] = bfloat16_raw_to_fp8(
-                raw, SaturationMode.SATFINITE, FP8Format.E5M2
+            out_u8[1] = bfloat16_to_fp8(
+                bf16, SaturationMode.SATFINITE, FP8Format.E5M2
             )
 
         out_u8 = np.zeros(2, dtype=np.uint8)
