@@ -61,6 +61,11 @@ if not config.ENABLE_CUDASIM:
 
     FE8_TYPES = [fp8_e5m2, fp8_e4m3, fp8_e8m0]
 
+    @cuda.jit(device=True)
+    def _packed_storage_bits(value):
+        # Avoid class-scope name mangling of `.__x` in test methods.
+        return value.__x
+
 
 @unittest.skipUnless(is_fp8_supported(), "FP8 is not supported")
 @unittest.skipIf(
@@ -177,28 +182,28 @@ class FP8ConstructorTests(CUDATestCase):
             f2 = cuda.float32x2(float32(1.0), float32(2.0))
             d2 = cuda.float64x2(float64(4.0), float64(8.0))
 
-            result[0] = fp8x2_e5m2(f2).__x
+            result[0] = _packed_storage_bits(fp8x2_e5m2(f2))
             result[1] = cvt_float2_to_fp8x2(
                 f2, saturation_t.SATFINITE, fp8_interpretation_t.E5M2
             )
-            result[2] = fp8x2_e4m3(f2).__x
+            result[2] = _packed_storage_bits(fp8x2_e4m3(f2))
             result[3] = cvt_float2_to_fp8x2(
                 f2, saturation_t.SATFINITE, fp8_interpretation_t.E4M3
             )
-            result[4] = fp8x2_e8m0(f2).__x
+            result[4] = _packed_storage_bits(fp8x2_e8m0(f2))
             result[5] = cvt_float2_to_e8m0x2(
                 f2, saturation_t.SATFINITE, cudaRoundMode.cudaRoundPosInf
             )
 
-            result[6] = fp8x2_e5m2(d2).__x
+            result[6] = _packed_storage_bits(fp8x2_e5m2(d2))
             result[7] = cvt_double2_to_fp8x2(
                 d2, saturation_t.SATFINITE, fp8_interpretation_t.E5M2
             )
-            result[8] = fp8x2_e4m3(d2).__x
+            result[8] = _packed_storage_bits(fp8x2_e4m3(d2))
             result[9] = cvt_double2_to_fp8x2(
                 d2, saturation_t.SATFINITE, fp8_interpretation_t.E4M3
             )
-            result[10] = fp8x2_e8m0(d2).__x
+            result[10] = _packed_storage_bits(fp8x2_e8m0(d2))
             result[11] = cvt_double2_to_e8m0x2(
                 d2, saturation_t.SATFINITE, cudaRoundMode.cudaRoundPosInf
             )
@@ -264,18 +269,18 @@ class FP8ConstructorTests(CUDATestCase):
                 d_hi2, saturation_t.SATFINITE, cudaRoundMode.cudaRoundPosInf
             )
 
-            result[0] = fp8x4_e5m2(f4).__x
+            result[0] = _packed_storage_bits(fp8x4_e5m2(f4))
             result[1] = uint32(e5m2_lo_f) | (uint32(e5m2_hi_f) << 16)
-            result[2] = fp8x4_e4m3(f4).__x
+            result[2] = _packed_storage_bits(fp8x4_e4m3(f4))
             result[3] = uint32(e4m3_lo_f) | (uint32(e4m3_hi_f) << 16)
-            result[4] = fp8x4_e8m0(f4).__x
+            result[4] = _packed_storage_bits(fp8x4_e8m0(f4))
             result[5] = uint32(e8m0_lo_f) | (uint32(e8m0_hi_f) << 16)
 
-            result[6] = fp8x4_e5m2(d4).__x
+            result[6] = _packed_storage_bits(fp8x4_e5m2(d4))
             result[7] = uint32(e5m2_lo_d) | (uint32(e5m2_hi_d) << 16)
-            result[8] = fp8x4_e4m3(d4).__x
+            result[8] = _packed_storage_bits(fp8x4_e4m3(d4))
             result[9] = uint32(e4m3_lo_d) | (uint32(e4m3_hi_d) << 16)
-            result[10] = fp8x4_e8m0(d4).__x
+            result[10] = _packed_storage_bits(fp8x4_e8m0(d4))
             result[11] = uint32(e8m0_lo_d) | (uint32(e8m0_hi_d) << 16)
 
         result = np.zeros(12, dtype=np.uint32)
