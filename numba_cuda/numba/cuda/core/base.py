@@ -468,19 +468,6 @@ class BaseContext:
         fnty = llvmir.FunctionType(restype, argtypes)
         return fnty
 
-    def declare_function(self, module, fndesc):
-        fnty = self.call_conv.get_function_type(fndesc.restype, fndesc.argtypes)
-        fn = cgutils.get_or_insert_function(module, fnty, fndesc.mangled_name)
-        self.call_conv.decorate_function(
-            fn, fndesc.args, fndesc.argtypes, noalias=fndesc.noalias
-        )
-        if fndesc.inline:
-            fn.attributes.add("alwaysinline")
-            # alwaysinline overrides optnone
-            fn.attributes.discard("noinline")
-            fn.attributes.discard("optnone")
-        return fn
-
     def declare_external_function(self, module, fndesc):
         fnty = self.get_external_function_type(fndesc)
         fn = cgutils.get_or_insert_function(module, fnty, fndesc.mangled_name)
@@ -975,7 +962,7 @@ class BaseContext:
             builder, fndesc, sig, args
         )
         with cgutils.if_unlikely(builder, status.is_error):
-            self.call_conv.return_status_propagate(builder, status)
+            fndesc.call_conv.return_status_propagate(builder, status)
 
         res = imputils.fix_returning_optional(self, builder, sig, status, res)
         return res
@@ -986,8 +973,8 @@ class BaseContext:
         """
         # Add call to the generated function
         llvm_mod = builder.module
-        fn = self.declare_function(llvm_mod, fndesc)
-        status, res = self.call_conv.call_function(
+        fn = fndesc.declare_function(llvm_mod)
+        status, res = fndesc.call_conv.call_function(
             builder, fn, sig.return_type, sig.args, args
         )
         return status, res

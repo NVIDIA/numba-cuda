@@ -230,7 +230,7 @@ class PythonAPI:
                 )
                 self.builder.ret(self.get_null_object())
             else:
-                self.context.call_conv.return_user_exc(
+                self.context.fndesc.call_conv.return_user_exc(
                     self.builder,
                     RuntimeError,
                     (f"missing Environment: {debug_msg}",),
@@ -1771,7 +1771,7 @@ class PythonAPI:
             with has_err:
                 builder.store(status.is_error, is_error_ptr)
                 # Set error state in the Python interpreter
-                self.context.call_conv.raise_error(builder, self, status)
+                self.context.fndesc.call_conv.raise_error(builder, self, status)
             with no_err:
                 # Handle returned value
                 res = imputils.fix_returning_optional(

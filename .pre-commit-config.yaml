@@ -12,6 +12,7 @@ repos:
     - id: check-yaml
       exclude: ^conda/recipes/numba-cuda/meta.yaml
     - id: debug-statements
+      exclude: examples/debugging/hello.py
     - id: end-of-file-fixer
     - id: trailing-whitespace
       exclude: '.+\.patch'
@@ -31,6 +32,7 @@ repos:
       language: python
       additional_dependencies:
         - pathspec==0.12.1
+      exclude: examples/debugging/debugging.code-workspace
 - repo: https://github.com/sphinx-contrib/sphinx-lint
   rev: v1.0.2
   hooks:
