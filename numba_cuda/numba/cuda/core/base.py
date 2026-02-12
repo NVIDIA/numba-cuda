@@ -961,8 +961,9 @@ class BaseContext:
         status, res = self.call_internal_no_propagate(
             builder, fndesc, sig, args
         )
-        with cgutils.if_unlikely(builder, status.is_error):
-            fndesc.call_conv.return_status_propagate(builder, status)
+        if status is not None:
+            with cgutils.if_unlikely(builder, status.is_error):
+                fndesc.call_conv.return_status_propagate(builder, status)
 
         res = imputils.fix_returning_optional(self, builder, sig, status, res)
         return res

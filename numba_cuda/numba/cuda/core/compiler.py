@@ -84,7 +84,16 @@ class CompilerBase:
     """
 
     def __init__(
-        self, typingctx, targetctx, library, args, return_type, flags, locals
+        self,
+        typingctx,
+        targetctx,
+        library,
+        args,
+        return_type,
+        flags,
+        locals,
+        call_conv=None,
+        abi_info=None,
     ):
         # Make sure the environment is reloaded
         config.reload_config()
@@ -115,6 +124,14 @@ class CompilerBase:
         self.state.reload_init = []
         # hold this for e.g. with_lifting, null out on exit
         self.state.pipeline = self
+
+        if call_conv is None:
+            call_conv = CUDACallConv(self.state.targetctx)
+        if abi_info is None:
+            abi_info = {}
+
+        self.state.call_conv = call_conv
+        self.state.abi_info = abi_info
 
         self.state.status = _CompileStatus(
             can_fallback=self.state.flags.enable_pyobject
