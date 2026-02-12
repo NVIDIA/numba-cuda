@@ -158,12 +158,10 @@ class _Runtime:
                     # Get primary context for the active device
                     ctx = self.gpus[ac.devnum].get_primary_context()
                     # Is active context the primary context?
-                    ctx_handle = ctx.handle.value
-                    ac_ctx_handle = ac.context_handle.value
-                    if ctx_handle != ac_ctx_handle:
+                    if ctx.handle != ac.context_handle:
                         raise RuntimeError(
                             "Numba cannot operate on non-primary"
-                            f" CUDA context {ac_ctx_handle:x}"
+                            f" CUDA context {int(ac.context_handle):x}"
                         )
                     # Ensure the context is ready
                     ctx.prepare_for_use()
