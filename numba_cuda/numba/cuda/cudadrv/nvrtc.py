@@ -108,6 +108,13 @@ def compile(src, name, cc, ltoir=False, lineinfo=False, debug=False):
     numba_cuda_path = os.path.dirname(cudadrv_path)
 
     nvrtc_ver_major = version[0]
+
+    if nvrtc_ver_major == 12:
+        numba_include = f"{os.path.join(numba_cuda_path, 'include', '12')}"
+
+    elif nvrtc_ver_major == 13:
+        numba_include = f"{os.path.join(numba_cuda_path, 'include', '13')}"
+
     cccl_found_header_dir = pathfinder.locate_nvidia_header_directory("cccl")
     if cccl_found_header_dir is None:
         raise RuntimeError("Unable to locate CCCL header directory.")
