@@ -426,7 +426,7 @@ def get_current_cuda_target_name():
 def _get_include_dir():
     """Find the root include directory."""
     located_header_dir = pathfinder.locate_nvidia_header_directory("cudart")
-    if located_header_dir:
+    if located_header_dir is not None:
         assert os.path.exists(
             os.path.join(
                 located_header_dir.abs_path, "cuda_device_runtime_api.h"
@@ -440,6 +440,7 @@ def _get_include_dir():
             return _env_path_tuple(
                 "CUDA_INCLUDE_PATH Config entry", config.CUDA_INCLUDE_PATH
             )
+    return _env_path_tuple("Unknown", None)
 
 
 def _find_cuda_home_from_lib_path(lib_path):
