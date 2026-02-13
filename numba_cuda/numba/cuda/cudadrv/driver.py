@@ -1066,6 +1066,11 @@ class Context:
         self.modules.clear()
         # Clear trash
         self.deallocations.clear()
+        # Reset NRT runtime so it does not hold a dangling weakref to a
+        # module that was just removed from self.modules
+        from numba.cuda.memory_management.nrt import rtsys
+
+        rtsys.close()
 
     def get_memory_info(self):
         """Returns (free, total) memory in bytes in the context."""
