@@ -116,10 +116,12 @@ def compile(src, name, cc, ltoir=False, lineinfo=False, debug=False):
         numba_include = f"{os.path.join(numba_cuda_path, 'include', '13')}"
 
     cccl_found_header_dir = pathfinder.locate_nvidia_header_directory("cccl")
-    if cccl_found_header_dir is None:
-        raise RuntimeError("Unable to locate CCCL header directory.")
-    cccl_include_dir = cccl_found_header_dir.abs_path
-    cuda_includes.append(cccl_include_dir)
+    if cccl_found_header_dir is not None:
+        # TODO: Not every kernel needs cccl, so it shouldn't
+        # be added to the include path for every kernel.
+        # Needs to be flagged during compilation if NRT is included.
+        cccl_include_dir = cccl_found_header_dir.abs_path
+        cuda_includes.append(cccl_include_dir)
 
     if config.CUDA_NVRTC_EXTRA_SEARCH_PATHS:
         extra_includes = config.CUDA_NVRTC_EXTRA_SEARCH_PATHS.split(":")
