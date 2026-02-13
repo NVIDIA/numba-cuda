@@ -53,24 +53,46 @@ class TestCudaEvent(CUDATestCase):
         stream = cuda.stream()
         evt = cuda.event()
 
+        # Mapped arrays: host-side edits visible to device and vice versa.
+        started = cuda.mapped_array(1, dtype=np.int32)
+        release = cuda.mapped_array(1, dtype=np.int32)
+
         @cuda.jit
-        def spin(ms):
-            # Sleep for ms
-            for i in range(ms):
-                cuda.nanosleep(int32(1_000_000))  # 1 ms
+        def gated_kernel(started_flag, release_flag):
+            # Signal that kernel has started
+            started_flag[0] = 1
+            # Spin until host releases us
+            while release_flag[0] == 0:
+                cuda.nanosleep(int32(1_000))
 
-        # Run once to compile
-        spin[1, 1, stream](1)
+        # Compile first
+        started[0] = 0
+        release[0] = 1  # Don't block during warmup
+        gated_kernel[1, 1, stream](started, release)
+        stream.synchronize()
 
-        spin_ms = 200
-        spin[1, 1, stream](spin_ms)
+        # Reset for actual test
+        started[0] = 0
+        release[0] = 0
+
+        # Launch - kernel will spin until we release it
+        gated_kernel[1, 1, stream](started, release)
         evt.record(stream)
 
-        immediate_query = evt.query()
-        evt.synchronize()
-        synced_query = evt.query()
+        # Wait until kernel confirms it's running
+        while started[0] == 0:
+            pass
 
+        # Kernel is running until we release it - if query returns True, fail.
+        immediate_query = evt.query()
         assert immediate_query is False, "Query returned True prematurely"
+
+        # Release the kernel and synchronize
+        release[0] = 1
+        evt.synchronize()
+
+        # If query returns False after synchronize, fail.
+        synced_query = evt.query()
         assert synced_query is True, "Query returned False after sync"
 
 if __name__ == "__main__":
