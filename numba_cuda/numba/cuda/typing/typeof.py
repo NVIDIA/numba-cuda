@@ -56,6 +56,13 @@ def typeof_impl(val, c):
     if tp is not None:
         return tp
 
+    # Check for dlpack objects
+    dlpack = getattr(val, "__dlpack__", None)
+    if dlpack is not None:
+        tp = _typeof_dlpack(dlpack, c)
+        if tp is not None:
+            return tp
+
     # Check for __cuda_array_interface__ objects (third-party device arrays)
 
     # Numba's own DeviceNDArray is handled above via _numba_type_.
@@ -349,6 +356,29 @@ def _typeof_cuda_array_interface_cached(
             layout = "A"
 
     return types.Array(dtype, ndim, layout, readonly=readonly)
+
+
+def _typeof_dlpack(val, c):
+    obj = getattr(val, "__self__", None)
+    if obj is not None:
+        smv = StridedMemoryView.from_dlpack(
+            obj, stream_ptr=-1
+        )  # stream is probably unimportant here?
+
+        smv_layout = smv._layout
+        layout = (
+            "C"
+            if smv_layout.is_contiguous_c
+            else "F"
+            if smv_layout.is_contiguous_f
+            else "A"
+        )
+        return types.Array(
+            dtype=numpy_support.from_dtype(smv.dtype),
+            ndim=len(smv.shape),
+            layout=layout,
+            readonly=smv.readonly,
+        )
 
 
 @functools.lru_cache
