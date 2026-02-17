@@ -450,6 +450,29 @@ class TestCudaArrayInterface(CUDATestCase):
             # Ensure that synchronize was not called
             mock_sync.assert_not_called()
 
+    def test_from_dtype_caching_distiguish_custom_dtypes(self):
+        f16x2 = np.dtype([("x", np.float16), ("y", np.float16)])
+        f16x2_aligned = np.dtype(
+            [("x", np.float16), ("y", np.float16)], align=True
+        )
+
+        @cuda.jit
+        def f1(input, output):
+            pass
+
+        @cuda.jit
+        def f2(input, output):
+            pass
+
+        arr0 = cuda.to_device(np.zeros((1,), dtype=f16x2))
+        arr1 = cuda.to_device(np.zeros((1,), dtype=f16x2_aligned))
+        output = cuda.to_device(np.zeros((2,), dtype=np.int64))
+
+        f1[1, 1](arr0, output)
+        f2[1, 1](arr1, output)
+
+        assert f1.signatures[0] != f2.signatures[0]
+
 
 if __name__ == "__main__":
     unittest.main()
