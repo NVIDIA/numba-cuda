@@ -4,6 +4,7 @@
 from abc import abstractmethod, ABCMeta
 import itertools
 import numba
+import numba_cuda
 import os
 import contextlib
 import uuid
@@ -100,7 +101,7 @@ class IndexDataCacheFile:
         self._index_path = os.path.join(self._cache_path, self._index_name)
         self._data_name_pattern = "%s.{number:d}.nbc" % (filename_base,)
         self._source_stamp = source_stamp
-        self._version = numba.__version__
+        self._version = (numba.__version__, numba_cuda.__version__)
 
     def flush(self):
         self._save_index({})
