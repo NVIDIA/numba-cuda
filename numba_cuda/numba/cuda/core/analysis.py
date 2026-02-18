@@ -27,6 +27,7 @@ def compute_use_defs(blocks):
     """
     Find variable use/def per block.
     """
+    from numba.cuda.core import ir_utils
 
     var_use_map = {}  # { block offset -> set of vars }
     var_def_map = {}  # { block offset -> set of vars }
@@ -56,7 +57,7 @@ def compute_use_defs(blocks):
                 if stmt.target.name not in rhs_set:
                     def_set.add(stmt.target.name)
 
-            for var in stmt.list_vars():
+            for var in ir_utils.compat_list_vars_stmt(stmt):
                 # do not include locally defined vars to use-map
                 if var.name not in def_set:
                     use_set.add(var.name)
