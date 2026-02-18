@@ -1017,11 +1017,11 @@ def _make_dtype_object(typingctx, desc):
 
 
 @overload(np.dtype)
-def numpy_dtype(dtype, align=False, copy=False, **kwargs):
+def numpy_dtype(dtype, align=False, copy=False):
     """Provide an implementation so that numpy.dtype function can be lowered."""
     if isinstance(dtype, (types.Literal, types.functions.NumberClass)):
 
-        def imp(dtype, align=False, copy=False, **kwargs):
+        def imp(dtype, align=False, copy=False):
             return _make_dtype_object(dtype)
 
         return imp
