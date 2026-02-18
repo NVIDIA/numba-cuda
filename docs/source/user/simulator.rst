@@ -6,7 +6,7 @@
 .. _simulator:
 
 =================================================
-Debugging CUDA Python with the the CUDA Simulator
+Debugging CUDA Python with the CUDA Simulator
 =================================================
 
 Numba includes a CUDA Simulator that implements most of the semantics in CUDA
