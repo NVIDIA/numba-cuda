@@ -70,7 +70,7 @@ try:
             break  # no progress — avoid infinite loop
         _remaining = _next_round
 
-    setattr(_mod, "NumbaError", NumbaError)
+    _mod.NumbaError = NumbaError
 
 except ImportError:
     pass
