@@ -530,9 +530,10 @@ def compat_list_vars_node(node):
     visit_vars_inner(node, _collect_vars_callback, collected)
     if collected:
         return collected
-    if hasattr(node, "list_vars"):
+    try:
         return node.list_vars()
-    return ()
+    except AttributeError:
+        return ()
 
 
 add_offset_to_labels_extensions = {}
