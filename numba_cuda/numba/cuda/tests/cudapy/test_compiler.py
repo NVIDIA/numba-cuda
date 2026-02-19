@@ -788,6 +788,15 @@ class TestCompile(unittest.TestCase):
             wrapper_func, types.int32(types.int32), output="ltoir", abi="c"
         )
 
+    def test_compile_complex_div_c_abi(self):
+        # Reproducer from gh-789
+        # https://github.com/NVIDIA/numba-cuda/issues/789
+        def div_by_2(x):
+            return x / 2
+
+        sig = types.complex128(types.complex128)
+        cuda.compile(div_by_2, sig, device=True, abi="c")
+
 
 @skip_on_cudasim("Compilation unsupported in the simulator")
 class TestCompileForCurrentDevice(CUDATestCase):
