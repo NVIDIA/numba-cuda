@@ -745,7 +745,7 @@ class TestCompile(unittest.TestCase):
                     # is compiled with numba-abi. So cres should have CUDACallConv.
                     assert isinstance(cres.fndesc.call_conv, CUDACallConv)
 
-                    _, result = context.call_internal_no_propagate(
+                    result = context.call_internal(
                         builder, cres.fndesc, inner_sig, [input_val]
                     )
 
@@ -768,9 +768,9 @@ class TestCompile(unittest.TestCase):
 
         cuda.compile(wrapper, wrapper_sig.args, output="ltoir")
 
-    def test_compile_jitted_subroutine_returning_none(self):
+    def test_compile_CABI_calling_device_function_returning_optional(self):
         # Exercise a CABI caller invoking a Numba ABI callee that can return
-        # None through Optional[int32], without intrinsic wrapper plumbing.
+        # None through Optional[int32]
         def maybe_none(x):
             if x > 0:
                 return x + 1
