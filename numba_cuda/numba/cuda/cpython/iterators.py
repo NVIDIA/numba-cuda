@@ -7,6 +7,7 @@ Implementation of various iterable and iterator types.
 
 from numba.cuda import types
 from numba.cuda import cgutils
+from numba.cuda.core import callconv
 from numba.cuda.core.imputils import (
     iternext_impl,
     call_iternext,
@@ -164,4 +165,6 @@ def iternext_zip(context, builder, sig, args, result):  # noqa: F811
         builder,
         builder.and_(status.is_error, builder.not_(status.is_stop_iteration)),
     ):
-        context.fndesc.call_conv.return_status_propagate(builder, status)
+        callconv.maybe_return_status_propagate(
+            context.fndesc.call_conv, builder, status
+        )

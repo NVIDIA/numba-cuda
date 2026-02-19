@@ -5,6 +5,7 @@ import operator
 
 from numba.cuda import types, typing
 from numba.cuda import cgutils
+from numba.cuda.core import callconv
 
 from numba.cuda.core.imputils import Registry, impl_ret_untracked
 
@@ -124,6 +125,8 @@ def optional_to_any(context, builder, fromty, toty, val):
     validbit = cgutils.as_bool_bit(builder, optval.valid)
     with builder.if_then(builder.not_(validbit), likely=False):
         msg = "expected %s, got None" % (fromty.type,)
-        context.fndesc.call_conv.return_user_exc(builder, TypeError, (msg,))
+        callconv.maybe_return_user_exc(
+            context.fndesc.call_conv, builder, TypeError, (msg,)
+        )
 
     return context.cast(builder, optval.data, fromty.type, toty)

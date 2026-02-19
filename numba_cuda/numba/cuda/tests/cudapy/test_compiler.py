@@ -768,6 +768,26 @@ class TestCompile(unittest.TestCase):
 
         cuda.compile(wrapper, wrapper_sig.args, output="ltoir")
 
+    def test_compile_jitted_subroutine_returning_none(self):
+        # Exercise a CABI caller invoking a Numba ABI callee that can return
+        # None through Optional[int32], without intrinsic wrapper plumbing.
+        def maybe_none(x):
+            if x > 0:
+                return x + 1
+            else:
+                return
+
+        maybe_none_device = cuda.jit(device=True)(maybe_none)
+
+        def wrapper_func(x):
+            return maybe_none_device(x)
+
+        # Compile a CABI wrapper that calls into a Numba-ABI callee returning
+        # Optional[int32]. Successful compilation exercises the ABI boundary.
+        cuda.compile(
+            wrapper_func, types.int32(types.int32), output="ltoir", abi="c"
+        )
+
 
 @skip_on_cudasim("Compilation unsupported in the simulator")
 class TestCompileForCurrentDevice(CUDATestCase):

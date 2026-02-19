@@ -9,7 +9,7 @@ import operator
 
 from llvmlite import ir
 from numba.cuda import types
-from numba.cuda.core import errors
+from numba.cuda.core import callconv, errors
 from numba.cuda import cgutils
 from numba.cuda.core.imputils import (
     Registry,
@@ -117,8 +117,11 @@ class _ListPayloadMixin:
         Raise an error if the index is out of bounds.
         """
         with self._builder.if_then(self.is_out_of_bounds(idx), likely=False):
-            self._context.fndesc.call_conv.return_user_exc(
-                self._builder, IndexError, (msg,)
+            callconv.maybe_return_user_exc(
+                self._context.fndesc.call_conv,
+                self._builder,
+                IndexError,
+                (msg,),
             )
 
     def fix_slice(self, slice):
@@ -347,8 +350,11 @@ class ListInstance(_ListPayloadMixin):
         """
         ok, self = cls.allocate_ex(context, builder, list_type, nitems)
         with builder.if_then(builder.not_(ok), likely=False):
-            context.fndesc.call_conv.return_user_exc(
-                builder, MemoryError, ("cannot allocate list",)
+            callconv.maybe_return_user_exc(
+                context.fndesc.call_conv,
+                builder,
+                MemoryError,
+                ("cannot allocate list",),
             )
         return self
 
@@ -384,8 +390,11 @@ class ListInstance(_ListPayloadMixin):
                 ir.Constant(intp_t, payload_size),
             )
             with builder.if_then(ovf, likely=False):
-                context.fndesc.call_conv.return_user_exc(
-                    builder, MemoryError, ("cannot resize list",)
+                callconv.maybe_return_user_exc(
+                    context.fndesc.call_conv,
+                    builder,
+                    MemoryError,
+                    ("cannot resize list",),
                 )
 
             ptr = context.nrt.meminfo_varsize_realloc_unchecked(
@@ -654,8 +663,8 @@ def setitem_list(context, builder, sig, args):  # noqa: F811
         with otherwise:
             with builder.if_then(builder.icmp_signed("!=", size_delta, zero)):
                 msg = "cannot resize extended list slice with step != 1"
-                context.fndesc.call_conv.return_user_exc(
-                    builder, ValueError, (msg,)
+                callconv.maybe_return_user_exc(
+                    context.fndesc.call_conv, builder, ValueError, (msg,)
                 )
 
             with cgutils.for_range_slice_generic(
@@ -695,8 +704,8 @@ def delitem_list(context, builder, sig, args):
         builder.icmp_signed("!=", slice.step, one), likely=False
     ):
         msg = "unsupported del list[start:stop:step] with step != 1"
-        context.fndesc.call_conv.return_user_exc(
-            builder, NotImplementedError, (msg,)
+        callconv.maybe_return_user_exc(
+            context.fndesc.call_conv, builder, NotImplementedError, (msg,)
         )
 
     # Compute the real stop, e.g. for dest[2:0]

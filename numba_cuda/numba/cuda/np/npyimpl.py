@@ -34,7 +34,7 @@ from numba.cuda.np.arrayobj import _getitem_array_generic
 from numba.cuda.typing import npydecl
 from numba.cuda.extending import overload, intrinsic
 
-from numba.cuda.core import errors
+from numba.cuda.core import callconv, errors
 
 registry = Registry("npyimpl")
 
@@ -507,8 +507,8 @@ def _build_array(context, builder, array_ty, input_types, inputs):
             if loc is not None:
                 msg += '\nFile "%s", line %d, ' % (loc.filename, loc.line)
 
-            context.fndesc.call_conv.return_user_exc(
-                builder, ValueError, (msg,)
+            callconv.maybe_return_user_exc(
+                context.fndesc.call_conv, builder, ValueError, (msg,)
             )
 
     real_array_ty = array_ty.as_array

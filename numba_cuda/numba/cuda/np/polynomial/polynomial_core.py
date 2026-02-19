@@ -13,6 +13,7 @@ from numba.cuda.extending import (
 from numba.cuda import types
 from numba.cuda import cgutils
 import warnings
+from numba.cuda.core import callconv
 from numba.cuda.core.errors import (
     NumbaExperimentalFeatureWarning,
     NumbaValueError,
@@ -149,13 +150,19 @@ def impl_polynomial3(context, builder, sig, args):
     pred2 = builder.icmp_signed("!=", s2, two)
 
     with cgutils.if_unlikely(builder, pred1):
-        context.fndesc.call_conv.return_user_exc(
-            builder, ValueError, ("Domain has wrong number of elements.",)
+        callconv.maybe_return_user_exc(
+            context.fndesc.call_conv,
+            builder,
+            ValueError,
+            ("Domain has wrong number of elements.",),
         )
 
     with cgutils.if_unlikely(builder, pred2):
-        context.fndesc.call_conv.return_user_exc(
-            builder, ValueError, ("Window has wrong number of elements.",)
+        callconv.maybe_return_user_exc(
+            context.fndesc.call_conv,
+            builder,
+            ValueError,
+            ("Window has wrong number of elements.",),
         )
 
     polynomial.coef = coef_cast

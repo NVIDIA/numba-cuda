@@ -7,7 +7,7 @@ import sys
 from llvmlite import ir
 
 from numba.cuda import types, config
-from numba.cuda.core import errors
+from numba.cuda.core import callconv, errors
 from numba.cuda import cgutils, utils
 from numba.cuda.misc.special import gdb, gdb_init, gdb_breakpoint
 from numba.cuda.extending import overload, intrinsic
@@ -162,14 +162,18 @@ def init_gdb_codegen(
     invalid_write = builder.icmp_signed(">", stat, int32_t(12))
     with builder.if_then(invalid_write, likely=False):
         msg = "Internal error: `snprintf` buffer would have overflowed."
-        cgctx.fndesc.call_conv.return_user_exc(builder, RuntimeError, (msg,))
+        callconv.maybe_return_user_exc(
+            cgctx.fndesc.call_conv, builder, RuntimeError, (msg,)
+        )
 
     # fork, check pids etc
     child_pid = builder.call(fork, tuple())
     fork_failed = builder.icmp_signed("==", child_pid, int32_t(-1))
     with builder.if_then(fork_failed, likely=False):
         msg = "Internal error: `fork` failed."
-        cgctx.fndesc.call_conv.return_user_exc(builder, RuntimeError, (msg,))
+        callconv.maybe_return_user_exc(
+            cgctx.fndesc.call_conv, builder, RuntimeError, (msg,)
+        )
 
     is_child = builder.icmp_signed("==", child_pid, zero_i32t)
     with builder.if_else(is_child) as (then, orelse):

@@ -4,6 +4,7 @@
 from numba.cuda import types
 from numba.cuda import cgutils
 from numba.cuda import itanium_mangler
+from numba.cuda.core import imputils
 from collections import namedtuple
 
 from llvmlite import ir
@@ -167,6 +168,18 @@ class BaseCallConv:
             name, argtypes, abi_tags=abi_tags, uid=uid
         )
 
+    def call_internal_no_propagate(self, builder, fndesc, sig, args):
+        """Similar to `.call_internal()` but does not handle or propagate
+        the return status automatically.
+        """
+        llvm_mod = builder.module
+        fn = fndesc.declare_function(llvm_mod)
+        # Marshal the call using the callee's ABI.
+        status, res = fndesc.call_conv.call_function(
+            builder, fn, sig.return_type, sig.args, args
+        )
+        return status, res
+
 
 class MinimalCallConv(BaseCallConv):
     """
@@ -297,6 +310,23 @@ class MinimalCallConv(BaseCallConv):
         retval = builder.load(retvaltmp)
         out = self.context.get_returned_value(builder, resty, retval)
         return status, out
+
+    def call_internal(self, builder, fndesc, sig, args):
+        """
+        Given the function descriptor of an internally compiled function,
+        emit a call to that function with the given arguments.
+        """
+        status, res = self.call_internal_no_propagate(
+            builder, fndesc, sig, args
+        )
+        if status is not None:
+            with cgutils.if_unlikely(builder, status.is_error):
+                self.return_status_propagate(builder, status)
+
+        res = imputils.fix_returning_optional(
+            self.context, builder, sig, status, res
+        )
+        return res
 
 
 class _MinimalCallHelper:
@@ -439,6 +469,34 @@ class CUDACABICallConv(BaseCallConv):
         out = self.context.get_returned_value(builder, resty, code)
         return status, out
 
+    def call_internal(self, builder, fndesc, sig, args):
+        """
+        Given the function descriptor of an internally compiled function,
+        emit a call to that function with the given arguments.
+        """
+        status, res = self.call_internal_no_propagate(
+            builder, fndesc, sig, args
+        )
+
+        # CABI intentionally ignores lower-frame error codes.
+        if not isinstance(sig.return_type, types.Optional):
+            return res
+
+        # A callee without a status channel cannot represent None.
+        if status is None:
+            return res
+
+        # Flatten Optional[T] into plain T for CABI:
+        # - if value is present, return it
+        # - if value is None, return a default-initialized T
+        value_type = sig.return_type.type
+        default_value = self.context.get_constant_null(value_type)
+
+        outptr = cgutils.alloca_once_value(builder, default_value)
+        with builder.if_then(builder.not_(status.is_none)):
+            builder.store(res, outptr)
+        return builder.load(outptr)
+
     def get_return_type(self, ty):
         return self.context.data_model_manager[ty].get_return_type()
 
@@ -449,18 +507,40 @@ class CUDACABICallConv(BaseCallConv):
         return name.split(".")[-1]
 
 
+def maybe_return_user_exc(
+    call_conv, builder, exc, exc_args=None, loc=None, func_name=None
+):
+    """Call return_user_exc only when the call convention supports it."""
+    if isinstance(call_conv, CUDACallConv):
+        call_conv.return_user_exc(
+            builder, exc, exc_args, loc=loc, func_name=func_name
+        )
+        return True
+    return False
+
+
+def maybe_return_status_propagate(call_conv, builder, status):
+    """Call return_status_propagate only when the call convention supports it."""
+    if isinstance(call_conv, CUDACallConv):
+        call_conv.return_status_propagate(builder, status)
+        return True
+    return False
+
+
 class ErrorModel:
     def __init__(self, call_conv):
         self.call_conv = call_conv
 
     def fp_zero_division(self, builder, exc_args=None, loc=None):
         if self.raise_on_fp_zero_division:
-            self.call_conv.return_user_exc(
-                builder, ZeroDivisionError, exc_args, loc
+            return maybe_return_user_exc(
+                self.call_conv,
+                builder,
+                ZeroDivisionError,
+                exc_args=exc_args,
+                loc=loc,
             )
-            return True
-        else:
-            return False
+        return False
 
 
 class PythonErrorModel(ErrorModel):

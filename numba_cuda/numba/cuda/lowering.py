@@ -15,6 +15,7 @@ from numba.cuda.core import (
     ir_utils,
     targetconfig,
     funcdesc,
+    callconv,
     config,
     generators,
     removerefctpass,
@@ -202,7 +203,8 @@ class BaseLower:
 
     def return_exception(self, exc_class, exc_args=None, loc=None):
         """Propagate exception to the caller."""
-        self.call_conv.return_user_exc(
+        callconv.maybe_return_user_exc(
+            self.fndesc.call_conv,
             self.builder,
             exc_class,
             exc_args,

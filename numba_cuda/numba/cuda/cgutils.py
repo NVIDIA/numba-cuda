@@ -13,6 +13,7 @@ from llvmlite import ir
 
 from numba.cuda import types
 from numba.cuda import config, utils, debuginfo
+from numba.cuda.core import callconv
 import numba.cuda.datamodel
 
 
@@ -764,12 +765,16 @@ def do_boundscheck(context, builder, ind, dimlen, axis=None):
     with if_unlikely(builder, out_of_bounds_upper):
         if config.FULL_TRACEBACKS:
             _dbg()
-        context.fndesc.call_conv.return_user_exc(builder, IndexError, (msg,))
+        callconv.maybe_return_user_exc(
+            context.fndesc.call_conv, builder, IndexError, (msg,)
+        )
     out_of_bounds_lower = builder.icmp_signed("<", ind, ind.type(0))
     with if_unlikely(builder, out_of_bounds_lower):
         if config.FULL_TRACEBACKS:
             _dbg()
-        context.fndesc.call_conv.return_user_exc(builder, IndexError, (msg,))
+        callconv.maybe_return_user_exc(
+            context.fndesc.call_conv, builder, IndexError, (msg,)
+        )
 
 
 def get_item_pointer2(
@@ -936,7 +941,9 @@ def guard_null(context, builder, value, exc_tuple):
     with builder.if_then(is_scalar_zero(builder, value), likely=False):
         exc = exc_tuple[0]
         exc_args = exc_tuple[1:] or None
-        context.fndesc.call_conv.return_user_exc(builder, exc, exc_args)
+        callconv.maybe_return_user_exc(
+            context.fndesc.call_conv, builder, exc, exc_args
+        )
 
 
 def guard_memory_error(context, builder, pointer, msg=None):
@@ -946,7 +953,9 @@ def guard_memory_error(context, builder, pointer, msg=None):
     assert isinstance(pointer.type, ir.PointerType), pointer.type
     exc_args = (msg,) if msg else ()
     with builder.if_then(is_null(builder, pointer), likely=False):
-        context.fndesc.call_conv.return_user_exc(builder, MemoryError, exc_args)
+        callconv.maybe_return_user_exc(
+            context.fndesc.call_conv, builder, MemoryError, exc_args
+        )
 
 
 @contextmanager
