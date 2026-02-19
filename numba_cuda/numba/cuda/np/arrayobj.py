@@ -4836,7 +4836,9 @@ def _parse_shape(context, builder, ty, val):
         is_neg = builder.icmp_signed("<", shape, zero)
         with cgutils.if_unlikely(builder, is_neg):
             context.fndesc.call_conv.return_user_exc(
-                builder, ValueError, ("negative dimensions not allowed",)
+                builder,
+                ValueError,
+                ("negative dimensions not allowed",),
             )
 
     return shapes
@@ -6023,7 +6025,9 @@ def check_sequence_shape(context, builder, seqty, seq, shapes):
 
     def _fail():
         context.fndesc.call_conv.return_user_exc(
-            builder, ValueError, ("incompatible sequence shape",)
+            builder,
+            ValueError,
+            ("incompatible sequence shape",),
         )
 
     def check_seq_size(seqty, seq, shapes):
