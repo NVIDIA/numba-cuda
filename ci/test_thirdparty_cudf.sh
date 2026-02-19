@@ -5,6 +5,7 @@
 set -euo pipefail
 
 CUDA_VER_MAJOR_MINOR=${CUDA_VER%.*}
+CUDA_VER_MAJOR=${CUDA_VER%.*.*}
 
 rapids-logger "Install cuDF Wheel"
 
@@ -24,6 +25,7 @@ python -m pip install \
     "nvidia-nvjitlink-cu12" \
     --group test
 
+pip install "cupy-cuda${CUDA_VER_MAJOR}x<14.0.0"
 
 
 rapids-logger "Shallow clone cuDF repository"
