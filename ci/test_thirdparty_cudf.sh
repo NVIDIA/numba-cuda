@@ -25,6 +25,7 @@ python -m pip install \
     "nvidia-nvjitlink-cu12" \
     --group test
 
+# Temporary until cupy 14.0.1 is released
 pip install "cupy-cuda${CUDA_VER_MAJOR}x<14.0.0"
 
 
