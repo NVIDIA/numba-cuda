@@ -799,14 +799,16 @@ class CUDACache(Cache):
 
     def mark_launch_config_sensitive(self):
         if self._launch_config_sensitive_flag is True:
-            return
+            return True
         try:
             self._impl.locator.ensure_cache_path()
             with open(self._launch_config_marker_path, "a"):
                 pass
         except OSError:
-            return
+            self._launch_config_sensitive_flag = False
+            return False
         self._launch_config_sensitive_flag = True
+        return True
 
     def flush(self):
         super().flush()
@@ -2060,16 +2062,32 @@ class CUDADispatcher(serialize.ReduceMixin, _MemoMixin, _DispatcherBase):
         # Can we load from the disk cache?
         kernel = self._cache.load_overload(sig, self.targetctx)
 
-        if kernel is not None:
-            self._cache_hits[sig] += 1
-            if isinstance(self._cache, CUDACache) and getattr(
-                kernel, "launch_config_sensitive", False
-            ):
-                self._cache.mark_launch_config_sensitive()
+        if (
+            kernel is not None
+            and isinstance(self._cache, CUDACache)
+            and getattr(kernel, "launch_config_sensitive", False)
+        ):
+            cache_has_marker = self._cache.is_launch_config_sensitive()
+            if not cache_has_marker:
+                # Pre-existing cache entries without a launch-config marker are
+                # unsafe for LCS kernels. Force a recompile under the new key.
                 if launch_config is not None:
                     self._cache.set_launch_config_key(
                         self._launch_config_key(launch_config)
                     )
+                if not self._cache.mark_launch_config_sensitive():
+                    # If we cannot record the marker, disable disk cache to
+                    # avoid unsafe reuse.
+                    self._cache = NullCache()
+                kernel = None
+            else:
+                if launch_config is not None:
+                    self._cache.set_launch_config_key(
+                        self._launch_config_key(launch_config)
+                    )
+
+        if kernel is not None:
+            self._cache_hits[sig] += 1
         else:
             # We need to compile a new kernel
             self._cache_misses[sig] += 1
@@ -2082,11 +2100,14 @@ class CUDADispatcher(serialize.ReduceMixin, _MemoMixin, _DispatcherBase):
             if isinstance(self._cache, CUDACache) and getattr(
                 kernel, "launch_config_sensitive", False
             ):
-                self._cache.mark_launch_config_sensitive()
                 if launch_config is not None:
                     self._cache.set_launch_config_key(
                         self._launch_config_key(launch_config)
                     )
+                if not self._cache.mark_launch_config_sensitive():
+                    # If we cannot record the marker, disable disk cache to
+                    # avoid unsafe reuse.
+                    self._cache = NullCache()
             self._cache.save_overload(sig, kernel)
 
         self.add_overload(kernel, argtypes)
