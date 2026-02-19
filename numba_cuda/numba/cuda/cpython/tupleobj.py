@@ -14,7 +14,6 @@ from numba.cuda.core.imputils import (
     impl_ret_untracked,
     RefType,
 )
-from numba.cuda.core import callconv
 from numba.cuda import typing, types
 from numba.cuda import cgutils
 from numba.cuda.extending import overload_method, overload
@@ -252,8 +251,8 @@ def getitem_typed(context, builder, sig, args):
 
         # Always branch and raise IndexError
         with builder.if_then(cgutils.true_bit):
-            callconv.maybe_return_user_exc(
-                context.fndesc.call_conv, builder, IndexError, errmsg_oob
+            context.fndesc.call_conv.return_user_exc(
+                builder, IndexError, errmsg_oob
             )
         # This is unreachable in runtime,
         # but it exists to not terminate the current basicblock.
@@ -267,8 +266,8 @@ def getitem_typed(context, builder, sig, args):
         switch = builder.switch(idx, bbelse)
 
         with builder.goto_block(bbelse):
-            callconv.maybe_return_user_exc(
-                context.fndesc.call_conv, builder, IndexError, errmsg_oob
+            context.fndesc.call_conv.return_user_exc(
+                builder, IndexError, errmsg_oob
             )
 
         lrtty = context.get_value_type(sig.return_type)
@@ -350,8 +349,8 @@ def getitem_unituple(context, builder, sig, args):
 
         # Always branch and raise IndexError
         with builder.if_then(cgutils.true_bit):
-            callconv.maybe_return_user_exc(
-                context.fndesc.call_conv, builder, IndexError, errmsg_oob
+            context.fndesc.call_conv.return_user_exc(
+                builder, IndexError, errmsg_oob
             )
         # This is unreachable in runtime,
         # but it exists to not terminate the current basicblock.
@@ -364,8 +363,8 @@ def getitem_unituple(context, builder, sig, args):
         switch = builder.switch(idx, bbelse)
 
         with builder.goto_block(bbelse):
-            callconv.maybe_return_user_exc(
-                context.fndesc.call_conv, builder, IndexError, errmsg_oob
+            context.fndesc.call_conv.return_user_exc(
+                builder, IndexError, errmsg_oob
             )
 
         lrtty = context.get_value_type(tupty.dtype)

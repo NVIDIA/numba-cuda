@@ -426,12 +426,12 @@ class CUDACABICallConv(BaseCallConv):
     def return_user_exc(
         self, builder, exc, exc_args=None, loc=None, func_name=None
     ):
-        msg = "Python exceptions are unsupported in the CUDA C/C++ ABI"
-        raise NotImplementedError(msg)
+        # C ABI has no status channel to propagate Python exceptions.
+        return
 
     def return_status_propagate(self, builder, status):
-        msg = "Return status is unsupported in the CUDA C/C++ ABI"
-        raise NotImplementedError(msg)
+        # C ABI has no status channel to propagate lower-frame failures.
+        return
 
     def get_function_type(self, restype, argtypes):
         """
@@ -507,39 +507,19 @@ class CUDACABICallConv(BaseCallConv):
         return name.split(".")[-1]
 
 
-def maybe_return_user_exc(
-    call_conv, builder, exc, exc_args=None, loc=None, func_name=None
-):
-    """Call return_user_exc only when the call convention supports it."""
-    if isinstance(call_conv, CUDACallConv):
-        call_conv.return_user_exc(
-            builder, exc, exc_args, loc=loc, func_name=func_name
-        )
-        return True
-    return False
-
-
-def maybe_return_status_propagate(call_conv, builder, status):
-    """Call return_status_propagate only when the call convention supports it."""
-    if isinstance(call_conv, CUDACallConv):
-        call_conv.return_status_propagate(builder, status)
-        return True
-    return False
-
-
 class ErrorModel:
     def __init__(self, call_conv):
         self.call_conv = call_conv
 
     def fp_zero_division(self, builder, exc_args=None, loc=None):
         if self.raise_on_fp_zero_division:
-            return maybe_return_user_exc(
-                self.call_conv,
+            self.call_conv.return_user_exc(
                 builder,
                 ZeroDivisionError,
                 exc_args=exc_args,
                 loc=loc,
             )
+            return True
         return False
 
 

@@ -203,8 +203,7 @@ class BaseLower:
 
     def return_exception(self, exc_class, exc_args=None, loc=None):
         """Propagate exception to the caller."""
-        callconv.maybe_return_user_exc(
-            self.fndesc.call_conv,
+        self.fndesc.call_conv.return_user_exc(
             self.builder,
             exc_class,
             exc_args,

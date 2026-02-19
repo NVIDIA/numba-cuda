@@ -8,7 +8,6 @@ Implement slices and various slice computations.
 from llvmlite import ir
 from numba.cuda import types
 from numba.cuda import cgutils
-from numba.cuda.core import callconv
 from numba.cuda.core.imputils import impl_ret_untracked, Registry
 
 registry = Registry("slicing")
@@ -241,8 +240,7 @@ def slice_indices(context, builder, sig, args):
     sli = context.make_helper(builder, sig.args[0], args[0])
 
     with builder.if_then(cgutils.is_neg_int(builder, length), likely=False):
-        callconv.maybe_return_user_exc(
-            context.fndesc.call_conv,
+        context.fndesc.call_conv.return_user_exc(
             builder,
             ValueError,
             ("length should not be negative",),
@@ -250,8 +248,7 @@ def slice_indices(context, builder, sig, args):
     with builder.if_then(
         cgutils.is_scalar_zero(builder, sli.step), likely=False
     ):
-        callconv.maybe_return_user_exc(
-            context.fndesc.call_conv,
+        context.fndesc.call_conv.return_user_exc(
             builder,
             ValueError,
             ("slice step cannot be zero",),

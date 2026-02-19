@@ -222,9 +222,7 @@ def user_function(fndesc, libs):
 
         if status is not None:
             with cgutils.if_unlikely(builder, status.is_error):
-                callconv.maybe_return_status_propagate(
-                    fndesc.call_conv, builder, status
-                )
+                fndesc.call_conv.return_status_propagate(builder, status)
 
         assert sig.return_type == fndesc.restype
 

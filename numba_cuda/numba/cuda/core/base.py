@@ -12,7 +12,7 @@ from functools import cached_property
 from llvmlite import ir as llvmir
 from llvmlite.ir import Constant
 
-from numba.cuda.core import callconv, imputils, targetconfig, funcdesc
+from numba.cuda.core import imputils, targetconfig, funcdesc
 from numba.cuda import cgutils, debuginfo, types, utils, datamodel, config
 from numba.cuda.core import errors
 from numba.cuda.core.compiler_lock import global_compiler_lock
@@ -1008,9 +1008,7 @@ class BaseContext:
             builder, fn, sig.return_type, sig.args, args
         )
         with cgutils.if_unlikely(builder, status.is_error):
-            callconv.maybe_return_status_propagate(
-                self.call_conv, builder, status
-            )
+            self.call_conv.return_status_propagate(builder, status)
 
         res = imputils.fix_returning_optional(self, builder, sig, status, res)
         return res

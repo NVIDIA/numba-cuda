@@ -16,7 +16,6 @@ from numba.cuda.core.imputils import (
     impl_ret_untracked,
 )
 from numba.cuda.typing import signature
-from numba.cuda.core import callconv
 from numba.cuda.extending import (
     intrinsic,
     overload,
@@ -159,8 +158,7 @@ def make_range_impl(int_type, range_state_type, range_iter_type):
 
             with cgutils.if_unlikely(builder, zero_step):
                 # step shouldn't be zero
-                callconv.maybe_return_user_exc(
-                    context.fndesc.call_conv,
+                context.fndesc.call_conv.return_user_exc(
                     builder,
                     ValueError,
                     ("range() arg 3 must not be zero",),

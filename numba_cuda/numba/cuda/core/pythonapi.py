@@ -11,7 +11,7 @@ from llvmlite.ir import Constant
 
 import ctypes
 from numba.cuda.cext import _helperlib
-from numba.cuda.core import callconv, errors
+from numba.cuda.core import errors
 from numba.cuda.core import imputils
 from numba.cuda.utils import PYVERSION
 from numba.cuda import config, types, lowering, cgutils, serialize
@@ -230,8 +230,7 @@ class PythonAPI:
                 )
                 self.builder.ret(self.get_null_object())
             else:
-                callconv.maybe_return_user_exc(
-                    self.context.fndesc.call_conv,
+                self.context.fndesc.call_conv.return_user_exc(
                     self.builder,
                     RuntimeError,
                     (f"missing Environment: {debug_msg}",),
