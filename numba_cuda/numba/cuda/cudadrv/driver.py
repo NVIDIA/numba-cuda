@@ -532,7 +532,7 @@ class Device:
         self._dev.set_current()
         self.primary_context = ctx = Context(
             weakref.proxy(self),
-            ctypes.c_void_p(int(self._dev.context._handle)),
+            ctypes.c_void_p(int(self._dev.context.handle)),
         )
         return ctx
 
@@ -2155,7 +2155,7 @@ class CudaPythonFunction:
     def __init__(self, module, kernel, name):
         self.module = module
         self.kernel = kernel
-        self.handle = kernel._handle
+        self.handle = kernel.handle
         self.name = name
         attrs = self.kernel.attributes
         self.attrs = FuncAttr(
