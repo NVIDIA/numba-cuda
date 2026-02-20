@@ -6,7 +6,7 @@ import cffi
 import numpy as np
 
 from numba.cuda.cudadrv.driver import host_to_device, device_to_host, driver
-from numba.cuda._compat import (
+from cuda.core import (
     LaunchConfig,
     Device,
     Stream as ExperimentalStream,
