@@ -15,6 +15,7 @@ from numba.cuda.core.errors import NumbaWarning, NumbaInvalidConfigWarning
 from numba.cuda.core.interpreter import Interpreter
 
 from numba.cuda import cgutils, typing, lowering, nvvmutils, utils
+from numba.cuda import launchconfig
 from numba.cuda.api import get_current_device
 from numba.cuda.codegen import ExternalCodeLibrary
 
@@ -398,6 +399,14 @@ class CUDABackend(LoweringPass):
         """
         lowered = state["cr"]
         signature = typing.signature(state.return_type, *state.args)
+        launch_cfg = launchconfig.current_launch_config()
+        if (
+            launch_cfg is not None
+            and launch_cfg.is_kernel_launch_config_sensitive()
+        ):
+            if state.metadata is None:
+                state.metadata = {}
+            state.metadata["launch_config_sensitive"] = True
 
         state.cr = cuda_compile_result(
             typing_context=state.typingctx,

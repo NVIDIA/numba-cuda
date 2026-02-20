@@ -4,6 +4,17 @@ This repo includes lightweight benchmarking scaffolding to quantify CUDA kernel
 launch overhead across three launch-config implementations (baseline, old
 contextvar branch, and the new v2 branch).
 
+## Status / Next Steps (Launch Config Work)
+- LC-S plumbing is implemented in `dispatcher.py` and supporting files.
+- CUDA LC-S tests have been run on GPU in this branch and are passing.
+- There are uncommitted changes in `compiler.py`, `dispatcher.py`, and
+  `scripts/bench-launch-overhead.py` that add an explicit LC-S API on
+  `_LaunchConfiguration` and a compiler hook to honor it.
+- cccl rewrite integration now uses the explicit LC-S API with a fallback to
+  metadata for compatibility.
+- Cross-process disk-cache behavior is covered by LC-S caching tests and passes.
+- See `LAUNCH-CONFIG-TODO.md` for a detailed handoff checklist.
+
 ## What’s Included
 
 ### 1) `scripts/bench-launch-overhead.py`

@@ -71,7 +71,12 @@ def _run_worker(label, loops, repeats, json_only):
     import numpy as np
     import numba
     from numba import cuda
-    from numba.cuda.core import config
+
+    try:
+        from numba.cuda.core import config
+    except ModuleNotFoundError:
+        # Older branches use numba.core.config instead of numba.cuda.core.
+        from numba.core import config
 
     if config.ENABLE_CUDASIM:
         raise RuntimeError("CUDA simulator enabled; benchmarks require GPU.")

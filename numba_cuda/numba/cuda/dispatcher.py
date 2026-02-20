@@ -704,6 +704,7 @@ class _LaunchConfiguration:
         self.sharedmem = sharedmem
         self.pre_launch_callbacks = []
         self.args = None
+        self._kernel_launch_config_sensitive = None
 
         if (
             config.CUDA_LOW_OCCUPANCY_WARNINGS
@@ -728,6 +729,28 @@ class _LaunchConfiguration:
 
     def __call__(self, *args):
         return self.dispatcher.call(args, self)
+
+    def mark_kernel_as_launch_config_sensitive(self):
+        """Mark this configured launch path as launch-config sensitive.
+
+        Once set, this flag is intentionally sticky for this
+        ``_LaunchConfiguration`` instance. This aligns with the expected LC-S
+        use case: if code generation depends on launch config for this
+        kernel/configuration path, treat it as launch-config sensitive for all
+        subsequent compilations through the same configured launcher.
+        """
+        self._kernel_launch_config_sensitive = True
+
+    def get_kernel_launch_config_sensitive(self):
+        """Return the launch-config sensitivity flag.
+
+        The result is ``None`` if no explicit decision was made.
+        """
+        return self._kernel_launch_config_sensitive
+
+    def is_kernel_launch_config_sensitive(self):
+        """Return True if this kernel was marked as launch-config sensitive."""
+        return bool(self._kernel_launch_config_sensitive)
 
     def __getstate__(self):
         state = self.__dict__.copy()

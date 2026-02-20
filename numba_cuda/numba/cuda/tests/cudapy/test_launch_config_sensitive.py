@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-2-Clause
 
 import numpy as np
@@ -51,7 +51,7 @@ class LaunchConfigSensitiveRewrite(Rewrite):
         )
         # Mark compilation as launch-config sensitive so the dispatcher can
         # avoid reusing the compiled kernel across different launch configs.
-        self._state.metadata["launch_config_sensitive"] = True
+        cfg.mark_kernel_as_launch_config_sensitive()
         self._logged = True
         return self._block
 

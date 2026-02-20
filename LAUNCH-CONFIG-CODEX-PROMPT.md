@@ -1,87 +1,68 @@
-# Codex Prompt: Launch Config Benchmarking (Baseline vs Contextvar vs V2)
+# Codex Prompt: Launch Config Sensitive (LC-S) work for cuda.coop
 
-You are working in the `numba-cuda` repo with three branches/worktrees:
-- **baseline**: main (or a specific baseline ref) in `~/src/numba-cuda-main`
-- **contextvar**: old implementation in `~/src/numba-cuda` (branch `280-launch-config-contextvar`)
-- **v2**: new implementation in `~/src/280-launch-config-v2` (branch `280-launch-config-v2`)
+You are resuming launch-config work in `numba-cuda` to support cuda.coop
+single-phase. The cache invalidation change for `numba_cuda.__version__` is
+already in a separate PR; do not redo that here.
 
-Your goal is to benchmark CUDA kernel launch overhead across all three.
+## Repos / worktrees
+- `numba-cuda` (current worktree): `/home/trentn/src/280-launch-config-v2`
+  - branch: `280-launch-config-v2`
+- `numba-cuda` main baseline: `/home/trentn/src/numba-cuda-main`
+- cuda.coop repo: `/home/trentn/src/cccl/python/cuda_cccl`
+  - see `SINGLE-PHASE-*.md` for context
 
-## Key Artifacts
-- `scripts/bench-launch-overhead.py` (micro-benchmark for launch overhead)
-- `scripts/bench-against.py` (two-ref compare helper)
-- Pixi tasks in `pixi.toml`:
-  - `bench-launch-overhead`
-  - `bench`
-  - `benchcmp`
-  - `bench-against`
+## Current local state (numba-cuda)
+Run:
+- `git status -sb`
+- `git diff`
 
-## Benchmarks to Run
-### A) Launch Overhead Micro-Benchmark (Primary)
-Run a three-way comparison using the micro-benchmark script. It measures kernel
-launch overhead for 0..4 args and reports mean/stdev and deltas vs baseline.
+Expected (uncommitted) changes in this worktree:
+- `numba_cuda/numba/cuda/compiler.py`
+  - CUDABackend sets `state.metadata["launch_config_sensitive"] = True`
+    when the active launch config is explicitly marked.
+- `numba_cuda/numba/cuda/dispatcher.py`
+  - `_LaunchConfiguration` adds explicit API:
+    `mark_kernel_as_launch_config_sensitive()`, `get_kernel_launch_config_sensitive()`,
+    `is_kernel_launch_config_sensitive()`.
+- `scripts/bench-launch-overhead.py`
+  - import compatibility for `numba.cuda.core.config` vs `numba.core.config`.
+- Untracked: `PR.md`, `tags` (clean up before commit).
 
-From `~/src/280-launch-config-v2`:
-```bash
-pixi run -e cu-12-9-py312 bench-launch-overhead \
-  --repo baseline=$HOME/src/numba-cuda-main \
-  --repo contextvar=$HOME/src/numba-cuda \
-  --repo v2=$HOME/src/280-launch-config-v2
-```
+## What is already implemented
+- TLS-based launch-config capture in C extension, exposed via
+  `numba_cuda/numba/cuda/launchconfig.py`.
+- Dispatcher plumbing for LC-S (per-config specialization + cache keys + `.lcs` marker).
+- Tests for LC-S recompile + cache coverage.
+- Docs updated for launch-config introspection.
+- In cccl: `cuda/coop/_rewrite.py` now marks LC-S when accessing launch config.
+  It calls `mark_kernel_as_launch_config_sensitive()` when available, with
+  fallback to `state.metadata["launch_config_sensitive"] = True`.
 
-Notes:
-- The script will `pip install -e` each repo by default. If you already have
-  them installed in the active environment, add `--no-install`.
-- You can change the Python interpreter with `--python /path/to/python`.
-- You can tune loops with `--loops 200000,200000,200000,200000,20000`.
-- Use `--output results.json` to save output.
+## Open decisions / tasks
+1. **Explicit LC-S API decision: keep**
+   - `_LaunchConfiguration` explicit LC-S API is retained.
+   - Compiler hook in `CUDABackend` uses this API to set metadata.
+   - cccl rewrite is updated to use the API when available.
 
-### B) Broader Benchmarks (Optional)
-Use the full pytest benchmark suite for more coverage:
+2. **Run CUDA tests on a GPU**
+   - `pixi run -e cu-12-9-py312 pytest testing --pyargs numba.cuda.tests.cudapy.test_launch_config_sensitive -k launch_config_sensitive`
+   - `pixi run -e cu-12-9-py312 pytest testing --pyargs numba.cuda.tests.cudapy.test_caching -k launch_config_sensitive`
+   - Status: both passing on GPU in this worktree.
 
-```bash
-pixi run -e cu-12-9-py312 bench
-```
+3. **Validate disk-cache behavior across processes**
+   - Ensure `.lcs` marker + launch-config cache keying behave correctly.
+   - Status: covered by
+     `LaunchConfigSensitiveCachingTest.test_launch_config_sensitive_cache_keys`
+     in `test_caching.py` (passes, includes separate-process verification).
 
-If you want to compare two refs in a temporary worktree:
+4. **Audit launch paths**
+   - Confirm all kernel launch paths go through `CUDADispatcher.call()`.
+   - Status: Python launch paths in `dispatcher.py` verified.
 
-```bash
-pixi run -e cu-12-9-py312 bench-against BASELINE_REF PROPOSED_REF
-```
+5. **Commit / cleanup**
+   - Remove untracked `PR.md` and `tags`.
+   - Prepare commit(s) for the launch-config work.
 
-## Environment Expectations
-- GPU available (the micro-benchmark refuses to run under CUDA simulator).
-- Use the same CUDA toolkit + driver across all runs.
-- Ensure `pixi` env `cu-12-9-py312` (or equivalent) is available.
-
-## Data to Capture
-- Full stdout from `bench-launch-overhead` (table + deltas)
-- Optional JSON output for records
-- Device info from the benchmark output (GPU name, CC, CUDA runtime version)
-- Git SHAs for all three repos
-
-## Interpretation Guidance
-- Focus on delta vs baseline for each arg count.
-- Large increases (e.g., +30–50%) are likely unacceptable for the new
-  implementation if the contextvar branch is already known to be slower.
-- If v2 overhead is close to baseline and materially below contextvar, that
-  supports adopting v2.
-
-## Cleanup / Reporting
-- Summarize results in a short table:
-  - mean ± stdev for each arg count
-  - delta vs baseline for each branch
-- Note any anomalies (e.g., variance, outliers, or errors)
-- If results are noisy, increase repeats or loops and rerun.
-
-## Troubleshooting
-- If you see nvjitlink or compilation failures, verify that the active `pixi`
-  environment has CUDA toolchain components compatible with the driver.
-- If results are all identical, ensure each repo is actually installed (and
-  not accidentally shadowed by an earlier editable install). Check `pip show
-  numba-cuda` and `python -c "import numba_cuda,inspect;print(numba_cuda.__file__)"`.
-
-## Deliverables
-- A concise report of the measured overheads and deltas for baseline vs
-  contextvar vs v2.
-- A short conclusion on whether v2 overhead is acceptable.
+## Notes
+- If you need to re-run the overhead micro-benchmark, see `LAUNCH-CONFIG.md`.
+- Update `LAUNCH-CONFIG-TODO.md` with any new decisions or test results.
