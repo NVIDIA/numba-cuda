@@ -82,29 +82,27 @@ def _find_valid_path(options):
         return "<unknown>", None
 
 
-def _get_libdevice_path_decision():
-    options = _build_options(
-        [
-            ("Conda environment", get_libdevice_conda_path),
-            ("NVIDIA NVCC Wheel", get_libdevice_wheel_path),
-            (
-                "CUDA_HOME",
-                lambda: get_cuda_home("nvvm", "libdevice", "libdevice.10.bc"),
-            ),
-            (
-                "System",
-                lambda: get_system_ctk("nvvm", "libdevice", "libdevice.10.bc"),
-            ),
-        ]
-    )
-    return _find_first_valid_lazy(options)
+# Map cuda-pathfinder found_via to numba-cuda path source labels
+_LIBDEVICE_FOUND_VIA_TO_LABEL = {
+    "site-packages": "NVIDIA NVCC Wheel",
+    "conda": "Conda environment",
+    "CUDA_HOME": "CUDA_HOME",
+}
 
 
 def _get_libdevice_path():
-    by, out = _get_libdevice_path_decision()
-    if not out:
-        return _env_path_tuple(by, None)
-    return _env_path_tuple(by, out)
+    """Get libdevice path and source using cuda-pathfinder's locate_bitcode_lib."""
+    located = pathfinder.locate_bitcode_lib("device")
+    if located is not None:
+        by = _LIBDEVICE_FOUND_VIA_TO_LABEL.get(
+            located.found_via, located.found_via
+        )
+        return _env_path_tuple(by, located.abs_path)
+    # Fallback: system CTK (pathfinder does not search /usr/local/cuda)
+    system_path = get_system_ctk("nvvm", "libdevice", "libdevice.10.bc")
+    if system_path and os.path.isfile(system_path):
+        return _env_path_tuple("System", system_path)
+    return _env_path_tuple("<unknown>", None)
 
 
 def _cuda_static_libdir():
@@ -251,26 +249,6 @@ def get_conda_ctk_libdir():
         return None
     # Use the directory name of the max path
     return os.path.dirname(max(paths))
-
-
-def get_libdevice_conda_path():
-    """Return path to directory containing the libdevice bitcode library."""
-    is_conda_env = os.path.isdir(os.path.join(sys.prefix, "conda-meta"))
-    if not is_conda_env:
-        return None
-
-    # Linux: nvvm/libdevice/libdevice.10.bc
-    # Windows: Library/nvvm/libdevice/libdevice.10.bc
-    libdevice_path = os.path.join(
-        sys.prefix,
-        "Library" if IS_WIN32 else "",
-        "nvvm",
-        "libdevice",
-        "libdevice.10.bc",
-    )
-    if os.path.isfile(libdevice_path):
-        return libdevice_path
-    return None
 
 
 def get_wheel_static_libdir():
@@ -430,43 +408,6 @@ def get_cuda_paths():
         # Cache result
         get_cuda_paths._cached_result = d
         return d
-
-
-def get_libdevice_wheel_path():
-    libdevice_path = None
-    # CUDA 12
-    nvvm_distribution = _get_distribution("nvidia-cuda-nvcc-cu12")
-    if nvvm_distribution is not None:
-        site_packages_path = nvvm_distribution.locate_file("")
-        libdevice_path = os.path.join(
-            site_packages_path,
-            "nvidia",
-            "cuda_nvcc",
-            "nvvm",
-            "libdevice",
-            "libdevice.10.bc",
-        )
-
-    # CUDA 13
-    if libdevice_path is None:
-        nvvm_distribution = _get_distribution("nvidia-nvvm")
-        if (
-            nvvm_distribution is not None
-            and nvvm_distribution.version.startswith("13.")
-        ):
-            site_packages_path = nvvm_distribution.locate_file("")
-            libdevice_path = os.path.join(
-                site_packages_path,
-                "nvidia",
-                "cu13",
-                "nvvm",
-                "libdevice",
-                "libdevice.10.bc",
-            )
-
-    if libdevice_path and os.path.isfile(libdevice_path):
-        return libdevice_path
-    return None
 
 
 def get_current_cuda_target_name():
