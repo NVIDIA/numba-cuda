@@ -5,17 +5,16 @@
 set -euo pipefail
 
 CUDA_VER_MAJOR_MINOR=${CUDA_VER%.*}
+CUDA_VER_MAJOR=${CUDA_VER%.*.*}
 
 rapids-logger "Install wheel with test dependencies and coverage tools"
 package=$(realpath "${NUMBA_CUDA_ARTIFACTS_DIR}"/*.whl)
 echo "Package path: ${package}"
 python -m pip install \
-    "${package}" \
-    "cuda-python==${CUDA_VER_MAJOR_MINOR%.*}.*" \
-    "cuda-core" \
+    "${package}[cu${CUDA_VER_MAJOR}]" \
     pytest-cov \
     coverage \
-    --group test
+    --group test-cu${CUDA_VER_MAJOR}
 
 rapids-logger "Build test binaries"
 export NUMBA_CUDA_TEST_BIN_DIR=`pwd`/testing
