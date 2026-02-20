@@ -154,6 +154,17 @@ def _summarize_device(results: list[dict]) -> str | None:
     return None
 
 
+def _sanitize_svg(path: Path) -> None:
+    if path.suffix.lower() != ".svg":
+        return
+    text = path.read_text(encoding="utf-8")
+    sanitized = "\n".join(line.rstrip() for line in text.splitlines())
+    if text.endswith("\n"):
+        sanitized += "\n"
+    if sanitized != text:
+        path.write_text(sanitized, encoding="utf-8")
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(
         description="Plot launch-overhead results from bench-launch-overhead.py."
@@ -285,6 +296,7 @@ def main() -> int:
 
     if args.output:
         fig.savefig(args.output, dpi=args.dpi)
+        _sanitize_svg(args.output)
         print(f"Wrote {args.output}")
         return 0
 
