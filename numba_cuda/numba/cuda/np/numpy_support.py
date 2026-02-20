@@ -121,12 +121,31 @@ def _from_datetime_dtype(dtype):
         raise errors.NumbaNotImplementedError(dtype)
 
 
+def _dtype_cache_key(dtype):
+    """
+    Create a cache key for dtype that includes the isalignedstruct attribute.
+
+    NumPy's dtype hashing and comparison mechanisms do not consider the
+    isalignedstruct field when determining dtype equality. This means that
+    two dtypes with the same structure but different alignment settings would
+    be treated as identical by NumPy's default comparison, leading to incorrect
+    caching behavior. To ensure correct caching of from_dtype results, we
+    extend the cache key to explicitly include the isalignedstruct attribute.
+    """
+    return (
+        dtype,
+        getattr(dtype, "isalignedstruct", None),
+    )
+
+
 @functools.lru_cache
-def from_dtype(dtype):
+def _from_dtype_impl(dtype_cached):
     """
     Return a Numba Type instance corresponding to the given Numpy *dtype*.
     NumbaNotImplementedError is raised on unsupported Numpy dtypes.
     """
+    dtype = dtype_cached[0]
+
     if type(dtype) is type and issubclass(dtype, np.generic):
         dtype = np.dtype(dtype)
     elif getattr(dtype, "fields", None) is not None:
@@ -146,6 +165,10 @@ def from_dtype(dtype):
             return types.NestedArray(subtype, dtype.shape)
 
     raise errors.NumbaNotImplementedError(dtype)
+
+
+def from_dtype(dtype):
+    return _from_dtype_impl(_dtype_cache_key(dtype))
 
 
 _as_dtype_letters = {
