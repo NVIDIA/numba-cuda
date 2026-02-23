@@ -54,14 +54,14 @@ from numba.cuda.utils import cached_file_read
 from numba.cuda.cudadrv import nvrtc
 
 from cuda.bindings import driver as binding
-from numba.cuda._compat import (
+from cuda.core import (
     Linker,
     LinkerOptions,
     ObjectCode,
     Stream as ExperimentalStream,
     Device as ExperimentalDevice,
 )
-
+from numba.cuda._compat import CUDA_CORE_GT_0_6
 from cuda.bindings.utils import get_cuda_native_handle
 
 
@@ -534,9 +534,13 @@ class Device:
             )
 
         self._dev.set_current()
+        if CUDA_CORE_GT_0_6:
+            ctx_handle = self._dev.context.handle
+        else:
+            ctx_handle = self._dev.context._handle
         self.primary_context = ctx = Context(
             weakref.proxy(self),
-            self._dev.context._handle,
+            ctypes.c_void_p(int(ctx_handle)),
         )
         return ctx
 
@@ -2154,7 +2158,10 @@ class CudaPythonFunction:
     def __init__(self, module, kernel, name):
         self.module = module
         self.kernel = kernel
-        self.handle = kernel._handle
+        if CUDA_CORE_GT_0_6:
+            self.handle = kernel.handle
+        else:
+            self.handle = kernel._handle
         self.name = name
         attrs = self.kernel.attributes
         self.attrs = FuncAttr(
