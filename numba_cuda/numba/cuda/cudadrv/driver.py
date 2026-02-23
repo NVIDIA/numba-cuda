@@ -540,7 +540,7 @@ class Device:
             ctx_handle = self._dev.context._handle
         self.primary_context = ctx = Context(
             weakref.proxy(self),
-            ctypes.c_void_p(int(ctx_handle)),
+            ctx_handle,
         )
         return ctx
 
