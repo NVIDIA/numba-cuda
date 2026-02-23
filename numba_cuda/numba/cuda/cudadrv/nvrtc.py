@@ -12,7 +12,7 @@ import os
 import warnings
 import functools
 
-from numba.cuda._compat import Program, ProgramOptions
+from cuda.core import Program, ProgramOptions
 from cuda.bindings import nvrtc as bindings_nvrtc
 
 NVRTC_EXTRA_SEARCH_PATHS = _readenv(
