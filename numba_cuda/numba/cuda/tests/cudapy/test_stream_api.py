@@ -41,7 +41,7 @@ class TestStreamAPI(CUDATestCase):
         # We don't test synchronization on the stream because it's not a real
         # stream - we used a dummy pointer for testing the API, so we just
         # ensure that the stream handle matches the external stream pointer.
-        value = s.handle.value
+        value = int(s.handle)
         self.assertEqual(ptr, value)
 
     @skip_unless_cudasim("External streams are usable with hardware")

@@ -29,7 +29,15 @@ import tempfile
 import re
 from itertools import product
 from abc import ABCMeta, abstractmethod
-from ctypes import c_int, byref, c_void_p, c_uint8
+from ctypes import (
+    c_int,
+    byref,
+    c_void_p,
+    c_uint8,
+    CFUNCTYPE,
+    py_object,
+    c_size_t,
+)
 import contextlib
 import importlib
 import numpy as np
@@ -40,12 +48,10 @@ from numba.cuda.cext import mviewbuf
 from numba.cuda.core import config
 from numba.cuda import utils, serialize
 from .error import CudaSupportError, CudaDriverError
-from .drvapi import API_PROTOTYPES
-from .drvapi import cu_stream_callback_pyobj
 from .mappings import FILE_EXTENSION_MAP
 from .linkable_code import LinkableCode, LTOIR, Fatbin, Object
 from numba.cuda.utils import cached_file_read
-from numba.cuda.cudadrv import drvapi, nvrtc
+from numba.cuda.cudadrv import nvrtc
 
 from cuda.bindings import driver as binding
 from cuda.core import (
@@ -67,7 +73,7 @@ CU_STREAM_DEFAULT = 0
 
 MIN_REQUIRED_CC = (3, 5)
 SUPPORTS_IPC = sys.platform.startswith("linux")
-
+cu_stream_callback_pyobj = CFUNCTYPE(None, c_void_p, c_int, py_object)
 
 _py_decref = ctypes.pythonapi.Py_DecRef
 _py_incref = ctypes.pythonapi.Py_IncRef
@@ -389,7 +395,7 @@ class Driver:
         """
         with self.get_active_context() as ac:
             if ac.devnum is not None:
-                popped = drvapi.cu_context(int(driver.cuCtxPopCurrent()))
+                popped = driver.cuCtxPopCurrent()
                 return popped
 
     def get_active_context(self):
@@ -428,8 +434,6 @@ class _ActiveContext:
             hctx = driver.cuCtxGetCurrent()
             if int(hctx) == 0:
                 hctx = None
-            else:
-                hctx = drvapi.cu_context(int(hctx))
 
             if hctx is None:
                 devnum = None
@@ -536,7 +540,7 @@ class Device:
             ctx_handle = self._dev.context._handle
         self.primary_context = ctx = Context(
             weakref.proxy(self),
-            ctypes.c_void_p(int(ctx_handle)),
+            ctx_handle,
         )
         return ctx
 
@@ -1143,7 +1147,7 @@ class Context:
         """
         Pushes this context on the current CPU Thread.
         """
-        driver.cuCtxPushCurrent(self.handle.value)
+        driver.cuCtxPushCurrent(self.handle)
         self.prepare_for_use()
 
     def pop(self):
@@ -1152,7 +1156,7 @@ class Context:
         must be at the top of the context stack, otherwise an error will occur.
         """
         popped = driver.pop_active_context()
-        assert popped.value == self.handle.value
+        assert int(popped) == int(self.handle)
 
     def memalloc(self, bytesize):
         return self.memory_manager.memalloc(bytesize)
@@ -1223,19 +1227,15 @@ class Context:
         del self.modules[key]
 
     def get_default_stream(self):
-        handle = drvapi.cu_stream(int(binding.CUstream(CU_STREAM_DEFAULT)))
+        handle = binding.CUstream(CU_STREAM_DEFAULT)
         return Stream(handle)
 
     def get_legacy_default_stream(self):
-        handle = drvapi.cu_stream(
-            int(binding.CUstream(binding.CU_STREAM_LEGACY))
-        )
+        handle = binding.CUstream(binding.CU_STREAM_LEGACY)
         return Stream(handle)
 
     def get_per_thread_default_stream(self):
-        handle = drvapi.cu_stream(
-            int(binding.CUstream(binding.CU_STREAM_PER_THREAD))
-        )
+        handle = binding.CUstream(binding.CU_STREAM_PER_THREAD)
         return Stream(handle)
 
     def create_stream(self):
@@ -1244,7 +1244,7 @@ class Context:
         # default stream, which we define also as CU_STREAM_DEFAULT when
         # the NV binding is in use).
         flags = binding.CUstream_flags.CU_STREAM_DEFAULT.value
-        handle = drvapi.cu_stream(int(driver.cuStreamCreate(flags)))
+        handle = driver.cuStreamCreate(flags)
         return Stream(
             handle, finalizer=_stream_finalizer(self.deallocations, handle)
         )
@@ -1252,14 +1252,14 @@ class Context:
     def create_external_stream(self, ptr):
         if not isinstance(ptr, int):
             raise TypeError("ptr for external stream must be an int")
-        handle = drvapi.cu_stream(int(binding.CUstream(ptr)))
+        handle = binding.CUstream(ptr)
         return Stream(handle, external=True)
 
     def create_event(self, timing=True):
         flags = 0
         if not timing:
             flags |= int(binding.CUevent_flags.CU_EVENT_DISABLE_TIMING)
-        handle = drvapi.cu_event(int(driver.cuEventCreate(flags)))
+        handle = driver.cuEventCreate(flags)
         return Event(
             handle, finalizer=_event_finalizer(self.deallocations, handle)
         )
@@ -1358,14 +1358,14 @@ def _pin_finalizer(memory_manager, ptr, alloc_key, mapped):
 
 def _event_finalizer(deallocs, handle):
     def core():
-        deallocs.add_item(driver.cuEventDestroy, handle.value)
+        deallocs.add_item(driver.cuEventDestroy, int(handle))
 
     return core
 
 
 def _stream_finalizer(deallocs, handle):
     def core():
-        deallocs.add_item(driver.cuStreamDestroy, handle.value)
+        deallocs.add_item(driver.cuStreamDestroy, handle)
 
     return core
 
@@ -1681,7 +1681,7 @@ class MemoryPointer:
             if size < 0:
                 raise RuntimeError("size cannot be negative")
             pointer = binding.CUdeviceptr()
-            ctypes_ptr = drvapi.cu_device_ptr.from_address(pointer.getPtr())
+            ctypes_ptr = c_void_p.from_address(pointer.getPtr())
             ctypes_ptr.value = base
             view = MemoryPointer(self.context, pointer, size, owner=self.owner)
 
@@ -1694,7 +1694,7 @@ class MemoryPointer:
 
     @property
     def device_ctypes_pointer(self):
-        return drvapi.cu_device_ptr(int(self.device_pointer))
+        return c_size_t(int(self.device_pointer))
 
     @property
     def device_pointer_value(self):
@@ -1881,35 +1881,34 @@ class Stream:
 
     def __int__(self):
         # The default stream's handle.value is 0, which gives `None`
-        return self.handle.value or drvapi.CU_STREAM_DEFAULT
+        return int(self.handle) or binding.CUstream_flags.CU_STREAM_DEFAULT
 
     def __cuda_stream__(self):
-        if not self.handle.value:
-            return (0, drvapi.CU_STREAM_DEFAULT)
-        return (0, self.handle.value)
+        if not self.handle:
+            return (0, binding.CUstream_flags.CU_STREAM_DEFAULT)
+        return (0, int(self.handle))
 
     def __repr__(self):
         default_streams = {
-            drvapi.CU_STREAM_DEFAULT: "<Default CUDA stream>",
-            drvapi.CU_STREAM_LEGACY: "<Legacy default CUDA stream>",
-            drvapi.CU_STREAM_PER_THREAD: "<Per-thread default CUDA stream>",
+            binding.CUstream_flags.CU_STREAM_DEFAULT: "<Default CUDA stream>",
+            binding.CU_STREAM_LEGACY: "<Legacy default CUDA stream>",
+            binding.CU_STREAM_PER_THREAD: "<Per-thread default CUDA stream>",
         }
-        ptr = self.handle.value or drvapi.CU_STREAM_DEFAULT
+        ptr = int(self.handle) or binding.CUstream_flags.CU_STREAM_DEFAULT
 
         if ptr in default_streams:
             return default_streams[ptr]
         elif self.external:
-            return f"<External CUDA stream {ptr:d}>"
+            return f"<External CUDA stream {int(ptr):d}>"
         else:
-            return f"<CUDA stream {ptr:d}>"
+            return f"<CUDA stream {int(ptr):d}>"
 
     def synchronize(self):
         """
         Wait for all commands in this stream to execute. This will commit any
         pending memory transfers.
         """
-        handle = self.handle.value
-        driver.cuStreamSynchronize(handle)
+        driver.cuStreamSynchronize(int(self.handle))
 
     @contextlib.contextmanager
     def auto_synchronize(self):
@@ -2008,7 +2007,7 @@ def _to_core_stream(stream):
     if not stream:
         return ExperimentalStream.from_handle(0)
     elif isinstance(stream, Stream):
-        return ExperimentalStream.from_handle(stream.handle.value or 0)
+        return ExperimentalStream.from_handle(stream.handle or 0)
     elif isinstance(stream, ExperimentalStream):
         return stream
     else:
@@ -2048,14 +2047,14 @@ class Event:
         completed.
         """
         hstream = _stream_handle(stream)
-        handle = self.handle.value
+        handle = int(self.handle)
         driver.cuEventRecord(handle, hstream)
 
     def synchronize(self):
         """
         Synchronize the host thread for the completion of the event.
         """
-        handle = self.handle.value
+        handle = int(self.handle)
         driver.cuEventSynchronize(handle)
 
     def wait(self, stream=0):
@@ -2063,7 +2062,7 @@ class Event:
         All future works submitted to stream will wait util the event completes.
         """
         hstream = _stream_handle(stream)
-        handle = self.handle.value
+        handle = int(self.handle)
         flags = 0
         driver.cuStreamWaitEvent(hstream, handle, flags)
 
@@ -2075,7 +2074,7 @@ def event_elapsed_time(evtstart, evtend):
     """
     Compute the elapsed time between two events in milliseconds.
     """
-    return driver.cuEventElapsedTime(evtstart.handle.value, evtend.handle.value)
+    return driver.cuEventElapsedTime(int(evtstart.handle), int(evtend.handle))
 
 
 class CudaPythonModule:
