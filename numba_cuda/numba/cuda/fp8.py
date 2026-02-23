@@ -30,24 +30,24 @@ from numba.cuda.bf16 import (
     _bfloat16_as_bfloat16_raw,
     _bfloat16_raw_as_bfloat16,
 )
-from numba.cuda.extending import register_jitable
+from numba import cuda
 
 
-@register_jitable
+@cuda.jit
 def bfloat16_to_fp8(x, saturate, fp8_kind):
     return _cvt_bfloat16raw_to_fp8(
         _bfloat16_as_bfloat16_raw(x), saturate, fp8_kind
     )
 
 
-@register_jitable
+@cuda.jit
 def bfloat16_to_e8m0(x, saturate, rounding):
     return _cvt_bfloat16raw_to_e8m0(
         _bfloat16_as_bfloat16_raw(x), saturate, rounding
     )
 
 
-@register_jitable
+@cuda.jit
 def e8m0_to_bfloat16(x):
     return _bfloat16_raw_as_bfloat16(_cvt_e8m0_to_bf16raw(x))
 
