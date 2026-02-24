@@ -83,8 +83,7 @@ scalar_types: tuple[tuple[types.Type, str]] = (
         types.uint8,
         """
         CHECK-LLVMLITE-LE44: distinct !DISubprogram
-        CHECK: [[DBG86:.+]] = !DIBasicType(encoding: DW_ATE_unsigned
-        CHECK-SAME: name: "uint8", size: 8)
+        CHECK: [[DBG86:.+]] = !DIBasicType(encoding: DW_ATE_unsigned, name: "uint8", size: 8)
         CHECK: !DILocalVariable(
         CHECK-SAME: name: "a"
         CHECK-SAME: type: [[DBG86]]
@@ -255,7 +254,7 @@ array_types: tuple[tuple[types.Type, str]] = (
         CHECK: distinct !DICompileUnit
         CHECK: distinct !DISubprogram
 
-        CHECK-LLVMLITE-LE44: [[DBG127:.+]] = !DIBasicType(encoding: DW_ATE_boolean, name: "i8", size: 8)
+        CHECK-LLVMLITE-LE44: [[DBG127:.+]] = !DIBasicType(encoding: DW_ATE_unsigned, name: "i8", size: 8)
         CHECK-LLVMLITE-LE44: [[DBG128:.+]] = !DIDerivedType(
         CHECK-LLVMLITE-LE44-SAME: baseType: [[DBG127]]
         CHECK-LLVMLITE-LE44-SAME: size: 64
@@ -268,7 +267,7 @@ array_types: tuple[tuple[types.Type, str]] = (
         CHECK-LLVMLITE-LE44-SAME: size: 64
         CHECK-LLVMLITE-LE44-SAME: tag: DW_TAG_member
         CHECK-LLVMLITE-LE44-SAME: )
-        CHECK-LLVMLITE-LE44: [[DBG130:.+]] = !DIBasicType(encoding: DW_ATE_boolean, name: "i8", size: 8)
+        CHECK-LLVMLITE-LE44: [[DBG130:.+]] = !DIBasicType(encoding: DW_ATE_unsigned, name: "i8", size: 8)
         CHECK-LLVMLITE-LE44: [[DBG131:.+]] = !DIDerivedType(
         CHECK-LLVMLITE-LE44-SAME: baseType: [[DBG130]]
         CHECK-LLVMLITE-LE44-SAME: size: 64
