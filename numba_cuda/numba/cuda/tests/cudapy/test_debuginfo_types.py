@@ -252,6 +252,7 @@ array_types: tuple[tuple[types.Type, str]] = (
         types.float32[::1],
         """
         CHECK: distinct !DICompileUnit
+        CHECK: [[INT64_TYPE:![0-9]+]] = !DIBasicType(encoding: DW_ATE_signed, name: "int64", size: 64)
         CHECK: distinct !DISubprogram
 
         CHECK-LLVMLITE-LE44: [[DBG127:.+]] = !DIBasicType(encoding: DW_ATE_unsigned, name: "i8", size: 8)
@@ -309,7 +310,7 @@ array_types: tuple[tuple[types.Type, str]] = (
         CHECK-LLVMLITE-LE44-SAME: size: 64
         CHECK-LLVMLITE-LE44-SAME: tag: DW_TAG_member
         CHECK-LLVMLITE-LE44-SAME: )
-        CHECK-LLVMLITE-LE44: [[DBG140:.+]] = !DIBasicType(encoding: DW_ATE_unsigned, name: "i64", size: 64)
+        CHECK-LLVMLITE-LE44: [[DBG140:.+]] = !DIBasicType(encoding: DW_ATE_signed, name: "int64", size: 64)
         CHECK-LLVMLITE-LE44: [[DBG141:.+]] = !DICompositeType(
         CHECK-LLVMLITE-LE44-SAME: baseType: [[DBG140]]
         CHECK-LLVMLITE-LE44-SAME: identifier: "[1 x i64]"
@@ -323,7 +324,7 @@ array_types: tuple[tuple[types.Type, str]] = (
         CHECK-LLVMLITE-LE44-SAME: size: 64
         CHECK-LLVMLITE-LE44-SAME: tag: DW_TAG_member
         CHECK-LLVMLITE-LE44-SAME: )
-        CHECK-LLVMLITE-LE44: [[DBG143:.+]] = !DIBasicType(encoding: DW_ATE_unsigned, name: "i64", size: 64)
+        CHECK-LLVMLITE-LE44: [[DBG143:.+]] = !DIBasicType(encoding: DW_ATE_signed, name: "int64", size: 64)
         CHECK-LLVMLITE-LE44: [[DBG144:.+]] = !DICompositeType(
         CHECK-LLVMLITE-LE44-SAME: baseType: [[DBG143]]
         CHECK-LLVMLITE-LE44-SAME: identifier: "[1 x i64]"
@@ -402,7 +403,7 @@ array_types: tuple[tuple[types.Type, str]] = (
         CHECK-LLVMLITE-GE45-SAME: tag: DW_TAG_member
         CHECK-LLVMLITE-GE45-SAME: )
         CHECK-LLVMLITE-GE45: [[DBG131:.+]] = !DICompositeType(
-        CHECK-LLVMLITE-GE45-SAME: baseType: [[DBG111:![0-9]+]]
+        CHECK-LLVMLITE-GE45-SAME: baseType: [[INT64_TYPE]]
         CHECK-LLVMLITE-GE45-SAME: elements: [[DBG113:![0-9]+]]
         CHECK-LLVMLITE-GE45-SAME: identifier: "[1 x i64]"
         CHECK-LLVMLITE-GE45-SAME: name: "UniTuple(int64 x 1) ([1 x i64])"
@@ -417,7 +418,7 @@ array_types: tuple[tuple[types.Type, str]] = (
         CHECK-LLVMLITE-GE45-SAME: tag: DW_TAG_member
         CHECK-LLVMLITE-GE45-SAME: )
         CHECK-LLVMLITE-GE45: [[DBG133:.+]] = !DICompositeType(
-        CHECK-LLVMLITE-GE45-SAME: baseType: [[DBG111]]
+        CHECK-LLVMLITE-GE45-SAME: baseType: [[INT64_TYPE]]
         CHECK-LLVMLITE-GE45-SAME: elements: [[DBG113]]
         CHECK-LLVMLITE-GE45-SAME: identifier: "[1 x i64]"
         CHECK-LLVMLITE-GE45-SAME: name: "UniTuple(int64 x 1) ([1 x i64])"
