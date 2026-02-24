@@ -11,8 +11,6 @@ import unittest
 import numba
 import numba_cuda
 
-os.environ.setdefault("NUMBA_ENABLE_CUDASIM", "1")
-
 
 @contextlib.contextmanager
 def _cuda_bindings_stub():
@@ -27,10 +25,7 @@ def _cuda_bindings_stub():
                 pass
         runtime_path = os.path.join(bindings_root, "runtime.py")
         with open(runtime_path, "w", encoding="utf-8") as f:
-            f.write(
-                "def getLocalRuntimeVersion():\n"
-                "    return (0, 0)\n"
-            )
+            f.write("def getLocalRuntimeVersion():\n    return (0, 0)\n")
         sys.path.insert(0, tempdir.name)
         yield
     finally:
@@ -56,9 +51,7 @@ class TestCacheVersion(unittest.TestCase):
                 with open(index_path, "rb") as f:
                     version = pickle.load(f)
 
-        self.assertEqual(
-            version, (numba.__version__, numba_cuda.__version__)
-        )
+        self.assertEqual(version, (numba.__version__, numba_cuda.__version__))
 
     def test_cache_version_mismatch_invalidates(self):
         with tempfile.TemporaryDirectory() as tmp:
