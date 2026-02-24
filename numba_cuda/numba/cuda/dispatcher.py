@@ -15,7 +15,7 @@ import uuid
 import re
 from warnings import warn
 
-from numba.cuda._compat import launch, LaunchConfig
+from cuda.core import launch, LaunchConfig
 
 from numba.cuda.core import errors
 from numba.cuda import serialize, utils

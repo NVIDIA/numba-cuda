@@ -654,11 +654,7 @@ class CUDADIBuilder(DIBuilder):
         m = self.module
 
         if isinstance(lltype, ir.IntType):
-            if datamodel is None:
-                if size == 1:
-                    name = str(lltype)
-                    is_bool = True
-            else:
+            if datamodel is not None:
                 name = str(datamodel.fe_type)
                 if isinstance(datamodel.fe_type, types.Boolean):
                     is_bool = True
@@ -766,7 +762,7 @@ class CUDADIBuilder(DIBuilder):
                         "baseType": m.add_debug_info(
                             "DIBasicType",
                             {
-                                "name": "int",
+                                "name": "uint8",
                                 "size": _BYTE_SIZE,
                                 "encoding": ir.DIToken("DW_ATE_unsigned"),
                             },

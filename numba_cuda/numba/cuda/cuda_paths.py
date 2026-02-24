@@ -216,20 +216,6 @@ def get_system_ctk_libdir():
     return None
 
 
-def get_system_ctk_include():
-    system_ctk_dir = get_system_ctk()
-    if system_ctk_dir is None:
-        return None
-    include_dir = os.path.join(system_ctk_dir, "include")
-
-    if include_dir and os.path.isdir(include_dir):
-        if os.path.isfile(
-            os.path.join(include_dir, "cuda_device_runtime_api.h")
-        ):
-            return include_dir
-    return None
-
-
 def get_conda_ctk_libdir():
     """Return path to directory containing the shared libraries of cudatoolkit."""
     is_conda_env = os.path.isdir(os.path.join(sys.prefix, "conda-meta"))
@@ -292,40 +278,6 @@ def get_wheel_static_libdir():
     return None
 
 
-def get_wheel_include():
-    cuda_module_include_dir = None
-    # CUDA 12
-    cuda_runtime_distribution = _get_distribution("nvidia-cuda-runtime-cu12")
-    if cuda_runtime_distribution is not None:
-        site_packages_path = cuda_runtime_distribution.locate_file("")
-        cuda_module_include_dir = os.path.join(
-            site_packages_path,
-            "nvidia",
-            "cuda_runtime",
-            "include",
-        )
-    else:
-        cuda_runtime_distribution = _get_distribution("nvidia-cuda-runtime")
-        if (
-            cuda_runtime_distribution is not None
-            and cuda_runtime_distribution.version.startswith("13.")
-        ):
-            site_packages_path = cuda_runtime_distribution.locate_file("")
-            cuda_module_include_dir = os.path.join(
-                site_packages_path,
-                "nvidia",
-                "cu13",
-                "include",
-            )
-
-    if cuda_module_include_dir and os.path.isdir(cuda_module_include_dir):
-        if os.path.isfile(
-            os.path.join(cuda_module_include_dir, "cuda_device_runtime_api.h")
-        ):
-            return cuda_module_include_dir
-    return None
-
-
 def get_cuda_home(*subdirs):
     """Get paths of CUDA_HOME.
     If *subdirs* are the subdirectory name to be appended in the resulting
@@ -354,28 +306,6 @@ def get_cuda_home_libdir():
     if IS_WIN32 and os.path.isdir(os.path.join(libdir, "x64")):
         libdir = os.path.join(libdir, "x64")
     return os.path.normpath(libdir)
-
-
-def get_cuda_home_include():
-    cuda_home_dir = get_cuda_home()
-    if cuda_home_dir is None:
-        return None
-    include_dir = cuda_home_dir
-    # For Windows, CTK puts it in $CTK/include but conda puts it in $CTK/Library/include
-    if IS_WIN32:
-        if os.path.isdir(os.path.join(include_dir, "Library")):
-            include_dir = os.path.join(include_dir, "Library", "include")
-        else:
-            include_dir = os.path.join(include_dir, "include")
-    else:
-        include_dir = os.path.join(include_dir, "include")
-
-    if include_dir and os.path.isdir(include_dir):
-        if os.path.isfile(
-            os.path.join(include_dir, "cuda_device_runtime_api.h")
-        ):
-            return include_dir
-    return None
 
 
 def get_cuda_paths():
@@ -434,44 +364,25 @@ def get_current_cuda_target_name():
     return arch_to_targets.get(machine, None)
 
 
-def get_conda_include_dir():
-    """
-    Return the include directory in the current conda environment, if one
-    is active and it exists.
-    """
-    is_conda_env = os.path.isdir(os.path.join(sys.prefix, "conda-meta"))
-    if not is_conda_env:
-        return
-
-    if IS_WIN32:
-        include_dir = os.path.join(sys.prefix, "Library", "include")
-    elif target_name := get_current_cuda_target_name():
-        include_dir = os.path.join(
-            sys.prefix, "targets", target_name, "include"
-        )
-    else:
-        # A fallback when target cannot determined
-        # though usually it shouldn't.
-        include_dir = os.path.join(sys.prefix, "include")
-
-    if os.path.isdir(include_dir) and os.path.isfile(
-        os.path.join(include_dir, "cuda_device_runtime_api.h")
-    ):
-        return include_dir
-    return None
-
-
 def _get_include_dir():
     """Find the root include directory."""
-    options = [
-        ("Conda environment (NVIDIA package)", get_conda_include_dir()),
-        ("NVIDIA NVCC Wheel", get_wheel_include()),
-        ("CUDA_HOME", get_cuda_home_include()),
-        ("System", get_system_ctk_include()),
-        ("CUDA_INCLUDE_PATH Config Entry", config.CUDA_INCLUDE_PATH),
-    ]
-    by, include_dir = _find_valid_path(options)
-    return _env_path_tuple(by, include_dir)
+    located_header_dir = pathfinder.locate_nvidia_header_directory("cudart")
+    if located_header_dir is not None:
+        if not os.path.exists(
+            os.path.join(
+                located_header_dir.abs_path, "cuda_device_runtime_api.h"
+            )
+        ):
+            return _env_path_tuple("Unknown", None)
+        return _env_path_tuple(
+            located_header_dir.found_via, located_header_dir.abs_path
+        )
+    else:
+        if config.CUDA_INCLUDE_PATH:
+            return _env_path_tuple(
+                "CUDA_INCLUDE_PATH Config entry", config.CUDA_INCLUDE_PATH
+            )
+    return _env_path_tuple("Unknown", None)
 
 
 def _find_cuda_home_from_lib_path(lib_path):
