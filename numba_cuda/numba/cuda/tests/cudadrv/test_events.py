@@ -95,5 +95,6 @@ class TestCudaEvent(CUDATestCase):
         synced_query = evt.query()
         assert synced_query is True, "Query returned False after sync"
 
+
 if __name__ == "__main__":
     unittest.main()
