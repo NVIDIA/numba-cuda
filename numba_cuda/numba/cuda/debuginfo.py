@@ -864,9 +864,11 @@ class CUDADIBuilder(DIBuilder):
         else:
             int_type = (ir.IntType,)
             real_type = ir.FloatType, ir.DoubleType
-            if isinstance(lltype, int_type + real_type):
-                # Start with scalar variable, swtiching llvm.dbg.declare
-                # to llvm.dbg.value
+            if isinstance(lltype, int_type + real_type) and argidx is None:
+                # For scalar local variables, skip llvm.dbg.declare and
+                # rely on llvm.dbg.value emitted by update_variable().
+                # Function parameters still need llvm.dbg.declare to guarantee
+                # the emission of DW_TAG_formal_parameter.
                 return
             else:
                 return super().mark_variable(

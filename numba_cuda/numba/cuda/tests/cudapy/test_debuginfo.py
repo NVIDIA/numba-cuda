@@ -332,7 +332,37 @@ class TestCudaDebugInfo(CUDATestCase):
         match = re.compile(pat).search(llvm_ir)
         self.assertIsNone(match, msg=llvm_ir)
 
+    def test_llvm_dbg_declare(self):
+        """Test kernel params have dbg.declare that survives control flow.
+
+        Function parameters need llvm.dbg.declare to guarantee the emission of
+        DW_TAG_formal_parameter in the presence of control-flow branches.
+        """
+        sig = (types.int32[:], types.int32)
+
+        @cuda.jit(sig, debug=True, opt=False)
+        def foo(arr, scalar):
+            idx = cuda.grid(1)
+            if idx < arr.size:
+                arr[idx] = arr[idx] + scalar
+
+        llvm_ir = foo.inspect_llvm(sig)
+
+        check_pattern = r"""
+            CHECK: call void @"llvm.dbg.declare"(metadata {{.*}}, metadata ![[ARR_MD:[0-9]+]], metadata
+            CHECK: call void @"llvm.dbg.declare"(metadata {{.*}}, metadata ![[S_MD:[0-9]+]], metadata
+            CHECK-DAG: ![[ARR_MD]] = !DILocalVariable(arg: 1{{.*}}name: "arr"
+            CHECK-DAG: ![[S_MD]] = !DILocalVariable(arg: 2{{.*}}name: "scalar"
+        """
+        self.assertFileCheckMatches(llvm_ir, check_pattern)
+
     def test_llvm_dbg_value(self):
+        """Test kernel params have dbg.declare and local variables have dbg.value.
+
+        Function parameters need llvm.dbg.declare to guarantee the emission of
+        DW_TAG_formal_parameter. Local variables need llvm.dbg.value to track
+        value changes.
+        """
         sig = (types.int32, types.int32)
 
         @cuda.jit("void(int32, int32)", debug=True, opt=False)
@@ -343,13 +373,24 @@ class TestCudaDebugInfo(CUDATestCase):
             z4 = True  # noqa: F841
 
         llvm_ir = f.inspect_llvm(sig)
-        # Verify the call to llvm.dbg.declare is replaced by llvm.dbg.value
-        pat1 = r'call void @"llvm.dbg.declare"'
-        match = re.compile(pat1).search(llvm_ir)
-        self.assertIsNone(match, msg=llvm_ir)
-        pat2 = r'call void @"llvm.dbg.value"'
-        match = re.compile(pat2).search(llvm_ir)
-        self.assertIsNotNone(match, msg=llvm_ir)
+
+        check_pattern = r"""
+            CHECK: call void @"llvm.dbg.declare"(metadata {{.*}}, metadata ![[X_MD:[0-9]+]], metadata
+            CHECK: call void @"llvm.dbg.value"(metadata {{.*}}, metadata ![[X_MD]], metadata
+            CHECK: call void @"llvm.dbg.declare"(metadata {{.*}}, metadata ![[Y_MD:[0-9]+]], metadata
+            CHECK: call void @"llvm.dbg.value"(metadata {{.*}}, metadata ![[Y_MD]], metadata
+            CHECK: call void @"llvm.dbg.value"(metadata {{.*}}, metadata ![[Z1_MD:[0-9]+]], metadata
+            CHECK: call void @"llvm.dbg.value"(metadata {{.*}}, metadata ![[Z2_MD:[0-9]+]], metadata
+            CHECK: call void @"llvm.dbg.value"(metadata {{.*}}, metadata ![[Z3_MD:[0-9]+]], metadata
+            CHECK: call void @"llvm.dbg.value"(metadata {{.*}}, metadata ![[Z4_MD:[0-9]+]], metadata
+            CHECK-DAG: ![[X_MD]] = !DILocalVariable(arg: 1{{.*}}name: "x"
+            CHECK-DAG: ![[Y_MD]] = !DILocalVariable(arg: 2{{.*}}name: "y"
+            CHECK-DAG: ![[Z1_MD]] = !DILocalVariable(arg: 0{{.*}}name: "z1"
+            CHECK-DAG: ![[Z2_MD]] = !DILocalVariable(arg: 0{{.*}}name: "z2"
+            CHECK-DAG: ![[Z3_MD]] = !DILocalVariable(arg: 0{{.*}}name: "z3"
+            CHECK-DAG: ![[Z4_MD]] = !DILocalVariable(arg: 0{{.*}}name: "z4"
+        """
+        self.assertFileCheckMatches(llvm_ir, check_pattern)
 
     def test_llvm_dbg_value_range(self):
         sig = (types.int64,)
