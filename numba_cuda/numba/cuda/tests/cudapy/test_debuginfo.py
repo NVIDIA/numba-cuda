@@ -1213,5 +1213,31 @@ class TestCudaDebugInfo(CUDATestCase):
         )
 
 
+    def test_arg_load_has_dbg_location(self):
+        """Loads of arg-named variables must carry !dbg in the body.
+
+        Reusing `j` across two loops creates multiple dbg.value
+        entries; a missing !dbg on the arg load (".loc line 0")
+        makes ptxas zero the location list and results in corrupted
+        DW_AT_location. Regression test for nvbug 5886953.
+        """
+        sig = (types.float32[:], types.int64)
+
+        @cuda.jit("void(float32[:], int64)", debug=True, opt=False)
+        def foo(arr, n):
+            for j in range(n):
+                arr[0] += j
+            for j in range(n):
+                arr[0] += j
+
+        llvm_ir = foo.inspect_llvm(sig)
+        pat = re.compile(r'load\s.*%"arr"\s*$', re.MULTILINE)
+        match = pat.search(llvm_ir)
+        self.assertIsNone(
+            match,
+            msg="Load of arg 'arr' missing !dbg metadata",
+        )
+
+
 if __name__ == "__main__":
     unittest.main()
