@@ -34,6 +34,7 @@ from numba.cuda.core.ir_utils import (
 from numba.cuda.core.callconv import CUDACallConv
 
 from numba.cuda.core import postproc, rewrites, funcdesc, config
+from numba.cuda.core.options import InlineOptions
 
 
 try:
@@ -202,9 +203,15 @@ class BaseTypeInference(FunctionPass):
             'Function "%s" has invalid return type'
             % (state.func_id.func_name,),
         ):
-            legalize_return_type(
-                state.return_type, state.func_ir, state.targetctx
-            )
+            # We don't need to run legalize_return_type for always inline
+            # functions, as they will be inlined into their callers at numba IR
+            # stage and never compiled on their own. This allows us to support
+            # returning arrays that are not passed in as arguments, which is a
+            # common pattern in array-oriented code.
+            if state.flags.inline != InlineOptions("always"):
+                legalize_return_type(
+                    state.return_type, state.func_ir, state.targetctx
+                )
         return True
 
 
