@@ -1212,7 +1212,6 @@ class TestCudaDebugInfo(CUDATestCase):
             match, f"No non-zero store to 'bar.N' with !dbg !{continue_dbg_id}"
         )
 
-
     def test_arg_load_has_dbg_location(self):
         """Loads of arg-named variables must carry !dbg in the body.
 
