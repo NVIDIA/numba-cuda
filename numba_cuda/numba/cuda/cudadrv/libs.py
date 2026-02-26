@@ -3,35 +3,18 @@
 
 """CUDA Toolkit libraries lookup utilities.
 
-CUDA Toolkit libraries can be available via either:
-
-- the `cuda-nvcc` and `cuda-nvrtc` conda packages,
-- a user supplied location from CUDA_HOME,
-- a system wide location,
-- package-specific locations (e.g. the Debian NVIDIA packages),
-- or can be discovered by the system loader.
+All path discovery is delegated to ``cuda.pathfinder``.  This module
+provides thin wrappers that expose the results via ``get_cuda_paths()``.
 """
 
 import os
 import sys
 import ctypes
 
-from numba.cuda.misc.findlib import find_lib
 from numba.cuda.cuda_paths import get_cuda_paths
 from numba.cuda.cudadrv.driver import locate_driver_and_loader, load_driver
 from numba.cuda.cudadrv.error import CudaSupportError
 from numba.cuda import config
-
-
-if sys.platform == "win32":
-    _dllnamepattern = "%s.dll"
-    _staticnamepattern = "%s.lib"
-elif sys.platform == "darwin":
-    _dllnamepattern = "lib%s.dylib"
-    _staticnamepattern = "lib%s.a"
-else:
-    _dllnamepattern = "lib%s.so"
-    _staticnamepattern = "lib%s.a"
 
 
 def get_libdevice():
@@ -47,22 +30,26 @@ def open_libdevice():
 
 def get_cudalib(lib, static=False):
     """
-    Find the path of a CUDA library based on a search of known locations. If
-    the search fails, return a generic filename for the library (e.g.
-    'libnvvm.so' for 'nvvm') so that we may attempt to load it using the system
-    loader's search mechanism.
+    Find the path of a CUDA library via pathfinder.  For dynamic libraries
+    (nvrtc, nvvm) the absolute path discovered by pathfinder is returned.
+    For static libraries (cudadevrt) the path is resolved by
+    ``pathfinder.find_static_lib``.
     """
     if lib in {"nvrtc", "nvvm"}:
-        # System search either invoked inside cuda-pathfinder
-        # or, for nvvm, using custom logic inside cuda-paths
         return get_cuda_paths()[lib].info
 
-    dir_type = "static_cudalib_dir" if static else "cudalib_dir"
-    libdir = get_cuda_paths()[dir_type].info
+    if static and lib == "cudadevrt":
+        path = get_cuda_paths()["cudadevrt"].info
+        if path is not None:
+            return path
 
-    candidates = find_lib(lib, libdir, static=static)
-    namepattern = _staticnamepattern if static else _dllnamepattern
-    return max(candidates) if candidates else namepattern % lib
+    if sys.platform == "win32":
+        namepattern = "%s.lib" if static else "%s.dll"
+    elif sys.platform == "darwin":
+        namepattern = "lib%s.a" if static else "lib%s.dylib"
+    else:
+        namepattern = "lib%s.a" if static else "lib%s.so"
+    return namepattern % lib
 
 
 def get_cuda_include_dir():
@@ -93,17 +80,11 @@ def check_static_lib(path):
 
 
 def _get_source_variable(lib, static=False):
-    if lib == "nvvm":
-        return get_cuda_paths()["nvvm"].by
-    elif lib == "nvrtc":
-        return get_cuda_paths()["nvrtc"].by
-    elif lib == "libdevice":
-        return get_cuda_paths()["libdevice"].by
-    elif lib == "include_dir":
-        return get_cuda_paths()["include_dir"].by
-    else:
-        dir_type = "static_cudalib_dir" if static else "cudalib_dir"
-        return get_cuda_paths()[dir_type].by
+    if lib in {"nvvm", "nvrtc", "libdevice", "include_dir"}:
+        return get_cuda_paths()[lib].by
+    if static and lib == "cudadevrt":
+        return get_cuda_paths()["cudadevrt"].by
+    return "<unknown>"
 
 
 def test():
