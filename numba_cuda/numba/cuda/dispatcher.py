@@ -1838,7 +1838,7 @@ class CUDADispatcher(serialize.ReduceMixin, _MemoMixin, _DispatcherBase):
                 debug = self.targetoptions.get("debug")
                 lineinfo = self.targetoptions.get("lineinfo")
                 forceinline = self.targetoptions.get("forceinline")
-                inline = self.targetoptions.get("inline")
+                inline = self.targetoptions.get("inline", "never")
                 fastmath = self.targetoptions.get("fastmath")
 
                 nvvm_options = {
