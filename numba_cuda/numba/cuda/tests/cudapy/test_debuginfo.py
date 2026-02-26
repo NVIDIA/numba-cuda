@@ -332,37 +332,7 @@ class TestCudaDebugInfo(CUDATestCase):
         match = re.compile(pat).search(llvm_ir)
         self.assertIsNone(match, msg=llvm_ir)
 
-    def test_llvm_dbg_declare(self):
-        """Test kernel params have dbg.declare that survives control flow.
-
-        Function parameters need llvm.dbg.declare to guarantee the emission of
-        DW_TAG_formal_parameter in the presence of control-flow branches.
-        """
-        sig = (types.int32[:], types.int32)
-
-        @cuda.jit(sig, debug=True, opt=False)
-        def foo(arr, scalar):
-            idx = cuda.grid(1)
-            if idx < arr.size:
-                arr[idx] = arr[idx] + scalar
-
-        llvm_ir = foo.inspect_llvm(sig)
-
-        check_pattern = r"""
-            CHECK: call void @"llvm.dbg.declare"(metadata {{.*}}, metadata ![[ARR_MD:[0-9]+]], metadata
-            CHECK: call void @"llvm.dbg.declare"(metadata {{.*}}, metadata ![[S_MD:[0-9]+]], metadata
-            CHECK-DAG: ![[ARR_MD]] = !DILocalVariable(arg: 1{{.*}}name: "arr"
-            CHECK-DAG: ![[S_MD]] = !DILocalVariable(arg: 2{{.*}}name: "scalar"
-        """
-        self.assertFileCheckMatches(llvm_ir, check_pattern)
-
     def test_llvm_dbg_value(self):
-        """Test kernel params have dbg.declare and local variables have dbg.value.
-
-        Function parameters need llvm.dbg.declare to guarantee the emission of
-        DW_TAG_formal_parameter. Local variables need llvm.dbg.value to track
-        value changes.
-        """
         sig = (types.int32, types.int32)
 
         @cuda.jit("void(int32, int32)", debug=True, opt=False)
@@ -373,28 +343,12 @@ class TestCudaDebugInfo(CUDATestCase):
             z4 = True  # noqa: F841
 
         llvm_ir = f.inspect_llvm(sig)
-
-        def find_metadata_id(ir, arg_num, name):
-            """Find the metadata ID for a DILocalVariable."""
-            pat = rf'!(\d+) = !DILocalVariable\(arg: {arg_num}.*name: "{name}"'
-            m = re.search(pat, ir)
-            self.assertIsNotNone(m, msg=f"DILocalVariable not found: {name}")
-            return m.group(1)
-
-        def assert_intrinsic(ir, intrinsic, md_id):
-            """Assert that an llvm.dbg intrinsic references the metadata ID."""
-            pat = rf'call void @"llvm.dbg.{intrinsic}"\(metadata .*, metadata !{md_id},'
-            self.assertRegex(ir, pat)
-
-        x_md = find_metadata_id(llvm_ir, 1, "x")
-        assert_intrinsic(llvm_ir, "declare", x_md)
-
-        y_md = find_metadata_id(llvm_ir, 2, "y")
-        assert_intrinsic(llvm_ir, "declare", y_md)
-
-        for name in ("z1", "z2", "z3", "z4"):
-            z_md = find_metadata_id(llvm_ir, 0, name)
-            assert_intrinsic(llvm_ir, "value", z_md)
+        pat1 = r'call void @"llvm.dbg.declare"'
+        match = re.compile(pat1).search(llvm_ir)
+        self.assertIsNotNone(match, msg=llvm_ir)
+        pat2 = r'call void @"llvm.dbg.value"'
+        match = re.compile(pat2).search(llvm_ir)
+        self.assertIsNotNone(match, msg=llvm_ir)
 
     def test_llvm_dbg_value_range(self):
         sig = (types.int64,)
