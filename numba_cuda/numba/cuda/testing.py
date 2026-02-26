@@ -4,10 +4,11 @@
 import os
 import platform
 import shutil
+import sys
+
 import pytest
 from datetime import datetime
 from numba.cuda.utils import PYVERSION
-from numba.cuda.cuda_paths import get_conda_ctk_libdir
 from numba.cuda.cudadrv import driver, devices, libs
 from numba.cuda.dispatcher import CUDADispatcher
 from numba.cuda import config
@@ -202,10 +203,19 @@ def skip_unless_cudasim(reason):
     return unittest.skipUnless(config.ENABLE_CUDASIM, reason)
 
 
+def _is_conda_cudatoolkit():
+    """Check if the CUDA toolkit is available via a conda environment."""
+    is_conda_env = os.path.isdir(os.path.join(sys.prefix, "conda-meta"))
+    if not is_conda_env:
+        return False
+    conda_prefix = os.environ.get("CONDA_PREFIX")
+    return conda_prefix is not None
+
+
 def skip_unless_conda_cudatoolkit(reason):
     """Skip test if the CUDA toolkit was not installed by Conda"""
     assert isinstance(reason, str)
-    return unittest.skipUnless(get_conda_ctk_libdir() is not None, reason)
+    return unittest.skipUnless(_is_conda_cudatoolkit(), reason)
 
 
 def skip_if_external_memmgr(reason):
