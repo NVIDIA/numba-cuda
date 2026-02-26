@@ -299,7 +299,8 @@ class DIBuilder(AbstractDIBuilder):
         elif isinstance(datamodel, UniTupleModel):
             element = lltype.element
             el_size = self.cgctx.get_abi_sizeof(element)
-            basetype = self._var_type(element, el_size)
+            element_model = next(iter(datamodel.inner_models()), None)
+            basetype = self._var_type(element, el_size, datamodel=element_model)
             name = f"{datamodel.fe_type} ({str(lltype)})"
             count = size // el_size
             mdrange = m.add_debug_info(
