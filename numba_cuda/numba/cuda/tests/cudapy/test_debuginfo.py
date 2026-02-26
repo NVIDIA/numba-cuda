@@ -374,23 +374,27 @@ class TestCudaDebugInfo(CUDATestCase):
 
         llvm_ir = f.inspect_llvm(sig)
 
-        check_pattern = r"""
-            CHECK: call void @"llvm.dbg.declare"(metadata {{.*}}, metadata ![[X_MD:[0-9]+]], metadata
-            CHECK: call void @"llvm.dbg.value"(metadata {{.*}}, metadata ![[X_MD]], metadata
-            CHECK: call void @"llvm.dbg.declare"(metadata {{.*}}, metadata ![[Y_MD:[0-9]+]], metadata
-            CHECK: call void @"llvm.dbg.value"(metadata {{.*}}, metadata ![[Y_MD]], metadata
-            CHECK: call void @"llvm.dbg.value"(metadata {{.*}}, metadata ![[Z1_MD:[0-9]+]], metadata
-            CHECK: call void @"llvm.dbg.value"(metadata {{.*}}, metadata ![[Z2_MD:[0-9]+]], metadata
-            CHECK: call void @"llvm.dbg.value"(metadata {{.*}}, metadata ![[Z3_MD:[0-9]+]], metadata
-            CHECK: call void @"llvm.dbg.value"(metadata {{.*}}, metadata ![[Z4_MD:[0-9]+]], metadata
-            CHECK-DAG: ![[X_MD]] = !DILocalVariable(arg: 1{{.*}}name: "x"
-            CHECK-DAG: ![[Y_MD]] = !DILocalVariable(arg: 2{{.*}}name: "y"
-            CHECK-DAG: ![[Z1_MD]] = !DILocalVariable(arg: 0{{.*}}name: "z1"
-            CHECK-DAG: ![[Z2_MD]] = !DILocalVariable(arg: 0{{.*}}name: "z2"
-            CHECK-DAG: ![[Z3_MD]] = !DILocalVariable(arg: 0{{.*}}name: "z3"
-            CHECK-DAG: ![[Z4_MD]] = !DILocalVariable(arg: 0{{.*}}name: "z4"
-        """
-        self.assertFileCheckMatches(llvm_ir, check_pattern)
+        def find_metadata_id(ir, arg_num, name):
+            """Find the metadata ID for a DILocalVariable."""
+            pat = rf'!(\d+) = !DILocalVariable\(arg: {arg_num}.*name: "{name}"'
+            m = re.search(pat, ir)
+            self.assertIsNotNone(m, msg=f"DILocalVariable not found: {name}")
+            return m.group(1)
+
+        def assert_intrinsic(ir, intrinsic, md_id):
+            """Assert that an llvm.dbg intrinsic references the metadata ID."""
+            pat = rf'call void @"llvm.dbg.{intrinsic}"\(metadata .*, metadata !{md_id},'
+            self.assertRegex(ir, pat)
+
+        x_md = find_metadata_id(llvm_ir, 1, "x")
+        assert_intrinsic(llvm_ir, "declare", x_md)
+
+        y_md = find_metadata_id(llvm_ir, 2, "y")
+        assert_intrinsic(llvm_ir, "declare", y_md)
+
+        for name in ("z1", "z2", "z3", "z4"):
+            z_md = find_metadata_id(llvm_ir, 0, name)
+            assert_intrinsic(llvm_ir, "value", z_md)
 
     def test_llvm_dbg_value_range(self):
         sig = (types.int64,)
