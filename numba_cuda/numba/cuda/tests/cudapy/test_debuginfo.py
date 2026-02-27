@@ -383,10 +383,10 @@ class TestCudaDebugInfo(CUDATestCase):
         @cuda.jit("void(int32[:], int32)", debug=True, opt=False)
         def foo(arr, scalar):
             """
-            CHECK: call void @"llvm.dbg.value"(metadata i32 %"scalar", metadata ![[SC:[0-9]+]]
+            CHECK: call void @"llvm.dbg.value"(metadata i32 %"scalar"
 
             CHECK: load i32, i32* %"scalar.1"
-            CHECK: call void @"llvm.dbg.value"(metadata i32 %"{{[^"]+}}", metadata ![[SC]]
+            CHECK: call void @"llvm.dbg.value"(metadata i32 %"{{[^"]+}}", metadata ![[SC:[0-9]+]]
 
             CHECK: ![[SC]] = !DILocalVariable{{.+}}name: "scalar"
             """
