@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: BSD-2-Clause
 
 from numba import cuda
+from numba.cuda import HAS_NUMBA
 from numba.cuda.core.errors import TypingError
 from numba.cuda.testing import unittest, CUDATestCase, skip_on_cudasim
 from numba.cuda.cudadrv import driver
@@ -9,6 +10,35 @@ from numba.cuda.cudadrv import driver
 
 def noop(x):
     pass
+
+
+class TestErrorHierarchy(unittest.TestCase):
+    @unittest.skipUnless(HAS_NUMBA, "requires numba.core.errors")
+    def test_cuda_error_hierarchy_is_narrower_than_core(self):
+        from numba.core import errors as core_errors
+        from numba.cuda.core import errors as cuda_errors
+
+        for name, core_exc in vars(core_errors).items():
+            if not isinstance(core_exc, type):
+                continue
+            if not issubclass(core_exc, core_errors.NumbaError):
+                continue
+
+            with self.subTest(error_name=name):
+                cuda_exc = getattr(cuda_errors, name)
+                self.assertIsNot(cuda_exc, core_exc)
+                self.assertTrue(issubclass(cuda_exc, core_exc))
+                self.assertTrue(issubclass(cuda_exc, cuda_errors.NumbaError))
+                self.assertFalse(issubclass(core_exc, cuda_errors.NumbaError))
+
+        self.assertIsInstance(
+            cuda_errors.TypingError("cuda typing"),
+            core_errors.TypingError,
+        )
+        self.assertNotIsInstance(
+            core_errors.TypingError("core typing"),
+            cuda_errors.NumbaError,
+        )
 
 
 class TestJitErrors(CUDATestCase):
