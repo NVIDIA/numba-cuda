@@ -386,7 +386,7 @@ class TestCudaDebugInfo(CUDATestCase):
             CHECK: call void @"llvm.dbg.value"(metadata i32 %"scalar", metadata ![[SC:[0-9]+]]
 
             CHECK: load i32, i32* %"scalar.1"
-            CHECK: call void @"llvm.dbg.value"(metadata i32 %{{.*}}, metadata ![[SC]]
+            CHECK: call void @"llvm.dbg.value"(metadata i32 %"{{[^"]+}}", metadata ![[SC]]
 
             CHECK: ![[SC]] = !DILocalVariable{{.+}}name: "scalar"
             """
