@@ -36,7 +36,7 @@ class TestCudaArrayInterface(CUDATestCase):
         self.assertPointersEqual(wrapped, d_arr)
 
     def get_stream_value(self, stream):
-        return stream.handle.value
+        return int(stream.handle)
 
     @skip_if_external_memmgr("Ownership not relevant with external memmgr")
     def test_ownership(self):

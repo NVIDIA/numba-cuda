@@ -5825,7 +5825,7 @@ def impl_np_frombuffer(buffer, dtype=float):
     return impl
 
 
-@overload(carray)
+@overload(carray, inline="always")
 def impl_carray(ptr, shape, dtype=None):
     if is_nonelike(dtype):
         intrinsic_cfarray = get_cfarray_intrinsic("C", None)
@@ -5843,7 +5843,7 @@ def impl_carray(ptr, shape, dtype=None):
         return impl
 
 
-@overload(farray)
+@overload(farray, inline="always")
 def impl_farray(ptr, shape, dtype=None):
     if is_nonelike(dtype):
         intrinsic_cfarray = get_cfarray_intrinsic("F", None)

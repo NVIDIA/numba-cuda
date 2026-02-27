@@ -694,6 +694,7 @@ def compile_cuda(
     debug=False,
     lineinfo=False,
     forceinline=False,
+    inline="never",
     fastmath=False,
     nvvm_options=None,
     cc=None,
@@ -715,6 +716,8 @@ def compile_cuda(
     flags.no_compile = True
     flags.no_cpython_wrapper = True
     flags.no_cfunc_wrapper = True
+
+    flags.inline = inline
 
     # Both debug and lineinfo turn on debug information in the compiled code,
     # but we keep them separate arguments in case we later want to overload
