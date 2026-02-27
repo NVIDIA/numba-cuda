@@ -30,7 +30,16 @@ class DefaultPassBuilder:
 
 class CompilerBase:
     def __init__(
-        self, typingctx, targetctx, library, args, return_type, flags, locals
+        self,
+        typingctx,
+        targetctx,
+        library,
+        args,
+        return_type,
+        flags,
+        locals,
+        call_conv,
+        abi_info,
     ):
         pass
 

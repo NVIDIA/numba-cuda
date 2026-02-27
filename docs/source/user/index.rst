@@ -32,6 +32,7 @@ User guide
    bindings.rst
    cuda_ffi.rst
    cuda_compilation.rst
+   callconv.rst
    caching.rst
    minor_version_compatibility.rst
    faq.rst
