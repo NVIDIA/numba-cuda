@@ -1694,6 +1694,45 @@ class Lower(BaseLower):
 
 
 class CUDALower(Lower):
+    def loadvar(self, name):
+        val = super().loadvar(name)
+        # Emit dbg.value for scalar user variables loaded but not assigned
+        # in current block, extending the per-block dbg.value range coverage.
+        if (
+            self.context.enable_debuginfo
+            and self._disable_sroa_like_opt
+            and not name.startswith(("$", "."))
+        ):
+            src_name = name.split(".")[0]
+            if (
+                src_name not in self.dbg_val_names
+                and src_name not in self.poly_var_typ_map
+            ):
+                fetype = self.typeof(name)
+                lltype = self.context.get_value_type(fetype)
+                int_type = (llvm_ir.IntType,)
+                real_type = llvm_ir.FloatType, llvm_ir.DoubleType
+                if isinstance(lltype, int_type + real_type):
+                    sizeof = self.context.get_abi_sizeof(lltype)
+                    datamodel = self.context.data_model_manager[fetype]
+                    line = self._adjust_line_if_prologue(self.loc.line)
+                    if src_name in self.fndesc.args:
+                        argidx = self.fndesc.args.index(src_name) + 1
+                    else:
+                        argidx = None
+                    self.debuginfo.update_variable(
+                        self.builder,
+                        val,
+                        src_name,
+                        lltype,
+                        sizeof,
+                        line,
+                        datamodel,
+                        argidx,
+                    )
+                    self.dbg_val_names.add(src_name)
+        return val
+
     def storevar(self, value, name, argidx=None):
         """
         Store the value into the given variable.

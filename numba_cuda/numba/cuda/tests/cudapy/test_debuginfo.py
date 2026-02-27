@@ -363,8 +363,6 @@ class TestCudaDebugInfo(CUDATestCase):
             CHECK: call void @"llvm.dbg.value"
 
             CHECK: %[[VAL_1:.*]] = load i1, i1* %"second.2"
-            CHECK: %[[VAL_2:.*]] = load i1, i1* %[[VAL_3:.*]]
-            CHECK: store i1 %[[VAL_1]], i1* %[[VAL_3]]
             CHECK: call void @"llvm.dbg.value"(metadata i1 %[[VAL_1]], metadata ![[VAL_4:[0-9]+]]
 
             CHECK: ![[VAL_4]] = !DILocalVariable{{.+}}name: "second"
@@ -375,6 +373,26 @@ class TestCudaDebugInfo(CUDATestCase):
                 second = True
             if second:
                 pass
+
+        ir = foo.inspect_llvm()[sig]
+        self.assertFileCheckMatches(ir, foo.__doc__)
+
+    def test_llvm_dbg_value_loadvar_coverage(self):
+        sig = (types.int32[:], types.int32)
+
+        @cuda.jit("void(int32[:], int32)", debug=True, opt=False)
+        def foo(arr, scalar):
+            """
+            CHECK: call void @"llvm.dbg.value"(metadata i32 %"scalar", metadata ![[SC:[0-9]+]]
+
+            CHECK: load i32, i32* %"scalar.1"
+            CHECK: call void @"llvm.dbg.value"(metadata i32 %{{.*}}, metadata ![[SC]]
+
+            CHECK: ![[SC]] = !DILocalVariable{{.+}}name: "scalar"
+            """
+            idx = cuda.grid(1)
+            if idx < arr.size:
+                arr[idx] = arr[idx] + scalar
 
         ir = foo.inspect_llvm()[sig]
         self.assertFileCheckMatches(ir, foo.__doc__)
