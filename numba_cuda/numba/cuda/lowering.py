@@ -1694,6 +1694,21 @@ class Lower(BaseLower):
 
 
 class CUDALower(Lower):
+    def loadvar(self, name):
+        if name in self._blk_local_varmap and not self._disable_sroa_like_opt:
+            return self._blk_local_varmap[name]
+        ptr = self.getvar(name)
+
+        # Skip the base-class suspend_emission for arg-named loads.
+        # loadvar is never called in the prologue (arg unpacking in
+        # lower_assign and storevar already suppresses there).
+        # On CUDA the missing !dbg emits ".loc line 0"; when a
+        # variable (e.g. a reused loop counter) has multiple
+        # dbg.value entries, ptxas builds a multi-entry location
+        # list and the line-0 ranges inserted between entries
+        # will result in an corrupted DW_AT_location.
+        return self.builder.load(ptr)
+
     def storevar(self, value, name, argidx=None):
         """
         Store the value into the given variable.
