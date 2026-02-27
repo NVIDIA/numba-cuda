@@ -7,12 +7,12 @@ from numba.cuda.cudadrv.error import (
 from numba.cuda import config
 from numba.cuda.cuda_paths import get_cuda_paths
 from numba.cuda.utils import _readenv
-
+from cuda import pathfinder
 import os
 import warnings
 import functools
 
-from numba.cuda._compat import Program, ProgramOptions
+from cuda.core import Program, ProgramOptions
 from cuda.bindings import nvrtc as bindings_nvrtc
 
 NVRTC_EXTRA_SEARCH_PATHS = _readenv(
@@ -108,20 +108,20 @@ def compile(src, name, cc, ltoir=False, lineinfo=False, debug=False):
     numba_cuda_path = os.path.dirname(cudadrv_path)
 
     nvrtc_ver_major = version[0]
+
     if nvrtc_ver_major == 12:
         numba_include = f"{os.path.join(numba_cuda_path, 'include', '12')}"
-        # For CUDA 12 wheels, `cuda_include_dir` is `site-packages/nvidia/cuda_runtime/include`
-        # We need to find CCCL at `site-packages/nvidia/cuda_cccl/include`
-        # For CUDA 12 conda / system install, CCCL is just in the `include` directory
-        cuda_includes.append(
-            f"{os.path.join(cuda_include_dir, '..', '..', 'cuda_cccl', 'include')}"
-        )
+
     elif nvrtc_ver_major == 13:
         numba_include = f"{os.path.join(numba_cuda_path, 'include', '13')}"
-        # For CUDA 13 wheels, `cuda_include_dir` is `site-packages/nvidia/cu13/include`
-        # We need to find CCCL at `site-packages/nvidia/cu13/include/cccl`
-        # For CUDA 13 conda / system install, CCCL is in the `include/cccl` directory
-        cuda_includes.append(f"{os.path.join(cuda_include_dir, 'cccl')}")
+
+    cccl_found_header_dir = pathfinder.locate_nvidia_header_directory("cccl")
+    if cccl_found_header_dir is not None:
+        # TODO: Not every kernel needs cccl, so it shouldn't
+        # be added to the include path for every kernel.
+        # Needs to be flagged during compilation if NRT is included.
+        cccl_include_dir = cccl_found_header_dir.abs_path
+        cuda_includes.append(cccl_include_dir)
 
     if config.CUDA_NVRTC_EXTRA_SEARCH_PATHS:
         extra_includes = config.CUDA_NVRTC_EXTRA_SEARCH_PATHS.split(":")
