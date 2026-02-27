@@ -15,7 +15,7 @@ import uuid
 import re
 from warnings import warn
 
-from numba.cuda._compat import launch, LaunchConfig
+from cuda.core import launch, LaunchConfig
 
 from numba.cuda.core import errors
 from numba.cuda import serialize, utils
@@ -1838,6 +1838,7 @@ class CUDADispatcher(serialize.ReduceMixin, _MemoMixin, _DispatcherBase):
                 debug = self.targetoptions.get("debug")
                 lineinfo = self.targetoptions.get("lineinfo")
                 forceinline = self.targetoptions.get("forceinline")
+                inline = self.targetoptions.get("inline", "never")
                 fastmath = self.targetoptions.get("fastmath")
 
                 nvvm_options = {
@@ -1856,6 +1857,7 @@ class CUDADispatcher(serialize.ReduceMixin, _MemoMixin, _DispatcherBase):
                     debug=debug,
                     lineinfo=lineinfo,
                     forceinline=forceinline,
+                    inline=inline,
                     fastmath=fastmath,
                     nvvm_options=nvvm_options,
                     cc=cc,

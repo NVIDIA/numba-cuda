@@ -4836,7 +4836,9 @@ def _parse_shape(context, builder, ty, val):
         is_neg = builder.icmp_signed("<", shape, zero)
         with cgutils.if_unlikely(builder, is_neg):
             context.fndesc.call_conv.return_user_exc(
-                builder, ValueError, ("negative dimensions not allowed",)
+                builder,
+                ValueError,
+                ("negative dimensions not allowed",),
             )
 
     return shapes
@@ -5825,7 +5827,7 @@ def impl_np_frombuffer(buffer, dtype=float):
     return impl
 
 
-@overload(carray)
+@overload(carray, inline="always")
 def impl_carray(ptr, shape, dtype=None):
     if is_nonelike(dtype):
         intrinsic_cfarray = get_cfarray_intrinsic("C", None)
@@ -5843,7 +5845,7 @@ def impl_carray(ptr, shape, dtype=None):
         return impl
 
 
-@overload(farray)
+@overload(farray, inline="always")
 def impl_farray(ptr, shape, dtype=None):
     if is_nonelike(dtype):
         intrinsic_cfarray = get_cfarray_intrinsic("F", None)
@@ -6023,7 +6025,9 @@ def check_sequence_shape(context, builder, seqty, seq, shapes):
 
     def _fail():
         context.fndesc.call_conv.return_user_exc(
-            builder, ValueError, ("incompatible sequence shape",)
+            builder,
+            ValueError,
+            ("incompatible sequence shape",),
         )
 
     def check_seq_size(seqty, seq, shapes):

@@ -560,6 +560,8 @@ def compile_extra(
     locals,
     library=None,
     pipeline_class=CUDACompiler,
+    call_conv=None,
+    abi_info=None,
 ):
     """Compiler entry point
 
@@ -584,7 +586,15 @@ def compile_extra(
         compiler pipeline
     """
     pipeline = pipeline_class(
-        typingctx, targetctx, library, args, return_type, flags, locals
+        typingctx,
+        targetctx,
+        library,
+        args,
+        return_type,
+        flags,
+        locals,
+        call_conv,
+        abi_info,
     )
     return pipeline.compile_extra(func)
 
@@ -602,6 +612,8 @@ def compile_ir(
     is_lifted_loop=False,
     library=None,
     pipeline_class=CUDACompiler,
+    call_conv=None,
+    abi_info=None,
 ):
     """
     Compile a function with the given IR.
@@ -637,6 +649,8 @@ def compile_ir(
                 return_type,
                 the_flags,
                 locals,
+                call_conv,
+                abi_info,
             )
             return pipeline.compile_ir(
                 func_ir=the_ir, lifted=lifted, lifted_from=lifted_from
@@ -675,13 +689,30 @@ def compile_ir(
 
 
 def compile_internal(
-    typingctx, targetctx, library, func, args, return_type, flags, locals
+    typingctx,
+    targetctx,
+    library,
+    func,
+    args,
+    return_type,
+    flags,
+    locals,
+    call_conv=None,
+    abi_info=None,
 ):
     """
     For internal use only.
     """
     pipeline = CUDACompiler(
-        typingctx, targetctx, library, args, return_type, flags, locals
+        typingctx,
+        targetctx,
+        library,
+        args,
+        return_type,
+        flags,
+        locals,
+        call_conv,
+        abi_info,
     )
     return pipeline.compile_extra(func)
 
@@ -694,6 +725,7 @@ def compile_cuda(
     debug=False,
     lineinfo=False,
     forceinline=False,
+    inline="never",
     fastmath=False,
     nvvm_options=None,
     cc=None,
@@ -715,6 +747,8 @@ def compile_cuda(
     flags.no_compile = True
     flags.no_cpython_wrapper = True
     flags.no_cfunc_wrapper = True
+
+    flags.inline = inline
 
     # Both debug and lineinfo turn on debug information in the compiled code,
     # but we keep them separate arguments in case we later want to overload
@@ -744,10 +778,12 @@ def compile_cuda(
     flags.lto = lto
 
     if abi == "c":
-        flags.call_conv = CUDACABICallConv(targetctx)
+        call_conv = CUDACABICallConv(targetctx)
+    else:
+        call_conv = CUDACallConv(targetctx)
 
-    if abi_info is not None:
-        flags.abi_info = abi_info
+    if abi_info is None:
+        abi_info = {}
 
     with utils.numba_target_override():
         cres = compile_extra(
@@ -759,6 +795,8 @@ def compile_cuda(
             flags=flags,
             locals={},
             pipeline_class=CUDACompiler,
+            call_conv=call_conv,
+            abi_info=abi_info,
         )
 
     library = cres.library
