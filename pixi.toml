@@ -261,6 +261,9 @@ bench-against = { cmd = [
     "$PIXI_PROJECT_ROOT/scripts/bench-against.py",
 ] }
 
+[target.linux.tasks.bench-launch-overhead]
+cmd = ["python", "$PIXI_PROJECT_ROOT/scripts/bench-launch-overhead.py"]
+
 [target.linux.tasks.build-docs]
 cmd = ["make", "-C", "$PIXI_PROJECT_ROOT/docs", "html"]
 

@@ -16,6 +16,7 @@ from numba.cuda.types import (
 )
 from numba import cuda
 from numba.cuda import config, types
+from numba.cuda import launchconfig
 from numba.cuda.core.errors import TypingError
 from numba.cuda.testing import (
     cc_X_or_above,
@@ -127,6 +128,52 @@ class TestDispatcherSpecialization(CUDATestCase):
 
 class TestDispatcher(CUDATestCase):
     """Most tests based on those in numba.tests.test_dispatcher."""
+
+    @skip_on_cudasim("Dispatcher C-extension not used in the simulator")
+    def test_launch_config_available_during_compile(self):
+        @cuda.jit
+        def f(x):
+            x[0] = 1
+
+        seen = {}
+        orig = f._compile_for_args
+
+        def wrapped(*args, **kws):
+            seen["config"] = launchconfig.current_launch_config()
+            return orig(*args, **kws)
+
+        f._compile_for_args = wrapped
+
+        arr = np.zeros(1, dtype=np.int32)
+        self.assertIsNone(launchconfig.current_launch_config())
+        f[1, 1](arr)
+
+        cfg = seen.get("config")
+        self.assertIsNotNone(cfg)
+        self.assertIs(cfg.dispatcher, f)
+        self.assertEqual(cfg.griddim, (1, 1, 1))
+        self.assertEqual(cfg.blockdim, (1, 1, 1))
+        self.assertIsNone(launchconfig.current_launch_config())
+        with self.assertRaises(RuntimeError):
+            launchconfig.ensure_current_launch_config()
+
+    @skip_on_cudasim("Dispatcher C-extension not used in the simulator")
+    def test_capture_compile_config(self):
+        @cuda.jit
+        def f(x):
+            x[0] = 1
+
+        arr = np.zeros(1, dtype=np.int32)
+        original = f._compile_for_args
+        with launchconfig.capture_compile_config(f) as capture:
+            f[1, 1](arr)
+
+        cfg = capture["config"]
+        self.assertIsNotNone(cfg)
+        self.assertIs(cfg.dispatcher, f)
+        self.assertEqual(cfg.griddim, (1, 1, 1))
+        self.assertEqual(cfg.blockdim, (1, 1, 1))
+        self.assertIs(f._compile_for_args, original)
 
     def test_coerce_input_types(self):
         # Do not allow unsafe conversions if we can still compile other
