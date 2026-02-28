@@ -55,6 +55,7 @@ from numba.cuda.memory_management.nrt import rtsys, NRT_LIBRARY
 import numba.cuda.core.event as ev
 from numba.cuda.cext import _dispatcher
 
+_arg_handlers = {}
 
 cuda_fp16_math_funcs = [
     "hsin",
@@ -554,8 +555,30 @@ class _Kernel(serialize.ReduceMixin):
         """
 
         # map the arguments using any extension you've registered
-        for extension in reversed(self.extensions):
-            ty, val = extension.prepare_args(ty, val, stream=stream, retr=retr)
+        handler = _arg_handlers.get(type(val))
+        mutated = False
+
+        if self.extensions:
+            for extension in reversed(self.extensions):
+                if not mutated:
+                    _ty, _val = ty, val
+
+                ty, val = extension.prepare_args(
+                    ty, val, stream=stream, retr=retr
+                )
+
+                if not mutated and not (_ty is ty and _val is val):
+                    mutated = True
+                    if handler is not None:
+                        raise RuntimeError(
+                            "Argument type %s and value %s were mutated by "
+                            "extension; cannot also be handled by registered "
+                            "argument handler" % (ty, val)
+                        )
+
+        # only run global handler if untouched by extensions
+        if not mutated and handler is not None:
+            ty, val = handler(ty, val, stream=stream, retr=retr)
 
         if isinstance(ty, types.Array):
             devary = wrap_arg(val).to_device(retr, stream)
@@ -633,7 +656,6 @@ class _Kernel(serialize.ReduceMixin):
                 )
             except NotImplementedError:
                 raise NotImplementedError(ty, val)
-
         else:
             raise NotImplementedError(ty, val)
 
@@ -2135,6 +2157,19 @@ class CUDADispatcher(serialize.ReduceMixin, _MemoMixin, _DispatcherBase):
         Compiled definitions are discarded.
         """
         return dict(py_func=self.py_func, targetoptions=self.targetoptions)
+
+
+def register_arg_handler(handler, handled_types):
+    global _arg_handlers
+
+    for ty in handled_types:
+        if _arg_handlers.get(ty, None):
+            raise ValueError(
+                f"A handler for args of type {ty} is already registered."
+            )
+
+    for ty in handled_types:
+        _arg_handlers[ty] = handler
 
 
 class LiftedCode(serialize.ReduceMixin, _MemoMixin, _DispatcherBase):
