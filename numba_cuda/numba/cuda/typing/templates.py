@@ -689,6 +689,7 @@ class _OverloadFunctionTemplate(AbstractTemplate):
             # spoof a compiler pipline like the one that will be in use
             tyctx = fcomp.targetdescr.typing_context
             tgctx = fcomp.targetdescr.target_context
+
             compiler_inst = fcomp.pipeline_class(
                 tyctx,
                 tgctx,

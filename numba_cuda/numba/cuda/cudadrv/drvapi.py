@@ -1,6 +1,8 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-2-Clause
 
+import warnings
+
 from ctypes import (
     c_byte,
     c_char_p,
@@ -14,6 +16,12 @@ from ctypes import (
     CFUNCTYPE,
     POINTER,
     Structure,
+)
+
+warnings.warn(
+    "Importing from numba.cuda.cudadrv.drvapi is deprecated.",
+    DeprecationWarning,
+    stacklevel=2,
 )
 
 cu_device = c_int

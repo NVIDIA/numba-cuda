@@ -299,7 +299,8 @@ class DIBuilder(AbstractDIBuilder):
         elif isinstance(datamodel, UniTupleModel):
             element = lltype.element
             el_size = self.cgctx.get_abi_sizeof(element)
-            basetype = self._var_type(element, el_size)
+            element_model = next(iter(datamodel.inner_models()), None)
+            basetype = self._var_type(element, el_size, datamodel=element_model)
             name = f"{datamodel.fe_type} ({str(lltype)})"
             count = size // el_size
             mdrange = m.add_debug_info(
@@ -654,11 +655,7 @@ class CUDADIBuilder(DIBuilder):
         m = self.module
 
         if isinstance(lltype, ir.IntType):
-            if datamodel is None:
-                if size == 1:
-                    name = str(lltype)
-                    is_bool = True
-            else:
+            if datamodel is not None:
                 name = str(datamodel.fe_type)
                 if isinstance(datamodel.fe_type, types.Boolean):
                     is_bool = True
@@ -766,7 +763,7 @@ class CUDADIBuilder(DIBuilder):
                         "baseType": m.add_debug_info(
                             "DIBasicType",
                             {
-                                "name": "int",
+                                "name": "uint8",
                                 "size": _BYTE_SIZE,
                                 "encoding": ir.DIToken("DW_ATE_unsigned"),
                             },
