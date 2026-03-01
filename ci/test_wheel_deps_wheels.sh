@@ -11,7 +11,7 @@ rapids-logger "Install wheel with test dependencies"
 package=$(realpath "${NUMBA_CUDA_ARTIFACTS_DIR}"/*.whl)
 echo "Package path: ${package}"
 # TODO: control minor version pinning to honor TEST_MATRIX once the cuda-toolkit metapackage is up
-python -m pip install "${package}[cu${CUDA_VER_MAJOR}]" --group "test-cu${CUDA_VER_MAJOR}"
+python -m pip install "${package}[cu${CUDA_VER_MAJOR}]" "ml_dtypes" --group "test-cu${CUDA_VER_MAJOR}"
 
 rapids-logger "Build test binaries"
 
