@@ -14,7 +14,11 @@ class TestCupyBfloat16Interop(CUDATestCase):
         if not cuda.is_bfloat16_supported():
             self.skipTest("bfloat16 requires compute capability 8.0+")
 
-        cp = pytest.importorskip("cupy")
+        cp = pytest.importorskip(
+            "cupy",
+            minversion="14.0.0",
+            reason="requires CuPy >= 14 for bfloat16 interop",
+        )
         ml_dtypes = pytest.importorskip("ml_dtypes")
 
         arr_h = np.asarray([1, 2, 3, 4, 5], dtype=ml_dtypes.bfloat16)
