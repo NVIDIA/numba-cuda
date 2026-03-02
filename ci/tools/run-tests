@@ -10,9 +10,9 @@ set -euo pipefail
 
 echo "Installing numba-cuda wheel with test dependencies"
 if [[ "${LOCAL_CTK}" == 1 ]]; then
-  pip install "${NUMBA_CUDA_ARTIFACTS_DIR}"/*.whl "ml_dtypes" "cuda-bindings==${TEST_CUDA_MAJOR}.*" --group test
+  pip install "${NUMBA_CUDA_ARTIFACTS_DIR}"/*.whl "cuda-bindings==${TEST_CUDA_MAJOR}.*" --group test
 else
-  pip install $(ls "${NUMBA_CUDA_ARTIFACTS_DIR}"/*.whl)["cu${TEST_CUDA_MAJOR}"] "ml_dtypes" "cuda-toolkit==${TEST_CUDA_MAJOR}.${TEST_CUDA_MINOR}.*" --group "test-cu${TEST_CUDA_MAJOR}"
+  pip install $(ls "${NUMBA_CUDA_ARTIFACTS_DIR}"/*.whl)["cu${TEST_CUDA_MAJOR}"] "cuda-toolkit==${TEST_CUDA_MAJOR}.${TEST_CUDA_MINOR}.*" --group "test-cu${TEST_CUDA_MAJOR}"
 fi
 
 export NUMBA_CUDA_TEST_BIN_DIR=`pwd`/testing
