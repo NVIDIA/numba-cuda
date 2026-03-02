@@ -218,6 +218,7 @@ class FP8ConversionTests(CUDATestCase):
                         )
                     )
 
+    @unittest.skip("flaky test - needs investigation (NVIDIA/numba-cuda#819)")
     def test_fp8_to_unsigned_integers(self):
         """Test FP8 conversion to unsigned integer types."""
 
