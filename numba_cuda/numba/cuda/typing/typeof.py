@@ -326,51 +326,39 @@ def typeof_numpy_polynomial(val, c):
 def _typeof_cuda_array_interface_cached(
     *, dtype, shape, strides, readonly: bool
 ):
-    # Determine layout
     ndim = len(shape)
-    if not ndim:
-        layout = "C"
-    elif strides is None:
-        layout = "C"
-    else:
-        itemsize = dtype.bitwidth
-        # Quick rejection: C-contiguous has strides[-1] == itemsize,
-        # F-contiguous has strides[0] == itemsize. If neither, it's "A".
-        if strides[-1] == itemsize:
-            c_strides = numpy_support.strides_from_shape(
-                shape=shape,
-                itemsize=itemsize,
-                c_contiguous=True,
-                f_contiguous=False,
-            )
-            layout = "C" if all(map(operator.eq, strides, c_strides)) else "A"
-        elif strides[0] == itemsize:
-            f_strides = numpy_support.strides_from_shape(
-                shape=shape,
-                itemsize=itemsize,
-                c_contiguous=False,
-                f_contiguous=True,
-            )
-            layout = "F" if all(map(operator.eq, strides, f_strides)) else "A"
-        else:
-            layout = "A"
+    layout = _infer_layout(
+        shape, strides, numpy_support.as_dtype(dtype).itemsize
+    )
 
     return types.Array(dtype, ndim, layout, readonly=readonly)
+
+
+def _infer_layout(shape, strides, itemsize):
+    ndim = len(shape)
+    if not ndim or strides is None:
+        return "C"
+
+    c_strides = numpy_support.strides_from_shape(
+        shape=shape, itemsize=itemsize, c_contiguous=True, f_contiguous=False
+    )
+    if all(map(operator.eq, strides, c_strides)):
+        return "C"
+
+    f_strides = numpy_support.strides_from_shape(
+        shape=shape, itemsize=itemsize, c_contiguous=False, f_contiguous=True
+    )
+    if all(map(operator.eq, strides, f_strides)):
+        return "F"
+
+    return "A"
 
 
 def _typeof_dlpack(val, c):
     obj = getattr(val, "__self__", None)
     if obj is not None:
         smv = StridedMemoryView.from_dlpack(obj, stream_ptr=-1)
-
-        smv_layout = smv._layout
-        layout = (
-            "C"
-            if smv_layout.is_contiguous_c
-            else "F"
-            if smv_layout.is_contiguous_f
-            else "A"
-        )
+        layout = _infer_layout(smv.shape, smv.strides, smv.dtype.itemsize)
         return types.Array(
             dtype=numpy_support.from_dtype(smv.dtype),
             ndim=len(smv.shape),
@@ -416,17 +404,7 @@ def typeof_buffer(val, c):
 
 @typeof_impl.register(StridedMemoryView)
 def typeof_strided_memory_view(val, c):
-    raw_layout = val._layout
-    if raw_layout.is_contiguous_c:
-        layout = "C"
-    elif raw_layout.is_contiguous_f:
-        layout = "F"
-    elif raw_layout.is_contiguous_any:
-        layout = "A"
-    else:
-        raise ValueError(
-            "Unsupported StridedMemoryView layout; must be contiguous"
-        )
+    layout = _infer_layout(val.shape, val.strides, val.dtype.itemsize)
     return types.Array(
         dtype=numpy_support.from_dtype(val.dtype),
         ndim=len(val.shape),
