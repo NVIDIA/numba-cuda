@@ -62,7 +62,11 @@ class TestCudaDateTime(CUDATestCase):
 
     @skip_on_cudasim("API unsupported in the simulator")
     def test_datetime_cupy_inputs(self):
-        cp = pytest.importorskip("cupy")
+        cp = pytest.importorskip(
+            "cupy",
+            minversion="14.0.0",
+            reason="requires CuPy >= 14 for datetime DLPack interop",
+        )
         datetime_t = from_dtype(cp.dtype("datetime64[D]"))
 
         @cuda.jit
