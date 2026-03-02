@@ -13,11 +13,18 @@ import threading
 
 from llvmlite import ir
 
-from cuda.bindings import nvvm as _nvvm
+try:
+    from cuda.bindings import nvvm as _nvvm
+except (ImportError, ModuleNotFoundError):
+    _nvvm = None
 
-from .error import NvvmError, NvvmSupportError, NvvmWarning
+from .error import NvvmSupportError, NvvmWarning
+
+# Re-export the binding's exception for code that catches NVVM API errors
+nvvmError = _nvvm.nvvmError if _nvvm is not None else None
 from .libs import get_libdevice, open_libdevice
 from numba.cuda import cgutils
+from numba.cuda.cuda_paths import get_cuda_paths
 
 
 logger = logging.getLogger(__name__)
@@ -35,15 +42,23 @@ _datalayout = (
 )
 
 
-def is_available():
-    """
-    Return if libNVVM is available (via cuda-python bindings).
-    """
+def _nvvm_library_loaded():
+    # use same check as cuda-python, nvjitlink, etc
     try:
-        _nvvm.ir_version()
-        return True
-    except Exception:
+        from cuda.bindings._internal.nvvm import _inspect_function_pointer
+
+        return _inspect_function_pointer("__nvvmCreateProgram") != 0
+    except (ImportError, ModuleNotFoundError, AttributeError):
+        return None  # internal API missing or changed
+
+
+def is_available():
+    if _nvvm is None:
         return False
+    loaded = _nvvm_library_loaded()
+    if loaded is not None:
+        return loaded
+    return True
 
 
 _nvvm_lock = threading.Lock()
@@ -55,18 +70,12 @@ class NVVM:
     __INSTANCE = None
 
     def __new__(cls):
+        if _nvvm is None:
+            raise NvvmSupportError("libNVVM is not available")
         with _nvvm_lock:
             if cls.__INSTANCE is None:
                 cls.__INSTANCE = inst = object.__new__(cls)
-                try:
-                    inst._binding = _nvvm
-                    inst._binding.ir_version()
-                except Exception as e:
-                    cls.__INSTANCE = None
-                    raise NvvmSupportError(
-                        "libNVVM cannot be found. Please install cuda-python "
-                        "(e.g. conda install -c nvidia cuda-python): %s" % e
-                    )
+                inst._binding = _nvvm
         return cls.__INSTANCE
 
     def __init__(self):
@@ -189,10 +198,7 @@ class CompilationUnit:
                 options_list.append(numba_debug_option)
 
         self.n_options = len(options_list)
-        try:
-            self._handle = _nvvm.create_program()
-        except _nvvm.nvvmError as e:
-            raise NvvmError("Failed to create CU", str(e))
+        self._handle = _nvvm.create_program()
         self._options_str = [
             x.decode("utf-8") if isinstance(x, bytes) else x
             for x in options_list
@@ -213,10 +219,7 @@ class CompilationUnit:
         - The buffer should contain an NVVM module IR either in the bitcode
           representation (LLVM3.0) or in the text representation.
         """
-        try:
-            _nvvm.add_module_to_program(self._handle, buffer, len(buffer), "")
-        except _nvvm.nvvmError as e:
-            raise NvvmError("Failed to add module", str(e))
+        _nvvm.add_module_to_program(self._handle, buffer, len(buffer), "")
 
     def lazy_add_module(self, buffer):
         """
@@ -224,41 +227,28 @@ class CompilationUnit:
         The buffer should contain NVVM module IR either in the bitcode
         representation or in the text representation.
         """
-        try:
-            _nvvm.lazy_add_module_to_program(
-                self._handle, buffer, len(buffer), ""
-            )
-        except _nvvm.nvvmError as e:
-            raise NvvmError("Failed to add module", str(e))
+        _nvvm.lazy_add_module_to_program(self._handle, buffer, len(buffer), "")
 
     def verify(self):
         """
         Run the NVVM verifier on all code added to the compilation unit.
         """
-        try:
-            _nvvm.verify_program(
-                self._handle,
-                self.n_options,
-                self._options_str,
-            )
-        except _nvvm.nvvmError as e:
-            log = self.get_log()
-            raise NvvmError("Failed to verify\n%s" % log, str(e))
+        _nvvm.verify_program(
+            self._handle,
+            self.n_options,
+            self._options_str,
+        )
 
     def compile(self):
         """
         Compile all modules added to the compilation unit and return the
         resulting PTX or LTO-IR (depending on the options).
         """
-        try:
-            _nvvm.compile_program(
-                self._handle,
-                self.n_options,
-                self._options_str,
-            )
-        except _nvvm.nvvmError as e:
-            log = self.get_log()
-            raise NvvmError("Failed to compile\n%s" % log, str(e))
+        _nvvm.compile_program(
+            self._handle,
+            self.n_options,
+            self._options_str,
+        )
         result_size = _nvvm.get_compiled_result_size(self._handle)
         output_buffer = bytearray(result_size)
         _nvvm.get_compiled_result(self._handle, output_buffer)
