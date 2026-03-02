@@ -8,8 +8,11 @@ from numba import cuda
 from numba.cuda.testing import unittest, CUDATestCase, skip_on_cudasim
 
 
-pytest.importorskip("cuda.core", minversion="0.6.0",
-                    reason="requires cuda.core 0.6.0 or later for DLPack + bf16 support")
+pytest.importorskip(
+    "cuda.core",
+    minversion="0.6.0",
+    reason="requires cuda.core 0.6.0 or later for DLPack + bf16 support",
+)
 cp = pytest.importorskip(
     "cupy",
     minversion="14.0.0",
