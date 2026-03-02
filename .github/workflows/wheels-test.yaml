@@ -121,7 +121,7 @@ jobs:
         SHA: ${{ github.sha }}
       run: ./ci/tools/env-vars test
 
-    - uses: actions/download-artifact@v7
+    - uses: actions/download-artifact@v8
       with:
         name: ${{ env.NUMBA_CUDA_ARTIFACT_NAME }}
         path: ${{ env.NUMBA_CUDA_ARTIFACTS_DIR }}
