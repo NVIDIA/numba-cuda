@@ -26,7 +26,7 @@ def _is_numba_core_config_loaded():
     To detect if numba.core.config has been initialized due to circular imports.
     """
     try:
-        numba.cuda.core.config
+        _ = numba.cuda.core.config
     except AttributeError:
         return False
     else:
@@ -261,7 +261,7 @@ else:
                 reinit()
 
         def __exit__(self, *exc_detail):
-            Style.RESET_ALL
+            _ = Style.RESET_ALL
             deinit()
 
     class reset_terminal(object):
