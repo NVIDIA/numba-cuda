@@ -361,9 +361,7 @@ def _typeof_cuda_array_interface_cached(
 def _typeof_dlpack(val, c):
     obj = getattr(val, "__self__", None)
     if obj is not None:
-        smv = StridedMemoryView.from_dlpack(
-            obj, stream_ptr=-1
-        )  # stream is probably unimportant here?
+        smv = StridedMemoryView.from_dlpack(obj, stream_ptr=-1)
 
         smv_layout = smv._layout
         layout = (
