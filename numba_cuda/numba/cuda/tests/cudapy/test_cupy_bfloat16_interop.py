@@ -8,18 +8,21 @@ from numba import cuda
 from numba.cuda.testing import unittest, CUDATestCase, skip_on_cudasim
 
 
+pytest.importorskip("cuda.core", minversion="0.6.0",
+                    reason="requires cuda.core 0.6.0 or later for DLPack + bf16 support")
+cp = pytest.importorskip(
+    "cupy",
+    minversion="14.0.0",
+    reason="requires CuPy >= 14 for bfloat16 interop",
+)
+ml_dtypes = pytest.importorskip("ml_dtypes")
+
+
 @skip_on_cudasim("CuPy interoperability requires a real GPU")
 class TestCupyBfloat16Interop(CUDATestCase):
     def test_cupy_bfloat16_kernel_interop(self):
         if not cuda.is_bfloat16_supported():
             self.skipTest("bfloat16 requires compute capability 8.0+")
-
-        cp = pytest.importorskip(
-            "cupy",
-            minversion="14.0.0",
-            reason="requires CuPy >= 14 for bfloat16 interop",
-        )
-        ml_dtypes = pytest.importorskip("ml_dtypes")
 
         arr_h = np.asarray([1, 2, 3, 4, 5], dtype=ml_dtypes.bfloat16)
         arr_d = cp.asarray(arr_h)
