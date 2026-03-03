@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: BSD-2-Clause
 
 import multiprocessing
+import json
 import os
 import shutil
 import unittest
@@ -84,6 +85,9 @@ class BaseCacheTest(TestCase):
             for fn in sorted(self.cache_contents())
         )
 
+    def count_cache_markers(self, suffix=".lcs"):
+        return len([fn for fn in self.cache_contents() if fn.endswith(suffix)])
+
     def check_pycache(self, n):
         c = self.cache_contents()
         self.assertEqual(len(c), n, c)
@@ -97,19 +101,35 @@ class DispatcherCacheUsecasesTest(BaseCacheTest):
     usecases_file = os.path.join(here, "cache_usecases.py")
     modname = "dispatcher_caching_test_fodder"
 
-    def run_in_separate_process(self):
+    def run_in_separate_process(self, *, envvars=None, report_code=None):
         # Cached functions can be run from a distinct process.
         # Also stresses issue #1603: uncached function calling cached function
         # shouldn't fail compiling.
-        code = """if 1:
-            import sys
-
-            sys.path.insert(0, %(tempdir)r)
-            mod = __import__(%(modname)r)
-            mod.self_test()
-            """ % dict(tempdir=self.tempdir, modname=self.modname)
+        code_lines = [
+            "if 1:",
+            "    import sys",
+        ]
+        if report_code is not None:
+            code_lines.append("    import json")
+        code_lines.extend(
+            [
+                f"    sys.path.insert(0, {self.tempdir!r})",
+                f"    mod = __import__({self.modname!r})",
+                "    mod.self_test()",
+            ]
+        )
+        if report_code is not None:
+            for line in report_code.splitlines():
+                if line.strip():
+                    code_lines.append(f"    {line}")
+            code_lines.append(
+                '    print("__CACHE_REPORT__" + json.dumps(report))'
+            )
+        code = "\n".join(code_lines)
 
         subp_env = os.environ.copy()
+        if envvars is not None:
+            subp_env.update(envvars)
         popen = subprocess.Popen(
             [sys.executable, "-c", code],
             stdout=subprocess.PIPE,
@@ -124,6 +144,16 @@ class DispatcherCacheUsecasesTest(BaseCacheTest):
                 "stderr follows\n%s\n"
                 % (popen.returncode, out.decode(), err.decode()),
             )
+        if report_code is None:
+            return None
+        stdout = out.decode().splitlines()
+        marker = "__CACHE_REPORT__"
+        for line in reversed(stdout):
+            if line.startswith(marker):
+                return json.loads(line[len(marker) :])
+        raise AssertionError(
+            "cache report missing from subprocess output:\n%s" % out.decode()
+        )
 
     def check_hits(self, func, hits, misses=None):
         st = func.stats
@@ -413,6 +443,167 @@ class CUDACachingTest(DispatcherCacheUsecasesTest):
                 cached_kernel_global[1, 3](output)
         finally:
             GLOBAL_DEVICE_ARRAY = None
+
+
+@skip_on_cudasim("Simulator does not implement caching")
+class LaunchConfigSensitiveCachingTest(DispatcherCacheUsecasesTest):
+    here = os.path.dirname(__file__)
+    usecases_file = os.path.join(
+        here, "cache_launch_config_sensitive_usecases.py"
+    )
+    modname = "cuda_launch_config_sensitive_cache_test_fodder"
+
+    def setUp(self):
+        DispatcherCacheUsecasesTest.setUp(self)
+        CUDATestCase.setUp(self)
+
+    def tearDown(self):
+        CUDATestCase.tearDown(self)
+        DispatcherCacheUsecasesTest.tearDown(self)
+
+    def test_launch_config_sensitive_cache_keys(self):
+        self.check_pycache(0)
+        mod = self.import_module()
+        self.check_pycache(0)
+
+        mod.launch(32)
+        self.check_pycache(3)  # index, data, marker
+        self.assertEqual(self.count_cache_markers(), 1)
+
+        mod.launch(64)
+        self.check_pycache(4)  # index, 2 data, marker
+        self.assertEqual(self.count_cache_markers(), 1)
+
+        mod2 = self.import_module()
+        self.assertIsNot(mod, mod2)
+        mod2.launch(32)
+        self.check_hits(mod2.lcs_cache_kernel, 1, 0)
+        self.check_pycache(4)
+
+        mod2.launch(64)
+        self.check_hits(mod2.lcs_cache_kernel, 1, 0)
+        self.assertEqual(
+            len(mod2.lcs_cache_kernel._launch_config_specializations), 1
+        )
+        specialization = next(
+            iter(mod2.lcs_cache_kernel._launch_config_specializations.values())
+        )
+        self.check_hits(specialization, 1, 0)
+        self.check_pycache(4)
+
+        mtimes = self.get_cache_mtimes()
+        report = self.run_in_separate_process(
+            report_code="\n".join(
+                [
+                    "main_hits = sum(mod.lcs_cache_kernel.stats.cache_hits.values())",
+                    "main_misses = sum(mod.lcs_cache_kernel.stats.cache_misses.values())",
+                    "spec = next(iter(mod.lcs_cache_kernel._launch_config_specializations.values()))",
+                    "spec_hits = sum(spec.stats.cache_hits.values())",
+                    "spec_misses = sum(spec.stats.cache_misses.values())",
+                    "report = {'main_hits': main_hits, 'main_misses': main_misses, 'spec_hits': spec_hits, 'spec_misses': spec_misses}",
+                ]
+            )
+        )
+        self.assertEqual(report["main_hits"], 1)
+        self.assertEqual(report["main_misses"], 0)
+        self.assertEqual(report["spec_hits"], 1)
+        self.assertEqual(report["spec_misses"], 0)
+        self.assertEqual(self.get_cache_mtimes(), mtimes)
+
+
+@skip_on_cudasim("Simulator does not implement caching")
+class LaunchConfigInsensitiveCachingTest(DispatcherCacheUsecasesTest):
+    here = os.path.dirname(__file__)
+    usecases_file = os.path.join(
+        here, "cache_launch_config_insensitive_usecases.py"
+    )
+    modname = "cuda_launch_config_insensitive_cache_test_fodder"
+
+    def setUp(self):
+        DispatcherCacheUsecasesTest.setUp(self)
+        CUDATestCase.setUp(self)
+
+    def tearDown(self):
+        CUDATestCase.tearDown(self)
+        DispatcherCacheUsecasesTest.tearDown(self)
+
+    def test_launch_config_insensitive_cache_keys(self):
+        self.check_pycache(0)
+        mod = self.import_module()
+        self.check_pycache(0)
+
+        mod.launch(32)
+        self.check_pycache(2)  # index, data
+        self.assertEqual(self.count_cache_markers(), 0)
+
+        mod.launch(64)
+        self.check_pycache(2)
+
+        mod2 = self.import_module()
+        self.assertIsNot(mod, mod2)
+        mod2.launch(64)
+        self.check_hits(mod2.cache_kernel, 1, 0)
+        self.check_pycache(2)
+
+        mtimes = self.get_cache_mtimes()
+        report = self.run_in_separate_process(
+            report_code=(
+                "hits = sum(mod.cache_kernel.stats.cache_hits.values())\n"
+                "misses = sum(mod.cache_kernel.stats.cache_misses.values())\n"
+                "report = {'hits': hits, 'misses': misses}"
+            )
+        )
+        self.assertEqual(report["hits"], 1)
+        self.assertEqual(report["misses"], 0)
+        self.assertEqual(self.get_cache_mtimes(), mtimes)
+
+
+@skip_on_cudasim("Simulator does not implement caching")
+class MultiDeviceCachingTest(DispatcherCacheUsecasesTest):
+    here = os.path.dirname(__file__)
+    usecases_file = os.path.join(
+        here, "cache_launch_config_insensitive_usecases.py"
+    )
+    modname = "cuda_multi_device_cache_test_fodder"
+
+    def setUp(self):
+        DispatcherCacheUsecasesTest.setUp(self)
+        CUDATestCase.setUp(self)
+
+    def tearDown(self):
+        CUDATestCase.tearDown(self)
+        DispatcherCacheUsecasesTest.tearDown(self)
+
+    def test_cache_separate_per_compute_capability(self):
+        gpus = list(cuda.gpus)
+        if len(gpus) < 2:
+            self.skipTest("requires at least two GPUs")
+
+        cc_map = {}
+        for gpu in gpus:
+            cc_map.setdefault(gpu.compute_capability, []).append(gpu.id)
+
+        if len(cc_map) < 2:
+            self.skipTest("requires at least two distinct compute capabilities")
+
+        for cc, ids in sorted(cc_map.items()):
+            dev_id = ids[0]
+            with cuda.gpus[dev_id]:
+                mod = self.import_module()
+                mod.launch(32)
+                hits = sum(mod.cache_kernel.stats.cache_hits.values())
+                misses = sum(mod.cache_kernel.stats.cache_misses.values())
+                self.assertEqual(hits, 0, f"unexpected cache hit for CC {cc}")
+                self.assertEqual(misses, 1, f"expected cache miss for CC {cc}")
+
+                mod2 = self.import_module()
+                mod2.launch(32)
+                hits = sum(mod2.cache_kernel.stats.cache_hits.values())
+                misses = sum(mod2.cache_kernel.stats.cache_misses.values())
+                self.assertEqual(hits, 1, f"expected cache hit for CC {cc}")
+                self.assertEqual(
+                    misses, 0, f"unexpected cache miss for CC {cc}"
+                )
 
 
 @skip_on_cudasim("Simulator does not implement caching")
