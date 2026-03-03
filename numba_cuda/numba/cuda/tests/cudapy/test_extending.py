@@ -995,7 +995,7 @@ class TestNumbaInternalOverloads(TestCase):
             def create_message(func, overload_func, func_sig, ol_sig):
                 msg = []
                 s = (
-                    f"{func} from module '{getattr(func, '__module__')}' "
+                    f"{func} from module '{func.__module__}' "
                     "has mismatched sig."
                 )
                 msg.append(s)
@@ -1082,6 +1082,30 @@ class TestNumbaInternalOverloads(TestCase):
             for item in k.functions:
                 if getattr(item, "_overload_func", False):
                     checker(item.key, item._overload_func)
+
+
+def test_overload_array_return():
+    def slice_a(a):
+        pass
+
+    @overload(slice_a, inline="always")
+    def slice_a_overload(a):
+        def impl(a):
+            return a[:, 0]
+
+        return impl
+
+    @cuda.jit
+    def add(a):
+        s = slice_a(a)
+        s[0] += 1.0
+
+    a = np.array([[0.0], [1.0]], dtype=np.float32)
+    a = cuda.to_device(a)
+    add[1, 1](a)
+    a = a.copy_to_host()
+
+    assert a[0, 0] == 1
 
 
 if __name__ == "__main__":

@@ -52,7 +52,6 @@ elif [[ "${1}" == "test" ]]; then
 #  fi
   {
 #    echo "SETUP_SANITIZER=${SETUP_SANITIZER}"
-#    echo "SKIP_NUMBA_CUDA_TEST=${SKIP_NUMBA_CUDA_TEST}"
     echo "SANITIZER_CMD="
     echo "TEST_CUDA_MAJOR=${TEST_CUDA_MAJOR}"
     echo "TEST_CUDA_MINOR=${TEST_CUDA_MINOR}"

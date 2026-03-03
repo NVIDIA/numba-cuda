@@ -41,9 +41,7 @@ kernel[1,1]()
         performance_warning = "float16 relies on LTO for performance"
         expected_warning_count = 0 if driver._have_nvjitlink() else 1
         _, err = run_in_subprocess(fp16_kernel_invocation)
-        self.assertEqual(
-            err.decode().count(performance_warning), expected_warning_count
-        )
+        self.assertEqual(err.count(performance_warning), expected_warning_count)
 
     def test_inefficient_launch_configuration(self):
         @cuda.jit

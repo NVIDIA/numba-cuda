@@ -555,7 +555,7 @@ def dead_branch_prune(func_ir, called_args):
         taken = do_prune(take_truebr, blk)
         return True, taken
 
-    class Unknown(object):
+    class Unknown:
         pass
 
     def resolve_input_arg_const(input_arg_idx):
