@@ -1822,6 +1822,19 @@ class CUDALower(Lower):
                         # Function arguments are described via dbg.declare on
                         # their stack slots in the prologue.
                         if argidx is not None:
+                            # Boolean parameters are kept on dbg.value to avoid
+                            # NVVM crashes with dbg.declare.
+                            if isinstance(fetype, types.Boolean):
+                                self.debuginfo.update_variable(
+                                    self.builder,
+                                    value,
+                                    src_name,
+                                    lltype,
+                                    sizeof,
+                                    line,
+                                    datamodel,
+                                    argidx,
+                                )
                             return
                         # Insert the llvm.dbg.value intrinsic call
                         self.debuginfo.update_variable(

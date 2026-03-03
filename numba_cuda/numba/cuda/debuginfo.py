@@ -871,6 +871,12 @@ class CUDADIBuilder(DIBuilder):
                 # stable stack location so they don't get encoded as absolute
                 # parameter-space addresses in downstream DWARF.
                 if argidx is not None:
+                    # NVVM has been observed to crash on some boolean-parameter
+                    # debug.declare patterns - use dbg.value for these instead.
+                    if datamodel is not None and isinstance(
+                        datamodel.fe_type, types.Boolean
+                    ):
+                        return
                     return super().mark_variable(
                         builder,
                         allocavalue,
