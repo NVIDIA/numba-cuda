@@ -5,8 +5,10 @@ import numpy as np
 
 from numba.cuda.testing import unittest, CUDATestCase
 from numba.cuda.testing import skip_on_cudasim, skip_unless_cudasim
-from numba import cuda
+from numba import cuda, types
 from numba.cuda import config
+import pytest
+from numba.cuda.np.numpy_support import carray, farray
 
 
 if config.ENABLE_CUDASIM:
@@ -338,6 +340,27 @@ class TestCudaArray(CUDATestCase):
 
         arr = np.array([])
         check_empty(arr)
+
+    def _test_cfarray(self, cfarray):
+        @cuda.jit(types.void(types.CPointer(types.float32)))
+        def add(a_ptr):
+            a = cfarray(a_ptr, (1,), dtype=cuda.float32)
+            a[0] += 1.2
+
+        a = cuda.to_device(np.array([0.0], dtype=np.float32))
+        add[1, 1](int(a.gpu_data.device_pointer))
+
+        cuda.synchronize()
+        a = a.copy_to_host()
+        assert a[0] == 1.2
+
+    @skip_on_cudasim("Kernel overloads not created in the simulator")
+    def test_carray(self):
+        self._test_cfarray(carray)
+
+    @skip_on_cudasim("Kernel overloads not created in the simulator")
+    def test_farray(self):
+        self._test_cfarray(farray)
 
 
 if __name__ == "__main__":

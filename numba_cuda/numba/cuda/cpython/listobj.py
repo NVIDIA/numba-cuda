@@ -118,7 +118,9 @@ class _ListPayloadMixin:
         """
         with self._builder.if_then(self.is_out_of_bounds(idx), likely=False):
             self._context.fndesc.call_conv.return_user_exc(
-                self._builder, IndexError, (msg,)
+                self._builder,
+                IndexError,
+                (msg,),
             )
 
     def fix_slice(self, slice):
@@ -348,7 +350,9 @@ class ListInstance(_ListPayloadMixin):
         ok, self = cls.allocate_ex(context, builder, list_type, nitems)
         with builder.if_then(builder.not_(ok), likely=False):
             context.fndesc.call_conv.return_user_exc(
-                builder, MemoryError, ("cannot allocate list",)
+                builder,
+                MemoryError,
+                ("cannot allocate list",),
             )
         return self
 
@@ -385,7 +389,9 @@ class ListInstance(_ListPayloadMixin):
             )
             with builder.if_then(ovf, likely=False):
                 context.fndesc.call_conv.return_user_exc(
-                    builder, MemoryError, ("cannot resize list",)
+                    builder,
+                    MemoryError,
+                    ("cannot resize list",),
                 )
 
             ptr = context.nrt.meminfo_varsize_realloc_unchecked(

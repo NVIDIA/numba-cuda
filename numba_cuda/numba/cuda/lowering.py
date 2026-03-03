@@ -15,6 +15,7 @@ from numba.cuda.core import (
     ir_utils,
     targetconfig,
     funcdesc,
+    callconv,
     config,
     generators,
     removerefctpass,
@@ -202,7 +203,7 @@ class BaseLower:
 
     def return_exception(self, exc_class, exc_args=None, loc=None):
         """Propagate exception to the caller."""
-        self.call_conv.return_user_exc(
+        self.fndesc.call_conv.return_user_exc(
             self.builder,
             exc_class,
             exc_args,
@@ -1695,7 +1696,20 @@ class Lower(BaseLower):
 
 class CUDALower(Lower):
     def loadvar(self, name):
-        val = super().loadvar(name)
+        if name in self._blk_local_varmap and not self._disable_sroa_like_opt:
+            return self._blk_local_varmap[name]
+        ptr = self.getvar(name)
+
+        # Skip the base-class suspend_emission for arg-named loads.
+        # loadvar is never called in the prologue (arg unpacking in
+        # lower_assign and storevar already suppresses there).
+        # On CUDA the missing !dbg emits ".loc line 0"; when a
+        # variable (e.g. a reused loop counter) has multiple
+        # dbg.value entries, ptxas builds a multi-entry location
+        # list and the line-0 ranges inserted between entries
+        # will result in an corrupted DW_AT_location.
+        val = self.builder.load(ptr)
+
         # Emit dbg.value for scalar user variables loaded but not assigned
         # in current block, extending the per-block dbg.value range coverage.
         if (

@@ -163,24 +163,6 @@ def _optional_int_type(x):
         return x
 
 
-def _call_conv_options_type(x):
-    if x is None:
-        return None
-
-    else:
-        assert isinstance(x, BaseCallConv)
-        return x
-
-
-def _abi_info_options_type(x):
-    if x is None:
-        return {}
-
-    else:
-        assert isinstance(x, dict)
-        return x
-
-
 class CUDAFlags(Flags):
     nvvm_options = Option(
         type=_nvvm_options_type,
@@ -196,7 +178,3 @@ class CUDAFlags(Flags):
         type=_optional_int_type, default=None, doc="Max registers"
     )
     lto = Option(type=bool, default=False, doc="Enable Link-time Optimization")
-
-    call_conv = Option(type=_call_conv_options_type, default=None, doc="")
-
-    abi_info = Option(type=_abi_info_options_type, default=None, doc="ABI info")
