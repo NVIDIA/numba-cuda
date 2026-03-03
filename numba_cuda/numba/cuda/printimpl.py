@@ -122,7 +122,7 @@ def print_varargs(context, builder, sig, args):
     formats = []
     values = []
 
-    for i, (argtype, argval) in enumerate(zip(sig.args, args)):
+    for argtype, argval in zip(sig.args, args):
         argfmt, argvals = print_item(argtype, context, builder, argval)
         formats.append(argfmt)
         values.extend(argvals)

@@ -328,7 +328,7 @@ def poly_polyint(c, m=1):
     def impl(c, m=1):
         c = np.asarray(c).astype(res_dtype)
         cdt = c.dtype
-        for i in range(m):
+        for _ in range(m):
             n = len(c)
 
             tmp = np.empty((n + 1,) + c.shape[1:], dtype=cdt)

@@ -74,7 +74,7 @@ def _created_inlined_var_name(function_name, var_name):
     return new_name
 
 
-class InlineClosureCallPass(object):
+class InlineClosureCallPass:
     """InlineClosureCallPass class looks for direct calls to locally defined
     closures, and inlines the body of the closure function to the call site.
     """
@@ -137,7 +137,7 @@ class InlineClosureCallPass(object):
             sized_loops = [(k, len(loops[k].body)) for k in loops.keys()]
             visited = []
             # We go over all loops, bigger loops first (outer first)
-            for k, s in sorted(
+            for k, _ in sorted(
                 sized_loops, key=lambda tup: tup[1], reverse=True
             ):
                 visited.append(k)
@@ -259,7 +259,7 @@ def check_reduce_func(func_ir, func_var):
     return reduce_func
 
 
-class InlineWorker(object):
+class InlineWorker:
     """A worker class for inlining, this is a more advanced version of
     `inline_closure_call` in that it permits inlining from function type, Numba
     IR and code object. It also, runs the entire untyped compiler pipeline on
@@ -1398,7 +1398,7 @@ def _inline_arraycall(
 
 
 def _find_unsafe_empty_inferred(func_ir, expr):
-    unsafe_empty_inferred
+    unsafe_empty_inferred  # noqa: B018
     require(isinstance(expr, ir.expr_types) and expr.op == "call")
     callee = expr.func
     callee_def = get_definition(func_ir, callee)
@@ -1555,7 +1555,7 @@ class RewriteArrayOfConsts(rewrites.Rewrite):
 
     def __init__(self, state, *args, **kws):
         self.typingctx = state.typingctx
-        super(RewriteArrayOfConsts, self).__init__(*args, **kws)
+        super().__init__(*args, **kws)
 
     def match(self, func_ir, block, typemap, calltypes):
         if len(calltypes) == 0:
@@ -1692,7 +1692,7 @@ def _inline_const_arraycall(block, func_ir, context, typemap, calltypes):
         stmts.extend(dels)
         return True
 
-    class State(object):
+    class State:
         """
         This class is used to hold the state in the following loop so as to make
         it easy to reset the state of the variables tracking the various

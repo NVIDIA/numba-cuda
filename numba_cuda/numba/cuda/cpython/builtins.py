@@ -446,7 +446,7 @@ def next_impl(context, builder, sig, args):
     res = call_iternext(context, builder, iterty, iterval)
 
     with builder.if_then(builder.not_(res.is_valid()), likely=False):
-        context.call_conv.return_user_exc(builder, StopIteration, ())
+        context.fndesc.call_conv.return_user_exc(builder, StopIteration, ())
 
     return res.yielded_value()
 

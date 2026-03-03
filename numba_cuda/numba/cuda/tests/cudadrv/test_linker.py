@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: BSD-2-Clause
 
 import numpy as np
+import os
 import pytest
 from numba.cuda.testing import unittest
 from numba.cuda.testing import (
@@ -15,7 +16,7 @@ from numba.cuda import require_context
 from numba import cuda
 from numba.cuda import void, float64, int64, int32, float32
 from numba.cuda.typing.typeof import typeof
-from numba.cuda._compat import CUDAError
+from cuda.core._utils.cuda_utils import CUDAError
 
 CONST1D = np.arange(10, dtype=np.float64)
 
@@ -109,6 +110,25 @@ def simple_lmem(A, B, dty):
         B[i] = C[i]
 
 
+TEST_BIN_DIR = os.getenv("NUMBA_CUDA_TEST_BIN_DIR")
+if TEST_BIN_DIR:
+    test_device_functions_ltoir = os.path.join(
+        TEST_BIN_DIR, "test_device_functions.ltoir"
+    )
+
+
+add_from_numba = cuda.declare_device(
+    "add_from_numba",
+    "int32(int32, int32)",
+    link=[test_device_functions_ltoir],
+)
+
+
+def debuggable_kernel(result):
+    i = cuda.grid(1)
+    result[i] = add_from_numba(i, i)
+
+
 @skip_on_cudasim("Linking unsupported in the simulator")
 class TestLinker(CUDATestCase):
     @require_context
@@ -196,7 +216,7 @@ class TestLinker(CUDATestCase):
 
         link = str(test_data_dir / "error.cu")
 
-        from numba.cuda._compat import NVRTCError
+        from cuda.core._utils.cuda_utils import NVRTCError
 
         errty = NVRTCError
         with self.assertRaises(errty) as e:
@@ -329,6 +349,9 @@ class TestLinker(CUDATestCase):
         local_mem_size = compiled_specialized.get_local_mem_per_thread()
         calc_size = np.dtype(np.float64).itemsize * LMEM_SIZE
         self.assertGreaterEqual(local_mem_size, calc_size)
+
+    def test_debug_kernel_with_lto(self):
+        cuda.jit("void(int32[::1])", debug=True, opt=False)(debuggable_kernel)
 
     @skip_if_nvjitlink_missing("nvJitLink not installed or new enough (>12.3)")
     def test_link_for_different_cc(self):

@@ -89,7 +89,7 @@ class NullCache(_Cache):
         pass
 
 
-class IndexDataCacheFile(object):
+class IndexDataCacheFile:
     """
     Implements the logic for the index file and data file used by a cache.
     """
@@ -407,7 +407,7 @@ class _CacheLocator(metaclass=ABCMeta):
         return "_".join([parentdir, hashed])
 
 
-class _SourceFileBackedLocatorMixin(object):
+class _SourceFileBackedLocatorMixin:
     """
     A cache locator mixin for functions which are backed by a well-known
     Python source file.
@@ -456,7 +456,7 @@ class _InTreeCacheLocator(_SourceFileBackedLocatorMixin, _CacheLocator):
         return self._cache_path
 
 
-class _SourceFileBackedLocatorMixin(object):
+class _SourceFileBackedLocatorMixin:
     """
     A cache locator mixin for functions which are backed by a well-known
     Python source file.
