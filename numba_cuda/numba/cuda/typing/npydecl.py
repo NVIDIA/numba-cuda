@@ -238,7 +238,7 @@ class NumpyRulesArrayOperator(Numpy_rules_ufunc):
         (particularly user-defined operators).
         """
         try:
-            sig = super(NumpyRulesArrayOperator, self).generic(args, kws)
+            sig = super().generic(args, kws)
         except TypingError:
             return None
         if sig is None:
@@ -279,7 +279,7 @@ class NumpyRulesInplaceArrayOperator(NumpyRulesArrayOperator):
         if not isinstance(lhs, types.ArrayCompatible):
             return
         args = args + (lhs,)
-        sig = super(NumpyRulesInplaceArrayOperator, self).generic(args, kws)
+        sig = super().generic(args, kws)
         # Strip off the fake explicit output
         assert len(sig.args) == 3
         real_sig = signature(sig.return_type, *sig.args[:2])
@@ -296,7 +296,7 @@ class NumpyRulesUnaryArrayOperator(NumpyRulesArrayOperator):
     def generic(self, args, kws):
         assert not kws
         if len(args) == 1 and isinstance(args[0], types.ArrayCompatible):
-            return super(NumpyRulesUnaryArrayOperator, self).generic(args, kws)
+            return super().generic(args, kws)
 
 
 # list of unary ufuncs to register

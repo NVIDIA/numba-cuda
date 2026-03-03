@@ -24,6 +24,6 @@ python -m numba --sysinfo
 echo "Running numba-cuda tests"
 GPU_CC=$(nvidia-smi --query-gpu=compute_cap --format=csv | grep -v compute_cap | head -n 1 | sed 's/\.//')
 mv cu${TEST_CUDA_MAJOR}_cc${GPU_CC}/* .
-${SANITIZER_CMD} pytest -v
+${SANITIZER_CMD} pytest -v -n auto --dist loadscope --loadscope-reorder
 
 popd

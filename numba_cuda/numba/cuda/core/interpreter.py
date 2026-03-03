@@ -36,7 +36,7 @@ else:
     raise NotImplementedError(PYVERSION)
 
 
-class _UNKNOWN_VALUE(object):
+class _UNKNOWN_VALUE:
     """Represents an unknown value, this is for ease of debugging purposes only."""
 
     def __init__(self, varname):
@@ -49,7 +49,7 @@ class _UNKNOWN_VALUE(object):
 _logger = logging.getLogger(__name__)
 
 
-class Assigner(object):
+class Assigner:
     """
     This object keeps track of potential assignment simplifications
     inside a code block.
@@ -779,7 +779,7 @@ def peep_hole_list_to_tuple(func_ir):
         while True:
             # first try and find a matching region
             # i.e. BUILD_LIST...<stuff>...LIST_TO_TUPLE
-            def find_postive_region():
+            def find_postive_region(blk):
                 found = False
                 for idx in reversed(range(len(blk.body))):
                     stmt = blk.body[idx]
@@ -798,7 +798,7 @@ def peep_hole_list_to_tuple(func_ir):
                                 region = (bt, (idx, stmt))
                                 return region
 
-            region = find_postive_region()
+            region = find_postive_region(blk)
             # if there's a peep hole region then do something with it
             if region is not None:
                 peep_hole = blk.body[region[1][0] : region[0][0]]
@@ -836,7 +836,7 @@ def peep_hole_list_to_tuple(func_ir):
 
                 def append_and_fix(x):
                     """Adds to the new_hole and fixes up definitions"""
-                    new_hole.append(x)
+                    new_hole.append(x)  # noqa: B023
                     if x.target.name in func_ir._definitions:
                         # if there's already a definition, drop it, should only
                         # be 1 as the way cpython emits the sequence for
@@ -1347,7 +1347,7 @@ def _build_new_build_map(func_ir, name, old_body, old_lineno, new_items):
     )
 
 
-class Interpreter(object):
+class Interpreter:
     """A bytecode interpreter that builds up the IR."""
 
     _DEBUG_PRINT = False
@@ -1484,7 +1484,21 @@ class Interpreter(object):
         See also: _insert_try_block_end
         """
         assert PYVERSION in ((3, 11), (3, 12), (3, 13), (3, 14))
+
+        def do_change(remain, block):
+            while remain:
+                ent = remain.pop()
+                if ent["kind"] == BlockKind("TRY"):
+                    # Extend block with marker for end of try
+                    self.current_block = block
+                    oldbody = list(block.body)
+                    block.body.clear()
+                    self._insert_try_block_end()
+                    block.body.extend(oldbody)
+                    return True
+
         graph = self.cfa.graph
+
         for offset, block in self.blocks.items():
             # Get current blockstack
             cur_bs = self.dfa.infos[offset].blockstack
@@ -1493,25 +1507,13 @@ class Interpreter(object):
                 inc_bs = self.dfa.infos[inc].blockstack
 
                 # find first diff in the blockstack
-                for i, (x, y) in enumerate(zip(cur_bs, inc_bs)):
+                for i, (x, y) in enumerate(zip(cur_bs, inc_bs)):  # noqa: B007
                     if x != y:
                         break
                 else:
                     i = min(len(cur_bs), len(inc_bs))
 
-                def do_change(remain):
-                    while remain:
-                        ent = remain.pop()
-                        if ent["kind"] == BlockKind("TRY"):
-                            # Extend block with marker for end of try
-                            self.current_block = block
-                            oldbody = list(block.body)
-                            block.body.clear()
-                            self._insert_try_block_end()
-                            block.body.extend(oldbody)
-                            return True
-
-                if do_change(list(inc_bs[i:])):
+                if do_change(list(inc_bs[i:]), block):
                     break
 
     def _legalize_exception_vars(self):

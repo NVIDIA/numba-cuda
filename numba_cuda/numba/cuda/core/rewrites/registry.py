@@ -6,7 +6,7 @@ from collections import defaultdict
 from numba.cuda import config
 
 
-class Rewrite(object):
+class Rewrite:
     """Defines the abstract base class for Numba rewrites."""
 
     def __init__(self, state=None):
@@ -26,7 +26,7 @@ class Rewrite(object):
         raise NotImplementedError("Abstract Rewrite.apply() called!")
 
 
-class RewriteRegistry(object):
+class RewriteRegistry:
     """Defines a registry for Numba rewrites."""
 
     _kinds = frozenset(["before-inference", "after-inference"])

@@ -43,7 +43,7 @@ class FloatModel(models.PrimitiveModel):
             be_type = ir.DoubleType()
         else:
             raise NotImplementedError(fe_type)
-        super(FloatModel, self).__init__(dmm, fe_type, be_type)
+        super().__init__(dmm, fe_type, be_type)
 
 
 register_model(CUDADispatcher)(models.OpaqueModel)
@@ -53,4 +53,4 @@ register_model(CUDADispatcher)(models.OpaqueModel)
 class _model___nv_bfloat16(PrimitiveModel):
     def __init__(self, dmm, fe_type):
         be_type = ir.IntType(16)
-        super(_model___nv_bfloat16, self).__init__(dmm, fe_type, be_type)
+        super().__init__(dmm, fe_type, be_type)

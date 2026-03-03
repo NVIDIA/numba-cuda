@@ -124,7 +124,7 @@ class UnicodeIteratorModel(StructModel):
             ("index", types.EphemeralPointer(types.uintp)),
             ("data", fe_type.data),
         ]
-        super(UnicodeIteratorModel, self).__init__(dmm, fe_type, members)
+        super().__init__(dmm, fe_type, members)
 
 
 # CAST

@@ -1,0 +1,13 @@
+{
+        // Add the path to the Anaconda environments to the python.venvPath environment variable.
+        // If your Anaconda environments are not in the home directory, you need to change this to
+        // the path to your Anaconda environments directory.
+        "python.venvPath": "${env:HOME}/anaconda3/envs",
+        "python-envs.pythonProjects": [
+                {
+                        "path": "",
+                        "envManager": "ms-python.python:conda",
+                        "packageManager": "ms-python.python:conda"
+                }
+        ]
+}

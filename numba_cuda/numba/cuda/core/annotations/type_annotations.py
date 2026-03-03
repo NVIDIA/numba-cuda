@@ -42,7 +42,7 @@ class SourceLines(Mapping):
         return bool(self.lines)
 
 
-class TypeAnnotation(object):
+class TypeAnnotation:
     # func_data dict stores annotation data for all functions that are
     # compiled. We store the data in the TypeAnnotation class since a new
     # TypeAnnotation instance is created for each function that is compiled.

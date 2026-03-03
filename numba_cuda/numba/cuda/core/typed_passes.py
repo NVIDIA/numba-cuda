@@ -31,8 +31,10 @@ from numba.cuda.core.ir_utils import (
     compute_cfg_from_blocks,
     is_operator_or_getitem,
 )
+from numba.cuda.core.callconv import CUDACallConv
 
 from numba.cuda.core import postproc, rewrites, funcdesc, config
+from numba.cuda.core.options import InlineOptions
 
 
 try:
@@ -201,9 +203,15 @@ class BaseTypeInference(FunctionPass):
             'Function "%s" has invalid return type'
             % (state.func_id.func_name,),
         ):
-            legalize_return_type(
-                state.return_type, state.func_ir, state.targetctx
-            )
+            # We don't need to run legalize_return_type for always inline
+            # functions, as they will be inlined into their callers at numba IR
+            # stage and never compiled on their own. This allows us to support
+            # returning arrays that are not passed in as arguments, which is a
+            # common pattern in array-oriented code.
+            if state.flags.inline != InlineOptions("always"):
+                legalize_return_type(
+                    state.return_type, state.func_ir, state.targetctx
+                )
         return True
 
 
@@ -325,6 +333,12 @@ class BaseNativeLowering(abc.ABC, LoweringPass):
         metadata = state.metadata
         pre_stats = passmanagers.dump_refprune_stats()
 
+        call_conv = state.call_conv
+        if call_conv is None:
+            call_conv = CUDACallConv(state.targetctx)
+
+        mangler = call_conv.mangler
+
         msg = "Function %s failed at nopython mode lowering" % (
             state.func_id.func_name,
         )
@@ -336,10 +350,12 @@ class BaseNativeLowering(abc.ABC, LoweringPass):
                     typemap,
                     restype,
                     calltypes,
-                    mangler=targetctx.mangler,
+                    mangler=mangler,
                     inline=flags.forceinline,
                     noalias=flags.noalias,
                     abi_tags=[flags.get_mangle_string()],
+                    call_conv=call_conv,
+                    abi_info=state.abi_info,
                 )
             )
 
@@ -821,7 +837,7 @@ class PreLowerStripPhis(FunctionPass):
         exporters = defaultdict(list)
         phis = set()
         # Find all variables that needs to be exported
-        for label, block in func_ir.blocks.items():
+        for block in func_ir.blocks.values():
             for assign in block.find_insts(ir.assign_types):
                 if isinstance(assign.value, ir.expr_types):
                     if assign.value.op == "phi":
@@ -842,6 +858,11 @@ class PreLowerStripPhis(FunctionPass):
             newblk.body = [stmt for stmt in block.body if stmt not in phis]
 
             # insert exporters
+            # Get the block's terminator location for use when the variable
+            # was not assigned in this block (e.g., in continue/break paths).
+            term_loc = (
+                block.terminator.loc if block.is_terminated else block.loc
+            )
             for target, rhs in exporters[label]:
                 # If RHS is undefined
                 if rhs is ir.UNDEFINED:
@@ -849,7 +870,6 @@ class PreLowerStripPhis(FunctionPass):
                     # will eventually materialize as the prologue.
                     rhs = ir.Expr.null(loc=func_ir.loc)
 
-                assign = ir.Assign(target=target, value=rhs, loc=rhs.loc)
                 # Insert at the earliest possible location; i.e. after the
                 # last assignment to rhs
                 assignments = [
@@ -858,9 +878,16 @@ class PreLowerStripPhis(FunctionPass):
                     if stmt.target == rhs
                 ]
                 if assignments:
+                    # Variable was assigned in this block; use RHS location
+                    # to keep the location info at the assignment site.
+                    assign = ir.Assign(target=target, value=rhs, loc=rhs.loc)
                     last_assignment = assignments[-1]
                     newblk.insert_after(assign, last_assignment)
                 else:
+                    # Variable was NOT assigned in this block (just passed
+                    # through, e.g., in continue/break blocks). Use the
+                    # terminator location to preserve location info.
+                    assign = ir.Assign(target=target, value=rhs, loc=term_loc)
                     newblk.prepend(assign)
 
         func_ir.blocks = newblocks

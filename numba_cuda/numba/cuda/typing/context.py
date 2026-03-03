@@ -18,7 +18,7 @@ from numba.cuda import types, utils
 from numba.cuda.utils import order_by_target_specificity
 
 
-class Rating(object):
+class Rating:
     __slots__ = "promote", "safe_convert", "unsafe_convert"
 
     def __init__(self):
@@ -103,7 +103,7 @@ class CallStack(Sequence):
                 return frame
 
 
-class CallFrame(object):
+class CallFrame:
     """
     A compile-time call frame
     """
@@ -131,7 +131,7 @@ class CallFrame(object):
             raise errors.TypingError(m)
 
 
-class BaseContext(object):
+class BaseContext:
     """A typing context for storing function typing constrain template."""
 
     def __init__(self):

@@ -50,7 +50,7 @@ def _check_arity_and_homogeneity(sig, args, arity, return_type=None):
 
         fname = inspect.currentframe().f_back.f_code.co_name
         msg = "{0} called with invalid types: {1}".format(fname, sig)
-        assert False, msg
+        raise TypeError(msg)
 
 
 cast_arg_ty = types.float64

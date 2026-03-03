@@ -56,7 +56,7 @@ class _DeviceList:
                 return self[devnum]
 
 
-class _DeviceContextManager(object):
+class _DeviceContextManager:
     """
     Provides a context manager for executing in the context of the chosen
     device. The normal use of instances of this type is from
@@ -88,7 +88,7 @@ class _DeviceContextManager(object):
         return f"<Managed Device {self.id}>"
 
 
-class _Runtime(object):
+class _Runtime:
     """Emulate the CUDA runtime context management.
 
     It owns all Devices and Contexts.
@@ -158,12 +158,10 @@ class _Runtime(object):
                     # Get primary context for the active device
                     ctx = self.gpus[ac.devnum].get_primary_context()
                     # Is active context the primary context?
-                    ctx_handle = ctx.handle.value
-                    ac_ctx_handle = ac.context_handle.value
-                    if ctx_handle != ac_ctx_handle:
+                    if ctx.handle != ac.context_handle:
                         raise RuntimeError(
                             "Numba cannot operate on non-primary"
-                            f" CUDA context {ac_ctx_handle:x}"
+                            f" CUDA context {int(ac.context_handle):x}"
                         )
                     # Ensure the context is ready
                     ctx.prepare_for_use()

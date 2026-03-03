@@ -12,7 +12,7 @@ class KernelRuntimeError(RuntimeError):
         self.msg = msg
         t = "An exception was raised in thread=%s block=%s\n\t%s"
         msg = t % (self.tid, self.ctaid, self.msg)
-        super(KernelRuntimeError, self).__init__(msg)
+        super().__init__(msg)
 
 
 class UnsupportedBytecodeError(Exception):
