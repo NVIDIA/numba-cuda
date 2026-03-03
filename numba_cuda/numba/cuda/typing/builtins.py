@@ -896,7 +896,7 @@ class TypeRefAttribute(AttributeTemplate):
             # For example, see numba/typed/typeddict.py
             #   @type_callable(DictType)
             #   def typeddict_call(context):
-            class Redirect(object):
+            class Redirect:
                 def __init__(self, context):
                     self.context = context
 
@@ -1159,7 +1159,7 @@ class DeferredAttribute(AttributeTemplate):
 # ------------------------------------------------------------------------------
 
 
-class IndexValue(object):
+class IndexValue:
     """
     Index and value
     """
@@ -1175,9 +1175,7 @@ class IndexValue(object):
 class IndexValueType(types.Type):
     def __init__(self, val_typ):
         self.val_typ = val_typ
-        super(IndexValueType, self).__init__(
-            name="IndexValueType({})".format(val_typ)
-        )
+        super().__init__(name="IndexValueType({})".format(val_typ))
 
 
 @typeof_impl.register(IndexValue)

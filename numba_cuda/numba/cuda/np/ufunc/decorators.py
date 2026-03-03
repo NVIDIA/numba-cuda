@@ -5,7 +5,7 @@ from numba.cuda.core.registry import DelayedRegistry
 from numba.cuda.vectorizers import CUDAVectorize, CUDAGUFuncVectorize
 
 
-class _BaseVectorize(object):
+class _BaseVectorize:
     @classmethod
     def get_identity(cls, kwargs):
         return kwargs.pop("identity", None)

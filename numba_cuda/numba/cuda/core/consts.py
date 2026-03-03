@@ -8,7 +8,7 @@ from numba.cuda.core.errors import ConstantInferenceError, NumbaError
 from numba.cuda.core import ir
 
 
-class ConstantInference(object):
+class ConstantInference:
     """
     A constant inference engine for a given interpreter.
     Inference inspects the IR to try and compute a compile-time constant for

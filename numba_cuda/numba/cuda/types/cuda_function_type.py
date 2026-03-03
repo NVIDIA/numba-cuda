@@ -121,7 +121,7 @@ class UndefinedFunctionType(FunctionType):
             types.undefined, (types.undefined,) * nargs, recvr=None
         )
 
-        super(UndefinedFunctionType, self).__init__(signature)
+        super().__init__(signature)
 
         self.dispatchers = dispatchers
 
@@ -159,7 +159,7 @@ class FunctionPrototype(Type):
             lst.append(atype.name)
         name = "%s(%s)" % (rtype, ", ".join(lst))
 
-        super(FunctionPrototype, self).__init__(name)
+        super().__init__(name)
 
     @property
     def key(self):
@@ -212,7 +212,7 @@ class CompileResultWAP(WrapperAddressProtocol):
           attribute)
         """
         self.cres = cres
-        name = getattr(cres.fndesc, "llvm_cfunc_wrapper_name")
+        name = cres.fndesc.llvm_cfunc_wrapper_name
         self.address = cres.library.get_pointer_to_function(name)
 
     def dump(self, tab=""):

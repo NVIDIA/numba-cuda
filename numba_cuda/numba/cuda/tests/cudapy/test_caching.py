@@ -97,7 +97,7 @@ class DispatcherCacheUsecasesTest(BaseCacheTest):
     usecases_file = os.path.join(here, "cache_usecases.py")
     modname = "dispatcher_caching_test_fodder"
 
-    def run_in_separate_process(self, *, envvars={}):
+    def run_in_separate_process(self):
         # Cached functions can be run from a distinct process.
         # Also stresses issue #1603: uncached function calling cached function
         # shouldn't fail compiling.
@@ -110,7 +110,6 @@ class DispatcherCacheUsecasesTest(BaseCacheTest):
             """ % dict(tempdir=self.tempdir, modname=self.modname)
 
         subp_env = os.environ.copy()
-        subp_env.update(envvars)
         popen = subprocess.Popen(
             [sys.executable, "-c", code],
             stdout=subprocess.PIPE,

@@ -124,7 +124,7 @@ def _process_opt_level(opt_level):
         return _OptLevel(opt_level)
 
 
-class _EnvReloader(object):
+class _EnvReloader:
     def __init__(self):
         self.reset()
 

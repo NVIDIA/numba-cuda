@@ -51,7 +51,7 @@ else:
 
 
 @total_ordering
-class BlockKind(object):
+class BlockKind:
     """Kinds of block to make related code safer than just `str`."""
 
     _members = frozenset(
@@ -88,7 +88,7 @@ class BlockKind(object):
         return "BlockKind({})".format(self._value)
 
 
-class Flow(object):
+class Flow:
     """Data+Control Flow analysis.
 
     Simulate execution to recover dataflow and controlflow information.
@@ -293,7 +293,7 @@ class Flow(object):
 
         def apply_changes(used_phis, phismap):
             keep = {}
-            for state, used_set in used_phis.items():
+            for used_set in used_phis.values():
                 for phi in used_set:
                     keep[phi] = phismap[phi]
             _logger.debug("keep phismap: %s", _lazy_pformat(keep))
@@ -353,7 +353,7 @@ def _is_null_temp_reg(reg):
     return reg.startswith("$null$")
 
 
-class TraceRunner(object):
+class TraceRunner:
     """Trace runner contains the states for the trace and the opcode dispatch."""
 
     def __init__(self, debug_filename):
@@ -1139,7 +1139,7 @@ class TraceRunner(object):
 
     def op_BEGIN_FINALLY(self, state, inst):
         temps = []
-        for i in range(_EXCEPT_STACK_OFFSET):
+        for _ in range(_EXCEPT_STACK_OFFSET):
             tmp = state.make_temp()
             temps.append(tmp)
             state.push(tmp)
@@ -1656,7 +1656,7 @@ class TraceRunner(object):
         count = inst.arg
         items = []
         # In 3.5+, BUILD_MAP takes <count> pairs from the stack
-        for i in range(count):
+        for _ in range(count):
             v, k = state.pop(), state.pop()
             items.append((k, v))
         state.append(inst, items=items[::-1], size=count, res=dct)
@@ -2118,7 +2118,7 @@ class TraceRunner(object):
 
 
 @total_ordering
-class _State(object):
+class _State:
     """State of the trace"""
 
     def __init__(self, bytecode, pc, nstack, blockstack, nullvals=()):
@@ -2360,8 +2360,7 @@ class _State(object):
             stack = stack[:nstack]
         if npush:
             assert 0 <= npush
-            for i in range(npush):
-                stack.append(self.make_temp())
+            stack.extend(self.make_temp() for _ in range(npush))
         # Handle changes on the blockstack
         blockstack = list(self._blockstack)
         if PYVERSION in ((3, 11), (3, 12), (3, 13), (3, 14)):
@@ -2488,7 +2487,7 @@ else:
 Edge = namedtuple("Edge", ["pc", "stack", "blockstack", "npush"])
 
 
-class AdaptDFA(object):
+class AdaptDFA:
     """Adapt Flow to the old DFA class expected by Interpreter"""
 
     def __init__(self, flow):
@@ -2544,7 +2543,7 @@ def _flatten_inst_regs(iterable):
                 yield x
 
 
-class AdaptCFA(object):
+class AdaptCFA:
     """Adapt Flow to the old CFA class expected by Interpreter"""
 
     def __init__(self, flow):
@@ -2586,7 +2585,7 @@ class AdaptCFA(object):
         self._flow.cfgraph.dump()
 
 
-class AdaptCFBlock(object):
+class AdaptCFBlock:
     def __init__(self, blockinfo, offset):
         self.offset = offset
         self.body = tuple(i for i, _ in blockinfo.insts)

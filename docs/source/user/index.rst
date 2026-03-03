@@ -22,6 +22,7 @@ User guide
    random.rst
    device-management.rst
    examples.rst
+   debugging.rst
    simulator.rst
    reduction.rst
    ufunc.rst
@@ -31,6 +32,7 @@ User guide
    bindings.rst
    cuda_ffi.rst
    cuda_compilation.rst
+   callconv.rst
    caching.rst
    minor_version_compatibility.rst
    faq.rst
