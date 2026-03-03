@@ -74,12 +74,12 @@ class TestCudaDateTime(CUDATestCase):
             for i in range(arr.shape[0]):
                 out[i] = arr[i]
 
-        # TODO: cupy doesn't allow passing the datetime64[D] array directly
+        # CuPy doesn't allow constructing the datetime64[D] array directly
         arr = cp.array(
             np.arange("2005-02", "2006-02", dtype="datetime64[D]").view("int64")
         ).view("datetime64[D]")
 
-        out = cp.empty_like(arr)
+        out = cp.empty(arr.size, dtype="float64").view("datetime64[D]")
         assign[1, 1](out, arr)
 
         self.assertPreciseEqual(arr.get(), out.get())
