@@ -9,7 +9,7 @@ class RangeType(SimpleIterableType):
     def __init__(self, dtype):
         self.dtype = dtype
         name = "range_state_%s" % (dtype,)
-        super(SimpleIterableType, self).__init__(name)
+        super().__init__(name)
         self._iterator_type = RangeIteratorType(self.dtype)
 
     def unify(self, typingctx, other):
@@ -22,7 +22,7 @@ class RangeType(SimpleIterableType):
 class RangeIteratorType(SimpleIteratorType):
     def __init__(self, dtype):
         name = "range_iter_%s" % (dtype,)
-        super(SimpleIteratorType, self).__init__(name)
+        super().__init__(name)
         self._yield_type = dtype
 
     def unify(self, typingctx, other):
@@ -50,7 +50,7 @@ class Generator(SimpleIteratorType):
             self.arg_types,
             self.has_finalizer,
         )
-        super(Generator, self).__init__(name, yield_type)
+        super().__init__(name, yield_type)
 
     @property
     def key(self):
@@ -75,7 +75,7 @@ class EnumerateType(SimpleIteratorType):
         self.source_type = iterable_type.iterator_type
         yield_type = Tuple([intp, self.source_type.yield_type])
         name = "enumerate(%s)" % (self.source_type)
-        super(EnumerateType, self).__init__(name, yield_type)
+        super().__init__(name, yield_type)
 
     @property
     def key(self):
@@ -94,7 +94,7 @@ class ZipType(SimpleIteratorType):
         self.source_types = tuple(tp.iterator_type for tp in iterable_types)
         yield_type = Tuple([tp.yield_type for tp in self.source_types])
         name = "zip(%s)" % ", ".join(str(tp) for tp in self.source_types)
-        super(ZipType, self).__init__(name, yield_type)
+        super().__init__(name, yield_type)
 
     @property
     def key(self):
@@ -117,4 +117,4 @@ class ArrayIterator(SimpleIteratorType):
         else:
             # iteration semantics leads to A order layout
             yield_type = array_type.copy(ndim=array_type.ndim - 1, layout="A")
-        super(ArrayIterator, self).__init__(name, yield_type)
+        super().__init__(name, yield_type)

@@ -240,14 +240,18 @@ def slice_indices(context, builder, sig, args):
     sli = context.make_helper(builder, sig.args[0], args[0])
 
     with builder.if_then(cgutils.is_neg_int(builder, length), likely=False):
-        context.call_conv.return_user_exc(
-            builder, ValueError, ("length should not be negative",)
+        context.fndesc.call_conv.return_user_exc(
+            builder,
+            ValueError,
+            ("length should not be negative",),
         )
     with builder.if_then(
         cgutils.is_scalar_zero(builder, sli.step), likely=False
     ):
-        context.call_conv.return_user_exc(
-            builder, ValueError, ("slice step cannot be zero",)
+        context.fndesc.call_conv.return_user_exc(
+            builder,
+            ValueError,
+            ("slice step cannot be zero",),
         )
 
     fix_slice(builder, sli, length)

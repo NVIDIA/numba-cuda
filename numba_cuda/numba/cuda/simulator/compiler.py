@@ -18,7 +18,7 @@ def run_frontend(func):
     pass
 
 
-class DefaultPassBuilder(object):
+class DefaultPassBuilder:
     @staticmethod
     def define_nopython_lowering_pipeline(state, name="nopython_lowering"):
         pass
@@ -30,7 +30,16 @@ class DefaultPassBuilder(object):
 
 class CompilerBase:
     def __init__(
-        self, typingctx, targetctx, library, args, return_type, flags, locals
+        self,
+        typingctx,
+        targetctx,
+        library,
+        args,
+        return_type,
+        flags,
+        locals,
+        call_conv,
+        abi_info,
     ):
         pass
 

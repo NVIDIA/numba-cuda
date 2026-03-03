@@ -6,6 +6,7 @@ Implements the cuda module as called from within an executing kernel
 (@cuda.jit-decorated function).
 """
 
+from collections import defaultdict
 from contextlib import contextmanager
 import sys
 import threading
@@ -18,7 +19,7 @@ from numba.cuda.np import numpy_support
 from .vector_types import vector_types
 
 
-class Dim3(object):
+class Dim3:
     """
     Used to implement thread/block indices/dimensions
     """
@@ -61,7 +62,7 @@ class FakeCUDACg:
         return GridGroup()
 
 
-class FakeCUDALocal(object):
+class FakeCUDALocal:
     """
     CUDA Local arrays
     """
@@ -75,7 +76,7 @@ class FakeCUDALocal(object):
         return np.empty(shape, dtype)
 
 
-class FakeCUDAConst(object):
+class FakeCUDAConst:
     """
     CUDA Const arrays
     """
@@ -84,7 +85,7 @@ class FakeCUDAConst(object):
         return ary
 
 
-class FakeCUDAShared(object):
+class FakeCUDAShared:
     """
     CUDA Shared arrays.
 
@@ -149,7 +150,7 @@ declock = threading.Lock()
 exchlock = threading.Lock()
 
 
-class FakeCUDAAtomic(object):
+class FakeCUDAAtomic:
     def add(self, array, index, val):
         with addlock:
             old = array[index]
@@ -244,7 +245,7 @@ class FakeCUDAAtomic(object):
             return loaded
 
 
-class FakeCUDAFp16(object):
+class FakeCUDAFp16:
     def hadd(self, a, b):
         return a + b
 
@@ -336,7 +337,7 @@ class FakeCUDAFp16(object):
         return min(a, b)
 
 
-class FakeCUDAModule(object):
+class FakeCUDAModule:
     """
     An instance of this class will be injected into the __globals__ for an
     executing function in order to implement calls to cuda.*. This will fail to
@@ -491,19 +492,43 @@ class FakeCUDAModule(object):
         raise RuntimeError("Global grid has 1-3 dimensions. %d requested" % n)
 
 
+_locks_register_lock = threading.Lock()
+_globals_locks = defaultdict(threading.Lock)
+_swap_refcount = defaultdict(int)
+_swap_orig = {}
+
+
 @contextmanager
 def swapped_cuda_module(fn, fake_cuda_module):
     from numba import cuda
 
     fn_globs = fn.__globals__
-    # get all globals that is the "cuda" module
-    orig = dict((k, v) for k, v in fn_globs.items() if v is cuda)
-    # build replacement dict
-    repl = dict((k, fake_cuda_module) for k, v in orig.items())
-    # replace
-    fn_globs.update(repl)
+    gid = id(fn_globs)
+
+    # Use a per-module lock to avoid cross-locking other modules. Protect
+    # creation of lock keys with a global lock to avoid multiple locks per
+    # module.
+    with _locks_register_lock:
+        lock = _globals_locks[gid]
+
+    with lock:
+        # Scan and replace globals with fake module on first entrance only
+        if _swap_refcount[gid] == 0:
+            orig = {k: v for k, v in fn_globs.items() if v is cuda}
+            _swap_orig[gid] = orig
+            for k in orig:
+                fn_globs[k] = fake_cuda_module
+
+        # Increment the reference counter on every entrance
+        _swap_refcount[gid] += 1
     try:
         yield
     finally:
-        # revert
-        fn_globs.update(orig)
+        with lock:
+            # Decrement "number of modules using fake CUDA" counter on exit
+            _swap_refcount[gid] -= 1
+
+            # Last thread to leave the context restores real cuda
+            if _swap_refcount[gid] == 0:
+                fn_globs.update(_swap_orig.pop(gid))
+                del _swap_refcount[gid]

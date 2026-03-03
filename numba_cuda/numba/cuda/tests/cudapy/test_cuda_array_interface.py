@@ -10,6 +10,8 @@ from numba.cuda.testing import skip_on_cudasim, skip_if_external_memmgr
 from numba.cuda.tests.support import linux_only, override_config
 from unittest.mock import call, patch
 
+import pytest
+
 
 @skip_on_cudasim("CUDA Array Interface is not supported in the simulator")
 class TestCudaArrayInterface(CUDATestCase):
@@ -34,7 +36,7 @@ class TestCudaArrayInterface(CUDATestCase):
         self.assertPointersEqual(wrapped, d_arr)
 
     def get_stream_value(self, stream):
-        return stream.handle.value
+        return int(stream.handle)
 
     @skip_if_external_memmgr("Ownership not relevant with external memmgr")
     def test_ownership(self):
@@ -79,6 +81,21 @@ class TestCudaArrayInterface(CUDATestCase):
 
         np.testing.assert_array_equal(wrapped.copy_to_host(), h_arr + val)
         np.testing.assert_array_equal(d_arr.copy_to_host(), h_arr + val)
+
+    def test_fortran_contiguous(self):
+        cp = pytest.importorskip("cupy")
+
+        @cuda.jit
+        def copy(arr, out):
+            for i in range(arr.shape[0]):
+                for j in range(arr.shape[1]):
+                    out[i, j] = arr[i, j]
+
+        arr = cp.asfortranarray(cp.random.random((10, 10)))
+        out = cp.empty_like(arr)
+        copy[1, 1](arr, out)
+
+        np.testing.assert_array_equal(arr.get(), out.get())
 
     def test_ufunc_arg(self):
         @vectorize(["f8(f8, f8)"], target="cuda")
@@ -432,6 +449,29 @@ class TestCudaArrayInterface(CUDATestCase):
 
             # Ensure that synchronize was not called
             mock_sync.assert_not_called()
+
+    def test_from_dtype_caching_distiguish_custom_dtypes(self):
+        f16x2 = np.dtype([("x", np.float16), ("y", np.float16)])
+        f16x2_aligned = np.dtype(
+            [("x", np.float16), ("y", np.float16)], align=True
+        )
+
+        @cuda.jit
+        def f1(input, output):
+            pass
+
+        @cuda.jit
+        def f2(input, output):
+            pass
+
+        arr0 = cuda.to_device(np.zeros((1,), dtype=f16x2))
+        arr1 = cuda.to_device(np.zeros((1,), dtype=f16x2_aligned))
+        output = cuda.to_device(np.zeros((2,), dtype=np.int64))
+
+        f1[1, 1](arr0, output)
+        f2[1, 1](arr1, output)
+
+        assert f1.signatures[0] != f2.signatures[0]
 
 
 if __name__ == "__main__":

@@ -244,7 +244,7 @@ def unicode_to_bytes_cast(context, builder, fromty, toty, val):
     src_length = uni_str.length
 
     with builder.if_then(notkind1):
-        context.call_conv.return_user_exc(
+        context.fndesc.call_conv.return_user_exc(
             builder,
             ValueError,
             ("cannot cast higher than 8-bit unicode_type to bytes",),
@@ -315,7 +315,7 @@ def unicode_to_unicode_charseq(context, builder, fromty, toty, val):
                 in_val = builder.zext(builder.load(in_ptr), dstint_t)
                 builder.store(in_val, builder.gep(dst, [loop.index]))
         else:
-            context.call_conv.return_user_exc(
+            context.fndesc.call_conv.return_user_exc(
                 builder,
                 ValueError,
                 (
@@ -331,7 +331,7 @@ def unicode_to_unicode_charseq(context, builder, fromty, toty, val):
                 in_val = builder.zext(builder.load(in_ptr), dstint_t)
                 builder.store(in_val, builder.gep(dst, [loop.index]))
         else:
-            context.call_conv.return_user_exc(
+            context.fndesc.call_conv.return_user_exc(
                 builder,
                 ValueError,
                 (

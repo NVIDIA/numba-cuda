@@ -116,15 +116,15 @@ class TestBranchPruneBase(TestCase):
 
         # what is expected to be pruned
         expect_removed = []
-        for idx, prune in enumerate(prune):
+        for idx, p in enumerate(prune):
             branch = before_branches[idx]
-            if prune is True:
+            if p is True:
                 expect_removed.append(branch.truebr)
-            elif prune is False:
+            elif p is False:
                 expect_removed.append(branch.falsebr)
-            elif prune is None:
+            elif p is None:
                 pass  # nothing should be removed!
-            elif prune == "both":
+            elif p == "both":
                 expect_removed.append(branch.falsebr)
                 expect_removed.append(branch.truebr)
             else:

@@ -30,7 +30,7 @@ class Conversion(enum.IntEnum):
     nil = 99
 
 
-class CastSet(object):
+class CastSet:
     """A set of casting rules.
 
     There is at most one rule per target type.
@@ -71,7 +71,7 @@ class CastSet(object):
         return self._rels[item]
 
 
-class TypeGraph(object):
+class TypeGraph:
     """A graph that maintains the casting relationship of all types.
 
     This simplifies the definition of casting rules by automatically

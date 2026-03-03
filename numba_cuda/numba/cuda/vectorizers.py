@@ -11,7 +11,7 @@ from numba.cuda.deviceufunc import (
 )
 
 
-class CUDAUFuncDispatcher(object):
+class CUDAUFuncDispatcher:
     """
     Invoke the CUDA ufunc specialization for the given inputs.
     """

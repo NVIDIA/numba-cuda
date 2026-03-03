@@ -608,11 +608,11 @@ def dot_2_vv(context, builder, sig, args, conjugate=False):
 
 
 @overload(np.dot)
-def dot_2(left, right):
+def dot_2(a, b):
     """
     np.dot(a, b)
     """
-    return dot_2_impl("np.dot()", left, right)
+    return dot_2_impl("np.dot()", a, b)
 
 
 @overload(operator.matmul)
@@ -679,14 +679,14 @@ def dot_2_impl(name, left, right):
 
 
 @overload(np.vdot)
-def vdot(left, right):
+def vdot(a, b):
     """
     np.vdot(a, b)
     """
-    if isinstance(left, types.Array) and isinstance(right, types.Array):
+    if isinstance(a, types.Array) and isinstance(b, types.Array):
 
         @intrinsic
-        def _impl(typingcontext, left, right):
+        def _impl(typingcontext, a, b):
             def codegen(context, builder, sig, args):
                 ensure_blas()
 
@@ -696,23 +696,23 @@ def vdot(left, right):
                 ):
                     return dot_2_vv(context, builder, sig, args, conjugate=True)
 
-            if left.ndim != 1 or right.ndim != 1:
+            if a.ndim != 1 or b.ndim != 1:
                 raise TypingError("np.vdot() only supported on 1-D arrays")
 
-            if left.dtype != right.dtype:
+            if a.dtype != b.dtype:
                 raise TypingError(
                     "np.vdot() arguments must all have the same dtype"
                 )
-            return signature(left.dtype, left, right), codegen
+            return signature(a.dtype, a, b), codegen
 
-        if left.layout not in "CF" or right.layout not in "CF":
+        if a.layout not in "CF" or b.layout not in "CF":
             warnings.warn(
                 "np.vdot() is faster on contiguous arrays, called on %s"
-                % ((left, right),),
+                % ((a, b),),
                 NumbaPerformanceWarning,
             )
 
-        return lambda left, right: _impl(left, right)
+        return lambda a, b: _impl(a, b)
 
 
 def dot_3_vm_check_args(a, b, out):
@@ -935,18 +935,18 @@ def dot_3_mm(context, builder, sig, args):
 
 
 @overload(np.dot)
-def dot_3(left, right, out):
+def dot_3(a, b, out):
     """
     np.dot(a, b, out)
     """
     if (
-        isinstance(left, types.Array)
-        and isinstance(right, types.Array)
+        isinstance(a, types.Array)
+        and isinstance(b, types.Array)
         and isinstance(out, types.Array)
     ):
 
         @intrinsic
-        def _impl(typingcontext, left, right, out):
+        def _impl(typingcontext, a, b, out):
             def codegen(context, builder, sig, args):
                 ensure_blas()
 
@@ -962,25 +962,25 @@ def dot_3(left, right, out):
                     else:
                         raise AssertionError("unreachable")
 
-            if left.dtype != right.dtype or left.dtype != out.dtype:
+            if a.dtype != b.dtype or a.dtype != out.dtype:
                 raise TypingError(
                     "np.dot() arguments must all have the same dtype"
                 )
 
-            return signature(out, left, right, out), codegen
+            return signature(out, a, b, out), codegen
 
         if (
-            left.layout not in "CF"
-            or right.layout not in "CF"
+            a.layout not in "CF"
+            or b.layout not in "CF"
             or out.layout not in "CF"
         ):
             warnings.warn(
                 "np.vdot() is faster on contiguous arrays, called on %s"
-                % ((left, right),),
+                % ((a, b),),
                 NumbaPerformanceWarning,
             )
 
-        return lambda left, right, out: _impl(left, right, out)
+        return lambda a, b, out: _impl(a, b, out)
 
 
 fatal_error_func = types.ExternalFunction("numba_fatal_error", types.intc())
