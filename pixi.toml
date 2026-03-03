@@ -23,6 +23,7 @@ cuda-nvrtc = "*"
 libnvjitlink = "*"
 cuda-cccl = "*"
 libcurand = "*"
+llvm-tools = "*"
 
 [feature.cu-12.system-requirements]
 cuda = "12"

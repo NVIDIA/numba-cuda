@@ -114,6 +114,37 @@ class TestCudaDebugInfo(CUDATestCase):
         match = re.compile(pat).search(llvm_ir)
         self.assertIsNotNone(match, msg=llvm_ir)
 
+    def test_scalar_kernel_parameters_use_dbg_declare(self):
+        sig = (types.int32, types.int32, types.int32, types.int32[::1])
+
+        @cuda.jit(sig, debug=True, opt=False)
+        def f(depth1, depth2, depth3, out):
+            acc = 0
+            for i in range(depth1):
+                for j in range(depth2):
+                    for k in range(depth3):
+                        acc += i + j + k
+            out[0] = acc
+
+        llvm_ir = f.inspect_llvm(sig)
+
+        # Scalar arguments should be described via dbg.declare on their stack
+        # slots (stable), rather than only via dbg.value (which ptxas may encode
+        # as parameter-space DW_OP_addr locations).
+        for argno, name in enumerate(("depth1", "depth2", "depth3"), start=1):
+            md_pat = rf"^!(\d+)\s+=\s+!DILocalVariable\([^)]*arg:\s*{argno}[^)]*name:\s*\"{name}\""
+            md_match = re.compile(md_pat, re.MULTILINE).search(llvm_ir)
+            self.assertIsNotNone(md_match, msg=llvm_ir)
+            md_id = md_match.group(1)
+
+            declare_pat = (
+                r"call void @\"llvm\.dbg\.declare\"\("
+                r"[\s\S]*?"
+                rf"metadata\s+!{md_id}\b"
+            )
+            declare_match = re.compile(declare_pat).search(llvm_ir)
+            self.assertIsNotNone(declare_match, msg=llvm_ir)
+
     def test_grid_group_type(self):
         sig = (types.int32,)
 
