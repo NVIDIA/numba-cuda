@@ -386,7 +386,9 @@ class TestCudaDebugInfo(CUDATestCase):
             value_match = re.compile(value_pat).search(llvm_ir)
             self.assertIsNotNone(value_match, msg=llvm_ir)
 
-            declare_pat = rf'call void @"llvm\.dbg\.declare"\([^)]*metadata !{md_id}\b'
+            declare_pat = (
+                rf'call void @"llvm\.dbg\.declare"\([^)]*metadata !{md_id}\b'
+            )
             declare_match = re.compile(declare_pat).search(llvm_ir)
             self.assertIsNone(declare_match, msg=llvm_ir)
 
