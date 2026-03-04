@@ -5,7 +5,7 @@ import ctypes
 
 import numpy as np
 
-from numba.cuda.cudadrv import driver, drvapi, devices
+from numba.cuda.cudadrv import driver, devices
 from numba.cuda.testing import unittest, CUDATestCase
 from numba.cuda.testing import skip_on_cudasim
 
@@ -24,7 +24,7 @@ class TestCudaMemory(CUDATestCase):
     def _template(self, obj):
         self.assertTrue(driver.is_device_memory(obj))
         driver.require_device_memory(obj)
-        expected_class = drvapi.cu_device_ptr
+        expected_class = ctypes.c_size_t
         self.assertTrue(isinstance(obj.device_ctypes_pointer, expected_class))
 
     def test_device_memory(self):

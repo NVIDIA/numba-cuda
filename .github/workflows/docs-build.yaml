@@ -38,7 +38,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
       - name: Upload docs
         if: "!cancelled()"
-        uses: actions/upload-artifact@v6.0.0
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f  # v7.0.0
         with:
           name: docs
           path: ${{ github.workspace }}/docs/build/html
