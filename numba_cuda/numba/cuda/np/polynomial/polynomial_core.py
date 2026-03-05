@@ -150,12 +150,16 @@ def impl_polynomial3(context, builder, sig, args):
 
     with cgutils.if_unlikely(builder, pred1):
         context.fndesc.call_conv.return_user_exc(
-            builder, ValueError, ("Domain has wrong number of elements.",)
+            builder,
+            ValueError,
+            ("Domain has wrong number of elements.",),
         )
 
     with cgutils.if_unlikely(builder, pred2):
         context.fndesc.call_conv.return_user_exc(
-            builder, ValueError, ("Window has wrong number of elements.",)
+            builder,
+            ValueError,
+            ("Window has wrong number of elements.",),
         )
 
     polynomial.coef = coef_cast

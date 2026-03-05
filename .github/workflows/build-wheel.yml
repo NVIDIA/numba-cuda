@@ -132,7 +132,7 @@ jobs:
           ls -lahR ${{ env.NUMBA_CUDA_ARTIFACTS_DIR }}
 
       - name: Upload numba-cuda build artifacts
-        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f  # v6.0.0
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f  # v7.0.0
         with:
           name: ${{ env.NUMBA_CUDA_ARTIFACT_NAME }}
           path: ${{ env.NUMBA_CUDA_ARTIFACTS_DIR }}/*.whl
@@ -212,7 +212,7 @@ jobs:
           env
 
       - name: Download numba-cuda build artifacts
-        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131  # v7.0.0
+        uses: actions/download-artifact@70fc10c6e5e1ce46ad2ea6f2b72d43f7d47b13c3  # v8.0.0
         with:
           name: ${{ env.NUMBA_CUDA_ARTIFACT_NAME }}
           path: ${{ env.NUMBA_CUDA_ARTIFACTS_DIR }}
@@ -264,7 +264,7 @@ jobs:
           fi
 
       - name: Upload numba-cuda test artifacts
-        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f  # v6.0.0
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f  # v7.0.0
         with:
           name: ${{ env.NUMBA_CUDA_TEST_ARTIFACT_NAME }}-cu${{ env.CUDA_MAJOR }}
           path: testing/cu*
