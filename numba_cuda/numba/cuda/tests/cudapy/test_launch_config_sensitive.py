@@ -51,7 +51,7 @@ class LaunchConfigSensitiveRewrite(Rewrite):
         )
         # Mark compilation as launch-config sensitive so the dispatcher can
         # avoid reusing the compiled kernel across different launch configs.
-        cfg.mark_kernel_as_launch_config_sensitive()
+        cfg.dispatcher.mark_launch_config_sensitive()
         self._logged = True
         return self._block
 

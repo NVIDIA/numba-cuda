@@ -63,6 +63,7 @@ creating a specialized instance:
 .. autoclass:: numba.cuda.dispatcher.CUDADispatcher
    :members: inspect_asm, inspect_llvm, inspect_sass, inspect_types,
              get_regs_per_thread, specialize, specialized, extensions, forall,
+             mark_launch_config_sensitive,
              get_shared_mem_per_block, get_max_threads_per_block,
              get_const_mem_size, get_local_mem_per_thread
 
@@ -133,12 +134,12 @@ Launch-config-sensitive compilation
 
 If code generation depends on launch configuration (for example, a rewrite
 pass that inspects ``cfg.blockdim`` and emits different IR), mark the active
-launch as launch-config sensitive:
+dispatcher as launch-config sensitive:
 
 .. code-block:: python
 
    cfg = launchconfig.ensure_current_launch_config()
-   cfg.mark_kernel_as_launch_config_sensitive()
+   cfg.dispatcher.mark_launch_config_sensitive()
 
 This instructs the dispatcher/cache machinery to avoid unsafe reuse across
 different launch configurations for that kernel path.

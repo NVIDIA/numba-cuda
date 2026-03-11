@@ -731,15 +731,8 @@ class _LaunchConfiguration:
         return self.dispatcher.call(args, self)
 
     def mark_kernel_as_launch_config_sensitive(self):
-        """Mark this configured launch path as launch-config sensitive.
-
-        Once set, this flag is intentionally sticky for this
-        ``_LaunchConfiguration`` instance. This aligns with the expected LC-S
-        use case: if code generation depends on launch config for this
-        kernel/configuration path, treat it as launch-config sensitive for all
-        subsequent compilations through the same configured launcher.
-        """
-        self._kernel_launch_config_sensitive = True
+        """Compatibility wrapper for dispatcher-level LC-S marking."""
+        self.dispatcher.mark_launch_config_sensitive()
 
     def get_kernel_launch_config_sensitive(self):
         """Return the launch-config sensitivity flag.
@@ -1728,6 +1721,21 @@ class CUDADispatcher(serialize.ReduceMixin, _MemoMixin, _DispatcherBase):
                 dispatcher._configure_cache_for_launch_config(None)
             self._launch_config_specializations[key] = dispatcher
         return dispatcher
+
+    def mark_launch_config_sensitive(self):
+        """Mark the active compilation for this dispatcher as LC-S.
+
+        This method must be called while a launch-triggered compilation is in
+        progress so the active launch configuration can carry the flag through
+        to compile metadata.
+        """
+        launch_cfg = launchconfig.ensure_current_launch_config()
+        if launch_cfg.dispatcher is not self:
+            raise RuntimeError(
+                "mark_launch_config_sensitive() must be called on the active "
+                "launch configuration's dispatcher"
+            )
+        launch_cfg._kernel_launch_config_sensitive = True
 
     def _select_launch_config_dispatcher(self, launch_config):
         if not self._launch_config_sensitive:
