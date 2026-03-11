@@ -730,18 +730,7 @@ class _LaunchConfiguration:
     def __call__(self, *args):
         return self.dispatcher.call(args, self)
 
-    def mark_kernel_as_launch_config_sensitive(self):
-        """Compatibility wrapper for dispatcher-level LC-S marking."""
-        self.dispatcher.mark_launch_config_sensitive()
-
-    def get_kernel_launch_config_sensitive(self):
-        """Return the launch-config sensitivity flag.
-
-        The result is ``None`` if no explicit decision was made.
-        """
-        return self._kernel_launch_config_sensitive
-
-    def is_kernel_launch_config_sensitive(self):
+    def _is_kernel_launch_config_sensitive(self):
         """Return True if this kernel was marked as launch-config sensitive."""
         return bool(self._kernel_launch_config_sensitive)
 

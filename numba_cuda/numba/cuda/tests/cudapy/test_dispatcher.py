@@ -196,27 +196,6 @@ class TestDispatcher(CUDATestCase):
         kernel = next(iter(f.overloads.values()))
         self.assertTrue(kernel.launch_config_sensitive)
 
-    @skip_on_cudasim("Dispatcher C-extension not used in the simulator")
-    def test_launch_config_mark_kernel_as_launch_config_sensitive_wrapper(self):
-        @cuda.jit
-        def f(x):
-            x[0] = 1
-
-        orig = f._compile_for_args
-
-        def wrapped(*args, **kws):
-            cfg = launchconfig.ensure_current_launch_config()
-            cfg.mark_kernel_as_launch_config_sensitive()
-            return orig(*args, **kws)
-
-        f._compile_for_args = wrapped
-
-        arr = np.zeros(1, dtype=np.int32)
-        f[1, 1](arr)
-
-        kernel = next(iter(f.overloads.values()))
-        self.assertTrue(kernel.launch_config_sensitive)
-
     def test_coerce_input_types(self):
         # Do not allow unsafe conversions if we can still compile other
         # specializations.
