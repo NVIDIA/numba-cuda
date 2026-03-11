@@ -866,8 +866,27 @@ class CUDADIBuilder(DIBuilder):
             int_type = (ir.IntType,)
             real_type = ir.FloatType, ir.DoubleType
             if isinstance(lltype, int_type + real_type):
-                # Start with scalar variable, swtiching llvm.dbg.declare
-                # to llvm.dbg.value
+                # For scalar locals we use llvm.dbg.value instead of
+                # llvm.dbg.declare, but for scalar *arguments* we still want a
+                # stable stack location so they don't get encoded as absolute
+                # parameter-space addresses in downstream DWARF.
+                if argidx is not None:
+                    # NVVM has been observed to crash on some boolean-parameter
+                    # debug.declare patterns - use dbg.value for these instead.
+                    if datamodel is not None and isinstance(
+                        datamodel.fe_type, types.Boolean
+                    ):
+                        return
+                    return super().mark_variable(
+                        builder,
+                        allocavalue,
+                        name,
+                        lltype,
+                        size,
+                        line,
+                        datamodel,
+                        argidx,
+                    )
                 return
             else:
                 return super().mark_variable(
