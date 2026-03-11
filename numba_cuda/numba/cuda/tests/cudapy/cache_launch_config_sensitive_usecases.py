@@ -35,7 +35,7 @@ if not getattr(rewrite_registry, _REWRITE_FLAG, False):
             # Ensure launch config is available and mark compilation as
             # launch-config sensitive so the disk cache keys include it.
             cfg = launchconfig.ensure_current_launch_config()
-            cfg.mark_kernel_as_launch_config_sensitive()
+            cfg.dispatcher.mark_launch_config_sensitive()
             self._logged = True
             return self._block
 
