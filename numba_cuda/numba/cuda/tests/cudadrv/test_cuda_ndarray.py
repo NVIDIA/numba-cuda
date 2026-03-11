@@ -618,6 +618,7 @@ class TestCoreContiguous(CUDATestCase):
         view = np.zeros(shape, order="F")[::2, ::2]
         self._test_against_array_core(view)
 
+    @skip_on_cudasim("Simulator cannot use cuda.core Buffer")
     def test_kernel_with_buffer(self):
         from cuda.core import Buffer
 
@@ -635,6 +636,7 @@ class TestCoreContiguous(CUDATestCase):
         func(buf, out)
         assert out[0] == n
 
+    @skip_on_cudasim("Simulator cannot use cuda.core SMV")
     def test_kernel_with_strided_memory_view(self):
         from cuda.core.utils import StridedMemoryView
 

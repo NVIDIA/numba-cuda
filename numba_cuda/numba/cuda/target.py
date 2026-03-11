@@ -11,6 +11,7 @@ import numpy as np
 
 from numba.cuda import types
 from numba.cuda import HAS_NUMBA
+from numba.cuda.core.callconv import CUDACallConv
 from numba.cuda.core.compiler_lock import global_compiler_lock
 from numba.cuda.core.errors import NumbaWarning
 from numba.cuda.core.base import BaseContext
@@ -43,6 +44,7 @@ class CUDATypingContext(typing.BaseContext):
             cudamath,
             fp16,
             bf16,
+            fp8,
             libdevicedecl,
             vector_types,
         )
@@ -58,6 +60,7 @@ class CUDATypingContext(typing.BaseContext):
         self.install_registry(vector_types.typing_registry)
         self.install_registry(fp16.typing_registry)
         self.install_registry(bf16.typing_registry)
+        self.install_registry(fp8.typing_registry)
 
     def resolve_value_type(self, val):
         # treat other dispatcher object as another device function
@@ -186,6 +189,7 @@ class CUDATargetContext(BaseContext):
             mathimpl as cuda_mathimpl,
             vector_types,
             bf16,
+            fp8,
         )
 
         # fix for #8940
@@ -203,6 +207,7 @@ class CUDATargetContext(BaseContext):
         self.install_registry(vector_types.impl_registry)
         self.install_registry(fp16.target_registry)
         self.install_registry(bf16.target_registry)
+        self.install_registry(fp8.target_registry)
         self.install_registry(slicing.registry)
         self.install_registry(iterators.registry)
         self.install_registry(listobj.registry)
@@ -407,6 +412,10 @@ class CUDATargetContext(BaseContext):
             flags.no_cpython_wrapper = True
             flags.no_cfunc_wrapper = True
 
+            # compile_subroutine always uses CUDACallConv
+            call_conv = CUDACallConv(self)
+            abi_info = {}
+
             cres = compiler.compile_internal(
                 self.typing_context,
                 self,
@@ -416,6 +425,8 @@ class CUDATargetContext(BaseContext):
                 sig.return_type,
                 flags,
                 locals=locals,
+                call_conv=call_conv,
+                abi_info=abi_info,
             )
 
             # Allow inlining the function inside callers

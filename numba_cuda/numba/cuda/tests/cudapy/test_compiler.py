@@ -4,6 +4,8 @@
 import os
 from math import sqrt
 from numba import cuda
+from numba.core.extending import intrinsic
+
 from numba.cuda import float32, int16, int32, int64, types, uint32, void
 from numba.cuda import (
     compile,
@@ -15,6 +17,8 @@ from numba.cuda import (
 )
 from numba.cuda.cudadrv import nvrtc
 from numba.cuda.testing import skip_on_cudasim, unittest, CUDATestCase
+
+from numba.cuda.core.callconv import CUDACallConv
 
 TEST_BIN_DIR = os.getenv("NUMBA_CUDA_TEST_BIN_DIR")
 if TEST_BIN_DIR:
@@ -445,6 +449,99 @@ class TestCompile(unittest.TestCase):
             r"func_retval0\)\s+_Z4funcii\(",
         )
 
+    def test_c_abi_boolean_return(self):
+        """
+        Tests that returning a raw boolean comparison (a == b) compiles correctly
+        without NVVM verification errors.
+
+        See: https://github.com/NVIDIA/numba-cuda/issues/157
+        """
+        with self.subTest("compile_ptx"):
+            self._test_c_abi_boolean_return(
+                compile_ptx, {"device": True, "abi": "c"}
+            )
+
+        with self.subTest("compile_all"):
+            self._test_c_abi_boolean_return(
+                compile_all, {"device": True, "abi": "c", "output": "ptx"}
+            )
+
+    def _test_c_abi_boolean_return(self, compile_function, default_kwargs):
+        # Explicit cast
+        def cmp_explicit(a, b):
+            return types.uint8(a == b)
+
+        ret = compile_function(cmp_explicit, (int32, int32), **default_kwargs)
+        ptx, resty = self._handle_compile_result(ret, compile_function)
+        self.assertEqual(resty, types.uint8)
+        self.assertIn(".visible .func", ptx)
+
+        # Implicit boolean return
+        def cmp_implicit(a, b):
+            return a == b
+
+        ret = compile_function(cmp_implicit, (int32, int32), **default_kwargs)
+        ptx, resty = self._handle_compile_result(ret, compile_function)
+        self.assertEqual(resty, types.boolean)
+        self.assertIn(".visible .func", ptx)
+        self.assertIn("func_retval0", ptx)
+
+        def cmp_less_than(a, b):
+            return a < b
+
+        def cmp_greater_than(a, b):
+            return a > b
+
+        def cmp_less_equal(a, b):
+            return a <= b
+
+        def cmp_greater_equal(a, b):
+            return a >= b
+
+        def cmp_not_equal(a, b):
+            return a != b
+
+        comparison_ops = [
+            (cmp_less_than, "less than"),
+            (cmp_greater_than, "greater than"),
+            (cmp_less_equal, "less equal"),
+            (cmp_greater_equal, "greater equal"),
+            (cmp_not_equal, "not equal"),
+        ]
+
+        for func, op_name in comparison_ops:
+            with self.subTest(operator=op_name):
+                ret = compile_function(func, (int32, int32), **default_kwargs)
+                ptx, resty = self._handle_compile_result(ret, compile_function)
+                self.assertEqual(resty, types.boolean)
+                self.assertIn(".visible .func", ptx)
+
+        # Different integer types
+        def cmp_eq(a, b):
+            return a == b
+
+        integer_types = [
+            (int16, "int16"),
+            (int64, "int64"),
+            (uint32, "uint32"),
+        ]
+
+        for typ, type_name in integer_types:
+            with self.subTest(type=type_name):
+                ret = compile_function(cmp_eq, (typ, typ), **default_kwargs)
+                ptx, resty = self._handle_compile_result(ret, compile_function)
+                self.assertEqual(resty, types.boolean)
+                self.assertIn(".visible .func", ptx)
+
+        # Float comparison
+        def cmp_float(a, b):
+            return a < b
+
+        ret = compile_function(cmp_float, (float32, float32), **default_kwargs)
+        ptx, resty = self._handle_compile_result(ret, compile_function)
+        self.assertEqual(resty, types.boolean)
+        self.assertIn(".visible .func", ptx)
+
     def test_compile_defaults_to_c_abi(self):
         with self.subTest("compile"):
             self._test_compile_defaults_to_c_abi(compile, {"device": True})
@@ -557,7 +654,7 @@ class TestCompile(unittest.TestCase):
                 link_obj = LinkableCode.from_path(link)
                 if link_obj.kind == "cu":
                     # if link is a cu file, result contains a compiled object code
-                    from numba.cuda._compat import ObjectCode
+                    from cuda.core import ObjectCode
 
                     assert isinstance(code_list[1], ObjectCode)
                 else:
@@ -607,6 +704,98 @@ class TestCompile(unittest.TestCase):
         self.assertRegex(
             str(code_list[1].code.decode()), r"\.section\s+\.debug_info"
         )
+
+    def test_compile_jitted_subroutine(self):
+        # Reproducer from gh-781
+        # https://github.com/NVIDIA/numba-cuda/issues/781
+        def foo(x):
+            return 2 * x
+
+        # Create a wrapper that takes void* arguments
+        def create_void_ptr_wrapper():
+            """Create a wrapper that takes void* input and output pointers."""
+
+            # Make foo a device function
+            foo_device = cuda.jit(device=True)(foo)
+
+            # The inner signature: int32 -> int32
+            inner_sig = types.int32(types.int32)
+
+            # The wrapper signature: void(void*, void*) - input ptr, output ptr
+            wrapper_sig = types.void(types.voidptr, types.voidptr)
+
+            @intrinsic
+            def wrapper_impl(typingctx, arg0, arg1):
+                def codegen(context, builder, sig, args):
+                    input_ptr, output_ptr = args
+
+                    # Cast input void* to int32*, load value
+                    int32_llvm_type = context.get_value_type(types.int32)
+                    typed_input_ptr = builder.bitcast(
+                        input_ptr, int32_llvm_type.as_pointer()
+                    )
+                    input_val = builder.load(typed_input_ptr)
+
+                    # Call the inner function
+                    cres = context.compile_subroutine(
+                        builder, foo_device, inner_sig, caching=False
+                    )
+
+                    # Wrapper function is compiled with cabi, but inner function
+                    # is compiled with numba-abi. So cres should have CUDACallConv.
+                    assert isinstance(cres.fndesc.call_conv, CUDACallConv)
+
+                    result = context.call_internal(
+                        builder, cres.fndesc, inner_sig, [input_val]
+                    )
+
+                    # Cast output void* to int32*, store result
+                    typed_output_ptr = builder.bitcast(
+                        output_ptr, int32_llvm_type.as_pointer()
+                    )
+                    builder.store(result, typed_output_ptr)
+
+                    return context.get_dummy_value()
+
+                return wrapper_sig, codegen
+
+            def wrapper_func(input_ptr, output_ptr):
+                return wrapper_impl(input_ptr, output_ptr)
+
+            return wrapper_func, wrapper_sig
+
+        wrapper, wrapper_sig = create_void_ptr_wrapper()
+
+        cuda.compile(wrapper, wrapper_sig.args, output="ltoir")
+
+    def test_compile_CABI_calling_device_function_returning_optional(self):
+        # Exercise a CABI caller invoking a Numba ABI callee that can return
+        # None through Optional[int32]
+        def maybe_none(x):
+            if x > 0:
+                return x + 1
+            else:
+                return
+
+        maybe_none_device = cuda.jit(device=True)(maybe_none)
+
+        def wrapper_func(x):
+            return maybe_none_device(x)
+
+        # Compile a CABI wrapper that calls into a Numba-ABI callee returning
+        # Optional[int32]. Successful compilation exercises the ABI boundary.
+        cuda.compile(
+            wrapper_func, types.int32(types.int32), output="ltoir", abi="c"
+        )
+
+    def test_compile_complex_div_c_abi(self):
+        # Reproducer from gh-789
+        # https://github.com/NVIDIA/numba-cuda/issues/789
+        def div_by_2(x):
+            return x / 2
+
+        sig = types.complex128(types.complex128)
+        cuda.compile(div_by_2, sig, device=True, abi="c")
 
 
 @skip_on_cudasim("Compilation unsupported in the simulator")
