@@ -57,6 +57,15 @@ This is similar to launch configuration in CUDA C/C++:
 .. note:: The order of ``stream`` and ``sharedmem`` are reversed in Numba
    compared to in CUDA C/C++.
 
+Dispatcher objects also provide several utility methods for inspection and
+creating a specialized instance:
+
+.. autoclass:: numba.cuda.dispatcher.CUDADispatcher
+   :members: inspect_asm, inspect_llvm, inspect_sass, inspect_types,
+             get_regs_per_thread, specialize, specialized, extensions, forall,
+             get_shared_mem_per_block, get_max_threads_per_block,
+             get_const_mem_size, get_local_mem_per_thread
+
 Launch configuration access (advanced)
 --------------------------------------
 
@@ -137,15 +146,6 @@ different launch configurations for that kernel path.
 .. note:: Launch-config-sensitive cache keying for ``cache=True`` applies to
    kernels that are otherwise disk-cacheable. Kernels that require external
    linking files are not currently disk-cacheable.
-
-Dispatcher objects also provide several utility methods for inspection and
-creating a specialized instance:
-
-.. autoclass:: numba.cuda.dispatcher.CUDADispatcher
-   :members: inspect_asm, inspect_llvm, inspect_sass, inspect_types,
-             get_regs_per_thread, specialize, specialized, extensions, forall,
-             get_shared_mem_per_block, get_max_threads_per_block,
-             get_const_mem_size, get_local_mem_per_thread
 
 
 Kernel Arguments
