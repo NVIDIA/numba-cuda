@@ -402,7 +402,7 @@ class CUDABackend(LoweringPass):
         launch_cfg = launchconfig.current_launch_config()
         if (
             launch_cfg is not None
-            and launch_cfg.is_kernel_launch_config_sensitive()
+            and launch_cfg._is_kernel_launch_config_sensitive()
         ):
             if state.metadata is None:
                 state.metadata = {}
