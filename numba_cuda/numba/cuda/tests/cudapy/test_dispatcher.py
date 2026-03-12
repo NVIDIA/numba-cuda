@@ -173,7 +173,9 @@ class TestDispatcher(CUDATestCase):
         self.assertIs(cfg.dispatcher, f)
         self.assertEqual(cfg.griddim, (1, 1, 1))
         self.assertEqual(cfg.blockdim, (1, 1, 1))
-        self.assertIs(f._compile_for_args, original)
+        self.assertNotIn("_compile_for_args", f.__dict__)
+        self.assertIs(f._compile_for_args.__self__, original.__self__)
+        self.assertIs(f._compile_for_args.__func__, original.__func__)
 
     @skip_on_cudasim("Dispatcher C-extension not used in the simulator")
     def test_dispatcher_mark_launch_config_sensitive(self):
