@@ -57,6 +57,7 @@ import numba.cuda.core.event as ev
 from numba.cuda.cext import _dispatcher
 
 _LAUNCH_CONFIG_KW = "__numba_cuda_launch_config__"
+_NO_LAUNCH_CONFIG_CACHE_KEY = "__numba_cuda_no_launch_config__"
 
 cuda_fp16_math_funcs = [
     "hsin",
@@ -1671,10 +1672,10 @@ class CUDADispatcher(serialize.ReduceMixin, _MemoMixin, _DispatcherBase):
     def _cache_launch_config_key(self, launch_config):
         if self._launch_config_is_specialized:
             return self._launch_config_specialization_key
+        if launch_config is None:
+            return _NO_LAUNCH_CONFIG_CACHE_KEY
         if self._launch_config_default_key is not None:
             return self._launch_config_default_key
-        if launch_config is None:
-            return None
         return self._launch_config_key(launch_config)
 
     def _configure_cache_for_launch_config(self, launch_config):
@@ -1686,7 +1687,7 @@ class CUDADispatcher(serialize.ReduceMixin, _MemoMixin, _DispatcherBase):
             return
         if self._cache.is_launch_config_sensitive():
             if launch_config is None:
-                key = None
+                key = _NO_LAUNCH_CONFIG_CACHE_KEY
             else:
                 key = self._launch_config_key(launch_config)
             self._cache.set_launch_config_key(key)
@@ -2093,20 +2094,18 @@ class CUDADispatcher(serialize.ReduceMixin, _MemoMixin, _DispatcherBase):
             if not cache_has_marker:
                 # Pre-existing cache entries without a launch-config marker are
                 # unsafe for LCS kernels. Force a recompile under the new key.
-                if launch_config is not None:
-                    self._cache.set_launch_config_key(
-                        self._launch_config_key(launch_config)
-                    )
+                self._cache.set_launch_config_key(
+                    self._cache_launch_config_key(launch_config)
+                )
                 if not self._cache.mark_launch_config_sensitive():
                     # If we cannot record the marker, disable disk cache to
                     # avoid unsafe reuse.
                     self._cache = NullCache()
                 kernel = None
             else:
-                if launch_config is not None:
-                    self._cache.set_launch_config_key(
-                        self._launch_config_key(launch_config)
-                    )
+                self._cache.set_launch_config_key(
+                    self._cache_launch_config_key(launch_config)
+                )
 
         if kernel is not None:
             self._cache_hits[sig] += 1
@@ -2122,10 +2121,9 @@ class CUDADispatcher(serialize.ReduceMixin, _MemoMixin, _DispatcherBase):
             if isinstance(self._cache, CUDACache) and getattr(
                 kernel, "launch_config_sensitive", False
             ):
-                if launch_config is not None:
-                    self._cache.set_launch_config_key(
-                        self._launch_config_key(launch_config)
-                    )
+                self._cache.set_launch_config_key(
+                    self._cache_launch_config_key(launch_config)
+                )
                 if not self._cache.mark_launch_config_sensitive():
                     # If we cannot record the marker, disable disk cache to
                     # avoid unsafe reuse.
