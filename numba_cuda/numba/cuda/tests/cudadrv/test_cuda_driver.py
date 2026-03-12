@@ -202,6 +202,33 @@ class TestCudaDriver(CUDATestCase):
         for i, v in enumerate(result):
             self.assertEqual(i, v)
 
+    def test_cuda_core_graph_builder_launch_user_facing(self):
+        @cuda.jit
+        def kernel(a):
+            idx = cuda.grid(1)
+            if idx < len(a):
+                a[idx] = idx
+
+        dev = Device()
+        dev.set_current()
+        stream = dev.create_stream()
+
+        ary = cuda.to_device([0] * 100, stream=stream)
+        stream.sync()
+
+        graph_builder = dev.create_graph_builder()
+        graph_builder.begin_building()
+        kernel[1, 100, graph_builder](ary)
+        graph = graph_builder.end_building().complete()
+
+        # Execute the captured graph
+        graph.launch(stream)
+        stream.sync()
+
+        result = ary.copy_to_host(stream=stream)
+        for i, v in enumerate(result):
+            self.assertEqual(i, v)
+
     def test_cuda_driver_default_stream(self):
         # Test properties of the default stream
         ds = self.context.get_default_stream()
