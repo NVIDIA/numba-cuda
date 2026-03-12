@@ -77,7 +77,6 @@ cuda_fp16_math_funcs = [
     "htrunc",
     "hdiv",
 ]
-
 reshape_funcs = ["nocopy_empty_reshape", "numba_attempt_nocopy_reshape"]
 
 
@@ -704,7 +703,6 @@ class _LaunchConfiguration:
         self.stream = driver._to_core_stream(stream)
         self.sharedmem = sharedmem
         self.pre_launch_callbacks = []
-        self.args = None
         self._kernel_launch_config_sensitive = None
 
         if (
@@ -735,12 +733,21 @@ class _LaunchConfiguration:
         """Return True if this kernel was marked as launch-config sensitive."""
         return bool(self._kernel_launch_config_sensitive)
 
+    @property
+    def args(self):
+        return _dispatcher.get_current_launch_args()
+
+    def _push_args(self, args):
+        return _dispatcher.swap_current_launch_args(args)
+
+    def _pop_args(self, prev):
+        _dispatcher.swap_current_launch_args(prev)
+
     def __getstate__(self):
         state = self.__dict__.copy()
         state["stream"] = int(state["stream"].handle)
         # Avoid serializing callables that may not be picklable.
         state["pre_launch_callbacks"] = []
-        state["args"] = None
         return state
 
     def __setstate__(self, state):
@@ -749,8 +756,6 @@ class _LaunchConfiguration:
         self.stream = driver._to_core_stream(handle)
         if "pre_launch_callbacks" not in self.__dict__:
             self.pre_launch_callbacks = []
-        if "args" not in self.__dict__:
-            self.args = None
 
 
 class CUDACacheImpl(CacheImpl):
@@ -1806,7 +1811,7 @@ class CUDADispatcher(serialize.ReduceMixin, _MemoMixin, _DispatcherBase):
         stream = launch_config.stream
         sharedmem = launch_config.sharedmem
 
-        launch_config.args = args
+        prev_args = launch_config._push_args(args)
         try:
             dispatcher = self._select_launch_config_dispatcher(launch_config)
             if dispatcher is not self:
@@ -1826,7 +1831,7 @@ class CUDADispatcher(serialize.ReduceMixin, _MemoMixin, _DispatcherBase):
 
             kernel.launch(args, griddim, blockdim, stream, sharedmem)
         finally:
-            launch_config.args = None
+            launch_config._pop_args(prev_args)
 
     def _compile_for_args(self, *args, **kws):
         # Based on _DispatcherBase._compile_for_args.
