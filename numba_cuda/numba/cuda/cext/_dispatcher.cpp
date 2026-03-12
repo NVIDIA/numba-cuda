@@ -14,6 +14,7 @@
 #include "typeconv.hpp"
 
 static Py_tss_t launch_config_tss_key = Py_tss_NEEDS_INIT;
+static Py_tss_t launch_args_tss_key = Py_tss_NEEDS_INIT;
 static const char *launch_config_kw = "__numba_cuda_launch_config__";
 
 static int
@@ -27,10 +28,27 @@ launch_config_tss_init(void)
     return 0;
 }
 
+static int
+launch_args_tss_init(void)
+{
+    if (PyThread_tss_create(&launch_args_tss_key) != 0) {
+        PyErr_SetString(PyExc_RuntimeError,
+                        "Failed to initialize launch args TLS");
+        return -1;
+    }
+    return 0;
+}
+
 static PyObject *
 launch_config_get_borrowed(void)
 {
     return (PyObject *) PyThread_tss_get(&launch_config_tss_key);
+}
+
+static PyObject *
+launch_args_get_borrowed(void)
+{
+    return (PyObject *) PyThread_tss_get(&launch_args_tss_key);
 }
 
 static int
@@ -44,6 +62,23 @@ launch_config_set(PyObject *obj)
         Py_XDECREF(obj);
         PyErr_SetString(PyExc_RuntimeError,
                         "Failed to set launch config TLS");
+        return -1;
+    }
+    Py_XDECREF(old);
+    return 0;
+}
+
+static int
+launch_args_set(PyObject *obj)
+{
+    PyObject *old = (PyObject *) PyThread_tss_get(&launch_args_tss_key);
+    if (obj != NULL) {
+        Py_INCREF(obj);
+    }
+    if (PyThread_tss_set(&launch_args_tss_key, (void *) obj) != 0) {
+        Py_XDECREF(obj);
+        PyErr_SetString(PyExc_RuntimeError,
+                        "Failed to set launch args TLS");
         return -1;
     }
     Py_XDECREF(old);
@@ -1155,12 +1190,43 @@ get_current_launch_config(PyObject *self, PyObject *args)
     return config;
 }
 
+static PyObject *
+get_current_launch_args(PyObject *self, PyObject *args)
+{
+    PyObject *launch_args = launch_args_get_borrowed();
+    if (launch_args == NULL) {
+        Py_RETURN_NONE;
+    }
+    Py_INCREF(launch_args);
+    return launch_args;
+}
+
+static PyObject *
+swap_current_launch_args(PyObject *self, PyObject *arg)
+{
+    PyObject *new_args = arg == Py_None ? NULL : arg;
+    PyObject *old_args = launch_args_get_borrowed();
+    Py_XINCREF(old_args);
+    if (launch_args_set(new_args) != 0) {
+        Py_XDECREF(old_args);
+        return NULL;
+    }
+    if (old_args == NULL) {
+        Py_RETURN_NONE;
+    }
+    return old_args;
+}
+
 static PyMethodDef ext_methods[] = {
 #define declmethod(func) { #func , ( PyCFunction )func , METH_VARARGS , NULL }
     declmethod(typeof_init),
     declmethod(compute_fingerprint),
     { "get_current_launch_config", (PyCFunction)get_current_launch_config,
       METH_NOARGS, NULL },
+    { "get_current_launch_args", (PyCFunction)get_current_launch_args,
+      METH_NOARGS, NULL },
+    { "swap_current_launch_args", (PyCFunction)swap_current_launch_args,
+      METH_O, NULL },
     { NULL },
 #undef declmethod
 };
@@ -1173,6 +1239,9 @@ MOD_INIT(_dispatcher) {
         return MOD_ERROR_VAL;
 
     if (launch_config_tss_init() != 0) {
+        return MOD_ERROR_VAL;
+    }
+    if (launch_args_tss_init() != 0) {
         return MOD_ERROR_VAL;
     }
 

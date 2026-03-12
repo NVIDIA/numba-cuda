@@ -196,6 +196,52 @@ class TestDispatcher(CUDATestCase):
         kernel = next(iter(f.overloads.values()))
         self.assertTrue(kernel.launch_config_sensitive)
 
+    @skip_on_cudasim("Dispatcher C-extension not used in the simulator")
+    def test_launch_config_args_are_thread_local(self):
+        @cuda.jit
+        def f(x):
+            x[0] = 1
+
+        configured = f[1, 1]
+        barrier = threading.Barrier(2)
+        seen = []
+        errors = []
+        orig = f._compile_for_args
+
+        def wrapped(*args, **kws):
+            cfg = launchconfig.ensure_current_launch_config()
+            try:
+                barrier.wait(timeout=5)
+                seen.append(id(cfg.args[0]))
+            except BaseException as e:
+                errors.append(e)
+                raise
+            return orig(*args, **kws)
+
+        f._compile_for_args = wrapped
+
+        arrays = [np.zeros(1, dtype=np.int32), np.zeros(1, dtype=np.int32)]
+        expected = {id(arr) for arr in arrays}
+
+        def launch(arr):
+            try:
+                configured(arr)
+            except BaseException as e:
+                errors.append(e)
+
+        threads = [
+            threading.Thread(target=launch, args=(arr,)) for arr in arrays
+        ]
+        for thread in threads:
+            thread.start()
+        for thread in threads:
+            thread.join(timeout=10)
+
+        self.assertFalse(any(thread.is_alive() for thread in threads))
+        self.assertEqual(errors, [])
+        self.assertEqual(set(seen), expected)
+        self.assertIsNone(configured.args)
+
     def test_coerce_input_types(self):
         # Do not allow unsafe conversions if we can still compile other
         # specializations.
