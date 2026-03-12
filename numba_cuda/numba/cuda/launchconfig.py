@@ -9,6 +9,7 @@ compilation completes.
 
 import contextlib
 from functools import wraps
+from types import MethodType
 
 from numba.cuda.cext import _dispatcher
 
@@ -38,18 +39,23 @@ def capture_compile_config(dispatcher):
         raise TypeError("dispatcher is required")
 
     record = {"config": None}
+    missing = object()
+    original_attr = dispatcher.__dict__.get("_compile_for_args", missing)
     original = dispatcher._compile_for_args
 
     @wraps(original)
-    def wrapped(*args, **kws):
+    def wrapped(self, *args, **kws):
         record["config"] = current_launch_config()
         return original(*args, **kws)
 
-    dispatcher._compile_for_args = wrapped
+    dispatcher._compile_for_args = MethodType(wrapped, dispatcher)
     try:
         yield record
     finally:
-        dispatcher._compile_for_args = original
+        if original_attr is missing:
+            del dispatcher._compile_for_args
+        else:
+            dispatcher._compile_for_args = original_attr
 
 
 __all__ = [
