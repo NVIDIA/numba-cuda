@@ -113,8 +113,7 @@ class TestCudaDriver(CUDATestCase):
         launch(exp_stream, config, function.kernel, ptr)
 
         device_to_host(array, memory, sizeof(array))
-        for i, v in enumerate(array):
-            self.assertEqual(i, v)
+        np.testing.assert_equal(array, np.arange(len(array)))
 
         module.unload()
 
@@ -144,9 +143,7 @@ class TestCudaDriver(CUDATestCase):
             launch(_to_core_stream(stream), config, function.kernel, ptr)
 
         device_to_host(array, memory, sizeof(array), stream=stream)
-
-        for i, v in enumerate(array):
-            self.assertEqual(i, v)
+        np.testing.assert_equal(array, np.arange(len(array)))
 
     def test_cuda_core_stream_operations(self):
         module = self.context.create_module_ptx(self.ptx)
@@ -178,8 +175,7 @@ class TestCudaDriver(CUDATestCase):
             launch(stream, config, function.kernel, ptr)
 
             device_to_host(array, memory, sizeof(array), stream=stream)
-        for i, v in enumerate(array):
-            self.assertEqual(i, v)
+        np.testing.assert_equal(array, np.arange(len(array)))
 
     def test_cuda_core_stream_launch_user_facing(self):
         @cuda.jit
@@ -198,9 +194,8 @@ class TestCudaDriver(CUDATestCase):
         kernel[1, 100, stream](ary)
         stream.sync()
 
-        result = ary.copy_to_host(stream=stream)
-        for i, v in enumerate(result):
-            self.assertEqual(i, v)
+        result = ary.copy_to_host()
+        np.testing.assert_equal(result, np.arange(len(result)))
 
     def test_cuda_core_graph_builder_launch_user_facing(self):
         @cuda.jit
@@ -223,11 +218,9 @@ class TestCudaDriver(CUDATestCase):
 
         # Execute the captured graph
         graph.launch(stream)
-        stream.sync()
 
-        result = ary.copy_to_host(stream=stream)
-        for i, v in enumerate(result):
-            self.assertEqual(i, v)
+        result = ary.copy_to_host()
+        np.testing.assert_equal(result, np.arange(len(result)))
 
     def test_cuda_driver_default_stream(self):
         # Test properties of the default stream
