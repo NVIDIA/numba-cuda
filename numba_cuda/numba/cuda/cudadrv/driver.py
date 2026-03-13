@@ -55,6 +55,7 @@ from numba.cuda.cudadrv import nvrtc
 
 from cuda.bindings import driver as binding
 from cuda.core import (
+    GraphBuilder,
     Linker,
     LinkerOptions,
     ObjectCode,
@@ -2003,16 +2004,19 @@ class Stream:
 
 
 def _to_core_stream(stream):
-    # stream can be: int (0 for default), Stream (shim), or ExperimentalStream
+    # stream can be: int (0 for default), Stream (shim), ExperimentalStream,
+    # or GraphBuilder.
     if not stream:
         return ExperimentalStream.from_handle(0)
     elif isinstance(stream, Stream):
         return ExperimentalStream.from_handle(stream.handle or 0)
     elif isinstance(stream, ExperimentalStream):
         return stream
+    elif isinstance(stream, GraphBuilder):
+        return stream.stream
     else:
         raise TypeError(
-            f"Expected a Stream object, ExperimentalStream, or 0, got {type(stream).__name__}"
+            f"Expected a Stream object, ExperimentalStream, GraphBuilder, or 0, got {type(stream).__name__}"
         )
 
 
