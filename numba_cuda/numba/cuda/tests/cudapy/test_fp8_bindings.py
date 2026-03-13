@@ -46,8 +46,8 @@ if not config.ENABLE_CUDASIM:
         cvt_e8m0_to_bf16raw,
         saturation_t,
         fp8_interpretation_t,
-        cudaRoundMode,
     )
+    from cuda.bindings.runtime import cudaRoundMode
 
     FE8_TYPES = [fp8_e5m2, fp8_e4m3, fp8_e8m0]
 
