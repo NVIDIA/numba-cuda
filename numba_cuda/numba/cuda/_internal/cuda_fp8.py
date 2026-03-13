@@ -20,6 +20,7 @@ from numba.cuda.extending import make_attribute_wrapper
 from numba.cuda.types import bool_
 from numba.cuda.types import uint64
 from llvmlite import ir
+from cuda.bindings.runtime import cudaRoundMode
 from numba.cuda.typing.templates import Registry as TypingRegistry
 from numba.cuda.types import uint32
 from numba.cuda.types import float32
@@ -227,13 +228,6 @@ class saturation_t(IntEnum):
 class fp8_interpretation_t(IntEnum):
     E4M3 = 0
     E5M2 = 1
-
-
-class cudaRoundMode(IntEnum):
-    cudaRoundNearest = 0
-    cudaRoundZero = 1
-    cudaRoundPosInf = 2
-    cudaRoundMinInf = 3
 
 
 # Structs:
@@ -3937,6 +3931,6 @@ _FUNCTION_SYMBOLS = [
 ]
 
 
-_ENUM_SYMBOLS = ["saturation_t", "fp8_interpretation_t", "cudaRoundMode"]
+_ENUM_SYMBOLS = ["saturation_t", "fp8_interpretation_t"]
 
 __all__ = _NBTYPE_SYMBOLS + _RECORD_SYMBOLS + _FUNCTION_SYMBOLS + _ENUM_SYMBOLS
