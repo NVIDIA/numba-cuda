@@ -11,6 +11,7 @@ User guide
 .. toctree::
 
    installation.rst
+   release_notes.rst
    kernels.rst
    memory.rst
    device-functions.rst
