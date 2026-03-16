@@ -2032,14 +2032,14 @@ class Event:
         otherwise, returns False.
         """
         try:
-            driver.cuEventQuery(self.handle)
+            handle = self.handle.value
+            driver.cuEventQuery(handle)
+            return True
         except CudaAPIError as e:
             if e.code == binding.CUresult.CUDA_ERROR_NOT_READY:
                 return False
             else:
                 raise
-        else:
-            return True
 
     def record(self, stream=0):
         """
