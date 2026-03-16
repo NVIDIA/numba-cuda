@@ -20,3 +20,4 @@ testing/*.ptx
 !.pixi/config.toml
 *.log
 .benchmarks
+.cursorrules
