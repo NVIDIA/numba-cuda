@@ -82,7 +82,15 @@ class DeviceNDArrayBase:
         if isinstance(shape, int):
             shape = (shape,)
         else:
-            shape = tuple(shape)
+            normalized_shape = []
+            for s in shape:
+                if not isinstance(s, (int, np.integer)):
+                    raise TypeError(
+                        f"shape elements must be integers, got {type(s).__name__}"
+                    )
+                normalized_shape.append(int(s))
+            shape = tuple(normalized_shape)
+
         if isinstance(strides, int):
             strides = (strides,)
         else:
