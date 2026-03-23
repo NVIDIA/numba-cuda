@@ -5,6 +5,7 @@ from collections import namedtuple
 from functools import singledispatch
 import ctypes
 import enum
+import functools
 import operator
 
 import numpy as np
@@ -14,6 +15,17 @@ from numba.cuda import types
 from numba.cuda.core import errors
 from numba.cuda import utils
 from numba.cuda.np import numpy_support
+
+from cuda.core import Buffer
+from cuda.core.utils import StridedMemoryView
+
+# As of cuda_bindings 13.2, it uses its own enum implementation and we need to
+# extend the type conversions to support them.
+
+try:
+    from cuda.bindings._internal import _fast_enum
+except ImportError:
+    _fast_enum = None
 
 
 # terminal color markup
@@ -51,6 +63,13 @@ def typeof_impl(val, c):
     tp = getattr(val, "_numba_type_", None)
     if tp is not None:
         return tp
+
+    # Check for dlpack objects
+    dlpack = getattr(val, "__dlpack__", None)
+    if dlpack is not None:
+        tp = _typeof_dlpack(dlpack, c)
+        if tp is not None:
+            return tp
 
     # Check for __cuda_array_interface__ objects (third-party device arrays)
 
@@ -229,6 +248,10 @@ def _typeof_enum(val, c):
     return clsty.member_type
 
 
+if _fast_enum is not None:
+    _typeof_enum = typeof_impl.register(_fast_enum.FastEnum)(_typeof_enum)
+
+
 @typeof_impl.register(enum.EnumMeta)
 def _typeof_enum_class(val, c):
     cls = val
@@ -243,9 +266,17 @@ def _typeof_enum_class(val, c):
         )
     if issubclass(val, enum.IntEnum):
         typecls = types.IntEnumClass
+    elif _fast_enum is not None and issubclass(val, _fast_enum.FastEnum):
+        typecls = types.IntEnumClass
     else:
         typecls = types.EnumClass
     return typecls(cls, dtypes.pop())
+
+
+if _fast_enum is not None:
+    _typeof_enum_class = typeof_impl.register(_fast_enum.FastEnumMetaclass)(
+        _typeof_enum_class
+    )
 
 
 @typeof_impl.register(np.dtype)
@@ -311,6 +342,71 @@ def typeof_numpy_polynomial(val, c):
     return types.PolynomialType(coef, domain, window)
 
 
+@functools.lru_cache
+def _typeof_cuda_array_interface_cached(
+    *, dtype, shape, strides, readonly: bool
+):
+    # Determine layout
+    ndim = len(shape)
+    if not ndim:
+        layout = "C"
+    elif strides is None:
+        layout = "C"
+    else:
+        itemsize = dtype.bitwidth
+        # Quick rejection: C-contiguous has strides[-1] == itemsize,
+        # F-contiguous has strides[0] == itemsize. If neither, it's "A".
+        if strides[-1] == itemsize:
+            c_strides = numpy_support.strides_from_shape(
+                shape=shape,
+                itemsize=itemsize,
+                c_contiguous=True,
+                f_contiguous=False,
+            )
+            layout = "C" if all(map(operator.eq, strides, c_strides)) else "A"
+        elif strides[0] == itemsize:
+            f_strides = numpy_support.strides_from_shape(
+                shape=shape,
+                itemsize=itemsize,
+                c_contiguous=False,
+                f_contiguous=True,
+            )
+            layout = "F" if all(map(operator.eq, strides, f_strides)) else "A"
+        else:
+            layout = "A"
+
+    return types.Array(dtype, ndim, layout, readonly=readonly)
+
+
+def _typeof_dlpack(val, c):
+    obj = getattr(val, "__self__", None)
+    if obj is not None:
+        try:
+            smv = StridedMemoryView.from_dlpack(obj, stream_ptr=-1)
+        except BufferError:
+            return
+
+        smv_layout = smv._layout
+        layout = (
+            "C"
+            if smv_layout.is_contiguous_c
+            else "F"
+            if smv_layout.is_contiguous_f
+            else "A"
+        )
+        return types.Array(
+            dtype=numpy_support.from_dtype(smv.dtype),
+            ndim=len(smv.shape),
+            layout=layout,
+            readonly=smv.readonly,
+        )
+
+
+@functools.lru_cache
+def _numba_dtype_from_str(typestr):
+    return numpy_support.from_dtype(np.dtype(typestr))
+
+
 def _typeof_cuda_array_interface(val, c):
     """
     Determine the type of a __cuda_array_interface__ object.
@@ -319,32 +415,44 @@ def _typeof_cuda_array_interface(val, c):
     Array Interface. These are typed as regular Array types, with lowering
     handled in numba.cuda.np.arrayobj.
     """
-    dtype = numpy_support.from_dtype(np.dtype(val["typestr"]))
+    dtype = _numba_dtype_from_str(val["typestr"])
     shape = val["shape"]
-    ndim = len(shape)
     strides = val.get("strides")
-
-    # Determine layout
-    if not ndim:
-        layout = "C"
-    elif strides is None:
-        layout = "C"
-    else:
-        itemsize = np.dtype(val["typestr"]).itemsize
-        # Quick rejection: C-contiguous has strides[-1] == itemsize,
-        # F-contiguous has strides[0] == itemsize. If neither, it's "A".
-        if strides[-1] == itemsize:
-            c_strides = numpy_support.strides_from_shape(
-                shape, itemsize, order="C"
-            )
-            layout = "C" if all(map(operator.eq, strides, c_strides)) else "A"
-        elif strides[0] == itemsize:
-            f_strides = numpy_support.strides_from_shape(
-                shape, itemsize, order="F"
-            )
-            layout = "F" if all(map(operator.eq, strides, f_strides)) else "A"
-        else:
-            layout = "A"
-
     _, readonly = val["data"]
-    return types.Array(dtype, ndim, layout, readonly=readonly)
+    return _typeof_cuda_array_interface_cached(
+        dtype=dtype,
+        shape=shape,
+        strides=strides,
+        readonly=readonly,
+    )
+
+
+@typeof_impl.register(Buffer)
+def typeof_buffer(val, c):
+    return types.Array(
+        dtype=_numba_dtype_from_str("uint8"),
+        ndim=1,
+        layout="C",
+        readonly=False,
+    )
+
+
+@typeof_impl.register(StridedMemoryView)
+def typeof_strided_memory_view(val, c):
+    raw_layout = val._layout
+    if raw_layout.is_contiguous_c:
+        layout = "C"
+    elif raw_layout.is_contiguous_f:
+        layout = "F"
+    elif raw_layout.is_contiguous_any:
+        layout = "A"
+    else:
+        raise ValueError(
+            "Unsupported StridedMemoryView layout; must be contiguous"
+        )
+    return types.Array(
+        dtype=numpy_support.from_dtype(val.dtype),
+        ndim=len(val.shape),
+        layout=layout,
+        readonly=val.readonly,
+    )

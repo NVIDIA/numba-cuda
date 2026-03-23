@@ -510,6 +510,32 @@ def visit_vars_inner(node, callback, cbdata):
     return node
 
 
+def _collect_vars_callback(var, collected):
+    collected.append(var)
+    return var
+
+
+def compat_list_vars_stmt(stmt):
+    """List variables in a statement, robust to mixed IR node classes."""
+    collected = []
+    visit_vars_stmt(stmt, _collect_vars_callback, collected)
+    if collected:
+        return collected
+    return stmt.list_vars()
+
+
+def compat_list_vars_node(node):
+    """List variables in an IR node/expression, robust to mixed IR classes."""
+    collected = []
+    visit_vars_inner(node, _collect_vars_callback, collected)
+    if collected:
+        return collected
+    try:
+        return node.list_vars()
+    except AttributeError:
+        return ()
+
+
 add_offset_to_labels_extensions = {}
 
 
@@ -654,7 +680,7 @@ def remove_dead(
     removed = False
     for label, block in blocks.items():
         # find live variables at each statement to delete dead assignment
-        lives = {v.name for v in block.terminator.list_vars()}
+        lives = {v.name for v in compat_list_vars_stmt(block.terminator)}
         if config.DEBUG_ARRAY_OPT >= 2:
             print("remove_dead processing block", label, lives)
         # find live variables at the end of block
@@ -768,11 +794,13 @@ def remove_dead_block(
             lives -= defs
             lives |= uses
         else:
-            lives |= {v.name for v in stmt.list_vars()}
+            lives |= {v.name for v in compat_list_vars_stmt(stmt)}
             if isinstance(stmt, ir.assign_types):
                 # make sure lhs is not used in rhs, e.g. a = g(a)
                 if isinstance(stmt.value, ir.expr_types):
-                    rhs_vars = {v.name for v in stmt.value.list_vars()}
+                    rhs_vars = {
+                        v.name for v in compat_list_vars_node(stmt.value)
+                    }
                     if lhs.name not in rhs_vars:
                         lives.remove(lhs.name)
                 else:
@@ -1487,7 +1515,7 @@ def simplify_CFG(blocks):
         inst = blocks[label].body[0]
         predecessors = cfg.predecessors(label)
         delete_block = True
-        for p, q in predecessors:
+        for p, _ in predecessors:
             block = blocks[p]
             if isinstance(block.body[-1], ir.jump_types):
                 block.body[-1] = copy.copy(inst)
@@ -1992,7 +2020,7 @@ def get_ir_of_code(glbls, fcode):
     # we need to run the before inference rewrite pass to normalize the IR
     # XXX: check rewrite pass flag?
     # for example, Raise nodes need to become StaticRaise before type inference
-    class DummyPipeline(object):
+    class DummyPipeline:
         def __init__(self, f_ir):
             self.state = StateDict()
             self.state.typingctx = None
@@ -2617,7 +2645,7 @@ def fixup_var_define_in_scope(blocks):
     # Ensure the scope of each block defines all used variables.
     for blk in blocks.values():
         scope = blk.scope
-        for var, inst in used_var.items():
+        for var in used_var.keys():
             # add this variable if it's not in scope
             if var.name not in scope.localvars:
                 # Note: using a internal method to reuse the same

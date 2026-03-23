@@ -120,7 +120,7 @@ def attempt_nocopy_reshape(
     return 1
 
 
-class Dim(object):
+class Dim:
     """A single dimension of the array
 
     Attributes
@@ -208,7 +208,7 @@ def compute_index(indices, dims):
     return sum(d.get_offset(i) for i, d in zip(indices, dims))
 
 
-class Element(object):
+class Element:
     is_array = False
 
     def __init__(self, extent):
@@ -218,7 +218,7 @@ class Element(object):
         yield self.extent
 
 
-class Array(object):
+class Array:
     """A dummy numpy array-like object.  Consider it an array without the
     actual data, but offset from the base data pointer.
 
@@ -249,8 +249,17 @@ class Array(object):
     @functools.cache
     def from_desc(cls, offset, shape, strides, itemsize):
         dims = []
+        shape = tuple(
+            int(s) if isinstance(s, (int, np.integer)) else s for s in shape
+        )
+        strides = tuple(
+            int(s) if isinstance(s, (int, np.integer)) else s for s in strides
+        )
+        offset = (
+            int(offset) if isinstance(offset, (int, np.integer)) else offset
+        )
         for ashape, astride in zip(shape, strides):
-            if not isinstance(ashape, (int, np.integer)):
+            if not isinstance(ashape, int):
                 raise TypeError("all elements of shape must be ints")
             dim = Dim(
                 offset, offset + ashape * astride, ashape, astride, single=False

@@ -11,7 +11,7 @@ class NvvmSupportError(ImportError):
     pass
 
 
-class NVVM(object):
+class NVVM:
     def __init__(self):
         raise NvvmSupportError("NVVM not supported in the simulator")
 
@@ -21,7 +21,10 @@ compile_ir = None
 set_cuda_kernel = None
 get_arch_option = None
 LibDevice = None
-NvvmError = None
+NvvmError = (
+    None  # deprecated: use nvvmError (cuda.bindings.nvvm) when available
+)
+nvvmError = None
 
 
 def is_available():

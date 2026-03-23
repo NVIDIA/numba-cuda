@@ -170,7 +170,7 @@ def dotrace(*args, **kwds):
         if inspect.ismodule(arg0):
             for n, f in inspect.getmembers(arg0, inspect.isfunction):
                 setattr(arg0, n, decorator(f))
-            for n, c in inspect.getmembers(arg0, inspect.isclass):
+            for _, c in inspect.getmembers(arg0, inspect.isclass):
                 dotrace(c, *args, recursive=recursive)
         elif inspect.isclass(arg0):
             for n, f in inspect.getmembers(

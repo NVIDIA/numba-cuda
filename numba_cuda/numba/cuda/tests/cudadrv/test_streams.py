@@ -94,34 +94,5 @@ class TestCudaStream(CUDATestCase):
         self.assertTrue(done2.done())
 
 
-@skip_on_cudasim("CUDA Driver API unsupported in the simulator")
-class TestFailingStream(CUDATestCase):
-    # This test can only be run in isolation because it corrupts the CUDA
-    # context, which cannot be recovered from within the same process. It is
-    # left here so that it can be run manually for debugging / testing purposes
-    # - or may be re-enabled if in future there is infrastructure added for
-    # running tests in a separate process (a subprocess cannot be used because
-    # CUDA will have been initialized before the fork, so it cannot be used in
-    # the child process).
-    @unittest.skip
-    @with_asyncio_loop
-    async def test_failed_stream(self):
-        ctx = cuda.current_context()
-        module = ctx.create_module_ptx("""
-            .version 6.5
-            .target sm_30
-            .address_size 64
-            .visible .entry failing_kernel() { trap; }
-        """)
-        failing_kernel = module.get_function("failing_kernel")
-
-        stream = cuda.stream()
-        failing_kernel.configure((1,), (1,), stream=stream).__call__()
-        done = stream.async_done()
-        with self.assertRaises(Exception):
-            await done
-        self.assertIsNotNone(done.exception())
-
-
 if __name__ == "__main__":
     unittest.main()

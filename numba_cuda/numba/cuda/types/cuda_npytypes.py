@@ -25,7 +25,7 @@ class CharSeq(Type):
     def __init__(self, count):
         self.count = count
         name = "[char x %d]" % count
-        super(CharSeq, self).__init__(name)
+        super().__init__(name)
 
     @property
     def key(self):
@@ -46,7 +46,7 @@ class UnicodeCharSeq(Type):
     def __init__(self, count):
         self.count = count
         name = "[unichr x %d]" % count
-        super(UnicodeCharSeq, self).__init__(name)
+        super().__init__(name)
 
     @property
     def key(self):
@@ -149,7 +149,7 @@ class Record(Type):
 
         desc = ",".join(descbuf)
         name = "Record({};{};{})".format(desc, self.size, self.aligned)
-        super(Record, self).__init__(name)
+        super().__init__(name)
 
         self.bitwidth = self.dtype.itemsize * 8
 
@@ -276,7 +276,7 @@ class DType(DTypeSpec, Opaque):
         assert isinstance(dtype, Type)
         self._dtype = dtype
         name = "dtype(%s)" % (dtype,)
-        super(DTypeSpec, self).__init__(name)
+        super().__init__(name)
 
     @property
     def key(self):
@@ -287,7 +287,7 @@ class DType(DTypeSpec, Opaque):
         return self._dtype
 
     def __getitem__(self, arg):
-        res = super(DType, self).__getitem__(arg)
+        res = super().__getitem__(arg)
         return res.copy(dtype=self.dtype)
 
 
@@ -301,7 +301,7 @@ class NumpyFlatType(SimpleIteratorType, MutableSequence):
         yield_type = arrty.dtype
         self.dtype = yield_type
         name = "array.flat({arrayty})".format(arrayty=arrty)
-        super(NumpyFlatType, self).__init__(name, yield_type)
+        super().__init__(name, yield_type)
 
     @property
     def key(self):
@@ -319,7 +319,7 @@ class NumpyNdEnumerateType(SimpleIteratorType):
         self.array_type = arrty
         yield_type = Tuple((UniTuple(intp, arrty.ndim), arrty.dtype))
         name = "ndenumerate({arrayty})".format(arrayty=arrty)
-        super(NumpyNdEnumerateType, self).__init__(name, yield_type)
+        super().__init__(name, yield_type)
 
     @property
     def key(self):
@@ -346,7 +346,7 @@ class NumpyNdIterType(IteratorType):
         name = "nditer(ndim={ndim}, layout={layout}, inputs={arrays})".format(
             ndim=self.ndim, layout=self.layout, arrays=self.arrays
         )
-        super(NumpyNdIterType, self).__init__(name)
+        super().__init__(name)
 
     @classmethod
     def _compute_layout(cls, arrays):
@@ -445,7 +445,7 @@ class NumpyNdIndexType(SimpleIteratorType):
         self.ndim = ndim
         yield_type = UniTuple(intp, self.ndim)
         name = "ndindex(ndim={ndim})".format(ndim=ndim)
-        super(NumpyNdIndexType, self).__init__(name, yield_type)
+        super().__init__(name, yield_type)
 
     @property
     def key(self):
@@ -474,7 +474,7 @@ class Array(Buffer):
             if not self.aligned:
                 type_name = "unaligned " + type_name
             name = "%s(%s, %sd, %s)" % (type_name, dtype, ndim, layout)
-        super(Array, self).__init__(dtype, ndim, layout, name=name)
+        super().__init__(dtype, ndim, layout, name=name)
 
     @property
     def mangling_args(self):
@@ -572,7 +572,7 @@ class ArrayCTypes(Type):
         self.dtype = arytype.dtype
         self.ndim = arytype.ndim
         name = "ArrayCTypes(dtype={0}, ndim={1})".format(self.dtype, self.ndim)
-        super(ArrayCTypes, self).__init__(name)
+        super().__init__(name)
 
     @property
     def key(self):
@@ -605,7 +605,7 @@ class ArrayFlags(Type):
     def __init__(self, arytype):
         self.array_type = arytype
         name = "ArrayFlags({0})".format(self.array_type)
-        super(ArrayFlags, self).__init__(name)
+        super().__init__(name)
 
     @property
     def key(self):
@@ -630,7 +630,7 @@ class NestedArray(Array):
         self._shape = shape
         name = "nestedarray(%s, %s)" % (dtype, shape)
         ndim = len(shape)
-        super(NestedArray, self).__init__(dtype, ndim, "C", name=name)
+        super().__init__(dtype, ndim, "C", name=name)
 
     @property
     def shape(self):
@@ -666,19 +666,19 @@ class NestedArray(Array):
 
 class NumPyRandomBitGeneratorType(Type):
     def __init__(self, *args, **kwargs):
-        super(NumPyRandomBitGeneratorType, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.name = "NumPyRandomBitGeneratorType"
 
 
 class NumPyRandomGeneratorType(Type):
     def __init__(self, *args, **kwargs):
-        super(NumPyRandomGeneratorType, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.name = "NumPyRandomGeneratorType"
 
 
 class PolynomialType(Type):
     def __init__(self, coef, domain=None, window=None, n_args=1):
-        super(PolynomialType, self).__init__(
+        super().__init__(
             name=f"PolynomialType({coef}, {domain}, {domain}, {n_args})"
         )
         self.coef = coef

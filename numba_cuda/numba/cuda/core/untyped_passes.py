@@ -928,7 +928,7 @@ class MixedContainerUnroller(FunctionPass):
         sentinel_exits = set()
         sentinel_blocks = []
         for lbl, blk in switch_ir.blocks.items():
-            for i, stmt in enumerate(blk.body):
+            for stmt in blk.body:
                 if isinstance(stmt, ir.assign_types):
                     if "SENTINEL" in stmt.target.name:
                         sentinel_blocks.append(lbl)
@@ -941,8 +941,8 @@ class MixedContainerUnroller(FunctionPass):
         # find jumps that are non-local, we won't relabel these
         ignore_set = set()
         local_lbl = [x for x in loop_ir.blocks.keys()]
-        for lbl, blk in loop_ir.blocks.items():
-            for i, stmt in enumerate(blk.body):
+        for blk in loop_ir.blocks.values():
+            for stmt in blk.body:
                 if isinstance(stmt, ir.jump_types):
                     if stmt.target not in local_lbl:
                         ignore_set.add(stmt.target)

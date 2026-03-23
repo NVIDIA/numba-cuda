@@ -5,10 +5,38 @@ from numba import cuda
 from numba.cuda.core.errors import TypingError
 from numba.cuda.testing import unittest, CUDATestCase, skip_on_cudasim
 from numba.cuda.cudadrv import driver
+from numba.cuda.tests.support import run_in_subprocess
 
 
 def noop(x):
     pass
+
+
+class TestStringArgCompileTime(CUDATestCase):
+    """Regression test for github.com/NVIDIA/numba-cuda/issues/755"""
+
+    @skip_on_cudasim("Compilation time is not relevant on simulator")
+    def test_string_device_function_arg_compiles_quickly(self):
+        code = """\
+import numpy as np
+from numba import cuda
+
+@cuda.jit(device=True, forceinline=True)
+def load(gmem, value):
+    if value == "1":
+        gmem[cuda.threadIdx.x] = 1.0
+    else:
+        gmem[cuda.threadIdx.x] = 0.0
+
+@cuda.jit
+def kernel(buff):
+    load(buff, "1")
+
+buff = cuda.to_device(np.zeros(32, dtype=np.float32))
+kernel[1, 32](buff)
+cuda.synchronize()
+"""
+        run_in_subprocess(code, timeout=30)
 
 
 class TestJitErrors(CUDATestCase):

@@ -11,10 +11,11 @@ from enum import Enum
 
 from numba.cuda import typing, cgutils
 from numba.cuda import types
+from numba.cuda.core import callconv
 from numba.cuda.typing.templates import BaseRegistryLoader
 
 
-class Registry(object):
+class Registry:
     """
     A registry of function and attribute implementations.
     """
@@ -212,15 +213,19 @@ def user_function(fndesc, libs):
     A wrapper inserting code calling Numba-compiled *fndesc*.
     """
 
-    def imp(context, builder, sig, args):
-        func = context.declare_function(builder.module, fndesc)
+    def imp(context, builder, sig, args, fndesc=fndesc):
+        func = fndesc.declare_function(builder.module)
         # env=None assumes this is a nopython function
-        status, retval = context.call_conv.call_function(
+        status, retval = fndesc.call_conv.call_function(
             builder, func, fndesc.restype, fndesc.argtypes, args
         )
-        with cgutils.if_unlikely(builder, status.is_error):
-            context.call_conv.return_status_propagate(builder, status)
+
+        if status is not None:
+            with cgutils.if_unlikely(builder, status.is_error):
+                fndesc.call_conv.return_status_propagate(builder, status)
+
         assert sig.return_type == fndesc.restype
+
         # Reconstruct optional return type
         retval = fix_returning_optional(context, builder, sig, status, retval)
         # If the data representations don't match up
@@ -240,10 +245,10 @@ def user_generator(gendesc, libs):
     A wrapper inserting code calling Numba-compiled *gendesc*.
     """
 
-    def imp(context, builder, sig, args):
-        func = context.declare_function(builder.module, gendesc)
+    def imp(context, builder, sig, args, gendesc=gendesc):
+        func = gendesc.declare_function(builder.module)
         # env=None assumes this is a nopython function
-        status, retval = context.call_conv.call_function(
+        status, retval = gendesc.call_conv.call_function(
             builder, func, gendesc.restype, gendesc.argtypes, args
         )
         # Return raw status for caller to process StopIteration
@@ -275,7 +280,7 @@ def iterator_impl(iterable_type, iterator_type):
     return wrapper
 
 
-class _IternextResult(object):
+class _IternextResult:
     """
     A result wrapper for iteration, passed by iternext_impl() into the
     wrapped function.
@@ -492,8 +497,6 @@ def force_error_model(context, model_name="numpy"):
     """
     Temporarily change the context's error model.
     """
-    from numba.cuda.core import callconv
-
     old_error_model = context.error_model
     context.error_model = callconv.create_error_model(model_name, context)
     try:

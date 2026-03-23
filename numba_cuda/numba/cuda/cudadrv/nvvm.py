@@ -2,22 +2,29 @@
 # SPDX-License-Identifier: BSD-2-Clause
 
 """
-This is a direct translation of nvvm.h
+NVVM support via cuda-python (cuda.bindings.nvvm).
 """
 
 import logging
 import re
-import sys
 import warnings
-from ctypes import c_void_p, c_int, POINTER, c_char_p, c_size_t, byref, c_char
 
 import threading
 
 from llvmlite import ir
 
-from .error import NvvmError, NvvmSupportError, NvvmWarning
-from .libs import get_libdevice, open_libdevice, open_cudalib
+try:
+    from cuda.bindings import nvvm as _nvvm
+except (ImportError, ModuleNotFoundError):
+    _nvvm = None
+
+from .error import NvvmSupportError, NvvmWarning
+
+# Re-export the binding's exception for code that catches NVVM API errors
+nvvmError = _nvvm.nvvmError if _nvvm is not None else None
+from .libs import get_libdevice, open_libdevice
 from numba.cuda import cgutils
+from numba.cuda.cuda_paths import get_cuda_paths
 
 
 logger = logging.getLogger(__name__)
@@ -28,28 +35,6 @@ ADDRSPACE_SHARED = 3
 ADDRSPACE_CONSTANT = 4
 ADDRSPACE_LOCAL = 5
 
-# Opaque handle for compilation unit
-nvvm_program = c_void_p
-
-# Result code
-nvvm_result = c_int
-
-RESULT_CODE_NAMES = """
-NVVM_SUCCESS
-NVVM_ERROR_OUT_OF_MEMORY
-NVVM_ERROR_PROGRAM_CREATION_FAILURE
-NVVM_ERROR_IR_VERSION_MISMATCH
-NVVM_ERROR_INVALID_INPUT
-NVVM_ERROR_INVALID_PROGRAM
-NVVM_ERROR_INVALID_IR
-NVVM_ERROR_INVALID_OPTION
-NVVM_ERROR_NO_MODULE_IN_PROGRAM
-NVVM_ERROR_COMPILATION
-""".split()
-
-for i, k in enumerate(RESULT_CODE_NAMES):
-    setattr(sys.modules[__name__], k, i)
-
 _datalayout = (
     "e-p:64:64:64-i1:8:8-i8:8:8-i16:16:16-i32:32:32-i64:64:64-"
     "i128:128:128-f32:32:32-f64:64:64-v16:16:16-v32:32:32-"
@@ -57,113 +42,40 @@ _datalayout = (
 )
 
 
-def is_available():
-    """
-    Return if libNVVM is available
-    """
+def _nvvm_library_loaded():
+    # use same check as cuda-python, nvjitlink, etc
     try:
-        NVVM()
-    except NvvmSupportError:
+        from cuda.bindings._internal.nvvm import _inspect_function_pointer
+
+        return _inspect_function_pointer("__nvvmCreateProgram") != 0
+    except (ImportError, ModuleNotFoundError, AttributeError):
+        return None  # internal API missing or changed
+
+
+def is_available():
+    if _nvvm is None:
         return False
-    else:
-        return True
+    loaded = _nvvm_library_loaded()
+    if loaded is not None:
+        return loaded
+    return True
 
 
 _nvvm_lock = threading.Lock()
 
 
-class NVVM(object):
-    """Process-wide singleton."""
+class NVVM:
+    """Process-wide singleton using cuda.bindings.nvvm."""
 
-    _PROTOTYPES = {
-        # nvvmResult nvvmVersion(int *major, int *minor)
-        "nvvmVersion": (nvvm_result, POINTER(c_int), POINTER(c_int)),
-        # nvvmResult nvvmCreateProgram(nvvmProgram *cu)
-        "nvvmCreateProgram": (nvvm_result, POINTER(nvvm_program)),
-        # nvvmResult nvvmDestroyProgram(nvvmProgram *cu)
-        "nvvmDestroyProgram": (nvvm_result, POINTER(nvvm_program)),
-        # nvvmResult nvvmAddModuleToProgram(nvvmProgram cu, const char *buffer,
-        #                                   size_t size, const char *name)
-        "nvvmAddModuleToProgram": (
-            nvvm_result,
-            nvvm_program,
-            c_char_p,
-            c_size_t,
-            c_char_p,
-        ),
-        # nvvmResult nvvmLazyAddModuleToProgram(nvvmProgram cu,
-        #                                       const char* buffer,
-        #                                       size_t size,
-        #                                       const char *name)
-        "nvvmLazyAddModuleToProgram": (
-            nvvm_result,
-            nvvm_program,
-            c_char_p,
-            c_size_t,
-            c_char_p,
-        ),
-        # nvvmResult nvvmCompileProgram(nvvmProgram cu, int numOptions,
-        #                          const char **options)
-        "nvvmCompileProgram": (
-            nvvm_result,
-            nvvm_program,
-            c_int,
-            POINTER(c_char_p),
-        ),
-        # nvvmResult nvvmGetCompiledResultSize(nvvmProgram cu,
-        #                                      size_t *bufferSizeRet)
-        "nvvmGetCompiledResultSize": (
-            nvvm_result,
-            nvvm_program,
-            POINTER(c_size_t),
-        ),
-        # nvvmResult nvvmGetCompiledResult(nvvmProgram cu, char *buffer)
-        "nvvmGetCompiledResult": (nvvm_result, nvvm_program, c_char_p),
-        # nvvmResult nvvmGetProgramLogSize(nvvmProgram cu,
-        #                                      size_t *bufferSizeRet)
-        "nvvmGetProgramLogSize": (nvvm_result, nvvm_program, POINTER(c_size_t)),
-        # nvvmResult nvvmGetProgramLog(nvvmProgram cu, char *buffer)
-        "nvvmGetProgramLog": (nvvm_result, nvvm_program, c_char_p),
-        # nvvmResult nvvmIRVersion (int* majorIR, int* minorIR, int* majorDbg,
-        #                           int* minorDbg )
-        "nvvmIRVersion": (
-            nvvm_result,
-            POINTER(c_int),
-            POINTER(c_int),
-            POINTER(c_int),
-            POINTER(c_int),
-        ),
-        # nvvmResult nvvmVerifyProgram (nvvmProgram prog, int numOptions,
-        #                               const char** options)
-        "nvvmVerifyProgram": (
-            nvvm_result,
-            nvvm_program,
-            c_int,
-            POINTER(c_char_p),
-        ),
-    }
-
-    # Singleton reference
     __INSTANCE = None
 
     def __new__(cls):
+        if _nvvm is None:
+            raise NvvmSupportError("libNVVM is not available")
         with _nvvm_lock:
             if cls.__INSTANCE is None:
                 cls.__INSTANCE = inst = object.__new__(cls)
-                try:
-                    inst.driver = open_cudalib("nvvm")
-                except OSError as e:
-                    cls.__INSTANCE = None
-                    errmsg = "libNVVM cannot be found. Please install the cuda-toolkit conda package:\n%s"
-                    raise NvvmSupportError(errmsg % e)
-
-                # Find & populate functions
-                for name, proto in inst._PROTOTYPES.items():
-                    func = getattr(inst.driver, name)
-                    func.restype = proto[0]
-                    func.argtypes = proto[1:]
-                    setattr(inst, name, func)
-
+                inst._binding = _nvvm
         return cls.__INSTANCE
 
     def __init__(self):
@@ -178,34 +90,69 @@ class NVVM(object):
         return _datalayout
 
     def get_version(self):
-        major = c_int()
-        minor = c_int()
-        err = self.nvvmVersion(byref(major), byref(minor))
-        self.check_error(err, "Failed to get version.")
-        return major.value, minor.value
+        return self._binding.version()
 
     def get_ir_version(self):
-        majorIR = c_int()
-        minorIR = c_int()
-        majorDbg = c_int()
-        minorDbg = c_int()
-        err = self.nvvmIRVersion(
-            byref(majorIR), byref(minorIR), byref(majorDbg), byref(minorDbg)
+        return self._binding.ir_version()
+
+    def check_options(self, options):
+        """
+        Check if the specified options are supported by the current libNVVM version.
+
+        The options are a list of bytes, each representing a compiler option.
+
+        If the test program fails to compile, the options are not supported and False
+        is returned.
+
+        If the test program compiles successfully, True is returned.
+        """
+        precheck_nvvm_ir = """target triple = "nvptx64-unknown-cuda"
+        target datalayout = "e-p:64:64:64-i1:8:8-i8:8:8-i16:16:16-i32:32:32-i64:64:64-i128:128:128-f32:32:32-f64:64:64-v16:16:16-v32:32:32-v64:64:64-v128:128:128-n16:32:64"
+
+        define void @dummy_kernel() {{
+        entry:
+        ret void
+        }}
+
+        !nvvm.annotations = !{{!0}}
+        !0 = !{{void ()* @dummy_kernel, !"kernel", i32 1}}
+
+        !nvvmir.version = !{{!1}}
+        !1 = !{{i32 {major}, i32 {minor}, i32 {debug_major}, i32 {debug_minor}}}
+        """
+        precheck_nvvm_ir = precheck_nvvm_ir.format(
+            major=self._majorIR,
+            minor=self._minorIR,
+            debug_major=self._majorDbg,
+            debug_minor=self._minorDbg,
         )
-        self.check_error(err, "Failed to get IR version.")
-        return majorIR.value, minorIR.value, majorDbg.value, minorDbg.value
+        precheck_ir_bytes = precheck_nvvm_ir.encode("utf-8")
+        options_str = [
+            x.decode("utf-8") if isinstance(x, bytes) else x for x in options
+        ]
+        try:
+            program = self._binding.create_program()
+            try:
+                self._binding.add_module_to_program(
+                    program,
+                    precheck_ir_bytes,
+                    len(precheck_ir_bytes),
+                    "precheck.ll",
+                )
+                self._binding.verify_program(
+                    program, len(options_str), options_str
+                )
+                self._binding.compile_program(
+                    program, len(options_str), options_str
+                )
+            finally:
+                self._binding.destroy_program(program)
+        except Exception:
+            return False
+        return True
 
-    def check_error(self, error, msg, exit=False):
-        if error:
-            exc = NvvmError(msg, RESULT_CODE_NAMES[error])
-            if exit:
-                print(exc)
-                sys.exit(1)
-            else:
-                raise exc
 
-
-class CompilationUnit(object):
+class CompilationUnit:
     """
     A CompilationUnit is a set of LLVM modules that are compiled to PTX or
     LTO-IR with NVVM.
@@ -228,9 +175,6 @@ class CompilationUnit(object):
 
     def __init__(self, options):
         self.driver = NVVM()
-        self._handle = nvvm_program()
-        err = self.driver.nvvmCreateProgram(byref(self._handle))
-        self.driver.check_error(err, "Failed to create CU")
 
         def stringify_option(k, v):
             k = k.replace("_", "-")
@@ -243,19 +187,31 @@ class CompilationUnit(object):
 
             return f"-{k}={v}".encode("utf-8")
 
-        options = [stringify_option(k, v) for k, v in options.items()]
-        option_ptrs = (c_char_p * len(options))(*[c_char_p(x) for x in options])
+        debug_build = "g" in options
+        options_list = [stringify_option(k, v) for k, v in options.items()]
 
-        # We keep both the options and the pointers to them so that options are
-        # not destroyed before we've used their values
-        self.options = options
-        self.option_ptrs = option_ptrs
-        self.n_options = len(options)
+        # If the -numba-debug option is supported by libnvvm, pass it to the
+        # compiler for debug builds.
+        if debug_build:
+            numba_debug_option = stringify_option("numba-debug", None)
+            if self.driver.check_options(options_list + [numba_debug_option]):
+                options_list.append(numba_debug_option)
+
+        self.n_options = len(options_list)
+        self._handle = _nvvm.create_program()
+        self._options_str = [
+            x.decode("utf-8") if isinstance(x, bytes) else x
+            for x in options_list
+        ]
+        self.options = options_list
 
     def __del__(self):
-        driver = NVVM()
-        err = driver.nvvmDestroyProgram(byref(self._handle))
-        driver.check_error(err, "Failed to destroy CU", exit=True)
+        if getattr(self, "_handle", None) is not None:
+            try:
+                _nvvm.destroy_program(self._handle)
+            except Exception:
+                pass
+            self._handle = None
 
     def add_module(self, buffer):
         """
@@ -263,10 +219,7 @@ class CompilationUnit(object):
         - The buffer should contain an NVVM module IR either in the bitcode
           representation (LLVM3.0) or in the text representation.
         """
-        err = self.driver.nvvmAddModuleToProgram(
-            self._handle, buffer, len(buffer), None
-        )
-        self.driver.check_error(err, "Failed to add module")
+        _nvvm.add_module_to_program(self._handle, buffer, len(buffer), "")
 
     def lazy_add_module(self, buffer):
         """
@@ -274,64 +227,42 @@ class CompilationUnit(object):
         The buffer should contain NVVM module IR either in the bitcode
         representation or in the text representation.
         """
-        err = self.driver.nvvmLazyAddModuleToProgram(
-            self._handle, buffer, len(buffer), None
-        )
-        self.driver.check_error(err, "Failed to add module")
+        _nvvm.lazy_add_module_to_program(self._handle, buffer, len(buffer), "")
 
     def verify(self):
         """
         Run the NVVM verifier on all code added to the compilation unit.
         """
-        err = self.driver.nvvmVerifyProgram(
-            self._handle, self.n_options, self.option_ptrs
+        _nvvm.verify_program(
+            self._handle,
+            self.n_options,
+            self._options_str,
         )
-        self._try_error(err, "Failed to verify\n")
 
     def compile(self):
         """
         Compile all modules added to the compilation unit and return the
         resulting PTX or LTO-IR (depending on the options).
         """
-        err = self.driver.nvvmCompileProgram(
-            self._handle, self.n_options, self.option_ptrs
+        _nvvm.compile_program(
+            self._handle,
+            self.n_options,
+            self._options_str,
         )
-        self._try_error(err, "Failed to compile\n")
-
-        # Get result
-        result_size = c_size_t()
-        err = self.driver.nvvmGetCompiledResultSize(
-            self._handle, byref(result_size)
-        )
-
-        self._try_error(err, "Failed to get size of compiled result.")
-
-        output_buffer = (c_char * result_size.value)()
-        err = self.driver.nvvmGetCompiledResult(self._handle, output_buffer)
-        self._try_error(err, "Failed to get compiled result.")
-
-        # Get log
+        result_size = _nvvm.get_compiled_result_size(self._handle)
+        output_buffer = bytearray(result_size)
+        _nvvm.get_compiled_result(self._handle, output_buffer)
         self.log = self.get_log()
         if self.log:
             warnings.warn(self.log, category=NvvmWarning)
-
-        return output_buffer[:]
-
-    def _try_error(self, err, msg):
-        self.driver.check_error(err, "%s\n%s" % (msg, self.get_log()))
+        return bytes(output_buffer)
 
     def get_log(self):
-        reslen = c_size_t()
-        err = self.driver.nvvmGetProgramLogSize(self._handle, byref(reslen))
-        self.driver.check_error(err, "Failed to get compilation log size.")
-
-        if reslen.value > 1:
-            logbuf = (c_char * reslen.value)()
-            err = self.driver.nvvmGetProgramLog(self._handle, logbuf)
-            self.driver.check_error(err, "Failed to get compilation log.")
-
-            return logbuf.value.decode("utf8")  # populate log attribute
-
+        reslen = _nvvm.get_program_log_size(self._handle)
+        if reslen > 1:
+            logbuf = bytearray(reslen)
+            _nvvm.get_program_log(self._handle, logbuf)
+            return logbuf.decode("utf8").rstrip("\x00")
         return ""
 
 
@@ -342,7 +273,7 @@ MISSING_LIBDEVICE_FILE_MSG = """Missing libdevice file.
 """
 
 
-class LibDevice(object):
+class LibDevice:
     _cache_ = None
 
     def __init__(self):

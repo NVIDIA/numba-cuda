@@ -37,7 +37,7 @@ class TestExtTypDummy(unittest.TestCase):
     def setUp(self):
         class DummyType(types.Type):
             def __init__(self):
-                super(DummyType, self).__init__(name="Dummy")
+                super().__init__(name="Dummy")
 
         make_attribute_wrapper(DummyType, "value", "value")
 

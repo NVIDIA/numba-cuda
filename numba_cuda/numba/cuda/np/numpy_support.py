@@ -24,14 +24,25 @@ numpy_version = tuple(map(int, np.__version__.split(".")[:2]))
 
 @functools.lru_cache
 def strides_from_shape(
-    shape: tuple[int, ...], itemsize: int, *, order: str
+    *,
+    shape: tuple[int, ...],
+    itemsize: int,
+    c_contiguous: bool,
+    f_contiguous: bool,
 ) -> tuple[int, ...]:
     """Compute strides for a contiguous array with given shape and order."""
     if not shape:
         # 0-D arrays have empty strides
         return ()
-    limits = slice(1, None) if order == "C" else slice(None, -1)
-    transform = reversed if order == "C" else lambda x: x
+
+    # assert that c_contiguous and f_contiguous are not both False
+    assert c_contiguous or f_contiguous, (
+        "either c_contiguous or f_contiguous or both must be True"
+    )
+    limits = (
+        slice(1, None) if c_contiguous and not f_contiguous else slice(None, -1)
+    )
+    transform = reversed if c_contiguous else lambda x: x
     strides = tuple(
         map(
             itemsize.__mul__,
@@ -40,7 +51,7 @@ def strides_from_shape(
             ),
         )
     )
-    if order == "F":
+    if f_contiguous:
         return strides
     return strides[::-1]
 
@@ -62,6 +73,15 @@ FROM_DTYPE = {
     np.dtype("complex128"): types.complex128,
     np.dtype(object): types.pyobject,
 }
+
+# Optional dtype support (not provided by NumPy itself).
+try:
+    import ml_dtypes  # type: ignore
+except ImportError:
+    ml_dtypes = None
+
+if ml_dtypes is not None:
+    FROM_DTYPE[np.dtype(ml_dtypes.bfloat16)] = types.bfloat16
 
 re_typestr = re.compile(r"[<>=\|]([a-z])(\d+)?$", re.I)
 re_datetimestr = re.compile(r"[<>=\|]([mM])8?(\[([a-z]+)\])?$", re.I)
@@ -110,11 +130,31 @@ def _from_datetime_dtype(dtype):
         raise errors.NumbaNotImplementedError(dtype)
 
 
-def from_dtype(dtype):
+def _dtype_cache_key(dtype):
+    """
+    Create a cache key for dtype that includes the isalignedstruct attribute.
+
+    NumPy's dtype hashing and comparison mechanisms do not consider the
+    isalignedstruct field when determining dtype equality. This means that
+    two dtypes with the same structure but different alignment settings would
+    be treated as identical by NumPy's default comparison, leading to incorrect
+    caching behavior. To ensure correct caching of from_dtype results, we
+    extend the cache key to explicitly include the isalignedstruct attribute.
+    """
+    return (
+        dtype,
+        getattr(dtype, "isalignedstruct", None),
+    )
+
+
+@functools.lru_cache
+def _from_dtype_impl(dtype_cached):
     """
     Return a Numba Type instance corresponding to the given Numpy *dtype*.
     NumbaNotImplementedError is raised on unsupported Numpy dtypes.
     """
+    dtype = dtype_cached[0]
+
     if type(dtype) is type and issubclass(dtype, np.generic):
         dtype = np.dtype(dtype)
     elif getattr(dtype, "fields", None) is not None:
@@ -134,6 +174,10 @@ def from_dtype(dtype):
             return types.NestedArray(subtype, dtype.shape)
 
     raise errors.NumbaNotImplementedError(dtype)
+
+
+def from_dtype(dtype):
+    return _from_dtype_impl(_dtype_cache_key(dtype))
 
 
 _as_dtype_letters = {

@@ -9,6 +9,8 @@ from numba.cuda.core.options import (
     InlineOptions,
 )
 
+from numba.cuda.core.callconv import BaseCallConv
+
 
 class Flags(TargetConfig):
     __slots__ = ()

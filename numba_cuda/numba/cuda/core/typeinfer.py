@@ -63,7 +63,7 @@ class NOTSET:
 _termcolor = termcolor()
 
 
-class TypeVar(object):
+class TypeVar:
     def __init__(self, context, var):
         self.context = context
         self.var = var
@@ -163,7 +163,7 @@ class TypeVar(object):
         return 1 if self.type is not None else 0
 
 
-class ConstraintNetwork(object):
+class ConstraintNetwork:
     """
     TODO: It is possible to optimize constraint propagation to consider only
           dirty type variables.
@@ -204,7 +204,7 @@ class ConstraintNetwork(object):
         return errors
 
 
-class Propagate(object):
+class Propagate:
     """
     A simple constraint for direct propagation of types for assignments.
     """
@@ -230,7 +230,7 @@ class Propagate(object):
         )
 
 
-class ArgConstraint(object):
+class ArgConstraint:
     def __init__(self, dst, src, loc):
         self.dst = dst
         self.src = src
@@ -252,7 +252,7 @@ class ArgConstraint(object):
             typeinfer.add_type(self.dst, ty, loc=self.loc)
 
 
-class BuildTupleConstraint(object):
+class BuildTupleConstraint:
     def __init__(self, target, items, loc):
         self.target = target
         self.items = items
@@ -272,7 +272,7 @@ class BuildTupleConstraint(object):
                 typeinfer.add_type(self.target, tup, loc=self.loc)
 
 
-class _BuildContainerConstraint(object):
+class _BuildContainerConstraint:
     def __init__(self, target, items, loc):
         self.target = target
         self.items = items
@@ -339,7 +339,7 @@ class BuildSetConstraint(_BuildContainerConstraint):
     container_type = types.Set
 
 
-class BuildMapConstraint(object):
+class BuildMapConstraint:
     def __init__(self, target, items, special_value, value_indexes, loc):
         self.target = target
         self.items = items
@@ -417,7 +417,7 @@ class BuildMapConstraint(object):
                     )
 
 
-class ExhaustIterConstraint(object):
+class ExhaustIterConstraint:
     def __init__(self, target, count, iterator, loc):
         self.target = target
         self.count = count
@@ -454,7 +454,7 @@ class ExhaustIterConstraint(object):
                     )
 
 
-class PairFirstConstraint(object):
+class PairFirstConstraint:
     def __init__(self, target, pair, loc):
         self.target = target
         self.pair = pair
@@ -474,7 +474,7 @@ class PairFirstConstraint(object):
                 typeinfer.add_type(self.target, tp.first_type, loc=self.loc)
 
 
-class PairSecondConstraint(object):
+class PairSecondConstraint:
     def __init__(self, target, pair, loc):
         self.target = target
         self.pair = pair
@@ -491,7 +491,7 @@ class PairSecondConstraint(object):
                 typeinfer.add_type(self.target, tp.second_type, loc=self.loc)
 
 
-class StaticGetItemConstraint(object):
+class StaticGetItemConstraint:
     def __init__(self, target, value, index, index_var, loc):
         self.target = target
         self.value = value
@@ -526,7 +526,7 @@ class StaticGetItemConstraint(object):
         return self.fallback and self.fallback.get_call_signature()
 
 
-class TypedGetItemConstraint(object):
+class TypedGetItemConstraint:
     def __init__(self, target, value, dtype, index, loc):
         self.target = target
         self.value = value
@@ -593,7 +593,7 @@ def _is_array_not_precise(arrty):
     return isinstance(arrty, types.Array) and not arrty.is_precise()
 
 
-class CallConstraint(object):
+class CallConstraint:
     """Constraint for calling functions.
     Perform case analysis foreach combinations of argument types.
     """
@@ -755,7 +755,7 @@ class IntrinsicCallConstraint(CallConstraint):
             self.resolve(typeinfer, typeinfer.typevars, fnty=fnty)
 
 
-class GetAttrConstraint(object):
+class GetAttrConstraint:
     def __init__(self, target, attr, value, loc, inst):
         self.target = target
         self.attr = attr
@@ -793,7 +793,7 @@ class GetAttrConstraint(object):
         )
 
 
-class SetItemRefinement(object):
+class SetItemRefinement:
     """A mixin class to provide the common refinement logic in setitem
     and static setitem.
     """
@@ -892,7 +892,7 @@ class StaticSetItemConstraint(SetItemRefinement):
         return self.signature
 
 
-class DelItemConstraint(object):
+class DelItemConstraint:
     def __init__(self, target, index, loc):
         self.target = target
         self.index = index
@@ -920,7 +920,7 @@ class DelItemConstraint(object):
         return self.signature
 
 
-class SetAttrConstraint(object):
+class SetAttrConstraint:
     def __init__(self, target, attr, value, loc):
         self.target = target
         self.attr = attr
@@ -951,7 +951,7 @@ class SetAttrConstraint(object):
         return self.signature
 
 
-class PrintConstraint(object):
+class PrintConstraint:
     def __init__(self, args, vararg, loc):
         self.args = args
         self.vararg = vararg
@@ -982,14 +982,14 @@ class TypeVarMap(dict):
     def __getitem__(self, name):
         if name not in self:
             self[name] = TypeVar(self.context, name)
-        return super(TypeVarMap, self).__getitem__(name)
+        return super().__getitem__(name)
 
     def __setitem__(self, name, value):
         assert isinstance(name, str)
         if name in self:
             raise KeyError("Cannot redefine typevar %s" % name)
         else:
-            super(TypeVarMap, self).__setitem__(name, value)
+            super().__setitem__(name, value)
 
 
 # A temporary mapping of {function name: dispatcher object}
@@ -1023,7 +1023,7 @@ def register_dispatcher(disp):
 typeinfer_extensions = {}
 
 
-class TypeInferer(object):
+class TypeInferer:
     """
     Operates on block that shares the same ir.Scope.
     """
@@ -1931,7 +1931,7 @@ https://numba.readthedocs.io/en/stable/user/troubleshoot.html#my-code-has-an-unt
         self.calls.append((inst.value, constraint))
 
 
-class NullDebug(object):
+class NullDebug:
     def propagate_started(self):
         pass
 
@@ -1942,7 +1942,7 @@ class NullDebug(object):
         pass
 
 
-class TypeInferDebug(object):
+class TypeInferDebug:
     def __init__(self, typeinfer):
         self.typeinfer = typeinfer
 
