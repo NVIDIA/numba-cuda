@@ -3,6 +3,7 @@
 
 import numpy as np
 import os
+import pickle
 import sys
 import ctypes
 import collections
@@ -746,8 +747,10 @@ class _LaunchConfiguration:
     def __getstate__(self):
         state = self.__dict__.copy()
         state["stream"] = int(state["stream"].handle)
-        # Avoid serializing callables that may not be picklable.
-        state["pre_launch_callbacks"] = []
+        if state["pre_launch_callbacks"]:
+            raise pickle.PicklingError(
+                "Cannot pickle configured launches with pre-launch callbacks"
+            )
         return state
 
     def __setstate__(self, state):
