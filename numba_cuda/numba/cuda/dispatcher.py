@@ -110,6 +110,7 @@ class _Kernel(serialize.ReduceMixin):
         inline=False,
         forceinline=False,
         fastmath=False,
+        fma=True,
         extensions=None,
         max_registers=None,
         lto=False,
@@ -145,7 +146,13 @@ class _Kernel(serialize.ReduceMixin):
         self.extensions = extensions or []
         self.launch_bounds = launch_bounds
 
-        nvvm_options = {"fastmath": fastmath, "opt": 3 if opt else 0}
+        nvvm_options = {
+            "fastmath": fastmath,
+            "opt": 3 if opt else 0,
+        }
+
+        if not fma:
+            nvvm_options["fma"] = False
 
         if debug:
             nvvm_options["g"] = None
@@ -1840,11 +1847,15 @@ class CUDADispatcher(serialize.ReduceMixin, _MemoMixin, _DispatcherBase):
                 forceinline = self.targetoptions.get("forceinline")
                 inline = self.targetoptions.get("inline", "never")
                 fastmath = self.targetoptions.get("fastmath")
+                fma = self.targetoptions.get("fma", True)
 
                 nvvm_options = {
                     "opt": 3 if self.targetoptions.get("opt") else 0,
                     "fastmath": fastmath,
                 }
+
+                if not fma:
+                    nvvm_options["fma"] = False
 
                 if debug:
                     nvvm_options["g"] = None
