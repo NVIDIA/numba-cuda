@@ -78,13 +78,36 @@ Compile-time launch-config access
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The active launch configuration is available only while compilation is in
-progress for a kernel launch.
+progress for a kernel launch. Most consumers should access it from code that
+is already running inside compilation, such as rewrite passes, compiler
+extensions, or other compile-time helpers.
 
 .. note:: This is compile-time state. If a launch reuses an existing compiled
    kernel for the same cache key, no compilation occurs and no compile-time
    launch config is set. For launch-config-sensitive kernels, a different
    launch configuration can trigger a separate compilation/specialization; see
    :ref:`cuda-launch-config-sensitive-compilation`.
+
+Primary path for compile-time consumers:
+
+.. code-block:: python
+
+   from numba.cuda import launchconfig
+
+   cfg = launchconfig.ensure_current_launch_config()
+   print(cfg.griddim, cfg.blockdim, cfg.sharedmem, cfg.args)
+
+Use ``ensure_current_launch_config()`` when an active launch-triggered
+compilation is required. Use ``current_launch_config()`` instead when the
+absence of compile-time launch state is expected and should return ``None``.
+
+For external introspection or testing:
+
+``capture_compile_config()`` is a convenience helper for observing the
+compile-time launch configuration from ordinary Python code outside compilation
+itself. Most user code does not need it, but it can be useful in tests,
+debugging, or tooling that wants to inspect the launch configuration that
+triggered compilation.
 
 .. code-block:: python
 
@@ -101,15 +124,6 @@ progress for a kernel launch.
 
    cfg = capture["config"]
    print(cfg.griddim, cfg.blockdim, cfg.sharedmem)
-
-For use inside compilation passes:
-
-.. code-block:: python
-
-   from numba.cuda import launchconfig
-
-   cfg = launchconfig.ensure_current_launch_config()
-   print(cfg.griddim, cfg.blockdim, cfg.sharedmem, cfg.args)
 
 Pre-launch callbacks
 ~~~~~~~~~~~~~~~~~~~~
