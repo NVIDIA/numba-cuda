@@ -131,6 +131,10 @@ Pre-launch callbacks
 Configured launches expose ``pre_launch_callbacks``. Each callback is called
 immediately before launch with ``(kernel, launch_config)``.
 
+.. warning:: Pre-launch callbacks must not invoke CUDA APIs or launch CUDA
+   work. This use is not supported, is not tested, and has undefined
+   behavior; it may deadlock or fail in other ways.
+
 .. code-block:: python
 
    cfg = f[1, 1]

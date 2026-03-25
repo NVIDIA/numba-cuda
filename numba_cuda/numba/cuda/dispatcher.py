@@ -697,6 +697,17 @@ class ForAll:
 
 
 class _LaunchConfiguration:
+    """Configured CUDA kernel launch metadata.
+
+    The ``pre_launch_callbacks`` list may be used to register host-side
+    callbacks that run immediately before kernel launch with
+    ``(kernel, launch_config)``.
+
+    Callbacks must not invoke CUDA APIs or launch CUDA work. That use is not
+    supported, is not tested, and has undefined behavior; it may deadlock or
+    fail in other ways.
+    """
+
     def __init__(self, dispatcher, griddim, blockdim, stream, sharedmem):
         self.dispatcher = dispatcher
         self.griddim = griddim
