@@ -10,6 +10,7 @@ from numba.cuda.core.codegen import Codegen, CodeLibrary
 from numba.cuda.cudadrv.libs import get_cudalib
 from numba.cuda.cudadrv.linkable_code import LinkableCode
 from numba.cuda.memory_management.nrt import NRT_LIBRARY
+from cuda import pathfinder
 
 import os
 import pickle
@@ -20,6 +21,16 @@ CUDA_TRIPLE = "nvptx64-nvidia-cuda"
 
 
 def run_nvdisasm(cubin, flags):
+    nvdisasm_path = pathfinder.find_nvidia_binary_utility("nvdisasm")
+    if nvdisasm_path is None:
+        msg = (
+            "nvdisasm has not been found. You may need "
+            "to install the CUDA toolkit and ensure that "
+            "it is available on your PATH "
+            "or install cuda-toolkit[nvdisasm] package.\n"
+        )
+        raise RuntimeError(msg)
+
     # nvdisasm only accepts input from a file, so we need to write out to a
     # temp file and clean up afterwards.
     fd = None
@@ -29,20 +40,13 @@ def run_nvdisasm(cubin, flags):
         with open(fname, "wb") as f:
             f.write(cubin.code)
 
-        try:
-            cp = subprocess.run(
-                ["nvdisasm", *flags, fname],
-                check=True,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-            )
-        except FileNotFoundError as e:
-            msg = (
-                "nvdisasm has not been found. You may need "
-                "to install the CUDA toolkit and ensure that "
-                "it is available on your PATH.\n"
-            )
-            raise RuntimeError(msg) from e
+        cp = subprocess.run(
+            [nvdisasm_path, *flags, fname],
+            check=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        )
+
         return cp.stdout.decode("utf-8")
     finally:
         if fd is not None:
