@@ -19,17 +19,18 @@ import tempfile
 
 CUDA_TRIPLE = "nvptx64-nvidia-cuda"
 
+_NVDISASM_UNAVAILABLE_MSG = (
+    "nvdisasm was not found or could not be executed. It is included with "
+    "the CUDA toolkit: install the toolkit on your system or install a Python-packaged "
+    "toolkit in this environment (for example cuda-toolkit with the "
+    "nvdisasm extra).\n"
+)
+
 
 def run_nvdisasm(cubin, flags):
     nvdisasm_path = pathfinder.find_nvidia_binary_utility("nvdisasm")
     if nvdisasm_path is None:
-        msg = (
-            "nvdisasm has not been found. You may need "
-            "to install the CUDA toolkit and ensure that "
-            "it is available on your PATH "
-            "or install cuda-toolkit[nvdisasm] package.\n"
-        )
-        raise RuntimeError(msg)
+        raise RuntimeError(_NVDISASM_UNAVAILABLE_MSG)
 
     # nvdisasm only accepts input from a file, so we need to write out to a
     # temp file and clean up afterwards.
@@ -40,12 +41,15 @@ def run_nvdisasm(cubin, flags):
         with open(fname, "wb") as f:
             f.write(cubin.code)
 
-        cp = subprocess.run(
-            [nvdisasm_path, *flags, fname],
-            check=True,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-        )
+        try:
+            cp = subprocess.run(
+                [nvdisasm_path, *flags, fname],
+                check=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+            )
+        except FileNotFoundError as e:
+            raise RuntimeError(_NVDISASM_UNAVAILABLE_MSG) from e
 
         return cp.stdout.decode("utf-8")
     finally:
