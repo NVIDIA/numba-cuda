@@ -228,8 +228,10 @@ class BaseLower:
         self.context.declare_env_global(self.module, envname)
 
     def lower(self):
-        # Emit the Env into the module
-        self.emit_environment_object()
+        # Emit the Env into the module (only needed for calling conventions
+        # that use a Numba environment for error-status propagation).
+        if self.call_conv.needs_env:
+            self.emit_environment_object()
         if self.generator_info is None:
             self.genlower = None
             self.lower_normal_function(self.fndesc)

@@ -62,25 +62,32 @@ N2CODE = {
 }
 
 
-def _escape_string(text):
+def escape_string(text):
     """Escape the given string so that it only contains ASCII characters
-    of [a-zA-Z0-9_$].
+    valid in mangled names: ``[a-zA-Z0-9_]``.
 
-    The dollar symbol ($) and other invalid characters are escaped into
-    the string sequence of "$xx" where "xx" is the hex codepoint of the char.
+    Invalid characters are hex-escaped as ``_xx`` where *xx* is the two-digit
+    hex code point.  Multibyte (non-ASCII) characters are first encoded to
+    UTF-8 and each byte is escaped individually.
 
-    Multibyte characters are encoded into utf8 and converted into the above
-    hex format.
+    Examples::
+
+        >>> escape_string("hello")
+        'hello'
+        >>> escape_string("<lambda>")
+        '_3clambda_3e'
     """
 
     def repl(m):
         return "".join(("_%02x" % ch) for ch in m.group(0).encode("utf8"))
 
     ret = re.sub(_re_invalid_char, repl, text)
-    # Return str if we got a unicode (for py2)
     if not isinstance(ret, str):
         return ret.encode("ascii")
     return ret
+
+
+_escape_string = escape_string
 
 
 def _fix_lead_digit(text):
