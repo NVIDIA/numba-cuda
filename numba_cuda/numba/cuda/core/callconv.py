@@ -53,6 +53,8 @@ RETCODE_USEREXC = _const_int(FIRST_USEREXC)
 
 
 class BaseCallConv:
+    needs_env = True
+
     def __init__(self, context):
         self.context = context
 
@@ -398,7 +400,12 @@ class CUDACABICallConv(BaseCallConv):
         <Python return type> (<Python arguments>)
 
     Exceptions are unsupported in this convention.
+
+    No Numba environment pointer is needed because there is no error-status
+    channel to propagate exceptions through.
     """
+
+    needs_env = False
 
     def _make_call_helper(self, builder):
         # Call helpers are used to help report exceptions back to Python, so
@@ -501,10 +508,10 @@ class CUDACABICallConv(BaseCallConv):
         return self.context.data_model_manager[ty].get_return_type()
 
     def mangler(self, name, argtypes, *, abi_tags=None, uid=None):
+        escaped = itanium_mangler.escape_string(name.split(".")[-1])
         if name.startswith(".NumbaEnv."):
-            func_name = name.split(".")[-1]
-            return f"_ZN08NumbaEnv{func_name}"
-        return name.split(".")[-1]
+            return f"_ZN08NumbaEnv{escaped}"
+        return escaped
 
 
 class ErrorModel:

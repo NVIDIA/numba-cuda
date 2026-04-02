@@ -449,6 +449,55 @@ class TestCompile(unittest.TestCase):
             r"func_retval0\)\s+_Z4funcii\(",
         )
 
+    def test_c_abi_lambda_with_abi_name(self):
+        """Compiling a lambda with CABI + abi_name should produce valid IR.
+
+        Lambdas have ``<lambda>`` as their qualname; the angle brackets must be
+        escaped when mangling names for NVVM.
+        """
+        abi_info = {"abi_name": "blah"}
+
+        with self.subTest("compile_ptx"):
+            self._test_c_abi_lambda_with_abi_name(
+                compile_ptx,
+                {"device": True, "abi": "c", "abi_info": abi_info},
+            )
+
+        with self.subTest("compile_all"):
+            self._test_c_abi_lambda_with_abi_name(
+                compile_all,
+                {
+                    "device": True,
+                    "abi": "c",
+                    "abi_info": abi_info,
+                    "output": "ptx",
+                },
+            )
+
+    def _test_c_abi_lambda_with_abi_name(
+        self, compile_function, default_kwargs
+    ):
+        ret = compile_function(lambda x: x, int32(int32), **default_kwargs)
+        ptx, resty = self._handle_compile_result(ret, compile_function)
+
+        self.assertRegex(
+            ptx,
+            r"\.visible\s+\.func\s+\(\.param\s+\.b32\s+"
+            r"func_retval0\)\s+blah\(",
+        )
+
+    def test_c_abi_no_env_global(self):
+        """CABI functions should not emit a NumbaEnv global."""
+        ret = compile_ptx(lambda x: x, int32(int32), device=True, abi="c")
+        ptx, _ = self._handle_compile_result(ret, compile_ptx)
+        self.assertNotIn("NumbaEnv", ptx)
+
+    def test_numba_abi_has_env_global(self):
+        """Numba-ABI functions still require a NumbaEnv global."""
+        ret = compile_ptx(lambda x: x, int32(int32), device=True, abi="numba")
+        ptx, _ = self._handle_compile_result(ret, compile_ptx)
+        self.assertIn("NumbaEnv", ptx)
+
     def test_c_abi_boolean_return(self):
         """
         Tests that returning a raw boolean comparison (a == b) compiles correctly
