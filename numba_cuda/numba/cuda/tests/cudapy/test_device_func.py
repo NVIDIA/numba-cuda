@@ -630,5 +630,83 @@ class TestDeclareDeviceCABI(CUDATestCase):
         np.testing.assert_equal(x, 42)
 
 
+@skip_on_cudasim("Data model inspection unsupported in the simulator")
+class TestNoneTypeModel(CUDATestCase):
+    """Tests for the NoneTypeModel data model (issue #845).
+
+    Verifies that types.void / types.NoneType uses ir.VoidType() as the
+    LLVM return type, fixing ABI mismatches when linking with external
+    C/C++ device code via LTO.
+    """
+
+    def test_nonetype_model_return_type_is_void(self):
+        from llvmlite import ir
+        from numba.cuda.descriptor import cuda_target
+
+        dm = cuda_target.target_context.data_model_manager
+        model = dm.lookup(types.void)
+
+        self.assertEqual(type(model).__name__, "NoneTypeModel")
+        self.assertIsInstance(model.get_return_type(), ir.VoidType)
+
+    def test_nonetype_model_value_type_is_opaque_ptr(self):
+        from llvmlite import ir
+        from numba.cuda.descriptor import cuda_target
+
+        dm = cuda_target.target_context.data_model_manager
+        model = dm.lookup(types.void)
+        vt = model.get_value_type()
+
+        self.assertIsInstance(vt, ir.PointerType)
+
+    def test_cabi_void_device_function_signature(self):
+        consume = cuda.declare_device(
+            "consume", "void(int32)", link=consume_cabi_cu, abi="c"
+        )
+
+        @cuda.jit
+        def kernel(r, x):
+            i = cuda.grid(1)
+            if i < len(r):
+                consume(x[i])
+                r[i] = x[i] * 3
+
+        x = np.arange(10, dtype=np.int32)
+        r = np.empty_like(x)
+        kernel[1, 32](r, x)
+        np.testing.assert_equal(r, x * 3)
+
+    def test_void_device_function_numba_abi(self):
+        @cuda.jit(device=True)
+        def noop():
+            pass
+
+        @cuda.jit
+        def kernel(r):
+            i = cuda.grid(1)
+            if i < len(r):
+                noop()
+                r[i] = 42
+
+        r = np.zeros(10, dtype=np.int32)
+        kernel[1, 32](r)
+        np.testing.assert_equal(r, 42)
+
+    def test_void_device_function_with_side_effect(self):
+        @cuda.jit(device=True)
+        def write_value(arr, idx, val):
+            arr[idx] = val
+
+        @cuda.jit
+        def kernel(arr):
+            i = cuda.grid(1)
+            if i < len(arr):
+                write_value(arr, i, i * 10)
+
+        arr = np.zeros(10, dtype=np.int32)
+        kernel[1, 32](arr)
+        np.testing.assert_equal(arr, np.arange(10, dtype=np.int32) * 10)
+
+
 if __name__ == "__main__":
     unittest.main()
