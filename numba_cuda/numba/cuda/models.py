@@ -54,11 +54,10 @@ class NoneTypeModel(DataModel):
     """Data model for ``types.NoneType`` (``types.void``).
 
     Shadows the ``OpaqueModel`` registration for ``types.NoneType`` that
-    exists in ``default_manager`` (from upstream numba or
-    ``cuda_models.py``).  Because ``cuda_data_manager`` is the first map
-    in the ``ChainMap`` built by ``CUDATargetContext.__init__``, this
-    model takes priority without mutating the underlying
-    ``default_manager``.
+    exists in ``default_manager`` (from upstream numba).  Because
+    ``cuda_data_manager`` is the first map in the ``ChainMap`` built by
+    ``CUDATargetContext.__init__``, this model takes priority without
+    mutating the underlying ``default_manager``.
 
     This model intentionally returns *different* LLVM types from
     ``get_value_type()`` and ``get_return_type()`` because LLVM treats
