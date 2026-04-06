@@ -674,7 +674,16 @@ class TestNoneTypeModel(CUDATestCase):
         x = np.arange(10, dtype=np.int32)
         r = np.empty_like(x)
         kernel[1, 32](r, x)
-        np.testing.assert_equal(r, x * 3)
+
+        irs = kernel.inspect_llvm()
+
+        # Pattern to match 'call void @consume(i32 ...)' in the LLVM IR
+        pat = re.compile(r'call void @"?consume"?\s*\(\s*i32\b')
+        matched = any(pat.search(ir) for ir in irs.values())
+        self.assertTrue(
+            matched,
+            "Did not find the expected 'call void @consume(i32 ...)' pattern in LLVM IR",
+        )
 
     def test_void_device_function_numba_abi(self):
         @cuda.jit(device=True)
@@ -690,7 +699,27 @@ class TestNoneTypeModel(CUDATestCase):
 
         r = np.zeros(10, dtype=np.int32)
         kernel[1, 32](r)
-        np.testing.assert_equal(r, 42)
+
+        callee_irs = noop.inspect_llvm()
+        caller_irs = kernel.inspect_llvm()
+
+        callee_pat = re.compile(r'define\b[^@]*\bvoid\s+@"[^"]*noop[^"]*"')
+        callee_matched = any(
+            callee_pat.search(ir) for ir in callee_irs.values()
+        )
+        self.assertTrue(
+            callee_matched,
+            "Device function 'noop' should be defined with void return type",
+        )
+
+        caller_pat = re.compile(r'call\s+void\s+@"[^"]*noop[^"]*"\s*\(')
+        caller_matched = any(
+            caller_pat.search(ir) for ir in caller_irs.values()
+        )
+        self.assertTrue(
+            caller_matched,
+            "Kernel should call 'noop' with void return type",
+        )
 
     def test_void_device_function_with_side_effect(self):
         @cuda.jit(device=True)
