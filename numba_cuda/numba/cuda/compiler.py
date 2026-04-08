@@ -1064,9 +1064,10 @@ def cabi_wrap_function(
 
     argtypes = fndesc.argtypes
     restype = fndesc.restype
+    numba_call_conv = fndesc.call_conv
     c_call_conv = CUDACABICallConv(context)
     wrapfnty = c_call_conv.get_function_type(restype, argtypes)
-    fnty = context.call_conv.get_function_type(fndesc.restype, argtypes)
+    fnty = numba_call_conv.get_function_type(fndesc.restype, argtypes)
 
     wrapper_module = context.create_module("cuda.cabi.wrapper")
     func = ir.Function(wrapper_module, fnty, fndesc.llvm_func_name)
@@ -1077,7 +1078,7 @@ def cabi_wrap_function(
     arginfo = context.get_arg_packer(argtypes)
     callargs = arginfo.from_arguments(builder, wrapfn.args)
     # Ignore the status -- it can't propagate through the C ABI
-    _, return_value = context.call_conv.call_function(
+    _, return_value = numba_call_conv.call_function(
         builder, func, restype, argtypes, callargs
     )
     builder.ret(return_value)
