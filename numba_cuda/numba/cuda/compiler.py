@@ -1178,8 +1178,16 @@ def _compile_pyfunc_with_fixup(
         nvvm.set_launch_bounds(kernel, launch_bounds)
     elif abi == "c":
         tgt = cres.target_context
-        default_name = "cfunc_" + cres.fndesc.mangled_name
-        wrapper_name = abi_info.get("abi_name", default_name)
+        if "abi_name" in abi_info:
+            wrapper_name = abi_info["abi_name"]
+        elif pyfunc.__name__.isidentifier():
+            wrapper_name = pyfunc.__name__
+        else:
+            raise ValueError(
+                f"Cannot determine a C ABI function name from "
+                f"'{pyfunc.__name__}'. Provide an explicit name via "
+                f"abi_info={{'abi_name': '<name>'}}."
+            )
         lib = cabi_wrap_function(
             tgt, lib, cres.fndesc, wrapper_name, nvvm_options
         )

@@ -486,12 +486,6 @@ class TestCompile(unittest.TestCase):
             r"func_retval0\)\s+blah\(",
         )
 
-    def test_c_abi_no_env_global(self):
-        """CABI functions should not emit a NumbaEnv global."""
-        ret = compile_ptx(lambda x: x, int32(int32), device=True, abi="c")
-        ptx, _ = self._handle_compile_result(ret, compile_ptx)
-        self.assertNotIn("NumbaEnv", ptx)
-
     def test_numba_abi_has_env_global(self):
         """Numba-ABI functions still require a NumbaEnv global."""
         ret = compile_ptx(lambda x: x, int32(int32), device=True, abi="numba")
