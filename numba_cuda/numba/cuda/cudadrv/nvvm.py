@@ -242,7 +242,7 @@ class CompilationUnit:
         except Exception as e:
             log = self.get_log()
             if log:
-                raise nvvmError(f"{e}\n{log}") from e
+                raise NvvmSupportError(f"{e}\n{log}") from e
             raise
 
     def compile(self):
