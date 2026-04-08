@@ -1081,7 +1081,7 @@ def cabi_wrap_function(
     _, return_value = numba_call_conv.call_function(
         builder, func, restype, argtypes, callargs
     )
-    builder.ret(return_value)
+    c_call_conv.return_value(builder, return_value)
 
     library.add_ir_module(wrapper_module)
     library.finalize()
