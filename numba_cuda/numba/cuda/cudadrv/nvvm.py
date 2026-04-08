@@ -239,10 +239,10 @@ class CompilationUnit:
                 self.n_options,
                 self._options_str,
             )
-        except Exception:
+        except Exception as e:
             log = self.get_log()
             if log:
-                print("NVVM verify log:\n" + log)
+                raise type(e)(f"{e}\n{log}") from e
             raise
 
     def compile(self):
