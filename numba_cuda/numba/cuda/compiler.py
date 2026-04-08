@@ -1085,6 +1085,13 @@ def cabi_wrap_function(
 
     library.add_ir_module(wrapper_module)
     library.finalize()
+
+    if config.DUMP_LLVM:
+        print("LLVM DUMP: CABI wrapper".center(80, "-"))
+        for mod in library.modules:
+            print(mod)
+        print("=" * 80)
+
     return library
 
 
@@ -1171,7 +1178,9 @@ def _compile_pyfunc_with_fixup(
         nvvm.set_launch_bounds(kernel, launch_bounds)
     elif abi == "c":
         tgt = cres.target_context
-        wrapper_name = abi_info.get("abi_name", pyfunc.__name__)
+        wrapper_name = abi_info.get(
+            "abi_name", cres.fndesc.llvm_cfunc_wrapper_name
+        )
         lib = cabi_wrap_function(
             tgt, lib, cres.fndesc, wrapper_name, nvvm_options
         )
