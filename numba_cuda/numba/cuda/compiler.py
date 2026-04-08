@@ -743,8 +743,6 @@ def compile_cuda(
     cc=None,
     max_registers=None,
     lto=False,
-    abi="numba",
-    abi_info=None,
 ):
     if cc is None:
         raise ValueError("Compute Capability must be supplied")
@@ -789,13 +787,7 @@ def compile_cuda(
     flags.max_registers = max_registers
     flags.lto = lto
 
-    if abi == "c":
-        call_conv = CUDACABICallConv(targetctx)
-    else:
-        call_conv = CUDACallConv(targetctx)
-
-    if abi_info is None:
-        abi_info = {}
+    call_conv = CUDACallConv(targetctx)
 
     with utils.numba_target_override():
         cres = compile_extra(
@@ -808,7 +800,6 @@ def compile_cuda(
             locals={},
             pipeline_class=CUDACompiler,
             call_conv=call_conv,
-            abi_info=abi_info,
         )
 
     library = cres.library
@@ -1056,6 +1047,46 @@ def compile_all(
     return codes, resty
 
 
+def cabi_wrap_function(
+    context, lib, fndesc, wrapper_function_name, nvvm_options
+):
+    """
+    Wrap a Numba ABI function in a C ABI wrapper at the NVVM IR level.
+
+    The C ABI wrapper will have the same name as the source Python function.
+    """
+    library = lib.codegen.create_library(
+        f"{lib.name}_function_",
+        entry_name=wrapper_function_name,
+        nvvm_options=nvvm_options,
+    )
+    library.add_linking_library(lib)
+
+    argtypes = fndesc.argtypes
+    restype = fndesc.restype
+    c_call_conv = CUDACABICallConv(context)
+    wrapfnty = c_call_conv.get_function_type(restype, argtypes)
+    fnty = context.call_conv.get_function_type(fndesc.restype, argtypes)
+
+    wrapper_module = context.create_module("cuda.cabi.wrapper")
+    func = ir.Function(wrapper_module, fnty, fndesc.llvm_func_name)
+
+    wrapfn = ir.Function(wrapper_module, wrapfnty, wrapper_function_name)
+    builder = ir.IRBuilder(wrapfn.append_basic_block(""))
+
+    arginfo = context.get_arg_packer(argtypes)
+    callargs = arginfo.from_arguments(builder, wrapfn.args)
+    # Ignore the status -- it can't propagate through the C ABI
+    _, return_value = context.call_conv.call_function(
+        builder, func, restype, argtypes, callargs
+    )
+    builder.ret(return_value)
+
+    library.add_ir_module(wrapper_module)
+    library.finalize()
+    return library
+
+
 def _compile_pyfunc_with_fixup(
     pyfunc,
     sig,
@@ -1125,8 +1156,6 @@ def _compile_pyfunc_with_fixup(
         nvvm_options=nvvm_options,
         cc=cc,
         forceinline=forceinline,
-        abi=abi,
-        abi_info=abi_info,
     )
     resty = cres.signature.return_type
 
@@ -1139,6 +1168,12 @@ def _compile_pyfunc_with_fixup(
         lib._entry_name = cres.fndesc.llvm_func_name
         kernel_fixup(kernel, debug)
         nvvm.set_launch_bounds(kernel, launch_bounds)
+    elif abi == "c":
+        tgt = cres.target_context
+        wrapper_name = abi_info.get("abi_name", pyfunc.__name__)
+        lib = cabi_wrap_function(
+            tgt, lib, cres.fndesc, wrapper_name, nvvm_options
+        )
 
     return lib, resty
 
