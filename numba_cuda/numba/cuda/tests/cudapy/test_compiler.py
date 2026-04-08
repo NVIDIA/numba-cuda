@@ -4,7 +4,7 @@
 import os
 from math import sqrt
 from numba import cuda
-from numba.core.extending import intrinsic
+from numba.core.extending import intrinsic, overload
 
 from numba.cuda import float32, int16, int32, int64, types, uint32, void
 from numba.cuda import (
@@ -836,6 +836,34 @@ class TestCompile(unittest.TestCase):
         cuda.compile(
             wrapper_func, types.int32(types.int32), output="ltoir", abi="c"
         )
+
+    def test_compile_CABI_calling_overloaded_function(self):
+        # Reproducer from gh-841
+        # https://github.com/NVIDIA/numba-cuda/issues/841
+        #
+        # When a CABI function calls an overloaded function (compiled as a
+        # Numba-ABI subroutine), the error-status return path must use the
+        # caller's calling convention. Previously the callee's Numba-ABI
+        # convention was used, emitting `ret i32` (the status code) inside a
+        # function whose declared return type did not match, producing invalid
+        # LLVM IR.
+
+        def _my_func(x):
+            pass
+
+        @overload(_my_func)
+        def _ov_my_func(x):
+            if isinstance(x, types.IntegerLiteral):
+
+                def impl(x):
+                    return int32(0)
+
+                return impl
+
+        def caller():
+            _my_func(0)
+
+        cuda.compile(caller, (), abi_info={"abi_name": "caller"}, abi="c")
 
     def test_compile_complex_div_c_abi(self):
         # Reproducer from gh-789
