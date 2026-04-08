@@ -1178,9 +1178,8 @@ def _compile_pyfunc_with_fixup(
         nvvm.set_launch_bounds(kernel, launch_bounds)
     elif abi == "c":
         tgt = cres.target_context
-        wrapper_name = abi_info.get(
-            "abi_name", cres.fndesc.llvm_cfunc_wrapper_name
-        )
+        default_name = "cfunc_" + cres.fndesc.mangled_name
+        wrapper_name = abi_info.get("abi_name", default_name)
         lib = cabi_wrap_function(
             tgt, lib, cres.fndesc, wrapper_name, nvvm_options
         )
