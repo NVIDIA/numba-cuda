@@ -233,11 +233,17 @@ class CompilationUnit:
         """
         Run the NVVM verifier on all code added to the compilation unit.
         """
-        _nvvm.verify_program(
-            self._handle,
-            self.n_options,
-            self._options_str,
-        )
+        try:
+            _nvvm.verify_program(
+                self._handle,
+                self.n_options,
+                self._options_str,
+            )
+        except Exception:
+            log = self.get_log()
+            if log:
+                print("NVVM verify log:\n" + log)
+            raise
 
     def compile(self):
         """
