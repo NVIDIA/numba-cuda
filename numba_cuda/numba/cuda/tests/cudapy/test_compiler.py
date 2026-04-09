@@ -837,7 +837,7 @@ class TestCompile(unittest.TestCase):
             wrapper_func, types.int32(types.int32), output="ltoir", abi="c"
         )
 
-    def test_compile_CABI_calling_overloaded_function(self):
+    def test_compile_cabi_calling_overloaded_function(self):
         # Reproducer from gh-841
         # https://github.com/NVIDIA/numba-cuda/issues/841
         #
