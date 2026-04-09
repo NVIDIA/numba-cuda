@@ -817,7 +817,7 @@ class TestCompile(unittest.TestCase):
 
         cuda.compile(wrapper, wrapper_sig.args, output="ltoir")
 
-    def test_compile_CABI_calling_device_function_returning_optional(self):
+    def test_compile_cabi_calling_device_function_returning_optional(self):
         # Exercise a CABI caller invoking a Numba ABI callee that can return
         # None through Optional[int32]
         def maybe_none(x):
