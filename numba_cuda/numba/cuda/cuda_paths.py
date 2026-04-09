@@ -14,6 +14,9 @@ import pathlib
 from contextlib import contextmanager
 
 _env_path_tuple = namedtuple("_env_path_tuple", ["by", "info"])
+_header_dir_info = namedtuple(
+    "_header_dir_info", ["found_via", "abs_path"]
+)
 
 SEARCH_PRIORITY = [
     "Conda environment",
@@ -80,6 +83,20 @@ def _find_valid_path(options):
             return by, data
     else:
         return "<unknown>", None
+
+
+def _locate_nvidia_header_directory(name):
+    locator = getattr(pathfinder, "locate_nvidia_header_directory", None)
+    if locator is None:
+        locator = getattr(pathfinder, "find_nvidia_header_directory", None)
+    if locator is None:
+        return None
+    located = locator(name)
+    if located is None:
+        return None
+    if hasattr(located, "abs_path") and hasattr(located, "found_via"):
+        return located
+    return _header_dir_info("cuda.pathfinder", located)
 
 
 def _get_libdevice_path_decision():
@@ -425,7 +442,7 @@ def get_current_cuda_target_name():
 
 def _get_include_dir():
     """Find the root include directory."""
-    located_header_dir = pathfinder.locate_nvidia_header_directory("cudart")
+    located_header_dir = _locate_nvidia_header_directory("cudart")
     if located_header_dir is not None:
         if not os.path.exists(
             os.path.join(

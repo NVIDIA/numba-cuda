@@ -182,11 +182,11 @@ class CUDACodeLibrary(serialize.ReduceMixin, CodeLibrary):
         self._ptx_cache = {}
         # Maps CC -> LTO-IR
         self._ltoir_cache = {}
-        # Maps CC -> cubin
+        # Maps CC -> cubin bytes
         self._cubin_cache = {}
         # Maps CC -> linker info output for cubin
         self._linkerinfo_cache = {}
-        # Maps Device numeric ID -> cufunc
+        # Maps execution-context cache key -> cufunc
         self._cufunc_cache = {}
 
         self._max_registers = max_registers
@@ -321,9 +321,9 @@ class CUDACodeLibrary(serialize.ReduceMixin, CodeLibrary):
     def get_cubin(self, cc=None):
         cc = self._ensure_cc(cc)
 
-        cubin = self._cubin_cache.get(cc, None)
-        if cubin:
-            return cubin
+        cubin_code = self._cubin_cache.get(cc, None)
+        if cubin_code is not None:
+            return driver.ObjectCode.from_cubin(cubin_code, name=self._name)
 
         if self._lto and config.DUMP_ASSEMBLY:
             ptx = self.get_lto_ptx(cc=cc)
@@ -338,7 +338,7 @@ class CUDACodeLibrary(serialize.ReduceMixin, CodeLibrary):
         self._link_all(linker, cc, ignore_nonlto=False)
         cubin = linker.complete()
 
-        self._cubin_cache[cc] = cubin
+        self._cubin_cache[cc] = cubin.code
         self._linkerinfo_cache[cc] = linker.info_log
 
         return cubin
@@ -352,9 +352,9 @@ class CUDACodeLibrary(serialize.ReduceMixin, CodeLibrary):
             raise RuntimeError(msg)
 
         ctx = devices.get_context()
-        device = ctx.device
+        cache_key = ctx.cache_key
 
-        cufunc = self._cufunc_cache.get(device.id, None)
+        cufunc = self._cufunc_cache.get(cache_key, None)
         if cufunc:
             return cufunc
         cubin = self.get_cubin()
@@ -366,7 +366,7 @@ class CUDACodeLibrary(serialize.ReduceMixin, CodeLibrary):
         cufunc = module.get_function(self._entry_name)
 
         # Populate caches
-        self._cufunc_cache[device.id] = cufunc
+        self._cufunc_cache[cache_key] = cufunc
 
         return cufunc
 

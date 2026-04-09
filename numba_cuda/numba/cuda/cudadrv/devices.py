@@ -18,7 +18,7 @@ import functools
 import threading
 from contextlib import contextmanager
 
-from .driver import driver
+from .driver import driver, is_green_context_handle
 
 
 class _DeviceList:
@@ -91,8 +91,8 @@ class _DeviceContextManager:
 class _Runtime:
     """Emulate the CUDA runtime context management.
 
-    It owns all Devices and Contexts.
-    Keeps at most one Context per Device
+    It owns all Devices and primary Contexts, and borrows active external
+    contexts by handle when needed.
     """
 
     def __init__(self):
@@ -130,8 +130,8 @@ class _Runtime:
 
     def get_or_create_context(self, devnum):
         """Returns the primary context and push+create it if needed
-        for *devnum*.  If *devnum* is None, use the active CUDA context (must
-        be primary) or create a new one with ``devnum=0``.
+        for *devnum*.  If *devnum* is None, use the active CUDA context or
+        create a new one with ``devnum=0``.
         """
         if devnum is None:
             attached_ctx = self._get_attached_context()
@@ -155,10 +155,15 @@ class _Runtime:
                 if not ac:
                     return self._activate_context_for(0)
                 else:
-                    # Get primary context for the active device
-                    ctx = self.gpus[ac.devnum].get_primary_context()
-                    # Is active context the primary context?
-                    if ctx.handle != ac.context_handle:
+                    gpu = self.gpus[ac.devnum]
+                    primary_ctx = gpu.get_primary_context()
+                    if primary_ctx.handle == ac.context_handle:
+                        ctx = primary_ctx
+                    elif is_green_context_handle(ac.context_handle):
+                        ctx = gpu.get_or_create_borrowed_context(
+                            ac.context_handle
+                        )
+                    else:
                         raise RuntimeError(
                             "Numba cannot operate on non-primary"
                             f" CUDA context {int(ac.context_handle):x}"
@@ -190,6 +195,7 @@ class _Runtime:
         """Clear all contexts in the thread.  Destroy the context if and only
         if we are in the main thread.
         """
+        self._ensure_resettable()
         # Pop all active context.
         while driver.pop_active_context() is not None:
             pass
@@ -202,6 +208,28 @@ class _Runtime:
         # Reset all devices
         for gpu in self.gpus:
             gpu.reset()
+
+    def _ensure_resettable(self):
+        if self._has_borrowed_contexts():
+            raise RuntimeError(
+                "Cannot reset CUDA subsystem while borrowed CUDA contexts "
+                "are still live"
+            )
+
+        with driver.get_active_context() as ac:
+            if not ac:
+                return
+
+            gpu = self.gpus[ac.devnum]
+            primary_ctx = gpu.get_primary_context()
+            if primary_ctx.handle != ac.context_handle:
+                raise RuntimeError(
+                    "Cannot reset CUDA subsystem while a non-primary CUDA "
+                    "context is active"
+                )
+
+    def _has_borrowed_contexts(self):
+        return any(gpu.has_borrowed_contexts() for gpu in self.gpus)
 
 
 _runtime = _Runtime()
@@ -245,3 +273,8 @@ def reset():
 
     """
     _runtime.reset()
+
+
+def require_resettable():
+    """Raise if a destructive reset would touch externally-managed contexts."""
+    _runtime._ensure_resettable()
