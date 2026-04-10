@@ -3604,8 +3604,11 @@ def np_count_nonzero(a, axis=None):
     if is_nonelike(axis):
 
         def impl(a, axis=None):
-            arr2 = np.ravel(a)
-            return np.sum(arr2 != 0)
+            c = 0
+            for v in np.nditer(a):
+                if v.item() != 0:
+                    c += 1
+            return c
 
         return impl
     else:
