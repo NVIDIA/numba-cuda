@@ -2,9 +2,18 @@
 # SPDX-License-Identifier: BSD-2-Clause
 
 import numbers
+from contextlib import contextmanager
+from unittest.mock import patch
+
+import numpy as np
 
 from numba import cuda
-from numba.cuda.testing import unittest, CUDATestCase, skip_on_cudasim
+from numba.cuda.testing import (
+    unittest,
+    CUDATestCase,
+    ForeignArray,
+    skip_on_cudasim,
+)
 from numba.cuda.cudadrv import driver
 
 
@@ -153,6 +162,213 @@ class Test3rdPartyContext(CUDATestCase):
             self.assertEqual(list(a.copy_to_host()), list(range(10)))
 
         self.test_attached_primary(do)
+
+
+@skip_on_cudasim("CUDA HW required")
+class TestGreenContextInterop(CUDATestCase):
+    def tearDown(self):
+        super().tearDown()
+        with driver.driver.get_active_context() as ac:
+            if ac:
+                cuda.current_context().reset()
+
+    def _require_green_context_support(self):
+        if driver.driver.get_version() < (13, 0):
+            self.skipTest("CUDA 13+ required for green contexts")
+
+        required = (
+            "CUgreenCtxCreate_flags",
+            "cuDeviceGetDevResource",
+            "cuDevResourceGenerateDesc",
+            "cuGreenCtxCreate",
+            "cuCtxFromGreenCtx",
+            "cuGreenCtxStreamCreate",
+            "cuGreenCtxDestroy",
+            "cuStreamGetGreenCtx",
+        )
+        missing = [
+            name for name in required if not hasattr(driver.binding, name)
+        ]
+        if missing:
+            self.skipTest(
+                "Green context bindings are unavailable: "
+                + ", ".join(sorted(missing))
+            )
+
+    @contextmanager
+    def green_context(self):
+        self._require_green_context_support()
+
+        the_driver = driver.driver
+        binding = driver.binding
+        dev = binding.CUdevice(0)
+        green_ctx = None
+        ctx_handle = None
+        stream = None
+
+        try:
+            resource = the_driver.cuDeviceGetDevResource(
+                dev, binding.CUdevResourceType.CU_DEV_RESOURCE_TYPE_SM
+            )
+            desc = the_driver.cuDevResourceGenerateDesc([resource], 1)
+            green_ctx = the_driver.cuGreenCtxCreate(
+                desc,
+                dev,
+                binding.CUgreenCtxCreate_flags.CU_GREEN_CTX_DEFAULT_STREAM.value,
+            )
+            ctx_handle = the_driver.cuCtxFromGreenCtx(green_ctx)
+            stream = the_driver.cuGreenCtxStreamCreate(
+                green_ctx,
+                binding.CUstream_flags.CU_STREAM_NON_BLOCKING.value,
+                0,
+            )
+            the_driver.cuCtxPushCurrent(ctx_handle)
+        except driver.CudaAPIError as e:
+            if green_ctx is not None:
+                the_driver.cuGreenCtxDestroy(green_ctx)
+            self.skipTest(f"Green contexts are unavailable: {e}")
+
+        try:
+            yield ctx_handle, stream
+        finally:
+            if stream is not None:
+                the_driver.cuStreamDestroy(stream)
+            if ctx_handle is not None:
+                popped = the_driver.cuCtxPopCurrent()
+                self.assertEqual(int(popped), int(ctx_handle))
+            if green_ctx is not None:
+                the_driver.cuGreenCtxDestroy(green_ctx)
+
+    def test_attached_green_context(self):
+        with self.green_context() as (ctx_handle, _):
+            my_ctx = cuda.current_context()
+            self.assertEqual(int(my_ctx.handle), int(ctx_handle))
+            self.assertTrue(my_ctx.borrowed)
+
+    def test_cudajit_in_attached_green_context(self):
+        with self.green_context() as (_, stream_handle):
+            stream = cuda.external_stream(int(stream_handle))
+
+            @cuda.jit
+            def fill(a):
+                i = cuda.grid(1)
+                if i < a.size:
+                    a[i] = i
+
+            a = cuda.device_array(10, dtype=np.int32)
+            fill[1, 10, stream](a)
+            stream.synchronize()
+
+            np.testing.assert_array_equal(
+                a.copy_to_host(), np.arange(10, dtype=np.int32)
+            )
+
+    def test_cuda_array_interface_sync_in_green_context(self):
+        with self.green_context() as (_, stream_handle):
+            stream = cuda.external_stream(int(stream_handle))
+            foreign = ForeignArray(
+                cuda.device_array(10, dtype=np.int32, stream=stream)
+            )
+
+            @cuda.jit
+            def touch(arr):
+                i = cuda.grid(1)
+                if i < arr.size:
+                    arr[i] = i + 1
+
+            with patch.object(
+                cuda.cudadrv.driver.Stream, "synchronize", return_value=None
+            ) as mock_sync:
+                imported = cuda.as_cuda_array(foreign)
+
+            self.assertTrue(imported.stream.external)
+            self.assertEqual(int(imported.stream.handle), int(stream_handle))
+            mock_sync.assert_called_once_with()
+
+            with patch.object(
+                cuda.cudadrv.driver.Stream, "synchronize", return_value=None
+            ) as mock_sync:
+                touch[1, 10](foreign)
+
+            mock_sync.assert_called_once_with()
+
+    def test_cufunc_cache_is_context_specific(self):
+        from numba import types
+
+        sig = (types.int32[::1],)
+
+        @cuda.jit(sig)
+        def fill(a):
+            i = cuda.grid(1)
+            if i < a.size:
+                a[i] = i
+
+        primary_ctx = cuda.current_context()
+        primary = cuda.device_array(10, dtype=np.int32)
+        fill[1, 10](primary)
+        primary_key = primary_ctx.cache_key
+
+        with self.green_context() as (_, _stream_handle):
+            green_ctx = cuda.current_context()
+            green = cuda.device_array(10, dtype=np.int32)
+            fill[1, 10](green)
+            np.testing.assert_array_equal(
+                green.copy_to_host(), np.arange(10, dtype=np.int32)
+            )
+            green_key = green_ctx.cache_key
+
+        fill[1, 10](primary)
+        np.testing.assert_array_equal(
+            primary.copy_to_host(), np.arange(10, dtype=np.int32)
+        )
+
+        cufunc_cache = fill.overloads[sig]._codelibrary._cufunc_cache
+        self.assertIn(primary_key, cufunc_cache)
+        self.assertIn(green_key, cufunc_cache)
+        self.assertEqual(len(cufunc_cache), 2)
+
+    def test_borrowed_context_reset_reloads_modules(self):
+        with self.green_context():
+            @cuda.jit
+            def fill(a):
+                i = cuda.grid(1)
+                if i < a.size:
+                    a[i] = i
+
+            ctx = cuda.current_context()
+            before = ctx.cache_key
+
+            first = cuda.device_array(10, dtype=np.int32)
+            fill[1, 10](first)
+            np.testing.assert_array_equal(
+                first.copy_to_host(), np.arange(10, dtype=np.int32)
+            )
+            overload = next(iter(fill.overloads.values()))
+
+            ctx.reset()
+            after = ctx.cache_key
+            self.assertNotEqual(before, after)
+
+            second = cuda.device_array(10, dtype=np.int32)
+            fill[1, 10](second)
+            np.testing.assert_array_equal(
+                second.copy_to_host(), np.arange(10, dtype=np.int32)
+            )
+
+            cufunc_cache = overload._codelibrary._cufunc_cache
+            self.assertIn(before, cufunc_cache)
+            self.assertIn(after, cufunc_cache)
+
+    def test_close_rejected_in_borrowed_context(self):
+        with self.green_context():
+            cuda.current_context()
+            with self.assertRaises(RuntimeError) as raises:
+                cuda.close()
+
+            self.assertIn(
+                "borrowed CUDA contexts are still live",
+                str(raises.exception),
+            )
 
 
 if __name__ == "__main__":

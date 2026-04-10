@@ -511,6 +511,8 @@ def close():
     Explicitly clears all contexts in the current thread, and destroys all
     contexts if the current thread is the main thread.
     """
+    devices.require_resettable()
+
     # Must clear memsys object in case it has been used already
     from .memory_management import rtsys
 

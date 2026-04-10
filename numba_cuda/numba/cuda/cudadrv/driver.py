@@ -463,6 +463,23 @@ class _ActiveContext:
 driver = Driver()
 
 
+def is_green_context_handle(handle):
+    if not hasattr(binding, "CUgreenCtx") or not hasattr(
+        binding, "cuGreenCtxGetId"
+    ):
+        return False
+
+    green_handle = binding.CUgreenCtx(int(handle))
+    try:
+        driver.cuGreenCtxGetId(green_handle)
+    except CudaAPIError as e:
+        if e.code == binding.CUresult.CUDA_ERROR_INVALID_CONTEXT:
+            return False
+        raise
+    else:
+        return True
+
+
 class Device:
     """
     The device object owns the CUDA contexts.  This is owned by the driver
@@ -491,6 +508,7 @@ class Device:
         self.name = self._dev.name
         self.uuid = f"GPU-{self._dev.uuid}"
         self.primary_context = None
+        self._borrowed_contexts = weakref.WeakValueDictionary()
 
     def get_device_identity(self):
         return {
@@ -534,16 +552,29 @@ class Device:
                 f"{self} has compute capability < {MIN_REQUIRED_CC}"
             )
 
-        self._dev.set_current()
-        if CUDA_CORE_GT_0_6:
-            ctx_handle = self._dev.context.handle
-        else:
-            ctx_handle = self._dev.context._handle
+        ctx_handle = driver.cuDevicePrimaryCtxRetain(self.id)
         self.primary_context = ctx = Context(
             weakref.proxy(self),
             ctx_handle,
         )
         return ctx
+
+    def get_or_create_borrowed_context(self, handle):
+        handle_value = int(handle)
+
+        if (ctx := self.primary_context) is not None:
+            if int(ctx.handle) == handle_value:
+                return ctx
+
+        if (ctx := self._borrowed_contexts.get(handle_value)) is not None:
+            return ctx
+
+        ctx = Context(weakref.proxy(self), handle, borrowed=True)
+        self._borrowed_contexts[handle_value] = ctx
+        return ctx
+
+    def has_borrowed_contexts(self):
+        return bool(self._borrowed_contexts)
 
     def release_primary_context(self):
         """
@@ -1054,9 +1085,11 @@ class Context:
     Contexts should not be constructed directly by user code.
     """
 
-    def __init__(self, device, handle):
+    def __init__(self, device, handle, borrowed=False):
         self.device = device
         self.handle = handle
+        self.borrowed = borrowed
+        self._generation = 0
         self.allocations = utils.UniqueDict()
         self.deallocations = _PendingDeallocs()
         _ensure_memory_manager()
@@ -1069,6 +1102,7 @@ class Context:
         """
         Clean up all owned resources in this context.
         """
+        self._generation += 1
         # Free owned resources
         _logger.info("reset context of device %s", self.device.id)
         self.memory_manager.reset()
@@ -1143,6 +1177,10 @@ class Context:
         It's safe to be called multiple times.
         """
         self.memory_manager.initialize()
+
+    @property
+    def cache_key(self):
+        return int(self.handle), self._generation
 
     def push(self):
         """

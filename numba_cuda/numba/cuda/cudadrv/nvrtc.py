@@ -5,9 +5,11 @@ from numba.cuda.cudadrv.error import (
     CCSupportError,
 )
 from numba.cuda import config
-from numba.cuda.cuda_paths import get_cuda_paths
+from numba.cuda.cuda_paths import (
+    get_cuda_paths,
+    _locate_nvidia_header_directory,
+)
 from numba.cuda.utils import _readenv
-from cuda import pathfinder
 import os
 import warnings
 import functools
@@ -115,7 +117,7 @@ def compile(src, name, cc, ltoir=False, lineinfo=False, debug=False):
     elif nvrtc_ver_major == 13:
         numba_include = f"{os.path.join(numba_cuda_path, 'include', '13')}"
 
-    cccl_found_header_dir = pathfinder.locate_nvidia_header_directory("cccl")
+    cccl_found_header_dir = _locate_nvidia_header_directory("cccl")
     if cccl_found_header_dir is not None:
         # TODO: Not every kernel needs cccl, so it shouldn't
         # be added to the include path for every kernel.
