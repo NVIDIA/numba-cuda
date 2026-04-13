@@ -78,6 +78,51 @@ class TestContextAPI(CUDATestCase):
 
 
 @skip_on_cudasim("CUDA HW required")
+class TestContextLeak(CUDATestCase):
+    """Regression tests for context leaks from the gpu context manager."""
+
+    def test_gpus_context_manager_does_not_leak(self):
+        # Regression test: ``with cuda.gpus[N]`` must not leave a CUDA
+        # context on the thread after the block exits.
+        the_driver = driver.driver
+
+        # Drain any pre-existing contexts from the stack.
+        while the_driver.pop_active_context() is not None:
+            pass
+
+        with cuda.gpus[0]:
+            pass
+
+        # After exiting the context manager the current context must be null.
+        with the_driver.get_active_context() as ac:
+            self.assertIsNone(
+                ac.context_handle,
+                "CUDA context leaked after exiting cuda.gpus context manager",
+            )
+
+    def test_gpus_context_manager_restores_previous_context(self):
+        # If a context is already active before entering the context manager,
+        # it must be restored on exit.
+        the_driver = driver.driver
+
+        # Ensure device-0 context exists and is pushed.
+        outer_ctx = cuda.current_context()
+        outer_handle = int(outer_ctx.handle)
+
+        with cuda.gpus[0]:
+            pass
+
+        with the_driver.get_active_context() as ac:
+            self.assertIsNotNone(ac.context_handle)
+            self.assertEqual(
+                int(ac.context_handle),
+                outer_handle,
+                "Previous context was not restored after exiting "
+                "cuda.gpus context manager",
+            )
+
+
+@skip_on_cudasim("CUDA HW required")
 class Test3rdPartyContext(CUDATestCase):
     def tearDown(self):
         super().tearDown()

@@ -539,6 +539,10 @@ class Device:
             ctx_handle = self._dev.context.handle
         else:
             ctx_handle = self._dev.context._handle
+        # set_current() leaves the context active on the thread, but this
+        # method must not have that side effect — callers (e.g.
+        # _activate_context_for) push explicitly and expect a balanced pop.
+        driver.cuCtxPopCurrent()
         self.primary_context = ctx = Context(
             weakref.proxy(self),
             ctx_handle,
