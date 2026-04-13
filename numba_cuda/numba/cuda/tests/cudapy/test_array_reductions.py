@@ -379,6 +379,7 @@ class TestArrayReductions(MemoryLeakMixin, TestCase):
             np.int64([1, 0, 2, 0, 3]),
             np.int64([0, 0, 0, 0]),
             np.int64([1, 2, 3, 4]),
+            np.array(0),
             np.float64([]),
             np.float64([0.0, -0.0, 1.5, 0.0]),
             np.float64([1.0, 2.0, 0.0, -0.0, 1.0, -1.5]),
