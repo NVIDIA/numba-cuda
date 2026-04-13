@@ -534,15 +534,18 @@ class Device:
                 f"{self} has compute capability < {MIN_REQUIRED_CC}"
             )
 
+        prev = driver.cuCtxGetCurrent()
         self._dev.set_current()
         if CUDA_CORE_GT_0_6:
             ctx_handle = self._dev.context.handle
         else:
             ctx_handle = self._dev.context._handle
-        # set_current() leaves the context active on the thread, but this
-        # method must not have that side effect — callers (e.g.
-        # _activate_context_for) push explicitly and expect a balanced pop.
-        driver.cuCtxPopCurrent()
+        # set_current() may push a context onto the thread's stack.  Undo
+        # that so callers (_activate_context_for) can push/pop symmetrically.
+        # Only pop when set_current() actually changed the current context;
+        # it is a no-op when a context for this device is already active.
+        if int(driver.cuCtxGetCurrent()) != int(prev):
+            driver.cuCtxPopCurrent()
         self.primary_context = ctx = Context(
             weakref.proxy(self),
             ctx_handle,
