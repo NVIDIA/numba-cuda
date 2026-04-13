@@ -379,11 +379,48 @@ class TestArrayReductions(MemoryLeakMixin, TestCase):
             np.int64([1, 0, 2, 0, 3]),
             np.int64([0, 0, 0, 0]),
             np.int64([1, 2, 3, 4]),
+            np.float64([]),
             np.float64([0.0, -0.0, 1.5, 0.0]),
             np.float64([1.0, 2.0, 0.0, -0.0, 1.0, -1.5]),
-            np.array([[1, 0, 1], [0, 1, 1]]),
-            np.array([]),
-            np.array(0),
+            np.float64([np.nan, 0.0, np.inf, -np.inf, 0.0]),
+        )
+
+        @cuda.jit
+        def kernel(out):
+            i = 0
+            for case in literal_unroll(cases):
+                out[i] = np.count_nonzero(case)
+                i += 1
+
+        expected = np.array([np.count_nonzero(a) for a in cases], dtype=np.intp)
+        out = cuda.to_device(np.zeros(len(cases), dtype=np.intp))
+        kernel[1, 1](out)
+        self.assertPreciseEqual(expected, out.copy_to_host())
+
+    def test_count_nonzero_bool(self):
+        cases = (
+            np.array([True, False, True, False, True]),
+            np.array([False, False, False]),
+            np.array([True, True, True]),
+        )
+
+        @cuda.jit
+        def kernel(out):
+            i = 0
+            for case in literal_unroll(cases):
+                out[i] = np.count_nonzero(case)
+                i += 1
+
+        expected = np.array([np.count_nonzero(a) for a in cases], dtype=np.intp)
+        out = cuda.to_device(np.zeros(len(cases), dtype=np.intp))
+        kernel[1, 1](out)
+        self.assertPreciseEqual(expected, out.copy_to_host())
+
+    def test_count_nonzero_2d(self):
+        cases = (
+            np.int64([[1, 0, 2], [0, 3, 0]]),
+            np.int64([[0, 0], [0, 0]]),
+            np.float64([[1.0, 0.0], [-0.0, 2.5]]),
         )
 
         @cuda.jit
