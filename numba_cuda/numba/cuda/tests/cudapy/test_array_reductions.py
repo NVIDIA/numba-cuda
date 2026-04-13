@@ -381,6 +381,9 @@ class TestArrayReductions(MemoryLeakMixin, TestCase):
             np.int64([1, 2, 3, 4]),
             np.float64([0.0, -0.0, 1.5, 0.0]),
             np.float64([1.0, 2.0, 0.0, -0.0, 1.0, -1.5]),
+            np.array([[1, 0, 1], [0, 1, 1]]),
+            np.array([]),
+            np.array(0),
         )
 
         @cuda.jit
