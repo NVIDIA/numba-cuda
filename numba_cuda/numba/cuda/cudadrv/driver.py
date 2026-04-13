@@ -534,7 +534,7 @@ class Device:
                 f"{self} has compute capability < {MIN_REQUIRED_CC}"
             )
 
-        prev = driver.cuCtxGetCurrent()
+        prev = get_cuda_native_handle(driver.cuCtxGetCurrent())
         self._dev.set_current()
         if CUDA_CORE_GT_0_6:
             ctx_handle = self._dev.context.handle
@@ -544,7 +544,7 @@ class Device:
         # that so callers (_activate_context_for) can push/pop symmetrically.
         # Only pop when set_current() actually changed the current context;
         # it is a no-op when a context for this device is already active.
-        if int(driver.cuCtxGetCurrent()) != int(prev):
+        if get_cuda_native_handle(driver.cuCtxGetCurrent()) != prev:
             driver.cuCtxPopCurrent()
         self.primary_context = ctx = Context(
             weakref.proxy(self),
