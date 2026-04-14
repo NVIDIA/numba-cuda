@@ -557,6 +557,34 @@ class TestDeclareDeviceCABI(CUDATestCase):
         kernel[1, 32](r, x)
         np.testing.assert_equal(r, x * 2)
 
+    def test_declare_device_cabi_propagate(self):
+        # Ensures that a device function calling a C ABI function correctly
+        # propoagates the error status to its caller. No error status is
+        # provided by the C ABI function, so the device function that calls it
+        # should return status 0 (no error).
+        times2 = cuda.declare_device(
+            "times2", "int32(int32)", link=times2_cabi_cu, abi="c"
+        )
+
+        @cuda.jit
+        def device_func(x):
+            return times2(x)
+
+        @cuda.jit
+        def kernel(r, x):
+            i = cuda.grid(1)
+            if i < len(r):
+                r[i] = device_func(x[i])
+
+        x = np.arange(10, dtype=np.int32)
+        r = np.empty_like(x)
+        kernel[1, 32](r, x)
+        np.testing.assert_equal(r, x * 2)
+
+        compile_result = device_func.overloads[device_func.signatures[0]]
+        device_func_ir = compile_result.library.get_llvm_str()
+        self.assertIn("ret i32 0", device_func_ir)
+
     def test_declare_device_cabi_zero_args(self):
         const42 = cuda.declare_device(
             "const42", "int32()", link=const42_cabi_cu, abi="c"

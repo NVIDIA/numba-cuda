@@ -5,6 +5,7 @@ import os
 import platform
 import shutil
 import pytest
+from cuda import pathfinder
 from datetime import datetime
 from numba.cuda.utils import PYVERSION
 from numba.cuda.cuda_paths import get_conda_ctk_libdir
@@ -221,13 +222,13 @@ def skip_under_cuda_memcheck(reason):
 
 def skip_without_nvdisasm(reason):
     assert isinstance(reason, str)
-    nvdisasm_path = shutil.which("nvdisasm")
+    nvdisasm_path = pathfinder.find_nvidia_binary_utility("nvdisasm")
     return unittest.skipIf(nvdisasm_path is None, reason)
 
 
 def skip_with_nvdisasm(reason):
     assert isinstance(reason, str)
-    nvdisasm_path = shutil.which("nvdisasm")
+    nvdisasm_path = pathfinder.find_nvidia_binary_utility("nvdisasm")
     return unittest.skipIf(nvdisasm_path is not None, reason)
 
 

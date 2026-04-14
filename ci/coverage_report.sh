@@ -12,6 +12,7 @@ package=$(realpath "${NUMBA_CUDA_ARTIFACTS_DIR}"/*.whl)
 echo "Package path: ${package}"
 python -m pip install \
     "${package}[cu${CUDA_VER_MAJOR}]" \
+    "ml_dtypes" \
     pytest-cov \
     coverage \
     --group test-cu${CUDA_VER_MAJOR}

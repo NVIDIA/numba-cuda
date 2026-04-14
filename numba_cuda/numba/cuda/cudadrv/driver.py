@@ -55,6 +55,7 @@ from numba.cuda.cudadrv import nvrtc
 
 from cuda.bindings import driver as binding
 from cuda.core import (
+    GraphBuilder,
     Linker,
     LinkerOptions,
     ObjectCode,
@@ -533,11 +534,18 @@ class Device:
                 f"{self} has compute capability < {MIN_REQUIRED_CC}"
             )
 
+        prev = get_cuda_native_handle(driver.cuCtxGetCurrent())
         self._dev.set_current()
         if CUDA_CORE_GT_0_6:
             ctx_handle = self._dev.context.handle
         else:
             ctx_handle = self._dev.context._handle
+        # set_current() may push a context onto the thread's stack.  Undo
+        # that so callers (_activate_context_for) can push/pop symmetrically.
+        # Only pop when set_current() actually changed the current context;
+        # it is a no-op when a context for this device is already active.
+        if get_cuda_native_handle(driver.cuCtxGetCurrent()) != prev:
+            driver.cuCtxPopCurrent()
         self.primary_context = ctx = Context(
             weakref.proxy(self),
             ctx_handle,
@@ -2003,16 +2011,19 @@ class Stream:
 
 
 def _to_core_stream(stream):
-    # stream can be: int (0 for default), Stream (shim), or ExperimentalStream
+    # stream can be: int (0 for default), Stream (shim), ExperimentalStream,
+    # or GraphBuilder.
     if not stream:
         return ExperimentalStream.from_handle(0)
     elif isinstance(stream, Stream):
         return ExperimentalStream.from_handle(stream.handle or 0)
     elif isinstance(stream, ExperimentalStream):
         return stream
+    elif isinstance(stream, GraphBuilder):
+        return stream.stream
     else:
         raise TypeError(
-            f"Expected a Stream object, ExperimentalStream, or 0, got {type(stream).__name__}"
+            f"Expected a Stream object, ExperimentalStream, GraphBuilder, or 0, got {type(stream).__name__}"
         )
 
 

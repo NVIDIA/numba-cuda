@@ -81,6 +81,24 @@ class TestPickle(CUDATestCase):
         got2 = foo2(ary)
         np.testing.assert_equal(expected, got2)
 
+    def test_pickling_configured_launch_with_pre_launch_callbacks_raises(self):
+        @cuda.jit
+        def foo(arr):
+            arr[0] += 1
+
+        cfg = foo[5, 8]
+
+        def callback(kernel, launch_config):
+            pass
+
+        cfg.pre_launch_callbacks.append(callback)
+
+        with self.assertRaisesRegex(
+            pickle.PicklingError,
+            "Cannot pickle configured launches with pre-launch callbacks",
+        ):
+            pickle.dumps(cfg)
+
 
 if __name__ == "__main__":
     unittest.main()

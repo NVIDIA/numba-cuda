@@ -19,6 +19,14 @@ from numba.cuda.np import numpy_support
 from cuda.core import Buffer
 from cuda.core.utils import StridedMemoryView
 
+# As of cuda_bindings 13.2, it uses its own enum implementation and we need to
+# extend the type conversions to support them.
+
+try:
+    from cuda.bindings._internal import _fast_enum
+except ImportError:
+    _fast_enum = None
+
 
 # terminal color markup
 _termcolor = errors.termcolor()
@@ -55,6 +63,13 @@ def typeof_impl(val, c):
     tp = getattr(val, "_numba_type_", None)
     if tp is not None:
         return tp
+
+    # Check for dlpack objects
+    dlpack = getattr(val, "__dlpack__", None)
+    if dlpack is not None:
+        tp = _typeof_dlpack(dlpack, c)
+        if tp is not None:
+            return tp
 
     # Check for __cuda_array_interface__ objects (third-party device arrays)
 
@@ -233,6 +248,10 @@ def _typeof_enum(val, c):
     return clsty.member_type
 
 
+if _fast_enum is not None:
+    _typeof_enum = typeof_impl.register(_fast_enum.FastEnum)(_typeof_enum)
+
+
 @typeof_impl.register(enum.EnumMeta)
 def _typeof_enum_class(val, c):
     cls = val
@@ -247,9 +266,17 @@ def _typeof_enum_class(val, c):
         )
     if issubclass(val, enum.IntEnum):
         typecls = types.IntEnumClass
+    elif _fast_enum is not None and issubclass(val, _fast_enum.FastEnum):
+        typecls = types.IntEnumClass
     else:
         typecls = types.EnumClass
     return typecls(cls, dtypes.pop())
+
+
+if _fast_enum is not None:
+    _typeof_enum_class = typeof_impl.register(_fast_enum.FastEnumMetaclass)(
+        _typeof_enum_class
+    )
 
 
 @typeof_impl.register(np.dtype)
@@ -349,6 +376,30 @@ def _typeof_cuda_array_interface_cached(
             layout = "A"
 
     return types.Array(dtype, ndim, layout, readonly=readonly)
+
+
+def _typeof_dlpack(val, c):
+    obj = getattr(val, "__self__", None)
+    if obj is not None:
+        try:
+            smv = StridedMemoryView.from_dlpack(obj, stream_ptr=-1)
+        except BufferError:
+            return
+
+        smv_layout = smv._layout
+        layout = (
+            "C"
+            if smv_layout.is_contiguous_c
+            else "F"
+            if smv_layout.is_contiguous_f
+            else "A"
+        )
+        return types.Array(
+            dtype=numpy_support.from_dtype(smv.dtype),
+            ndim=len(smv.shape),
+            layout=layout,
+            readonly=smv.readonly,
+        )
 
 
 @functools.lru_cache
