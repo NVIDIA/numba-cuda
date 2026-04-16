@@ -40,7 +40,7 @@ jobs:
                  (inputs.host-platform == 'win-64' && 'windows-2022') }}
     steps:
       - name: Checkout ${{ github.event.repository.name }}
-        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8  # v6.0.1
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
         with:
           fetch-depth: 0
 
@@ -81,7 +81,7 @@ jobs:
 
       - name: Set up MSVC
         if: ${{ startsWith(inputs.host-platform, 'win') }}
-        uses: ilammy/msvc-dev-cmd@v1  # TODO: ask admin to allow pinning commits
+        uses: ilammy/msvc-dev-cmd@0b201ec74fa43914dc39ae48a89fd1d8cb592756  # v1
 
       - name: Set environment variables
         env:
@@ -95,7 +95,7 @@ jobs:
           env
 
       - name: Build numba-cuda wheel
-        uses: pypa/cibuildwheel@298ed2fb2c105540f5ed055e8a6ad78d82dd3a7e  # v3.3.1
+        uses: pypa/cibuildwheel@ee02a1537ce3071a004a6b08c41e72f0fdc42d9a  # v3.4.0
         with:
           package-dir: .
           output-dir: ${{ env.NUMBA_CUDA_ARTIFACTS_DIR }}
@@ -114,12 +114,21 @@ jobs:
             SCCACHE_GHA_USE_PREPROCESSOR_CACHE_MODE=${{ env.SCCACHE_GHA_USE_PREPROCESSOR_CACHE_MODE }}
           # check cache stats before leaving cibuildwheel
           CIBW_BEFORE_TEST_LINUX: >
-            "/host/${{ env.SCCACHE_PATH }}" --show-adv-stats
+            "/host/${{ env.SCCACHE_PATH }}" --show-adv-stats &&
+            "/host/${{ env.SCCACHE_PATH }}" --show-stats --stats-format=json > /host/${{ github.workspace }}/sccache_numba_cuda.json
           # force the test stage to be run (so that before-test is not skipped)
           # TODO: we might want to think twice on adding this, it does a lot of
           # things before reaching this command.
           CIBW_TEST_COMMAND_LINUX: >
             echo "ok!"
+
+      - name: Report sccache stats (numba-cuda)
+        if: ${{ inputs.host-platform != 'win-64' }}
+        uses: ./.github/actions/sccache-summary
+        with:
+          json-file: sccache_numba_cuda.json
+          label: "numba-cuda"
+          build-step: "Build numba-cuda wheel"
 
       - name: List the numba-cuda artifacts directory
         run: |
@@ -156,7 +165,7 @@ jobs:
                  (inputs.host-platform == 'win-64' && 'windows-2022') }}
     steps:
       - name: Checkout ${{ github.event.repository.name }}
-        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8  # v6.0.1
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
         with:
           fetch-depth: 0
 
@@ -195,7 +204,7 @@ jobs:
 
       - name: Set up MSVC
         if: ${{ startsWith(inputs.host-platform, 'win') }}
-        uses: ilammy/msvc-dev-cmd@v1  # TODO: ask admin to allow pinning commits
+        uses: ilammy/msvc-dev-cmd@0b201ec74fa43914dc39ae48a89fd1d8cb592756  # v1
 
       - name: Set environment variables
         env:
@@ -212,7 +221,7 @@ jobs:
           env
 
       - name: Download numba-cuda build artifacts
-        uses: actions/download-artifact@70fc10c6e5e1ce46ad2ea6f2b72d43f7d47b13c3  # v8.0.0
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c  # v8.0.1
         with:
           name: ${{ env.NUMBA_CUDA_ARTIFACT_NAME }}
           path: ${{ env.NUMBA_CUDA_ARTIFACTS_DIR }}
@@ -261,7 +270,16 @@ jobs:
 
           if [[ "${{ inputs.host-platform }}" == linux* ]]; then
             "${SCCACHE_PATH}" --show-adv-stats
+            "${SCCACHE_PATH}" --show-stats --stats-format=json > "${GITHUB_WORKSPACE}/sccache_test_artifacts_cu${CUDA_MAJOR}.json"
           fi
+
+      - name: Report sccache stats (test artifacts cu${{ env.CUDA_MAJOR }})
+        if: ${{ inputs.host-platform != 'win-64' }}
+        uses: ./.github/actions/sccache-summary
+        with:
+          json-file: sccache_test_artifacts_cu${{ env.CUDA_MAJOR }}.json
+          label: "test artifacts (CUDA ${{ matrix.cuda-version }})"
+          build-step: "Build numba-cuda test artifacts aginst CUDA ${{ matrix.cuda-version }}"
 
       - name: Upload numba-cuda test artifacts
         uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f  # v7.0.0
