@@ -5,6 +5,7 @@ import argparse
 import os
 import pathlib
 import platform
+import shlex
 import subprocess
 import sys
 
@@ -77,7 +78,9 @@ def determine_include_flags():
     # Parse out the arguments following "INCLUDES=" - these are a space
     # separated list of strings that are potentially quoted.
 
-    quoted_flags = includes_lines[0].split("INCLUDES=")[1].strip().split()
+    quoted_flags = shlex.split(
+        includes_lines[0].split("INCLUDES=")[1].strip(), posix=False
+    )
     include_flags = [flag.strip('"') for flag in quoted_flags]
     cccl_include_flags = [flag + os.path.sep + "cccl" for flag in include_flags]
     include_flags += cccl_include_flags
