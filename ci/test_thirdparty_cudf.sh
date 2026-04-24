@@ -9,9 +9,7 @@ CUDA_VER_MAJOR=${CUDA_VER%.*.*}
 
 rapids-logger "Install cuDF Wheel"
 
-pip install \
-    --extra-index-url=https://pypi.anaconda.org/rapidsai-wheels-nightly/simple \
-    "cudf-cu12>=26.4.0a0,<=26.4" "dask-cuda>=26.4.0a0,<=26.4"
+pip install cudf-cu12
 
 
 rapids-logger "Remove Extraneous numba-cuda"
@@ -31,8 +29,14 @@ python -m pip install \
 pip install "cupy-cuda${CUDA_VER_MAJOR}x<14.0.0"
 
 
-rapids-logger "Shallow clone cuDF repository"
-git clone --single-branch --branch 'release/26.04' https://github.com/rapidsai/cudf.git
+rapids-logger "Determine cuDF release branch from installed version"
+CUDF_VERSION=$(pip show cudf-cu12 | grep '^Version:' | awk '{print $2}')
+CUDF_BRANCH=$(printf "release/%s.%02d" \
+    "$(echo "$CUDF_VERSION" | cut -d. -f1)" \
+    "$(echo "$CUDF_VERSION" | cut -d. -f2)")
+
+rapids-logger "Shallow clone cuDF repository (${CUDF_BRANCH})"
+git clone --single-branch --branch "${CUDF_BRANCH}" https://github.com/rapidsai/cudf.git
 
 
 pushd cudf
