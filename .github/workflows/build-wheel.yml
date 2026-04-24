@@ -57,7 +57,7 @@ jobs:
 
       # xref: https://github.com/orgs/community/discussions/42856#discussioncomment-7678867
       - name: Adding addtional GHA cache-related env vars
-        uses: actions/github-script@v8
+        uses: actions/github-script@v9
         with:
           script: |
             core.exportVariable('ACTIONS_CACHE_SERVICE_V2', 'on');
@@ -98,7 +98,7 @@ jobs:
           env
 
       - name: Build numba-cuda wheel
-        uses: pypa/cibuildwheel@ee02a1537ce3071a004a6b08c41e72f0fdc42d9a  # v3.4.0
+        uses: pypa/cibuildwheel@8d2b08b68458a16aeb24b64e68a09ab1c8e82084  # v3.4.1
         with:
           package-dir: .
           output-dir: ${{ env.NUMBA_CUDA_ARTIFACTS_DIR }}
@@ -144,7 +144,7 @@ jobs:
           ls -lahR ${{ env.NUMBA_CUDA_ARTIFACTS_DIR }}
 
       - name: Upload numba-cuda build artifacts
-        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f  # v7.0.0
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
         with:
           name: ${{ env.NUMBA_CUDA_ARTIFACT_NAME }}
           path: ${{ env.NUMBA_CUDA_ARTIFACTS_DIR }}/*.whl
@@ -185,7 +185,7 @@ jobs:
 
       # xref: https://github.com/orgs/community/discussions/42856#discussioncomment-7678867
       - name: Adding addtional GHA cache-related env vars
-        uses: actions/github-script@v8
+        uses: actions/github-script@v9
         with:
           script: |
             core.exportVariable('ACTIONS_CACHE_SERVICE_V2', 'on');
@@ -288,7 +288,7 @@ jobs:
           build-step: "Build numba-cuda test artifacts aginst CUDA ${{ matrix.cuda-version }}"
 
       - name: Upload numba-cuda test artifacts
-        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f  # v7.0.0
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
         with:
           name: ${{ env.NUMBA_CUDA_TEST_ARTIFACT_NAME }}-cu${{ env.CUDA_MAJOR }}
           path: testing/cu*
