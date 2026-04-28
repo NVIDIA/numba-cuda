@@ -283,7 +283,7 @@ NUMBA_ENABLE_CUDASIM = "1"
 
 [package]
 name = "numba-cuda"
-version = "0.30.0"
+version = "0.30.1"
 
 [package.build]
 backend = { name = "pixi-build-python", version = "*" }
