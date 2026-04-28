@@ -177,7 +177,6 @@ jobs:
   compute-matrix:
     runs-on: ubuntu-latest
     outputs:
-      BUILD_MATRIX: ${{ steps.compute-matrix.outputs.BUILD_MATRIX }}
       SIMULATOR_MATRIX: ${{ steps.compute-matrix.outputs.SIMULATOR_MATRIX }}
       TEST_MATRIX: ${{ steps.compute-matrix.outputs.TEST_MATRIX }}
     steps:
@@ -185,13 +184,9 @@ jobs:
       - name: Compute Matrices
         id: compute-matrix
         run: |
-          BUILD_MATRIX="$(yq '.build-matrix' ci/matrix.yml)"
           SIMULATOR_MATRIX="$(yq '.simulator-matrix' ci/matrix.yml)"
           TEST_MATRIX="$(yq '.test-matrix' ci/matrix.yml)"
           {
-            echo 'BUILD_MATRIX<<EOF'
-            echo "${BUILD_MATRIX}"
-            echo 'EOF'
             echo 'SIMULATOR_MATRIX<<EOF'
             echo "${SIMULATOR_MATRIX}"
             echo 'EOF'
