@@ -184,8 +184,8 @@ jobs:
       - name: Compute Matrices
         id: compute-matrix
         run: |
-          SIMULATOR_MATRIX="$(yq '.simulator-matrix' ci/matrix.yml)"
-          TEST_MATRIX="$(yq '.test-matrix' ci/matrix.yml)"
+          SIMULATOR_MATRIX="$(yq '.simulator' ci/test-matrix.yml)"
+          TEST_MATRIX="$(yq '.linux["pull-request-legacy"]' ci/test-matrix.yml)"
           {
             echo 'SIMULATOR_MATRIX<<EOF'
             echo "${SIMULATOR_MATRIX}"
