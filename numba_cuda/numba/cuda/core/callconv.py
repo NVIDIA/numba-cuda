@@ -104,6 +104,8 @@ class BaseCallConv:
         Get the actual type of the return argument for Numba type *ty*.
         """
         restype = self.context.data_model_manager[ty].get_return_type()
+        if isinstance(restype, ir.VoidType):
+            return ir.IntType(8).as_pointer().as_pointer()
         return restype.as_pointer()
 
     def init_call_helper(self, builder):
@@ -414,6 +416,10 @@ class CUDACABICallConv(BaseCallConv):
 
     def return_value(self, builder, retval):
         expected_type = builder.function.ftype.return_type
+
+        if isinstance(expected_type, ir.VoidType):
+            return builder.ret_void()
+
         actual_type = retval.type
 
         # If types don't match, we need to cast
@@ -473,7 +479,11 @@ class CUDACABICallConv(BaseCallConv):
         # No status required as we don't support exceptions or a distinct None
         # value in a C ABI.
         status = None
-        out = self.context.get_returned_value(builder, resty, code)
+        ret_model = self.context.data_model_manager[resty]
+        if isinstance(ret_model.get_return_type(), ir.VoidType):
+            out = cgutils.get_null_value(ret_model.get_value_type())
+        else:
+            out = self.context.get_returned_value(builder, resty, code)
         return status, out
 
     def call_internal(self, builder, fndesc, sig, args):

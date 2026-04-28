@@ -308,7 +308,6 @@ class EnumModel(ProxyModel):
 @register_default(types.Opaque)
 @register_default(types.PyObject)
 @register_default(types.RawPointer)
-@register_default(types.NoneType)
 @register_default(types.StringLiteral)
 @register_default(types.EllipsisType)
 @register_default(types.Function)
