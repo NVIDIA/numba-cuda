@@ -47,7 +47,7 @@ jobs:
       - name: Install latest rapidsai/sccache
         if: ${{ startsWith(inputs.host-platform, 'linux') }}
         env:
-          SCCACHE_TAG: v0.14.0-rapids.3
+          SCCACHE_TAG: v0.14.0-rapids.9
         run: |
           # curl -fsSL "https://github.com/rapidsai/sccache/releases/latest/download/sccache-$(uname -m)-unknown-linux-musl.tar.gz" \
           curl -fsSL "https://github.com/rapidsai/sccache/releases/download/${{ env.SCCACHE_TAG }}/sccache-${{ env.SCCACHE_TAG }}-$(uname -m)-unknown-linux-musl.tar.gz" \
@@ -175,7 +175,7 @@ jobs:
       - name: Install latest rapidsai/sccache
         if: ${{ startsWith(inputs.host-platform, 'linux') }}
         env:
-          SCCACHE_TAG: v0.14.0-rapids.3
+          SCCACHE_TAG: v0.14.0-rapids.9
         run: |
           # curl -fsSL "https://github.com/rapidsai/sccache/releases/latest/download/sccache-$(uname -m)-unknown-linux-musl.tar.gz" \
           curl -fsSL "https://github.com/rapidsai/sccache/releases/download/${{ env.SCCACHE_TAG }}/sccache-${{ env.SCCACHE_TAG }}-$(uname -m)-unknown-linux-musl.tar.gz" \
