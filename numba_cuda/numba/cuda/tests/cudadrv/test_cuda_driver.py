@@ -107,7 +107,7 @@ class TestCudaDriver(CUDATestCase):
             grid=(1, 1, 1),
             block=(100, 1, 1),
             shmem_size=0,
-            cooperative_launch=False,
+            is_cooperative=False,
         )
         exp_stream = ExperimentalStream.from_handle(0)
         launch(exp_stream, config, function.kernel, ptr)
@@ -137,7 +137,7 @@ class TestCudaDriver(CUDATestCase):
                 grid=(1, 1, 1),
                 block=(100, 1, 1),
                 shmem_size=0,
-                cooperative_launch=False,
+                is_cooperative=False,
             )
             # Convert numba Stream to ExperimentalStream
             launch(_to_core_stream(stream), config, function.kernel, ptr)
@@ -170,7 +170,7 @@ class TestCudaDriver(CUDATestCase):
                 grid=(1, 1, 1),
                 block=(100, 1, 1),
                 shmem_size=0,
-                cooperative_launch=False,
+                is_cooperative=False,
             )
             launch(stream, config, function.kernel, ptr)
 

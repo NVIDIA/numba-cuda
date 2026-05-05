@@ -512,7 +512,7 @@ class _Kernel(serialize.ReduceMixin):
             grid=griddim,
             block=blockdim,
             shmem_size=sharedmem,
-            cooperative_launch=self.cooperative,
+            is_cooperative=self.cooperative,
         )
         kernel = cufunc.kernel
         launch(stream, config, kernel, *kernelargs)

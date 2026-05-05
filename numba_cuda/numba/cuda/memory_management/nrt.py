@@ -184,7 +184,7 @@ class _Runtime:
             grid=(1, 1, 1),
             block=(1, 1, 1),
             shmem_size=0,
-            cooperative_launch=False,
+            is_cooperative=False,
         )
 
         launch(_to_core_stream(stream), config, func.kernel, *params)
