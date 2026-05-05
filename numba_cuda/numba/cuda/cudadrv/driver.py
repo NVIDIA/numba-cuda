@@ -1142,7 +1142,7 @@ class Context:
         """
         return (
             binding.CUresult.CUDA_SUCCESS,
-            func.kernel.attributes.max_threads_per_block(),
+            func.kernel.attributes.max_threads_per_block,
         )
 
     def prepare_for_use(self):
@@ -2176,11 +2176,11 @@ class CudaPythonFunction:
         self.name = name
         attrs = self.kernel.attributes
         self.attrs = FuncAttr(
-            regs=attrs.num_regs(),
-            const=attrs.const_size_bytes(),
-            local=attrs.local_size_bytes(),
-            shared=attrs.shared_size_bytes(),
-            maxthreads=attrs.max_threads_per_block(),
+            regs=attrs.num_regs,
+            const=attrs.const_size_bytes,
+            local=attrs.local_size_bytes,
+            shared=attrs.shared_size_bytes,
+            maxthreads=attrs.max_threads_per_block,
         )
 
     def __repr__(self):
