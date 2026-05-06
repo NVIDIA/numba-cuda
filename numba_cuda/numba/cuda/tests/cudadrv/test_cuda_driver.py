@@ -13,7 +13,7 @@ from cuda.core import (
 )
 
 from numba import cuda
-from numba.cuda._compat import make_cuda_core_launch_config
+from numba.cuda._compat import _make_cuda_core_launch_config
 from numba.cuda.cudadrv import devices, nvrtc
 from numba.cuda.testing import unittest, CUDATestCase, skip_unless_cc_90
 from numba.cuda.testing import skip_on_cudasim
@@ -103,7 +103,7 @@ class TestCudaDriver(CUDATestCase):
 
         ptr = memory.device_ctypes_pointer
 
-        config = make_cuda_core_launch_config(
+        config = _make_cuda_core_launch_config(
             grid=(1, 1, 1),
             block=(100, 1, 1),
             shmem_size=0,
@@ -133,7 +133,7 @@ class TestCudaDriver(CUDATestCase):
 
             ptr = memory.device_ctypes_pointer
 
-            config = make_cuda_core_launch_config(
+            config = _make_cuda_core_launch_config(
                 grid=(1, 1, 1),
                 block=(100, 1, 1),
                 shmem_size=0,
@@ -166,7 +166,7 @@ class TestCudaDriver(CUDATestCase):
 
             ptr = memory.device_ctypes_pointer
 
-            config = make_cuda_core_launch_config(
+            config = _make_cuda_core_launch_config(
                 grid=(1, 1, 1),
                 block=(100, 1, 1),
                 shmem_size=0,

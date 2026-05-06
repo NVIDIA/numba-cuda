@@ -4,8 +4,8 @@
 from unittest.mock import patch
 
 from numba.cuda._compat import (
-    cuda_core_attr_value,
-    make_cuda_core_launch_config,
+    _cuda_core_attr_value,
+    _make_cuda_core_launch_config,
 )
 from numba.cuda.testing import unittest
 
@@ -15,17 +15,17 @@ class TestCudaCoreCompat(unittest.TestCase):
         class Attrs:
             num_regs = 32
 
-        self.assertEqual(cuda_core_attr_value(Attrs(), "num_regs"), 32)
+        self.assertEqual(_cuda_core_attr_value(Attrs(), "num_regs"), 32)
 
     def test_cuda_core_attr_value_from_accessor(self):
         class Attrs:
             def num_regs(self):
                 return 32
 
-        self.assertEqual(cuda_core_attr_value(Attrs(), "num_regs"), 32)
+        self.assertEqual(_cuda_core_attr_value(Attrs(), "num_regs"), 32)
 
     def test_make_cuda_core_launch_config_current_keyword(self):
-        config = make_cuda_core_launch_config(
+        config = _make_cuda_core_launch_config(
             grid=(1, 1, 1),
             block=(1, 1, 1),
             shmem_size=0,
@@ -45,7 +45,7 @@ class TestCudaCoreCompat(unittest.TestCase):
                 self.kwargs = kwargs
 
         with patch("numba.cuda._compat.core.LaunchConfig", LegacyLaunchConfig):
-            config = make_cuda_core_launch_config(
+            config = _make_cuda_core_launch_config(
                 grid=(1, 1, 1),
                 block=(1, 1, 1),
                 shmem_size=0,

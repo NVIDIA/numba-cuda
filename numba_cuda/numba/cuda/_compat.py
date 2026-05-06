@@ -8,12 +8,14 @@ CUDA_CORE_VERSION = version.parse(core.__version__)
 CUDA_CORE_GT_0_6 = CUDA_CORE_VERSION >= version.parse("0.6.0")
 
 
-def cuda_core_attr_value(obj, name):
+def _cuda_core_attr_value(obj, name):
+    """Return a cuda-core attribute exposed as either a value or accessor."""
     attr = getattr(obj, name)
     return attr() if callable(attr) else attr
 
 
-def make_cuda_core_launch_config(**kwargs):
+def _make_cuda_core_launch_config(**kwargs):
+    """Create a cuda-core LaunchConfig across cooperative keyword variants."""
     try:
         return core.LaunchConfig(**kwargs)
     except TypeError as e:
