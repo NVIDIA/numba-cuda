@@ -62,7 +62,7 @@ from cuda.core import (
     Stream as ExperimentalStream,
     Device as ExperimentalDevice,
 )
-from numba.cuda._compat import CUDA_CORE_GT_0_6
+from numba.cuda._compat import CUDA_CORE_GT_0_6, cuda_core_attr_value
 from cuda.bindings.utils import get_cuda_native_handle
 
 
@@ -1142,7 +1142,9 @@ class Context:
         """
         return (
             binding.CUresult.CUDA_SUCCESS,
-            func.kernel.attributes.max_threads_per_block,
+            cuda_core_attr_value(
+                func.kernel.attributes, "max_threads_per_block"
+            ),
         )
 
     def prepare_for_use(self):
@@ -2176,11 +2178,11 @@ class CudaPythonFunction:
         self.name = name
         attrs = self.kernel.attributes
         self.attrs = FuncAttr(
-            regs=attrs.num_regs,
-            const=attrs.const_size_bytes,
-            local=attrs.local_size_bytes,
-            shared=attrs.shared_size_bytes,
-            maxthreads=attrs.max_threads_per_block,
+            regs=cuda_core_attr_value(attrs, "num_regs"),
+            const=cuda_core_attr_value(attrs, "const_size_bytes"),
+            local=cuda_core_attr_value(attrs, "local_size_bytes"),
+            shared=cuda_core_attr_value(attrs, "shared_size_bytes"),
+            maxthreads=cuda_core_attr_value(attrs, "max_threads_per_block"),
         )
 
     def __repr__(self):

@@ -16,7 +16,8 @@ from numba.cuda.cudadrv.driver import (
     _to_core_stream,
     _have_nvjitlink,
 )
-from cuda.core import LaunchConfig, launch
+from cuda.core import launch
+from numba.cuda._compat import make_cuda_core_launch_config
 from numba.cuda.cudadrv import devices
 from numba.cuda.api import get_current_device
 from numba.cuda.utils import _readenv, cached_file_read
@@ -180,7 +181,7 @@ class _Runtime:
             stream = cuda.default_stream()
 
         func = module.get_function(name)
-        config = LaunchConfig(
+        config = make_cuda_core_launch_config(
             grid=(1, 1, 1),
             block=(1, 1, 1),
             shmem_size=0,
