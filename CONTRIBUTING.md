@@ -28,7 +28,7 @@ into three categories:
 3. Comment on the issue saying you are going to work on it
 4. Code! Make sure to update unit tests!
 5. When done, [create your pull request](https://github.com/NVIDIA/numba-cuda/compare)
-6. Sign the [CLA](https://github.com/NVIDIA/numba-cuda/CLA.md)
+6. Sign the [CLA](https://github.com/NVIDIA/numba-cuda/blob/main/CLA.md)
 7. Verify that CI passes all [status checks](https://help.github.com/articles/about-status-checks/). Fix if needed
 8. Wait for other developers to review your code and update code as needed
 9. Once reviewed and approved, a Numba-CUDA developer will merge your pull request
@@ -44,11 +44,11 @@ These dependencies are listed under the `test-cu12` and `test-cu13` optional dep
 To install Numba-CUDA for development, run this in the root of the repository:
 
 ```shell
-pip install -e ".[test-cu12]"
+pip install -e . --group test-cu12
 ```
 or
 ```sh
-pip install -e ".[test-cu13]"
+pip install -e . --group test-cu13
 ```
 
 Numba-CUDA uses [`pre-commit`](https://pre-commit.com/) to run a number of style
