@@ -5,7 +5,6 @@ import math
 import numpy as np
 from numba import cuda
 from numba.cuda import float64, int8, int32, void
-from numba.cuda.testing import unittest, CUDATestCase
 
 
 def cu_mat_power(A, power, power_A):
@@ -54,7 +53,7 @@ def random_complex(N):
     return np.random.random(1) + np.random.random(1) * 1j
 
 
-class TestCudaPowi(CUDATestCase):
+class TestCudaPowi:
     def test_powi(self):
         dec = cuda.jit(void(float64[:, :], int8, float64[:, :]))
         kernel = dec(cu_mat_power)
@@ -63,7 +62,7 @@ class TestCudaPowi(CUDATestCase):
         A = np.arange(10, dtype=np.float64).reshape(2, 5)
         Aout = np.empty_like(A)
         kernel[1, A.shape](A, power, Aout)
-        self.assertTrue(np.allclose(Aout, A**power))
+        assert np.allclose(Aout, A**power)
 
     def test_powi_binop(self):
         dec = cuda.jit(void(float64[:, :], int8, float64[:, :]))
@@ -73,7 +72,7 @@ class TestCudaPowi(CUDATestCase):
         A = np.arange(10, dtype=np.float64).reshape(2, 5)
         Aout = np.empty_like(A)
         kernel[1, A.shape](A, power, Aout)
-        self.assertTrue(np.allclose(Aout, A**power))
+        assert np.allclose(Aout, A**power)
 
     # Relative tolerance kwarg is provided because 1.0e-7 (the default for
     # assert_allclose) is a bit tight for single precision.
@@ -122,7 +121,3 @@ class TestCudaPowi(CUDATestCase):
 
     def test_cpow_complex128_inplace_binop(self):
         self._test_cpow_inplace_binop(np.complex128, rtol=3.0e-7)
-
-
-if __name__ == "__main__":
-    unittest.main()
