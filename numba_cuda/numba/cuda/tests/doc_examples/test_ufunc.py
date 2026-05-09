@@ -1,31 +1,19 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-2-Clause
 
-import unittest
+# Contents in this file are referenced from the sphinx-generated docs.
+# "ex_cuda_ufunc" is used for markers as beginning and ending of example text.
 
 from numba.cuda.testing import CUDATestCase, skip_on_cudasim
 from numba.cuda.tests.support import captured_stdout
 
 
 @skip_on_cudasim("cudasim doesn't support cuda import at non-top-level")
-class TestUFunc(CUDATestCase):
+def test_ufunc():
     """
     Test calling a UFunc
     """
-
-    def setUp(self):
-        # Prevent output from this test showing
-        # up when running the test suite
-        self._captured_stdout = captured_stdout()
-        self._captured_stdout.__enter__()
-        super().setUp()
-
-    def tearDown(self):
-        # No exception type, value, or traceback
-        self._captured_stdout.__exit__(None, None, None)
-        super().tearDown()
-
-    def test_ex_cuda_ufunc_call(self):
+    with captured_stdout():
         # ex_cuda_ufunc.begin
         import numpy as np
         from numba import cuda
@@ -47,7 +35,3 @@ class TestUFunc(CUDATestCase):
         # the sin ufunc inside the kernel, and NumPy's sin ufunc
         np.testing.assert_allclose(r, np.sin(x))
         # ex_cuda_ufunc.end
-
-
-if __name__ == "__main__":
-    unittest.main()
