@@ -675,8 +675,11 @@ class TestCase(unittest.TestCase):
         executed without error. The timeout kwarg can be used to allow more time
         for longer running tests, it defaults to 60 seconds.
         """
-        parts = (test_module, test_class, test_name)
-        fully_qualified_test = ".".join(x for x in parts if x is not None)
+        fully_qualified_test = test_module
+        if test_class:
+            fully_qualified_test += f"::{test_class}"
+        if test_name:
+            fully_qualified_test += f"::{test_name}"
         flags_args = []
         if flags is not None:
             for flag, value in flags.items():
@@ -686,7 +689,8 @@ class TestCase(unittest.TestCase):
             sys.executable,
             *flags_args,
             "-m",
-            "numba.runtests",
+            "pytest",
+            "--pyargs",
             fully_qualified_test,
         ]
         env_copy = os.environ.copy()
@@ -715,7 +719,10 @@ class TestCase(unittest.TestCase):
         if no_tests_ran in status.stderr:
             self.skipTest(no_tests_ran)
         else:
-            self.assertIn("OK", status.stderr)
+            # status.stderr for successful runs comprise a string like
+            # "...Ran 1 test in 0.565s\n\nOK\n". Migrating to pytest means the
+            # error stream in successful runs are empty
+            self.assertEqual("", status.stderr)
         return status
 
     def run_test_in_subprocess(maybefunc=None, timeout=60, envvars=None):
