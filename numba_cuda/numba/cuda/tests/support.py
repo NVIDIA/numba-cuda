@@ -193,6 +193,20 @@ def ignore_internal_warnings():
     )
 
 
+def reset_module_warnings(module):
+    """
+    Reset the warnings registry of a module.  This can be necessary
+    as the warnings module is buggy in that regard.
+    See http://bugs.python.org/issue4180
+    """
+    if isinstance(module, str):
+        module = sys.modules[module]
+    try:
+        del module.__warningregistry__
+    except AttributeError:
+        pass
+
+
 @contextlib.contextmanager
 def override_config(name, value):
     """
@@ -206,6 +220,45 @@ def override_config(name, value):
         yield
     finally:
         setattr(config, name, old_value)
+
+
+# TODO: how to generate self.id() without access to instance?
+def make_dummy_type(test_obj: unittest.TestCase):
+    """
+    Use to generate a dummy type unique to this test. Returns a python
+    Dummy class and a corresponding Numba type DummyType.
+    """
+
+    # Use test_id to make sure no collision is possible.
+    test_id = test_obj.id()
+    DummyType = type("DummyTypeFor{}".format(test_id), (types.Opaque,), {})
+
+    dummy_type = DummyType("my_dummy")
+    register_model(DummyType)(OpaqueModel)
+
+    class Dummy:
+        pass
+
+    @typeof_impl.register(Dummy)
+    def typeof_dummy(val, c):
+        return dummy_type
+
+    # Dual registration for cross-target tests
+    if HAS_NUMBA:
+        UpstreamDummyType = type(
+            "DummyTypeFor{}".format(test_id), (upstream_types.Opaque,), {}
+        )
+        upstream_dummy_type = UpstreamDummyType("my_dummy")
+
+        @upstream_typeof_impl.register(Dummy)
+        def typeof_dummy_core(val, c):
+            return upstream_dummy_type
+
+    @unbox(DummyType)
+    def unbox_dummy(typ, obj, c):
+        return NativeValue(c.context.get_dummy_value())
+
+    return Dummy, DummyType
 
 
 def run_in_subprocess(code, flags=(), env=None, timeout=30):
@@ -663,19 +716,6 @@ class TestCase(unittest.TestCase):
     def random(self):
         return np.random.RandomState(42)
 
-    def reset_module_warnings(self, module):
-        """
-        Reset the warnings registry of a module.  This can be necessary
-        as the warnings module is buggy in that regard.
-        See http://bugs.python.org/issue4180
-        """
-        if isinstance(module, str):
-            module = sys.modules[module]
-        try:
-            del module.__warningregistry__
-        except AttributeError:
-            pass
-
     @contextlib.contextmanager
     def assertTypingError(self):
         """
@@ -745,41 +785,6 @@ class TestCase(unittest.TestCase):
             total_mi_free,
             "number of meminfo allocs != number of meminfo frees",
         )
-
-    def make_dummy_type(self):
-        """Use to generate a dummy type unique to this test. Returns a python
-        Dummy class and a corresponding Numba type DummyType."""
-
-        # Use test_id to make sure no collision is possible.
-        test_id = self.id()
-        DummyType = type("DummyTypeFor{}".format(test_id), (types.Opaque,), {})
-
-        dummy_type = DummyType("my_dummy")
-        register_model(DummyType)(OpaqueModel)
-
-        class Dummy:
-            pass
-
-        @typeof_impl.register(Dummy)
-        def typeof_dummy(val, c):
-            return dummy_type
-
-        # Dual registration for cross-target tests
-        if HAS_NUMBA:
-            UpstreamDummyType = type(
-                "DummyTypeFor{}".format(test_id), (upstream_types.Opaque,), {}
-            )
-            upstream_dummy_type = UpstreamDummyType("my_dummy")
-
-            @upstream_typeof_impl.register(Dummy)
-            def typeof_dummy_core(val, c):
-                return upstream_dummy_type
-
-        @unbox(DummyType)
-        def unbox_dummy(typ, obj, c):
-            return NativeValue(c.context.get_dummy_value())
-
-        return Dummy, DummyType
 
 
 class MemoryLeak:

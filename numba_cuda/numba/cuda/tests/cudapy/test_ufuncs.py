@@ -15,7 +15,7 @@ from numba.cuda import config, types
 from numba.cuda.testing import skip_on_standalone_numba_cuda
 from numba.cuda.typing.typeof import typeof
 from numba.cuda.np import numpy_support
-from numba.cuda.tests.support import TestCase
+from numba.cuda.tests.support import TestCase, reset_module_warnings
 
 
 class BaseUFuncTest:
@@ -121,7 +121,7 @@ class BasicUFuncTest(BaseUFuncTest):
     ):
         # Necessary to avoid some Numpy warnings being silenced, despite
         # the simplefilter() call below.
-        self.reset_module_warnings(__name__)
+        reset_module_warnings(__name__)
 
         pyfunc = self._make_ufunc_usecase(ufunc)
 

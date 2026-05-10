@@ -1,6 +1,8 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-2-Clause
 
+import numpy as np
+
 from numba import cuda
 from numba.cuda import types
 from numba.cuda import HAS_NUMBA
@@ -20,8 +22,7 @@ from numba.cuda.testing import (
     unittest,
     skip_on_standalone_numba_cuda,
 )
-import numpy as np
-
+from numba.cuda.tests.support import make_dummy_type
 
 # Dummy function definitions to overload
 
@@ -349,7 +350,7 @@ class TestOverload(CUDATestCase):
 
     @skip_on_standalone_numba_cuda
     def test_overload_attribute_target(self):
-        MyDummy, MyDummyType = self.make_dummy_type()
+        MyDummy, MyDummyType = make_dummy_type(self)
         mydummy_type_cpu = cpu_typeof(MyDummy())  # For @njit (cpu)
         mydummy_type = typeof(MyDummy())  # For @cuda.jit (CUDA)
 
