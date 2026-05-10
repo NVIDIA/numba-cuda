@@ -12,6 +12,7 @@ from numba.cuda import HAS_NUMBA
 from numba.cuda.testing import skip_on_standalone_numba_cuda
 from numba.cuda import types
 from numba.cuda import config
+from numba.cuda.tests.support import run_test_in_subprocess
 
 if config.ENABLE_CUDASIM:
     raise unittest.SkipTest("Simulator does not support extending types")
@@ -408,7 +409,7 @@ class TestLowLevelExtending(TestCase):
             cfunc[1, 1](18.0, res)
         self.assertPreciseEqual(res[0], 6.0)
 
-    @TestCase.run_test_in_subprocess
+    @run_test_in_subprocess
     def test_func1_isolated(self):
         self.test_func1()
 

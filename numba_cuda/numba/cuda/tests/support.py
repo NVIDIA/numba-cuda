@@ -217,6 +217,121 @@ def run_in_subprocess(code, flags=(), env=None, timeout=30):
         return proc.stdout, proc.stderr
 
 
+def run_test_in_subprocess(maybefunc=None, timeout=60, envvars=None):
+    """
+    Runs the decorated test in a subprocess via invoking pytest.
+    kwargs timeout and envvars are passed through to
+    subprocess_test_runner.
+    """
+
+    def wrapper(func):
+        def inner(self, *args, **kwargs):
+            if os.environ.get("SUBPROC_TEST", None) != func.__name__:
+                # Not in a subprocess test env, so stage the call to run the
+                # test in a subprocess which will set the env var.
+                class_name = self.__class__.__name__
+                subprocess_test_runner(
+                    test_module=self.__module__,
+                    test_class=class_name,
+                    test_name=func.__name__,
+                    timeout=timeout,
+                    envvars=envvars,
+                    _subproc_test_env=func.__name__,
+                )
+            else:
+                # env var is set, so we're in the subprocess, run the
+                # actual test.
+                func(self)
+
+        return inner
+
+    if isinstance(maybefunc, pytypes.FunctionType):
+        return wrapper(maybefunc)
+    else:
+        return wrapper
+
+
+def subprocess_test_runner(
+    test_module,
+    test_class=None,
+    test_name=None,
+    envvars=None,
+    timeout=60,
+    flags=None,
+    _subproc_test_env="1",
+):
+    """
+    Runs named unit test(s) as specified in the arguments as:
+    test_module.test_class.test_name. test_module must always be supplied
+    and if no further refinement is made with test_class and test_name then
+    all tests in the module will be run. The tests will be run in a
+    subprocess with environment variables specified in `envvars`.
+    If given, envvars must be a map of form:
+        environment variable name (str) -> value (str)
+    If given, flags must be a map of form:
+        flag including the `-` (str) -> value (str)
+    It is most convenient to use this method in conjunction with
+    @needs_subprocess as the decorator will cause the decorated test to be
+    skipped unless the `SUBPROC_TEST` environment variable is set to
+    the same value of ``_subproc_test_env``
+    (this special environment variable is set by this method such that the
+    specified test(s) will not be skipped in the subprocess).
+
+
+    Following execution in the subprocess this method will check the test(s)
+    executed without error. The timeout kwarg can be used to allow more time
+    for longer running tests, it defaults to 60 seconds.
+    """
+    fully_qualified_test = test_module
+    if test_class:
+        fully_qualified_test += f"::{test_class}"
+    if test_name:
+        fully_qualified_test += f"::{test_name}"
+    flags_args = []
+    if flags is not None:
+        for flag, value in flags.items():
+            flags_args.append(f"{flag}")
+            flags_args.append(f"{value}")
+    cmd = [
+        sys.executable,
+        *flags_args,
+        "-m",
+        "pytest",
+        "--pyargs",
+        fully_qualified_test,
+    ]
+    env_copy = os.environ.copy()
+    env_copy["SUBPROC_TEST"] = _subproc_test_env
+    try:
+        env_copy["COVERAGE_PROCESS_START"] = os.environ["COVERAGE_RCFILE"]
+    except KeyError:
+        pass  # ignored
+    envvars = pytypes.MappingProxyType({} if envvars is None else envvars)
+    env_copy.update(envvars)
+    status = subprocess.run(
+        cmd,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        timeout=timeout,
+        env=env_copy,
+        universal_newlines=True,
+    )
+    streams = (
+        f"\ncaptured stdout: {status.stdout}\ncaptured stderr: {status.stderr}"
+    )
+    assert status.returncode == 0, streams
+    # Python 3.12.1 report
+    no_tests_ran = "NO TESTS RAN"
+    if no_tests_ran in status.stderr:
+        pytest.skip(no_tests_ran)
+    else:
+        # status.stderr for successful runs comprise a string like
+        # "...Ran 1 test in 0.565s\n\nOK\n". Migrating to pytest means the
+        # error stream in successful runs are empty
+        assert status.stderr == ""
+    return status
+
+
 def captured_stdout():
     """Capture the output of sys.stdout:
 
@@ -642,119 +757,6 @@ class TestCase(unittest.TestCase):
                 _assertNumberEqual(first, second, delta)
         else:
             _assertNumberEqual(first, second, delta)
-
-    def subprocess_test_runner(
-        self,
-        test_module,
-        test_class=None,
-        test_name=None,
-        envvars=None,
-        timeout=60,
-        flags=None,
-        _subproc_test_env="1",
-    ):
-        """
-        Runs named unit test(s) as specified in the arguments as:
-        test_module.test_class.test_name. test_module must always be supplied
-        and if no further refinement is made with test_class and test_name then
-        all tests in the module will be run. The tests will be run in a
-        subprocess with environment variables specified in `envvars`.
-        If given, envvars must be a map of form:
-            environment variable name (str) -> value (str)
-        If given, flags must be a map of form:
-            flag including the `-` (str) -> value (str)
-        It is most convenient to use this method in conjunction with
-        @needs_subprocess as the decorator will cause the decorated test to be
-        skipped unless the `SUBPROC_TEST` environment variable is set to
-        the same value of ``_subproc_test_env``
-        (this special environment variable is set by this method such that the
-        specified test(s) will not be skipped in the subprocess).
-
-
-        Following execution in the subprocess this method will check the test(s)
-        executed without error. The timeout kwarg can be used to allow more time
-        for longer running tests, it defaults to 60 seconds.
-        """
-        fully_qualified_test = test_module
-        if test_class:
-            fully_qualified_test += f"::{test_class}"
-        if test_name:
-            fully_qualified_test += f"::{test_name}"
-        flags_args = []
-        if flags is not None:
-            for flag, value in flags.items():
-                flags_args.append(f"{flag}")
-                flags_args.append(f"{value}")
-        cmd = [
-            sys.executable,
-            *flags_args,
-            "-m",
-            "pytest",
-            "--pyargs",
-            fully_qualified_test,
-        ]
-        env_copy = os.environ.copy()
-        env_copy["SUBPROC_TEST"] = _subproc_test_env
-        try:
-            env_copy["COVERAGE_PROCESS_START"] = os.environ["COVERAGE_RCFILE"]
-        except KeyError:
-            pass  # ignored
-        envvars = pytypes.MappingProxyType({} if envvars is None else envvars)
-        env_copy.update(envvars)
-        status = subprocess.run(
-            cmd,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            timeout=timeout,
-            env=env_copy,
-            universal_newlines=True,
-        )
-        streams = (
-            f"\ncaptured stdout: {status.stdout}\n"
-            f"captured stderr: {status.stderr}"
-        )
-        self.assertEqual(status.returncode, 0, streams)
-        # Python 3.12.1 report
-        no_tests_ran = "NO TESTS RAN"
-        if no_tests_ran in status.stderr:
-            self.skipTest(no_tests_ran)
-        else:
-            # status.stderr for successful runs comprise a string like
-            # "...Ran 1 test in 0.565s\n\nOK\n". Migrating to pytest means the
-            # error stream in successful runs are empty
-            self.assertEqual("", status.stderr)
-        return status
-
-    def run_test_in_subprocess(maybefunc=None, timeout=60, envvars=None):
-        """Runs the decorated test in a subprocess via invoking numba's test
-        runner. kwargs timeout and envvars are passed through to
-        subprocess_test_runner."""
-
-        def wrapper(func):
-            def inner(self, *args, **kwargs):
-                if os.environ.get("SUBPROC_TEST", None) != func.__name__:
-                    # Not in a subprocess test env, so stage the call to run the
-                    # test in a subprocess which will set the env var.
-                    class_name = self.__class__.__name__
-                    self.subprocess_test_runner(
-                        test_module=self.__module__,
-                        test_class=class_name,
-                        test_name=func.__name__,
-                        timeout=timeout,
-                        envvars=envvars,
-                        _subproc_test_env=func.__name__,
-                    )
-                else:
-                    # env var is set, so we're in the subprocess, run the
-                    # actual test.
-                    func(self)
-
-            return inner
-
-        if isinstance(maybefunc, pytypes.FunctionType):
-            return wrapper(maybefunc)
-        else:
-            return wrapper
 
     def make_dummy_type(self):
         """Use to generate a dummy type unique to this test. Returns a python
