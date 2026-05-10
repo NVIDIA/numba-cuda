@@ -4,6 +4,7 @@
 from numba import cuda
 from numba.cuda.core.errors import TypingError
 from numba.cuda.testing import CUDATestCase, skip_on_cudasim
+from numba.cuda.tests.support import assertPreciseEqual
 import numpy as np
 import unittest
 
@@ -28,7 +29,7 @@ class TestSelfRecursion(CUDATestCase):
 
         actual = r[0]
         expected = 55
-        self.assertPreciseEqual(actual, expected)
+        assertPreciseEqual(actual, expected)
 
     def test_global_explicit_sig(self):
         self.check_fib(self.mod.fib1)
@@ -71,7 +72,7 @@ class TestSelfRecursion(CUDATestCase):
         expected = pfunc(*args)
         actual = r[0]
 
-        self.assertPreciseEqual(actual, expected)
+        assertPreciseEqual(actual, expected)
 
     @unittest.expectedFailure
     def test_raise(self):

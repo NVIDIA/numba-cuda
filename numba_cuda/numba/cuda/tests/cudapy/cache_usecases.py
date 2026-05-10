@@ -3,6 +3,7 @@
 
 from numba import cuda
 from numba.cuda.testing import CUDATestCase
+from numba.cuda.tests.support import assertPreciseEqual
 import numpy as np
 import sys
 
@@ -214,14 +215,14 @@ class _TestModule(CUDATestCase):
     """
 
     def check_module(self, mod):
-        self.assertPreciseEqual(mod.add_usecase(2, 3), 6)
-        self.assertPreciseEqual(mod.outer_uncached(3, 2), 2)
-        self.assertPreciseEqual(mod.outer(3, 2), 2)
+        assertPreciseEqual(mod.add_usecase(2, 3), 6)
+        assertPreciseEqual(mod.outer_uncached(3, 2), 2)
+        assertPreciseEqual(mod.outer(3, 2), 2)
 
         packed_rec = mod.record_return_packed(mod.packed_arr, 1)
-        self.assertPreciseEqual(tuple(packed_rec), (2, 43.5))
+        assertPreciseEqual(tuple(packed_rec), (2, 43.5))
         aligned_rec = mod.record_return_aligned(mod.aligned_arr, 1)
-        self.assertPreciseEqual(tuple(aligned_rec), (2, 43.5))
+        assertPreciseEqual(tuple(aligned_rec), (2, 43.5))
 
         mod.simple_usecase_caller(2)
 

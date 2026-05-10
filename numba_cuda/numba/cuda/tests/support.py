@@ -22,6 +22,7 @@ import multiprocessing as mp
 import traceback
 
 import numpy as np
+import pytest
 
 from numba.cuda import types
 from numba.cuda.core import errors
@@ -45,6 +46,20 @@ if HAS_NUMBA:
         typeof_impl as upstream_typeof_impl,
     )
     from numba.core import types as upstream_types
+
+
+_bool_types = (bool, np.bool_)
+_exact_typesets = [
+    _bool_types,
+    (int,),
+    (str,),
+    (np.integer,),
+    (bytes, np.bytes_),
+]
+_approx_typesets = [(float,), (complex,), (np.inexact)]
+_sequence_typesets = [(tuple, list)]
+_float_types = (float, np.floating)
+_complex_types = (complex, np.complexfloating)
 
 
 class EnableNRTStatsMixin:
@@ -352,6 +367,293 @@ def captured_stderr():
     return contextlib.redirect_stderr(io.StringIO())
 
 
+def assertStridesEqual(first, second):
+    """
+    Test that two arrays have the same shape and strides.
+    """
+    assert first.shape == second.shape, "shapes differ"
+    assert first.itemsize == second.itemsize, "itemsizes differ"
+    assert _fix_strides(first) == _fix_strides(second), "strides differ"
+
+
+def assertPreciseEqual(
+    first,
+    second,
+    prec="exact",
+    ulps=1,
+    msg=None,
+    ignore_sign_on_zero=False,
+    abs_tol=None,
+):
+    """
+    Versatile equality testing function with more built-in checks than
+    standard assertEqual().
+
+    For arrays, test that layout, dtype, shape are identical, and
+    recursively call assertPreciseEqual() on the contents.
+
+    For other sequences, recursively call assertPreciseEqual() on
+    the contents.
+
+    For scalars, test that two scalars or have similar types and are
+    equal up to a computed precision.
+    If the scalars are instances of exact types or if *prec* is
+    'exact', they are compared exactly.
+    If the scalars are instances of inexact types (float, complex)
+    and *prec* is not 'exact', then the number of significant bits
+    is computed according to the value of *prec*: 53 bits if *prec*
+    is 'double', 24 bits if *prec* is single.  This number of bits
+    can be lowered by raising the *ulps* value.
+    ignore_sign_on_zero can be set to True if zeros are to be considered
+    equal regardless of their sign bit.
+    abs_tol if this is set to a float value its value is used in the
+    following. If, however, this is set to the string "eps" then machine
+    precision of the type(first) is used in the following instead. This
+    kwarg is used to check if the absolute difference in value between first
+    and second is less than the value set, if so the numbers being compared
+    are considered equal. (This is to handle small numbers typically of
+    magnitude less than machine precision).
+
+    Any value of *prec* other than 'exact', 'single' or 'double'
+    will raise an error.
+    """
+    try:
+        _assertPreciseEqual(
+            first, second, prec, ulps, msg, ignore_sign_on_zero, abs_tol
+        )
+    except AssertionError as exc:
+        failure_msg = str(exc)
+        # Fall off of the 'except' scope to avoid Python 3 exception
+        # chaining.
+    else:
+        return
+    # Decorate the failure message with more information
+    pytest.fail(reason=f"when comparing {first} and {second}: {failure_msg}")
+
+
+def _assertPreciseEqual(
+    first,
+    second,
+    prec="exact",
+    ulps=1,
+    msg=None,
+    ignore_sign_on_zero=False,
+    abs_tol=None,
+):
+    """Recursive workhorse for assertPreciseEqual()."""
+
+    def _assertNumberEqual(first, second, delta=None):
+        if (
+            delta is None
+            or first == second == 0.0
+            or math.isinf(first)
+            or math.isinf(second)
+        ):
+            assert first == second, msg
+            # For signed zeros
+            if not ignore_sign_on_zero:
+                try:
+                    if math.copysign(1, first) != math.copysign(1, second):
+                        pytest.fail(reason=f"{first} != {second} : {msg}")
+                except TypeError:
+                    pass
+        else:
+            assert first == pytest.approx(second, abs=delta), msg
+
+    first_family = _detect_family(first)
+    second_family = _detect_family(second)
+
+    assertion_message = (
+        f"Type Family mismatch. ({first_family} != {second_family})"
+    )
+    if msg:
+        assertion_message += ": {msg}"
+    assert first_family == second_family, assertion_message
+
+    # We now know they are in the same comparison family
+    compare_family = first_family
+
+    # For recognized sequences, recurse
+    if compare_family == "ndarray":
+        dtype = _fix_dtype(first.dtype)
+        assert dtype == _fix_dtype(second.dtype)
+        assert first.ndim == second.ndim, "different number of dimensions"
+        assert first.shape == second.shape, "different shapes"
+        assert first.flags.writeable == second.flags.writeable, (
+            "different mutability"
+        )
+        # itemsize is already checked by the dtype test above
+        assert _fix_strides(first) == _fix_strides(second), "different strides"
+        if first.dtype != dtype:
+            first = first.astype(dtype)
+        if second.dtype != dtype:
+            second = second.astype(dtype)
+        for a, b in zip(first.flat, second.flat):
+            _assertPreciseEqual(
+                a, b, prec, ulps, msg, ignore_sign_on_zero, abs_tol
+            )
+        return
+
+    elif compare_family == "sequence":
+        assert len(first) == len(second), msg
+        for a, b in zip(first, second):
+            _assertPreciseEqual(
+                a, b, prec, ulps, msg, ignore_sign_on_zero, abs_tol
+            )
+        return
+
+    elif compare_family == "exact":
+        exact_comparison = True
+
+    elif compare_family in ["complex", "approximate"]:
+        exact_comparison = False
+
+    elif compare_family == "enum":
+        assert first.__class__ is second.__class__
+        _assertPreciseEqual(
+            first.value,
+            second.value,
+            prec,
+            ulps,
+            msg,
+            ignore_sign_on_zero,
+            abs_tol,
+        )
+        return
+
+    elif compare_family == "unknown":
+        # Assume these are non-numeric types: we will fall back
+        # on regular unittest comparison.
+        assert first.__class__ is second.__class__
+        exact_comparison = True
+
+    else:
+        assert 0, "unexpected family"
+
+    # If a Numpy scalar, check the dtype is exactly the same too
+    # (required for datetime64 and timedelta64).
+    if hasattr(first, "dtype") and hasattr(second, "dtype"):
+        assert first.dtype == second.dtype
+
+    # Mixing bools and non-bools should always fail
+    if isinstance(first, _bool_types) != isinstance(second, _bool_types):
+        assertion_message = (
+            "Mismatching return types "
+            f"({first.__class__} vs. {second.__class__})"
+        )
+        if msg:
+            assertion_message += f": {msg}"
+        pytest.fail(reason=assertion_message)
+
+    try:
+        if cmath.isnan(first) and cmath.isnan(second):
+            # The NaNs will compare unequal, skip regular comparison
+            return
+    except TypeError:
+        # Not floats.
+        pass
+
+    # if absolute comparison is set, use it
+    if abs_tol is not None:
+        if abs_tol == "eps":
+            rtol = np.finfo(type(first)).eps
+        elif isinstance(abs_tol, float):
+            rtol = abs_tol
+        else:
+            raise ValueError(
+                f'abs_tol is not "eps" or a float, found {abs_tol}'
+            )
+        if abs(first - second) < rtol:
+            return
+
+    exact_comparison = exact_comparison or prec == "exact"
+
+    if not exact_comparison and prec != "exact":
+        if prec == "single":
+            bits = 24
+        elif prec == "double":
+            bits = 53
+        else:
+            raise ValueError(f"unsupported precision {prec!r}")
+        k = 2 ** (ulps - bits - 1)
+        delta = k * (abs(first) + abs(second))
+    else:
+        delta = None
+    if isinstance(first, _complex_types):
+        _assertNumberEqual(first.real, second.real, delta)
+        _assertNumberEqual(first.imag, second.imag, delta)
+    elif isinstance(first, (np.timedelta64, np.datetime64)):
+        # Since Np 1.16 NaT == NaT is False, so special comparison needed
+        if np.isnat(first):
+            assert np.isnat(first) == np.isnat(second)
+        else:
+            _assertNumberEqual(first, second, delta)
+    else:
+        _assertNumberEqual(first, second, delta)
+
+
+def _detect_family(numeric_object):
+    """
+    This function returns a string description of the type family
+    that the object in question belongs to.  Possible return values
+    are: "exact", "complex", "approximate", "sequence", and "unknown"
+    """
+    if isinstance(numeric_object, np.ndarray):
+        return "ndarray"
+
+    if isinstance(numeric_object, enum.Enum):
+        return "enum"
+
+    for tp in _sequence_typesets:
+        if isinstance(numeric_object, tp):
+            return "sequence"
+
+    for tp in _exact_typesets:
+        if isinstance(numeric_object, tp):
+            return "exact"
+
+    for tp in _complex_types:
+        if isinstance(numeric_object, tp):
+            return "complex"
+
+    for tp in _approx_typesets:
+        if isinstance(numeric_object, tp):
+            return "approximate"
+
+    return "unknown"
+
+
+def _fix_dtype(dtype):
+    """
+    Fix the given *dtype* for comparison.
+    """
+    # Under 64-bit Windows, Numpy may return either int32 or int64
+    # arrays depending on the function.
+    if (
+        sys.platform == "win32"
+        and sys.maxsize > 2**32
+        and dtype == np.dtype("int32")
+    ):
+        return np.dtype("int64")
+    else:
+        return dtype
+
+
+def _fix_strides(arr):
+    """
+    Return the strides of the given array, fixed for comparison.
+    Strides for 0- or 1-sized dimensions are ignored.
+    """
+    if arr.size == 0:
+        return [0] * arr.ndim
+    else:
+        return [
+            stride / arr.itemsize
+            for (stride, shape) in zip(arr.strides, arr.shape)
+            if shape > 1
+        ]
+
+
 class TestCase(unittest.TestCase):
     longMessage = True
 
@@ -407,17 +709,18 @@ class TestCase(unittest.TestCase):
                     % (old, new, obj)
                 )
 
-    def assertRefCountEqual(self, *objects):
-        gc.collect()
-        rc = [sys.getrefcount(x) for x in objects]
-        rc_0 = rc[0]
-        for i in range(len(objects))[1:]:
-            rc_i = rc[i]
-            if rc_0 != rc_i:
-                self.fail(
-                    f"Refcount for objects does not match. "
-                    f"#0({rc_0}) != #{i}({rc_i}) does not match."
-                )
+    # TODO: safe to delete since it's not used anywhere in numba_cuda?
+    # def assertRefCountEqual(self, *objects):
+    #     gc.collect()
+    #     rc = [sys.getrefcount(x) for x in objects]
+    #     rc_0 = rc[0]
+    #     for i in range(len(objects))[1:]:
+    #         rc_i = rc[i]
+    #         if rc_0 != rc_i:
+    #             self.fail(
+    #                 f"Refcount for objects does not match. "
+    #                 f"#0({rc_0}) != #{i}({rc_i}) does not match."
+    #             )
 
     @contextlib.contextmanager
     def assertNoNRTLeak(self):
@@ -442,321 +745,6 @@ class TestCase(unittest.TestCase):
             total_mi_free,
             "number of meminfo allocs != number of meminfo frees",
         )
-
-    _bool_types = (bool, np.bool_)
-    _exact_typesets = [
-        _bool_types,
-        (int,),
-        (str,),
-        (np.integer,),
-        (bytes, np.bytes_),
-    ]
-    _approx_typesets = [(float,), (complex,), (np.inexact)]
-    _sequence_typesets = [(tuple, list)]
-    _float_types = (float, np.floating)
-    _complex_types = (complex, np.complexfloating)
-
-    def _detect_family(self, numeric_object):
-        """
-        This function returns a string description of the type family
-        that the object in question belongs to.  Possible return values
-        are: "exact", "complex", "approximate", "sequence", and "unknown"
-        """
-        if isinstance(numeric_object, np.ndarray):
-            return "ndarray"
-
-        if isinstance(numeric_object, enum.Enum):
-            return "enum"
-
-        for tp in self._sequence_typesets:
-            if isinstance(numeric_object, tp):
-                return "sequence"
-
-        for tp in self._exact_typesets:
-            if isinstance(numeric_object, tp):
-                return "exact"
-
-        for tp in self._complex_types:
-            if isinstance(numeric_object, tp):
-                return "complex"
-
-        for tp in self._approx_typesets:
-            if isinstance(numeric_object, tp):
-                return "approximate"
-
-        return "unknown"
-
-    def _fix_dtype(self, dtype):
-        """
-        Fix the given *dtype* for comparison.
-        """
-        # Under 64-bit Windows, Numpy may return either int32 or int64
-        # arrays depending on the function.
-        if (
-            sys.platform == "win32"
-            and sys.maxsize > 2**32
-            and dtype == np.dtype("int32")
-        ):
-            return np.dtype("int64")
-        else:
-            return dtype
-
-    def _fix_strides(self, arr):
-        """
-        Return the strides of the given array, fixed for comparison.
-        Strides for 0- or 1-sized dimensions are ignored.
-        """
-        if arr.size == 0:
-            return [0] * arr.ndim
-        else:
-            return [
-                stride / arr.itemsize
-                for (stride, shape) in zip(arr.strides, arr.shape)
-                if shape > 1
-            ]
-
-    def assertStridesEqual(self, first, second):
-        """
-        Test that two arrays have the same shape and strides.
-        """
-        self.assertEqual(first.shape, second.shape, "shapes differ")
-        self.assertEqual(first.itemsize, second.itemsize, "itemsizes differ")
-        self.assertEqual(
-            self._fix_strides(first),
-            self._fix_strides(second),
-            "strides differ",
-        )
-
-    def assertPreciseEqual(
-        self,
-        first,
-        second,
-        prec="exact",
-        ulps=1,
-        msg=None,
-        ignore_sign_on_zero=False,
-        abs_tol=None,
-    ):
-        """
-        Versatile equality testing function with more built-in checks than
-        standard assertEqual().
-
-        For arrays, test that layout, dtype, shape are identical, and
-        recursively call assertPreciseEqual() on the contents.
-
-        For other sequences, recursively call assertPreciseEqual() on
-        the contents.
-
-        For scalars, test that two scalars or have similar types and are
-        equal up to a computed precision.
-        If the scalars are instances of exact types or if *prec* is
-        'exact', they are compared exactly.
-        If the scalars are instances of inexact types (float, complex)
-        and *prec* is not 'exact', then the number of significant bits
-        is computed according to the value of *prec*: 53 bits if *prec*
-        is 'double', 24 bits if *prec* is single.  This number of bits
-        can be lowered by raising the *ulps* value.
-        ignore_sign_on_zero can be set to True if zeros are to be considered
-        equal regardless of their sign bit.
-        abs_tol if this is set to a float value its value is used in the
-        following. If, however, this is set to the string "eps" then machine
-        precision of the type(first) is used in the following instead. This
-        kwarg is used to check if the absolute difference in value between first
-        and second is less than the value set, if so the numbers being compared
-        are considered equal. (This is to handle small numbers typically of
-        magnitude less than machine precision).
-
-        Any value of *prec* other than 'exact', 'single' or 'double'
-        will raise an error.
-        """
-        try:
-            self._assertPreciseEqual(
-                first, second, prec, ulps, msg, ignore_sign_on_zero, abs_tol
-            )
-        except AssertionError as exc:
-            failure_msg = str(exc)
-            # Fall off of the 'except' scope to avoid Python 3 exception
-            # chaining.
-        else:
-            return
-        # Decorate the failure message with more information
-        self.fail("when comparing %s and %s: %s" % (first, second, failure_msg))
-
-    def _assertPreciseEqual(
-        self,
-        first,
-        second,
-        prec="exact",
-        ulps=1,
-        msg=None,
-        ignore_sign_on_zero=False,
-        abs_tol=None,
-    ):
-        """Recursive workhorse for assertPreciseEqual()."""
-
-        def _assertNumberEqual(first, second, delta=None):
-            if (
-                delta is None
-                or first == second == 0.0
-                or math.isinf(first)
-                or math.isinf(second)
-            ):
-                self.assertEqual(first, second, msg=msg)
-                # For signed zeros
-                if not ignore_sign_on_zero:
-                    try:
-                        if math.copysign(1, first) != math.copysign(1, second):
-                            self.fail(
-                                self._formatMessage(
-                                    msg, "%s != %s" % (first, second)
-                                )
-                            )
-                    except TypeError:
-                        pass
-            else:
-                self.assertAlmostEqual(first, second, delta=delta, msg=msg)
-
-        first_family = self._detect_family(first)
-        second_family = self._detect_family(second)
-
-        assertion_message = "Type Family mismatch. (%s != %s)" % (
-            first_family,
-            second_family,
-        )
-        if msg:
-            assertion_message += ": %s" % (msg,)
-        self.assertEqual(first_family, second_family, msg=assertion_message)
-
-        # We now know they are in the same comparison family
-        compare_family = first_family
-
-        # For recognized sequences, recurse
-        if compare_family == "ndarray":
-            dtype = self._fix_dtype(first.dtype)
-            self.assertEqual(dtype, self._fix_dtype(second.dtype))
-            self.assertEqual(
-                first.ndim, second.ndim, "different number of dimensions"
-            )
-            self.assertEqual(first.shape, second.shape, "different shapes")
-            self.assertEqual(
-                first.flags.writeable,
-                second.flags.writeable,
-                "different mutability",
-            )
-            # itemsize is already checked by the dtype test above
-            self.assertEqual(
-                self._fix_strides(first),
-                self._fix_strides(second),
-                "different strides",
-            )
-            if first.dtype != dtype:
-                first = first.astype(dtype)
-            if second.dtype != dtype:
-                second = second.astype(dtype)
-            for a, b in zip(first.flat, second.flat):
-                self._assertPreciseEqual(
-                    a, b, prec, ulps, msg, ignore_sign_on_zero, abs_tol
-                )
-            return
-
-        elif compare_family == "sequence":
-            self.assertEqual(len(first), len(second), msg=msg)
-            for a, b in zip(first, second):
-                self._assertPreciseEqual(
-                    a, b, prec, ulps, msg, ignore_sign_on_zero, abs_tol
-                )
-            return
-
-        elif compare_family == "exact":
-            exact_comparison = True
-
-        elif compare_family in ["complex", "approximate"]:
-            exact_comparison = False
-
-        elif compare_family == "enum":
-            self.assertIs(first.__class__, second.__class__)
-            self._assertPreciseEqual(
-                first.value,
-                second.value,
-                prec,
-                ulps,
-                msg,
-                ignore_sign_on_zero,
-                abs_tol,
-            )
-            return
-
-        elif compare_family == "unknown":
-            # Assume these are non-numeric types: we will fall back
-            # on regular unittest comparison.
-            self.assertIs(first.__class__, second.__class__)
-            exact_comparison = True
-
-        else:
-            assert 0, "unexpected family"
-
-        # If a Numpy scalar, check the dtype is exactly the same too
-        # (required for datetime64 and timedelta64).
-        if hasattr(first, "dtype") and hasattr(second, "dtype"):
-            self.assertEqual(first.dtype, second.dtype)
-
-        # Mixing bools and non-bools should always fail
-        if isinstance(first, self._bool_types) != isinstance(
-            second, self._bool_types
-        ):
-            assertion_message = "Mismatching return types (%s vs. %s)" % (
-                first.__class__,
-                second.__class__,
-            )
-            if msg:
-                assertion_message += ": %s" % (msg,)
-            self.fail(assertion_message)
-
-        try:
-            if cmath.isnan(first) and cmath.isnan(second):
-                # The NaNs will compare unequal, skip regular comparison
-                return
-        except TypeError:
-            # Not floats.
-            pass
-
-        # if absolute comparison is set, use it
-        if abs_tol is not None:
-            if abs_tol == "eps":
-                rtol = np.finfo(type(first)).eps
-            elif isinstance(abs_tol, float):
-                rtol = abs_tol
-            else:
-                raise ValueError(
-                    'abs_tol is not "eps" or a float, found %s' % abs_tol
-                )
-            if abs(first - second) < rtol:
-                return
-
-        exact_comparison = exact_comparison or prec == "exact"
-
-        if not exact_comparison and prec != "exact":
-            if prec == "single":
-                bits = 24
-            elif prec == "double":
-                bits = 53
-            else:
-                raise ValueError("unsupported precision %r" % (prec,))
-            k = 2 ** (ulps - bits - 1)
-            delta = k * (abs(first) + abs(second))
-        else:
-            delta = None
-        if isinstance(first, self._complex_types):
-            _assertNumberEqual(first.real, second.real, delta)
-            _assertNumberEqual(first.imag, second.imag, delta)
-        elif isinstance(first, (np.timedelta64, np.datetime64)):
-            # Since Np 1.16 NaT == NaT is False, so special comparison needed
-            if np.isnat(first):
-                self.assertEqual(np.isnat(first), np.isnat(second))
-            else:
-                _assertNumberEqual(first, second, delta)
-        else:
-            _assertNumberEqual(first, second, delta)
 
     def make_dummy_type(self):
         """Use to generate a dummy type unique to this test. Returns a python

@@ -17,7 +17,11 @@ from numba.cuda.utils import PYVERSION
 from numba.cuda.core import postproc, rewrites, ir_utils
 from numba.cuda.core.options import ParallelOptions
 from numba.cuda.core.inline_closurecall import InlineClosureCallPass
-from numba.cuda.tests.support import TestCase, override_config
+from numba.cuda.tests.support import (
+    assertPreciseEqual,
+    TestCase,
+    override_config,
+)
 from numba.cuda.core.analysis import (
     dead_branch_prune,
     rewrite_semantic_constants,
@@ -159,7 +163,7 @@ class TestBranchPruneBase(TestCase):
         cres.py_func(*args)
         with override_config("DISABLE_PERFORMANCE_WARNINGS", 1):
             cres[1, 1](*dargs)
-        self.assertPreciseEqual(out[0], cout[0])
+        assertPreciseEqual(out[0], cout[0])
 
 
 class TestBranchPrune(TestBranchPruneBase):

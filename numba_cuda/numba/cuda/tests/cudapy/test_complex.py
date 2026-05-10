@@ -41,6 +41,7 @@ from numba.cuda.tests.cudapy.complex_usecases import (
     tanh_usecase,
 )
 from numba.cuda.np import numpy_support
+from numba.cuda.tests.support import assertPreciseEqual
 
 
 def compile_scalar_func(pyfunc, argtypes, restype):
@@ -155,7 +156,7 @@ class BaseComplexTest(CUDATestCase):
             got_list = cudafunc(ok_values)
             for got, expected, args in zip(got_list, expected_list, ok_values):
                 msg = "for input %r with prec %r" % (args, prec)
-                self.assertPreciseEqual(
+                assertPreciseEqual(
                     got,
                     expected,
                     prec=prec,

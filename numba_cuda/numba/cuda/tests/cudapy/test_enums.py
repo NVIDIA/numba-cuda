@@ -27,6 +27,7 @@ from numba.cuda.tests.cudapy.enum_usecases import (
     RequestError,
     IntEnumWithNegatives,
 )
+from numba.cuda.tests.support import assertPreciseEqual
 
 
 class EnumTest(CUDATestCase):
@@ -51,7 +52,7 @@ class EnumTest(CUDATestCase):
             expected = got.copy()
             cuda_f[1, 1](a, b, got)
             f(a, b, expected)
-            self.assertPreciseEqual(expected, got)
+            assertPreciseEqual(expected, got)
 
     def test_getattr_getitem(self):
         def f(out):
@@ -64,7 +65,7 @@ class EnumTest(CUDATestCase):
         expected = got.copy()
         cuda_f[1, 1](got)
         f(expected)
-        self.assertPreciseEqual(expected, got)
+        assertPreciseEqual(expected, got)
 
     @skip_on_standalone_numba_cuda
     def test_return_from_device_func(self):
@@ -81,7 +82,7 @@ class EnumTest(CUDATestCase):
         expected = got.copy()
         f(True, expected)
         cuda_f[1, 1](True, got)
-        self.assertPreciseEqual(expected, got)
+        assertPreciseEqual(expected, got)
 
     def test_int_coerce(self):
         def f(x, out):
@@ -97,7 +98,7 @@ class EnumTest(CUDATestCase):
             expected = got.copy()
             cuda_f[1, 1](x, got)
             f(x, expected)
-            self.assertPreciseEqual(expected, got)
+            assertPreciseEqual(expected, got)
 
     def test_int_cast(self):
         def f(x, out):
@@ -127,7 +128,7 @@ class EnumTest(CUDATestCase):
         arr = np.array([2, 404, 500, 404], dtype=np.int64)
         expected = np.array([f(x) for x in arr], dtype=np.int64)
         got = cuda_func(arr)
-        self.assertPreciseEqual(expected, got)
+        assertPreciseEqual(expected, got)
 
     @skip_on_cudasim("No typing context in CUDA simulator")
     def test_int_enum_no_conversion(self):

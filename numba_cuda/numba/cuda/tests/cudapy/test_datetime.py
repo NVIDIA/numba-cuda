@@ -1,14 +1,15 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-2-Clause
 
+import unittest
+
 import numpy as np
+import pytest
 
 from numba import cuda, vectorize, guvectorize
 from numba.cuda.np.numpy_support import from_dtype
 from numba.cuda.testing import CUDATestCase, skip_on_cudasim
-import unittest
-
-import pytest
+from numba.cuda.tests.support import assertPreciseEqual
 
 
 class TestCudaDateTime(CUDATestCase):
@@ -24,7 +25,7 @@ class TestCudaDateTime(CUDATestCase):
 
         foo[1, 32](arr1, arr2, delta)
 
-        self.assertPreciseEqual(delta, arr2 - arr1)
+        assertPreciseEqual(delta, arr2 - arr1)
 
     def test_scalar_datetime_kernel(self):
         @cuda.jit
@@ -43,7 +44,7 @@ class TestCudaDateTime(CUDATestCase):
         where = matches.nonzero()
 
         self.assertEqual(list(where), [5])
-        self.assertPreciseEqual(outdelta, arr1 - delta)
+        assertPreciseEqual(outdelta, arr1 - delta)
 
     @skip_on_cudasim("ufunc API unsupported in the simulator")
     def test_ufunc(self):
@@ -58,7 +59,7 @@ class TestCudaDateTime(CUDATestCase):
 
         delta = timediff(arr1, arr2)
 
-        self.assertPreciseEqual(delta, arr2 - arr1)
+        assertPreciseEqual(delta, arr2 - arr1)
 
     @skip_on_cudasim("API unsupported in the simulator")
     def test_datetime_cupy_inputs(self):
@@ -82,7 +83,7 @@ class TestCudaDateTime(CUDATestCase):
         out = cp.empty(arr.size, dtype="float64").view("datetime64[D]")
         assign[1, 1](out, arr)
 
-        self.assertPreciseEqual(arr.get(), out.get())
+        assertPreciseEqual(arr.get(), out.get())
 
     @skip_on_cudasim("ufunc API unsupported in the simulator")
     def test_gufunc(self):
@@ -102,14 +103,14 @@ class TestCudaDateTime(CUDATestCase):
 
         delta = timediff(arr1, arr2)
 
-        self.assertPreciseEqual(delta, arr2 - arr1)
+        assertPreciseEqual(delta, arr2 - arr1)
 
     @skip_on_cudasim("no .copy_to_host() in the simulator")
     def test_datetime_view_as_int64(self):
         arr = np.arange("2005-02", "2006-02", dtype="datetime64[D]")
         darr = cuda.to_device(arr)
         viewed = darr.view(np.int64)
-        self.assertPreciseEqual(arr.view(np.int64), viewed.copy_to_host())
+        assertPreciseEqual(arr.view(np.int64), viewed.copy_to_host())
         self.assertEqual(viewed.gpu_data, darr.gpu_data)
 
     @skip_on_cudasim("no .copy_to_host() in the simulator")
@@ -119,7 +120,7 @@ class TestCudaDateTime(CUDATestCase):
         self.assertEqual(arr.dtype, np.dtype("timedelta64[D]"))
         darr = cuda.to_device(arr)
         viewed = darr.view(np.int64)
-        self.assertPreciseEqual(arr.view(np.int64), viewed.copy_to_host())
+        assertPreciseEqual(arr.view(np.int64), viewed.copy_to_host())
         self.assertEqual(viewed.gpu_data, darr.gpu_data)
 
 

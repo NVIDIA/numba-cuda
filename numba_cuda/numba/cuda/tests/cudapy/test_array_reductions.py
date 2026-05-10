@@ -7,6 +7,7 @@ from numba import cuda
 from numba.cuda.testing import skip_on_cudasim, skip_on_nvjitlink_13_1_sm_120
 from numba.cuda.misc.special import literal_unroll
 from numba.cuda import config
+from numba.cuda.tests.support import assertPreciseEqual
 
 
 @skip_on_cudasim("doesn't work in the simulator")
@@ -48,7 +49,7 @@ class TestArrayReductions(MemoryLeakMixin, TestCase):
         out = cuda.to_device(np.zeros(len(cases), dtype=np.bool_))
         kernel[1, 1](out)
         got = out.copy_to_host()
-        self.assertPreciseEqual(expected, got)
+        assertPreciseEqual(expected, got)
 
     def test_any_basic(self):
         cases = (
@@ -70,7 +71,7 @@ class TestArrayReductions(MemoryLeakMixin, TestCase):
         expected = np.array([np.any(a) for a in cases], dtype=np.bool_)
         out = cuda.to_device(np.zeros(len(cases), dtype=np.bool_))
         kernel[1, 1](out)
-        self.assertPreciseEqual(expected, out.copy_to_host())
+        assertPreciseEqual(expected, out.copy_to_host())
 
     @skip_on_nvjitlink_13_1_sm_120(
         "sum fails at link time on sm_120 + CUDA 13.1"
@@ -100,7 +101,7 @@ class TestArrayReductions(MemoryLeakMixin, TestCase):
         expected = np.array([np.sum(a) for a in arrays], dtype=np.float64)
         out = cuda.to_device(np.zeros(len(arrays), dtype=np.float64))
         kernel[1, 1](out)
-        self.assertPreciseEqual(expected, out.copy_to_host())
+        assertPreciseEqual(expected, out.copy_to_host())
 
     @skip_on_nvjitlink_13_1_sm_120(
         "mean fails at link time on sm_120 + CUDA 13.1"
@@ -130,7 +131,7 @@ class TestArrayReductions(MemoryLeakMixin, TestCase):
         expected = np.array([np.mean(a) for a in arrays], dtype=np.float64)
         out = cuda.to_device(np.zeros(len(arrays), dtype=np.float64))
         kernel[1, 1](out)
-        self.assertPreciseEqual(expected, out.copy_to_host())
+        assertPreciseEqual(expected, out.copy_to_host())
 
     def test_var_basic(self):
         arrays = (
@@ -157,7 +158,7 @@ class TestArrayReductions(MemoryLeakMixin, TestCase):
         expected = np.array([np.var(a) for a in arrays], dtype=np.float64)
         out = cuda.to_device(np.zeros(len(arrays), dtype=np.float64))
         kernel[1, 1](out)
-        self.assertPreciseEqual(expected, out.copy_to_host(), prec="double")
+        assertPreciseEqual(expected, out.copy_to_host(), prec="double")
 
     def test_std_basic(self):
         arrays = (
@@ -184,7 +185,7 @@ class TestArrayReductions(MemoryLeakMixin, TestCase):
         expected = np.array([np.std(a) for a in arrays], dtype=np.float64)
         out = cuda.to_device(np.zeros(len(arrays), dtype=np.float64))
         kernel[1, 1](out)
-        self.assertPreciseEqual(expected, out.copy_to_host())
+        assertPreciseEqual(expected, out.copy_to_host())
 
     def test_min_basic(self):
         arrays = (
@@ -211,7 +212,7 @@ class TestArrayReductions(MemoryLeakMixin, TestCase):
         expected = np.array([np.min(a) for a in arrays], dtype=np.float64)
         out = cuda.to_device(np.zeros(len(arrays), dtype=np.float64))
         kernel[1, 1](out)
-        self.assertPreciseEqual(expected, out.copy_to_host())
+        assertPreciseEqual(expected, out.copy_to_host())
 
     def test_max_basic(self):
         arrays = (
@@ -238,7 +239,7 @@ class TestArrayReductions(MemoryLeakMixin, TestCase):
         expected = np.array([np.max(a) for a in arrays], dtype=np.float64)
         out = cuda.to_device(np.zeros(len(arrays), dtype=np.float64))
         kernel[1, 1](out)
-        self.assertPreciseEqual(expected, out.copy_to_host())
+        assertPreciseEqual(expected, out.copy_to_host())
 
     def test_nanmin_basic(self):
         arrays = (
@@ -263,7 +264,7 @@ class TestArrayReductions(MemoryLeakMixin, TestCase):
         expected = np.array([np.nanmin(a) for a in arrays], dtype=np.float64)
         out = cuda.to_device(np.zeros(len(arrays), dtype=np.float64))
         kernel[1, 1](out)
-        self.assertPreciseEqual(expected, out.copy_to_host())
+        assertPreciseEqual(expected, out.copy_to_host())
 
     def test_nanmax_basic(self):
         arrays = (
@@ -288,7 +289,7 @@ class TestArrayReductions(MemoryLeakMixin, TestCase):
         expected = np.array([np.nanmax(a) for a in arrays], dtype=np.float64)
         out = cuda.to_device(np.zeros(len(arrays), dtype=np.float64))
         kernel[1, 1](out)
-        self.assertPreciseEqual(expected, out.copy_to_host())
+        assertPreciseEqual(expected, out.copy_to_host())
 
     @skip_on_nvjitlink_13_1_sm_120(
         "nanmean fails at link time on sm_120 + CUDA 13.1"
@@ -316,7 +317,7 @@ class TestArrayReductions(MemoryLeakMixin, TestCase):
         expected = np.array([np.nanmean(a) for a in arrays], dtype=np.float64)
         out = cuda.to_device(np.zeros(len(arrays), dtype=np.float64))
         kernel[1, 1](out)
-        self.assertPreciseEqual(expected, out.copy_to_host())
+        assertPreciseEqual(expected, out.copy_to_host())
 
     @skip_on_nvjitlink_13_1_sm_120(
         "nansum fails at link time on sm_120 + CUDA 13.1"
@@ -344,7 +345,7 @@ class TestArrayReductions(MemoryLeakMixin, TestCase):
         expected = np.array([np.nansum(a) for a in arrays], dtype=np.float64)
         out = cuda.to_device(np.zeros(len(arrays), dtype=np.float64))
         kernel[1, 1](out)
-        self.assertPreciseEqual(expected, out.copy_to_host())
+        assertPreciseEqual(expected, out.copy_to_host())
 
     @skip_on_nvjitlink_13_1_sm_120(
         "nanprod fails at link time on sm_120 + CUDA 13.1"
@@ -372,7 +373,7 @@ class TestArrayReductions(MemoryLeakMixin, TestCase):
         expected = np.array([np.nanprod(a) for a in arrays], dtype=np.float64)
         out = cuda.to_device(np.zeros(len(arrays), dtype=np.float64))
         kernel[1, 1](out)
-        self.assertPreciseEqual(expected, out.copy_to_host())
+        assertPreciseEqual(expected, out.copy_to_host())
 
     def test_count_nonzero_basic(self):
         cases = (
@@ -396,7 +397,7 @@ class TestArrayReductions(MemoryLeakMixin, TestCase):
         expected = np.array([np.count_nonzero(a) for a in cases], dtype=np.intp)
         out = cuda.to_device(np.zeros(len(cases), dtype=np.intp))
         kernel[1, 1](out)
-        self.assertPreciseEqual(expected, out.copy_to_host())
+        assertPreciseEqual(expected, out.copy_to_host())
 
     def test_count_nonzero_bool(self):
         cases = (
@@ -415,7 +416,7 @@ class TestArrayReductions(MemoryLeakMixin, TestCase):
         expected = np.array([np.count_nonzero(a) for a in cases], dtype=np.intp)
         out = cuda.to_device(np.zeros(len(cases), dtype=np.intp))
         kernel[1, 1](out)
-        self.assertPreciseEqual(expected, out.copy_to_host())
+        assertPreciseEqual(expected, out.copy_to_host())
 
     def test_count_nonzero_2d(self):
         cases = (
@@ -434,4 +435,4 @@ class TestArrayReductions(MemoryLeakMixin, TestCase):
         expected = np.array([np.count_nonzero(a) for a in cases], dtype=np.intp)
         out = cuda.to_device(np.zeros(len(cases), dtype=np.intp))
         kernel[1, 1](out)
-        self.assertPreciseEqual(expected, out.copy_to_host())
+        assertPreciseEqual(expected, out.copy_to_host())

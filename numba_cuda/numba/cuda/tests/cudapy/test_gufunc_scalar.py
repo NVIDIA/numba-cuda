@@ -10,6 +10,7 @@ See Numpy documentation for detail about gufunc:
 import numpy as np
 from numba import cuda, guvectorize
 from numba.cuda.testing import skip_on_cudasim, CUDATestCase
+from numba.cuda.tests.support import assertPreciseEqual
 import unittest
 
 
@@ -64,7 +65,7 @@ class TestGUFuncScalar(CUDATestCase):
 
         self.assertEqual(twice(10), 20)
         arg = np.arange(10).astype(np.int32)
-        self.assertPreciseEqual(twice(arg), arg * 2)
+        assertPreciseEqual(twice(arg), arg * 2)
 
     def test_gufunc_scalar_input_saxpy(self):
         @guvectorize(

@@ -7,6 +7,7 @@ from numba import cuda
 from numba.cuda import HAS_NUMBA
 from numba.cuda.testing import CUDATestCase, skip_on_standalone_numba_cuda
 from numba.cuda.tests.cudapy.cache_usecases import CUDAUseCase, UseCase
+from numba.cuda.tests.support import assertPreciseEqual
 
 
 class CPUUseCase(UseCase):
@@ -39,10 +40,10 @@ class _TestModule(CUDATestCase):
     """
 
     def check_module(self, mod):
-        self.assertPreciseEqual(mod.assign_cpu(5), 5)
-        self.assertPreciseEqual(mod.assign_cpu(5.5), 5.5)
-        self.assertPreciseEqual(mod.assign_cuda(5), 5)
-        self.assertPreciseEqual(mod.assign_cuda(5.5), 5.5)
+        assertPreciseEqual(mod.assign_cpu(5), 5)
+        assertPreciseEqual(mod.assign_cpu(5.5), 5.5)
+        assertPreciseEqual(mod.assign_cuda(5), 5)
+        assertPreciseEqual(mod.assign_cuda(5.5), 5.5)
 
 
 def self_test():

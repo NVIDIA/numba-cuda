@@ -1,6 +1,8 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-2-Clause
 
+import math
+
 from cuda.core._utils.cuda_utils import CUDAError
 import numpy as np
 import threading
@@ -24,7 +26,7 @@ from numba.cuda.testing import (
     unittest,
     CUDATestCase,
 )
-import math
+from numba.cuda.tests.support import assertPreciseEqual
 
 
 def add(x, y):
@@ -270,7 +272,7 @@ class TestDispatcher(CUDATestCase):
         r = np.zeros(1, dtype=np.int32)
 
         c_add[1, 1](r, 123, 456)
-        self.assertPreciseEqual(r[0], add(123, 456))
+        assertPreciseEqual(r[0], add(123, 456))
 
     @skip_on_cudasim("Simulator ignores signature")
     @unittest.expectedFailure
@@ -287,7 +289,7 @@ class TestDispatcher(CUDATestCase):
         r = np.zeros(1, dtype=np.int32)
 
         c_add[1, 1](r, 12.3, 45.6)
-        self.assertPreciseEqual(r[0], add(12, 45))
+        assertPreciseEqual(r[0], add(12, 45))
 
     @skip_on_cudasim("Simulator ignores signature")
     def test_coerce_input_types_unsafe_complex(self):
@@ -360,11 +362,11 @@ class TestDispatcher(CUDATestCase):
         # Exact signature matches
         r = np.zeros(1, dtype=np.int64)
         f[1, 1](r, 1, 2)
-        self.assertPreciseEqual(r[0], 3)
+        assertPreciseEqual(r[0], 3)
 
         r = np.zeros(1, dtype=np.float64)
         f[1, 1](r, 1.5, 2.5)
-        self.assertPreciseEqual(r[0], 4.0)
+        assertPreciseEqual(r[0], 4.0)
 
         if config.ENABLE_CUDASIM:
             # Pass - we can't check for no conversion on the simulator.
@@ -433,11 +435,11 @@ class TestDispatcher(CUDATestCase):
 
         r = np.zeros(1, dtype=np.float64)
         f[1, 1](r, np.float32(1), np.float32(2**-25))
-        self.assertPreciseEqual(r[0], 1.0)
+        assertPreciseEqual(r[0], 1.0)
 
         r = np.zeros(1, dtype=np.float64)
         f[1, 1](r, 1, 2**-25)
-        self.assertPreciseEqual(r[0], 1.0000000298023224)
+        assertPreciseEqual(r[0], 1.0000000298023224)
 
     @skip_on_cudasim("No overload resolution in the simulator")
     def test_explicit_signatures_ambiguous_resolution(self):
@@ -480,7 +482,7 @@ class TestDispatcher(CUDATestCase):
 
         # Approximate match (unsafe conversion)
         f[1, 1](r, 1.5, 2.5)
-        self.assertPreciseEqual(r[0], 3)
+        assertPreciseEqual(r[0], 3)
         self.assertEqual(len(f.overloads), 1, f.overloads)
 
         sigs = [
@@ -491,7 +493,7 @@ class TestDispatcher(CUDATestCase):
         r = np.zeros(1, dtype=np.float64)
         # Approximate match (int32 -> float64 is a safe conversion)
         f[1, 1](r, np.int32(1), 2.5)
-        self.assertPreciseEqual(r[0], 3.5)
+        assertPreciseEqual(r[0], 3.5)
 
     def add_device_usecase(self, sigs):
         # Generate a kernel that calls the add device function compiled with a
@@ -513,11 +515,11 @@ class TestDispatcher(CUDATestCase):
         # Exact signature matches
         r = np.zeros(1, dtype=np.int64)
         f[1, 1](r, 1, 2)
-        self.assertPreciseEqual(r[0], 3)
+        assertPreciseEqual(r[0], 3)
 
         r = np.zeros(1, dtype=np.float64)
         f[1, 1](r, 1.5, 2.5)
-        self.assertPreciseEqual(r[0], 4.0)
+        assertPreciseEqual(r[0], 4.0)
 
         if config.ENABLE_CUDASIM:
             # Pass - we can't check for no conversion on the simulator.
@@ -544,11 +546,11 @@ class TestDispatcher(CUDATestCase):
 
         r = np.zeros(1, dtype=np.float64)
         f[1, 1](r, np.float32(1), np.float32(2**-25))
-        self.assertPreciseEqual(r[0], 1.0)
+        assertPreciseEqual(r[0], 1.0)
 
         r = np.zeros(1, dtype=np.float64)
         f[1, 1](r, 1, 2**-25)
-        self.assertPreciseEqual(r[0], 1.0000000298023224)
+        assertPreciseEqual(r[0], 1.0000000298023224)
 
     def test_explicit_signatures_device_ambiguous(self):
         # Ambiguity between the two best overloads resolves. This is somewhat
@@ -561,7 +563,7 @@ class TestDispatcher(CUDATestCase):
 
         r = np.zeros(1, dtype=np.float64)
         f[1, 1](r, 1.5, 2.5)
-        self.assertPreciseEqual(r[0], 4.0)
+        assertPreciseEqual(r[0], 4.0)
 
     @skip_on_cudasim("CUDA Simulator does not force casting")
     def test_explicit_signatures_device_unsafe(self):
@@ -575,7 +577,7 @@ class TestDispatcher(CUDATestCase):
         # Approximate match (unsafe conversion)
         r = np.zeros(1, dtype=np.int64)
         f[1, 1](r, 1.5, 2.5)
-        self.assertPreciseEqual(r[0], 3)
+        assertPreciseEqual(r[0], 3)
         self.assertEqual(len(f.overloads), 1, f.overloads)
 
         sigs = ["(int64, int64)", "(float64, float64)"]
@@ -584,7 +586,7 @@ class TestDispatcher(CUDATestCase):
         # Approximate match (int32 -> float64 is a safe conversion)
         r = np.zeros(1, dtype=np.float64)
         f[1, 1](r, np.int32(1), 2.5)
-        self.assertPreciseEqual(r[0], 3.5)
+        assertPreciseEqual(r[0], 3.5)
 
     def test_dispatcher_docstring(self):
         # Ensure that CUDA-jitting a function preserves its docstring. See

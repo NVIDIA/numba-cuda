@@ -21,6 +21,7 @@ from numba.cuda.testing import (
     skip_unless_cc_53,
     skip_if_nvjitlink_missing,
 )
+from numba.cuda.tests.support import assertPreciseEqual
 
 
 def simple_threadidx(ary):
@@ -1134,9 +1135,7 @@ class TestCudaIntrinsic(CUDATestCase):
         for val, ndigits in itertools.product(vals, digits):
             with self.subTest(val=val, ndigits=ndigits):
                 compiled[1, 1](ary, val, ndigits)
-                self.assertPreciseEqual(
-                    ary[0], round(val, ndigits), prec="single"
-                )
+                assertPreciseEqual(ary[0], round(val, ndigits), prec="single")
 
     # CPython on most platforms uses rounding based on dtoa.c, whereas the CUDA
     # round-to implementation uses CPython's fallback implementation, which has
@@ -1165,7 +1164,7 @@ class TestCudaIntrinsic(CUDATestCase):
         val = 0.3425
         ndigits = 3
         compiled[1, 1](ary, val, ndigits)
-        self.assertPreciseEqual(ary[0], round(val, ndigits), prec="single")
+        assertPreciseEqual(ary[0], round(val, ndigits), prec="single")
 
     def test_round_to_f8(self):
         compiled = cuda.jit("void(float64[:], float64, int32)")(simple_round_to)
@@ -1178,16 +1177,14 @@ class TestCudaIntrinsic(CUDATestCase):
         for val, ndigits in itertools.product(vals, digits):
             with self.subTest(val=val, ndigits=ndigits):
                 compiled[1, 1](ary, val, ndigits)
-                self.assertPreciseEqual(
-                    ary[0], round(val, ndigits), prec="exact"
-                )
+                assertPreciseEqual(ary[0], round(val, ndigits), prec="exact")
 
         # Trigger the "overflow safe" branch of the implementation
         val = 0.12345678987654321 * 10e-15
         ndigits = 23
         with self.subTest(val=val, ndigits=ndigits):
             compiled[1, 1](ary, val, ndigits)
-            self.assertPreciseEqual(ary[0], round(val, ndigits), prec="double")
+            assertPreciseEqual(ary[0], round(val, ndigits), prec="double")
 
     # Skipped on cudasim for the same reasons as test_round_to_f4 above.
     @skip_on_cudasim("Overflow behavior differs on CPython")
@@ -1212,7 +1209,7 @@ class TestCudaIntrinsic(CUDATestCase):
         val = 0.5425
         ndigits = 3
         compiled[1, 1](ary, val, ndigits)
-        self.assertPreciseEqual(ary[0], round(val, ndigits), prec="double")
+        assertPreciseEqual(ary[0], round(val, ndigits), prec="double")
 
 
 if __name__ == "__main__":

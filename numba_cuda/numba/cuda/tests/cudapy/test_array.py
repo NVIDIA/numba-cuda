@@ -9,6 +9,7 @@ from numba import cuda, types
 from numba.cuda import config
 import pytest
 from numba.cuda.np.numpy_support import carray, farray
+from numba.cuda.tests.support import assertPreciseEqual
 
 
 if config.ENABLE_CUDASIM:
@@ -302,7 +303,7 @@ class TestCudaArray(CUDATestCase):
             expected = pyfunc(arr, shape)
             got = np.zeros(expected.shape, dtype=arr.dtype)
             kernel[1, 1](arr, shape, got)
-            self.assertPreciseEqual(got, expected)
+            assertPreciseEqual(got, expected)
 
         def check_only_shape(kernelfunc, arr, shape, expected_shape):
             kernel = cuda.jit(kernelfunc)

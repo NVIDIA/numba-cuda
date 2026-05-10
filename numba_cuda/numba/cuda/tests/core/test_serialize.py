@@ -21,6 +21,7 @@ else:
 from numba.cuda.tests.support import TestCase
 from numba.cuda.cloudpickle import dumps, loads
 from numba.cuda.testing import skip_on_standalone_numba_cuda
+from numba.cuda.tests.support import assertPreciseEqual
 
 
 @skip_on_standalone_numba_cuda
@@ -50,7 +51,7 @@ class TestDispatcherPickling(TestCase):
             ):
                 self.assertRaises(expected_result, func, *args)
             else:
-                self.assertPreciseEqual(func(*args), expected_result)
+                assertPreciseEqual(func(*args), expected_result)
 
         # Control
         check_result(func)

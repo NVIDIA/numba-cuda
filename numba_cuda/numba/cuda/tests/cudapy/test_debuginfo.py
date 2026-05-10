@@ -16,7 +16,10 @@ import re
 import unittest
 import warnings
 from numba.cuda.core.errors import NumbaDebugInfoWarning
-from numba.cuda.tests.support import ignore_internal_warnings
+from numba.cuda.tests.support import (
+    assertPreciseEqual,
+    ignore_internal_warnings,
+)
 import numpy as np
 import inspect
 
@@ -806,7 +809,7 @@ class TestCudaDebugInfo(CUDATestCase):
             result.copy_to_host()
 
         result_host = math.sin(np.pi) + math.cos(np.pi)
-        self.assertPreciseEqual(result[0], result_host)
+        assertPreciseEqual(result[0], result_host)
 
         ir_content = foo.inspect_llvm()[foo.signatures[0]]
         self.assertFileCheckMatches(ir_content, foo.__doc__)

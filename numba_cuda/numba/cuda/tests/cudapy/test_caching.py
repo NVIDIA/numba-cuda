@@ -22,6 +22,7 @@ from numba.cuda.testing import (
     skip_on_standalone_numba_cuda,
 )
 from numba.cuda.tests.support import (
+    assertPreciseEqual,
     TestCase,
     temp_directory,
     import_dynamic,
@@ -220,19 +221,19 @@ class CUDACachingTest(DispatcherCacheUsecasesTest):
         self.check_pycache(0)
 
         f = mod.add_usecase
-        self.assertPreciseEqual(f(2, 3), 6)
+        assertPreciseEqual(f(2, 3), 6)
         self.check_pycache(2)  # 1 index, 1 data
-        self.assertPreciseEqual(f(2.5, 3), 6.5)
+        assertPreciseEqual(f(2.5, 3), 6.5)
         self.check_pycache(3)  # 1 index, 2 data
         self.check_hits(f.func, 0, 2)
 
         f = mod.record_return_aligned
         rec = f(mod.aligned_arr, 1)
-        self.assertPreciseEqual(tuple(rec), (2, 43.5))
+        assertPreciseEqual(tuple(rec), (2, 43.5))
 
         f = mod.record_return_packed
         rec = f(mod.packed_arr, 1)
-        self.assertPreciseEqual(tuple(rec), (2, 43.5))
+        assertPreciseEqual(tuple(rec), (2, 43.5))
         self.check_pycache(6)  # 2 index, 4 data
         self.check_hits(f.func, 0, 2)
 
@@ -243,7 +244,7 @@ class CUDACachingTest(DispatcherCacheUsecasesTest):
         mod = self.import_module()
 
         f = mod.add_nocache_usecase
-        self.assertPreciseEqual(f(2, 3), 6)
+        assertPreciseEqual(f(2, 3), 6)
         self.check_pycache(0)
 
     def test_many_locals(self):
@@ -265,13 +266,13 @@ class CUDACachingTest(DispatcherCacheUsecasesTest):
             warnings.simplefilter("error", NumbaWarning)
 
             f = mod.closure1
-            self.assertPreciseEqual(f(3), 6)  # 3 + 3 = 6
+            assertPreciseEqual(f(3), 6)  # 3 + 3 = 6
             f = mod.closure2
-            self.assertPreciseEqual(f(3), 8)  # 3 + 5 = 8
+            assertPreciseEqual(f(3), 8)  # 3 + 5 = 8
             f = mod.closure3
-            self.assertPreciseEqual(f(3), 10)  # 3 + 7 = 10
+            assertPreciseEqual(f(3), 10)  # 3 + 7 = 10
             f = mod.closure4
-            self.assertPreciseEqual(f(3), 12)  # 3 + 9 = 12
+            assertPreciseEqual(f(3), 12)  # 3 + 9 = 12
             self.check_pycache(5)  # 1 nbi, 4 nbc
 
     def test_cache_reuse(self):
@@ -304,7 +305,7 @@ class CUDACachingTest(DispatcherCacheUsecasesTest):
     def test_cache_invalidate(self):
         mod = self.import_module()
         f = mod.add_usecase
-        self.assertPreciseEqual(f(2, 3), 6)
+        assertPreciseEqual(f(2, 3), 6)
 
         # This should change the functions' results
         with open(self.modfile, "a") as f:
@@ -312,33 +313,33 @@ class CUDACachingTest(DispatcherCacheUsecasesTest):
 
         mod = self.import_module()
         f = mod.add_usecase
-        self.assertPreciseEqual(f(2, 3), 15)
+        assertPreciseEqual(f(2, 3), 15)
 
     def test_recompile(self):
         # Explicit call to recompile() should overwrite the cache
         mod = self.import_module()
         f = mod.add_usecase
-        self.assertPreciseEqual(f(2, 3), 6)
+        assertPreciseEqual(f(2, 3), 6)
 
         mod = self.import_module()
         f = mod.add_usecase
         mod.Z = 10
-        self.assertPreciseEqual(f(2, 3), 6)
+        assertPreciseEqual(f(2, 3), 6)
         f.func.recompile()
-        self.assertPreciseEqual(f(2, 3), 15)
+        assertPreciseEqual(f(2, 3), 15)
 
         # Freshly recompiled version is re-used from other imports
         mod = self.import_module()
         f = mod.add_usecase
-        self.assertPreciseEqual(f(2, 3), 15)
+        assertPreciseEqual(f(2, 3), 15)
 
     def test_same_names(self):
         # Function with the same names should still disambiguate
         mod = self.import_module()
         f = mod.renamed_function1
-        self.assertPreciseEqual(f(2), 4)
+        assertPreciseEqual(f(2), 4)
         f = mod.renamed_function2
-        self.assertPreciseEqual(f(2), 8)
+        assertPreciseEqual(f(2), 8)
 
     def _test_pycache_fallback(self):
         """
@@ -353,14 +354,14 @@ class CUDACachingTest(DispatcherCacheUsecasesTest):
             shutil.rmtree, f.func.stats.cache_path, ignore_errors=True
         )
 
-        self.assertPreciseEqual(f(2, 3), 6)
+        assertPreciseEqual(f(2, 3), 6)
         # It's a cache miss since the file was copied to a new temp location
         self.check_hits(f.func, 0, 1)
 
         # Test re-use
         mod2 = self.import_module()
         f = mod2.add_usecase
-        self.assertPreciseEqual(f(2, 3), 6)
+        assertPreciseEqual(f(2, 3), 6)
         self.check_hits(f.func, 1, 0)
 
         # The __pycache__ is empty (otherwise the test's preconditions
@@ -675,17 +676,17 @@ class CUDAAndCPUCachingTest(DispatcherCacheUsecasesTest):
 
         f_cpu = mod.assign_cpu
         f_cuda = mod.assign_cuda
-        self.assertPreciseEqual(f_cpu(5), 5)
+        assertPreciseEqual(f_cpu(5), 5)
         self.check_pycache(2)  # 1 index, 1 data
-        self.assertPreciseEqual(f_cuda(5), 5)
+        assertPreciseEqual(f_cuda(5), 5)
         self.check_pycache(3)  # 1 index, 2 data
 
         self.check_hits(f_cpu.func, 0, 1)
         self.check_hits(f_cuda.func, 0, 1)
 
-        self.assertPreciseEqual(f_cpu(5.5), 5.5)
+        assertPreciseEqual(f_cpu(5.5), 5.5)
         self.check_pycache(4)  # 1 index, 3 data
-        self.assertPreciseEqual(f_cuda(5.5), 5.5)
+        assertPreciseEqual(f_cuda(5.5), 5.5)
         self.check_pycache(5)  # 1 index, 4 data
 
         self.check_hits(f_cpu.func, 0, 2)
@@ -770,19 +771,19 @@ class TestMultiCCCaching(DispatcherCacheUsecasesTest):
         # Step 1. Populate the cache with the first GPU
         with gpus[0]:
             f = mod.add_usecase
-            self.assertPreciseEqual(f(2, 3), 6)
+            assertPreciseEqual(f(2, 3), 6)
             self.check_pycache(2)  # 1 index, 1 data
-            self.assertPreciseEqual(f(2.5, 3), 6.5)
+            assertPreciseEqual(f(2.5, 3), 6.5)
             self.check_pycache(3)  # 1 index, 2 data
             self.check_hits(f.func, 0, 2)
 
             f = mod.record_return_aligned
             rec = f(mod.aligned_arr, 1)
-            self.assertPreciseEqual(tuple(rec), (2, 43.5))
+            assertPreciseEqual(tuple(rec), (2, 43.5))
 
             f = mod.record_return_packed
             rec = f(mod.packed_arr, 1)
-            self.assertPreciseEqual(tuple(rec), (2, 43.5))
+            assertPreciseEqual(tuple(rec), (2, 43.5))
             self.check_pycache(6)  # 2 index, 4 data
             self.check_hits(f.func, 0, 2)
 
@@ -790,19 +791,19 @@ class TestMultiCCCaching(DispatcherCacheUsecasesTest):
         # doesn't further populate the cache.
         with gpus[1]:
             f = mod.add_usecase
-            self.assertPreciseEqual(f(2, 3), 6)
+            assertPreciseEqual(f(2, 3), 6)
             self.check_pycache(6)  # cache unchanged
-            self.assertPreciseEqual(f(2.5, 3), 6.5)
+            assertPreciseEqual(f(2.5, 3), 6.5)
             self.check_pycache(6)  # cache unchanged
             self.check_hits(f.func, 0, 2)
 
             f = mod.record_return_aligned
             rec = f(mod.aligned_arr, 1)
-            self.assertPreciseEqual(tuple(rec), (2, 43.5))
+            assertPreciseEqual(tuple(rec), (2, 43.5))
 
             f = mod.record_return_packed
             rec = f(mod.packed_arr, 1)
-            self.assertPreciseEqual(tuple(rec), (2, 43.5))
+            assertPreciseEqual(tuple(rec), (2, 43.5))
             self.check_pycache(6)  # cache unchanged
             self.check_hits(f.func, 0, 2)
 
@@ -813,19 +814,19 @@ class TestMultiCCCaching(DispatcherCacheUsecasesTest):
 
         with gpus[1]:
             f = mod2.add_usecase
-            self.assertPreciseEqual(f(2, 3), 6)
+            assertPreciseEqual(f(2, 3), 6)
             self.check_pycache(7)  # 2 index, 5 data
-            self.assertPreciseEqual(f(2.5, 3), 6.5)
+            assertPreciseEqual(f(2.5, 3), 6.5)
             self.check_pycache(8)  # 2 index, 6 data
             self.check_hits(f.func, 0, 2)
 
             f = mod2.record_return_aligned
             rec = f(mod.aligned_arr, 1)
-            self.assertPreciseEqual(tuple(rec), (2, 43.5))
+            assertPreciseEqual(tuple(rec), (2, 43.5))
 
             f = mod2.record_return_packed
             rec = f(mod.packed_arr, 1)
-            self.assertPreciseEqual(tuple(rec), (2, 43.5))
+            assertPreciseEqual(tuple(rec), (2, 43.5))
             self.check_pycache(10)  # 2 index, 8 data
             self.check_hits(f.func, 0, 2)
 
@@ -842,31 +843,31 @@ class TestMultiCCCaching(DispatcherCacheUsecasesTest):
         # during Step 3.
         with gpus[1]:
             f = mod3.add_usecase
-            self.assertPreciseEqual(f(2, 3), 6)
-            self.assertPreciseEqual(f(2.5, 3), 6.5)
+            assertPreciseEqual(f(2, 3), 6)
+            assertPreciseEqual(f(2.5, 3), 6.5)
 
             f = mod3.record_return_aligned
             rec = f(mod.aligned_arr, 1)
-            self.assertPreciseEqual(tuple(rec), (2, 43.5))
+            assertPreciseEqual(tuple(rec), (2, 43.5))
 
             f = mod3.record_return_packed
             rec = f(mod.packed_arr, 1)
-            self.assertPreciseEqual(tuple(rec), (2, 43.5))
+            assertPreciseEqual(tuple(rec), (2, 43.5))
 
         # Step 5. Run with GPU 0 using the module from Step 4, to force PTX
         # generation from cached NVVM IR.
         with gpus[0]:
             f = mod3.add_usecase
-            self.assertPreciseEqual(f(2, 3), 6)
-            self.assertPreciseEqual(f(2.5, 3), 6.5)
+            assertPreciseEqual(f(2, 3), 6)
+            assertPreciseEqual(f(2.5, 3), 6.5)
 
             f = mod3.record_return_aligned
             rec = f(mod.aligned_arr, 1)
-            self.assertPreciseEqual(tuple(rec), (2, 43.5))
+            assertPreciseEqual(tuple(rec), (2, 43.5))
 
             f = mod3.record_return_packed
             rec = f(mod.packed_arr, 1)
-            self.assertPreciseEqual(tuple(rec), (2, 43.5))
+            assertPreciseEqual(tuple(rec), (2, 43.5))
 
 
 def child_initializer():
