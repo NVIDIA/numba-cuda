@@ -716,38 +716,40 @@ class TestCase(unittest.TestCase):
     def random(self):
         return np.random.RandomState(42)
 
-    @contextlib.contextmanager
-    def assertTypingError(self):
-        """
-        A context manager that asserts the enclosed code block fails
-        compiling in nopython mode.
-        """
-        _accepted_errors = (
-            errors.LoweringError,
-            errors.TypingError,
-            TypeError,
-            NotImplementedError,
-        )
-        with self.assertRaises(_accepted_errors) as cm:
-            yield cm
+    # TODO: safe to delete since it's not used anywhere in numba_cuda?
+    # @contextlib.contextmanager
+    # def assertTypingError(self):
+    #     """
+    #     A context manager that asserts the enclosed code block fails
+    #     compiling in nopython mode.
+    #     """
+    #     _accepted_errors = (
+    #         errors.LoweringError,
+    #         errors.TypingError,
+    #         TypeError,
+    #         NotImplementedError,
+    #     )
+    #     with self.assertRaises(_accepted_errors) as cm:
+    #         yield cm
 
-    @contextlib.contextmanager
-    def assertRefCount(self, *objects):
-        """
-        A context manager that asserts the given objects have the
-        same reference counts before and after executing the
-        enclosed block.
-        """
-        old_refcounts = [sys.getrefcount(x) for x in objects]
-        yield
-        gc.collect()
-        new_refcounts = [sys.getrefcount(x) for x in objects]
-        for old, new, obj in zip(old_refcounts, new_refcounts, objects):
-            if old != new:
-                self.fail(
-                    "Refcount changed from %d to %d for object: %r"
-                    % (old, new, obj)
-                )
+    # TODO: safe to delete since it's not used anywhere in numba_cuda?
+    # @contextlib.contextmanager
+    # def assertRefCount(self, *objects):
+    #     """
+    #     A context manager that asserts the given objects have the
+    #     same reference counts before and after executing the
+    #     enclosed block.
+    #     """
+    #     old_refcounts = [sys.getrefcount(x) for x in objects]
+    #     yield
+    #     gc.collect()
+    #     new_refcounts = [sys.getrefcount(x) for x in objects]
+    #     for old, new, obj in zip(old_refcounts, new_refcounts, objects):
+    #         if old != new:
+    #             self.fail(
+    #                 "Refcount changed from %d to %d for object: %r"
+    #                 % (old, new, obj)
+    #             )
 
     # TODO: safe to delete since it's not used anywhere in numba_cuda?
     # def assertRefCountEqual(self, *objects):
@@ -762,29 +764,29 @@ class TestCase(unittest.TestCase):
     #                 f"#0({rc_0}) != #{i}({rc_i}) does not match."
     #             )
 
-    @contextlib.contextmanager
-    def assertNoNRTLeak(self):
-        """
-        A context manager that asserts no NRT leak was created during
-        the execution of the enclosed block.
-        """
-        old = rtsys.get_allocation_stats()
-        yield
-        new = rtsys.get_allocation_stats()
-        total_alloc = new.alloc - old.alloc
-        total_free = new.free - old.free
-        total_mi_alloc = new.mi_alloc - old.mi_alloc
-        total_mi_free = new.mi_free - old.mi_free
-        self.assertEqual(
-            total_alloc,
-            total_free,
-            "number of data allocs != number of data frees",
-        )
-        self.assertEqual(
-            total_mi_alloc,
-            total_mi_free,
-            "number of meminfo allocs != number of meminfo frees",
-        )
+    # @contextlib.contextmanager
+    # def assertNoNRTLeak(self):
+    #     """
+    #     A context manager that asserts no NRT leak was created during
+    #     the execution of the enclosed block.
+    #     """
+    #     old = rtsys.get_allocation_stats()
+    #     yield
+    #     new = rtsys.get_allocation_stats()
+    #     total_alloc = new.alloc - old.alloc
+    #     total_free = new.free - old.free
+    #     total_mi_alloc = new.mi_alloc - old.mi_alloc
+    #     total_mi_free = new.mi_free - old.mi_free
+    #     self.assertEqual(
+    #         total_alloc,
+    #         total_free,
+    #         "number of data allocs != number of data frees",
+    #     )
+    #     self.assertEqual(
+    #         total_mi_alloc,
+    #         total_mi_free,
+    #         "number of meminfo allocs != number of meminfo frees",
+    #     )
 
 
 class MemoryLeak:
