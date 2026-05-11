@@ -261,6 +261,11 @@ def make_dummy_type(test_obj: unittest.TestCase):
     return Dummy, DummyType
 
 
+@pytest.fixture
+def random():
+    return np.random.RandomState(42)
+
+
 def run_in_subprocess(code, flags=(), env=None, timeout=30):
     """Run a snippet of Python code in a subprocess with flags, if any are
     given. 'env' is passed to subprocess.Popen(). 'timeout' is passed to
@@ -708,14 +713,7 @@ def _fix_strides(arr):
 
 
 class TestCase(unittest.TestCase):
-    longMessage = True
-
-    # A random state yielding the same random numbers for any test case.
-    # Use as `self.random.<method name>`
-    @cached_property
-    def random(self):
-        return np.random.RandomState(42)
-
+    pass
     # TODO: safe to delete since it's not used anywhere in numba_cuda?
     # @contextlib.contextmanager
     # def assertTypingError(self):

@@ -2,8 +2,8 @@
 # SPDX-License-Identifier: BSD-2-Clause
 
 import itertools
+import pytest
 
-import unittest
 from numba.cuda import jit
 from numba.cuda.core.controlflow import CFGraph, ControlFlowAnalysis
 from numba.cuda import types
@@ -12,12 +12,12 @@ from numba.cuda.core.bytecode import (
     ByteCode,
     _fix_LOAD_GLOBAL_arg,
 )
-from numba.cuda.tests.support import TestCase
 from numba.cuda import utils
 from numba.cuda.core import config
+from numba.cuda.tests.support import random
 
 if config.ENABLE_CUDASIM:
-    raise unittest.SkipTest("Analysis passes not done in simulator")
+    pytest.skip("Analysis passes not done in simulator")
 
 
 def for_loop_usecase1(x, y, res1, res2):
@@ -214,7 +214,7 @@ def try_except_usecase():
         pass
 
 
-class TestFlowControl(TestCase):
+class TestFlowControl:
     def run_test(
         self,
         pyfunc,
@@ -242,15 +242,15 @@ class TestFlowControl(TestCase):
                 if pyerr is None:
                     raise
                 cerr = e
-                self.assertEqual(type(pyerr), type(cerr))
+                assert type(pyerr) == type(cerr)
             else:
                 if pyerr is not None:
                     self.fail(
                         "Invalid for pure-python but numba-cuda works\n"
                         + str(pyerr)
                     )
-                self.assertEqual(res1, cres1)
-                self.assertEqual(res2, cres2)
+                assert res1 == cres1
+                assert res2 == cres2
 
     def test_for_loop1(self):
         self.run_test(for_loop_usecase1, [-10, 0, 10], [0], [0], [0])
@@ -288,11 +288,11 @@ class TestFlowControl(TestCase):
     def test_for_loop7_npm(self):
         self.test_for_loop7()
 
-    @unittest.expectedFailure
+    @pytest.mark.xfail
     def test_for_loop8(self):
         self.run_test(for_loop_usecase8, [0, 1], [0, 2, 10], [0], [0])
 
-    @unittest.expectedFailure
+    @pytest.mark.xfail
     def test_for_loop8_npm(self):
         self.test_for_loop8()
 
@@ -381,7 +381,7 @@ class TestFlowControl(TestCase):
         self.test_double_infinite_loop()
 
 
-class TestCFGraph(TestCase):
+class TestCFGraph:
     """
     Test the numba.controlflow.CFGraph class.
     """
@@ -556,104 +556,98 @@ class TestCFGraph(TestCase):
 
     def test_simple_properties(self):
         g = self.loopless1()
-        self.assertEqual(sorted(g.successors(0)), [(12, None), (18, None)])
-        self.assertEqual(sorted(g.successors(21)), [])
-        self.assertEqual(sorted(g.predecessors(0)), [])
-        self.assertEqual(sorted(g.predecessors(21)), [(12, None), (18, None)])
+        assert sorted(g.successors(0)) == [(12, None), (18, None)]
+        assert sorted(g.successors(21)) == []
+        assert sorted(g.predecessors(0)) == []
+        assert sorted(g.predecessors(21)) == [(12, None), (18, None)]
 
     def test_exit_points(self):
         g = self.loopless1()
-        self.assertEqual(sorted(g.exit_points()), [21])
+        assert sorted(g.exit_points()) == [21]
         g = self.loopless1_dead_nodes()
-        self.assertEqual(sorted(g.exit_points()), [21])
+        assert sorted(g.exit_points()) == [21]
         g = self.loopless2()
-        self.assertEqual(sorted(g.exit_points()), [34, 42])
+        assert sorted(g.exit_points()) == [34, 42]
         g = self.multiple_loops()
-        self.assertEqual(sorted(g.exit_points()), [80, 88])
+        assert sorted(g.exit_points()) == [80, 88]
         g = self.infinite_loop1()
-        self.assertEqual(sorted(g.exit_points()), [6])
+        assert sorted(g.exit_points()) == [6]
         g = self.infinite_loop2()
-        self.assertEqual(sorted(g.exit_points()), [])
+        assert sorted(g.exit_points()) == []
         g = self.multiple_exits()
-        self.assertEqual(sorted(g.exit_points()), [19, 37])
+        assert sorted(g.exit_points()) == [19, 37]
 
     def test_dead_nodes(self):
         g = self.loopless1()
-        self.assertEqual(len(g.dead_nodes()), 0)
-        self.assertEqual(sorted(g.nodes()), [0, 12, 18, 21])
+        assert len(g.dead_nodes()) == 0
+        assert sorted(g.nodes()) == [0, 12, 18, 21]
         g = self.loopless2()
-        self.assertEqual(len(g.dead_nodes()), 0)
-        self.assertEqual(sorted(g.nodes()), [12, 18, 21, 34, 42, 99])
+        assert len(g.dead_nodes()) == 0
+        assert sorted(g.nodes()) == [12, 18, 21, 34, 42, 99]
         g = self.multiple_loops()
-        self.assertEqual(len(g.dead_nodes()), 0)
+        assert len(g.dead_nodes()) == 0
         g = self.infinite_loop1()
-        self.assertEqual(len(g.dead_nodes()), 0)
+        assert len(g.dead_nodes()) == 0
         g = self.multiple_exits()
-        self.assertEqual(len(g.dead_nodes()), 0)
+        assert len(g.dead_nodes()) == 0
         # Only this example has dead nodes
         g = self.loopless1_dead_nodes()
-        self.assertEqual(sorted(g.dead_nodes()), [91, 92, 93, 94])
-        self.assertEqual(sorted(g.nodes()), [0, 12, 18, 21])
+        assert sorted(g.dead_nodes()) == [91, 92, 93, 94]
+        assert sorted(g.nodes()) == [0, 12, 18, 21]
 
     def test_descendents(self):
         g = self.loopless2()
         d = g.descendents(34)
-        self.assertEqual(sorted(d), [])
+        assert sorted(d) == []
         d = g.descendents(42)
-        self.assertEqual(sorted(d), [])
+        assert sorted(d) == []
         d = g.descendents(21)
-        self.assertEqual(sorted(d), [34, 42])
+        assert sorted(d) == [34, 42]
         d = g.descendents(99)
-        self.assertEqual(sorted(d), [12, 18, 21, 34, 42])
+        assert sorted(d) == [12, 18, 21, 34, 42]
         g = self.infinite_loop1()
         d = g.descendents(26)
-        self.assertEqual(sorted(d), [])
+        assert sorted(d) == []
         d = g.descendents(19)
-        self.assertEqual(sorted(d), [])
+        assert sorted(d) == []
         d = g.descendents(13)
-        self.assertEqual(sorted(d), [19, 26])
+        assert sorted(d) == [19, 26]
         d = g.descendents(10)
-        self.assertEqual(sorted(d), [13, 19, 26])
+        assert sorted(d) == [13, 19, 26]
         d = g.descendents(6)
-        self.assertEqual(sorted(d), [])
+        assert sorted(d) == []
         d = g.descendents(0)
-        self.assertEqual(sorted(d), [6, 10, 13, 19, 26])
+        assert sorted(d) == [6, 10, 13, 19, 26]
 
     def test_topo_order(self):
         g = self.loopless1()
-        self.assertIn(g.topo_order(), ([0, 12, 18, 21], [0, 18, 12, 21]))
+        assert g.topo_order() in ([0, 12, 18, 21], [0, 18, 12, 21])
         g = self.loopless2()
-        self.assertIn(
-            g.topo_order(), ([99, 18, 12, 21, 34, 42], [99, 12, 18, 21, 34, 42])
+        assert g.topo_order() in (
+            [99, 18, 12, 21, 34, 42],
+            [99, 12, 18, 21, 34, 42],
         )
         g = self.infinite_loop2()
-        self.assertIn(g.topo_order(), ([0, 3, 9, 16], [0, 3, 16, 9]))
+        assert g.topo_order() in ([0, 3, 9, 16], [0, 3, 16, 9])
         g = self.infinite_loop1()
-        self.assertIn(
-            g.topo_order(),
-            (
-                [0, 6, 10, 13, 19, 26],
-                [0, 6, 10, 13, 26, 19],
-                [0, 10, 13, 19, 26, 6],
-                [0, 10, 13, 26, 19, 6],
-            ),
+        assert g.topo_order() in (
+            [0, 6, 10, 13, 19, 26],
+            [0, 6, 10, 13, 26, 19],
+            [0, 10, 13, 19, 26, 6],
+            [0, 10, 13, 26, 19, 6],
         )
 
-    def test_topo_sort(self):
+    def test_topo_sort(self, random):
         def check_topo_sort(nodes, expected):
-            self.assertIn(list(g.topo_sort(nodes)), expected)
-            self.assertIn(list(g.topo_sort(nodes[::-1])), expected)
-            self.assertIn(
-                list(g.topo_sort(nodes, reverse=True))[::-1], expected
+            assert list(g.topo_sort(nodes)) in expected
+            assert list(g.topo_sort(nodes[::-1])) in expected
+            assert list(g.topo_sort(nodes, reverse=True))[::-1] in expected
+            assert (
+                list(g.topo_sort(nodes[::-1], reverse=True))[::-1] in expected
             )
-            self.assertIn(
-                list(g.topo_sort(nodes[::-1], reverse=True))[::-1], expected
-            )
-            self.random.shuffle(nodes)
-            self.assertIn(list(g.topo_sort(nodes)), expected)
-            self.assertIn(
-                list(g.topo_sort(nodes, reverse=True))[::-1], expected
-            )
+            random.shuffle(nodes)
+            assert list(g.topo_sort(nodes)) in expected
+            assert list(g.topo_sort(nodes, reverse=True))[::-1] in expected
 
         g = self.loopless2()
         check_topo_sort([21, 99, 12, 34], ([99, 12, 21, 34],))
@@ -665,17 +659,15 @@ class TestCFGraph(TestCase):
         )
 
     def check_dominators(self, got, expected):
-        self.assertEqual(sorted(got), sorted(expected))
+        assert sorted(got) == sorted(expected)
         for node in sorted(got):
-            self.assertEqual(
-                sorted(got[node]),
-                sorted(expected[node]),
-                "mismatch for %r" % (node,),
+            assert sorted(got[node]) == sorted(expected[node]), (
+                f"mismatch for {node!r}"
             )
 
     def test_dominators_loopless(self):
         def eq_(d, l):
-            self.assertEqual(sorted(doms[d]), l)
+            assert sorted(doms[d]) == l
 
         for g in [self.loopless1(), self.loopless1_dead_nodes()]:
             doms = g.dominators()
@@ -748,7 +740,7 @@ class TestCFGraph(TestCase):
 
     def test_post_dominators_loopless(self):
         def eq_(d, l):
-            self.assertEqual(sorted(doms[d]), l)
+            assert sorted(doms[d]) == l
 
         for g in [self.loopless1(), self.loopless1_dead_nodes()]:
             doms = g.post_dominators()
@@ -837,7 +829,7 @@ class TestCFGraph(TestCase):
     def test_dominator_tree(self):
         def check(graph, expected):
             domtree = graph.dominator_tree()
-            self.assertEqual(domtree, expected)
+            assert domtree == expected
 
         check(
             self.loopless1(), {0: {12, 18, 21}, 12: set(), 18: set(), 21: set()}
@@ -908,7 +900,7 @@ class TestCFGraph(TestCase):
     def test_immediate_dominators(self):
         def check(graph, expected):
             idoms = graph.immediate_dominators()
-            self.assertEqual(idoms, expected)
+            assert idoms == expected
 
         check(self.loopless1(), {0: 0, 12: 0, 18: 0, 21: 0})
         check(
@@ -949,7 +941,7 @@ class TestCFGraph(TestCase):
     def test_dominance_frontier(self):
         def check(graph, expected):
             df = graph.dominance_frontier()
-            self.assertEqual(df, expected)
+            assert df == expected
 
         check(self.loopless1(), {0: set(), 12: {21}, 18: {21}, 21: set()})
         check(
@@ -1003,17 +995,17 @@ class TestCFGraph(TestCase):
 
     def test_backbone_loopless(self):
         for g in [self.loopless1(), self.loopless1_dead_nodes()]:
-            self.assertEqual(sorted(g.backbone()), [0, 21])
+            assert sorted(g.backbone()) == [0, 21]
         g = self.loopless2()
-        self.assertEqual(sorted(g.backbone()), [21, 99])
+        assert sorted(g.backbone()) == [21, 99]
 
     def test_backbone_loops(self):
         g = self.multiple_loops()
-        self.assertEqual(sorted(g.backbone()), [0, 7, 60, 61, 68])
+        assert sorted(g.backbone()) == [0, 7, 60, 61, 68]
         g = self.infinite_loop1()
-        self.assertEqual(sorted(g.backbone()), [0])
+        assert sorted(g.backbone()) == [0]
         g = self.infinite_loop2()
-        self.assertEqual(sorted(g.backbone()), [0, 3])
+        assert sorted(g.backbone()) == [0, 3]
 
     def test_loops(self):
         for g in [
@@ -1021,75 +1013,73 @@ class TestCFGraph(TestCase):
             self.loopless1_dead_nodes(),
             self.loopless2(),
         ]:
-            self.assertEqual(len(g.loops()), 0)
+            assert len(g.loops()) == 0
 
         g = self.multiple_loops()
         # Loop headers
-        self.assertEqual(sorted(g.loops()), [7, 20, 68])
+        assert sorted(g.loops()) == [7, 20, 68]
         outer1 = g.loops()[7]
         inner1 = g.loops()[20]
         outer2 = g.loops()[68]
-        self.assertEqual(outer1.header, 7)
-        self.assertEqual(sorted(outer1.entries), [0])
-        self.assertEqual(sorted(outer1.exits), [60])
-        self.assertEqual(
-            sorted(outer1.body), [7, 10, 13, 20, 23, 32, 44, 56, 57]
-        )
-        self.assertEqual(inner1.header, 20)
-        self.assertEqual(sorted(inner1.entries), [13])
-        self.assertEqual(sorted(inner1.exits), [56])
-        self.assertEqual(sorted(inner1.body), [20, 23, 32, 44])
-        self.assertEqual(outer2.header, 68)
-        self.assertEqual(sorted(outer2.entries), [61])
-        self.assertEqual(sorted(outer2.exits), [80, 87])
-        self.assertEqual(sorted(outer2.body), [68, 71])
+        assert outer1.header == 7
+        assert sorted(outer1.entries) == [0]
+        assert sorted(outer1.exits) == [60]
+        assert sorted(outer1.body) == [7, 10, 13, 20, 23, 32, 44, 56, 57]
+        assert inner1.header == 20
+        assert sorted(inner1.entries) == [13]
+        assert sorted(inner1.exits) == [56]
+        assert sorted(inner1.body) == [20, 23, 32, 44]
+        assert outer2.header == 68
+        assert sorted(outer2.entries) == [61]
+        assert sorted(outer2.exits) == [80, 87]
+        assert sorted(outer2.body) == [68, 71]
         for node in [0, 60, 61, 80, 87, 88]:
-            self.assertEqual(g.in_loops(node), [])
+            assert g.in_loops(node) == []
         for node in [7, 10, 13, 56, 57]:
-            self.assertEqual(g.in_loops(node), [outer1])
+            assert g.in_loops(node) == [outer1]
         for node in [20, 23, 32, 44]:
-            self.assertEqual(g.in_loops(node), [inner1, outer1])
+            assert g.in_loops(node) == [inner1, outer1]
         for node in [68, 71]:
-            self.assertEqual(g.in_loops(node), [outer2])
+            assert g.in_loops(node) == [outer2]
 
         g = self.infinite_loop1()
         # Loop headers
-        self.assertEqual(sorted(g.loops()), [13])
+        assert sorted(g.loops()) == [13]
         loop = g.loops()[13]
-        self.assertEqual(loop.header, 13)
-        self.assertEqual(sorted(loop.entries), [10])
-        self.assertEqual(sorted(loop.exits), [])
-        self.assertEqual(sorted(loop.body), [13, 19, 26])
+        assert loop.header == 13
+        assert sorted(loop.entries) == [10]
+        assert sorted(loop.exits) == []
+        assert sorted(loop.body) == [13, 19, 26]
         for node in [0, 6, 10]:
-            self.assertEqual(g.in_loops(node), [])
+            assert g.in_loops(node) == []
         for node in [13, 19, 26]:
-            self.assertEqual(g.in_loops(node), [loop])
+            assert g.in_loops(node) == [loop]
 
         g = self.infinite_loop2()
         # Loop headers
-        self.assertEqual(sorted(g.loops()), [3])
+        assert sorted(g.loops()) == [3]
         loop = g.loops()[3]
-        self.assertEqual(loop.header, 3)
-        self.assertEqual(sorted(loop.entries), [0])
-        self.assertEqual(sorted(loop.exits), [])
-        self.assertEqual(sorted(loop.body), [3, 9, 16])
+        assert loop.header == 3
+        assert sorted(loop.entries) == [0]
+        assert sorted(loop.exits) == []
+        assert sorted(loop.body) == [3, 9, 16]
         for node in [0]:
-            self.assertEqual(g.in_loops(node), [])
+            assert g.in_loops(node) == []
         for node in [3, 9, 16]:
-            self.assertEqual(g.in_loops(node), [loop])
+            assert g.in_loops(node) == [loop]
 
         g = self.multiple_exits()
         # Loop headers
-        self.assertEqual(sorted(g.loops()), [7])
+        assert sorted(g.loops()) == [7]
         loop = g.loops()[7]
-        self.assertEqual(loop.header, 7)
-        self.assertEqual(sorted(loop.entries), [0])
-        self.assertEqual(sorted(loop.exits), [19, 29, 36])
-        self.assertEqual(sorted(loop.body), [7, 10, 23])
+        assert loop.header == 7
+        assert sorted(loop.entries) == [0]
+        assert sorted(loop.exits) == [19, 29, 36]
+        assert sorted(loop.body) == [7, 10, 23]
         for node in [0, 19, 29, 36]:
-            self.assertEqual(g.in_loops(node), [])
+            assert g.in_loops(node) == []
         for node in [7, 10, 23]:
-            self.assertEqual(g.in_loops(node), [loop])
+            assert g.in_loops(node) == [loop]
 
     def test_loop_dfs_pathological(self):
         # The follow adjlist is an export from the reproducer in #6186
@@ -1164,8 +1154,8 @@ class TestCFGraph(TestCase):
         stats = {}
         # Compute backedges and store the iteration count for testing
         back_edges = g._find_back_edges(stats=stats)
-        self.assertEqual(back_edges, {(666, 610), (778, 722)})
-        self.assertEqual(stats["iteration_count"], 155)
+        assert back_edges == {(666, 610), (778, 722)}
+        assert stats["iteration_count"] == 155
 
     def test_equals(self):
         def get_new():
@@ -1178,19 +1168,19 @@ class TestCFGraph(TestCase):
         y = get_new()
 
         # identical
-        self.assertEqual(x, y)
+        assert x == y
 
         # identical but defined in a different order
         g = self.from_adj_list({0: [12, 18], 18: [21], 21: [], 12: [21]})
         g.set_entry_point(0)
         g.process()
-        self.assertEqual(x, g)
+        assert x == g
 
         # different entry point
         z = get_new()
         z.set_entry_point(18)
         z.process()
-        self.assertNotEqual(x, z)
+        assert x != z
 
         # extra node/edge, same entry point
         z = self.from_adj_list(
@@ -1198,7 +1188,7 @@ class TestCFGraph(TestCase):
         )
         z.set_entry_point(0)
         z.process()
-        self.assertNotEqual(x, z)
+        assert x != z
 
         # same nodes, different edges
         a = self.from_adj_list({0: [18, 12], 12: [0], 18: []})
@@ -1207,10 +1197,10 @@ class TestCFGraph(TestCase):
         z = self.from_adj_list({0: [18, 12], 12: [18], 18: []})
         z.set_entry_point(0)
         z.process()
-        self.assertNotEqual(a, z)
+        assert a != z
 
 
-class TestRealCodeDomFront(TestCase):
+class TestRealCodeDomFront:
     """Test IDOM and DOMFRONT computation on real python bytecode.
     Note: there will be less testing on IDOM (esp in loop) because of
     the extra blocks inserted by the interpreter.  But, testing on DOMFRONT
@@ -1290,8 +1280,8 @@ class TestRealCodeDomFront(TestCase):
         # Also, `SET_BLOCK_B0` is duplicated. As a result, the second B0
         # is picked up by `blkpts`.
         domfront = cfa.graph.dominance_frontier()
-        self.assertFalse(domfront[blkpts["A"]])
-        self.assertFalse(domfront[blkpts["C"]])
+        assert not domfront[blkpts["A"]]
+        assert not domfront[blkpts["C"]]
 
     def test_loop_nested_and_break(self):
         def foo(n):
@@ -1310,16 +1300,16 @@ class TestRealCodeDomFront(TestCase):
             SET_BLOCK_G  # noqa: F821
 
         cfa, blkpts = self.get_cfa_and_namedblocks(foo)
-        self.assertEqual(blkpts["D0"], blkpts["C1"])
+        assert blkpts["D0"] == blkpts["C1"]
 
         # Py3.10 changes while loop into if-do-while
         domfront = cfa.graph.dominance_frontier()
-        self.assertFalse(domfront[blkpts["A"]])
-        self.assertFalse(domfront[blkpts["G"]])
+        assert not domfront[blkpts["A"]]
+        assert not domfront[blkpts["G"]]
         # 2 domfront members for C1
         # C0 because of the loop; F because of the break.
-        self.assertEqual({blkpts["F"]}, domfront[blkpts["D1"]])
-        self.assertEqual({blkpts["E"]}, domfront[blkpts["D2"]])
+        assert {blkpts["F"]} == domfront[blkpts["D1"]]
+        assert {blkpts["E"]} == domfront[blkpts["D2"]]
 
     def test_if_else(self):
         def foo(a, b):
@@ -1345,23 +1335,23 @@ class TestRealCodeDomFront(TestCase):
         cfa, blkpts = self.get_cfa_and_namedblocks(foo)
 
         idoms = cfa.graph.immediate_dominators()
-        self.assertEqual(blkpts["A"], idoms[blkpts["B"]])
-        self.assertEqual(blkpts["A"], idoms[blkpts["C0"]])
-        self.assertEqual(blkpts["C0"], idoms[blkpts["C1"]])
-        self.assertEqual(blkpts["C0"], idoms[blkpts["D"]])
-        self.assertEqual(blkpts["A"], idoms[blkpts["E"]])
-        self.assertEqual(blkpts["E"], idoms[blkpts["F"]])
-        self.assertEqual(blkpts["E"], idoms[blkpts["G"]])
+        assert blkpts["A"] == idoms[blkpts["B"]]
+        assert blkpts["A"] == idoms[blkpts["C0"]]
+        assert blkpts["C0"] == idoms[blkpts["C1"]]
+        assert blkpts["C0"] == idoms[blkpts["D"]]
+        assert blkpts["A"] == idoms[blkpts["E"]]
+        assert blkpts["E"] == idoms[blkpts["F"]]
+        assert blkpts["E"] == idoms[blkpts["G"]]
 
         domfront = cfa.graph.dominance_frontier()
-        self.assertFalse(domfront[blkpts["A"]])
-        self.assertFalse(domfront[blkpts["E"]])
-        self.assertFalse(domfront[blkpts["G"]])
-        self.assertEqual({blkpts["E"]}, domfront[blkpts["B"]])
-        self.assertEqual({blkpts["E"]}, domfront[blkpts["C0"]])
-        self.assertEqual({blkpts["E"]}, domfront[blkpts["C1"]])
-        self.assertEqual({blkpts["E"]}, domfront[blkpts["D"]])
-        self.assertEqual({blkpts["G"]}, domfront[blkpts["F"]])
+        assert not domfront[blkpts["E"]]
+        assert not domfront[blkpts["A"]]
+        assert not domfront[blkpts["G"]]
+        assert {blkpts["E"]} == domfront[blkpts["B"]]
+        assert {blkpts["E"]} == domfront[blkpts["C0"]]
+        assert {blkpts["E"]} == domfront[blkpts["C1"]]
+        assert {blkpts["E"]} == domfront[blkpts["D"]]
+        assert {blkpts["G"]} == domfront[blkpts["F"]]
 
     def test_if_else_nested(self):
         def foo():
@@ -1385,20 +1375,20 @@ class TestRealCodeDomFront(TestCase):
         cfa, blkpts = self.get_cfa_and_namedblocks(foo)
 
         idoms = cfa.graph.immediate_dominators()
-        self.assertEqual(blkpts["A0"], idoms[blkpts["A1"]])
-        self.assertEqual(blkpts["A1"], idoms[blkpts["B1"]])
-        self.assertEqual(blkpts["A1"], idoms[blkpts["C0"]])
-        self.assertEqual(blkpts["C0"], idoms[blkpts["D"]])
-        self.assertEqual(blkpts["A1"], idoms[blkpts["E"]])
-        self.assertEqual(blkpts["A0"], idoms[blkpts["F"]])
+        assert blkpts["A0"] == idoms[blkpts["A1"]]
+        assert blkpts["A1"] == idoms[blkpts["B1"]]
+        assert blkpts["A1"] == idoms[blkpts["C0"]]
+        assert blkpts["C0"] == idoms[blkpts["D"]]
+        assert blkpts["A1"] == idoms[blkpts["E"]]
+        assert blkpts["A0"] == idoms[blkpts["F"]]
 
         domfront = cfa.graph.dominance_frontier()
-        self.assertFalse(domfront[blkpts["A0"]])
-        self.assertFalse(domfront[blkpts["F"]])
-        self.assertEqual({blkpts["E"]}, domfront[blkpts["B1"]])
-        self.assertEqual({blkpts["D"]}, domfront[blkpts["C1"]])
-        self.assertEqual({blkpts["E"]}, domfront[blkpts["D"]])
-        self.assertEqual({blkpts["F"]}, domfront[blkpts["E"]])
+        assert not domfront[blkpts["A0"]]
+        assert not domfront[blkpts["F"]]
+        assert {blkpts["E"]} == domfront[blkpts["B1"]]
+        assert {blkpts["D"]} == domfront[blkpts["C1"]]
+        assert {blkpts["E"]} == domfront[blkpts["D"]]
+        assert {blkpts["F"]} == domfront[blkpts["E"]]
 
     def test_infinite_loop(self):
         def foo():
@@ -1414,20 +1404,16 @@ class TestRealCodeDomFront(TestCase):
 
         idoms = cfa.graph.immediate_dominators()
         if utils.PYVERSION >= (3, 10):
-            self.assertNotIn("E", blkpts)
+            assert "E" not in blkpts
         else:
-            self.assertNotIn(blkpts["E"], idoms)
-        self.assertEqual(blkpts["B"], idoms[blkpts["C"]])
-        self.assertEqual(blkpts["B"], idoms[blkpts["D"]])
+            assert blkpts["E"] not in idoms
+        assert blkpts["B"] == idoms[blkpts["C"]]
+        assert blkpts["B"] == idoms[blkpts["D"]]
 
         domfront = cfa.graph.dominance_frontier()
         if utils.PYVERSION < (3, 10):
-            self.assertNotIn(blkpts["E"], domfront)
-        self.assertFalse(domfront[blkpts["A"]])
-        self.assertFalse(domfront[blkpts["C"]])
-        self.assertEqual({blkpts["B"]}, domfront[blkpts["B"]])
-        self.assertEqual({blkpts["B"]}, domfront[blkpts["D"]])
-
-
-if __name__ == "__main__":
-    unittest.main()
+            assert blkpts["E"] not in domfront
+        assert not domfront[blkpts["A"]]
+        assert not domfront[blkpts["C"]]
+        assert {blkpts["B"]} == domfront[blkpts["B"]]
+        assert {blkpts["B"]} == domfront[blkpts["D"]]
