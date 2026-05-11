@@ -26,7 +26,7 @@ import unittest
 import numba
 from numba import njit
 from numba.cuda import cgutils, jit
-from numba.cuda.tests.support import TestCase, override_config
+from numba.cuda.tests.support import override_config
 from numba.cuda.typing.templates import AttributeTemplate
 from numba.cuda.cudadecl import registry as cuda_registry
 from numba.cuda.cudaimpl import lower_attr as cuda_lower_attr
@@ -386,7 +386,7 @@ class TestExtendingLinkage(CUDATestCase):
         np.testing.assert_equal(r, x * 2)
 
 
-class TestLowLevelExtending(TestCase):
+class TestLowLevelExtending(unittest.TestCase):
     """
     Test the low-level two-tier extension API.
     """
@@ -418,7 +418,7 @@ class TestLowLevelExtending(TestCase):
         self.assertIsNotNone(type_func1)
 
 
-class TestHighLevelExtending(TestCase):
+class TestHighLevelExtending(unittest.TestCase):
     """
     Test the high-level combined API.
     """
@@ -708,7 +708,7 @@ def _assert_cache_stats(cfunc, expect_hit, expect_misses):
         raise AssertionError("cache not used")
 
 
-class TestIntrinsic(TestCase):
+class TestIntrinsic(unittest.TestCase):
     def test_void_return(self):
         """
         Verify that returning a None from codegen function is handled
@@ -885,7 +885,7 @@ class TestRegisterJitable(unittest.TestCase):
         self.assertEqual(x[0], 16)
 
 
-class TestOverloadPreferLiteral(TestCase):
+class TestOverloadPreferLiteral(unittest.TestCase):
     def test_overload(self):
         def prefer_lit(x):
             pass
@@ -942,7 +942,7 @@ class TestOverloadPreferLiteral(TestCase):
         self.assertEqual(c, 300)
 
 
-class TestNumbaInternalOverloads(TestCase):
+class TestNumbaInternalOverloads(unittest.TestCase):
     def test_signatures_match_overloaded_api(self):
         # This is a "best-effort" test to try and ensure that Numba's internal
         # overload declarations have signatures with argument names that match

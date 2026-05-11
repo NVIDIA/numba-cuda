@@ -7,11 +7,10 @@ Test byteflow.py specific issues
 
 import unittest
 
-from numba.cuda.tests.support import TestCase
 from numba.cuda.compiler import run_frontend
 
 
-class TestByteFlowIssues(TestCase):
+class TestByteFlowIssues(unittest.TestCase):
     def test_issue_5087(self):
         # This is an odd issue. The exact number of print below is
         # necessary to trigger it. Too many or too few will alter the behavior.

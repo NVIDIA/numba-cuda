@@ -723,10 +723,6 @@ def _fix_strides(arr):
         ]
 
 
-class TestCase(unittest.TestCase):
-    longMessage = True
-
-
 class MemoryLeak:
     __enable_leak_check = True
 

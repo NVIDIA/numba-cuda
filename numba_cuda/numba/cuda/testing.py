@@ -12,7 +12,6 @@ from numba.cuda.cuda_paths import get_conda_ctk_libdir
 from numba.cuda.cudadrv import driver, devices, libs
 from numba.cuda.dispatcher import CUDADispatcher
 from numba.cuda import config
-from numba.cuda.tests.support import TestCase
 from pathlib import Path
 
 from typing import Iterable, Union
@@ -32,7 +31,7 @@ test_data_dir = numba_cuda_dir / "tests" / "data"
 
 
 @pytest.mark.usefixtures("initialize_from_pytest_config")
-class CUDATestCase(TestCase):
+class CUDATestCase(unittest.TestCase):
     """
     For tests that use a CUDA device.
 

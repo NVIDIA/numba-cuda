@@ -15,7 +15,7 @@ from numba.cuda import config, types
 from numba.cuda.testing import skip_on_standalone_numba_cuda
 from numba.cuda.typing.typeof import typeof
 from numba.cuda.np import numpy_support
-from numba.cuda.tests.support import TestCase, reset_module_warnings
+from numba.cuda.tests.support import reset_module_warnings
 
 
 class BaseUFuncTest:
@@ -292,7 +292,7 @@ def _make_ufunc_usecase(ufunc):
 # global state, we implement the necessary part of CUDATestCase within this
 # class instead. This disables CUDA performance warnings for the duration of
 # tests.
-class CUDAUFuncTestBase(BasicUFuncTest, TestCase):
+class CUDAUFuncTestBase(BasicUFuncTest, unittest.TestCase):
     def setUp(self):
         BasicUFuncTest.setUp(self)
 

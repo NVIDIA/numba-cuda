@@ -23,7 +23,6 @@ from numba.cuda.testing import (
 )
 from numba.cuda.tests.support import (
     assertPreciseEqual,
-    TestCase,
     temp_directory,
     import_dynamic,
 )
@@ -34,7 +33,7 @@ from pickle import PicklingError
 GLOBAL_DEVICE_ARRAY = None
 
 
-class BaseCacheTest(TestCase):
+class BaseCacheTest(unittest.TestCase):
     # The source file that will be copied
     usecases_file = None
     # Make sure this doesn't conflict with another module

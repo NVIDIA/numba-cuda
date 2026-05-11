@@ -18,14 +18,13 @@ if HAS_NUMBA:
     from numba.core.target_extension import resolve_dispatcher_from_str
 else:
     from numba.cuda.core.errors import TypingError
-from numba.cuda.tests.support import TestCase
 from numba.cuda.cloudpickle import dumps, loads
 from numba.cuda.testing import skip_on_standalone_numba_cuda
 from numba.cuda.tests.support import assertPreciseEqual
 
 
 @skip_on_standalone_numba_cuda
-class TestDispatcherPickling(TestCase):
+class TestDispatcherPickling(unittest.TestCase):
     def run_with_protocols(self, meth, *args, **kwargs):
         for proto in range(pickle.HIGHEST_PROTOCOL + 1):
             meth(proto, *args, **kwargs)
@@ -235,7 +234,7 @@ class TestDispatcherPickling(TestCase):
         subprocess.check_call([sys.executable, "-c", code])
 
 
-class TestSerializationMisc(TestCase):
+class TestSerializationMisc(unittest.TestCase):
     def test_numba_unpickle(self):
         # Test that _numba_unpickle is memorizing its output
         from numba.cuda.serialize import _numba_unpickle
@@ -252,7 +251,7 @@ class TestSerializationMisc(TestCase):
         self.assertIs(got1, got2)
 
 
-class TestCloudPickleIssues(TestCase):
+class TestCloudPickleIssues(unittest.TestCase):
     """This test case includes issues specific to the cloudpickle implementation."""
 
     _numba_parallel_test_ = False

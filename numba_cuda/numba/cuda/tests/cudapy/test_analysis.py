@@ -19,7 +19,6 @@ from numba.cuda.core.options import ParallelOptions
 from numba.cuda.core.inline_closurecall import InlineClosureCallPass
 from numba.cuda.tests.support import (
     assertPreciseEqual,
-    TestCase,
     override_config,
 )
 from numba.cuda.core.analysis import (
@@ -54,7 +53,7 @@ def compile_to_ir(func):
     return func_ir
 
 
-class TestBranchPruneBase(TestCase):
+class TestBranchPruneBase(unittest.TestCase):
     """
     Tests branch pruning
     """

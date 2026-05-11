@@ -1,8 +1,9 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-2-Clause
 import numpy as np
+import unittest
 
-from numba.cuda.tests.support import TestCase, MemoryLeakMixin
+from numba.cuda.tests.support import MemoryLeakMixin
 from numba import cuda
 from numba.cuda.testing import skip_on_cudasim, skip_on_nvjitlink_13_1_sm_120
 from numba.cuda.misc.special import literal_unroll
@@ -11,7 +12,7 @@ from numba.cuda.tests.support import assertPreciseEqual
 
 
 @skip_on_cudasim("doesn't work in the simulator")
-class TestArrayReductions(MemoryLeakMixin, TestCase):
+class TestArrayReductions(MemoryLeakMixin, unittest.TestCase):
     """
     Test array reduction methods and functions such as .sum(), .max(), etc.
     """
