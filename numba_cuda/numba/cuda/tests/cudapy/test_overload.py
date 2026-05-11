@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: BSD-2-Clause
 
 import numpy as np
+import pytest
 
 from numba import cuda
 from numba.cuda import types
@@ -17,12 +18,10 @@ from numba.cuda.extending import overload, overload_attribute
 from numba.cuda.typing.typeof import typeof
 from numba.core.typing.typeof import typeof as cpu_typeof
 from numba.cuda.testing import (
-    CUDATestCase,
     skip_on_cudasim,
-    unittest,
     skip_on_standalone_numba_cuda,
 )
-from numba.cuda.tests.support import make_dummy_type
+from numba.cuda.tests.support import test_id_generator, make_dummy_type
 
 # Dummy function definitions to overload
 
@@ -232,17 +231,17 @@ def ol_default_values_and_kwargs(out, x, y=5, z=6):
 
 
 @skip_on_cudasim("Overloading not supported in cudasim")
-class TestOverload(CUDATestCase):
+class TestOverload:
     def check_overload(self, kernel, expected):
         x = np.ones(1, dtype=np.int32)
         cuda.jit(kernel)[1, 1](x)
-        self.assertEqual(x[0], expected)
+        assert x[0] == expected
 
     @skip_on_standalone_numba_cuda
     def check_overload_cpu(self, kernel, expected):
         x = np.ones(1, dtype=np.int32)
         njit(kernel)(x)
-        self.assertEqual(x[0], expected)
+        assert x[0] == expected
 
     def test_generic(self):
         def kernel(x):
@@ -349,8 +348,8 @@ class TestOverload(CUDATestCase):
         self.check_overload_cpu(kernel, expected)
 
     @skip_on_standalone_numba_cuda
-    def test_overload_attribute_target(self):
-        MyDummy, MyDummyType = make_dummy_type(self)
+    def test_overload_attribute_target(self, test_id):
+        MyDummy, MyDummyType = make_dummy_type(test_id)
         mydummy_type_cpu = cpu_typeof(MyDummy())  # For @njit (cpu)
         mydummy_type = typeof(MyDummy())  # For @cuda.jit (CUDA)
 
@@ -372,11 +371,13 @@ class TestOverload(CUDATestCase):
         else:
             msg = "Unknown attribute 'cuda_only'"
 
-        with self.assertRaisesRegex(TypingError, msg):
+        with pytest.raises(TypingError) as exc_info:
 
             @njit(types.int64(mydummy_type_cpu))
             def illegal_target_attr_use(x):
                 return x.cuda_only
+
+        assert exc_info.type is TypingError
 
         # Ensure that the CUDA target-specific attribute is usable and works
         # correctly when the target is CUDA - note eager compilation via
@@ -396,8 +397,4 @@ class TestOverload(CUDATestCase):
 
         out = np.empty(2, dtype=np.int64)
         kernel[1, 1](1, 2, out)
-        self.assertEqual(tuple(out), (6, 2))
-
-
-if __name__ == "__main__":
-    unittest.main()
+        assert tuple(out) == (6, 2)

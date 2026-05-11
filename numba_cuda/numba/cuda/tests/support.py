@@ -10,6 +10,7 @@ import math
 import unittest
 import os
 import io
+import itertools
 import subprocess
 import sys
 import shutil
@@ -222,15 +223,25 @@ def override_config(name, value):
         setattr(config, name, old_value)
 
 
-# TODO: how to generate self.id() without access to instance?
-def make_dummy_type(test_obj: unittest.TestCase):
+# This can certainly be divided into two pytest fixtures. However, doing so
+# means developers will have to import both 'test_id_generator' and the fixture
+# returning the itertools.count() generator. Importing could be avoided
+# altogether by adding the fixtures in conftest.py, but that potentially
+# pollutes the namespace
+@pytest.fixture(name="test_id")
+def test_id_generator(request):
+    cls = request.cls
+    if not hasattr(cls, "_test_id_counter"):
+        cls._test_id_counter = itertools.count()
+    yield next(cls._test_id_counter)
+
+
+def make_dummy_type(test_id):
     """
     Use to generate a dummy type unique to this test. Returns a python
     Dummy class and a corresponding Numba type DummyType.
     """
 
-    # Use test_id to make sure no collision is possible.
-    test_id = test_obj.id()
     DummyType = type("DummyTypeFor{}".format(test_id), (types.Opaque,), {})
 
     dummy_type = DummyType("my_dummy")
@@ -713,78 +724,7 @@ def _fix_strides(arr):
 
 
 class TestCase(unittest.TestCase):
-    pass
-    # TODO: safe to delete since it's not used anywhere in numba_cuda?
-    # @contextlib.contextmanager
-    # def assertTypingError(self):
-    #     """
-    #     A context manager that asserts the enclosed code block fails
-    #     compiling in nopython mode.
-    #     """
-    #     _accepted_errors = (
-    #         errors.LoweringError,
-    #         errors.TypingError,
-    #         TypeError,
-    #         NotImplementedError,
-    #     )
-    #     with self.assertRaises(_accepted_errors) as cm:
-    #         yield cm
-
-    # TODO: safe to delete since it's not used anywhere in numba_cuda?
-    # @contextlib.contextmanager
-    # def assertRefCount(self, *objects):
-    #     """
-    #     A context manager that asserts the given objects have the
-    #     same reference counts before and after executing the
-    #     enclosed block.
-    #     """
-    #     old_refcounts = [sys.getrefcount(x) for x in objects]
-    #     yield
-    #     gc.collect()
-    #     new_refcounts = [sys.getrefcount(x) for x in objects]
-    #     for old, new, obj in zip(old_refcounts, new_refcounts, objects):
-    #         if old != new:
-    #             self.fail(
-    #                 "Refcount changed from %d to %d for object: %r"
-    #                 % (old, new, obj)
-    #             )
-
-    # TODO: safe to delete since it's not used anywhere in numba_cuda?
-    # def assertRefCountEqual(self, *objects):
-    #     gc.collect()
-    #     rc = [sys.getrefcount(x) for x in objects]
-    #     rc_0 = rc[0]
-    #     for i in range(len(objects))[1:]:
-    #         rc_i = rc[i]
-    #         if rc_0 != rc_i:
-    #             self.fail(
-    #                 f"Refcount for objects does not match. "
-    #                 f"#0({rc_0}) != #{i}({rc_i}) does not match."
-    #             )
-
-    # @contextlib.contextmanager
-    # def assertNoNRTLeak(self):
-    #     """
-    #     A context manager that asserts no NRT leak was created during
-    #     the execution of the enclosed block.
-    #     """
-    #     old = rtsys.get_allocation_stats()
-    #     yield
-    #     new = rtsys.get_allocation_stats()
-    #     total_alloc = new.alloc - old.alloc
-    #     total_free = new.free - old.free
-    #     total_mi_alloc = new.mi_alloc - old.mi_alloc
-    #     total_mi_free = new.mi_free - old.mi_free
-    #     self.assertEqual(
-    #         total_alloc,
-    #         total_free,
-    #         "number of data allocs != number of data frees",
-    #     )
-    #     self.assertEqual(
-    #         total_mi_alloc,
-    #         total_mi_free,
-    #         "number of meminfo allocs != number of meminfo frees",
-    #     )
+    longMessage = True
 
 
 class MemoryLeak:
