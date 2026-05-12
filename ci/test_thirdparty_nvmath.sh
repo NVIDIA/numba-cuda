@@ -1,4 +1,4 @@
-#!/bin/bash
+#\!/bin/bash
 # SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-2-Clause
 
@@ -37,6 +37,7 @@ git checkout ${NVMATH_PYTHON_SHA}
 rapids-logger "Install nvmath-python test dependencies"
 pip install cffi hypothesis opt_einsum packaging psutil pytest pytest-repeat pytest-xdist scipy
 pip install "nvidia-mathdx~=25.6.0"
+pip install "nvidia-cuda-nvdisasm>=13.2"
 
 rapids-logger "Check GPU usage"
 nvidia-smi
