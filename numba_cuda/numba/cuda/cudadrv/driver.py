@@ -55,13 +55,13 @@ from numba.cuda.cudadrv import nvrtc
 
 from cuda.bindings import driver as binding
 from cuda.core import (
-    GraphBuilder,
     Linker,
     LinkerOptions,
     ObjectCode,
     Stream as ExperimentalStream,
     Device as ExperimentalDevice,
 )
+from cuda.core.graph import GraphBuilder
 from numba.cuda._compat import CUDA_CORE_GT_0_6, CUDA_CORE_GE_1_0
 from cuda.bindings.utils import get_cuda_native_handle
 
