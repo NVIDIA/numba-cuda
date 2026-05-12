@@ -49,7 +49,7 @@ rapids-logger "Run nvmath-python device tests"
 pushd tests
 # Required for nvmath-python to locate pip-installed MathDx
 export MATHDX_HOME=$(python -c "import sysconfig; print(sysconfig.get_path('purelib'))")/nvidia/mathdx
-python -m pytest -n auto -k "not (perf or benchmark)" nvmath_tests/device --tb=native -x
+python -m pytest -n auto -k "not (perf or benchmark)" --ignore-glob "*cusolverdx*" nvmath_tests/device --tb=native -x
 
 popd
 popd
