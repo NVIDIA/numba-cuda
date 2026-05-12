@@ -381,6 +381,7 @@ def subprocess_test_runner(
         *flags_args,
         "-m",
         "pytest",
+        "--import-mode=importlib",
         "--pyargs",
         fully_qualified_test,
     ]
@@ -404,15 +405,24 @@ def subprocess_test_runner(
         f"\ncaptured stdout: {status.stdout}\ncaptured stderr: {status.stderr}"
     )
     assert status.returncode == 0, streams
-    # Python 3.12.1 report
+
+    _IGNORED_STDERR_PATTERNS = [
+        "PytestBenchmarkWarning",
+        "Benchmarks are automatically disabled",
+    ]
+
+    def _unexpected_stderr_found(stderr):
+        lines = stderr.splitlines()
+        return any(
+            line and not any(pat in line for pat in _IGNORED_STDERR_PATTERNS)
+            for line in lines
+        )
+
     no_tests_ran = "NO TESTS RAN"
     if no_tests_ran in status.stderr:
         pytest.skip(no_tests_ran)
-    else:
-        # status.stderr for successful runs comprise a string like
-        # "...Ran 1 test in 0.565s\n\nOK\n". Migrating to pytest means the
-        # error stream in successful runs are empty
-        assert status.stderr == ""
+    elif _unexpected_stderr_found(status.stderr):
+        pytest.fail(f"Unexpected stderr output:\n{status.stderr}")
     return status
 
 
