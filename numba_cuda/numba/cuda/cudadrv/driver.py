@@ -61,8 +61,11 @@ from cuda.core import (
     Stream as ExperimentalStream,
     Device as ExperimentalDevice,
 )
-from cuda.core.graph import GraphBuilder
 from numba.cuda._compat import CUDA_CORE_GT_0_6, CUDA_CORE_GE_1_0
+if CUDA_CORE_GE_1_0:
+    from cuda.core.graph import GraphBuilder
+else:
+    from cuda.core import GraphBuilder
 from cuda.bindings.utils import get_cuda_native_handle
 
 
