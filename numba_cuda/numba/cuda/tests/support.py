@@ -223,17 +223,11 @@ def override_config(name, value):
         setattr(config, name, old_value)
 
 
-# This can certainly be divided into two pytest fixtures. However, doing so
-# means developers will have to import both 'test_id_generator' and the fixture
-# returning the itertools.count() generator. Importing could be avoided
-# altogether by adding the fixtures in conftest.py, but that potentially
-# pollutes the namespace
+# Returns string in following style:
+# 'cudapy/test_foo.py::TestFoo::test_foo1'
 @pytest.fixture(name="test_id")
 def test_id_generator(request):
-    cls = request.cls
-    if not hasattr(cls, "_test_id_counter"):
-        cls._test_id_counter = itertools.count()
-    yield next(cls._test_id_counter)
+    return request.node.nodeid
 
 
 def make_dummy_type(test_id):
