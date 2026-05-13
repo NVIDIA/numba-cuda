@@ -19,6 +19,7 @@ from warnings import warn
 from cuda.core import launch, LaunchConfig
 
 from numba.cuda.core import errors
+from numba.cuda._compat import CUDA_CORE_GE_1_0
 from numba.cuda import serialize, utils
 from numba import cuda
 from numba.cuda import launchconfig
@@ -508,12 +509,20 @@ class _Kernel(serialize.ReduceMixin):
             self._prepare_args(t, v, stream, retr, kernelargs)
 
         # Invoke kernel
-        config = LaunchConfig(
-            grid=griddim,
-            block=blockdim,
-            shmem_size=sharedmem,
-            cooperative_launch=self.cooperative,
-        )
+        if CUDA_CORE_GE_1_0:
+            config = LaunchConfig(
+                grid=griddim,
+                block=blockdim,
+                shmem_size=sharedmem,
+                is_cooperative=self.cooperative,
+            )
+        else:
+            config = LaunchConfig(
+                grid=griddim,
+                block=blockdim,
+                shmem_size=sharedmem,
+                cooperative_launch=self.cooperative,
+            )
         kernel = cufunc.kernel
         launch(stream, config, kernel, *kernelargs)
 
