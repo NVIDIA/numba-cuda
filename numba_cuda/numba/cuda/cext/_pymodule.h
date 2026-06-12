@@ -15,7 +15,10 @@
 #define MOD_INIT(name) PyMODINIT_FUNC PyInit_##name(void)
 #ifdef Py_GIL_DISABLED
 #define MOD_NOGIL(ob) do { \
-        PyUnstable_Module_SetGIL(ob, Py_MOD_GIL_NOT_USED); \
+        if (PyUnstable_Module_SetGIL(ob, Py_MOD_GIL_NOT_USED) < 0) { \
+            Py_DECREF(ob); \
+            ob = NULL; \
+        } \
     } while (0)
 #else
 #define MOD_NOGIL(ob) do {} while (0)

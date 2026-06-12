@@ -188,7 +188,7 @@ memoryview_get_extents_info(PyObject *self, PyObject *args)
     }
 
     if (itemsize <= 0) {
-        PyErr_SetString(PyExc_ValueError, "ndim <= 0");
+        PyErr_SetString(PyExc_ValueError, "itemsize <= 0");
         goto cleanup;
     }
 

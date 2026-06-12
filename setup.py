@@ -15,6 +15,11 @@ REDIRECTOR_PY = "_numba_cuda_redirector.py"
 SITE_PACKAGES = pathlib.Path("site-packages")
 
 
+def sysconfig_var_is_true(name):
+    value = sysconfig.get_config_var(name)
+    return value is True or str(value).strip() == "1"
+
+
 def get_version():
     """Read version from VERSION file."""
     version_file = pathlib.Path(__file__).parent / "numba_cuda" / "VERSION"
@@ -45,7 +50,7 @@ def get_ext_modules():
         install_name_tool_fixer = ["-headerpad_max_install_names"]
 
     free_threaded_macros = []
-    if sysconfig.get_config_var("Py_GIL_DISABLED"):
+    if sysconfig_var_is_true("Py_GIL_DISABLED"):
         free_threaded_macros.append(("Py_GIL_DISABLED", "1"))
 
     ext_mviewbuf = Extension(

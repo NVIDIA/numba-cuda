@@ -8,6 +8,11 @@ import unittest
 from numba.cuda.tests.support import run_in_subprocess
 
 
+def sysconfig_var_is_true(name):
+    value = sysconfig.get_config_var(name)
+    return value is True or str(value).strip() == "1"
+
+
 class TestImport(unittest.TestCase):
     def test_no_impl_import(self):
         """
@@ -68,7 +73,7 @@ for mod in sys.modules:
         assert not unexpected
 
     @unittest.skipUnless(
-        sysconfig.get_config_var("Py_GIL_DISABLED"),
+        sysconfig_var_is_true("Py_GIL_DISABLED"),
         "requires a free-threaded Python build",
     )
     def test_free_threaded_import_keeps_gil_disabled(self):

@@ -628,6 +628,7 @@ public:
         LockGuard guard(dispatcher_lock);
         functions.clear();
         overloads.clear();
+        fallbackdef = NULL;
     }
 
     PyObject* getFallbackDefinition() const {
