@@ -38,6 +38,19 @@ static void free_buffer(Py_buffer * buf)
     PyBuffer_Release(buf);
 }
 
+static PyObject*
+sequence_fast_get_item_ref(PyObject *seq, Py_ssize_t index)
+{
+#if PY_MAJOR_VERSION >= 3 && PY_MINOR_VERSION >= 13
+    if (PyList_Check(seq)) {
+        return PyList_GetItemRef(seq, index);
+    }
+#endif
+    PyObject *item = PySequence_Fast_GET_ITEM(seq, index);
+    Py_XINCREF(item);
+    return item;
+}
+
 /**
  * Return a pointer to the data of a writable buffer from obj. If only a
  * read-only buffer is available and force is True, a read-write buffer based on
@@ -161,6 +174,7 @@ memoryview_get_extents_info(PyObject *self, PyObject *args)
     PyObject *shape_tuple = NULL;
     PyObject *strides_tuple = NULL;
     PyObject *shape = NULL, *strides = NULL;
+    PyObject *item = NULL;
     Py_ssize_t itemsize = 0;
     int ndim = 0;
     PyObject* res = NULL;
@@ -178,29 +192,50 @@ memoryview_get_extents_info(PyObject *self, PyObject *args)
         goto cleanup;
     }
 
-    shape_ary = malloc(sizeof(Py_ssize_t) * ndim + 1);
-    strides_ary = malloc(sizeof(Py_ssize_t) * ndim + 1);
+    if (ndim > 0) {
+        shape_ary = malloc(sizeof(Py_ssize_t) * ndim);
+        strides_ary = malloc(sizeof(Py_ssize_t) * ndim);
+        if (shape_ary == NULL || strides_ary == NULL) {
+            PyErr_NoMemory();
+            goto cleanup;
+        }
+    }
 
     shape_tuple = PySequence_Fast(shape, "shape is not a sequence");
     if (!shape_tuple) goto cleanup;
+    if (PySequence_Fast_GET_SIZE(shape_tuple) < ndim) {
+        PyErr_SetString(PyExc_ValueError, "shape is shorter than ndim");
+        goto cleanup;
+    }
 
     for (i = 0; i < ndim; ++i) {
-        shape_ary[i] = PyNumber_AsSsize_t(
-                           PySequence_Fast_GET_ITEM(shape_tuple, i),
-                           PyExc_OverflowError);
+        item = sequence_fast_get_item_ref(shape_tuple, i);
+        if (item == NULL) goto cleanup;
+        shape_ary[i] = PyNumber_AsSsize_t(item, PyExc_OverflowError);
+        Py_DECREF(item);
+        item = NULL;
+        if (shape_ary[i] == -1 && PyErr_Occurred()) goto cleanup;
     }
 
     strides_tuple = PySequence_Fast(strides, "strides is not a sequence");
     if (!strides_tuple) goto cleanup;
+    if (PySequence_Fast_GET_SIZE(strides_tuple) < ndim) {
+        PyErr_SetString(PyExc_ValueError, "strides is shorter than ndim");
+        goto cleanup;
+    }
 
     for (i = 0; i < ndim; ++i) {
-        strides_ary[i] = PyNumber_AsSsize_t(
-                           PySequence_Fast_GET_ITEM(strides_tuple, i),
-                           PyExc_OverflowError);
+        item = sequence_fast_get_item_ref(strides_tuple, i);
+        if (item == NULL) goto cleanup;
+        strides_ary[i] = PyNumber_AsSsize_t(item, PyExc_OverflowError);
+        Py_DECREF(item);
+        item = NULL;
+        if (strides_ary[i] == -1 && PyErr_Occurred()) goto cleanup;
     }
 
     res = get_extents(shape_ary, strides_ary, ndim, itemsize, 0);
 cleanup:
+    Py_XDECREF(item);
     free(shape_ary);
     free(strides_ary);
     Py_XDECREF(shape_tuple);
@@ -375,7 +410,7 @@ static PyMethodDef core_methods[] = {
 
 MOD_INIT(mviewbuf) {
     PyObject *module;
-    MOD_DEF(module, "mviewbuf", "No docs", core_methods)
+    MOD_DEF_NOGIL(module, "mviewbuf", "No docs", core_methods)
     if (module == NULL)
         return MOD_ERROR_VAL;
 

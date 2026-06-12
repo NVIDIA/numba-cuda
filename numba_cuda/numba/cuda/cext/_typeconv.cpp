@@ -41,7 +41,7 @@ static PyMethodDef ext_methods[] = {
 
 MOD_INIT(_typeconv) {
     PyObject *m;
-    MOD_DEF(m, "_typeconv", "No docs", ext_methods)
+    MOD_DEF_NOGIL(m, "_typeconv", "No docs", ext_methods)
     if (m == NULL)
         return MOD_ERROR_VAL;
 

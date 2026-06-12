@@ -5,6 +5,7 @@
 #include <cstdio>
 #include <algorithm>
 #include <limits.h>
+#include <mutex>
 
 #include "typeconv.hpp"
 
@@ -68,15 +69,18 @@ inline bool Rating::operator == (const Rating &other) const {
 // ------ TypeManager ------
 
 bool TypeManager::canPromote(Type from, Type to) const {
-    return isCompatible(from, to) == TCC_PROMOTE;
+    std::lock_guard<std::mutex> guard(mutex);
+    return _isCompatible(from, to) == TCC_PROMOTE;
 }
 
 bool TypeManager::canSafeConvert(Type from, Type to) const {
-    return isCompatible(from, to) == TCC_CONVERT_SAFE;
+    std::lock_guard<std::mutex> guard(mutex);
+    return _isCompatible(from, to) == TCC_CONVERT_SAFE;
 }
 
 bool TypeManager::canUnsafeConvert(Type from, Type to) const {
-    return isCompatible(from, to) == TCC_CONVERT_UNSAFE;
+    std::lock_guard<std::mutex> guard(mutex);
+    return _isCompatible(from, to) == TCC_CONVERT_UNSAFE;
 }
 
 void TypeManager::addPromotion(Type from, Type to) {
@@ -92,11 +96,17 @@ void TypeManager::addSafeConversion(Type from, Type to) {
 }
 
 void TypeManager::addCompatibility(Type from, Type to, TypeCompatibleCode tcc) {
+    std::lock_guard<std::mutex> guard(mutex);
     TypePair pair(from, to);
     tccmap.insert(pair, tcc);
 }
 
 TypeCompatibleCode TypeManager::isCompatible(Type from, Type to) const {
+    std::lock_guard<std::mutex> guard(mutex);
+    return _isCompatible(from, to);
+}
+
+TypeCompatibleCode TypeManager::_isCompatible(Type from, Type to) const {
     if (from == to)
         return TCC_EXACT;
     TypePair pair(from, to);
@@ -109,6 +119,7 @@ int TypeManager::selectOverload(const Type sig[], const Type ovsigs[],
                                 int sigsz, int ovct, bool allow_unsafe,
                                 bool exact_match_required
                                ) const {
+    std::lock_guard<std::mutex> guard(mutex);
     int count;
     if (ovct <= 16) {
         Rating ratings[16];
@@ -142,7 +153,7 @@ int TypeManager::_selectOverload(const Type sig[], const Type ovsigs[],
         Rating rate;
 
         for (int j = 0; j < sigsz; ++j) {
-            TypeCompatibleCode tcc = isCompatible(sig[j], entry[j]);
+            TypeCompatibleCode tcc = _isCompatible(sig[j], entry[j]);
             if (tcc == TCC_FALSE ||
                 (tcc == TCC_CONVERT_UNSAFE && !allow_unsafe) ||
                 (tcc != TCC_EXACT && exact_match_required)) {

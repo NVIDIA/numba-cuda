@@ -67,6 +67,25 @@ static PyObject *structured_dtypes;
 static PyObject *str_typeof_pyval = NULL;
 static PyObject *str_value = NULL;
 static PyObject *str_numba_type = NULL;
+static PyThread_type_lock typeof_lock = NULL;
+
+class TypeofLockGuard {
+public:
+    explicit TypeofLockGuard(PyThread_type_lock lock) : lock(lock) {
+        if (lock != NULL) {
+            PyThread_acquire_lock(lock, 1);
+        }
+    }
+
+    ~TypeofLockGuard() {
+        if (lock != NULL) {
+            PyThread_release_lock(lock);
+        }
+    }
+
+private:
+    PyThread_type_lock lock;
+};
 
 /*
  * Type fingerprint computation.
@@ -242,15 +261,24 @@ compute_dtype_fingerprint(string_writer_t *w, PyArray_Descr *descr)
          * (e.g. np.recarray(dtype=some_dtype) creates a new dtype
          *  equal to some_dtype)
          */
-        PyObject *interned = PyDict_GetItem(structured_dtypes,
-                                            (PyObject *) descr);
-        if (interned == NULL) {
-            interned = (PyObject *) descr;
-            if (PyDict_SetItem(structured_dtypes, interned, interned))
-                return -1;
+        PyObject *interned;
+        {
+            TypeofLockGuard guard(typeof_lock);
+            interned = PyDict_GetItem(structured_dtypes, (PyObject *) descr);
+            if (interned == NULL) {
+                interned = (PyObject *) descr;
+                if (PyDict_SetItem(structured_dtypes, interned, interned))
+                    return -1;
+            }
+            Py_INCREF(interned);
         }
-        TRY(string_writer_put_char, w, (char) typenum);
-        return string_writer_put_intp(w, (npy_intp) interned);
+        if (string_writer_put_char(w, (char) typenum)) {
+            Py_DECREF(interned);
+            return -1;
+        }
+        int ret = string_writer_put_intp(w, (npy_intp) interned);
+        Py_DECREF(interned);
+        return ret;
     }
 #if NPY_API_VERSION >= 0x00000007
     if (PyTypeNum_ISDATETIME(typenum)) {
@@ -407,16 +435,37 @@ compute_fingerprint(string_writer_t *w, PyObject *val)
         return compute_dtype_fingerprint(w, PyArray_DESCR(ary));
     }
     if (PyList_Check(val)) {
-        Py_ssize_t n = PyList_GET_SIZE(val);
+        Py_ssize_t n;
+        PyObject *item = NULL;
+#ifdef Py_GIL_DISABLED
+        Py_BEGIN_CRITICAL_SECTION(val);
+#endif
+        n = PyList_GET_SIZE(val);
+        if (n > 0) {
+            item = PyList_GET_ITEM(val, 0);
+            Py_XINCREF(item);
+        }
+#ifdef Py_GIL_DISABLED
+        Py_END_CRITICAL_SECTION();
+#endif
         if (n == 0) {
             PyErr_SetString(PyExc_ValueError,
                             "cannot compute fingerprint of empty list");
             return -1;
         }
+        if (item == NULL) {
+            PyErr_SetString(PyExc_RuntimeError,
+                            "failed to read list item for fingerprint");
+            return -1;
+        }
         /* Only the first item is considered, as in typeof.py */
-        TRY(string_writer_put_char, w, OP_LIST);
-        TRY(compute_fingerprint, w, PyList_GET_ITEM(val, 0));
-        return 0;
+        if (string_writer_put_char(w, OP_LIST)) {
+            Py_DECREF(item);
+            return -1;
+        }
+        int ret = compute_fingerprint(w, item);
+        Py_DECREF(item);
+        return ret;
     }
     /* Note we only accept sets, not frozensets */
     if (Py_TYPE(val) == &PySet_Type) {
@@ -676,7 +725,13 @@ typecode_using_fingerprint(PyObject *dispatcher, PyObject *val)
         }
         return -1;
     }
-    if (_Numba_HASHTABLE_GET(fingerprint_hashtable, &w, typecode) > 0) {
+    int fingerprint_cache_hit;
+    {
+        TypeofLockGuard guard(typeof_lock);
+        fingerprint_cache_hit =
+            _Numba_HASHTABLE_GET(fingerprint_hashtable, &w, typecode) > 0;
+    }
+    if (fingerprint_cache_hit) {
         /* Cache hit */
         string_writer_clear(&w);
         return typecode;
@@ -698,10 +753,18 @@ typecode_using_fingerprint(PyObject *dispatcher, PyObject *val)
          * to the hash table.
          */
         string_writer_move(key, &w);
-        if (_Numba_HASHTABLE_SET(fingerprint_hashtable, key, typecode)) {
-            string_writer_clear(&w);
-            PyErr_NoMemory();
-            return -1;
+        {
+            TypeofLockGuard guard(typeof_lock);
+            if (_Numba_HASHTABLE_GET(fingerprint_hashtable, key, typecode) > 0) {
+                string_writer_clear(key);
+                free(key);
+            }
+            else if (_Numba_HASHTABLE_SET(fingerprint_hashtable, key, typecode)) {
+                string_writer_clear(key);
+                free(key);
+                PyErr_NoMemory();
+                return -1;
+            }
         }
     }
     return typecode;
@@ -767,6 +830,7 @@ static int dtype_num_to_typecode(int type_num) {
 
 static
 int get_cached_typecode(PyArray_Descr* descr) {
+    TypeofLockGuard guard(typeof_lock);
     PyObject* tmpobject = PyDict_GetItem(typecache, (PyObject*)descr);
     if (tmpobject == NULL)
         return -1;
@@ -775,10 +839,14 @@ int get_cached_typecode(PyArray_Descr* descr) {
 }
 
 static
-void cache_typecode(PyArray_Descr* descr, int typecode) {
+int cache_typecode(PyArray_Descr* descr, int typecode) {
     PyObject* value = PyLong_FromLong(typecode);
-    PyDict_SetItem(typecache, (PyObject*)descr, value);
+    if (value == NULL)
+        return -1;
+    TypeofLockGuard guard(typeof_lock);
+    int ret = PyDict_SetItem(typecache, (PyObject*)descr, value);
     Py_DECREF(value);
+    return ret;
 }
 
 static
@@ -796,22 +864,35 @@ PyObject* ndarray_key(int ndim, int layout, int readonly, PyArray_Descr* descr) 
 static
 int get_cached_ndarray_typecode(int ndim, int layout, int readonly, PyArray_Descr* descr) {
     PyObject* key = ndarray_key(ndim, layout, readonly, descr);
-    PyObject *tmpobject = PyDict_GetItem(ndarray_typecache, key);
-    if (tmpobject == NULL)
+    if (key == NULL)
         return -1;
+    TypeofLockGuard guard(typeof_lock);
+    PyObject *tmpobject = PyDict_GetItem(ndarray_typecache, key);
+    if (tmpobject == NULL) {
+        Py_DECREF(key);
+        return -1;
+    }
 
+    int typecode = PyLong_AsLong(tmpobject);
     Py_DECREF(key);
-    return PyLong_AsLong(tmpobject);
+    return typecode;
 }
 
 static
-void cache_ndarray_typecode(int ndim, int layout, int readonly, PyArray_Descr* descr,
+int cache_ndarray_typecode(int ndim, int layout, int readonly, PyArray_Descr* descr,
                             int typecode) {
     PyObject* key = ndarray_key(ndim, layout, readonly, descr);
     PyObject* value = PyLong_FromLong(typecode);
-    PyDict_SetItem(ndarray_typecache, key, value);
+    if (key == NULL || value == NULL) {
+        Py_XDECREF(key);
+        Py_XDECREF(value);
+        return -1;
+    }
+    TypeofLockGuard guard(typeof_lock);
+    int ret = PyDict_SetItem(ndarray_typecache, key, value);
     Py_DECREF(key);
     Py_DECREF(value);
+    return ret;
 }
 
 static
@@ -847,11 +928,22 @@ int typecode_ndarray(PyObject *dispatcher, PyArrayObject *ary) {
     assert(ndim <= N_NDIM);
     assert(dtype < N_DTYPES);
 
-    typecode = cached_arycode[ndim - 1][layout][dtype];
+    {
+        TypeofLockGuard guard(typeof_lock);
+        typecode = cached_arycode[ndim - 1][layout][dtype];
+    }
     if (typecode == -1) {
         /* First use of this table entry, so it requires populating */
         typecode = typecode_fallback_keep_ref(dispatcher, (PyObject*)ary);
-        cached_arycode[ndim - 1][layout][dtype] = typecode;
+        if (typecode >= 0) {
+            TypeofLockGuard guard(typeof_lock);
+            if (cached_arycode[ndim - 1][layout][dtype] == -1) {
+                cached_arycode[ndim - 1][layout][dtype] = typecode;
+            }
+            else {
+                typecode = cached_arycode[ndim - 1][layout][dtype];
+            }
+        }
     }
     return typecode;
 
@@ -866,9 +958,15 @@ FALLBACK:
     readonly = !PyArray_ISWRITEABLE(ary);
     typecode = get_cached_ndarray_typecode(ndim, layout, readonly, PyArray_DESCR(ary));
     if (typecode == -1) {
+        if (PyErr_Occurred())
+            return -1;
         /* First use of this type, use fallback and populate the cache */
         typecode = typecode_fallback_keep_ref(dispatcher, (PyObject*)ary);
-        cache_ndarray_typecode(ndim, layout, readonly, PyArray_DESCR(ary), typecode);
+        if (typecode == -1)
+            return -1;
+        if (cache_ndarray_typecode(ndim, layout, readonly,
+                                   PyArray_DESCR(ary), typecode))
+            return -1;
     }
     return typecode;
 }
@@ -885,9 +983,20 @@ int typecode_arrayscalar(PyObject *dispatcher, PyObject* aryscalar) {
     if (descr->type_num == NPY_VOID) {
         typecode = get_cached_typecode(descr);
         if (typecode == -1) {
+            if (PyErr_Occurred()) {
+                Py_DECREF(descr);
+                return -1;
+            }
             /* Resolve through fallback then populate cache */
             typecode = typecode_fallback_keep_ref(dispatcher, aryscalar);
-            cache_typecode(descr, typecode);
+            if (typecode == -1) {
+                Py_DECREF(descr);
+                return -1;
+            }
+            if (cache_typecode(descr, typecode)) {
+                Py_DECREF(descr);
+                return -1;
+            }
         }
         Py_DECREF(descr);
         return typecode;
@@ -1031,6 +1140,17 @@ typeof_init(PyObject *self, PyObject *args)
         return NULL;
     }
 
+    if (typeof_lock == NULL) {
+        typeof_lock = PyThread_allocate_lock();
+        if (typeof_lock == NULL) {
+            PyErr_SetString(PyExc_RuntimeError,
+                            "failed to allocate typeof lock");
+            return NULL;
+        }
+    }
+
+    /* Import-time setup is serialized by Python's import machinery.  The
+       runtime cache operations are protected by typeof_lock after setup. */
     #define UNWRAP_TYPE(S)                                              \
         if(!(tmpobj = PyDict_GetItemString(dict, #S))) return NULL;     \
         else {  tc_##S = PyLong_AsLong(tmpobj);                         \

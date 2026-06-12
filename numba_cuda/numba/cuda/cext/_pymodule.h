@@ -13,10 +13,24 @@
 #define MOD_ERROR_VAL NULL
 #define MOD_SUCCESS_VAL(val) val
 #define MOD_INIT(name) PyMODINIT_FUNC PyInit_##name(void)
+#ifdef Py_GIL_DISABLED
+#define MOD_NOGIL(ob) do { \
+        PyUnstable_Module_SetGIL(ob, Py_MOD_GIL_NOT_USED); \
+    } while (0)
+#else
+#define MOD_NOGIL(ob) do {} while (0)
+#endif
 #define MOD_DEF(ob, name, doc, methods) { \
         static struct PyModuleDef moduledef = { \
           PyModuleDef_HEAD_INIT, name, doc, -1, methods, NULL, NULL, NULL, NULL }; \
-        ob = PyModule_Create(&moduledef); }
+        ob = PyModule_Create(&moduledef); \
+    }
+#define MOD_DEF_NOGIL(ob, name, doc, methods) { \
+        MOD_DEF(ob, name, doc, methods) \
+        if (ob != NULL) { \
+            MOD_NOGIL(ob); \
+        } \
+    }
 #define MOD_INIT_EXEC(name) PyInit_##name();
 
 #define PyString_AsString PyUnicode_AsUTF8
