@@ -232,7 +232,7 @@ jobs:
       build_type: pull-request
       script: "ci/test_wheel_deps_wheels.sh"
       matrix: ${{ needs.compute-matrix.outputs.TEST_MATRIX }}
-      matrix_filter: map(select(.ARCH == "amd64" and (.CUDA_VER | split(".") | .[0] | tonumber >= 12))) | group_by(.CUDA_VER|split(".")|map(tonumber)|.[0]) | map(max_by([(.PY_VER|split(".")|map(tonumber)), (.CUDA_VER|split(".")|map(tonumber))]))
+      matrix_filter: map(select(.ARCH == "amd64" and (.CUDA_VER | split(".") | .[0] | tonumber >= 12))) | group_by(.CUDA_VER|split(".")|map(tonumber)|.[0]) | map(max_by([(.PY_VER|sub("t$"; "")|split(".")|map(tonumber)), (.PY_VER|endswith("t")|not), (.CUDA_VER|split(".")|map(tonumber))]))
 
   test-thirdparty-cudf:
     needs:
@@ -244,7 +244,7 @@ jobs:
       script: "ci/test_thirdparty_cudf.sh"
       matrix: ${{ needs.compute-matrix.outputs.TEST_MATRIX }}
       # TODO: Enable for CUDA 13 when a supporting version of cuDF is available
-      matrix_filter: map(select(.ARCH == "amd64" and (.CUDA_VER | split(".") | .[0] | tonumber == 12))) | group_by(.CUDA_VER|split(".")|map(tonumber)|.[0]) | map(max_by([(.PY_VER|split(".")|map(tonumber)), (.CUDA_VER|split(".")|map(tonumber))]))
+      matrix_filter: map(select(.ARCH == "amd64" and (.CUDA_VER | split(".") | .[0] | tonumber == 12))) | group_by(.CUDA_VER|split(".")|map(tonumber)|.[0]) | map(max_by([(.PY_VER|sub("t$"; "")|split(".")|map(tonumber)), (.PY_VER|endswith("t")|not), (.CUDA_VER|split(".")|map(tonumber))]))
 
   test-thirdparty-nvmath:
     needs:
@@ -256,7 +256,7 @@ jobs:
       script: "ci/test_thirdparty_nvmath.sh"
       matrix: ${{ needs.compute-matrix.outputs.TEST_MATRIX }}
       # TODO: Enable for CUDA 13 when a supporting version of nvmath-python is available
-      matrix_filter: map(select(.ARCH == "amd64" and (.CUDA_VER | split(".") | .[0] | tonumber == 12))) | group_by(.CUDA_VER|split(".")|map(tonumber)|.[0]) | map(max_by([(.PY_VER|split(".")|map(tonumber)), (.CUDA_VER|split(".")|map(tonumber))]))
+      matrix_filter: map(select(.ARCH == "amd64" and (.CUDA_VER | split(".") | .[0] | tonumber == 12))) | group_by(.CUDA_VER|split(".")|map(tonumber)|.[0]) | map(max_by([(.PY_VER|sub("t$"; "")|split(".")|map(tonumber)), (.PY_VER|endswith("t")|not), (.CUDA_VER|split(".")|map(tonumber))]))
 
   test-thirdparty-awkward:
     needs:
@@ -268,7 +268,7 @@ jobs:
       script: "ci/test_thirdparty_awkward.sh"
       matrix: ${{ needs.compute-matrix.outputs.TEST_MATRIX }}
       # TODO: Enable for CUDA 13 in future
-      matrix_filter: map(select(.ARCH == "amd64" and (.CUDA_VER | split(".") | .[0] | tonumber == 12))) | group_by(.CUDA_VER|split(".")|map(tonumber)|.[0]) | map(max_by([(.PY_VER|split(".")|map(tonumber)), (.CUDA_VER|split(".")|map(tonumber))]))
+      matrix_filter: map(select(.ARCH == "amd64" and (.CUDA_VER | split(".") | .[0] | tonumber == 12))) | group_by(.CUDA_VER|split(".")|map(tonumber)|.[0]) | map(max_by([(.PY_VER|sub("t$"; "")|split(".")|map(tonumber)), (.PY_VER|endswith("t")|not), (.CUDA_VER|split(".")|map(tonumber))]))
 
   build-docs:
     needs:
