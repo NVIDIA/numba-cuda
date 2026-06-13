@@ -1722,6 +1722,7 @@ class CUDADispatcher(serialize.ReduceMixin, _MemoMixin, _DispatcherBase):
             return
         self._cache.set_launch_config_key(None)
 
+    @global_compiler_lock
     def _get_launch_config_specialization(self, key):
         dispatcher = self._launch_config_specializations.get(key)
         if dispatcher is None:
@@ -1771,12 +1772,26 @@ class CUDADispatcher(serialize.ReduceMixin, _MemoMixin, _DispatcherBase):
     def _update_launch_config_sensitivity(self, kernel, launch_config):
         if not getattr(kernel, "launch_config_sensitive", False):
             return
-        if not self._launch_config_sensitive:
-            self._launch_config_sensitive = True
+        if launch_config is None:
+            launch_config = launchconfig.ensure_current_launch_config()
         if self._launch_config_default_key is None:
             self._launch_config_default_key = self._launch_config_key(
                 launch_config
             )
+        if not self._launch_config_sensitive:
+            self._launch_config_sensitive = True
+
+    def _requires_launch_config_specialization(self, launch_config):
+        if self._launch_config_is_specialized:
+            return False
+        if not self._launch_config_sensitive:
+            return False
+        if self._launch_config_default_key is None:
+            return False
+        return (
+            self._launch_config_key(launch_config)
+            != self._launch_config_default_key
+        )
 
     def forall(self, ntasks, tpb=0, stream=0, sharedmem=0):
         """Returns a 1D-configured dispatcher for a given number of tasks.
@@ -1848,6 +1863,12 @@ class CUDADispatcher(serialize.ReduceMixin, _MemoMixin, _DispatcherBase):
                 )
 
             self._update_launch_config_sensitivity(kernel, launch_config)
+
+            if self._requires_launch_config_specialization(launch_config):
+                dispatcher = self._get_launch_config_specialization(
+                    self._launch_config_key(launch_config)
+                )
+                return dispatcher.call(args, launch_config)
 
             for callback in launch_config.pre_launch_callbacks:
                 callback(kernel, launch_config)
@@ -2159,6 +2180,7 @@ class CUDADispatcher(serialize.ReduceMixin, _MemoMixin, _DispatcherBase):
                     self._cache = NullCache()
             self._cache.save_overload(sig, kernel)
 
+        self._update_launch_config_sensitivity(kernel, launch_config)
         self.add_overload(kernel, argtypes)
 
         return kernel
