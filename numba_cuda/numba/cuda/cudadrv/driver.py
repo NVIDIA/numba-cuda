@@ -267,13 +267,14 @@ class Driver:
         # multiple threads (notably under free-threaded CPython) cannot observe
         # a half-initialized driver.  Reentrant because resolving ``cuInit``
         # through ``__getattr__`` calls ``ensure_initialized`` again on the same
-        # thread.  The lock and the in-progress flag are initialized exactly
-        # once: ``Driver`` is a singleton whose ``__init__`` can be re-entered,
-        # and clobbering either would replace a lock another thread holds or
-        # defeat the recursion guard mid-initialization.
+        # thread.  Guard the lock and the in-progress flag separately:
+        # ``Driver`` is a singleton whose ``__init__`` can be re-entered, and
+        # each attribute must exist by the time any re-entered ``__init__``
+        # returns without clobbering state from an active initialization.
+        if not hasattr(self, "_initializing"):
+            self._initializing = False
         if not hasattr(self, "_initialization_lock"):
             self._initialization_lock = threading.RLock()
-            self._initializing = False
         try:
             if config.DISABLE_CUDA:
                 msg = (
