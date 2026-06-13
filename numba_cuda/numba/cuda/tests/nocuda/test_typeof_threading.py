@@ -11,18 +11,21 @@ import numpy as np
 from numba.cuda.cext import _dispatcher
 
 
+def sysconfig_var_is_true(name):
+    value = sysconfig.get_config_var(name)
+    return value is True or str(value).strip() == "1"
+
+
 class TestTypeofThreading(unittest.TestCase):
     @unittest.skipUnless(
-        sysconfig.get_config_var("Py_GIL_DISABLED"),
+        sysconfig_var_is_true("Py_GIL_DISABLED"),
         "requires a free-threaded Python build",
     )
     def test_compute_fingerprint_with_mutating_containers(self):
         stop = threading.Event()
         list_value = [np.arange(4, dtype=np.int32)]
         set_value = {1}
-        structured = np.zeros(
-            1, dtype=[("a", np.int32), ("b", np.float64)]
-        )
+        structured = np.zeros(1, dtype=[("a", np.int32), ("b", np.float64)])
 
         def mutate_list():
             while not stop.is_set():

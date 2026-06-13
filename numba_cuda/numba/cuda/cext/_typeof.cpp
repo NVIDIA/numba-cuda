@@ -437,7 +437,7 @@ compute_fingerprint(string_writer_t *w, PyObject *val)
     if (PyList_Check(val)) {
         Py_ssize_t n;
         PyObject *item = NULL;
-#ifdef Py_GIL_DISABLED
+#if defined(Py_GIL_DISABLED) && Py_GIL_DISABLED
         Py_BEGIN_CRITICAL_SECTION(val);
 #endif
         n = PyList_GET_SIZE(val);
@@ -445,7 +445,7 @@ compute_fingerprint(string_writer_t *w, PyObject *val)
             item = PyList_GET_ITEM(val, 0);
             Py_XINCREF(item);
         }
-#ifdef Py_GIL_DISABLED
+#if defined(Py_GIL_DISABLED) && Py_GIL_DISABLED
         Py_END_CRITICAL_SECTION();
 #endif
         if (n == 0) {
