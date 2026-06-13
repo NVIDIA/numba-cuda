@@ -76,6 +76,7 @@ def cuda_disabled_test():
 # seen by the worker threads (empty == success).
 def concurrent_first_touch_test(num_threads=32):
     import threading
+    import time
 
     import numpy as np
 
@@ -92,11 +93,25 @@ def concurrent_first_touch_test(num_threads=32):
             with errors_lock:
                 errors.append(repr(e))
 
-    threads = [threading.Thread(target=touch) for _ in range(num_threads)]
+    threads = [
+        threading.Thread(
+            target=touch, name=f"cuda-first-touch-{i}", daemon=True
+        )
+        for i in range(num_threads)
+    ]
     for t in threads:
         t.start()
+    join_timeout = 30
+    deadline = time.monotonic() + join_timeout
     for t in threads:
-        t.join(timeout=30)
+        t.join(timeout=max(deadline - time.monotonic(), 0))
+    timed_out = [t.name for t in threads if t.is_alive()]
+    if timed_out:
+        with errors_lock:
+            errors.append(
+                f"{len(timed_out)} worker thread(s) did not finish within "
+                f"{join_timeout}s: {', '.join(timed_out)}"
+            )
 
     return errors
 
