@@ -41,7 +41,7 @@ static void free_buffer(Py_buffer * buf)
 static PyObject*
 sequence_fast_get_item_ref(PyObject *seq, Py_ssize_t index)
 {
-#if PY_MAJOR_VERSION >= 3 && PY_MINOR_VERSION >= 13
+#if PY_VERSION_HEX >= 0x030d0000
     if (PyList_Check(seq)) {
         return PyList_GetItemRef(seq, index);
     }
