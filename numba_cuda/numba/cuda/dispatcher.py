@@ -1867,6 +1867,7 @@ class CUDADispatcher(serialize.ReduceMixin, _MemoMixin, _DispatcherBase):
         # the CUDA Array Interface.
         return typeof(val, Purpose.argument)
 
+    @global_compiler_lock
     def specialize(self, *args):
         """
         Create a new instance of this dispatcher specialized for the given

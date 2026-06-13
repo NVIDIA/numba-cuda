@@ -4,6 +4,7 @@
 from cuda.core._utils.cuda_utils import CUDAError
 import numpy as np
 import threading
+import time
 
 from numba.cuda.types import (
     boolean,
@@ -15,6 +16,7 @@ from numba.cuda.types import (
     void,
 )
 from numba import cuda
+import numba.cuda.dispatcher as dispatcher_module
 from numba.cuda import config, types
 from numba.cuda import launchconfig
 from numba.cuda.core.errors import TypingError
@@ -99,6 +101,59 @@ class TestDispatcherSpecialization(CUDATestCase):
         f_int32 = f.specialize(int32[::1])
         self.assertEqual(len(f.specializations), 2)
         self.assertIsNot(f_int32, f_float32)
+
+    def test_concurrent_specialize_cache_same(self):
+        @cuda.jit
+        def f(x):
+            x[0] += 1
+
+        original_kernel = dispatcher_module._Kernel
+        constructed_kernels = []
+        constructed_lock = threading.Lock()
+
+        class CountingKernel(original_kernel):
+            def __init__(self, *args, **kwargs):
+                with constructed_lock:
+                    constructed_kernels.append(threading.get_ident())
+                # Widen the race window so concurrent specialize() calls all
+                # reach the shared specialization cache lookup before the first
+                # kernel can be inserted.
+                time.sleep(0.05)
+                super().__init__(*args, **kwargs)
+
+        barrier = threading.Barrier(16)
+        specializations = []
+        specializations_lock = threading.Lock()
+        errors = []
+        errors_lock = threading.Lock()
+
+        def specialize():
+            try:
+                arr = np.zeros(1, dtype=np.int32)
+                barrier.wait(timeout=10)
+                specialization = f.specialize(arr)
+                with specializations_lock:
+                    specializations.append(specialization)
+            except BaseException as e:
+                with errors_lock:
+                    errors.append(e)
+
+        threads = [threading.Thread(target=specialize) for _ in range(16)]
+        dispatcher_module._Kernel = CountingKernel
+        try:
+            for thread in threads:
+                thread.start()
+            for thread in threads:
+                thread.join(timeout=20)
+        finally:
+            dispatcher_module._Kernel = original_kernel
+
+        self.assertFalse(any(thread.is_alive() for thread in threads))
+        self.assertEqual(errors, [])
+        self.assertEqual(len(specializations), len(threads))
+        self.assertEqual(len({id(s) for s in specializations}), 1)
+        self.assertEqual(len(f.specializations), 1)
+        self.assertEqual(len(constructed_kernels), 1)
 
     def test_specialize_cache_same_with_ordering(self):
         # Ensure that the same dispatcher is returned for the same argument
@@ -353,6 +408,55 @@ class TestDispatcher(CUDATestCase):
         for t in threads:
             t.join()
         self.assertFalse(errors)
+
+    @skip_on_cudasim("Simulator doesn't compile CUDA kernels")
+    def test_concurrent_launch_same_signature_compiles_once(self):
+        constructed_kernels = []
+        constructed_lock = threading.Lock()
+        original_kernel = dispatcher_module._Kernel
+
+        class CountingKernel(original_kernel):
+            def __init__(self, *args, **kwargs):
+                with constructed_lock:
+                    constructed_kernels.append(threading.get_ident())
+                # Widen the first compile window.  Without synchronization
+                # around the dispatcher overload cache, racing launchers would
+                # all build their own kernel for the same signature.
+                time.sleep(0.05)
+                super().__init__(*args, **kwargs)
+
+        @cuda.jit
+        def foo(r, x):
+            r[0] = x + 1
+
+        barrier = threading.Barrier(16)
+        errors = []
+        errors_lock = threading.Lock()
+
+        def launch():
+            try:
+                r = np.zeros(1, dtype=np.int64)
+                barrier.wait(timeout=10)
+                foo[1, 1](r, 1)
+                self.assertEqual(r[0], 2)
+            except BaseException as e:
+                with errors_lock:
+                    errors.append(e)
+
+        threads = [threading.Thread(target=launch) for _ in range(16)]
+        dispatcher_module._Kernel = CountingKernel
+        try:
+            for thread in threads:
+                thread.start()
+            for thread in threads:
+                thread.join(timeout=20)
+        finally:
+            dispatcher_module._Kernel = original_kernel
+
+        self.assertFalse(any(thread.is_alive() for thread in threads))
+        self.assertEqual(errors, [])
+        self.assertEqual(len(foo.overloads), 1)
+        self.assertEqual(len(constructed_kernels), 1)
 
     def _test_explicit_signatures(self, sigs):
         f = cuda.jit(sigs)(add_kernel)
