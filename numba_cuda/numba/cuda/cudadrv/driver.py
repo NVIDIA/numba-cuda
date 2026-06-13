@@ -263,6 +263,15 @@ class Driver:
         self.is_initialized = False
         self.initialization_error = None
         self.pid = None
+        # Serializes lazy driver initialization so concurrent first-touch from
+        # multiple threads (notably under free-threaded CPython) cannot observe
+        # a half-initialized driver.  Reentrant because resolving ``cuInit``
+        # through ``__getattr__`` calls ``ensure_initialized`` again on the same
+        # thread.  Guarded so re-running ``__init__`` on the singleton never
+        # replaces a lock another thread may be holding.
+        if not hasattr(self, "_initialization_lock"):
+            self._initialization_lock = threading.RLock()
+        self._initializing = False
         try:
             if config.DISABLE_CUDA:
                 msg = (
@@ -280,20 +289,37 @@ class Driver:
         if self.is_initialized:
             return
 
-        # lazily initialize logger
-        global _logger
-        _logger = make_logger()
+        with self._initialization_lock:
+            # Another thread may have completed initialization while we waited.
+            if self.is_initialized:
+                return
+            # Resolving ``self.cuInit`` below goes through ``__getattr__``,
+            # which calls back into ``ensure_initialized`` on this thread.
+            # ``_initializing`` breaks that recursion without publishing a
+            # half-initialized driver to threads blocked on the lock.
+            if self._initializing:
+                return
+            self._initializing = True
 
-        self.is_initialized = True
-        try:
-            _logger.info("init")
-            self.cuInit(0)
-        except CudaAPIError as e:
-            description = f"{e.msg} ({e.code})"
-            self.initialization_error = description
-            raise CudaSupportError(f"Error at driver init: {description}")
-        else:
-            self.pid = _getpid()
+            # lazily initialize logger
+            global _logger
+            _logger = make_logger()
+
+            try:
+                _logger.info("init")
+                self.cuInit(0)
+            except CudaAPIError as e:
+                description = f"{e.msg} ({e.code})"
+                self.initialization_error = description
+                raise CudaSupportError(f"Error at driver init: {description}")
+            else:
+                self.pid = _getpid()
+            finally:
+                # Publish completion (success *or* a cached failure) only after
+                # cuInit has actually run, so the fast-path guard above never
+                # lets another thread proceed before the driver is ready.
+                self.is_initialized = True
+                self._initializing = False
 
     @property
     def is_available(self):
@@ -301,6 +327,13 @@ class Driver:
         return self.initialization_error is None
 
     def __getattr__(self, fname):
+        # Only CUDA driver API entry points (e.g. ``cuInit``) are bound lazily
+        # here.  Internal attributes never start with an underscore, so refuse
+        # to "initialize and bind" those -- doing so would recurse infinitely
+        # when ``ensure_initialized`` touches its own lock before it is set.
+        if fname.startswith("_"):
+            raise AttributeError(fname)
+
         # First request of a driver API function
         self.ensure_initialized()
 

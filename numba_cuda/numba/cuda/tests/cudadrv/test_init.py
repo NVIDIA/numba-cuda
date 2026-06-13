@@ -68,6 +68,39 @@ def cuda_disabled_test():
     return success, msg
 
 
+# Run in a fresh (spawned) child so the CUDA driver is uninitialized: many
+# threads touch the driver for the very first time simultaneously. If
+# Driver.ensure_initialized() is not properly serialized, a thread can observe
+# is_initialized=True before cuInit() has completed and call a driver API on an
+# uninitialized driver (CUDA_ERROR_NOT_INITIALIZED). Returns the list of errors
+# seen by the worker threads (empty == success).
+def concurrent_first_touch_test(num_threads=32):
+    import threading
+
+    import numpy as np
+
+    barrier = threading.Barrier(num_threads)
+    errors = []
+    errors_lock = threading.Lock()
+
+    def touch():
+        try:
+            barrier.wait(timeout=30)
+            # First driver touch for this thread; all threads arrive together.
+            cuda.to_device(np.zeros(1, dtype=np.float32))
+        except BaseException as e:  # noqa: BLE001
+            with errors_lock:
+                errors.append(repr(e))
+
+    threads = [threading.Thread(target=touch) for _ in range(num_threads)]
+    for t in threads:
+        t.start()
+    for t in threads:
+        t.join(timeout=30)
+
+    return errors
+
+
 # Similar to cuda_disabled_test, but checks cuda.cuda_error() instead of the
 # exception raised on initialization
 def cuda_disabled_error_test():
@@ -132,6 +165,18 @@ class TestInit(CUDATestCase):
         # things will happen with the test suite if it is not) and check that
         # there is no error recorded.
         self.assertIsNone(cuda.cuda_error())
+
+    def test_concurrent_initialization_no_race(self):
+        # Concurrent first-touch of the driver from many threads must not
+        # observe a half-initialized driver. Regression test for the
+        # ensure_initialized() race that fails reliably under free-threaded
+        # CPython. Runs in a spawned subprocess so the driver starts cold.
+        with concurrent.futures.ProcessPoolExecutor(
+            mp_context=mp.get_context("spawn")
+        ) as exe:
+            errors = exe.submit(concurrent_first_touch_test).result(timeout=60)
+
+        self.assertEqual(errors, [])
 
 
 if __name__ == "__main__":
