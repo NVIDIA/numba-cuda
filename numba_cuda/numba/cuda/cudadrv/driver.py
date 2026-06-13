@@ -1018,6 +1018,11 @@ class _PendingDeallocs:
         self._disable_count = 0
         self._size = 0
         self.memory_capacity = capacity
+        # Deallocations are driven by weakref finalizers, which can run on any
+        # thread and concurrently under free-threaded CPython.  Serialize the
+        # pending list, size accounting and disable counter so a concurrent
+        # add_item/clear cannot race (e.g. popleft from an emptied deque).
+        self._lock = threading.Lock()
 
     @property
     def _max_pending_bytes(self):
@@ -1033,12 +1038,14 @@ class _PendingDeallocs:
         resources (e.g. CUModule) has an unknown memory footprint on the device.
         """
         _logger.info("add pending dealloc: %s %s bytes", dtor.__name__, size)
-        self._cons.append((dtor, handle, size))
-        self._size += int(size)
-        if (
-            len(self._cons) > config.CUDA_DEALLOCS_COUNT
-            or self._size > self._max_pending_bytes
-        ):
+        with self._lock:
+            self._cons.append((dtor, handle, size))
+            self._size += int(size)
+            should_clear = (
+                len(self._cons) > config.CUDA_DEALLOCS_COUNT
+                or self._size > self._max_pending_bytes
+            )
+        if should_clear:
             self.clear()
 
     def clear(self):
@@ -1046,13 +1053,19 @@ class _PendingDeallocs:
         Flush any pending deallocations unless it is disabled.
         Do nothing if disabled.
         """
-        if not self.is_disabled:
-            while self._cons:
-                [dtor, handle, size] = self._cons.popleft()
-                _logger.info("dealloc: %s %s bytes", dtor.__name__, size)
-                dtor(handle)
-
+        # Atomically take ownership of the pending list, then run the
+        # destructors without holding the lock: they call into the CUDA driver
+        # and must not block other threads queueing deallocations.
+        with self._lock:
+            if self.is_disabled:
+                return
+            pending = list(self._cons)
+            self._cons.clear()
             self._size = 0
+
+        for dtor, handle, size in pending:
+            _logger.info("dealloc: %s %s bytes", dtor.__name__, size)
+            dtor(handle)
 
     @contextlib.contextmanager
     def disable(self):
@@ -1060,12 +1073,14 @@ class _PendingDeallocs:
         Context manager to temporarily disable flushing pending deallocation.
         This can be nested.
         """
-        self._disable_count += 1
+        with self._lock:
+            self._disable_count += 1
         try:
             yield
         finally:
-            self._disable_count -= 1
-            assert self._disable_count >= 0
+            with self._lock:
+                self._disable_count -= 1
+                assert self._disable_count >= 0
 
     @property
     def is_disabled(self):
