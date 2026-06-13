@@ -1772,14 +1772,16 @@ class CUDADispatcher(serialize.ReduceMixin, _MemoMixin, _DispatcherBase):
     def _update_launch_config_sensitivity(self, kernel, launch_config):
         if not getattr(kernel, "launch_config_sensitive", False):
             return
+        if not self._launch_config_sensitive:
+            self._launch_config_sensitive = True
         if launch_config is None:
-            launch_config = launchconfig.ensure_current_launch_config()
+            launch_config = launchconfig.current_launch_config()
+            if launch_config is None:
+                return
         if self._launch_config_default_key is None:
             self._launch_config_default_key = self._launch_config_key(
                 launch_config
             )
-        if not self._launch_config_sensitive:
-            self._launch_config_sensitive = True
 
     def _requires_launch_config_specialization(self, launch_config):
         if self._launch_config_is_specialized:

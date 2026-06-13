@@ -510,7 +510,7 @@ class LaunchConfigSensitiveCachingTest(DispatcherCacheUsecasesTest):
         self.assertEqual(report["spec_misses"], 0)
         self.assertEqual(self.get_cache_mtimes(), mtimes)
 
-    def test_launch_config_sensitive_compile_requires_active_launch_config(
+    def test_launch_config_sensitive_compile_defers_default_launch_config(
         self,
     ):
         mod = self.import_module()
@@ -519,8 +519,9 @@ class LaunchConfigSensitiveCachingTest(DispatcherCacheUsecasesTest):
         sig = mod.lcs_cache_kernel.signatures[0]
 
         mod2 = self.import_module()
-        with self.assertRaisesRegex(RuntimeError, "No launch config set"):
-            mod2.lcs_cache_kernel.compile(sig)
+        mod2.lcs_cache_kernel.compile(sig)
+        self.assertTrue(mod2.lcs_cache_kernel._launch_config_sensitive)
+        self.assertIsNone(mod2.lcs_cache_kernel._launch_config_default_key)
 
 
 @skip_on_cudasim("Simulator does not implement caching")
