@@ -1025,7 +1025,7 @@ class _PendingDeallocs:
         # thread and concurrently under free-threaded CPython.  Serialize the
         # pending list, size accounting and disable counter so a concurrent
         # add_item/clear cannot race (e.g. popleft from an emptied deque).
-        self._lock = threading.Lock()
+        self._lock = threading.RLock()
 
     @property
     def _max_pending_bytes(self):
@@ -1087,13 +1087,15 @@ class _PendingDeallocs:
 
     @property
     def is_disabled(self):
-        return self._disable_count > 0
+        with self._lock:
+            return self._disable_count > 0
 
     def __len__(self):
         """
         Returns number of pending deallocations.
         """
-        return len(self._cons)
+        with self._lock:
+            return len(self._cons)
 
 
 MemoryInfo = namedtuple("MemoryInfo", "free,total")
