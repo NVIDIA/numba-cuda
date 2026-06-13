@@ -41,12 +41,14 @@ static void free_buffer(Py_buffer * buf)
 static PyObject*
 sequence_fast_get_item_ref(PyObject *seq, Py_ssize_t index)
 {
+    PyObject *item;
+
 #if PY_VERSION_HEX >= 0x030d0000
     if (PyList_Check(seq)) {
         return PyList_GetItemRef(seq, index);
     }
 #endif
-    PyObject *item = PySequence_Fast_GET_ITEM(seq, index);
+    item = PySequence_Fast_GET_ITEM(seq, index);
     Py_XINCREF(item);
     return item;
 }
