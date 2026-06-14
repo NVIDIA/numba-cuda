@@ -69,3 +69,9 @@ driver, and helper-extension paths more aggressively, for example::
 If a stress failure is hard to reproduce, increase
 ``NUMBA_CUDA_FT_STRESS_SECONDS`` for CUDA tests or
 ``NUMBA_CUDA_FT_STRESS_ITERS`` for loop-based no-CUDA tests.
+
+The CUDA dispatch stress tests deliberately avoid a concurrent tight loop of
+full ``gc.collect()`` calls. On many-core CPython 3.14t free-threaded builds,
+that pattern timed out in CPython's ``Python/gc_free_threading.c`` and turned
+the dispatch stress into a CPython full-GC progress test. The dispatch stress
+still performs a full collection after worker shutdown.
