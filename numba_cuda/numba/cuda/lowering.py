@@ -228,8 +228,10 @@ class BaseLower:
         self.context.declare_env_global(self.module, envname)
 
     def lower(self):
-        # Emit the Env into the module
-        self.emit_environment_object()
+        # Emit the Env into the module (only needed for calling conventions
+        # that use a Numba environment for error-status propagation).
+        if self.call_conv.needs_env:
+            self.emit_environment_object()
         if self.generator_info is None:
             self.genlower = None
             self.lower_normal_function(self.fndesc)
@@ -1722,6 +1724,12 @@ class CUDALower(Lower):
                 src_name not in self.dbg_val_names
                 and src_name not in self.poly_var_typ_map
             ):
+                # Function arguments are declared once in the prologue. Emitting
+                # additional dbg.value entries for them can cause ptxas to
+                # describe them via parameter-space addresses (DW_OP_addr),
+                # which is both unstable and confusing for debuggers.
+                if src_name in self.fndesc.args:
+                    return val
                 fetype = self.typeof(name)
                 lltype = self.context.get_value_type(fetype)
                 int_type = (llvm_ir.IntType,)
@@ -1730,10 +1738,6 @@ class CUDALower(Lower):
                     sizeof = self.context.get_abi_sizeof(lltype)
                     datamodel = self.context.data_model_manager[fetype]
                     line = self._adjust_line_if_prologue(self.loc.line)
-                    if src_name in self.fndesc.args:
-                        argidx = self.fndesc.args.index(src_name) + 1
-                    else:
-                        argidx = None
                     self.debuginfo.update_variable(
                         self.builder,
                         val,
@@ -1742,7 +1746,7 @@ class CUDALower(Lower):
                         sizeof,
                         line,
                         datamodel,
-                        argidx,
+                        argidx=None,
                     )
                     self.dbg_val_names.add(src_name)
         return val
@@ -1817,6 +1821,23 @@ class CUDALower(Lower):
                     # Emit debug value for user variable
                     src_name = name.split(".")[0]
                     if src_name not in self.poly_var_typ_map:
+                        # Function arguments are described via dbg.declare on
+                        # their stack slots in the prologue.
+                        if argidx is not None:
+                            # Boolean parameters are kept on dbg.value to avoid
+                            # NVVM crashes with dbg.declare.
+                            if isinstance(fetype, types.Boolean):
+                                self.debuginfo.update_variable(
+                                    self.builder,
+                                    value,
+                                    src_name,
+                                    lltype,
+                                    sizeof,
+                                    line,
+                                    datamodel,
+                                    argidx,
+                                )
+                            return
                         # Insert the llvm.dbg.value intrinsic call
                         self.debuginfo.update_variable(
                             self.builder,
@@ -1839,9 +1860,8 @@ class CUDALower(Lower):
                             # Not yet covered by the dbg.value range
                             and src_name not in self.dbg_val_names
                         ):
-                            # Use fndesc.args to get correct argidx for func args
                             if src_name in self.fndesc.args:
-                                argidx = self.fndesc.args.index(src_name) + 1
+                                return
                             # Insert the llvm.dbg.value intrinsic call
                             self.debuginfo.update_variable(
                                 self.builder,
@@ -1851,7 +1871,7 @@ class CUDALower(Lower):
                                 sizeof,
                                 line,
                                 datamodel,
-                                argidx,
+                                argidx=None,
                             )
 
     def pre_block(self, block):

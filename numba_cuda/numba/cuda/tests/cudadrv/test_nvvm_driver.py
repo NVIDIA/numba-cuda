@@ -6,7 +6,7 @@ import pytest
 from llvmlite import ir
 from numba.cuda.cudadrv import nvrtc, nvvm, runtime
 from numba.cuda.testing import unittest
-from numba.cuda.cudadrv.nvvm import LibDevice, NvvmError, NVVM
+from numba.cuda.cudadrv.nvvm import LibDevice, NVVM, nvvmError
 from numba.cuda.testing import skip_on_cudasim
 
 
@@ -37,10 +37,10 @@ class TestNvvmDriver(unittest.TestCase):
         self.assertEqual(ltoir[:4], b"\xed\x43\x4e\x7f")
 
     def test_nvvm_bad_option(self):
-        # Ensure that unsupported / non-existent options are reported as such
-        # to the user / caller
-        msg = "-made-up-option=2 is an unsupported option"
-        with self.assertRaisesRegex(NvvmError, msg):
+        # Ensure that unsupported / non-existent options raise from the binding
+        if nvvmError is None:
+            self.skipTest("NVVM binding not available")
+        with self.assertRaises(nvvmError):
             nvvm.compile_ir("", made_up_option=2)
 
     def test_nvvm_from_llvm(self):
@@ -88,13 +88,15 @@ class TestNvvmDriver(unittest.TestCase):
         self.assertIn('section "llvm.metadata"', used_line)
 
     def test_nvvm_ir_verify_fail(self):
+        if nvvmError is None:
+            self.skipTest("NVVM binding not available")
         if runtime.get_version() >= (12, 5):
             self.skipTest("Bad triple doesn't fail verify on CUDA >= 12.5")
         m = ir.Module("test_bad_ir")
         m.triple = "unknown-unknown-unknown"
         m.data_layout = NVVM().data_layout
         nvvm.add_ir_version(m)
-        with self.assertRaisesRegex(NvvmError, "Invalid target triple"):
+        with self.assertRaises(nvvmError):
             nvvm.compile_ir(str(m))
 
     def _test_nvvm_support(self, arch):

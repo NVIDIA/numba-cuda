@@ -61,7 +61,12 @@ from cuda.core import (
     Stream as ExperimentalStream,
     Device as ExperimentalDevice,
 )
-from numba.cuda._compat import CUDA_CORE_GT_0_6
+from numba.cuda._compat import CUDA_CORE_GT_0_6, CUDA_CORE_GE_1_0
+
+if CUDA_CORE_GE_1_0:
+    from cuda.core.graph import GraphBuilder
+else:
+    from cuda.core import GraphBuilder
 from cuda.bindings.utils import get_cuda_native_handle
 
 
@@ -533,11 +538,18 @@ class Device:
                 f"{self} has compute capability < {MIN_REQUIRED_CC}"
             )
 
+        prev = get_cuda_native_handle(driver.cuCtxGetCurrent())
         self._dev.set_current()
         if CUDA_CORE_GT_0_6:
             ctx_handle = self._dev.context.handle
         else:
             ctx_handle = self._dev.context._handle
+        # set_current() may push a context onto the thread's stack.  Undo
+        # that so callers (_activate_context_for) can push/pop symmetrically.
+        # Only pop when set_current() actually changed the current context;
+        # it is a no-op when a context for this device is already active.
+        if get_cuda_native_handle(driver.cuCtxGetCurrent()) != prev:
+            driver.cuCtxPopCurrent()
         self.primary_context = ctx = Context(
             weakref.proxy(self),
             ctx_handle,
@@ -1132,10 +1144,13 @@ class Context:
         :param blocksizelimit: maximum block size the kernel is designed to
                                handle
         """
-        return (
-            binding.CUresult.CUDA_SUCCESS,
-            func.kernel.attributes.max_threads_per_block(),
-        )
+        attrs = func.kernel.attributes
+        if CUDA_CORE_GE_1_0:
+            max_threads_per_block = attrs.max_threads_per_block
+        else:
+            max_threads_per_block = attrs.max_threads_per_block()
+
+        return binding.CUresult.CUDA_SUCCESS, max_threads_per_block
 
     def prepare_for_use(self):
         """Initialize the context for use.
@@ -2003,16 +2018,19 @@ class Stream:
 
 
 def _to_core_stream(stream):
-    # stream can be: int (0 for default), Stream (shim), or ExperimentalStream
+    # stream can be: int (0 for default), Stream (shim), ExperimentalStream,
+    # or GraphBuilder.
     if not stream:
         return ExperimentalStream.from_handle(0)
     elif isinstance(stream, Stream):
         return ExperimentalStream.from_handle(stream.handle or 0)
     elif isinstance(stream, ExperimentalStream):
         return stream
+    elif isinstance(stream, GraphBuilder):
+        return stream.stream
     else:
         raise TypeError(
-            f"Expected a Stream object, ExperimentalStream, or 0, got {type(stream).__name__}"
+            f"Expected a Stream object, ExperimentalStream, GraphBuilder, or 0, got {type(stream).__name__}"
         )
 
 
@@ -2164,13 +2182,22 @@ class CudaPythonFunction:
             self.handle = kernel._handle
         self.name = name
         attrs = self.kernel.attributes
-        self.attrs = FuncAttr(
-            regs=attrs.num_regs(),
-            const=attrs.const_size_bytes(),
-            local=attrs.local_size_bytes(),
-            shared=attrs.shared_size_bytes(),
-            maxthreads=attrs.max_threads_per_block(),
-        )
+        if CUDA_CORE_GE_1_0:
+            self.attrs = FuncAttr(
+                regs=attrs.num_regs,
+                const=attrs.const_size_bytes,
+                local=attrs.local_size_bytes,
+                shared=attrs.shared_size_bytes,
+                maxthreads=attrs.max_threads_per_block,
+            )
+        else:
+            self.attrs = FuncAttr(
+                regs=attrs.num_regs(),
+                const=attrs.const_size_bytes(),
+                local=attrs.local_size_bytes(),
+                shared=attrs.shared_size_bytes(),
+                maxthreads=attrs.max_threads_per_block(),
+            )
 
     def __repr__(self):
         return "<CUDA function %s>" % self.name

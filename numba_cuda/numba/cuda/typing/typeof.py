@@ -19,6 +19,14 @@ from numba.cuda.np import numpy_support
 from cuda.core import Buffer
 from cuda.core.utils import StridedMemoryView
 
+# As of cuda_bindings 13.2, it uses its own enum implementation and we need to
+# extend the type conversions to support them.
+
+try:
+    from cuda.bindings._internal import _fast_enum
+except ImportError:
+    _fast_enum = None
+
 
 # terminal color markup
 _termcolor = errors.termcolor()
@@ -240,6 +248,10 @@ def _typeof_enum(val, c):
     return clsty.member_type
 
 
+if _fast_enum is not None:
+    _typeof_enum = typeof_impl.register(_fast_enum.FastEnum)(_typeof_enum)
+
+
 @typeof_impl.register(enum.EnumMeta)
 def _typeof_enum_class(val, c):
     cls = val
@@ -254,9 +266,17 @@ def _typeof_enum_class(val, c):
         )
     if issubclass(val, enum.IntEnum):
         typecls = types.IntEnumClass
+    elif _fast_enum is not None and issubclass(val, _fast_enum.FastEnum):
+        typecls = types.IntEnumClass
     else:
         typecls = types.EnumClass
     return typecls(cls, dtypes.pop())
+
+
+if _fast_enum is not None:
+    _typeof_enum_class = typeof_impl.register(_fast_enum.FastEnumMetaclass)(
+        _typeof_enum_class
+    )
 
 
 @typeof_impl.register(np.dtype)

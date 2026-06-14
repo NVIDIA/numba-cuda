@@ -4,7 +4,7 @@
 import os
 from math import sqrt
 from numba import cuda
-from numba.core.extending import intrinsic
+from numba.core.extending import intrinsic, overload
 
 from numba.cuda import float32, int16, int32, int64, types, uint32, void
 from numba.cuda import (
@@ -449,6 +449,55 @@ class TestCompile(unittest.TestCase):
             r"func_retval0\)\s+_Z4funcii\(",
         )
 
+    def test_c_abi_lambda_with_abi_name(self):
+        """Compiling a lambda with CABI + abi_name should produce valid IR.
+
+        Lambdas have ``<lambda>`` as their qualname; the angle brackets must be
+        escaped when mangling names for NVVM.
+        """
+        abi_info = {"abi_name": "blah"}
+
+        with self.subTest("compile_ptx"):
+            self._test_c_abi_lambda_with_abi_name(
+                compile_ptx,
+                {"device": True, "abi": "c", "abi_info": abi_info},
+            )
+
+        with self.subTest("compile_all"):
+            self._test_c_abi_lambda_with_abi_name(
+                compile_all,
+                {
+                    "device": True,
+                    "abi": "c",
+                    "abi_info": abi_info,
+                    "output": "ptx",
+                },
+            )
+
+    def _test_c_abi_lambda_with_abi_name(
+        self, compile_function, default_kwargs
+    ):
+        ret = compile_function(lambda x: x, int32(int32), **default_kwargs)
+        ptx, resty = self._handle_compile_result(ret, compile_function)
+
+        self.assertRegex(
+            ptx,
+            r"\.visible\s+\.func\s+\(\.param\s+\.b32\s+"
+            r"func_retval0\)\s+blah\(",
+        )
+
+    def test_c_abi_no_env_global(self):
+        """CABI functions should not emit a NumbaEnv global."""
+        ret = compile_ptx(lambda x: x, int32(int32), device=True, abi="c")
+        ptx, _ = self._handle_compile_result(ret, compile_ptx)
+        self.assertNotIn("NumbaEnv", ptx)
+
+    def test_numba_abi_has_env_global(self):
+        """Numba-ABI functions still require a NumbaEnv global."""
+        ret = compile_ptx(lambda x: x, int32(int32), device=True, abi="numba")
+        ptx, _ = self._handle_compile_result(ret, compile_ptx)
+        self.assertIn("NumbaEnv", ptx)
+
     def test_c_abi_boolean_return(self):
         """
         Tests that returning a raw boolean comparison (a == b) compiles correctly
@@ -768,7 +817,7 @@ class TestCompile(unittest.TestCase):
 
         cuda.compile(wrapper, wrapper_sig.args, output="ltoir")
 
-    def test_compile_CABI_calling_device_function_returning_optional(self):
+    def test_compile_cabi_calling_device_function_returning_optional(self):
         # Exercise a CABI caller invoking a Numba ABI callee that can return
         # None through Optional[int32]
         def maybe_none(x):
@@ -787,6 +836,34 @@ class TestCompile(unittest.TestCase):
         cuda.compile(
             wrapper_func, types.int32(types.int32), output="ltoir", abi="c"
         )
+
+    def test_compile_cabi_calling_overloaded_function(self):
+        # Reproducer from gh-841
+        # https://github.com/NVIDIA/numba-cuda/issues/841
+        #
+        # When a CABI function calls an overloaded function (compiled as a
+        # Numba-ABI subroutine), the error-status return path must use the
+        # caller's calling convention. Previously the callee's Numba-ABI
+        # convention was used, emitting `ret i32` (the status code) inside a
+        # function whose declared return type did not match, producing invalid
+        # LLVM IR.
+
+        def _my_func(x):
+            pass
+
+        @overload(_my_func)
+        def _ov_my_func(x):
+            if isinstance(x, types.IntegerLiteral):
+
+                def impl(x):
+                    return int32(0)
+
+                return impl
+
+        def caller():
+            _my_func(0)
+
+        cuda.compile(caller, (), abi_info={"abi_name": "caller"}, abi="c")
 
     def test_compile_complex_div_c_abi(self):
         # Reproducer from gh-789

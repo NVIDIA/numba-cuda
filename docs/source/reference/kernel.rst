@@ -63,8 +63,108 @@ creating a specialized instance:
 .. autoclass:: numba.cuda.dispatcher.CUDADispatcher
    :members: inspect_asm, inspect_llvm, inspect_sass, inspect_types,
              get_regs_per_thread, specialize, specialized, extensions, forall,
+             mark_launch_config_sensitive,
              get_shared_mem_per_block, get_max_threads_per_block,
              get_const_mem_size, get_local_mem_per_thread
+
+Launch configuration access (advanced)
+--------------------------------------
+
+The configured-launch object returned by ``dispatcher[griddim, blockdim, ...]``
+exposes launch metadata and callback hooks that can be consumed by advanced
+tooling (for example, rewrite passes and extension integrations).
+
+Compile-time launch-config access
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The active launch configuration is available only while compilation is in
+progress for a kernel launch. Most consumers should access it from code that
+is already running inside compilation, such as rewrite passes, compiler
+extensions, or other compile-time helpers.
+
+.. note:: This is compile-time state. If a launch reuses an existing compiled
+   kernel for the same cache key, no compilation occurs and no compile-time
+   launch config is set. For launch-config-sensitive kernels, a different
+   launch configuration can trigger a separate compilation/specialization; see
+   :ref:`cuda-launch-config-sensitive-compilation`.
+
+Primary path for compile-time consumers:
+
+.. code-block:: python
+
+   from numba.cuda import launchconfig
+
+   cfg = launchconfig.ensure_current_launch_config()
+   print(cfg.griddim, cfg.blockdim, cfg.sharedmem, cfg.args)
+
+Use ``ensure_current_launch_config()`` when an active launch-triggered
+compilation is required. Use ``current_launch_config()`` instead when the
+absence of compile-time launch state is expected and should return ``None``.
+
+For external introspection or testing:
+
+``capture_compile_config()`` is a convenience helper for observing the
+compile-time launch configuration from ordinary Python code outside compilation
+itself. Most user code does not need it, but it can be useful in tests,
+debugging, or tooling that wants to inspect the launch configuration that
+triggered compilation.
+
+.. code-block:: python
+
+   from numba import cuda
+   from numba.cuda import launchconfig
+
+   @cuda.jit
+   def f(x):
+       x[0] = 1
+
+   arr = cuda.device_array(1, dtype="i4")
+   with launchconfig.capture_compile_config(f) as capture:
+       f[1, 1](arr)  # first launch triggers compilation
+
+   cfg = capture["config"]
+   print(cfg.griddim, cfg.blockdim, cfg.sharedmem)
+
+Pre-launch callbacks
+~~~~~~~~~~~~~~~~~~~~
+
+Configured launches expose ``pre_launch_callbacks``. Each callback is called
+immediately before launch with ``(kernel, launch_config)``.
+
+.. warning:: Pre-launch callbacks must not invoke CUDA APIs or launch CUDA
+   work. This use is not supported, is not tested, and has undefined
+   behavior; it may deadlock or fail in other ways.
+
+.. code-block:: python
+
+   cfg = f[1, 1]
+
+   def log_launch(kernel, cfg):
+       print(cfg.griddim, cfg.blockdim)
+
+   cfg.pre_launch_callbacks.append(log_launch)
+   cfg(arr)
+
+.. _cuda-launch-config-sensitive-compilation:
+
+Launch-config-sensitive compilation
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+If code generation depends on launch configuration (for example, a rewrite
+pass that inspects ``cfg.blockdim`` and emits different IR), mark the active
+dispatcher as launch-config sensitive:
+
+.. code-block:: python
+
+   cfg = launchconfig.ensure_current_launch_config()
+   cfg.dispatcher.mark_launch_config_sensitive()
+
+This instructs the dispatcher/cache machinery to avoid unsafe reuse across
+different launch configurations for that kernel path.
+
+.. note:: Launch-config-sensitive cache keying for ``cache=True`` applies to
+   kernels that are otherwise disk-cacheable. Kernels that require external
+   linking files are not currently disk-cacheable.
 
 
 Kernel Arguments
