@@ -28,3 +28,4 @@ Contents
 
    user/index.rst
    reference/index.rst
+   developer/index.rst
