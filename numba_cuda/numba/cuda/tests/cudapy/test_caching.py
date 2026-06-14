@@ -530,11 +530,22 @@ class LaunchConfigSensitiveCachingTest(DispatcherCacheUsecasesTest):
         mod.launch(32)
         mod.launch(64)
         sig = mod.lcs_cache_kernel.signatures[0]
+        mtimes = self.get_cache_mtimes()
 
         mod2 = self.import_module()
         mod2.lcs_cache_kernel.compile(sig)
         self.assertTrue(mod2.lcs_cache_kernel._launch_config_sensitive)
         self.assertIsNone(mod2.lcs_cache_kernel._launch_config_default_key)
+        self.assertEqual(mod2.lcs_cache_kernel.overloads, {})
+        self.assertEqual(self.get_cache_mtimes(), mtimes)
+
+        arr = mod2.launch(64)
+        self.assertEqual(arr[0], 1)
+        self.assertIsNotNone(mod2.lcs_cache_kernel._launch_config_default_key)
+        self.assertEqual(self.get_cache_mtimes(), mtimes)
+        stats = mod2.lcs_cache_kernel.stats
+        self.assertGreaterEqual(sum(stats.cache_hits.values()), 1)
+        self.assertEqual(sum(stats.cache_misses.values()), 0)
 
     def test_concurrent_launch_config_sensitive_cold_cache_threads(self):
         self.check_pycache(0)
