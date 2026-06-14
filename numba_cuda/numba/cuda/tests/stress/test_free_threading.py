@@ -4,6 +4,7 @@
 from concurrent.futures import ThreadPoolExecutor
 import gc
 import os
+import signal
 import shutil
 import stat
 import subprocess
@@ -89,8 +90,70 @@ def _stress_iters(default):
     return _stress_int("NUMBA_CUDA_FT_STRESS_ITERS", default)
 
 
+def _stress_child_timeout(seconds):
+    # CUDA stress runs can spend substantial time compiling before the timed
+    # workload reaches steady state. Bound hard hangs, but leave enough slack
+    # that normal compilation overhead does not look like a deadlock.
+    return max(300.0, seconds * 6.0)
+
+
+def _dispatch_stress_child_command():
+    test_name = "test_dispatch_lcs_callbacks_and_surfaces_stress"
+    pyargs = "numba.cuda.tests.stress.test_free_threading"
+    addopts = "addopts=--benchmark-disable --import-mode=importlib"
+    command = [
+        sys.executable,
+        "-m",
+        "pytest",
+        "-q",
+        "--override-ini",
+        addopts,
+        "--pyargs",
+        pyargs,
+        "-k",
+        test_name,
+    ]
+    if os.path.isdir("testing"):
+        # Source-checkout CUDA tests need testing/conftest.py fixtures.
+        command.insert(4, "testing")
+    return command
+
+
+def _stress_child_kwargs():
+    if os.name == "nt":
+        return {
+            "creationflags": subprocess.CREATE_NEW_PROCESS_GROUP,
+        }
+    return {
+        "start_new_session": True,
+    }
+
+
+def _kill_stress_child(process):
+    if process.poll() is not None:
+        return
+    if os.name == "nt":
+        try:
+            subprocess.run(
+                ["taskkill", "/F", "/T", "/PID", str(process.pid)],
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+                check=False,
+            )
+        except OSError:
+            process.kill()
+        if process.poll() is None:
+            process.kill()
+        return
+    try:
+        os.killpg(process.pid, signal.SIGKILL)
+    except ProcessLookupError:
+        pass
+
+
 _REWRITE_FLAG = "_numba_cuda_free_threading_stress_rewrite_registered"
 _FT_STRESS_CACHE_RESULT = "__FT_STRESS_CACHE_RESULT__"
+_FT_STRESS_DISPATCH_CHILD = "_NUMBA_CUDA_FT_STRESS_DISPATCH_CHILD"
 
 if free_threading_stress_enabled() and not getattr(
     rewrite_registry, _REWRITE_FLAG, False
@@ -325,6 +388,43 @@ class TestFreeThreadingNoCudaStress(unittest.TestCase):
 class TestFreeThreadingCudaStress(CUDATestCase):
     def test_dispatch_lcs_callbacks_and_surfaces_stress(self):
         seconds = _stress_seconds(30.0)
+        if os.environ.get(_FT_STRESS_DISPATCH_CHILD) != "1":
+            env = os.environ.copy()
+            # The child executes the original workload. The parent only
+            # contains hangs so the outer pytest process can report them.
+            env[_FT_STRESS_DISPATCH_CHILD] = "1"
+            process = subprocess.Popen(
+                _dispatch_stress_child_command(),
+                env=env,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                **_stress_child_kwargs(),
+            )
+            timeout = _stress_child_timeout(seconds)
+            try:
+                out, err = process.communicate(timeout=timeout)
+            except subprocess.TimeoutExpired as e:
+                _kill_stress_child(process)
+                out, err = process.communicate()
+                stdout = out.decode(errors="replace")
+                stderr = err.decode(errors="replace")
+                raise AssertionError(
+                    "dispatch stress child timed out after %.1fs:\n"
+                    "stdout follows\n%s\n"
+                    "stderr follows\n%s\n" % (timeout, stdout, stderr)
+                ) from e
+
+            stdout = out.decode(errors="replace")
+            stderr = err.decode(errors="replace")
+            if process.returncode != 0:
+                raise AssertionError(
+                    "dispatch stress child failed with code %s:\n"
+                    "stdout follows\n%s\n"
+                    "stderr follows\n%s\n"
+                    % (process.returncode, stdout, stderr)
+                )
+            return
+
         workers = _stress_workers(32)
         stop = threading.Event()
         errors = []
