@@ -2,30 +2,54 @@
 # SPDX-License-Identifier: BSD-2-Clause
 
 from concurrent.futures import ThreadPoolExecutor
-import sysconfig
 import threading
 import unittest
 
 import numpy as np
 
 from numba.cuda.cext import _dispatcher
-
-
-def sysconfig_var_is_true(name):
-    value = sysconfig.get_config_var(name)
-    return value is True or str(value).strip() == "1"
+from numba.cuda.tests.support import (
+    fresh_struct_array,
+    is_free_threaded_python,
+)
 
 
 class TestTypeofThreading(unittest.TestCase):
+    def test_compute_fingerprint_concurrent_dtype_variants(self):
+        def fingerprint_values(seed):
+            rng = np.random.default_rng(seed)
+            for _ in range(250):
+                i = int(rng.integers(0, 1000))
+                values = (
+                    np.arange(4, dtype=np.int32),
+                    np.arange(6, dtype=np.float64).reshape(2, 3),
+                    fresh_struct_array(i),
+                    fresh_struct_array(i)[0],
+                    (1, 2.0, np.float32(3), np.int64(4)),
+                    [np.arange((i % 5) + 1, dtype=np.int16)],
+                    np.float32(3.5),
+                    np.complex128(1 + 2j),
+                    {i},
+                )
+                for value in values:
+                    fingerprint = _dispatcher.compute_fingerprint(value)
+                    self.assertIsInstance(fingerprint, bytes)
+                    self.assertGreater(len(fingerprint), 0)
+
+        with ThreadPoolExecutor(max_workers=8) as executor:
+            futures = [executor.submit(fingerprint_values, i) for i in range(8)]
+            for future in futures:
+                future.result()
+
     @unittest.skipUnless(
-        sysconfig_var_is_true("Py_GIL_DISABLED"),
+        is_free_threaded_python(),
         "requires a free-threaded Python build",
     )
     def test_compute_fingerprint_with_mutating_containers(self):
         stop = threading.Event()
         list_value = [np.arange(4, dtype=np.int32)]
         set_value = {1}
-        structured = np.zeros(1, dtype=[("a", np.int32), ("b", np.float64)])
+        structured = fresh_struct_array(0)
 
         def mutate_list():
             while not stop.is_set():

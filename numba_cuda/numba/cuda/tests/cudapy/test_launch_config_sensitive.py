@@ -91,9 +91,7 @@ class TestLaunchConfigSensitive(CUDATestCase):
 
         arr = np.zeros(1, dtype=np.int32)
         launch_config_sensitive_kernel[1, 32](arr)
-        self.assertTrue(
-            launch_config_sensitive_kernel._launch_config_sensitive
-        )
+        self.assertTrue(launch_config_sensitive_kernel._launch_config_sensitive)
         self.assertEqual(len(LAUNCH_CONFIG_LOG), 1)
 
         original_init = dispatcher_module.CUDADispatcher.__init__
@@ -207,9 +205,7 @@ class TestLaunchConfigSensitive(CUDATestCase):
         finally:
             release_update.set()
             dispatcher_class = dispatcher_module.CUDADispatcher
-            dispatcher_class._update_launch_config_sensitivity = (
-                original_update
-            )
+            dispatcher_class._update_launch_config_sensitivity = original_update
 
         self.assertTrue(update_entered)
         self.assertFalse(any(thread.is_alive() for thread in threads))
@@ -218,6 +214,57 @@ class TestLaunchConfigSensitive(CUDATestCase):
         self.assertEqual(
             {entry["blockdim"] for entry in LAUNCH_CONFIG_LOG},
             {(32, 1, 1), (64, 1, 1)},
+        )
+
+    def test_concurrent_distinct_launch_config_specializations(self):
+        @cuda.jit
+        def launch_config_sensitive_kernel(x, mult):
+            i = cuda.grid(1)
+            if i < x.size:
+                x[i] *= mult[0]
+
+        configs = ((1, 32), (1, 64), (2, 32), (2, 64))
+        barrier = threading.Barrier(len(configs))
+        errors = []
+        errors_lock = threading.Lock()
+
+        def launch(config):
+            try:
+                blocks, threads = config
+                n = blocks * threads
+                arr = cuda.to_device(np.ones(n, dtype=np.int32))
+                mult = cuda.to_device(np.array([2], dtype=np.int32))
+                barrier.wait(timeout=10)
+                launch_config_sensitive_kernel[blocks, threads](arr, mult)
+                np.testing.assert_array_equal(
+                    arr.copy_to_host(), np.full(n, 2, dtype=np.int32)
+                )
+            except BaseException as e:
+                with errors_lock:
+                    errors.append(e)
+
+        threads = [threading.Thread(target=launch, args=(c,)) for c in configs]
+        for thread in threads:
+            thread.start()
+        for thread in threads:
+            thread.join(timeout=30)
+
+        self.assertFalse(any(thread.is_alive() for thread in threads))
+        self.assertEqual(errors, [])
+        self.assertTrue(launch_config_sensitive_kernel._launch_config_sensitive)
+        self.assertIsNotNone(
+            launch_config_sensitive_kernel._launch_config_default_key
+        )
+        self.assertLessEqual(
+            len(launch_config_sensitive_kernel._launch_config_specializations),
+            len(configs),
+        )
+        log_configs = {
+            (entry["griddim"], entry["blockdim"]) for entry in LAUNCH_CONFIG_LOG
+        }
+        self.assertEqual(
+            log_configs,
+            {((b, 1, 1), (t, 1, 1)) for b, t in configs},
         )
 
 

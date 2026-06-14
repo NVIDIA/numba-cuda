@@ -12,6 +12,7 @@ import os
 import io
 import subprocess
 import sys
+import sysconfig
 import shutil
 import warnings
 import tempfile
@@ -58,6 +59,90 @@ class EnableNRTStatsMixin:
 
 
 skip_if_py314 = unittest.skipIf(PYVERSION == (3, 14), "Test unstable on 3.14")
+
+
+def _sysconfig_var_is_true(name):
+    value = sysconfig.get_config_var(name)
+    return value is True or str(value).strip() == "1"
+
+
+def is_free_threaded_python():
+    return _sysconfig_var_is_true("Py_GIL_DISABLED")
+
+
+def free_threading_stress_enabled():
+    value = os.environ.get("NUMBA_CUDA_FT_STRESS", "")
+    return value.lower() in {"1", "true", "yes", "on"}
+
+
+def fresh_struct_array(i):
+    dtype = np.dtype(
+        [("a", np.int32), ("b", np.float64), (f"c{i % 4}", np.int16)]
+    )
+    return np.zeros(2, dtype=dtype)
+
+
+def launch_subprocess_code(tempdir, modname, blockdim, marker):
+    return "\n".join(
+        [
+            "import sys",
+            f"sys.path.insert(0, {tempdir!r})",
+            f"mod = __import__({modname!r})",
+            f"out = mod.launch({blockdim!r})",
+            f"print({marker!r} + str(int(out[0])))",
+        ]
+    )
+
+
+def _decode_subprocess_output(data):
+    return data.decode(errors="replace")
+
+
+def subprocess_marker_result(process, marker, timeout=120):
+    try:
+        out, err = process.communicate(timeout=timeout)
+    except subprocess.TimeoutExpired as e:
+        process.kill()
+        out, err = process.communicate()
+        stdout = _decode_subprocess_output(out)
+        stderr = _decode_subprocess_output(err)
+        raise AssertionError(
+            "process timed out: \n"
+            "stdout follows\n%s\n"
+            "stderr follows\n%s\n" % (stdout, stderr)
+        ) from e
+    stdout = _decode_subprocess_output(out)
+    stderr = _decode_subprocess_output(err)
+    if process.returncode != 0:
+        raise AssertionError(
+            "process failed with code %s: \n"
+            "stdout follows\n%s\n"
+            "stderr follows\n%s\n" % (process.returncode, stdout, stderr)
+        )
+    for line in reversed(stdout.splitlines()):
+        if line.startswith(marker):
+            return int(line[len(marker) :])
+    raise AssertionError(
+        "subprocess marker missing:\nstdout follows\n%s\n"
+        "stderr follows\n%s\n" % (stdout, stderr)
+    )
+
+
+def subprocess_marker_results(processes, marker, timeout=120):
+    try:
+        return [
+            subprocess_marker_result(
+                process,
+                marker,
+                timeout=timeout,
+            )
+            for process in processes
+        ]
+    finally:
+        for process in processes:
+            if process.poll() is None:
+                process.kill()
+                process.communicate()
 
 
 def expected_failure_py314(fn):
