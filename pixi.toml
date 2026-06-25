@@ -293,7 +293,7 @@ config.compilers = ["cxx"]
 
 [package.build-dependencies]
 # this can't be in `config.compilers` otherwise CUDA_HOME isn't defined
-cuda-compiler = "*"
+cuda-nvcc = "*"
 
 [package.host-dependencies]
 python = "*"
