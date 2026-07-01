@@ -24,7 +24,7 @@ jobs:
       CUDA_PREV_BUILD_VER: ${{ steps.get-vars.outputs.cuda_prev_build_ver }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0  # v7.0.0
         with:
           fetch-depth: 0
 
@@ -42,7 +42,7 @@ jobs:
       skip: ${{ steps.get-should-skip.outputs.skip }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0  # v7.0.0
       - name: Compute whether to skip builds and tests
         id: get-should-skip
         env:
@@ -168,8 +168,8 @@ jobs:
   pre-commit:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
-      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
       - uses: pre-commit/action@2c7b3805fd2a0fd8c1884dcaebf91fc102a13ecd
         with:
           extra_args: --all-files --show-diff-on-failure
@@ -181,7 +181,7 @@ jobs:
       SIMULATOR_MATRIX: ${{ steps.compute-matrix.outputs.SIMULATOR_MATRIX }}
       TEST_MATRIX: ${{ steps.compute-matrix.outputs.TEST_MATRIX }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - name: Compute Matrices
         id: compute-matrix
         run: |
