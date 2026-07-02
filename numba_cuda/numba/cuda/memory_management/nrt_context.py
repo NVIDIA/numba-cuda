@@ -388,7 +388,7 @@ class NRTContext:
             # XXX "nonnull" causes a crash in test_dyn_array: can this
             # function be called with a NULL pointer?
             fn.args[0].add_attribute("noalias")
-            fn.args[0].add_attribute("nocapture")
+            cgutils.add_no_capture_attribute(fn.args[0])
             builder.call(fn, [mi])
 
     def incref(self, builder, typ, value):
