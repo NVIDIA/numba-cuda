@@ -22,6 +22,19 @@ int32_t = ir.IntType(32)
 intp_t = ir.IntType(utils.MACHINE_BITS)
 voidptr_t = int8_t.as_pointer()
 
+
+def add_no_capture_attribute(arg):
+    """Mark an LLVM function argument as not capturing pointers."""
+    try:
+        arg.add_attribute("nocapture")
+    except ValueError:
+        # llvmlite >= 0.48 only supports the newer ``captures(none)``
+        # spelling, but NVVM does not accept that syntax. The attribute is an
+        # optimization hint, so omit it when the legacy spelling is
+        # unavailable.
+        pass
+
+
 true_bit = bool_t(1)
 false_bit = bool_t(0)
 true_byte = int8_t(1)
