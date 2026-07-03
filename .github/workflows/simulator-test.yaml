@@ -82,7 +82,7 @@ jobs:
         RAPIDS_BUILD_TYPE: ${{ inputs.build_type }}
     timeout-minutes: 60
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@v6
         with:
           repository: ${{ inputs.repo }}
           ref: ${{ inputs.sha }}
@@ -116,7 +116,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
       - name: Generate test report
-        uses: test-summary/action@v2.6
+        uses: test-summary/action@v2.4
         with:
           paths: "${{ env.RAPIDS_TESTS_DIR }}/*.xml"
         if: always()
