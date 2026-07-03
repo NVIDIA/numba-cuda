@@ -99,6 +99,23 @@ class TestTypeConv(CompatibilityTestMixin, unittest.TestCase):
         with self.assertRaises(TypeError):
             _typeconv.select_overload(None, (), (), True, False)
 
+    def test_select_overload_non_sequence_inputs(self):
+        tm = _typeconv.new_type_manager()
+        with self.assertRaises(TypeError):
+            _typeconv.select_overload(tm, 1, (), True, False)
+        with self.assertRaises(TypeError):
+            _typeconv.select_overload(tm, (), 1, True, False)
+
+    def test_select_overload_invalid_nested_input(self):
+        tm = _typeconv.new_type_manager()
+        with self.assertRaises(TypeError):
+            _typeconv.select_overload(tm, (1,), (1, 2), True, False)
+
+    def test_select_overload_mismatched_overload_arity(self):
+        tm = _typeconv.new_type_manager()
+        with self.assertRaises(TypeError):
+            _typeconv.select_overload(tm, (1,), ((1, 2),), True, False)
+
     def test_default_rules(self):
         tm = rules.default_type_manager
         self.check_number_compatibility(tm.check_compatible)
