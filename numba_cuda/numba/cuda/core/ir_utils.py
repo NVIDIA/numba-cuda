@@ -1040,7 +1040,8 @@ def is_immutable_type(var, typemap):
         typ,
         (
             types.Number,
-            types.scalars._NPDatetimeBase,
+            types.NPDatetime,
+            types.NPTimedelta,
             types.iterators.RangeType,
         ),
     ):

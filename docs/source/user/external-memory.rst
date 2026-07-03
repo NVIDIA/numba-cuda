@@ -282,7 +282,7 @@ Numba test suite with an EMM Plugin, e.g.:
 
 .. code::
 
-   $ NUMBA_CUDA_MEMORY_MANAGER=rmm pytest --pyargs numba.cuda.tests -v
+   $ NUMBA_CUDA_MEMORY_MANAGER=rmm.allocators.numba pytest --pyargs numba.cuda.tests -v
 
 
 Function
