@@ -790,7 +790,7 @@ class _OverloadFunctionTemplate(AbstractTemplate):
         return jit
 
     def _call_overload_func(self, args, kws):
-        """Invoke the overload function, memoizing on argument types only.
+        """Invoke the overload function, memoizing on the argument types only.
 
         The overload function receives only the argument *types* -- never the
         compiler ``Flags`` on the ConfigStack -- so its result (the
@@ -800,34 +800,24 @@ class _OverloadFunctionTemplate(AbstractTemplate):
         flags, so the same call resolved under two different flag contexts
         (e.g. an LTO kernel's type-inference stage vs. a force-inlined
         device-function compile) would otherwise re-execute the -- potentially
-        very expensive -- overload body once per context.  Memoizing here keeps
-        the flag-sensitive ``_impl_cache`` intact (flags still decide which
-        compiled artifact is built and stored) while guaranteeing the overload
-        body runs at most once per (typing-context, argument-type) set.
+        very expensive -- overload body once per context.
+
+        Wrapping ``_overload_func`` in a per-subclass ``functools.lru_cache``
+        collapses those to a single execution per argument-type set, while
+        leaving the flag-sensitive ``_impl_cache`` intact (flags still decide
+        which compiled artifact is built and stored).  Argument types are
+        already required to be hashable by ``_impl_cache``, so no additional
+        constraint is introduced.
         """
-        # Per-subclass cache: guard on ``__dict__`` so a subclass never reuses
-        # a parent template's cache (which would alias distinct overloads that
-        # happen to share argument types).
+        # Bind the cache lazily and per-subclass: guard on ``__dict__`` so a
+        # subclass never reuses a parent template's cached function (which would
+        # alias distinct overloads that happen to share argument types).
         cls = type(self)
-        if "_overload_result_cache" not in cls.__dict__:
-            cls._overload_result_cache = {}
-        cache = cls._overload_result_cache
-
-        try:
-            key = (self.context, tuple(args), tuple(sorted(kws.items())))
-        except TypeError:
-            # Unhashable/unsortable argument types or kwargs: do not memoize.
-            return self._overload_func(*args, **kws)
-        try:
-            return cache[key]
-        except KeyError:
-            pass
-        except TypeError:
-            return self._overload_func(*args, **kws)
-
-        result = self._overload_func(*args, **kws)
-        cache[key] = result
-        return result
+        cached = cls.__dict__.get("_cached_overload_func")
+        if cached is None:
+            cached = functools.lru_cache(maxsize=None)(cls._overload_func)
+            cls._cached_overload_func = cached
+        return cached(*args, **kws)
 
     def _build_impl(self, cache_key, args, kws):
         """Build and cache the implementation.
@@ -986,7 +976,6 @@ def make_overload_template(
         key=func,
         _overload_func=staticmethod(overload_func),
         _impl_cache={},
-        _overload_result_cache={},
         _compiled_overloads={},
         _jit_options=jit_options,
         _strict=strict,
