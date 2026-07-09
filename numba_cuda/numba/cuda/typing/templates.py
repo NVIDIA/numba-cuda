@@ -789,6 +789,46 @@ class _OverloadFunctionTemplate(AbstractTemplate):
 
         return jit
 
+    def _call_overload_func(self, args, kws):
+        """Invoke the overload function, memoizing on argument types only.
+
+        The overload function receives only the argument *types* -- never the
+        compiler ``Flags`` on the ConfigStack -- so its result (the
+        implementation ``pyfunc``, or a ``(signature, pyfunc)`` tuple) depends
+        solely on ``args``/``kws`` and is independent of flags such as
+        ``inline`` or ``lto``.  ``_impl_cache`` however keys on the active
+        flags, so the same call resolved under two different flag contexts
+        (e.g. an LTO kernel's type-inference stage vs. a force-inlined
+        device-function compile) would otherwise re-execute the -- potentially
+        very expensive -- overload body once per context.  Memoizing here keeps
+        the flag-sensitive ``_impl_cache`` intact (flags still decide which
+        compiled artifact is built and stored) while guaranteeing the overload
+        body runs at most once per (typing-context, argument-type) set.
+        """
+        # Per-subclass cache: guard on ``__dict__`` so a subclass never reuses
+        # a parent template's cache (which would alias distinct overloads that
+        # happen to share argument types).
+        cls = type(self)
+        if "_overload_result_cache" not in cls.__dict__:
+            cls._overload_result_cache = {}
+        cache = cls._overload_result_cache
+
+        try:
+            key = (self.context, tuple(args), tuple(sorted(kws.items())))
+        except TypeError:
+            # Unhashable/unsortable argument types or kwargs: do not memoize.
+            return self._overload_func(*args, **kws)
+        try:
+            return cache[key]
+        except KeyError:
+            pass
+        except TypeError:
+            return self._overload_func(*args, **kws)
+
+        result = self._overload_func(*args, **kws)
+        cache[key] = result
+        return result
+
     def _build_impl(self, cache_key, args, kws):
         """Build and cache the implementation.
 
@@ -826,7 +866,7 @@ class _OverloadFunctionTemplate(AbstractTemplate):
             # problems
             raise TypingError(str(e)) from e
         else:
-            ovf_result = self._overload_func(*args, **kws)
+            ovf_result = self._call_overload_func(args, kws)
 
         if ovf_result is None:
             # No implementation => fail typing
@@ -946,6 +986,7 @@ def make_overload_template(
         key=func,
         _overload_func=staticmethod(overload_func),
         _impl_cache={},
+        _overload_result_cache={},
         _compiled_overloads={},
         _jit_options=jit_options,
         _strict=strict,
