@@ -6,6 +6,7 @@ __pycache__
 build
 .*.swp
 *.so
+*.pyd
 numba_cuda/numba/cuda/tests/cudadrv/test_device_functions.*
 numba_cuda/numba/cuda/tests/cudadrv/undefined_extern.*
 testing/*.a

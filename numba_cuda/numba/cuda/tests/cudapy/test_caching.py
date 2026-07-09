@@ -1,6 +1,7 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-2-Clause
 
+from concurrent.futures import ThreadPoolExecutor
 import multiprocessing
 import json
 import os
@@ -10,6 +11,7 @@ import warnings
 import sys
 import stat
 import subprocess
+import threading
 
 from numba import cuda
 from numba.cuda.core.errors import NumbaWarning
@@ -23,14 +25,17 @@ from numba.cuda.testing import (
 )
 from numba.cuda.tests.support import (
     TestCase,
-    temp_directory,
     import_dynamic,
+    launch_subprocess_code,
+    subprocess_marker_results,
+    temp_directory,
 )
 import numpy as np
 from pickle import PicklingError
 
 # Module-level global for testing that caching rejects global device arrays
 GLOBAL_DEVICE_ARRAY = None
+_LCS_CACHE_RESULT = "__LCS_CACHE_RESULT__"
 
 
 class BaseCacheTest(TestCase):
@@ -495,12 +500,20 @@ class LaunchConfigSensitiveCachingTest(DispatcherCacheUsecasesTest):
         report = self.run_in_separate_process(
             report_code="\n".join(
                 [
-                    "main_hits = sum(mod.lcs_cache_kernel.stats.cache_hits.values())",
-                    "main_misses = sum(mod.lcs_cache_kernel.stats.cache_misses.values())",
-                    "spec = next(iter(mod.lcs_cache_kernel._launch_config_specializations.values()))",
+                    "main_stats = mod.lcs_cache_kernel.stats",
+                    "main_hits = sum(main_stats.cache_hits.values())",
+                    "main_misses = sum(main_stats.cache_misses.values())",
+                    "specs = mod.lcs_cache_kernel",
+                    "specs = specs._launch_config_specializations",
+                    "spec = next(iter(specs.values()))",
                     "spec_hits = sum(spec.stats.cache_hits.values())",
                     "spec_misses = sum(spec.stats.cache_misses.values())",
-                    "report = {'main_hits': main_hits, 'main_misses': main_misses, 'spec_hits': spec_hits, 'spec_misses': spec_misses}",
+                    "report = {",
+                    "'main_hits': main_hits,",
+                    "'main_misses': main_misses,",
+                    "'spec_hits': spec_hits,",
+                    "'spec_misses': spec_misses,",
+                    "}",
                 ]
             )
         )
@@ -510,17 +523,77 @@ class LaunchConfigSensitiveCachingTest(DispatcherCacheUsecasesTest):
         self.assertEqual(report["spec_misses"], 0)
         self.assertEqual(self.get_cache_mtimes(), mtimes)
 
-    def test_launch_config_sensitive_compile_requires_active_launch_config(
+    def test_launch_config_sensitive_compile_defers_default_launch_config(
         self,
     ):
         mod = self.import_module()
         mod.launch(32)
         mod.launch(64)
         sig = mod.lcs_cache_kernel.signatures[0]
+        mtimes = self.get_cache_mtimes()
 
         mod2 = self.import_module()
-        with self.assertRaisesRegex(RuntimeError, "No launch config set"):
-            mod2.lcs_cache_kernel.compile(sig)
+        mod2.lcs_cache_kernel.compile(sig)
+        self.assertTrue(mod2.lcs_cache_kernel._launch_config_sensitive)
+        self.assertIsNone(mod2.lcs_cache_kernel._launch_config_default_key)
+        self.assertEqual(mod2.lcs_cache_kernel.overloads, {})
+        self.assertEqual(self.get_cache_mtimes(), mtimes)
+
+        arr = mod2.launch(64)
+        self.assertEqual(arr[0], 1)
+        self.assertIsNotNone(mod2.lcs_cache_kernel._launch_config_default_key)
+        self.assertEqual(self.get_cache_mtimes(), mtimes)
+        stats = mod2.lcs_cache_kernel.stats
+        self.assertGreaterEqual(sum(stats.cache_hits.values()), 1)
+        self.assertEqual(sum(stats.cache_misses.values()), 0)
+
+    def test_concurrent_launch_config_sensitive_cold_cache_threads(self):
+        self.check_pycache(0)
+        mod = self.import_module()
+        blockdims = (32, 64, 32, 64)
+        barrier = threading.Barrier(len(blockdims))
+
+        def launch(blockdim):
+            barrier.wait(timeout=10)
+            return int(mod.launch(blockdim)[0])
+
+        with ThreadPoolExecutor(max_workers=len(blockdims)) as executor:
+            futures = [
+                executor.submit(launch, blockdim) for blockdim in blockdims
+            ]
+            results = [future.result(timeout=60) for future in futures]
+
+        self.assertEqual(results, [1] * len(blockdims))
+        self.assertEqual(self.count_cache_markers(), 1)
+        cache_contents = self.cache_contents()
+        self.assertTrue(any(fn.endswith(".nbi") for fn in cache_contents))
+
+    def test_concurrent_launch_config_sensitive_cold_cache_processes(self):
+        self.check_pycache(0)
+        blockdims = (32, 64, 32, 64)
+        processes = [
+            subprocess.Popen(
+                [
+                    sys.executable,
+                    "-c",
+                    launch_subprocess_code(
+                        self.tempdir,
+                        self.modname,
+                        blockdim,
+                        _LCS_CACHE_RESULT,
+                    ),
+                ],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+            )
+            for blockdim in blockdims
+        ]
+        results = subprocess_marker_results(processes, _LCS_CACHE_RESULT)
+
+        self.assertEqual(results, [1] * len(blockdims))
+        self.assertEqual(self.count_cache_markers(), 1)
+        cache_contents = self.cache_contents()
+        self.assertTrue(any(fn.endswith(".nbi") for fn in cache_contents))
 
 
 @skip_on_cudasim("Simulator does not implement caching")

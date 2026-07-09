@@ -49,6 +49,21 @@ CUDA 13 dependencies can be installed via ``pip`` with::
 
     $ pip install numba-cuda[cu13]
 
+Free-threaded Python
+--------------------
+
+Free-threaded CPython wheels use the ``cp314t`` ABI tag and are supported for
+Python 3.14t. A conda-forge environment for local smoke testing can be created
+with::
+
+    $ mamba create -n numba-cuda-py314t -c conda-forge \
+        "python=3.14.*=*_cp314t" numba llvmlite numpy \
+        cuda-bindings cuda-core cuda-pathfinder packaging pip
+
+The ``python=3.14.*=*_cp314t`` constraint selects a free-threaded Python build.
+In a supported environment, importing ``numba.cuda`` with ``PYTHON_GIL=0`` must
+leave ``sys._is_gil_enabled()`` false.
+
 If you are not using Conda/pip or if you want to use a different version of CUDA
 toolkit, :ref:`cudatoolkit-lookup` describes how Numba searches for a CUDA toolkit.
 

@@ -546,17 +546,40 @@ public:
     /* A flattened array of argument types to all overloads
      * (invariant: sizeof(overloads) == argct * sizeof(functions)) */
     TypeTable overloads;
+    PyThread_type_lock dispatcher_lock;
+
+    class LockGuard {
+    public:
+        explicit LockGuard(PyThread_type_lock lock) : lock(lock) {
+            if (lock != NULL) {
+                PyThread_acquire_lock(lock, 1);
+            }
+        }
+
+        ~LockGuard() {
+            if (lock != NULL) {
+                PyThread_release_lock(lock);
+            }
+        }
+
+    private:
+        PyThread_type_lock lock;
+    };
 
     /* Add a new overload. Parameters:
 
        - args: An array of Type objects, one for each parameter
        - callable: The callable implementing this overload. */
-    void addDefinition(Type args[], PyObject *callable) {
+    void addDefinition(Type args[], PyObject *callable, int objectmode) {
+        LockGuard guard(dispatcher_lock);
         overloads.reserve(argct + overloads.size());
         for (int i=0; i<argct; ++i) {
             overloads.push_back(args[i]);
         }
         functions.push_back(callable);
+        if (!fallbackdef && objectmode) {
+            fallbackdef = callable;
+        }
     }
 
     /* Given a list of types, find the overloads that have a matching signature.
@@ -574,6 +597,7 @@ public:
                                can also be matched. */
     PyObject* resolve(Type sig[], int &matches, bool allow_unsafe,
                       bool exact_match_required) const {
+        LockGuard guard(dispatcher_lock);
         const int ovct = functions.size();
         int selected;
         matches = 0;
@@ -592,15 +616,25 @@ public:
                                          exact_match_required);
         }
         if (matches == 1) {
-            return functions[selected];
+            PyObject *callable = functions[selected];
+            Py_INCREF(callable);
+            return callable;
         }
         return NULL;
     }
 
     /* Remove all overloads */
     void clear() {
+        LockGuard guard(dispatcher_lock);
         functions.clear();
         overloads.clear();
+        fallbackdef = NULL;
+    }
+
+    PyObject* getFallbackDefinition() const {
+        LockGuard guard(dispatcher_lock);
+        Py_XINCREF(fallbackdef);
+        return fallbackdef;
     }
 
 };
@@ -619,7 +653,23 @@ Dispatcher_dealloc(Dispatcher *self)
     Py_XDECREF(self->argnames);
     Py_XDECREF(self->defargs);
     self->clear();
+    if (self->dispatcher_lock != NULL) {
+        PyThread_free_lock(self->dispatcher_lock);
+        self->dispatcher_lock = NULL;
+    }
     Py_TYPE(self)->tp_free((PyObject*)self);
+}
+
+
+static PyObject *
+Dispatcher_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+{
+    Dispatcher *self = (Dispatcher *) PyType_GenericNew(type, args, kwds);
+    if (self != NULL) {
+        self->dispatcher_lock = NULL;
+        self->fallbackdef = NULL;
+    }
+    return (PyObject *) self;
 }
 
 
@@ -642,6 +692,14 @@ Dispatcher_init(Dispatcher *self, PyObject *args, PyObject *kwds)
                           &exact_match_required
                          )) {
         return -1;
+    }
+    if (self->dispatcher_lock == NULL) {
+        self->dispatcher_lock = PyThread_allocate_lock();
+        if (self->dispatcher_lock == NULL) {
+            PyErr_SetString(PyExc_RuntimeError,
+                            "failed to allocate dispatcher lock");
+            return -1;
+        }
     }
     Py_INCREF(self->argnames);
     Py_INCREF(self->defargs);
@@ -703,12 +761,7 @@ Dispatcher_Insert(Dispatcher *self, PyObject *args, PyObject *kwds)
 
     /* The reference to cfunc is borrowed; this only works because the
        derived Python class also stores an (owned) reference to cfunc. */
-    self->addDefinition(sig, cfunc);
-
-    /* Add pure python fallback */
-    if (!self->fallbackdef && objectmode){
-        self->fallbackdef = cfunc;
-    }
+    self->addDefinition(sig, cfunc, objectmode);
 
     delete[] sig;
 
@@ -947,7 +1000,7 @@ Dispatcher_cuda_call(Dispatcher *self, PyObject *args, PyObject *kws)
     int i;
     int prealloc[24];
     int matches;
-    PyObject *cfunc;
+    PyObject *cfunc = NULL;
     PyThreadState *ts = PyThreadState_Get();
     PyObject *locals = NULL;
     PyObject *launch_config = NULL;
@@ -1037,7 +1090,7 @@ Dispatcher_cuda_call(Dispatcher *self, PyObject *args, PyObject *kws)
     if (matches == 1) {
         /* Definition is found */
         retval = cfunc;
-        Py_INCREF(retval);
+        cfunc = NULL;
     } else if (matches == 0) {
         /* No matching definition */
         if (self->can_compile) {
@@ -1047,13 +1100,17 @@ Dispatcher_cuda_call(Dispatcher *self, PyObject *args, PyObject *kws)
                 goto CLEANUP;
             }
             retval = cuda_compile_only(self, args, kws, locals);
-        } else if (self->fallbackdef) {
-            /* Have object fallback */
-            retval = call_cfunc(self, self->fallbackdef, args, kws, locals);
         } else {
-            /* Raise TypeError */
-            explain_matching_error((PyObject *) self, args, kws);
-            retval = NULL;
+            PyObject *fallbackdef = self->getFallbackDefinition();
+            if (fallbackdef) {
+                /* Have object fallback */
+                retval = call_cfunc(self, fallbackdef, args, kws, locals);
+                Py_DECREF(fallbackdef);
+            } else {
+                /* Raise TypeError */
+                explain_matching_error((PyObject *) self, args, kws);
+                retval = NULL;
+            }
         }
     } else if (self->can_compile) {
         /* Ambiguous, but are allowed to compile */
@@ -1074,6 +1131,7 @@ CLEANUP:
         delete[] tys;
     Py_DECREF(args);
     Py_XDECREF(launch_config);
+    Py_XDECREF(cfunc);
 
     return retval;
 }
@@ -1234,7 +1292,7 @@ static PyMethodDef ext_methods[] = {
 
 MOD_INIT(_dispatcher) {
     PyObject *m;
-    MOD_DEF(m, "_dispatcher", "No docs", ext_methods)
+    MOD_DEF_NOGIL(m, "_dispatcher", "No docs", ext_methods)
     if (m == NULL)
         return MOD_ERROR_VAL;
 
@@ -1245,7 +1303,7 @@ MOD_INIT(_dispatcher) {
         return MOD_ERROR_VAL;
     }
 
-    DispatcherType.tp_new = PyType_GenericNew;
+    DispatcherType.tp_new = Dispatcher_new;
     if (PyType_Ready(&DispatcherType) < 0) {
         return MOD_ERROR_VAL;
     }

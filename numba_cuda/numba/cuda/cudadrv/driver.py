@@ -263,6 +263,18 @@ class Driver:
         self.is_initialized = False
         self.initialization_error = None
         self.pid = None
+        # Serializes lazy driver initialization so concurrent first-touch from
+        # multiple threads (notably under free-threaded CPython) cannot observe
+        # a half-initialized driver.  Reentrant because resolving ``cuInit``
+        # through ``__getattr__`` calls ``ensure_initialized`` again on the same
+        # thread.  Guard the lock and the in-progress flag separately:
+        # ``Driver`` is a singleton whose ``__init__`` can be re-entered, and
+        # each attribute must exist by the time any re-entered ``__init__``
+        # returns without clobbering state from an active initialization.
+        if not hasattr(self, "_initializing"):
+            self._initializing = False
+        if not hasattr(self, "_initialization_lock"):
+            self._initialization_lock = threading.RLock()
         try:
             if config.DISABLE_CUDA:
                 msg = (
@@ -280,20 +292,37 @@ class Driver:
         if self.is_initialized:
             return
 
-        # lazily initialize logger
-        global _logger
-        _logger = make_logger()
+        with self._initialization_lock:
+            # Another thread may have completed initialization while we waited.
+            if self.is_initialized:
+                return
+            # Resolving ``self.cuInit`` below goes through ``__getattr__``,
+            # which calls back into ``ensure_initialized`` on this thread.
+            # ``_initializing`` breaks that recursion without publishing a
+            # half-initialized driver to threads blocked on the lock.
+            if self._initializing:
+                return
+            self._initializing = True
 
-        self.is_initialized = True
-        try:
-            _logger.info("init")
-            self.cuInit(0)
-        except CudaAPIError as e:
-            description = f"{e.msg} ({e.code})"
-            self.initialization_error = description
-            raise CudaSupportError(f"Error at driver init: {description}")
-        else:
-            self.pid = _getpid()
+            # lazily initialize logger
+            global _logger
+            _logger = make_logger()
+
+            try:
+                _logger.info("init")
+                self.cuInit(0)
+            except CudaAPIError as e:
+                description = f"{e.msg} ({e.code})"
+                self.initialization_error = description
+                raise CudaSupportError(f"Error at driver init: {description}")
+            else:
+                self.pid = _getpid()
+            finally:
+                # Publish completion (success *or* a cached failure) only after
+                # cuInit has actually run, so the fast-path guard above never
+                # lets another thread proceed before the driver is ready.
+                self.is_initialized = True
+                self._initializing = False
 
     @property
     def is_available(self):
@@ -301,6 +330,13 @@ class Driver:
         return self.initialization_error is None
 
     def __getattr__(self, fname):
+        # Only CUDA driver API entry points (e.g. ``cuInit``) are bound lazily
+        # here.  Internal attributes never start with an underscore, so refuse
+        # to "initialize and bind" those -- doing so would recurse infinitely
+        # when ``ensure_initialized`` touches its own lock before it is set.
+        if fname.startswith("_"):
+            raise AttributeError(fname)
+
         # First request of a driver API function
         self.ensure_initialized()
 
@@ -985,6 +1021,11 @@ class _PendingDeallocs:
         self._disable_count = 0
         self._size = 0
         self.memory_capacity = capacity
+        # Deallocations are driven by weakref finalizers, which can run on any
+        # thread and concurrently under free-threaded CPython.  Serialize the
+        # pending list, size accounting and disable counter so a concurrent
+        # add_item/clear cannot race (e.g. popleft from an emptied deque).
+        self._lock = threading.RLock()
 
     @property
     def _max_pending_bytes(self):
@@ -1000,12 +1041,14 @@ class _PendingDeallocs:
         resources (e.g. CUModule) has an unknown memory footprint on the device.
         """
         _logger.info("add pending dealloc: %s %s bytes", dtor.__name__, size)
-        self._cons.append((dtor, handle, size))
-        self._size += int(size)
-        if (
-            len(self._cons) > config.CUDA_DEALLOCS_COUNT
-            or self._size > self._max_pending_bytes
-        ):
+        with self._lock:
+            self._cons.append((dtor, handle, size))
+            self._size += int(size)
+            should_clear = (
+                len(self._cons) > config.CUDA_DEALLOCS_COUNT
+                or self._size > self._max_pending_bytes
+            )
+        if should_clear:
             self.clear()
 
     def clear(self):
@@ -1013,13 +1056,19 @@ class _PendingDeallocs:
         Flush any pending deallocations unless it is disabled.
         Do nothing if disabled.
         """
-        if not self.is_disabled:
-            while self._cons:
-                [dtor, handle, size] = self._cons.popleft()
-                _logger.info("dealloc: %s %s bytes", dtor.__name__, size)
-                dtor(handle)
-
+        # Atomically take ownership of the pending list, then run the
+        # destructors without holding the lock: they call into the CUDA driver
+        # and must not block other threads queueing deallocations.
+        with self._lock:
+            if self.is_disabled:
+                return
+            pending = list(self._cons)
+            self._cons.clear()
             self._size = 0
+
+        for dtor, handle, size in pending:
+            _logger.info("dealloc: %s %s bytes", dtor.__name__, size)
+            dtor(handle)
 
     @contextlib.contextmanager
     def disable(self):
@@ -1027,22 +1076,26 @@ class _PendingDeallocs:
         Context manager to temporarily disable flushing pending deallocation.
         This can be nested.
         """
-        self._disable_count += 1
+        with self._lock:
+            self._disable_count += 1
         try:
             yield
         finally:
-            self._disable_count -= 1
-            assert self._disable_count >= 0
+            with self._lock:
+                self._disable_count -= 1
+                assert self._disable_count >= 0
 
     @property
     def is_disabled(self):
-        return self._disable_count > 0
+        with self._lock:
+            return self._disable_count > 0
 
     def __len__(self):
         """
         Returns number of pending deallocations.
         """
-        return len(self._cons)
+        with self._lock:
+            return len(self._cons)
 
 
 MemoryInfo = namedtuple("MemoryInfo", "free,total")

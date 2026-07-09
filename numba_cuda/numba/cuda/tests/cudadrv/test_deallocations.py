@@ -116,6 +116,65 @@ class TestDeallocation(CUDATestCase):
         self.assertEqual(len(deallocs), 0)
 
     @skip_if_external_memmgr("Deallocation specific to Numba memory management")
+    def test_concurrent_add_and_clear(self):
+        # Regression: _PendingDeallocs must tolerate concurrent add_item/clear.
+        # Deallocations run from weakref finalizers on arbitrary threads, which
+        # execute concurrently under free-threaded CPython; an unsynchronized
+        # "while self._cons: popleft()" raced and raised IndexError.
+        import threading
+
+        from numba.cuda.cudadrv.driver import _PendingDeallocs
+
+        # Ensure the driver is initialized (sets up the module logger that the
+        # dealloc path logs through; deallocations only ever run post-init).
+        cuda.current_context()
+
+        deallocs = _PendingDeallocs(capacity=2**30)
+
+        freed = []
+        freed_lock = threading.Lock()
+
+        def dtor(handle):
+            with freed_lock:
+                freed.append(handle)
+
+        n_threads = 16
+        per_thread = 500
+        barrier = threading.Barrier(n_threads)
+        errors = []
+        errors_lock = threading.Lock()
+
+        def worker(base):
+            try:
+                barrier.wait(timeout=30)
+                for i in range(per_thread):
+                    # Unique handle per queued item, size=1 so the count and
+                    # byte thresholds both drive frequent concurrent clear()s.
+                    deallocs.add_item(dtor, base + i, size=1)
+            except BaseException as e:  # noqa: BLE001
+                with errors_lock:
+                    errors.append(e)
+
+        threads = [
+            threading.Thread(target=worker, args=(t * per_thread,))
+            for t in range(n_threads)
+        ]
+        for t in threads:
+            t.start()
+        for t in threads:
+            t.join(timeout=60)
+
+        # Flush whatever remains pending.
+        deallocs.clear()
+
+        self.assertFalse(any(t.is_alive() for t in threads))
+        self.assertEqual(errors, [])
+        self.assertEqual(len(deallocs), 0)
+        # Every queued item is freed exactly once.
+        self.assertEqual(len(freed), n_threads * per_thread)
+        self.assertEqual(len(set(freed)), n_threads * per_thread)
+
+    @skip_if_external_memmgr("Deallocation specific to Numba memory management")
     def test_exception(self):
         harr = np.arange(5)
         darr1 = cuda.to_device(harr)

@@ -60,7 +60,7 @@ static PyMethodDef ext_methods[] = {
 
 MOD_INIT(_helperlib) {
     PyObject *m;
-    MOD_DEF(m, "_helperlib", "No docs", ext_methods)
+    MOD_DEF_NOGIL(m, "_helperlib", "No docs", ext_methods)
     if (m == NULL)
         return MOD_ERROR_VAL;
 

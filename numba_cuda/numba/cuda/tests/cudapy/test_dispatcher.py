@@ -1,9 +1,11 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-2-Clause
 
+from concurrent.futures import ThreadPoolExecutor
 from cuda.core._utils.cuda_utils import CUDAError
 import numpy as np
 import threading
+import time
 
 from numba.cuda.types import (
     boolean,
@@ -15,6 +17,7 @@ from numba.cuda.types import (
     void,
 )
 from numba import cuda
+import numba.cuda.dispatcher as dispatcher_module
 from numba.cuda import config, types
 from numba.cuda import launchconfig
 from numba.cuda.core.errors import TypingError
@@ -99,6 +102,59 @@ class TestDispatcherSpecialization(CUDATestCase):
         f_int32 = f.specialize(int32[::1])
         self.assertEqual(len(f.specializations), 2)
         self.assertIsNot(f_int32, f_float32)
+
+    def test_concurrent_specialize_cache_same(self):
+        @cuda.jit
+        def f(x):
+            x[0] += 1
+
+        original_kernel = dispatcher_module._Kernel
+        constructed_kernels = []
+        constructed_lock = threading.Lock()
+
+        class CountingKernel(original_kernel):
+            def __init__(self, *args, **kwargs):
+                with constructed_lock:
+                    constructed_kernels.append(threading.get_ident())
+                # Widen the race window so concurrent specialize() calls all
+                # reach the shared specialization cache lookup before the first
+                # kernel can be inserted.
+                time.sleep(0.05)
+                super().__init__(*args, **kwargs)
+
+        barrier = threading.Barrier(16)
+        specializations = []
+        specializations_lock = threading.Lock()
+        errors = []
+        errors_lock = threading.Lock()
+
+        def specialize():
+            try:
+                arr = np.zeros(1, dtype=np.int32)
+                barrier.wait(timeout=10)
+                specialization = f.specialize(arr)
+                with specializations_lock:
+                    specializations.append(specialization)
+            except BaseException as e:
+                with errors_lock:
+                    errors.append(e)
+
+        threads = [threading.Thread(target=specialize) for _ in range(16)]
+        dispatcher_module._Kernel = CountingKernel
+        try:
+            for thread in threads:
+                thread.start()
+            for thread in threads:
+                thread.join(timeout=20)
+        finally:
+            dispatcher_module._Kernel = original_kernel
+
+        self.assertFalse(any(thread.is_alive() for thread in threads))
+        self.assertEqual(errors, [])
+        self.assertEqual(len(specializations), len(threads))
+        self.assertEqual(len({id(s) for s in specializations}), 1)
+        self.assertEqual(len(f.specializations), 1)
+        self.assertEqual(len(constructed_kernels), 1)
 
     def test_specialize_cache_same_with_ordering(self):
         # Ensure that the same dispatcher is returned for the same argument
@@ -353,6 +409,213 @@ class TestDispatcher(CUDATestCase):
         for t in threads:
             t.join()
         self.assertFalse(errors)
+
+    @skip_on_cudasim("Simulator doesn't compile CUDA kernels")
+    def test_concurrent_launch_same_signature_compiles_once(self):
+        constructed_kernels = []
+        constructed_lock = threading.Lock()
+        original_kernel = dispatcher_module._Kernel
+
+        class CountingKernel(original_kernel):
+            def __init__(self, *args, **kwargs):
+                with constructed_lock:
+                    constructed_kernels.append(threading.get_ident())
+                # Widen the first compile window.  Without synchronization
+                # around the dispatcher overload cache, racing launchers would
+                # all build their own kernel for the same signature.
+                time.sleep(0.05)
+                super().__init__(*args, **kwargs)
+
+        @cuda.jit
+        def foo(r, x):
+            r[0] = x + 1
+
+        barrier = threading.Barrier(16)
+        errors = []
+        errors_lock = threading.Lock()
+
+        def launch():
+            try:
+                r = np.zeros(1, dtype=np.int64)
+                barrier.wait(timeout=10)
+                foo[1, 1](r, 1)
+                self.assertEqual(r[0], 2)
+            except BaseException as e:
+                with errors_lock:
+                    errors.append(e)
+
+        threads = [threading.Thread(target=launch) for _ in range(16)]
+        dispatcher_module._Kernel = CountingKernel
+        try:
+            for thread in threads:
+                thread.start()
+            for thread in threads:
+                thread.join(timeout=20)
+        finally:
+            dispatcher_module._Kernel = original_kernel
+
+        self.assertFalse(any(thread.is_alive() for thread in threads))
+        self.assertEqual(errors, [])
+        self.assertEqual(len(foo.overloads), 1)
+        self.assertEqual(len(constructed_kernels), 1)
+
+    @skip_on_cudasim("Simulator doesn't compile CUDA kernels")
+    def test_concurrent_launch_many_signatures_and_fresh_kernels(self):
+        dtypes = (np.int16, np.int32, np.int64, np.float32, np.float64)
+
+        def make_kernel():
+            @cuda.jit
+            def kernel(x, y):
+                i = cuda.grid(1)
+                if i < x.size:
+                    y[i] = x[i] + 1
+
+            return kernel
+
+        shared_kernel = make_kernel()
+        layout_kernel = make_kernel()
+
+        def launch_shared(seed, barrier):
+            barrier.wait(timeout=10)
+            for i in range(4):
+                dtype = dtypes[(seed + i) % len(dtypes)]
+                n = i + 4
+                host = np.arange(n, dtype=dtype)
+                inp = cuda.to_device(host)
+                out = cuda.device_array(n, dtype=dtype)
+                shared_kernel[1, 32](inp, out)
+                np.testing.assert_array_equal(out.copy_to_host(), host + 1)
+
+        def launch_fresh(seed, barrier):
+            barrier.wait(timeout=10)
+            kernel = make_kernel()
+            dtype = dtypes[seed % len(dtypes)]
+            host = np.arange(32, dtype=dtype)
+            inp = cuda.to_device(host)
+            out = cuda.device_array(host.size, dtype=dtype)
+            kernel[1, 32](inp, out)
+            np.testing.assert_array_equal(out.copy_to_host(), host + 1)
+
+        def launch_layouts(seed, barrier):
+            barrier.wait(timeout=10)
+            for i in range(4):
+                dtype = dtypes[(seed + i) % len(dtypes)]
+                base = np.arange(64, dtype=dtype).reshape(8, 8)
+                variants = (
+                    base.ravel(),
+                    np.asfortranarray(base).ravel(order="F"),
+                    base[::2].ravel(),
+                )
+                host = np.ascontiguousarray(variants[i % len(variants)])
+                inp = cuda.to_device(host)
+                out = cuda.device_array(host.size, dtype=dtype)
+                layout_kernel[1, 64](inp, out)
+                np.testing.assert_array_equal(out.copy_to_host(), host + 1)
+
+        workers = (
+            launch_shared,
+            launch_shared,
+            launch_shared,
+            launch_fresh,
+            launch_fresh,
+            launch_layouts,
+        )
+        barrier = threading.Barrier(len(workers))
+        with ThreadPoolExecutor(max_workers=len(workers)) as executor:
+            futures = [
+                executor.submit(worker, i, barrier)
+                for i, worker in enumerate(workers)
+            ]
+            for future in futures:
+                future.result()
+
+    @skip_on_cudasim("Simulator doesn't compile CUDA kernels")
+    def test_concurrent_compile_failures_do_not_corrupt_dispatcher(self):
+        @cuda.jit
+        def bad_kernel(x):
+            x[0] = undefined_global_name  # noqa: F821
+
+        @cuda.jit
+        def good_kernel(x):
+            i = cuda.grid(1)
+            if i < x.size:
+                x[i] += 1
+
+        def compile_bad_then_launch_good():
+            for _ in range(4):
+                with self.assertRaises(TypingError):
+                    bad_kernel[1, 1](np.zeros(1, dtype=np.int32))
+
+                arr = cuda.to_device(np.zeros(8, dtype=np.int32))
+                good_kernel[1, 8](arr)
+                np.testing.assert_array_equal(
+                    arr.copy_to_host(), np.ones(8, dtype=np.int32)
+                )
+
+        with ThreadPoolExecutor(max_workers=4) as executor:
+            futures = [
+                executor.submit(compile_bad_then_launch_good) for _ in range(4)
+            ]
+            for future in futures:
+                future.result()
+
+    @skip_on_cudasim("Simulator doesn't compile CUDA kernels")
+    def test_concurrent_configured_launch_callback_mutation(self):
+        @cuda.jit
+        def kernel(x):
+            i = cuda.grid(1)
+            if i < x.size:
+                x[i] += 1
+
+        hits = []
+        hits_lock = threading.Lock()
+
+        def callback(kernel, launch_config):
+            with hits_lock:
+                hits.append((kernel, launch_config))
+
+        launch_config = kernel.configure(1, 64)
+        launch_config.pre_launch_callbacks[:] = [callback]
+
+        def launch(seed, barrier):
+            arr = cuda.to_device(np.zeros(64, dtype=np.int32))
+            barrier.wait(timeout=10)
+            for _ in range(50):
+                launch_config(arr)
+            self.assertGreaterEqual(arr.copy_to_host()[0], 1)
+
+        def mutate_callbacks(seed, barrier):
+            barrier.wait(timeout=10)
+            for _ in range(50):
+                launch_config.pre_launch_callbacks.append(callback)
+                if len(launch_config.pre_launch_callbacks) > 10:
+                    del launch_config.pre_launch_callbacks[:]
+                time.sleep(0)
+
+        workers = (
+            launch,
+            launch,
+            launch,
+            launch,
+            mutate_callbacks,
+            mutate_callbacks,
+        )
+        barrier = threading.Barrier(len(workers))
+        try:
+            with ThreadPoolExecutor(max_workers=len(workers)) as executor:
+                futures = [
+                    executor.submit(worker, i, barrier)
+                    for i, worker in enumerate(workers)
+                ]
+                for future in futures:
+                    future.result()
+            if not hits:
+                launch_config.pre_launch_callbacks[:] = [callback]
+                launch_config(cuda.to_device(np.zeros(64, dtype=np.int32)))
+        finally:
+            del launch_config.pre_launch_callbacks[:]
+
+        self.assertGreater(len(hits), 0)
 
     def _test_explicit_signatures(self, sigs):
         f = cuda.jit(sigs)(add_kernel)

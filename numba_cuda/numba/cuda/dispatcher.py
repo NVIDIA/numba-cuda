@@ -857,6 +857,42 @@ class CUDACache(Cache):
         with utils.numba_target_override():
             return super().load_overload(sig, target_context)
 
+    def load_launch_config_sensitive_overload(self, sig, target_context):
+        with utils.numba_target_override():
+            target_context.refresh()
+            with self._guard_against_spurious_io_errors():
+                return self._load_launch_config_sensitive_overload(
+                    sig, target_context
+                )
+
+        return None
+
+    def _load_launch_config_sensitive_overload(self, sig, target_context):
+        if not self._enabled or not self.is_launch_config_sensitive():
+            return None
+
+        base_key = super()._index_key(sig, target_context.codegen())
+        for key in self._cache_file._load_index():
+            if len(key) != len(base_key) + 1:
+                continue
+            if key[: len(base_key)] != base_key:
+                continue
+
+            launch_config_entry = key[-1]
+            if not (
+                isinstance(launch_config_entry, tuple)
+                and len(launch_config_entry) == 2
+                and launch_config_entry[0] == "launch_config"
+                and launch_config_entry[1] != _NO_LAUNCH_CONFIG_CACHE_KEY
+            ):
+                continue
+
+            data = self._cache_file.load(key)
+            if data is not None:
+                return self._impl.rebuild(target_context, data)
+
+        return None
+
 
 class OmittedArg:
     """
@@ -1722,6 +1758,7 @@ class CUDADispatcher(serialize.ReduceMixin, _MemoMixin, _DispatcherBase):
             return
         self._cache.set_launch_config_key(None)
 
+    @global_compiler_lock
     def _get_launch_config_specialization(self, key):
         dispatcher = self._launch_config_specializations.get(key)
         if dispatcher is None:
@@ -1773,10 +1810,26 @@ class CUDADispatcher(serialize.ReduceMixin, _MemoMixin, _DispatcherBase):
             return
         if not self._launch_config_sensitive:
             self._launch_config_sensitive = True
+        if launch_config is None:
+            launch_config = launchconfig.current_launch_config()
+            if launch_config is None:
+                return
         if self._launch_config_default_key is None:
             self._launch_config_default_key = self._launch_config_key(
                 launch_config
             )
+
+    def _requires_launch_config_specialization(self, launch_config):
+        if self._launch_config_is_specialized:
+            return False
+        if not self._launch_config_sensitive:
+            return False
+        if self._launch_config_default_key is None:
+            return False
+        return (
+            self._launch_config_key(launch_config)
+            != self._launch_config_default_key
+        )
 
     def forall(self, ntasks, tpb=0, stream=0, sharedmem=0):
         """Returns a 1D-configured dispatcher for a given number of tasks.
@@ -1849,6 +1902,12 @@ class CUDADispatcher(serialize.ReduceMixin, _MemoMixin, _DispatcherBase):
 
             self._update_launch_config_sensitivity(kernel, launch_config)
 
+            if self._requires_launch_config_specialization(launch_config):
+                dispatcher = self._get_launch_config_specialization(
+                    self._launch_config_key(launch_config)
+                )
+                return dispatcher.call(args, launch_config)
+
             for callback in launch_config.pre_launch_callbacks:
                 callback(kernel, launch_config)
 
@@ -1867,6 +1926,7 @@ class CUDADispatcher(serialize.ReduceMixin, _MemoMixin, _DispatcherBase):
         # the CUDA Array Interface.
         return typeof(val, Purpose.argument)
 
+    @global_compiler_lock
     def specialize(self, *args):
         """
         Create a new instance of this dispatcher specialized for the given
@@ -2135,6 +2195,23 @@ class CUDADispatcher(serialize.ReduceMixin, _MemoMixin, _DispatcherBase):
                     self._cache_launch_config_key(launch_config)
                 )
 
+        if (
+            kernel is None
+            and launch_config is None
+            and isinstance(self._cache, CUDACache)
+            and self._cache.is_launch_config_sensitive()
+        ):
+            kernel = self._cache.load_launch_config_sensitive_overload(
+                sig, self.targetctx
+            )
+            if kernel is not None:
+                self._cache_hits[sig] += 1
+                self._launch_config_sensitive = True
+                # A no-launch direct compile cannot safely bind a concrete
+                # launch-config-specific kernel as the default. Defer binding
+                # until a real launch supplies the launch configuration.
+                return kernel
+
         if kernel is not None:
             self._cache_hits[sig] += 1
         else:
@@ -2158,6 +2235,7 @@ class CUDADispatcher(serialize.ReduceMixin, _MemoMixin, _DispatcherBase):
                     self._cache = NullCache()
             self._cache.save_overload(sig, kernel)
 
+        self._update_launch_config_sensitivity(kernel, launch_config)
         self.add_overload(kernel, argtypes)
 
         return kernel

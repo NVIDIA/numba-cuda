@@ -3,6 +3,7 @@
 
 import pathlib
 import sys
+import sysconfig
 
 from setuptools import setup, Extension
 from setuptools.command.build_py import build_py
@@ -12,6 +13,11 @@ from setuptools.command.build_ext import build_ext
 REDIRECTOR_PTH = "_numba_cuda_redirector.pth"
 REDIRECTOR_PY = "_numba_cuda_redirector.py"
 SITE_PACKAGES = pathlib.Path("site-packages")
+
+
+def sysconfig_var_is_true(name):
+    value = sysconfig.get_config_var(name)
+    return value is True or str(value).strip() == "1"
 
 
 def get_version():
@@ -43,9 +49,14 @@ def get_ext_modules():
     if sys.platform == "darwin":
         install_name_tool_fixer = ["-headerpad_max_install_names"]
 
+    free_threaded_macros = []
+    if sysconfig_var_is_true("Py_GIL_DISABLED"):
+        free_threaded_macros.append(("Py_GIL_DISABLED", "1"))
+
     ext_mviewbuf = Extension(
         name="numba_cuda.numba.cuda.cext.mviewbuf",
         extra_link_args=install_name_tool_fixer,
+        define_macros=list(free_threaded_macros),
         sources=["numba_cuda/numba/cuda/cext/mviewbuf.c"],
     )
 
@@ -64,6 +75,7 @@ def get_ext_modules():
             "numba_cuda/numba/cuda/cext/_hashtable.h",
         ],
         extra_compile_args=["-std=c++11"],
+        define_macros=list(free_threaded_macros),
         **np_compile_args,
     )
 
@@ -75,6 +87,7 @@ def get_ext_modules():
         ],
         depends=["numba_cuda/numba/cuda/cext/_pymodule.h"],
         extra_compile_args=["-std=c++11"],
+        define_macros=list(free_threaded_macros),
     )
 
     # Append our cext dir to include_dirs
@@ -88,6 +101,7 @@ def get_ext_modules():
             "numba_cuda/numba/cuda/cext/_helperlib.c",
         ],
         include_dirs=["numba_cuda/numba/cuda/cext"],
+        define_macros=list(free_threaded_macros),
     )
 
     return [
