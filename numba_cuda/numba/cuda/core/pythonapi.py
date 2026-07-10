@@ -1318,7 +1318,7 @@ class PythonAPI:
             self.pyobj, [self.voidptr, self.pyobj, intty, intty, self.pyobj]
         )
         fn = self._get_function(fnty, name="NRT_adapt_ndarray_to_python_acqref")
-        fn.args[0].add_attribute("nocapture")
+        cgutils.add_no_capture_attribute(fn.args[0])
 
         ndim = self.context.get_constant(types.int32, aryty.ndim)
         writable = self.context.get_constant(types.int32, int(aryty.mutable))
@@ -1350,8 +1350,8 @@ class PythonAPI:
             fnty,
             "NRT_meminfo_new_from_pyobject",
         )
-        fn.args[0].add_attribute("nocapture")
-        fn.args[1].add_attribute("nocapture")
+        cgutils.add_no_capture_attribute(fn.args[0])
+        cgutils.add_no_capture_attribute(fn.args[1])
         fn.return_value.add_attribute("noalias")
         return self.builder.call(fn, [data, pyobj])
 
@@ -1381,8 +1381,8 @@ class PythonAPI:
         assert self.context.enable_nrt
         fnty = ir.FunctionType(ir.IntType(32), [self.pyobj, self.voidptr])
         fn = self._get_function(fnty, name="NRT_adapt_ndarray_from_python")
-        fn.args[0].add_attribute("nocapture")
-        fn.args[1].add_attribute("nocapture")
+        cgutils.add_no_capture_attribute(fn.args[0])
+        cgutils.add_no_capture_attribute(fn.args[1])
         return self.builder.call(fn, (ary, ptr))
 
     def nrt_adapt_buffer_from_python(self, buf, ptr):
@@ -1391,8 +1391,8 @@ class PythonAPI:
             ir.VoidType(), [ir.PointerType(self.py_buffer_t), self.voidptr]
         )
         fn = self._get_function(fnty, name="NRT_adapt_buffer_from_python")
-        fn.args[0].add_attribute("nocapture")
-        fn.args[1].add_attribute("nocapture")
+        cgutils.add_no_capture_attribute(fn.args[0])
+        cgutils.add_no_capture_attribute(fn.args[1])
         return self.builder.call(fn, (buf, ptr))
 
     # ------ utils -----
@@ -1644,8 +1644,8 @@ class PythonAPI:
         assert not self.context.enable_nrt
         fnty = ir.FunctionType(ir.IntType(32), [self.pyobj, self.voidptr])
         fn = self._get_function(fnty, name="numba_adapt_ndarray")
-        fn.args[0].add_attribute("nocapture")
-        fn.args[1].add_attribute("nocapture")
+        cgutils.add_no_capture_attribute(fn.args[0])
+        cgutils.add_no_capture_attribute(fn.args[1])
         return self.builder.call(fn, (ary, ptr))
 
     def numba_buffer_adaptor(self, buf, ptr):
@@ -1653,8 +1653,8 @@ class PythonAPI:
             ir.VoidType(), [ir.PointerType(self.py_buffer_t), self.voidptr]
         )
         fn = self._get_function(fnty, name="numba_adapt_buffer")
-        fn.args[0].add_attribute("nocapture")
-        fn.args[1].add_attribute("nocapture")
+        cgutils.add_no_capture_attribute(fn.args[0])
+        cgutils.add_no_capture_attribute(fn.args[1])
         return self.builder.call(fn, (buf, ptr))
 
     def complex_adaptor(self, cobj, cmplx):

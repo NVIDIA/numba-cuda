@@ -16,6 +16,13 @@ from .scalars import *
 from .function_type import *
 from .ext_types import bfloat16, dim3, grid_group, GridGroup, Dim3
 
+try:
+    from numba.np.types import NPDatetime, NPTimedelta
+except ImportError:
+    # Numba < 0.66 defines these in numba.core.types.scalars, from which they
+    # are imported above.
+    pass
+
 numpy_version = tuple(map(int, np.__version__.split(".")[:2]))
 
 # Short names

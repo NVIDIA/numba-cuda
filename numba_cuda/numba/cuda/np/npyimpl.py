@@ -387,7 +387,7 @@ def _prepare_argument(ctxt, bld, inp, tyinp, where="input operand"):
         )
     elif types.unliteral(tyinp) in types.number_domain | {
         types.boolean
-    } or isinstance(tyinp, types.scalars._NPDatetimeBase):
+    } or isinstance(tyinp, (types.NPDatetime, types.NPTimedelta)):
         return _ScalarHelper(ctxt, bld, inp, tyinp)
     else:
         raise NotImplementedError(
