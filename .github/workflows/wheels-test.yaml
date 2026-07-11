@@ -106,7 +106,7 @@ jobs:
     - name: Run nvidia-smi to make sure GPU is working
       run: nvidia-smi
     - name: checkout code repo
-      uses: actions/checkout@v6
+      uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0  # v7.0.0
       with:
         repository: ${{ inputs.repo }}
         ref: ${{ inputs.sha }}
@@ -121,7 +121,7 @@ jobs:
         SHA: ${{ github.sha }}
       run: ./ci/tools/env-vars test
 
-    - uses: actions/download-artifact@v7
+    - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c  # v8.0.1
       with:
         name: ${{ env.NUMBA_CUDA_ARTIFACT_NAME }}
         path: ${{ env.NUMBA_CUDA_ARTIFACTS_DIR }}
@@ -142,7 +142,7 @@ jobs:
         CUDA_CORE_VERSION: ${{ matrix.CUDA_CORE_VERSION }}
         GH_TOKEN: ${{ github.token }}
     - name: Generate test report
-      uses: test-summary/action@v2.4
+      uses: test-summary/action@v2.6
       with:
         paths: "${{ env.RAPIDS_TESTS_DIR }}/*.xml"
         show: ${{ inputs.test_summary_show }}

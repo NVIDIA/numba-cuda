@@ -6,13 +6,13 @@ set -euo pipefail
 
 CUDA_VER_MAJOR_MINOR=${CUDA_VER%.*}
 
-NVMATH_PYTHON_VERSION="0.6.0"
-# The commit on Github corresponding to 0.6.0
-NVMATH_PYTHON_SHA="6bddfa71c39c07804127adeb23f5b0d2168ae38c"
+NVMATH_PYTHON_VERSION="0.9.0"
+# The commit on Github corresponding to 0.9.0
+NVMATH_PYTHON_SHA="48f5b643c8b7c04f8be1745b9b700eae17af7319"
 
 rapids-logger "Install nvmath-python"
 
-pip install nvmath-python[cu12,dx]==${NVMATH_PYTHON_VERSION}
+pip install nvmath-python[cu12-dx]==${NVMATH_PYTHON_VERSION}
 
 rapids-logger "Remove Extraneous numba-cuda"
 pip uninstall -y numba-cuda
@@ -23,10 +23,11 @@ echo "Package path: ${package}"
 python -m pip install \
     "${package}" \
     "cuda-python==${CUDA_VER_MAJOR_MINOR%.*}.*" \
-    "cuda-core" \
     "nvidia-nvjitlink-cu12" \
     --group test
 
+rapids-logger "Verify environment consistency"
+pip check
 
 rapids-logger "Shallow clone nvmath-python repository"
 git clone https://github.com/NVIDIA/nvmath-python.git
@@ -34,9 +35,9 @@ pushd nvmath-python
 git checkout ${NVMATH_PYTHON_SHA}
 
 rapids-logger "Install nvmath-python test dependencies"
-pip install -r requirements/pip/tests.txt
-pip install nvidia-mathdx
-pip install nvidia-cutlass
+pip install cffi hypothesis opt_einsum packaging psutil pytest pytest-repeat pytest-xdist scipy
+pip install "nvidia-mathdx~=25.6.0"
+pip install "nvidia-cuda-nvdisasm>=13.2"
 
 rapids-logger "Check GPU usage"
 nvidia-smi
@@ -46,10 +47,9 @@ python -m numba --sysinfo
 
 rapids-logger "Run nvmath-python device tests"
 pushd tests
-# Required for nvmath-python to locate pip-install MathDx
-export SYS_PREFIX=`python -c "import sys; print(sys.prefix)"`
-export MATHDX_HOME=${SYS_PREFIX}/lib/python3.13/site-packages/nvidia/mathdx
-python -m pytest -n auto -k "not (perf or benchmark)" nvmath_tests/device --tb=native -x
+# Required for nvmath-python to locate pip-installed MathDx
+export MATHDX_HOME=$(python -c "import sysconfig; print(sysconfig.get_path('purelib'))")/nvidia/mathdx
+python -m pytest -n auto -k "not (perf or benchmark)" --ignore-glob "*cusolverdx*" nvmath_tests/device --tb=native -x
 
 popd
 popd

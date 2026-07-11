@@ -4,6 +4,7 @@
 from abc import abstractmethod, ABCMeta
 import itertools
 import numba
+import numba_cuda
 import os
 import contextlib
 import uuid
@@ -100,6 +101,8 @@ class IndexDataCacheFile:
         self._index_path = os.path.join(self._cache_path, self._index_name)
         self._data_name_pattern = "%s.{number:d}.nbc" % (filename_base,)
         self._source_stamp = source_stamp
+        # Keep the shared index header aligned with CPU Numba so CPU and CUDA
+        # targets can continue to share one `.nbi` file for the same function.
         self._version = numba.__version__
 
     def flush(self):
@@ -328,7 +331,9 @@ class Cache(_Cache):
         Compute index key for the given signature and codegen.
         It includes a description of the OS, target architecture and hashes of
         the bytecode for the function and, if the function has a __closure__,
-        a hash of the cell_contents.
+        a hash of the cell_contents. The numba-cuda version is included so CUDA
+        cache entries invalidate on package upgrade without breaking the shared
+        index header used by CPU caches.
         """
         codebytes = self._py_func.__code__.co_code
         if self._py_func.__closure__ is not None:
@@ -343,6 +348,7 @@ class Cache(_Cache):
         return (
             sig,
             codegen.magic_tuple(),
+            numba_cuda.__version__,
             (
                 hasher(codebytes),
                 hasher(cvarbytes),

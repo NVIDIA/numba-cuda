@@ -232,7 +232,7 @@ class TestInspect(CUDATestCase):
         with self.assertRaises(RuntimeError) as raises:
             f.inspect_sass()
 
-        self.assertIn("nvdisasm has not been found", str(raises.exception))
+        self.assertIn("nvdisasm was not found", str(raises.exception))
 
     @skip_without_nvdisasm("nvdisasm needed for inspect_sass_cfg()")
     def test_inspect_sass_cfg(self):

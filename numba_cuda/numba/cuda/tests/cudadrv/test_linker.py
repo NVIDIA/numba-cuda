@@ -116,17 +116,15 @@ if TEST_BIN_DIR:
         TEST_BIN_DIR, "test_device_functions.ltoir"
     )
 
+    add_from_numba = cuda.declare_device(
+        "add_from_numba",
+        "int32(int32, int32)",
+        link=[test_device_functions_ltoir],
+    )
 
-add_from_numba = cuda.declare_device(
-    "add_from_numba",
-    "int32(int32, int32)",
-    link=[test_device_functions_ltoir],
-)
-
-
-def debuggable_kernel(result):
-    i = cuda.grid(1)
-    result[i] = add_from_numba(i, i)
+    def debuggable_kernel(result):
+        i = cuda.grid(1)
+        result[i] = add_from_numba(i, i)
 
 
 @skip_on_cudasim("Linking unsupported in the simulator")
@@ -350,6 +348,7 @@ class TestLinker(CUDATestCase):
         calc_size = np.dtype(np.float64).itemsize * LMEM_SIZE
         self.assertGreaterEqual(local_mem_size, calc_size)
 
+    @unittest.skipUnless(TEST_BIN_DIR, "NUMBA_CUDA_TEST_BIN_DIR not set")
     def test_debug_kernel_with_lto(self):
         cuda.jit("void(int32[::1])", debug=True, opt=False)(debuggable_kernel)
 

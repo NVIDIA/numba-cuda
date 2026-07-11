@@ -448,5 +448,67 @@ class TestEmptyArrayTypeInference(unittest.TestCase):
                 )
 
 
+@skip_on_cudasim("Tests internals of the CUDA driver device array")
+class TestNumpyIntegerTypes(unittest.TestCase):
+    def test_from_desc_with_numpy_integer_types(self):
+        # test that various numpy integer types in shape/strides are normalised to Python int
+        test_cases = [
+            # (shape, strides, description)
+            (
+                (np.int32(10), np.int32(20)),
+                (np.int32(80), np.int32(4)),
+                "np.int32",
+            ),
+            (
+                (np.int64(15), np.int64(25)),
+                (np.int64(100), np.int64(4)),
+                "np.int64",
+            ),
+            (
+                (10, np.int32(20), np.int64(30)),
+                (np.int32(2400), 120, np.int64(4)),
+                "mixed types",
+            ),
+            ((np.intp(8), np.intp(12)), (np.intp(48), np.intp(4)), "np.intp"),
+        ]
+
+        itemsize = 4
+        offset = 0
+
+        for shape, strides, description in test_cases:
+            with self.subTest(description=description):
+                arr = Array.from_desc(offset, shape, strides, itemsize)
+
+                expected_shape = tuple(int(s) for s in shape)
+                expected_strides = tuple(int(s) for s in strides)
+                self.assertEqual(arr.shape, expected_shape)
+                self.assertEqual(arr.strides, expected_strides)
+
+                for s in arr.shape:
+                    self.assertIsInstance(s, int)
+                    self.assertNotIsInstance(s, np.integer)
+
+                for stride in arr.strides:
+                    self.assertIsInstance(stride, int)
+                    self.assertNotIsInstance(stride, np.integer)
+
+    def test_from_desc_tuple_from_numpy_array(self):
+        # reference: https://github.com/NVIDIA/numba-cuda/issues/623
+        shape_array = np.array([50, 100], dtype=np.int32)
+        shape_tuple = tuple(shape_array)  # Preserves np.int32!
+
+        self.assertIsInstance(shape_tuple[0], np.int32)
+
+        itemsize = 4
+        strides_tuple = (itemsize * shape_tuple[1], itemsize)
+
+        arr = Array.from_desc(0, shape_tuple, strides_tuple, itemsize)
+
+        self.assertEqual(arr.shape, (50, 100))
+        for s in arr.shape:
+            self.assertIsInstance(s, int)
+            self.assertNotIsInstance(s, np.integer)
+
+
 if __name__ == "__main__":
     unittest.main()

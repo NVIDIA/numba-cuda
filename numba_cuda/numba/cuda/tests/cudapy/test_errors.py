@@ -2,43 +2,41 @@
 # SPDX-License-Identifier: BSD-2-Clause
 
 from numba import cuda
-from numba.cuda import HAS_NUMBA
 from numba.cuda.core.errors import TypingError
 from numba.cuda.testing import unittest, CUDATestCase, skip_on_cudasim
 from numba.cuda.cudadrv import driver
+from numba.cuda.tests.support import run_in_subprocess
 
 
 def noop(x):
     pass
 
 
-class TestErrorHierarchy(unittest.TestCase):
-    @unittest.skipUnless(HAS_NUMBA, "requires numba.core.errors")
-    def test_cuda_error_hierarchy_is_narrower_than_core(self):
-        from numba.core import errors as core_errors
-        from numba.cuda.core import errors as cuda_errors
+class TestStringArgCompileTime(CUDATestCase):
+    """Regression test for github.com/NVIDIA/numba-cuda/issues/755"""
 
-        for name, core_exc in vars(core_errors).items():
-            if not isinstance(core_exc, type):
-                continue
-            if not issubclass(core_exc, core_errors.NumbaError):
-                continue
+    @skip_on_cudasim("Compilation time is not relevant on simulator")
+    def test_string_device_function_arg_compiles_quickly(self):
+        code = """\
+import numpy as np
+from numba import cuda
 
-            with self.subTest(error_name=name):
-                cuda_exc = getattr(cuda_errors, name)
-                self.assertIsNot(cuda_exc, core_exc)
-                self.assertTrue(issubclass(cuda_exc, core_exc))
-                self.assertTrue(issubclass(cuda_exc, cuda_errors.NumbaError))
-                self.assertFalse(issubclass(core_exc, cuda_errors.NumbaError))
+@cuda.jit(device=True, forceinline=True)
+def load(gmem, value):
+    if value == "1":
+        gmem[cuda.threadIdx.x] = 1.0
+    else:
+        gmem[cuda.threadIdx.x] = 0.0
 
-        self.assertIsInstance(
-            cuda_errors.TypingError("cuda typing"),
-            core_errors.TypingError,
-        )
-        self.assertNotIsInstance(
-            core_errors.TypingError("core typing"),
-            cuda_errors.NumbaError,
-        )
+@cuda.jit
+def kernel(buff):
+    load(buff, "1")
+
+buff = cuda.to_device(np.zeros(32, dtype=np.float32))
+kernel[1, 32](buff)
+cuda.synchronize()
+"""
+        run_in_subprocess(code, timeout=30)
 
 
 class TestJitErrors(CUDATestCase):

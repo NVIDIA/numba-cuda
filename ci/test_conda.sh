@@ -22,6 +22,7 @@ set +e
 
 pixi run -e "${PIXI_ENV}" python -m numba --sysinfo
 pixi run -e "${PIXI_ENV}" python -c "from numba import cuda"
+pixi run -e "${PIXI_ENV}" python -c "import ml_dtypes"
 pixi run -e "${PIXI_ENV}" test -n auto --dist loadscope --loadscope-reorder -v
 
 exit "${EXITCODE}"

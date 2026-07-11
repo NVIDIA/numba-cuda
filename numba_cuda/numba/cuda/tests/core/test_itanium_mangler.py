@@ -8,6 +8,32 @@ from numba.cuda import itanium_mangler
 import unittest
 
 
+class TestEscapeString(unittest.TestCase):
+    def test_plain_ascii(self):
+        self.assertEqual(itanium_mangler.escape_string("hello"), "hello")
+
+    def test_underscores_and_digits(self):
+        self.assertEqual(
+            itanium_mangler.escape_string("my_func_2"), "my_func_2"
+        )
+
+    def test_angle_brackets(self):
+        self.assertEqual(
+            itanium_mangler.escape_string("<lambda>"), "_3clambda_3e"
+        )
+
+    def test_dot(self):
+        self.assertEqual(itanium_mangler.escape_string("a.b"), "a_2eb")
+
+    def test_empty_string(self):
+        self.assertEqual(itanium_mangler.escape_string(""), "")
+
+    def test_backward_compat_alias(self):
+        self.assertIs(
+            itanium_mangler._escape_string, itanium_mangler.escape_string
+        )
+
+
 class TestItaniumManager(unittest.TestCase):
     def test_ident(self):
         got = itanium_mangler.mangle_identifier("apple")

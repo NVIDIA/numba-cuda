@@ -24,7 +24,7 @@ jobs:
       CUDA_PREV_BUILD_VER: ${{ steps.get-vars.outputs.cuda_prev_build_ver }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8  # v6.0.1
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0  # v7.0.0
         with:
           fetch-depth: 0
 
@@ -42,7 +42,7 @@ jobs:
       skip: ${{ steps.get-should-skip.outputs.skip }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8  # v6.0.1
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0  # v7.0.0
       - name: Compute whether to skip builds and tests
         id: get-should-skip
         env:
@@ -168,8 +168,8 @@ jobs:
   pre-commit:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
-      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0  # v7.0.0
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
       - uses: pre-commit/action@2c7b3805fd2a0fd8c1884dcaebf91fc102a13ecd
         with:
           extra_args: --all-files --show-diff-on-failure
@@ -181,7 +181,7 @@ jobs:
       SIMULATOR_MATRIX: ${{ steps.compute-matrix.outputs.SIMULATOR_MATRIX }}
       TEST_MATRIX: ${{ steps.compute-matrix.outputs.TEST_MATRIX }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0  # v7.0.0
       - name: Compute Matrices
         id: compute-matrix
         run: |
@@ -247,7 +247,6 @@ jobs:
       matrix_filter: map(select(.ARCH == "amd64" and (.CUDA_VER | split(".") | .[0] | tonumber == 12))) | group_by(.CUDA_VER|split(".")|map(tonumber)|.[0]) | map(max_by([(.PY_VER|split(".")|map(tonumber)), (.CUDA_VER|split(".")|map(tonumber))]))
 
   test-thirdparty-nvmath:
-    if: ${{ github.ref_name == 'main' }}
     needs:
       - build-linux-64
       - compute-matrix
@@ -295,6 +294,7 @@ jobs:
     if: always()
     runs-on: ubuntu-latest
     needs:
+      - should-skip
       - test-linux-64
       - test-linux-aarch64
       - test-windows
@@ -309,45 +309,41 @@ jobs:
     steps:
       - name: Exit
         run: |
-          # if any dependencies were cancelled or failed, that's a failure
-          #
-          # see https://docs.github.com/en/actions/reference/workflows-and-actions/expressions#always
-          # and https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/collaborating-on-repositories-with-code-quality-features/troubleshooting-required-status-checks#handling-skipped-but-required-checks
-          # for why this cannot be encoded in the job-level `if:` field
-          #
-          # TL; DR: `$REASONS`
-          #
-          # The intersection of skipped-as-success and required status checks
-          # creates a scenario where if you DON'T `always()` run this job, the
-          # status check UI will block merging and if you DO `always()` run and
-          # a dependency is _cancelled_ (due to a critical failure, which is
-          # somehow not considered a failure ¯\_(ツ)_/¯) then the critically
-          # failing job(s) will timeout causing a cancellation here and the
-          # build to succeed which we don't want (originally this was just
-          # 'exit 0')
-          if ${{ needs.test-linux-64.result == 'cancelled' ||
-                 needs.test-linux-64.result == 'failure' ||
-                 needs.test-linux-aarch64.result == 'cancelled' ||
-                 needs.test-linux-aarch64.result == 'failure' ||
-                 needs.test-windows.result == 'cancelled' ||
-                 needs.test-windows.result == 'failure' ||
-                 needs.pre-commit.result == 'cancelled' ||
-                 needs.pre-commit.result == 'failure' ||
-                 needs.test-conda.result == 'cancelled' ||
-                 needs.test-conda.result == 'failure' ||
-                 needs.test-simulator.result == 'cancelled' ||
-                 needs.test-simulator.result == 'failure' ||
-                 needs.test-thirdparty-cudf.result == 'cancelled' ||
-                 needs.test-thirdparty-cudf.result == 'failure' ||
-                 needs.test-thirdparty-nvmath.result == 'cancelled' ||
-                 needs.test-thirdparty-nvmath.result == 'failure' ||
-                 needs.test-thirdparty-awkward.result == 'cancelled' ||
-                 needs.test-thirdparty-awkward.result == 'failure' ||
-                 needs.build-docs.result == 'cancelled' ||
-                 needs.build-docs.result == 'failure' ||
-                 needs.coverage-report.result == 'cancelled' ||
-                 needs.coverage-report.result == 'failure' }}; then
-            exit 1
-          else
+          # GitHub treats `result == 'skipped'` as success for required
+          # status checks (see CCCL gate comment + cccl#605). The previous
+          # `cancelled || failure` predicate let upstream build failures
+          # propagate as `skipped` on downstream test jobs and silently
+          # pass this aggregator. Adopt CCCL's `check_result` pattern:
+          # require an explicit `expected` status per dependency, where
+          # anything else (including `skipped` from a failed upstream)
+          # fails the gate. `if: always()` on the job still ensures this
+          # step runs even when needs are skipped.
+          if [[ "${{ needs.should-skip.outputs.skip }}" == "true" ]]; then
+            echo "[no-ci] - skipping aggregator checks"
             exit 0
           fi
+
+          status="success"
+          check_result() {
+            name=$1; expected=$2; result=$3
+            echo "Checking $name: result='$result' (expected '$expected')"
+            if [[ "$result" != "$expected" ]]; then
+              echo "::error::$name did not match expected result"
+              status="failed"
+            fi
+          }
+
+          check_result "should-skip"            "success" "${{ needs.should-skip.result }}"
+          check_result "test-linux-64"          "success" "${{ needs.test-linux-64.result }}"
+          check_result "test-linux-aarch64"     "success" "${{ needs.test-linux-aarch64.result }}"
+          check_result "test-windows"           "success" "${{ needs.test-windows.result }}"
+          check_result "pre-commit"             "success" "${{ needs.pre-commit.result }}"
+          check_result "test-conda"             "success" "${{ needs.test-conda.result }}"
+          check_result "test-simulator"         "success" "${{ needs.test-simulator.result }}"
+          check_result "test-thirdparty-cudf"   "success" "${{ needs.test-thirdparty-cudf.result }}"
+          check_result "test-thirdparty-nvmath" "success" "${{ needs.test-thirdparty-nvmath.result }}"
+          check_result "test-thirdparty-awkward" "success" "${{ needs.test-thirdparty-awkward.result }}"
+          check_result "build-docs"             "success" "${{ needs.build-docs.result }}"
+          check_result "coverage-report"        "success" "${{ needs.coverage-report.result }}"
+
+          [[ "$status" == "success" ]]

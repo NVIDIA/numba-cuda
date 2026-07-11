@@ -74,6 +74,15 @@ FROM_DTYPE = {
     np.dtype(object): types.pyobject,
 }
 
+# Optional dtype support (not provided by NumPy itself).
+try:
+    import ml_dtypes  # type: ignore
+except ImportError:
+    ml_dtypes = None
+
+if ml_dtypes is not None:
+    FROM_DTYPE[np.dtype(ml_dtypes.bfloat16)] = types.bfloat16
+
 re_typestr = re.compile(r"[<>=\|]([a-z])(\d+)?$", re.I)
 re_datetimestr = re.compile(r"[<>=\|]([mM])8?(\[([a-z]+)\])?$", re.I)
 

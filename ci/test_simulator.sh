@@ -14,6 +14,9 @@ pixi run -e "${PIXI_ENV}" python -m numba --sysinfo
 rapids-logger "Test importing numba.cuda"
 pixi run -e "${PIXI_ENV}" python -c "from numba import cuda"
 
+rapids-logger "Test importing ml_dtypes"
+pixi run -e "${PIXI_ENV}" python -c "import ml_dtypes"
+
 rapids-logger "Run Tests"
 pixi run -e "${PIXI_ENV}" simtest -n auto \
   --dist loadscope \

@@ -9,7 +9,7 @@ CUDA_VER_MAJOR=${CUDA_VER%.*.*}
 
 rapids-logger "Install cuDF Wheel"
 
-pip install "cudf-cu12==26.02.*"
+pip install cudf-cu12
 
 
 rapids-logger "Remove Extraneous numba-cuda"
@@ -29,8 +29,14 @@ python -m pip install \
 pip install "cupy-cuda${CUDA_VER_MAJOR}x<14.0.0"
 
 
-rapids-logger "Shallow clone cuDF repository"
-git clone --single-branch --branch 'release/26.02' https://github.com/rapidsai/cudf.git
+rapids-logger "Determine cuDF release branch from installed version"
+CUDF_VERSION=$(pip show cudf-cu12 | grep '^Version:' | awk '{print $2}')
+CUDF_BRANCH=$(printf "release/%s.%02d" \
+    "$(echo "$CUDF_VERSION" | cut -d. -f1)" \
+    "$(echo "$CUDF_VERSION" | cut -d. -f2)")
+
+rapids-logger "Shallow clone cuDF repository (${CUDF_BRANCH})"
+git clone --single-branch --branch "${CUDF_BRANCH}" https://github.com/rapidsai/cudf.git
 
 
 pushd cudf
@@ -46,11 +52,13 @@ rapids-logger "Run Scalar UDF tests"
 python -m pytest python/cudf/cudf/tests/dataframe/methods/test_apply.py -W ignore::UserWarning
 
 rapids-logger "Run GroupBy UDF tests"
-# Run JIT engine tests and tests that check jittability before falling back
 python -m pytest python/cudf/cudf/tests/groupby/test_apply.py -k test_groupby_apply -W ignore::UserWarning
 
 rapids-logger "Run NRT Stats Counting tests"
 python -m pytest python/cudf/cudf/tests/private_objects/test_nrt_stats.py  -W ignore::UserWarning
 
+rapids-logger "Run Query Tests"
+python -m pytest python/cudf/cudf/tests/dataframe/methods/test_query.py -W ignore::UserWarning
+python -m pytest python/cudf/cudf/tests/series/methods/test_query.py -W ignore::UserWarning
 
 popd
