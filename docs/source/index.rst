@@ -20,6 +20,20 @@ accelerated libraries like `RAPIDS <https://rapids.ai>`_.
   :ref:`writing-cuda-kernels`.
 * Browse the :ref:`numba-cuda-examples` to see a variety of use cases of Numba-CUDA.
 
+Maintenance Notice
+==================
+
+.. note::
+
+   Numba-CUDA is in maintenance mode. Moving forward, we intend to support only
+   security issues and critical bug fixes through the lifetime of CUDA 13. New
+   feature development is targeted towards `Numba-CUDA-MLIR
+   <https://nvidia.github.io/numba-cuda-mlir>`_, and we recommend upgrading to
+   Numba-CUDA-MLIR as soon as practical.
+
+   For migration guidance, see `Migration from Numba / Numba-CUDA
+   <https://github.com/NVIDIA/numba-cuda-mlir#migration-from-numba--numba-cuda>`_.
+
 Contents
 ========
 

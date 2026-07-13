@@ -283,7 +283,7 @@ NUMBA_ENABLE_CUDASIM = "1"
 
 [package]
 name = "numba-cuda"
-version = "0.30.2"
+version = "0.30.4"
 
 [package.build]
 backend = { name = "pixi-build-python", version = "*" }
@@ -293,7 +293,7 @@ config.compilers = ["cxx"]
 
 [package.build-dependencies]
 # this can't be in `config.compilers` otherwise CUDA_HOME isn't defined
-cuda-compiler = "*"
+cuda-nvcc = "*"
 
 [package.host-dependencies]
 python = "*"

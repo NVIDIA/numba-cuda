@@ -6,6 +6,12 @@ import unittest
 
 
 class TestImport(unittest.TestCase):
+    def test_datetime_types(self):
+        from numba import cuda, types
+
+        self.assertIs(cuda.types.NPDatetime, types.NPDatetime)
+        self.assertIs(cuda.types.NPTimedelta, types.NPTimedelta)
+
     def test_no_impl_import(self):
         """
         Tests that importing cuda doesn't trigger the import of modules

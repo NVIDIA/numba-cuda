@@ -5,8 +5,17 @@
 The CUDA target for Numba. Please visit the [official
 documentation](https://nvidia.github.io/numba-cuda) to get started!
 
+## Maintenance notice
 
-To report issues or file feature requests, please use the [issue
+Numba-CUDA is in maintenance mode. Moving forward, we intend to support only
+security issues and critical bug fixes through the lifetime of CUDA 13. New
+feature development is targeted towards
+[Numba-CUDA-MLIR](https://github.com/NVIDIA/numba-cuda-mlir), and we recommend
+upgrading to Numba-CUDA-MLIR as soon as practical. For migration guidance, see
+[Migration from Numba /
+Numba-CUDA](https://github.com/NVIDIA/numba-cuda-mlir#migration-from-numba--numba-cuda).
+
+To report security issues or critical bugs, please use the [issue
 tracker](https://github.com/NVIDIA/numba-cuda/issues).
 
 To raise questions or initiate discussions, please use the [Numba Discourse

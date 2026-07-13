@@ -4,6 +4,13 @@ Thank you for contributing to numba-cuda :)
 
 Here are some guidelines to help the review process go smoothly.
 
+Numba-CUDA is in maintenance mode. Moving forward, we intend to support only
+security issues and critical bug fixes through the lifetime of CUDA 13. New
+feature development is targeted towards Numba-CUDA-MLIR, and we recommend
+upgrading to Numba-CUDA-MLIR as soon as practical.
+
+See #902 for the public maintenance notice and migration guidance.
+
 1. Please write a description in this text box of the changes that are being
    made.
 
