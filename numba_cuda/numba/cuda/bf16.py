@@ -6,6 +6,7 @@ from numba.cuda._internal.cuda_bf16 import (
     typing_registry,
     target_registry,
     nv_bfloat16 as bfloat16,
+    _type_unnamed1405307 as _bfloat16_raw_type,
     # Arithmetic intrinsics
     __habs as habs,
     __hadd as hadd,
@@ -131,9 +132,48 @@ from numba.cuda._internal.cuda_bf16 import (
     htanh,
     htanh_approx,
 )
-from numba.cuda.extending import overload
+from numba.cuda.extending import intrinsic, overload
+from numba.cuda.typing import signature
 
 import math
+
+
+@intrinsic
+def _bfloat16_as_bfloat16_raw(typingctx, value):
+    """Cast bfloat16 to bfloat16 raw storage."""
+    if value != bfloat16:
+        return None
+
+    sig = signature(_bfloat16_raw_type, bfloat16)
+
+    def codegen(context, builder, signature, args):
+        return context.cast(
+            builder,
+            args[0],
+            signature.args[0],
+            signature.return_type,
+        )
+
+    return sig, codegen
+
+
+@intrinsic
+def _bfloat16_raw_as_bfloat16(typingctx, value):
+    """Cast bfloat16 raw storage to bfloat16."""
+    if value != _bfloat16_raw_type:
+        return None
+
+    sig = signature(bfloat16, _bfloat16_raw_type)
+
+    def codegen(context, builder, signature, args):
+        return context.cast(
+            builder,
+            args[0],
+            signature.args[0],
+            signature.return_type,
+        )
+
+    return sig, codegen
 
 
 def _make_unary(a, func):
