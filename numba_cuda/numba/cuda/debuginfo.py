@@ -43,10 +43,15 @@ def _check_polymorphic_debug_info_support():
     """
     # runtime.getLocalRuntimeVersion() returns (cudaError_t, version_int)
     # Example: 13010 = CTK 13.1, 13020 = CTK 13.2
-    _, ctk_version_number = runtime.getLocalRuntimeVersion()
-    ctk_major = ctk_version_number // 1000
-    ctk_minor = (ctk_version_number % 1000) // 10
-    ctk_version = (ctk_major, ctk_minor)
+    try:
+        status, ctk_version_number = runtime.getLocalRuntimeVersion()
+        if int(status) != 0:
+            return (False, False)
+        ctk_major = ctk_version_number // 1000
+        ctk_minor = (ctk_version_number % 1000) // 10
+        ctk_version = (ctk_major, ctk_minor)
+    except (NotImplementedError, AttributeError, RuntimeError):
+        return (False, False)
 
     llvmlite_version = _get_llvmlite_version()
 
