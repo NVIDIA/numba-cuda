@@ -173,6 +173,13 @@ class TestCudaConstantMemory(CUDATestCase):
         np.testing.assert_allclose(D, CONST_RECORD_ALIGN["y"])
         np.testing.assert_allclose(E, CONST_RECORD_ALIGN["z"])
 
+        if not ENABLE_CUDASIM:
+            self.assertRegex(
+                jcuconst.inspect_asm(),
+                r"\.const \.align 4 \.b8",
+                "record constant alignment follows its widest field",
+            )
+
 
 if __name__ == "__main__":
     unittest.main()
