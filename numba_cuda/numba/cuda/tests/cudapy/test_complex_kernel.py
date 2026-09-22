@@ -18,6 +18,25 @@ class TestCudaComplex(CUDATestCase):
         foo[1, a.shape](a, 2j)
         self.assertTrue(np.allclose(a, a0 + 2j))
 
+    def test_numpy_complex_constructor_two_args(self):
+        for dtype, component_dtype in (
+            (np.complex64, np.float32),
+            (np.complex128, np.float64),
+        ):
+
+            @cuda.jit
+            def foo(out, real, imag):
+                i = cuda.grid(1)
+                if i < out.size:
+                    out[i] = dtype(real[i], imag[i])
+
+            real = np.array([1.5, -2.0, 0.0], dtype=component_dtype)
+            imag = np.array([-3.25, 4.0, 0.5], dtype=component_dtype)
+            out = np.empty(real.size, dtype=dtype)
+            foo[1, real.size](out, real, imag)
+
+            self.assertTrue(np.allclose(out, real + 1j * imag))
+
 
 if __name__ == "__main__":
     unittest.main()
