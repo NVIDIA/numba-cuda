@@ -1295,6 +1295,73 @@ class TestCudaDebugInfo(CUDATestCase):
             msg="Load of arg 'arr' missing !dbg metadata",
         )
 
+    def test_composite_type_identifier_symbol_safe(self):
+        # Issue #876: NVVM uses the DICompositeType identifier as a symbol name.
+        # Characters like '{', '}', '[', ']', '*', ',', and spaces are invalid
+        # in PTX symbol names and cause NVVM to fail with
+        # 'Symbol name with unsupported characters'.
+        from numba import from_dtype
+
+        record_type = np.dtype([("a", np.int32), ("b", np.float64)], align=True)
+        nb_record = from_dtype(record_type)
+
+        @cuda.jit(debug=True, opt=False)
+        def f(arr):
+            arr[0].a = 1
+
+        sig = (nb_record[:],)
+        llvm_ir = f.inspect_llvm(sig)
+        ident_pattern = re.compile(
+            r'!DICompositeType\([^)]*identifier:\s*"([^"]+)"'
+        )
+        matches = ident_pattern.findall(llvm_ir)
+        self.assertGreater(
+            len(matches),
+            0,
+            msg="No DICompositeType identifiers found in LLVM IR",
+        )
+        for ident in matches:
+            self.assertRegex(
+                ident,
+                r"^[0-9A-Za-z_]+$",
+                msg=f"Identifier contains invalid PTX symbol characters: {ident}",
+            )
+
+
+class TestSymbolSafeIdentifier(unittest.TestCase):
+    def test_symbol_safe_identifier(self):
+        from numba.cuda.debuginfo import _symbol_safe_identifier
+
+        types_to_test = [
+            "{i8*, i8*, i64, i64, [16 x i8]*, [1 x i64], [1 x i64]}",
+            "[16 x i8]",
+            "i32*",
+            "{i32, {float, double}*}",
+            "()",
+            "{}",
+        ]
+        seen = set()
+        for t in types_to_test:
+            ident = _symbol_safe_identifier(t)
+            self.assertRegex(
+                ident,
+                r"^[0-9A-Za-z_]+$",
+                msg=f"Identifier contains invalid characters: {ident}",
+            )
+            self.assertNotIn(ident, seen, msg=f"Hash collision for type: {t}")
+            seen.add(ident)
+
+        # Determinism
+        self.assertEqual(
+            _symbol_safe_identifier("{i32, i64}"),
+            _symbol_safe_identifier("{i32, i64}"),
+        )
+        # Distinct types have distinct identifiers
+        self.assertNotEqual(
+            _symbol_safe_identifier("[4 x i32]"),
+            _symbol_safe_identifier("[8 x i32]"),
+        )
+
 
 if __name__ == "__main__":
     unittest.main()
