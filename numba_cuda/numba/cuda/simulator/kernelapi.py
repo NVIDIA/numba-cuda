@@ -40,6 +40,12 @@ class Dim3:
         yield self.y
         yield self.z
 
+    def __getitem__(self, idx):
+        return (self.x, self.y, self.z)[idx]
+
+    def __len__(self):
+        return 3
+
 
 class GridGroup:
     """

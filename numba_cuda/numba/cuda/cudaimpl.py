@@ -40,7 +40,7 @@ def initialize_dim3(builder, prefix):
     x = nvvmutils.call_sreg(builder, "%s.x" % prefix)
     y = nvvmutils.call_sreg(builder, "%s.y" % prefix)
     z = nvvmutils.call_sreg(builder, "%s.z" % prefix)
-    return cgutils.pack_struct(builder, (x, y, z))
+    return cgutils.pack_array(builder, (x, y, z))
 
 
 @lower_attr(types.Module(cuda), "threadIdx")
