@@ -989,6 +989,7 @@ def compile_all(
     lineinfo=False,
     device=True,
     fastmath=False,
+    fma=True,
     cc=None,
     opt=None,
     abi="c",
@@ -1022,6 +1023,7 @@ def compile_all(
         lineinfo=lineinfo,
         device=device,
         fastmath=fastmath,
+        fma=fma,
         cc=cc,
         opt=opt,
         abi=abi,
@@ -1063,6 +1065,7 @@ def _compile_pyfunc_with_fixup(
     lineinfo=False,
     device=True,
     fastmath=False,
+    fma=True,
     cc=None,
     opt=None,
     abi="c",
@@ -1104,6 +1107,8 @@ def _compile_pyfunc_with_fixup(
     abi_info = abi_info or dict()
 
     nvvm_options = {"fastmath": fastmath, "opt": 3 if opt else 0}
+    if not fma:
+        nvvm_options["fma"] = False
 
     if debug:
         nvvm_options["g"] = None
@@ -1151,6 +1156,7 @@ def compile(
     lineinfo=False,
     device=True,
     fastmath=False,
+    fma=True,
     cc=None,
     opt=None,
     abi="c",
@@ -1230,6 +1236,7 @@ def compile(
         lineinfo=lineinfo,
         device=device,
         fastmath=fastmath,
+        fma=fma,
         cc=cc,
         opt=opt,
         abi=abi,
@@ -1260,6 +1267,7 @@ def compile_for_current_device(
     lineinfo=False,
     device=True,
     fastmath=False,
+    fma=True,
     opt=None,
     abi="c",
     abi_info=None,
@@ -1278,6 +1286,7 @@ def compile_for_current_device(
         lineinfo=lineinfo,
         device=device,
         fastmath=fastmath,
+        fma=fma,
         cc=cc,
         opt=opt,
         abi=abi,
@@ -1295,6 +1304,7 @@ def compile_ptx(
     lineinfo=False,
     device=False,
     fastmath=False,
+    fma=True,
     cc=None,
     opt=None,
     abi="numba",
@@ -1313,6 +1323,7 @@ def compile_ptx(
         lineinfo=lineinfo,
         device=device,
         fastmath=fastmath,
+        fma=fma,
         cc=cc,
         opt=opt,
         abi=abi,
@@ -1330,6 +1341,7 @@ def compile_ptx_for_current_device(
     lineinfo=False,
     device=False,
     fastmath=False,
+    fma=True,
     opt=None,
     abi="numba",
     abi_info=None,
@@ -1346,6 +1358,7 @@ def compile_ptx_for_current_device(
         lineinfo=lineinfo,
         device=device,
         fastmath=fastmath,
+        fma=fma,
         cc=cc,
         opt=opt,
         abi=abi,
