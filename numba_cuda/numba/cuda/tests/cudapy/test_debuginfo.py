@@ -14,6 +14,7 @@ import math
 import itertools
 import re
 import unittest
+from unittest.mock import patch
 import warnings
 from numba.cuda.core.errors import NumbaDebugInfoWarning
 from numba.cuda.tests.support import ignore_internal_warnings
@@ -1294,6 +1295,110 @@ class TestCudaDebugInfo(CUDATestCase):
             match,
             msg="Load of arg 'arr' missing !dbg metadata",
         )
+
+
+class TestPolymorphicDebugInfoSupport(unittest.TestCase):
+    """
+    Unit tests for _check_polymorphic_debug_info_support()
+    """
+
+    def test_get_local_runtime_version_not_implemented(self):
+        from numba.cuda.debuginfo import _check_polymorphic_debug_info_support
+
+        with patch(
+            "numba.cuda.debuginfo.runtime.getLocalRuntimeVersion",
+            side_effect=NotImplementedError,
+        ):
+            supported, use_typed_const = _check_polymorphic_debug_info_support()
+            self.assertFalse(supported)
+            self.assertFalse(use_typed_const)
+
+    def test_get_local_runtime_version_runtime_error(self):
+        from numba.cuda.debuginfo import _check_polymorphic_debug_info_support
+
+        with patch(
+            "numba.cuda.debuginfo.runtime.getLocalRuntimeVersion",
+            side_effect=RuntimeError("DynamicLibNotFoundError"),
+        ):
+            supported, use_typed_const = _check_polymorphic_debug_info_support()
+            self.assertFalse(supported)
+            self.assertFalse(use_typed_const)
+
+    def test_get_local_runtime_version_attribute_error(self):
+        from numba.cuda.debuginfo import _check_polymorphic_debug_info_support
+
+        with patch(
+            "numba.cuda.debuginfo.runtime.getLocalRuntimeVersion",
+            side_effect=AttributeError,
+        ):
+            supported, use_typed_const = _check_polymorphic_debug_info_support()
+            self.assertFalse(supported)
+            self.assertFalse(use_typed_const)
+
+    def test_get_local_runtime_version_error_status(self):
+        from numba.cuda.debuginfo import _check_polymorphic_debug_info_support
+
+        with patch(
+            "numba.cuda.debuginfo.runtime.getLocalRuntimeVersion",
+            return_value=(1, 0),
+        ):
+            supported, use_typed_const = _check_polymorphic_debug_info_support()
+            self.assertFalse(supported)
+            self.assertFalse(use_typed_const)
+
+    def test_polymorphic_debug_info_older_ctk(self):
+        from numba.cuda.debuginfo import _check_polymorphic_debug_info_support
+
+        # CTK 12.8: (0, 12080)
+        with patch(
+            "numba.cuda.debuginfo.runtime.getLocalRuntimeVersion",
+            return_value=(0, 12080),
+        ):
+            supported, use_typed_const = _check_polymorphic_debug_info_support()
+            self.assertFalse(supported)
+            self.assertFalse(use_typed_const)
+
+        # CTK 13.1: (0, 13010)
+        with patch(
+            "numba.cuda.debuginfo.runtime.getLocalRuntimeVersion",
+            return_value=(0, 13010),
+        ):
+            supported, use_typed_const = _check_polymorphic_debug_info_support()
+            self.assertFalse(supported)
+            self.assertFalse(use_typed_const)
+
+    def test_polymorphic_debug_info_supported(self):
+        from numba.cuda.debuginfo import _check_polymorphic_debug_info_support
+
+        # CTK 13.2: (0, 13020) with llvmlite > 0.45
+        with (
+            patch(
+                "numba.cuda.debuginfo.runtime.getLocalRuntimeVersion",
+                return_value=(0, 13020),
+            ),
+            patch(
+                "numba.cuda.debuginfo._get_llvmlite_version",
+                return_value=(0, 46),
+            ),
+        ):
+            supported, use_typed_const = _check_polymorphic_debug_info_support()
+            self.assertTrue(supported)
+            self.assertTrue(use_typed_const)
+
+        # CTK 13.2: (0, 13020) with llvmlite <= 0.45
+        with (
+            patch(
+                "numba.cuda.debuginfo.runtime.getLocalRuntimeVersion",
+                return_value=(0, 13020),
+            ),
+            patch(
+                "numba.cuda.debuginfo._get_llvmlite_version",
+                return_value=(0, 45),
+            ),
+        ):
+            supported, use_typed_const = _check_polymorphic_debug_info_support()
+            self.assertTrue(supported)
+            self.assertFalse(use_typed_const)
 
 
 if __name__ == "__main__":
