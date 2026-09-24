@@ -2,7 +2,9 @@
 # SPDX-License-Identifier: BSD-2-Clause
 
 import abc
+import hashlib
 import os
+import re
 from contextlib import contextmanager
 from enum import IntEnum
 
@@ -14,6 +16,20 @@ from numba.cuda import cgutils
 from numba.cuda.datamodel.models import ComplexModel, UnionModel, UniTupleModel
 from numba.cuda.types.ext_types import GridGroup
 from cuda.bindings import runtime
+
+
+def _symbol_safe_identifier(lltype_str):
+    """Return a symbol-safe ODR identifier for a debug-info composite type.
+
+    NVVM uses the DICompositeType 'identifier' field as a symbol name.
+    Characters such as '{', '}', '[', ']', '(', ')', '*', ',', and spaces are
+    not valid in PTX symbol names and cause NVVM to reject the IR with
+    'Symbol name with unsupported characters'. This function creates a safe,
+    deterministic identifier while preserving uniqueness for ODR type uniquing.
+    """
+    safe = re.sub(r"[^0-9A-Za-z_]", "_", lltype_str)[:40]
+    digest = hashlib.sha1(lltype_str.encode("utf-8")).hexdigest()
+    return f"_di_{safe}_{digest}"
 
 
 # Check if CUDA Toolkit and llvmlite support polymorphic debug info
@@ -290,7 +306,7 @@ class DIBuilder(AbstractDIBuilder):
                 {
                     "tag": ir.DIToken("DW_TAG_structure_type"),
                     "name": f"{datamodel.fe_type} ({str(lltype)})",
-                    "identifier": str(lltype),
+                    "identifier": _symbol_safe_identifier(str(lltype)),
                     "elements": m.add_metadata(meta),
                     "size": offset,
                 },
@@ -316,7 +332,7 @@ class DIBuilder(AbstractDIBuilder):
                     "baseType": basetype,
                     "name": name,
                     "size": bitsize,
-                    "identifier": str(lltype),
+                    "identifier": _symbol_safe_identifier(str(lltype)),
                     "elements": m.add_metadata([mdrange]),
                 },
             )
@@ -381,7 +397,7 @@ class DIBuilder(AbstractDIBuilder):
                 {
                     "tag": ir.DIToken("DW_TAG_structure_type"),
                     "name": name,
-                    "identifier": str(lltype),
+                    "identifier": _symbol_safe_identifier(str(lltype)),
                     "elements": m.add_metadata(meta),
                     "size": offset,
                 },
@@ -405,7 +421,7 @@ class DIBuilder(AbstractDIBuilder):
                     "baseType": basetype,
                     "name": str(lltype),
                     "size": bitsize,
-                    "identifier": str(lltype),
+                    "identifier": _symbol_safe_identifier(str(lltype)),
                     "elements": m.add_metadata([mdrange]),
                 },
             )
@@ -433,7 +449,7 @@ class DIBuilder(AbstractDIBuilder):
                     "baseType": mdbase,
                     "name": str(lltype),
                     "size": bitsize,
-                    "identifier": str(lltype),
+                    "identifier": _symbol_safe_identifier(str(lltype)),
                     "elements": m.add_metadata([mdrange]),
                 },
             )
@@ -811,7 +827,7 @@ class CUDADIBuilder(DIBuilder):
                         "file": self.difile,
                         "tag": ir.DIToken("DW_TAG_union_type"),
                         "name": fake_union_name,
-                        "identifier": str(lltype),
+                        "identifier": _symbol_safe_identifier(str(lltype)),
                         "elements": m.add_metadata(meta),
                         "size": maxwidth,
                     },
