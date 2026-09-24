@@ -27,7 +27,7 @@ class CudaLoweringError(LoweringError):
 
 
 _launch_help_url = (
-    "https://numba.readthedocs.io/en/stable/cuda/kernels.html#kernel-invocation"
+    "https://nvidia.github.io/numba-cuda/user/kernels.html#kernel-invocation"
 )
 missing_launch_config_msg = """
 Kernel launch configuration was not specified. Use the syntax:
