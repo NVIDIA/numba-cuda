@@ -31,6 +31,11 @@ target.
    If set, don't compile and execute code for the GPU, but use the CUDA
    Simulator instead. For debugging purposes.
 
+.. envvar:: NUMBA_CUDA_DEBUGINFO
+
+   If set to 1, enable debug info for all compiled CUDA kernels by default
+   (equivalent to passing ``debug=True`` to ``@cuda.jit``). Defaults to 0.
+
 
 .. envvar:: NUMBA_CUDA_ARRAY_INTERFACE_SYNC
 
@@ -117,8 +122,48 @@ target.
    ``/usr/local/cuda/include``. On Windows, the default is
    ``$env:CUDA_PATH\include``.
 
+.. envvar:: NUMBA_CUDA_MEMORY_MANAGER
+
+   Configures an External Memory Management (EMM) Plugin for CUDA device
+   allocations. When set to a module name (such as ``rmm.allocators.numba``),
+   Numba-CUDA imports the module and uses its ``_numba_memory_manager``
+   global variable as the memory manager class. Defaults to ``default``.
+
+.. envvar:: NUMBA_CUDA_MAX_PENDING_DEALLOCS_COUNT
+
+   The maximum number of pending deallocations in the deallocation queue
+   before the queue is automatically flushed. Defaults to 10.
+
+.. envvar:: NUMBA_CUDA_MAX_PENDING_DEALLOCS_RATIO
+
+   The maximum accumulated byte size of pending deallocations as a ratio of
+   total device memory capacity before the queue is automatically flushed.
+   Defaults to 0.2 (20% of device memory).
+
+.. envvar:: NUMBA_CUDA_ENABLE_NRT
+
+   Whether to enable Numba Runtime (NRT) reference counting support on the
+   CUDA target. Defaults to 0 (disabled).
+
+.. envvar:: NUMBA_CUDA_NRT_STATS
+
+   Whether to enable Numba Runtime (NRT) allocation statistics tracking for
+   CUDA memory management. Defaults to 0.
+
 .. envvar:: NUMBA_CUDA_NVRTC_EXTRA_SEARCH_PATHS
 
    A colon separated list of paths that Numba's NVRTC should search for when compiling
    external functions. These folders are searched after the system cudatoolkit search
    paths and Numba-CUDA's internal search paths.
+
+.. envvar:: NUMBA_CUDA_TEST_BIN_DIR
+
+   Points to a directory containing precompiled test binaries (including
+   ``.ptx``, ``.cubin``, ``.fatbin``, ``.o``, ``.a``, and ``.ltoir`` files) used
+   by the Numba-CUDA driver and linker test suite.
+
+.. envvar:: NUMBA_CUDA_TEST_WHEEL_ONLY
+
+   When set to a non-empty string, skips tests that require system CUDA toolkit
+   binaries such as ``cuobjdump`` which are not present in wheel-only
+   installations.
