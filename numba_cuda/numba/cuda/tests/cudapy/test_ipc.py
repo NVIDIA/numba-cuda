@@ -87,6 +87,9 @@ class TestIpcMemory(CUDAIpcTestCase):
         # prepare data for IPC
         arr = np.arange(10, dtype=np.intp)
         devarr = cuda.to_device(arr)
+        # Ensure the host-to-device copy completes before exporting the IPC
+        # handle. The default stream may still be updating the allocation.
+        cuda.synchronize()
 
         # create IPC handle
         ctx = cuda.current_context()
