@@ -62,6 +62,17 @@ class Dim3(Stub):
     def z(self):
         pass
 
+    def __iter__(self):
+        yield self.x
+        yield self.y
+        yield self.z
+
+    def __getitem__(self, idx):
+        return (self.x, self.y, self.z)[idx]
+
+    def __len__(self):
+        return 3
+
 
 class threadIdx(Dim3):
     """
