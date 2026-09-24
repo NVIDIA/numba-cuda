@@ -43,7 +43,13 @@ def _check_polymorphic_debug_info_support():
     """
     # runtime.getLocalRuntimeVersion() returns (cudaError_t, version_int)
     # Example: 13010 = CTK 13.1, 13020 = CTK 13.2
-    _, ctk_version_number = runtime.getLocalRuntimeVersion()
+    try:
+        _, ctk_version_number = runtime.getLocalRuntimeVersion()
+    except NotImplementedError:
+        # cuda-bindings does not implement this query on Windows.  Do not
+        # prevent importing numba.cuda when the optional feature cannot be
+        # version-gated.
+        return (False, False)
     ctk_major = ctk_version_number // 1000
     ctk_minor = (ctk_version_number % 1000) // 10
     ctk_version = (ctk_major, ctk_minor)
