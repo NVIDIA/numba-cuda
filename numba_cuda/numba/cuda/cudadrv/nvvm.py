@@ -267,9 +267,19 @@ class CompilationUnit:
 
 
 MISSING_LIBDEVICE_FILE_MSG = """Missing libdevice file.
-``cuda-nvcc`` and ``cuda-nvrtc`` are required:
+The CUDA Toolkit compiler components are required.
 
-    $ conda install -c conda-forge cuda-nvcc cuda-nvrtc "cuda-version>=12.0"
+If using pip:
+
+    $ pip install numba-cuda[cu12]   # for CUDA 12
+    $ pip install numba-cuda[cu13]   # for CUDA 13
+
+If using conda:
+
+    $ conda install -c conda-forge numba-cuda "cuda-version=12"
+    $ conda install -c conda-forge numba-cuda "cuda-version=13"
+
+Alternatively, ensure a system CUDA Toolkit is installed and CUDA_HOME is set.
 """
 
 
