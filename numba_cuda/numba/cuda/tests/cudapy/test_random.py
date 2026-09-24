@@ -14,6 +14,7 @@ from numba.cuda.testing import (
 )
 
 from numba.cuda.random import (
+    uint64_to_unit_float32,
     xoroshiro128p_uniform_float32,
     xoroshiro128p_normal_float32,
     xoroshiro128p_uniform_float64,
@@ -50,6 +51,11 @@ def rng_kernel_float64(states, out, count, distribution):
             out[idx] = xoroshiro128p_uniform_float64(states, thread_id)
         elif distribution == NORMAL:
             out[idx] = xoroshiro128p_normal_float64(states, thread_id)
+
+
+@cuda.jit
+def convert_uint64_to_float32(value, out):
+    out[0] = uint64_to_unit_float32(value[0])
 
 
 @skip_on_standalone_numba_cuda
@@ -91,6 +97,14 @@ class TestCudaRandomXoroshiro128p(CUDATestCase):
 
     def test_uniform_float32(self):
         self.check_uniform(rng_kernel_float32, np.float32)
+
+    def test_uniform_float32_excludes_one(self):
+        value = np.array([np.iinfo(np.uint64).max], dtype=np.uint64)
+        out = np.zeros(1, dtype=np.float32)
+
+        convert_uint64_to_float32[1, 1](value, out)
+
+        self.assertLess(out[0], 1.0)
 
     @skip_on_cudasim("skip test for speed under cudasim")
     def test_uniform_float64(self):
