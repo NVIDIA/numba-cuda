@@ -32,6 +32,14 @@ target.
    Simulator instead. For debugging purposes.
 
 
+.. envvar:: NUMBA_CUDA_ENABLE_LTO
+
+   Whether to enable Link-Time Optimization (LTO) by default when linking
+   device code and ``nvJitLink`` is available. Defaults to 1. If set to 0,
+   default compilation linking uses PTX instead of LTO-IR unless explicitly
+   requested with ``lto=True``.
+
+
 .. envvar:: NUMBA_CUDA_ARRAY_INTERFACE_SYNC
 
    Whether to synchronize on streams provided by objects imported using the CUDA

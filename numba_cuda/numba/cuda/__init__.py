@@ -60,6 +60,9 @@ numba_cuda_default_ptx_cc = (7, 5)
 if numba_cuda_default_ptx_cc > config_default_cc:
     config.CUDA_DEFAULT_PTX_CC = numba_cuda_default_ptx_cc
 
+if not hasattr(config, "CUDA_ENABLE_LTO"):
+    config.CUDA_ENABLE_LTO = _readenv("NUMBA_CUDA_ENABLE_LTO", int, 1)
+
 
 # Warn if on Linux and RTLD_GLOBAL is enabled
 if sys.platform.startswith("linux") and (sys.getdlopenflags() & 0x100) != 0:

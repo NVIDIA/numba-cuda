@@ -570,6 +570,7 @@ class _EnvReloader:
         # The default value for the `debug` flag
         DEBUGINFO_DEFAULT = _readenv("NUMBA_DEBUGINFO", int, ENABLE_PROFILING)
         CUDA_DEBUGINFO_DEFAULT = _readenv("NUMBA_CUDA_DEBUGINFO", int, 0)
+        CUDA_ENABLE_LTO = _readenv("NUMBA_CUDA_ENABLE_LTO", int, 1)
 
         EXTEND_VARIABLE_LIFETIMES = _readenv(
             "NUMBA_EXTEND_VARIABLE_LIFETIMES", int, 0
@@ -644,5 +645,8 @@ try:
     import numba.core.config as _config
 
     sys.modules[__name__] = _config
+    from numba.cuda.utils import _readenv as _read_env_util
+
+    _config.CUDA_ENABLE_LTO = _read_env_util("NUMBA_CUDA_ENABLE_LTO", int, 1)
 except ImportError:
     pass
