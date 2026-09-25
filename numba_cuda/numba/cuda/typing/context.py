@@ -11,6 +11,7 @@ import operator
 from importlib.util import find_spec
 
 from numba.cuda.core import errors
+from numba.cuda.core import config
 from numba.cuda.typeconv import Conversion, rules
 from numba.cuda.typing.typeof import typeof, Purpose
 from numba.cuda.typing import templates
@@ -50,6 +51,8 @@ class CallStack(Sequence):
     def __init__(self):
         self._stack = []
         self._lock = threading.RLock()
+        # fail_cache only lasts for the current compilation session
+        self._fail_cache = {}
 
     def __getitem__(self, index):
         """
@@ -63,17 +66,34 @@ class CallStack(Sequence):
 
     @contextlib.contextmanager
     def register(self, target, typeinfer, func_id, args):
-        # guard compiling the same function with the same signature
-        if self.match(func_id.func, args):
-            msg = "compiler re-entrant to the same function signature"
-            raise errors.NumbaRuntimeError(msg)
-        self._lock.acquire()
-        self._stack.append(CallFrame(target, typeinfer, func_id, args))
-        try:
+        with contextlib.ExitStack() as undo:
+            # guard compiling the same function with the same signature
+            if self.match(func_id.func, args):
+                msg = "compiler re-entrant to the same function signature"
+                raise errors.NumbaRuntimeError(msg)
+
+            # Acquire lock
+            undo.enter_context(self._lock)
+
+            # Clear fail_cache at the start and end of a compilation session
+            def clear_fail_cache(*exc):
+                if config.DISABLE_TYPEINFER_FAIL_CACHE:
+                    return  # bypass
+                # Clear cache if stack is empty
+                if not self._stack:
+                    self._fail_cache.clear()
+
+            clear_fail_cache()
+            undo.push(clear_fail_cache)
+
+            # Setup callframe
+            self._stack.append(CallFrame(target, typeinfer, func_id, args))
+
+            @undo.push
+            def undo_stack(*exc):
+                self._stack.pop()
+
             yield
-        finally:
-            self._stack.pop()
-            self._lock.release()
 
     def finditer(self, py_func):
         """
@@ -101,6 +121,64 @@ class CallStack(Sequence):
         for frame in self.finditer(py_func):
             if frame.args == args:
                 return frame
+
+    def lookup_resolve_cache(self, func, args, kws):
+        """Lookup resolution cache for the given function type and argument
+        types.
+        """
+        if not self._stack or config.DISABLE_TYPEINFER_FAIL_CACHE:
+            # if callstack is empty, bypass fail_cache
+            return _ResolveCache()
+
+        def normalize_dict(obj):
+            if isinstance(obj, dict):
+                return tuple(sorted(obj.items()))
+            return obj  # already hashable as-is
+
+        def hashable(obj):
+            try:
+                hash(obj)
+            except TypeError:
+                return False
+            else:
+                return True
+
+        key = func, args, normalize_dict(kws)
+        if not hashable(key):
+            return _ResolveCache()
+        return self._fail_cache.setdefault(key, _ResolveCache())
+
+
+class _ResolveCache:
+    """
+    A cache for function resolution result.
+    Currently only remembers failed attempts.
+    """
+
+    def __init__(self):
+        self._status = "unmarked"
+        self._exc = None
+
+    def mark_error(self, exc):
+        """Mark the function resolution as failed with an exception."""
+        self._status = "error"
+        self._exc = exc
+
+    def mark_failed(self):
+        """Mark the function resolution as failed."""
+        self._status = "failed"
+
+    def replay_failure(self):
+        """Replay the failure if it has been marked as failed or error."""
+        if self._status == "error":
+            raise self._exc
+        else:
+            assert self._status == "failed"
+            return None
+
+    def has_failed_previously(self):
+        """Return True if the function resolution has failed previously."""
+        return self._status in {"failed", "error"}
 
 
 class CallFrame:
@@ -193,6 +271,10 @@ class BaseContext:
         Resolve function type *func* for argument types *args* and *kws*.
         A signature is returned.
         """
+        cache = self.callstack.lookup_resolve_cache(func, args, kws)
+        if cache.has_failed_previously():
+            return cache.replay_failure()
+
         # Prefer user definition first
         try:
             res = self._resolve_user_function_type(func, args, kws)
@@ -212,7 +294,11 @@ class BaseContext:
 
         # Re-raise last_exception if no function type has been found
         if res is None and last_exception is not None:
+            cache.mark_error(last_exception)
             raise last_exception
+
+        if res is None:
+            cache.mark_failed()
 
         return res
 
