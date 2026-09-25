@@ -31,6 +31,14 @@ target.
    If set, don't compile and execute code for the GPU, but use the CUDA
    Simulator instead. For debugging purposes.
 
+.. envvar:: NUMBA_CUDA_DEBUGINFO
+
+   If set to non-zero, enable debug info generation by default when compiling
+   kernels and device functions, as if ``debug=True`` were passed to the
+   :func:`@cuda.jit <numba.cuda.jit>` decorator. A ``debug`` argument passed
+   to the decorator takes precedence over this variable. Since debug info
+   degrades performance, ``opt`` should be set to ``False`` when this
+   variable is used. The default is 0 (debug info disabled).
 
 .. envvar:: NUMBA_CUDA_ARRAY_INTERFACE_SYNC
 
