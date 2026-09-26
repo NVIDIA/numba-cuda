@@ -658,5 +658,112 @@ class TestDeclareDeviceCABI(CUDATestCase):
         np.testing.assert_equal(x, 42)
 
 
+@skip_on_cudasim("Data model inspection unsupported in the simulator")
+class TestNoneTypeModel(CUDATestCase):
+    """Tests for the NoneTypeModel data model (issue #845).
+
+    Verifies that types.void / types.NoneType uses ir.VoidType() as the
+    LLVM return type, fixing ABI mismatches when linking with external
+    C/C++ device code via LTO.
+    """
+
+    def test_nonetype_model_return_type_is_void(self):
+        from llvmlite import ir
+        from numba.cuda.descriptor import cuda_target
+
+        dm = cuda_target.target_context.data_model_manager
+        model = dm.lookup(types.void)
+
+        self.assertEqual(type(model).__name__, "NoneTypeModel")
+        self.assertIsInstance(model.get_return_type(), ir.VoidType)
+
+    def test_nonetype_model_value_type_is_opaque_ptr(self):
+        from llvmlite import ir
+        from numba.cuda.descriptor import cuda_target
+
+        dm = cuda_target.target_context.data_model_manager
+        model = dm.lookup(types.void)
+        vt = model.get_value_type()
+
+        self.assertIsInstance(vt, ir.PointerType)
+
+    def test_cabi_void_device_function_signature(self):
+        consume = cuda.declare_device(
+            "consume", "void(int32)", link=consume_cabi_cu, abi="c"
+        )
+
+        @cuda.jit
+        def kernel(r, x):
+            i = cuda.grid(1)
+            if i < len(r):
+                consume(x[i])
+                r[i] = x[i] * 3
+
+        x = np.arange(10, dtype=np.int32)
+        r = np.empty_like(x)
+        kernel[1, 32](r, x)
+
+        irs = kernel.inspect_llvm()
+
+        # Pattern to match 'call void @consume(i32 ...)' in the LLVM IR
+        pat = re.compile(r'call void @"?consume"?\s*\(\s*i32\b')
+        matched = any(pat.search(ir) for ir in irs.values())
+        self.assertTrue(
+            matched,
+            "Did not find the expected 'call void @consume(i32 ...)' pattern in LLVM IR",
+        )
+
+    def test_void_device_function_numba_abi(self):
+        @cuda.jit(device=True)
+        def noop():
+            pass
+
+        @cuda.jit
+        def kernel(r):
+            i = cuda.grid(1)
+            if i < len(r):
+                noop()
+                r[i] = 42
+
+        r = np.zeros(10, dtype=np.int32)
+        kernel[1, 32](r)
+
+        callee_irs = noop.inspect_llvm()
+        caller_irs = kernel.inspect_llvm()
+
+        callee_pat = re.compile(r'define\b[^@]*\bvoid\s+@"[^"]*noop[^"]*"')
+        callee_matched = any(
+            callee_pat.search(ir) for ir in callee_irs.values()
+        )
+        self.assertTrue(
+            callee_matched,
+            "Device function 'noop' should be defined with void return type",
+        )
+
+        caller_pat = re.compile(r'call\s+void\s+@"[^"]*noop[^"]*"\s*\(')
+        caller_matched = any(
+            caller_pat.search(ir) for ir in caller_irs.values()
+        )
+        self.assertTrue(
+            caller_matched,
+            "Kernel should call 'noop' with void return type",
+        )
+
+    def test_void_device_function_with_side_effect(self):
+        @cuda.jit(device=True)
+        def write_value(arr, idx, val):
+            arr[idx] = val
+
+        @cuda.jit
+        def kernel(arr):
+            i = cuda.grid(1)
+            if i < len(arr):
+                write_value(arr, i, i * 10)
+
+        arr = np.zeros(10, dtype=np.int32)
+        kernel[1, 32](arr)
+        np.testing.assert_equal(arr, np.arange(10, dtype=np.int32) * 10)
+
+
 if __name__ == "__main__":
     unittest.main()
