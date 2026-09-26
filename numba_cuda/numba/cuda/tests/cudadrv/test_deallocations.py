@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: BSD-2-Clause
 
 from contextlib import contextmanager
+import gc
 
 import numpy as np
 
@@ -24,12 +25,18 @@ class TestDeallocation(CUDATestCase):
         deallocs = cuda.current_context().memory_manager.deallocations
         deallocs.clear()
         self.assertEqual(len(deallocs), 0)
-        # deallocate to maximum count
+        # Allocate device arrays, keeping references to prevent GC from
+        # collecting them prematurely (which caused flaky counts).
+        arrays = [cuda.to_device(np.arange(1))
+                  for _ in range(config.CUDA_DEALLOCS_COUNT)]
+        # Delete arrays one by one and check pending count increments
         for i in range(config.CUDA_DEALLOCS_COUNT):
-            cuda.to_device(np.arange(1))
+            del arrays[i]
+            gc.collect()  # Ensure finalizers run
             self.assertEqual(len(deallocs), i + 1)
         # one more to trigger .clear()
         cuda.to_device(np.arange(1))
+        gc.collect()
         self.assertEqual(len(deallocs), 0)
 
     @skip_if_external_memmgr("Deallocation specific to Numba memory management")
