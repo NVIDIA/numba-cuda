@@ -84,8 +84,12 @@ def make_attribute_wrapper(typeclass, struct_attr, python_attr):
     @cuda_impl_registry.lower_getattr(typeclass, python_attr)
     def struct_getattr_impl(context, builder, typ, val):
         val = cgutils.create_struct_proxy(typ)(context, builder, value=val)
+        model = data_model_manager.lookup(typ)
+        field_index = model.get_field_position(struct_attr)
         attrty = get_attr_fe_type(typ)
-        attrval = getattr(val, struct_attr)
+        # Access by field index so wrappers work for underscore-prefixed names
+        # like "__x", which are hidden from StructProxy.__getattr__.
+        attrval = val[field_index]
         return impl_ret_borrowed(context, builder, attrty, attrval)
 
 
