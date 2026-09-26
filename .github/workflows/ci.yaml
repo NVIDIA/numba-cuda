@@ -177,7 +177,6 @@ jobs:
   compute-matrix:
     runs-on: ubuntu-latest
     outputs:
-      BUILD_MATRIX: ${{ steps.compute-matrix.outputs.BUILD_MATRIX }}
       SIMULATOR_MATRIX: ${{ steps.compute-matrix.outputs.SIMULATOR_MATRIX }}
       TEST_MATRIX: ${{ steps.compute-matrix.outputs.TEST_MATRIX }}
     steps:
@@ -185,13 +184,9 @@ jobs:
       - name: Compute Matrices
         id: compute-matrix
         run: |
-          BUILD_MATRIX="$(yq '.build-matrix' ci/matrix.yml)"
-          SIMULATOR_MATRIX="$(yq '.simulator-matrix' ci/matrix.yml)"
-          TEST_MATRIX="$(yq '.test-matrix' ci/matrix.yml)"
+          SIMULATOR_MATRIX="$(yq '.simulator' ci/test-matrix.yml)"
+          TEST_MATRIX="$(yq '.linux["pull-request-legacy"]' ci/test-matrix.yml)"
           {
-            echo 'BUILD_MATRIX<<EOF'
-            echo "${BUILD_MATRIX}"
-            echo 'EOF'
             echo 'SIMULATOR_MATRIX<<EOF'
             echo "${SIMULATOR_MATRIX}"
             echo 'EOF'
@@ -222,17 +217,6 @@ jobs:
       build_type: pull-request
       script: "ci/test_simulator.sh"
       matrix: ${{ needs.compute-matrix.outputs.SIMULATOR_MATRIX }}
-
-  test-wheels-deps-wheels:
-    needs:
-      - build-linux-64
-      - compute-matrix
-    uses: ./.github/workflows/wheels-test.yaml
-    with:
-      build_type: pull-request
-      script: "ci/test_wheel_deps_wheels.sh"
-      matrix: ${{ needs.compute-matrix.outputs.TEST_MATRIX }}
-      matrix_filter: map(select(.ARCH == "amd64" and (.CUDA_VER | split(".") | .[0] | tonumber >= 12))) | group_by(.CUDA_VER|split(".")|map(tonumber)|.[0]) | map(max_by([(.PY_VER|split(".")|map(tonumber)), (.CUDA_VER|split(".")|map(tonumber))]))
 
   test-thirdparty-cudf:
     needs:
