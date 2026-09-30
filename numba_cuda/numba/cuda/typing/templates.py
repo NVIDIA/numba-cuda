@@ -789,6 +789,36 @@ class _OverloadFunctionTemplate(AbstractTemplate):
 
         return jit
 
+    def _call_overload_func(self, args, kws):
+        """Invoke the overload function, memoizing on the argument types only.
+
+        The overload function receives only the argument *types* -- never the
+        compiler ``Flags`` on the ConfigStack -- so its result (the
+        implementation ``pyfunc``, or a ``(signature, pyfunc)`` tuple) depends
+        solely on ``args``/``kws`` and is independent of flags such as
+        ``inline`` or ``lto``.  ``_impl_cache`` however keys on the active
+        flags, so the same call resolved under two different flag contexts
+        (e.g. an LTO kernel's type-inference stage vs. a force-inlined
+        device-function compile) would otherwise re-execute the -- potentially
+        very expensive -- overload body once per context.
+
+        Wrapping ``_overload_func`` in a per-subclass ``functools.lru_cache``
+        collapses those to a single execution per argument-type set, while
+        leaving the flag-sensitive ``_impl_cache`` intact (flags still decide
+        which compiled artifact is built and stored).  Argument types are
+        already required to be hashable by ``_impl_cache``, so no additional
+        constraint is introduced.
+        """
+        # Bind the cache lazily and per-subclass: guard on ``__dict__`` so a
+        # subclass never reuses a parent template's cached function (which would
+        # alias distinct overloads that happen to share argument types).
+        cls = type(self)
+        cached = cls.__dict__.get("_cached_overload_func")
+        if cached is None:
+            cached = functools.lru_cache(maxsize=None)(cls._overload_func)
+            cls._cached_overload_func = cached
+        return cached(*args, **kws)
+
     def _build_impl(self, cache_key, args, kws):
         """Build and cache the implementation.
 
@@ -826,7 +856,7 @@ class _OverloadFunctionTemplate(AbstractTemplate):
             # problems
             raise TypingError(str(e)) from e
         else:
-            ovf_result = self._overload_func(*args, **kws)
+            ovf_result = self._call_overload_func(args, kws)
 
         if ovf_result is None:
             # No implementation => fail typing
