@@ -15,6 +15,7 @@ import inspect
 import tempfile
 import sys
 
+from numba.core import caching as numba_caching
 from numba.cuda.misc.appdirs import AppDirs
 from pathlib import Path
 
@@ -420,13 +421,8 @@ class _SourceFileBackedLocatorMixin:
     """
 
     def get_source_stamp(self):
-        if getattr(sys, "frozen", False):
-            st = os.stat(sys.executable)
-        else:
-            st = os.stat(self._py_file)
-        # We use both timestamp and size as some filesystems only have second
-        # granularity.
-        return st.st_mtime, st.st_size
+        upstream_mixin = numba_caching._SourceFileBackedLocatorMixin
+        return upstream_mixin.get_source_stamp(self)
 
     def get_disambiguator(self):
         return str(self._lineno)
@@ -469,13 +465,8 @@ class _SourceFileBackedLocatorMixin:
     """
 
     def get_source_stamp(self):
-        if getattr(sys, "frozen", False):
-            st = os.stat(sys.executable)
-        else:
-            st = os.stat(self._py_file)
-        # We use both timestamp and size as some filesystems only have second
-        # granularity.
-        return st.st_mtime, st.st_size
+        upstream_mixin = numba_caching._SourceFileBackedLocatorMixin
+        return upstream_mixin.get_source_stamp(self)
 
     def get_disambiguator(self):
         return str(self._lineno)
@@ -660,6 +651,9 @@ class _ZipCacheLocator(_SourceFileBackedLocatorMixin, _CacheLocator):
         return self._cache_path
 
     def get_source_stamp(self):
+        upstream_locator = getattr(numba_caching, "ZipCacheLocator", None)
+        if upstream_locator is not None:
+            return upstream_locator.get_source_stamp(self)
         st = os.stat(self._zip_path)
         return st.st_mtime, st.st_size
 

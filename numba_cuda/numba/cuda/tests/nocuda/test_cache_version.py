@@ -5,12 +5,30 @@ import os
 import pickle
 import tempfile
 import unittest
+import zipfile
 from unittest import mock
 
 import numba
 import numba_cuda
 
-from numba.cuda.core.caching import Cache, IndexDataCacheFile
+from numba.cuda.core.caching import (
+    Cache,
+    IndexDataCacheFile,
+    _InTreeCacheLocator,
+    _ZipCacheLocator,
+)
+
+try:
+    from numba.core.caching import InTreeCacheLocator as NumbaInTreeCacheLocator
+except ImportError:
+    from numba.core.caching import (
+        _InTreeCacheLocator as NumbaInTreeCacheLocator,
+    )
+
+try:
+    from numba.core.caching import ZipCacheLocator as NumbaZipCacheLocator
+except ImportError:
+    NumbaZipCacheLocator = None
 
 
 def dummy_func(x):
@@ -66,6 +84,35 @@ class TestCacheVersion(unittest.TestCase):
 
             self.assertEqual(cache.load(old_key), ("payload",))
             self.assertIsNone(cache.load(new_key))
+
+    def test_source_stamp_matches_numba(self):
+        cuda_locator = _InTreeCacheLocator(dummy_func, __file__)
+        numba_locator = NumbaInTreeCacheLocator(dummy_func, __file__)
+
+        self.assertEqual(
+            cuda_locator.get_source_stamp(),
+            numba_locator.get_source_stamp(),
+        )
+
+    @unittest.skipIf(
+        NumbaZipCacheLocator is None,
+        "Numba does not provide a zip cache locator",
+    )
+    def test_zip_source_stamp_matches_numba(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            zip_path = os.path.join(tmp, "source.zip")
+            internal_path = "package/module.py"
+            with zipfile.ZipFile(zip_path, "w") as archive:
+                archive.writestr(internal_path, "def func():\n    pass\n")
+
+            py_file = os.path.join(zip_path, internal_path)
+            cuda_locator = _ZipCacheLocator(dummy_func, py_file)
+            numba_locator = NumbaZipCacheLocator(dummy_func, py_file)
+
+            self.assertEqual(
+                cuda_locator.get_source_stamp(),
+                numba_locator.get_source_stamp(),
+            )
 
 
 if __name__ == "__main__":
