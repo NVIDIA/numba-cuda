@@ -4,6 +4,7 @@
 import itertools
 
 from numba.cuda import types
+from numba.cuda.cext import _typeconv
 from numba.cuda.typeconv.typeconv import TypeManager, TypeCastingRules
 from numba.cuda.typeconv import rules
 from numba.cuda.typeconv import castgraph, Conversion
@@ -93,6 +94,10 @@ class TestTypeConv(CompatibilityTestMixin, unittest.TestCase):
         # allow_unsafe = False => no overload available
         with self.assertRaises(TypeError):
             sel = tm.select_overload(sig, ovs, False, False)
+
+    def test_select_overload_bad_type_manager(self):
+        with self.assertRaises(TypeError):
+            _typeconv.select_overload(None, (), (), True, False)
 
     def test_default_rules(self):
         tm = rules.default_type_manager

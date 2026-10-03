@@ -90,6 +90,7 @@ select_overload(PyObject* self, PyObject* args)
     TypeManager *tm = unwrap_TypeManager(tmcap);
     if (!tm) {
         BAD_TM_ARGUMENT;
+        return NULL;
     }
 
     Py_ssize_t sigsz = PySequence_Size(sigtup);
