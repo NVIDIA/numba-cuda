@@ -81,6 +81,14 @@ select_overload(PyObject* self, PyObject* args)
     PyObject *tmcap, *sigtup, *ovsigstup;
     int allow_unsafe;
     int exact_match_required;
+    PyObject *sigtup_fast = NULL;
+    PyObject *ovsigstup_fast = NULL;
+    PyObject *cursig_fast = NULL;
+    Type *sig = NULL;
+    Type *ovsigs = NULL;
+    PyObject *result = NULL;
+    Py_ssize_t sigsz = 0;
+    Py_ssize_t ovsz = 0;
 
     if (!PyArg_ParseTuple(args, "OOOii", &tmcap, &sigtup, &ovsigstup,
                           &allow_unsafe, &exact_match_required)) {
@@ -92,24 +100,65 @@ select_overload(PyObject* self, PyObject* args)
         BAD_TM_ARGUMENT;
     }
 
-    Py_ssize_t sigsz = PySequence_Size(sigtup);
-    Py_ssize_t ovsz = PySequence_Size(ovsigstup);
-
-    Type *sig = new Type[sigsz];
-    Type *ovsigs = new Type[ovsz * sigsz];
-
-    for (int i = 0; i < sigsz; ++i) {
-        sig[i] = Type(PyNumber_AsSsize_t(PySequence_Fast_GET_ITEM(sigtup,
-                                                                  i), NULL));
+    sigtup_fast = PySequence_Fast(sigtup, "1st argument should be a sequence");
+    if (!sigtup_fast) {
+        goto done;
+    }
+    ovsigstup_fast = PySequence_Fast(ovsigstup,
+                                     "2nd argument should be a sequence");
+    if (!ovsigstup_fast) {
+        goto done;
     }
 
-    for (int i = 0; i < ovsz; ++i) {
-        PyObject *cursig = PySequence_Fast_GET_ITEM(ovsigstup, i);
-        for (int j = 0; j < sigsz; ++j) {
-            long tid = PyNumber_AsSsize_t(PySequence_Fast_GET_ITEM(cursig,
-                                                                   j), NULL);
+    sigsz = PySequence_Fast_GET_SIZE(sigtup_fast);
+    ovsz = PySequence_Fast_GET_SIZE(ovsigstup_fast);
+
+    if (ovsz != 0 && sigsz > PY_SSIZE_T_MAX / ovsz) {
+        PyErr_SetString(PyExc_OverflowError, "Too many overload signatures");
+        goto done;
+    }
+
+    if (sigsz < 0 || ovsz < 0) {
+        goto done;
+    }
+
+    sig = new Type[sigsz];
+    ovsigs = new Type[ovsz * sigsz];
+
+    for (Py_ssize_t i = 0; i < sigsz; ++i) {
+        long tid = PyNumber_AsSsize_t(PySequence_Fast_GET_ITEM(sigtup_fast, i),
+                                      NULL);
+        if (tid == -1 && PyErr_Occurred()) {
+            goto done;
+        }
+        sig[i] = Type(tid);
+    }
+
+    for (Py_ssize_t i = 0; i < ovsz; ++i) {
+        cursig_fast = PySequence_Fast(PySequence_Fast_GET_ITEM(ovsigstup_fast, i),
+                                     "Each overload should be a sequence");
+        if (!cursig_fast) {
+            goto done;
+        }
+        if (PySequence_Fast_GET_SIZE(cursig_fast) != sigsz) {
+            PyErr_SetString(
+                PyExc_TypeError,
+                "Each overload should have same length as provided signature"
+            );
+            Py_DECREF(cursig_fast);
+            cursig_fast = NULL;
+            goto done;
+        }
+        for (Py_ssize_t j = 0; j < sigsz; ++j) {
+            long tid = PyNumber_AsSsize_t(PySequence_Fast_GET_ITEM(cursig_fast, j),
+                                          NULL);
+            if (tid == -1 && PyErr_Occurred()) {
+                goto done;
+            }
             ovsigs[i * sigsz + j] = Type(tid);
         }
+        Py_DECREF(cursig_fast);
+        cursig_fast = NULL;
     }
 
     int selected = -42;
@@ -117,18 +166,29 @@ select_overload(PyObject* self, PyObject* args)
                                      (bool) allow_unsafe,
                                      (bool) exact_match_required);
 
-    delete [] sig;
-    delete [] ovsigs;
-
     if (matches > 1) {
         PyErr_SetString(PyExc_TypeError, "Ambiguous overloading");
-        return NULL;
+        goto done;
     } else if (matches == 0) {
         PyErr_SetString(PyExc_TypeError, "No compatible overload");
+        goto done;
+    }
+
+    result = PyLong_FromLong(selected);
+
+done:
+    delete [] sig;
+    delete [] ovsigs;
+    Py_XDECREF(sigtup_fast);
+    Py_XDECREF(ovsigstup_fast);
+    Py_XDECREF(cursig_fast);
+
+    if (PyErr_Occurred()) {
+        Py_XDECREF(result);
         return NULL;
     }
 
-    return PyLong_FromLong(selected);
+    return result;
 }
 
 PyObject*
