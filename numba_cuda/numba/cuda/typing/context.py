@@ -67,13 +67,15 @@ class CallStack(Sequence):
         if self.match(func_id.func, args):
             msg = "compiler re-entrant to the same function signature"
             raise errors.NumbaRuntimeError(msg)
-        self._lock.acquire()
-        self._stack.append(CallFrame(target, typeinfer, func_id, args))
-        try:
-            yield
-        finally:
-            self._stack.pop()
-            self._lock.release()
+        # Use `with self._lock:` so an exception between acquire and the
+        # try-block (e.g. raised by CallFrame.__init__, an OOM, or an
+        # asynchronously-injected interrupt) cannot orphan the lock.
+        with self._lock:
+            self._stack.append(CallFrame(target, typeinfer, func_id, args))
+            try:
+                yield
+            finally:
+                self._stack.pop()
 
     def finditer(self, py_func):
         """
