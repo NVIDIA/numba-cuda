@@ -9,6 +9,7 @@ import itertools
 import pickle
 
 import numpy as np
+from cuda.bindings import driver as binding
 
 from numba import cuda
 from numba.cuda.testing import (
@@ -24,6 +25,11 @@ import unittest
 
 
 FUTURE_TIMEOUT = 4
+
+skip_without_ipc_handle_reserved = unittest.skipUnless(
+    hasattr(binding.CUipcMemHandle(), "reserved"),
+    "cuda-bindings does not expose CUipcMemHandle.reserved",
+)
 
 
 def base_ipc_handle_test(handle, size, parent_pid):
@@ -82,6 +88,7 @@ class CUDAIpcTestCase(CUDATestCase):
 @skip_on_cudasim("Ipc not available in CUDASIM")
 @skip_on_arm("CUDA IPC not supported on ARM in Numba")
 @skip_on_wsl2("CUDA IPC unreliable on WSL2; skipping IPC tests")
+@skip_without_ipc_handle_reserved
 class TestIpcMemory(CUDAIpcTestCase):
     def test_ipc_handle(self):
         # prepare data for IPC
@@ -208,6 +215,7 @@ def staged_ipc_array_test(ipcarr, device_num, parent_pid):
 @skip_on_cudasim("Ipc not available in CUDASIM")
 @skip_on_arm("CUDA IPC not supported on ARM in Numba")
 @skip_on_wsl2("CUDA IPC unreliable on WSL2; skipping IPC tests")
+@skip_without_ipc_handle_reserved
 class TestIpcStaged(CUDAIpcTestCase):
     def test_staged(self):
         # prepare data for IPC
