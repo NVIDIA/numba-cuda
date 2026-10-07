@@ -310,9 +310,20 @@ class CUDATargetContext(BaseContext):
         gv.global_constant = True
         gv.initializer = constary
 
-        # Preserve the underlying alignment
+        # Preserve the underlying alignment. Records are stored as byte
+        # arrays, so their ABI alignment does not reflect the alignment
+        # required by their fields.
         lldtype = self.get_data_type(aryty.dtype)
-        align = self.get_abi_sizeof(lldtype)
+        if isinstance(aryty.dtype, types.Record):
+            align = max(
+                (
+                    self.get_abi_alignment(self.get_data_type(field.type))
+                    for field in aryty.dtype.fields.values()
+                ),
+                default=1,
+            )
+        else:
+            align = self.get_abi_sizeof(lldtype)
         gv.align = 2 ** (align - 1).bit_length()
 
         # Convert to generic address-space
