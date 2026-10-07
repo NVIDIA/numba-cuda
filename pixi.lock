@@ -18471,7 +18471,8 @@ packages:
   depends:
   - python
   - packaging
-  - numba >=0.60
+  - numba >=0.60,<0.67
+  - numpy <2.5
   - cuda-core >=0.6.0,<1
   - cuda-bindings >=12.9,<14
   - cuda-python >=12.9,<14
@@ -18493,7 +18494,8 @@ packages:
   depends:
   - python
   - packaging
-  - numba >=0.60
+  - numba >=0.60,<0.67
+  - numpy <2.5
   - cuda-core >=0.6.0,<1
   - cuda-bindings >=12.9,<14
   - cuda-python >=12.9,<14
@@ -18516,7 +18518,8 @@ packages:
   depends:
   - python
   - packaging
-  - numba >=0.60
+  - numba >=0.60,<0.67
+  - numpy <2.5
   - cuda-core >=0.6.0,<1
   - cuda-bindings >=12.9,<14
   - cuda-python >=12.9,<14
@@ -18540,7 +18543,8 @@ packages:
   depends:
   - python
   - packaging
-  - numba >=0.60
+  - numba >=0.60,<0.67
+  - numpy <2.5
   - cuda-core >=0.6.0,<1
   - cuda-bindings >=12.9,<14
   - cuda-python >=12.9,<14
@@ -18563,7 +18567,8 @@ packages:
   depends:
   - python
   - packaging
-  - numba >=0.60
+  - numba >=0.60,<0.67
+  - numpy <2.5
   - cuda-core >=0.6.0,<1
   - cuda-bindings >=12.9,<14
   - cuda-python >=12.9,<14
@@ -18585,7 +18590,8 @@ packages:
   depends:
   - python
   - packaging
-  - numba >=0.60
+  - numba >=0.60,<0.67
+  - numpy <2.5
   - cuda-core >=0.6.0,<1
   - cuda-bindings >=12.9,<14
   - cuda-python >=12.9,<14
@@ -18607,7 +18613,8 @@ packages:
   depends:
   - python
   - packaging
-  - numba >=0.60
+  - numba >=0.60,<0.67
+  - numpy <2.5
   - cuda-core >=0.6.0,<1
   - cuda-bindings >=12.9,<14
   - cuda-python >=12.9,<14
@@ -18630,7 +18637,8 @@ packages:
   depends:
   - python
   - packaging
-  - numba >=0.60
+  - numba >=0.60,<0.67
+  - numpy <2.5
   - cuda-core >=0.6.0,<1
   - cuda-bindings >=12.9,<14
   - cuda-python >=12.9,<14
@@ -18653,7 +18661,8 @@ packages:
   depends:
   - python
   - packaging
-  - numba >=0.60
+  - numba >=0.60,<0.67
+  - numpy <2.5
   - cuda-core >=0.6.0,<1
   - cuda-bindings >=12.9,<14
   - cuda-python >=12.9,<14
@@ -18675,7 +18684,8 @@ packages:
   depends:
   - python
   - packaging
-  - numba >=0.60
+  - numba >=0.60,<0.67
+  - numpy <2.5
   - cuda-core >=0.6.0,<1
   - cuda-bindings >=12.9,<14
   - cuda-python >=12.9,<14
@@ -18698,7 +18708,8 @@ packages:
   depends:
   - python
   - packaging
-  - numba >=0.60
+  - numba >=0.60,<0.67
+  - numpy <2.5
   - cuda-core >=0.6.0,<1
   - cuda-bindings >=12.9,<14
   - cuda-python >=12.9,<14
@@ -18721,7 +18732,8 @@ packages:
   depends:
   - python
   - packaging
-  - numba >=0.60
+  - numba >=0.60,<0.67
+  - numpy <2.5
   - cuda-core >=0.6.0,<1
   - cuda-bindings >=12.9,<14
   - cuda-python >=12.9,<14
@@ -18744,7 +18756,8 @@ packages:
   depends:
   - python
   - packaging
-  - numba >=0.60
+  - numba >=0.60,<0.67
+  - numpy <2.5
   - cuda-core >=0.6.0,<1
   - cuda-bindings >=12.9,<14
   - cuda-python >=12.9,<14
@@ -18767,7 +18780,8 @@ packages:
   depends:
   - python
   - packaging
-  - numba >=0.60
+  - numba >=0.60,<0.67
+  - numpy <2.5
   - cuda-core >=0.6.0,<1
   - cuda-bindings >=12.9,<14
   - cuda-python >=12.9,<14
@@ -18789,7 +18803,8 @@ packages:
   depends:
   - python
   - packaging
-  - numba >=0.60
+  - numba >=0.60,<0.67
+  - numpy <2.5
   - cuda-core >=0.6.0,<1
   - cuda-bindings >=12.9,<14
   - cuda-python >=12.9,<14
