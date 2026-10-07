@@ -834,8 +834,8 @@ class NumberClassAttribute(AttributeTemplate):
                 real, imag = vals
                 if (
                     isinstance(ty, types.Complex)
-                    and real in types.number_domain
-                    and imag in types.number_domain
+                    and real in types.real_domain | types.integer_domain
+                    and imag in types.real_domain | types.integer_domain
                 ):
                     return ty
                 return
