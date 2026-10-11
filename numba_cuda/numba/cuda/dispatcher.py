@@ -2053,6 +2053,7 @@ class CUDADispatcher(serialize.ReduceMixin, _MemoMixin, _DispatcherBase):
                 forceinline = self.targetoptions.get("forceinline")
                 inline = self.targetoptions.get("inline", "never")
                 fastmath = self.targetoptions.get("fastmath")
+                abi = self.targetoptions.get("abi", "numba")
 
                 nvvm_options = {
                     "opt": 3 if self.targetoptions.get("opt") else 0,
@@ -2074,6 +2075,7 @@ class CUDADispatcher(serialize.ReduceMixin, _MemoMixin, _DispatcherBase):
                     fastmath=fastmath,
                     nvvm_options=nvvm_options,
                     cc=cc,
+                    abi=abi,
                 )
                 self.overloads[args] = cres
 
