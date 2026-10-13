@@ -398,5 +398,144 @@ class TestOverload(CUDATestCase):
         self.assertEqual(tuple(out), (6, 2))
 
 
+@skip_on_cudasim("Overloading not supported in cudasim")
+class TestOverloadFuncCaching(CUDATestCase):
+    """The overload body must execute at most once per argument-type set.
+
+    Numba resolves the same overloaded call under several ConfigStack flag
+    contexts during a single kernel compilation (type inference vs. a
+    force-inlined / LTO device-function compile).  ``_impl_cache`` keys on those
+    flags, so the -- potentially very expensive -- overload body would otherwise
+    run once per context.  ``_OverloadFunctionTemplate`` memoizes the overload
+    result (which depends only on the argument types, never on the flags) to
+    collapse those to a single execution.  These tests pin that down.
+    """
+
+    @staticmethod
+    def _make_template(overload_func, inline="never"):
+        from numba.cuda.typing.templates import make_overload_template
+
+        def target(x):
+            pass
+
+        return make_overload_template(
+            target, overload_func, jit_options={}, strict=True, inline=inline
+        )
+
+    def test_overload_body_runs_once(self):
+        calls = []
+
+        def ol(x):
+            calls.append(x)
+
+            def impl(x):
+                pass
+
+            return impl
+
+        template = self._make_template(ol)(None)
+        argty = types.int32
+
+        r1 = template._call_overload_func((argty,), {})
+        r2 = template._call_overload_func((argty,), {})
+
+        self.assertEqual(len(calls), 1)
+        self.assertIs(r1, r2)
+
+    def test_distinct_arg_types_run_again(self):
+        calls = []
+
+        def ol(x):
+            calls.append(x)
+
+            def impl(x):
+                pass
+
+            return impl
+
+        template = self._make_template(ol)(None)
+
+        template._call_overload_func((types.int32,), {})
+        template._call_overload_func((types.int64,), {})
+
+        self.assertEqual(len(calls), 2)
+
+    def test_kwargs_participate_in_key(self):
+        calls = []
+
+        def ol(x, flag=False):
+            calls.append((x, flag))
+
+            def impl(x, flag=False):
+                pass
+
+            return impl
+
+        template = self._make_template(ol)(None)
+
+        template._call_overload_func((types.int32,), {})
+        template._call_overload_func((types.int32,), {})
+        template._call_overload_func((types.int32,), {"flag": True})
+
+        self.assertEqual(len(calls), 2)
+
+    def test_cache_is_per_template(self):
+        calls_a = []
+        calls_b = []
+
+        def ol_a(x):
+            calls_a.append(x)
+
+            def impl(x):
+                pass
+
+            return impl
+
+        def ol_b(x):
+            calls_b.append(x)
+
+            def impl(x):
+                pass
+
+            return impl
+
+        template_a = self._make_template(ol_a)(None)
+        template_b = self._make_template(ol_b)(None)
+        argty = types.int32
+
+        ra1 = template_a._call_overload_func((argty,), {})
+        ra2 = template_a._call_overload_func((argty,), {})
+        rb1 = template_b._call_overload_func((argty,), {})
+
+        # Same argument type, but each template keeps its own cache: the two
+        # distinct overloads must not alias one another.
+        self.assertEqual(len(calls_a), 1)
+        self.assertEqual(len(calls_b), 1)
+        self.assertIs(ra1, ra2)
+        self.assertIsNot(ra1, rb1)
+
+    def test_cache_lives_on_template_class(self):
+        # Template instances are transient -- Numba creates a fresh one per
+        # resolution -- so the cache must live on the template *class* for a
+        # second instance to reuse the first's result.
+        calls = []
+
+        def ol(x):
+            calls.append(x)
+
+            def impl(x):
+                pass
+
+            return impl
+
+        template_cls = self._make_template(ol)
+        argty = types.int32
+
+        template_cls(None)._call_overload_func((argty,), {})
+        template_cls(None)._call_overload_func((argty,), {})
+
+        self.assertEqual(len(calls), 1)
+
+
 if __name__ == "__main__":
     unittest.main()
