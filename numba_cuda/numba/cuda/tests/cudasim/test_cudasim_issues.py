@@ -106,6 +106,25 @@ class TestCudaSimIssues(CUDATestCase):
             assign_with_sync[1, 6](x, y)
         assert_no_blockthreads()
 
+    @skip_unless_cudasim("Only works on CUDASIM")
+    def test_dim3_sequence_support(self):
+        @cuda.jit
+        def kernel(arr):
+            x, y, z = cuda.threadIdx
+            bx, by, bz = cuda.blockDim
+            arr[0] = x + bx
+            arr[1] = cuda.threadIdx[1]
+            arr[2] = len(cuda.threadIdx)
+            s = 0
+            for val in cuda.blockDim:
+                s += val
+            arr[3] = s
+
+        res = np.zeros(4, dtype=np.int32)
+        kernel[1, (2, 3, 4)](res)
+        self.assertEqual(res[2], 3)
+        self.assertEqual(res[3], 9)
+
 
 if __name__ == "__main__":
     unittest.main()

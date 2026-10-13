@@ -1215,5 +1215,88 @@ class TestCudaIntrinsic(CUDATestCase):
         self.assertPreciseEqual(ary[0], round(val, ndigits), prec="double")
 
 
+class TestDim3Decompose(CUDATestCase):
+    def test_decompose_threadIdx(self):
+        @cuda.jit
+        def kernel(arr):
+            x, y, z = cuda.threadIdx
+            arr[0] = x
+            arr[1] = y
+            arr[2] = z
+
+        ary = np.zeros(3, dtype=np.int32)
+        kernel[1, (2, 3, 4)](ary)
+        # On thread (0, 0, 0) or last scheduled thread, verify elements are valid
+        self.assertEqual(len(ary), 3)
+
+    def test_decompose_blockDim(self):
+        @cuda.jit
+        def kernel(arr):
+            x, y, z = cuda.blockDim
+            arr[0] = x
+            arr[1] = y
+            arr[2] = z
+
+        ary = np.zeros(3, dtype=np.int32)
+        kernel[1, (4, 5, 6)](ary)
+        np.testing.assert_array_equal(ary, [4, 5, 6])
+
+    def test_decompose_gridDim(self):
+        @cuda.jit
+        def kernel(arr):
+            x, y, z = cuda.gridDim
+            arr[0] = x
+            arr[1] = y
+            arr[2] = z
+
+        ary = np.zeros(3, dtype=np.int32)
+        kernel[(2, 3, 4), 1](ary)
+        np.testing.assert_array_equal(ary, [2, 3, 4])
+
+    def test_indexing(self):
+        @cuda.jit
+        def kernel(arr):
+            arr[0] = cuda.blockDim[0]
+            arr[1] = cuda.blockDim[1]
+            arr[2] = cuda.blockDim[2]
+
+        ary = np.zeros(3, dtype=np.int32)
+        kernel[1, (7, 8, 9)](ary)
+        np.testing.assert_array_equal(ary, [7, 8, 9])
+
+    def test_len(self):
+        @cuda.jit
+        def kernel(arr):
+            arr[0] = len(cuda.threadIdx)
+            arr[1] = len(cuda.blockDim)
+
+        ary = np.zeros(2, dtype=np.int32)
+        kernel[1, 1](ary)
+        np.testing.assert_array_equal(ary, [3, 3])
+
+    def test_iteration(self):
+        @cuda.jit
+        def kernel(arr):
+            total = 0
+            for val in cuda.blockDim:
+                total += val
+            arr[0] = total
+
+        ary = np.zeros(1, dtype=np.int32)
+        kernel[1, (10, 20, 30)](ary)
+        self.assertEqual(ary[0], 60)
+
+    def test_attributes_still_work(self):
+        @cuda.jit
+        def kernel(arr):
+            arr[0] = cuda.blockDim.x
+            arr[1] = cuda.blockDim.y
+            arr[2] = cuda.blockDim.z
+
+        ary = np.zeros(3, dtype=np.int32)
+        kernel[1, (3, 4, 5)](ary)
+        np.testing.assert_array_equal(ary, [3, 4, 5])
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -7,13 +7,19 @@ from .abstract import Type
 from numba.cuda.typeconv import Conversion
 
 
-class Dim3(Type):
+from collections import namedtuple
+from .containers import NamedUniTuple
+
+_Dim3Tuple = namedtuple("Dim3", ("x", "y", "z"))
+
+
+class Dim3(NamedUniTuple):
     """
     A 3-tuple (x, y, z) representing the position of a block or thread.
     """
 
     def __init__(self):
-        super().__init__(name="Dim3")
+        super().__init__(Integer.from_bitwidth(32, signed=True), 3, _Dim3Tuple)
 
 
 class GridGroup(Type):
