@@ -1101,6 +1101,14 @@ def _compile_pyfunc_with_fixup(
         )
         warn(NumbaInvalidConfigWarning(msg))
 
+    if debug and lto:
+        raise ValueError(
+            "debug=True is not compatible with lto=True. "
+            "When LTO is enabled, linking debug-annotated modules fails with "
+            "a 'Debug Info Version: IDs have conflicting behaviors' nvJitLink "
+            "error. Set debug=False or lto=False."
+        )
+
     abi_info = abi_info or dict()
 
     nvvm_options = {"fastmath": fastmath, "opt": 3 if opt else 0}
