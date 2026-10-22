@@ -656,6 +656,22 @@ class TestCoreContiguous(CUDATestCase):
         func(smv, out)
         assert out[0] == n
 
+    @skip_on_cudasim("Simulator cannot reset the CUDA context")
+    def test_assign_after_context_reset(self):
+        # Regression test for #644: the per-ndim assignment kernel is cached,
+        # and the cached kernel refers to a module that is unloaded when the
+        # context is reset. Assigning to a device array after a reset must not
+        # reuse the stale kernel.
+        ary = cuda.device_array(10, dtype=np.int32)
+        ary[0] = 1
+        cuda.synchronize()
+
+        cuda.current_context().reset()
+
+        ary = cuda.device_array(10, dtype=np.int32)
+        ary[1] = 2
+        self.assertEqual(ary[1], 2)
+
 
 if __name__ == "__main__":
     unittest.main()

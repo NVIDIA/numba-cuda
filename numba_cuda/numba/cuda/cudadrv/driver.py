@@ -1083,6 +1083,12 @@ class Context:
         # Free owned resources
         _logger.info("reset context of device %s", self.device.id)
         self.memory_manager.reset()
+        # Drop kernels cached in `devicearray._assign_kernel` - they refer to
+        # modules that are about to be unloaded, so reusing them after the
+        # reset would result in CUDA_ERROR_INVALID_HANDLE.
+        from numba.cuda.cudadrv import devicearray
+
+        devicearray._assign_kernel.cache_clear()
         self.modules.clear()
         # Clear trash
         self.deallocations.clear()
