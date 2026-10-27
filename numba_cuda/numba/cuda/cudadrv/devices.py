@@ -160,7 +160,7 @@ class _Runtime:
                     # Is active context the primary context?
                     if ctx.handle != ac.context_handle:
                         raise RuntimeError(
-                            "Numba cannot operate on non-primary"
+                            "Numba-CUDA cannot operate on non-primary"
                             f" CUDA context {int(ac.context_handle):x}"
                         )
                     # Ensure the context is ready

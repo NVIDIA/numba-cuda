@@ -36,7 +36,7 @@ def init_all():
             func()
         except Exception as e:
             msg = (
-                f"Numba extension module '{entry_point.module}' "
+                f"Numba-CUDA extension module '{entry_point.module}' "
                 f"failed to load due to '{type(e).__name__}({str(e)})'."
             )
             warnings.warn(msg, stacklevel=3)

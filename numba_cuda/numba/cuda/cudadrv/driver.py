@@ -935,9 +935,9 @@ def _ensure_memory_manager():
 
 
 def set_memory_manager(mm_plugin):
-    """Configure Numba to use an External Memory Management (EMM) Plugin. If
-    the EMM Plugin version does not match one supported by this version of
-    Numba, a RuntimeError will be raised.
+    """Configure Numba-CUDA to use an External Memory Management (EMM) Plugin.
+    If the EMM Plugin version does not match one supported by this version of
+    Numba-CUDA, a RuntimeError will be raised.
 
     :param mm_plugin: The class implementing the EMM Plugin.
     :type mm_plugin: BaseCUDAMemoryManager

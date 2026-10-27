@@ -177,7 +177,7 @@ class Test3rdPartyContext(CUDATestCase):
         except RuntimeError as e:
             # Expecting an error about non-primary CUDA context
             self.assertIn(
-                "Numba cannot operate on non-primary CUDA context ", str(e)
+                "Numba-CUDA cannot operate on non-primary CUDA context ", str(e)
             )
         else:
             self.fail("No RuntimeError raised")

@@ -380,35 +380,35 @@ else:
 pedantic_warning_info = """
 This warning came from an internal pedantic check. Please report the warning
 message and traceback, along with a minimal reproducer at:
-https://github.com/numba/numba/issues/new?template=bug_report.md
+https://github.com/NVIDIA/numba-cuda/issues/new?template=bug_report.md
 """
 
 feedback_details = """
 Please report the error message and traceback, along with a minimal reproducer
-at: https://github.com/numba/numba/issues/new?template=bug_report.md
+at: https://github.com/NVIDIA/numba-cuda/issues/new?template=bug_report.md
 
-If more help is needed please feel free to speak to the Numba core developers
-directly at: https://gitter.im/numba/numba
+If more help is needed please feel free to speak to the Numba-CUDA developers
+directly at: https://github.com/NVIDIA/numba-cuda/discussions
 
-Thanks in advance for your help in improving Numba!
+Thanks in advance for your help in improving Numba-CUDA!
 """
 
 unsupported_error_info = """
-Unsupported functionality was found in the code Numba was trying to compile.
+Unsupported functionality was found in the code Numba-CUDA was trying to compile.
 
 If this functionality is important to you please file a feature request at:
-https://github.com/numba/numba/issues/new?template=feature_request.md
+https://github.com/NVIDIA/numba-cuda/issues/new?template=feature-request.md
 """
 
 interpreter_error_info = """
-Unsupported Python functionality was found in the code Numba was trying to
+Unsupported Python functionality was found in the code Numba-CUDA was trying to
 compile. This error could be due to invalid code, does the code work
-without Numba? (To temporarily disable Numba JIT, set the `NUMBA_DISABLE_JIT`
+without Numba-CUDA? (To temporarily disable Numba JIT, set the `NUMBA_DISABLE_JIT`
 environment variable to non-zero, and then rerun the code).
 
 If the code is valid and the unsupported functionality is important to you
 please file a feature request at:
-https://github.com/numba/numba/issues/new?template=feature_request.md
+https://github.com/NVIDIA/numba-cuda/issues/new?template=feature-request.md
 
 To see Python/NumPy features supported by the latest release of Numba visit:
 https://numba.readthedocs.io/en/stable/reference/pysupported.html
@@ -418,8 +418,8 @@ https://numba.readthedocs.io/en/stable/reference/numpysupported.html
 
 constant_inference_info = (
     """
-Numba could not make a constant out of something that it decided should be
-a constant. This could well be a current limitation in Numba's internals,
+Numba-CUDA could not make a constant out of something that it decided should be
+a constant. This could well be a current limitation in Numba-CUDA's internals,
 however please first check that your code is valid for compilation,
 particularly with respect to string interpolation (not supported!) and
 the requirement of compile time constants as arguments to exceptions:
@@ -427,15 +427,15 @@ https://numba.readthedocs.io/en/stable/reference/pysupported.html?highlight=exce
 
 If the code is valid and the unsupported functionality is important to you
 please file a feature request at:
-https://github.com/numba/numba/issues/new?template=feature_request.md
+https://github.com/NVIDIA/numba-cuda/issues/new?template=feature-request.md
 
-If you think your code should work with Numba. %s
+If you think your code should work with Numba-CUDA. %s
 """
     % feedback_details
 )
 
 typing_error_info = """
-This is not usually a problem with Numba itself but instead often caused by
+This is not usually a problem with Numba-CUDA itself but instead often caused by
 the use of unsupported features or an issue in resolving types.
 
 To see Python/NumPy features supported by the latest release of Numba visit:
@@ -446,15 +446,15 @@ https://numba.readthedocs.io/en/stable/reference/numpysupported.html
 For more information about typing errors and how to debug them visit:
 https://numba.readthedocs.io/en/stable/user/troubleshoot.html#my-code-doesn-t-compile
 
-If you think your code should work with Numba, please report the error message
+If you think your code should work with Numba-CUDA, please report the error message
 and traceback, along with a minimal reproducer at:
-https://github.com/numba/numba/issues/new?template=bug_report.md
+https://github.com/NVIDIA/numba-cuda/issues/new?template=bug_report.md
 """
 
 reportable_issue_info = """
 -------------------------------------------------------------------------------
-This should not have happened, a problem has occurred in Numba's internals.
-You are currently using Numba version %s.
+This should not have happened, a problem has occurred in Numba-CUDA's internals.
+You are currently using Numba-CUDA version %s.
 %s
 """ % (numba_cuda.__version__, feedback_details)
 
