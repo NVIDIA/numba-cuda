@@ -594,7 +594,7 @@ def atomic_cas_2dim(res, old, ary, fill_val):
 
 @unittest.skipIf(
     not config.ENABLE_CUDASIM
-    and cuda.get_current_device().compute_capability >= (12, 0)
+    and cuda.get_current_device().compute_capability >= (10, 0)
     and cuda.cudadrv.runtime.get_version()[0] == 12,
     reason="NVVM 12.9 Bugged on CC 10+",
 )
