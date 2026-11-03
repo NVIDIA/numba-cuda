@@ -829,7 +829,16 @@ class NumberClassAttribute(AttributeTemplate):
         """
         ty = classty.instance_type
 
-        def typer(val):
+        def typer(val, imag=None):
+            if imag is not None:
+                if (
+                    isinstance(ty, types.Complex)
+                    and val in types.real_domain | types.integer_domain
+                    and imag in types.real_domain | types.integer_domain
+                ):
+                    return ty
+                return
+
             if isinstance(val, (types.BaseTuple, types.Sequence)):
                 # Array constructor, e.g. np.int32([1, 2])
                 fnty = self.context.resolve_value_type(np.array)

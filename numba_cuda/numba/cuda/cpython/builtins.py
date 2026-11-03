@@ -371,7 +371,7 @@ def complex_impl(context, builder, sig, args):
     return impl_ret_untracked(context, builder, sig.return_type, res)
 
 
-@lower(types.NumberClass, types.Any)
+@lower(types.NumberClass, types.VarArg(types.Any))
 def number_constructor(context, builder, sig, args):
     """
     Call a number class, e.g. np.int32(...)
@@ -385,11 +385,22 @@ def number_constructor(context, builder, sig, args):
 
         res = context.compile_internal(builder, foo, sig, args)
         return impl_ret_untracked(context, builder, sig.return_type, res)
-    else:
+    elif len(sig.args) == 1:
         # Scalar constructor
         [val] = args
         [valty] = sig.args
         return context.cast(builder, val, valty, sig.return_type)
+    else:
+        [realty, imagty] = sig.args
+        float_type = sig.return_type.underlying_float
+        real = context.cast(builder, args[0], realty, float_type)
+        imag = context.cast(builder, args[1], imagty, float_type)
+        cmplx = context.make_complex(builder, sig.return_type)
+        cmplx.real = real
+        cmplx.imag = imag
+        return impl_ret_untracked(
+            context, builder, sig.return_type, cmplx._getvalue()
+        )
 
 
 # -------------------------------------------------------------------------------
