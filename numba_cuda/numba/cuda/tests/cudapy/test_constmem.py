@@ -175,7 +175,7 @@ class TestCudaConstantMemory(CUDATestCase):
 
         if not ENABLE_CUDASIM:
             self.assertRegex(
-                jcuconst.inspect_asm(),
+                jcuconst.inspect_asm(jcuconst.signatures[0]),
                 r"\.const \.align 4 \.b8",
                 "record constant alignment follows its widest field",
             )
