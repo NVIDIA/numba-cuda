@@ -3,13 +3,104 @@
 
 import numpy as np
 from numba import cuda
-from numba.cuda import HAS_NUMBA
+from numba.cuda import HAS_NUMBA, types
+from numba.cuda.core.config import ENABLE_CUDASIM
 
 if HAS_NUMBA:
     from numba.core.errors import TypingError
 else:
     from numba.cuda.core.errors import TypingError
-from numba.cuda.testing import unittest, CUDATestCase
+from numba.cuda.testing import unittest, CUDATestCase, skip_on_cudasim
+
+
+@skip_on_cudasim("Compilation unsupported in the simulator")
+class TestNumpyNumberConstructorCompile(unittest.TestCase):
+    def test_complex_two_arguments(self):
+        component_types = (
+            types.float32,
+            types.float64,
+            types.int32,
+            types.int64,
+            types.uint64,
+        )
+        for dtype, expected in (
+            (np.complex64, types.complex64),
+            (np.complex128, types.complex128),
+        ):
+
+            def constructor(real, imag):
+                return dtype(real, imag)
+
+            for real in component_types:
+                for imag in component_types:
+                    with self.subTest(dtype=dtype, real=real, imag=imag):
+                        _, resty = cuda.compile_ptx(
+                            constructor, (real, imag), device=True, cc=(7, 5)
+                        )
+                        self.assertEqual(resty, expected)
+
+    def test_one_argument(self):
+        for dtype, expected in (
+            (np.int32, types.int32),
+            (np.int64, types.int64),
+            (np.float32, types.float32),
+            (np.float64, types.float64),
+            (np.complex64, types.complex64),
+            (np.complex128, types.complex128),
+        ):
+
+            def constructor(value):
+                return dtype(value)
+
+            for arg in (types.int32, types.float64, types.boolean):
+                with self.subTest(dtype=dtype, arg=arg):
+                    _, resty = cuda.compile_ptx(
+                        constructor, (arg,), device=True, cc=(7, 5)
+                    )
+                    self.assertEqual(resty, expected)
+
+    def test_invalid_arguments(self):
+        for dtype in (np.complex64, np.complex128):
+
+            def no_arguments():
+                return dtype()
+
+            def three_arguments(real, imag, extra):
+                return dtype(real, imag, extra)
+
+            def two_arguments(real, imag):
+                return dtype(real, imag)
+
+            cases = [
+                (no_arguments, ()),
+                (three_arguments, (types.float64,) * 3),
+                (two_arguments, (types.complex64, types.float64)),
+                (two_arguments, (types.complex128, types.float64)),
+                (two_arguments, (types.float64, types.complex64)),
+                (two_arguments, (types.float64, types.complex128)),
+                (two_arguments, (types.boolean, types.float64)),
+                (two_arguments, (types.float64, types.none)),
+            ]
+            for constructor, sig in cases:
+                with self.subTest(dtype=dtype, sig=sig):
+                    with self.assertRaises(TypingError):
+                        cuda.compile_ptx(
+                            constructor, sig, device=True, cc=(7, 5)
+                        )
+
+        for dtype in (np.int32, np.float64):
+
+            def constructor(real, imag):
+                return dtype(real, imag)
+
+            with self.subTest(dtype=dtype):
+                with self.assertRaises(TypingError):
+                    cuda.compile_ptx(
+                        constructor,
+                        (types.float64,) * 2,
+                        device=True,
+                        cc=(7, 5),
+                    )
 
 
 class TestCudaComplex(CUDATestCase):
@@ -44,6 +135,8 @@ class TestCudaComplex(CUDATestCase):
             self.assertTrue(np.allclose(out, real + 1j * imag))
 
     def test_numpy_complex_constructor_rejects_complex_components(self):
+        # The simulator executes NumPy directly instead of type checking.
+        error = TypeError if ENABLE_CUDASIM else TypingError
         for dtype in (np.complex64, np.complex128):
 
             @cuda.jit
@@ -52,7 +145,7 @@ class TestCudaComplex(CUDATestCase):
 
             out = np.empty(1, dtype=dtype)
             for real, imag in ((1j, 2.0), (1.0, 2j)):
-                with self.assertRaises(TypingError):
+                with self.assertRaises(error):
                     foo[1, 1](out, real, imag)
 
 
