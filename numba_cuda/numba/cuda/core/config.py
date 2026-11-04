@@ -141,8 +141,8 @@ class _EnvReloader:
                 msg = (
                     "A Numba config file is found but YAML parsing "
                     "capabilities appear to be missing. "
-                    "To use this feature please install `pyyaml`. e.g. "
-                    "`conda install pyyaml`."
+                    "To use this feature please install `pyyaml` (e.g. "
+                    "`pip install pyyaml` or `conda install pyyaml`)."
                 )
                 warnings.warn(msg)
             else:
