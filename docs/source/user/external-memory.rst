@@ -274,9 +274,9 @@ of an EMM Plugin: an environment variable, and a function.
 Environment variable
 --------------------
 
-A module name can be provided in the environment variable,
-``NUMBA_CUDA_MEMORY_MANAGER``. If this environment variable is set, Numba will
-attempt to import the module, and and use its ``_numba_memory_manager`` global
+A module name can be provided in the environment variable
+:envvar:`NUMBA_CUDA_MEMORY_MANAGER`. If this environment variable is set, Numba will
+attempt to import the module, and use its ``_numba_memory_manager`` global
 variable as the memory manager class. This is primarily useful for running the
 Numba test suite with an EMM Plugin, e.g.:
 

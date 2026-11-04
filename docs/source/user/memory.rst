@@ -334,13 +334,13 @@ occur:
   flushing all deallocations.
 - The deallocation queue has reached its maximum size, which is default to 10.
   User can override by setting the environment variable
-  `NUMBA_CUDA_MAX_PENDING_DEALLOCS_COUNT`.  For example,
-  `NUMBA_CUDA_MAX_PENDING_DEALLOCS_COUNT=20`, increases the limit to 20.
+  :envvar:`NUMBA_CUDA_MAX_PENDING_DEALLOCS_COUNT`.  For example,
+  ``NUMBA_CUDA_MAX_PENDING_DEALLOCS_COUNT=20`` increases the limit to 20.
 - The maximum accumulated byte size of resources that are pending deallocation
   is reached.  This is default to 20% of the device memory capacity.
   User can override by setting the environment variable
-  `NUMBA_CUDA_MAX_PENDING_DEALLOCS_RATIO`. For example,
-  `NUMBA_CUDA_MAX_PENDING_DEALLOCS_RATIO=0.5` sets the limit to 50% of the
+  :envvar:`NUMBA_CUDA_MAX_PENDING_DEALLOCS_RATIO`. For example,
+  ``NUMBA_CUDA_MAX_PENDING_DEALLOCS_RATIO=0.5`` sets the limit to 50% of the
   capacity.
 
 Sometimes, it is desired to defer resource deallocation until a code section
