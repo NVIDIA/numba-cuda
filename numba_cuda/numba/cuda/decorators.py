@@ -164,8 +164,9 @@ def jit(
         raise ValueError("link keyword invalid for device function")
 
     if lto is None:
-        # Default to using LTO if nvjitlink is available and we're not debugging
-        lto = _have_nvjitlink() and not debug
+        # Default to using LTO if nvjitlink is available, LTO is enabled in
+        # config, and we're not debugging
+        lto = bool(config.CUDA_ENABLE_LTO) and _have_nvjitlink() and not debug
     else:
         if lto and not _have_nvjitlink():
             raise RuntimeError(

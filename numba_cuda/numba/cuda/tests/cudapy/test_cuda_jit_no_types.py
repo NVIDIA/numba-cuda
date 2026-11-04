@@ -89,6 +89,56 @@ class TestCudaJitNoTypes(CUDATestCase):
             def f(x):
                 pass
 
+    def test_jit_lto_config_default_and_override(self):
+        # Issue #162: Provide an option to control default LTO mode via
+        # config.CUDA_ENABLE_LTO
+        from unittest.mock import patch
+
+        def dummy_kernel():
+            pass
+
+        # Verify default configuration value is enabled (1)
+        self.assertEqual(getattr(config, "CUDA_ENABLE_LTO", 1), 1)
+
+        # 1. When nvjitlink is available:
+        with patch("numba.cuda.decorators._have_nvjitlink", return_value=True):
+            # Default with CUDA_ENABLE_LTO=1 should default lto to True
+            with override_config("CUDA_ENABLE_LTO", 1):
+                disp = cuda.jit(dummy_kernel)
+                self.assertTrue(disp.targetoptions["lto"])
+
+            # Disabling CUDA_ENABLE_LTO should default lto to False
+            with override_config("CUDA_ENABLE_LTO", 0):
+                disp = cuda.jit(dummy_kernel)
+                self.assertFalse(disp.targetoptions["lto"])
+
+                # Explicit lto=True should still be respected even when
+                # CUDA_ENABLE_LTO=0
+                disp_explicit_true = cuda.jit(dummy_kernel, lto=True)
+                self.assertTrue(disp_explicit_true.targetoptions["lto"])
+
+            # Explicit lto=False should still be respected even when
+            # CUDA_ENABLE_LTO=1
+            with override_config("CUDA_ENABLE_LTO", 1):
+                disp_explicit_false = cuda.jit(dummy_kernel, lto=False)
+                self.assertFalse(disp_explicit_false.targetoptions["lto"])
+
+            # When debug=True, lto is disabled regardless of CUDA_ENABLE_LTO
+            with override_config("CUDA_ENABLE_LTO", 1):
+                disp_debug = cuda.jit(dummy_kernel, debug=True, opt=False)
+                self.assertFalse(disp_debug.targetoptions["lto"])
+
+        # 2. When nvjitlink is NOT available:
+        with patch("numba.cuda.decorators._have_nvjitlink", return_value=False):
+            # Even if CUDA_ENABLE_LTO=1, lto defaults to False
+            with override_config("CUDA_ENABLE_LTO", 1):
+                disp = cuda.jit(dummy_kernel)
+                self.assertFalse(disp.targetoptions["lto"])
+
+            # Explicit lto=True raises RuntimeError
+            with self.assertRaisesRegex(RuntimeError, "LTO requires nvjitlink"):
+                cuda.jit(dummy_kernel, lto=True)
+
 
 if __name__ == "__main__":
     unittest.main()
