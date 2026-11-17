@@ -2143,9 +2143,11 @@ class CUDADispatcher(serialize.ReduceMixin, _MemoMixin, _DispatcherBase):
             if not self._can_compile:
                 raise RuntimeError("Compilation disabled")
 
-            kernel = _Kernel(self.py_func, argtypes, **self.targetoptions)
-            # We call bind to force codegen, so that there is a cubin to cache
-            kernel.bind()
+            ev_details = dict(dispatcher=self, args=argtypes, return_type=None)
+            with ev.trigger_event("numba-cuda:compile", data=ev_details):
+                kernel = _Kernel(self.py_func, argtypes, **self.targetoptions)
+                # We call bind to force codegen, so that there is a cubin to cache
+                kernel.bind()
             if isinstance(self._cache, CUDACache) and getattr(
                 kernel, "launch_config_sensitive", False
             ):
@@ -2527,7 +2529,7 @@ class LiftedLoop(LiftedCode):
                     args=args,
                     return_type=return_type,
                 )
-                with ev.trigger_event("numba:compile", data=ev_details):
+                with ev.trigger_event("numba-cuda:compile", data=ev_details):
                     # this emulates "object mode fall-back", try nopython, if it
                     # fails, then try again in object mode.
                     try:
@@ -2637,7 +2639,7 @@ class LiftedWith(LiftedCode):
                     args=args,
                     return_type=return_type,
                 )
-                with ev.trigger_event("numba:compile", data=ev_details):
+                with ev.trigger_event("numba-cuda:compile", data=ev_details):
                     cres = compile_ir(
                         typingctx=self.typingctx,
                         targetctx=self.targetctx,
