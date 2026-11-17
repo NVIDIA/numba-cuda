@@ -366,7 +366,7 @@ class _MinimalCallHelper:
 
         Parameters
         ----------
-        id : integer
+        exc_id : integer
             The ID of the exception to look up
         """
         try:
