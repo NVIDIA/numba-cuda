@@ -43,7 +43,7 @@ configuration and code to generate binaries used during the tests. The test
 binaries need to be built on the system on which the tests are run, so that
 they are compiled for the appropriate compute capability.
 
-```
+```bash
 cd testing
 # Optionally, build test binaries and point to their location for the test suite
 make -j $(nproc)
@@ -52,9 +52,22 @@ export NUMBA_CUDA_TEST_BIN_DIR=`pwd`
 pytest -n auto -v --dist loadscope
 ```
 
+On Windows, use the batch helper in the `testing` folder to build the test
+binaries, then set `NUMBA_CUDA_TEST_BIN_DIR` to that folder before running
+pytest:
+
+```powershell
+cd testing
+# Optionally, build test binaries and point to their location for the test suite
+.\build.bat
+$env:NUMBA_CUDA_TEST_BIN_DIR = (Get-Location).Path
+# Execute tests
+pytest -n auto -v --dist loadscope
+```
+
 Alternatively, you can use [pixi](https://pixi.sh/latest/installation/) to wrap all of that up for you:
 
-```
+```bash
 # run tests against CUDA 13
 pixi run -e cu13 test -n auto -v --dist loadscope
 ```
