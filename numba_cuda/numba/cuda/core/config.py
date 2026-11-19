@@ -424,6 +424,12 @@ class _EnvReloader:
         # Disable jit for debugging
         DISABLE_JIT = _readenv("NUMBA_DISABLE_JIT", int, 0)
 
+        # Disable caching of failed type inferences.
+        # Use this to isolate problems due to the fail cache.
+        DISABLE_TYPEINFER_FAIL_CACHE = _readenv(
+            "NUMBA_DISABLE_TYPEINFER_FAIL_CACHE", int, 0
+        )
+
         # choose parallel backend to use
         THREADING_LAYER_PRIORITY = _readenv(
             "NUMBA_THREADING_LAYER_PRIORITY",
