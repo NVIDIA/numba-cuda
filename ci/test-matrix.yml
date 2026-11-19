@@ -64,6 +64,16 @@ linux:
     - { ARCH: 'amd64', PY_VER: '3.11',  CUDA_VER: '12.9.1', LOCAL_CTK: '0', GPU: 't4',         GPU_COUNT: '1', DRIVER: 'latest', FLAVOR: 'wsl' }
     - { ARCH: 'amd64', PY_VER: '3.12',  CUDA_VER: '13.2.1', LOCAL_CTK: '0', GPU: 'rtx4090',    GPU_COUNT: '1', DRIVER: 'latest', FLAVOR: 'wsl' }
   nightly: []
+  # Old container-based CI entries (issue #671) — remove when old CI is retired
+  pull-request-legacy:
+    # amd64
+    - { ARCH: 'amd64', PY_VER: '3.10', CUDA_VER: '12.0.1', GPU: 'l4',   DRIVER: 'earliest', NUMBA_VERSION: '0.60', CUDA_CORE_VERSION: '0.6.0' }
+    - { ARCH: 'amd64', PY_VER: '3.11', CUDA_VER: '12.0.1', GPU: 'l4',   DRIVER: 'earliest', NUMBA_VERSION: '*',    CUDA_CORE_VERSION: '*' }
+    - { ARCH: 'amd64', PY_VER: '3.11', CUDA_VER: '12.2.2', GPU: 'l4',   DRIVER: 'latest',   NUMBA_VERSION: '*',    CUDA_CORE_VERSION: '*' }
+    # arm64
+    - { ARCH: 'arm64', PY_VER: '3.10', CUDA_VER: '12.0.1', GPU: 'a100', DRIVER: 'earliest', NUMBA_VERSION: '0.60', CUDA_CORE_VERSION: '0.6.0' }
+    - { ARCH: 'arm64', PY_VER: '3.11', CUDA_VER: '12.0.1', GPU: 'a100', DRIVER: 'earliest', NUMBA_VERSION: '*',    CUDA_CORE_VERSION: '*' }
+    - { ARCH: 'arm64', PY_VER: '3.11', CUDA_VER: '12.2.2', GPU: 'a100', DRIVER: 'latest',   NUMBA_VERSION: '*',    CUDA_CORE_VERSION: '*' }
 
 windows:
   pull-request:
@@ -87,3 +97,7 @@ windows:
     # - { ARCH: 'amd64', PY_VER: '3.14t', CUDA_VER: '13.0.2', LOCAL_CTK: '0', GPU: 'a100',       GPU_COUNT: '1', DRIVER: 'latest', DRIVER_MODE: 'MCDM' }
     # - { ARCH: 'amd64', PY_VER: '3.14t', CUDA_VER: '13.2.1', LOCAL_CTK: '0', GPU: 'a100',       GPU_COUNT: '1', DRIVER: 'latest', DRIVER_MODE: 'MCDM' }
   nightly: []
+
+# Old container-based CI simulator (issue #671) — remove when old CI is retired
+simulator:
+  - { ARCH: 'amd64', PY_VER: '3.12', CUDA_VER: '12.8.0' }
