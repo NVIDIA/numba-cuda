@@ -20,8 +20,8 @@ from numba.cuda.utils import (
     PYVERSION,
     BINOPS_TO_OPERATORS,
     INPLACE_BINOPS_TO_OPERATORS,
+    _lazy_pformat,
 )
-from numba.cuda.utils import _lazy_pformat
 from numba.cuda.core.byteflow import Flow, AdaptDFA, AdaptCFA, BlockKind
 from numba.cuda.core.unsafe import eh
 from numba.cuda.cpython.unsafe.tuple import unpack_single_tuple

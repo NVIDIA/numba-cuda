@@ -17,6 +17,7 @@ from numba.cuda.core import ir
 from numba.cuda.core import errors
 from numba.cuda.core import ir_utils
 from numba.cuda.core.analysis import compute_use_defs
+from numba.core.utils import _lazy_pformat
 
 
 _logger = logging.getLogger(__name__)
@@ -301,7 +302,7 @@ def loop_lifting(func_ir, typingctx, targetctx, flags, locals):
         _logger.debug(
             "loop lifting this IR with %d candidates:\n%s",
             len(loopinfos),
-            func_ir.dump_to_string(),
+            _lazy_pformat(func_ir, lazy_func=lambda x: x.dump_to_string()),
         )
     for loopinfo in loopinfos:
         lifted = _loop_lift_modify_blocks(
